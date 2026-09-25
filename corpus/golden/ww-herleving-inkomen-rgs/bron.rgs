@@ -1,0 +1,52 @@
+Objecttype de Werknemer (mv: Werknemers) (bezield)
+    het maandloon Numeriek (niet-negatief getal met 2 decimalen);
+    het maandinkomen Numeriek (niet-negatief getal met 2 decimalen);
+    het nieuw maandloon Numeriek (niet-negatief getal met 2 decimalen);
+    de inkomensgrens Numeriek (getal met 2 decimalen);
+    de eindigingsdatum Datum in dagen;
+    de vervaldatum Datum in dagen;
+    de maxdatum Datum in dagen;
+    de verstreken periode Numeriek (geheel getal) met eenheid dagen;
+    de nieuwe maxdatum Datum in dagen;
+    is werkloos kenmerk (bijvoeglijk);
+    is omstandigheid vervallen kenmerk (bijvoeglijk);
+    is nieuw recht ontstaan kenmerk (bijvoeglijk);
+    het recht op uitkering kenmerk (bezittelijk);
+
+// Bron: WW art. 15
+Regel toekenning art 15
+    geldig altijd
+        Een Werknemer heeft recht op uitkering
+        indien hij werkloos is.
+
+Regel inkomensgrens van een werknemer
+    geldig altijd
+        De inkomensgrens van een Werknemer moet berekend worden als zijn maandloon maal 0,8750 rekenkundig afgerond op 2 decimalen.
+
+Regel verstreken periode bij herleving
+    geldig altijd
+        De verstreken periode van een Werknemer moet gesteld worden op de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen.
+
+Regel nieuwe maxdatum bij herleving
+    geldig altijd
+        De nieuwe maxdatum van een Werknemer moet berekend worden als zijn maxdatum plus zijn verstreken periode.
+
+// Bron: WW art. 20 lid 1 onderdeel c
+Uitzondering op toekenning art 15: einde art 20 lid 1 c
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien zijn maandinkomen groter is dan zijn inkomensgrens.
+
+// Bron: WW art. 21 lid 1
+Uitzondering op einde art 20 lid 1 c: herleving art 21 lid 1
+    geldig altijd
+        Een Werknemer heeft recht op uitkering
+        indien hij omstandigheid vervallen is.
+
+// Bron: WW art. 21 lid 2 onderdeel a
+Uitzondering op herleving art 21 lid 1: blokkade art 21 lid 2 a
+    geldig altijd
+        Een Werknemer heeft geen recht op uitkering
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is nieuw recht ontstaan
+        - zijn nieuw maandloon is groter dan zijn inkomensgrens.

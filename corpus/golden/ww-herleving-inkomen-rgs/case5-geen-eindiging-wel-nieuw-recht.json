@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W5",
+        "objectType": "Werknemer",
+        "attributes": {
+          "maandloon": {
+            "number": "2400.00"
+          },
+          "maandinkomen": {
+            "number": "1800.00"
+          },
+          "nieuw maandloon": {
+            "number": "2300.00"
+          },
+          "maxdatum": {
+            "date": "2026-11-30"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "werkloos",
+          "nieuw recht ontstaan"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W5",
+      "characteristic": "recht op uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W5",
+      "attribute": "inkomensgrens",
+      "value": {
+        "number": "2100.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "W5",
+      "attribute": "verstreken periode"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W5",
+      "attribute": "nieuwe maxdatum",
+      "value": {
+        "date": "2026-11-30"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

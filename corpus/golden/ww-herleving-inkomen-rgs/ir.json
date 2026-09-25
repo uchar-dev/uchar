@@ -1,0 +1,576 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Werknemer",
+        "animate": true,
+        "plural": "Werknemers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "maandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandinkomen",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "nieuw maandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "inkomensgrens",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eindigingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vervaldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maxdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verstreken periode",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dag",
+                "canonical": "dag",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "nieuwe maxdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "werkloos",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "omstandigheid vervallen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "nieuw recht ontstaan",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "recht op uitkering",
+            "kind": "possessive"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "inkomensgrens van een werknemer",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "inkomensgrens",
+              "subjectType": "Werknemer",
+              "source": {
+                "snippet": "De inkomensgrens van een Werknemer"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "maandloon",
+                  "subjectType": "Werknemer",
+                  "source": {
+                    "snippet": "zijn maandloon"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.8750"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 3,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "0,8750"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 5,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn maandloon maal 0,8750"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn maandloon maal 0,8750 rekenkundig afgerond op 2 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verstreken periode bij herleving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verstreken periode",
+              "subjectType": "Werknemer",
+              "source": {
+                "snippet": "De verstreken periode van een Werknemer"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "eindigingsdatum",
+                  "subjectType": "Werknemer",
+                  "source": {
+                    "snippet": "zijn eindigingsdatum"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vervaldatum",
+                  "subjectType": "Werknemer",
+                  "source": {
+                    "snippet": "zijn vervaldatum"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dag",
+                  "canonical": "dag",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "nieuwe maxdatum bij herleving",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "nieuwe maxdatum",
+              "subjectType": "Werknemer",
+              "source": {
+                "snippet": "De nieuwe maxdatum van een Werknemer"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "maxdatum",
+                "subjectType": "Werknemer",
+                "source": {
+                  "snippet": "zijn maxdatum"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "verstreken periode",
+                "subjectType": "Werknemer",
+                "source": {
+                  "snippet": "zijn verstreken periode"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn maxdatum plus zijn verstreken periode"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "toekenning art 15",
+        "subject": "Werknemer",
+        "characteristic": "recht op uitkering",
+        "defaults": [
+          {
+            "node": "Default",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "werkloos",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij werkloos is"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "maandinkomen",
+                    "subjectType": "Werknemer",
+                    "source": {
+                      "snippet": "zijn maandinkomen"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "inkomensgrens",
+                    "subjectType": "Werknemer",
+                    "source": {
+                      "snippet": "zijn inkomensgrens"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens"
+              }
+            },
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "decision": true,
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "werkloos",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij werkloos is"
+                            }
+                          },
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "maandinkomen",
+                              "subjectType": "Werknemer",
+                              "source": {
+                                "snippet": "zijn maandinkomen"
+                              }
+                            },
+                            "right": {
+                              "node": "AttributeReference",
+                              "attribute": "inkomensgrens",
+                              "subjectType": "Werknemer",
+                              "source": {
+                                "snippet": "zijn inkomensgrens"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                            }
+                          },
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "omstandigheid vervallen",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij omstandigheid vervallen is"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens en hij omstandigheid vervallen is"
+                        }
+                      },
+                      "exceptions": {
+                        "unordered": false,
+                        "members": [
+                          {
+                            "node": "ExceptionGroup",
+                            "defaults": [
+                              {
+                                "node": "Default",
+                                "decision": false,
+                                "justification": {
+                                  "node": "Compound",
+                                  "quantifier": "all",
+                                  "threshold": 0,
+                                  "parts": [
+                                    {
+                                      "node": "CharacteristicCheck",
+                                      "characteristic": "werkloos",
+                                      "negated": false,
+                                      "source": {
+                                        "snippet": "hij werkloos is"
+                                      }
+                                    },
+                                    {
+                                      "node": "Comparison",
+                                      "op": "greater",
+                                      "left": {
+                                        "node": "AttributeReference",
+                                        "attribute": "maandinkomen",
+                                        "subjectType": "Werknemer",
+                                        "source": {
+                                          "snippet": "zijn maandinkomen"
+                                        }
+                                      },
+                                      "right": {
+                                        "node": "AttributeReference",
+                                        "attribute": "inkomensgrens",
+                                        "subjectType": "Werknemer",
+                                        "source": {
+                                          "snippet": "zijn inkomensgrens"
+                                        }
+                                      },
+                                      "source": {
+                                        "snippet": "zijn maandinkomen groter is dan zijn inkomensgrens"
+                                      }
+                                    },
+                                    {
+                                      "node": "CharacteristicCheck",
+                                      "characteristic": "omstandigheid vervallen",
+                                      "negated": false,
+                                      "source": {
+                                        "snippet": "hij omstandigheid vervallen is"
+                                      }
+                                    },
+                                    {
+                                      "node": "CharacteristicCheck",
+                                      "characteristic": "nieuw recht ontstaan",
+                                      "negated": false,
+                                      "source": {
+                                        "snippet": "hij is nieuw recht ontstaan"
+                                      }
+                                    },
+                                    {
+                                      "node": "Comparison",
+                                      "op": "greater",
+                                      "left": {
+                                        "node": "AttributeReference",
+                                        "attribute": "nieuw maandloon",
+                                        "subjectType": "Werknemer",
+                                        "source": {
+                                          "snippet": "zijn nieuw maandloon"
+                                        }
+                                      },
+                                      "right": {
+                                        "node": "AttributeReference",
+                                        "attribute": "inkomensgrens",
+                                        "subjectType": "Werknemer",
+                                        "source": {
+                                          "snippet": "zijn inkomensgrens"
+                                        }
+                                      },
+                                      "source": {
+                                        "snippet": "zijn nieuw maandloon is groter dan zijn inkomensgrens"
+                                      }
+                                    }
+                                  ],
+                                  "source": {
+                                    "snippet": "hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens en hij omstandigheid vervallen is en hij is nieuw recht ontstaan en zijn nieuw maandloon is groter dan zijn inkomensgrens"
+                                  }
+                                },
+                                "source": {
+                                  "snippet": "WW art. 21 lid 2 onderdeel a"
+                                }
+                              }
+                            ],
+                            "source": {
+                              "snippet": "Uitzondering op herleving art 21 lid 1"
+                            }
+                          }
+                        ]
+                      },
+                      "source": {
+                        "snippet": "WW art. 21 lid 1"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzondering op einde art 20 lid 1 c"
+                  }
+                }
+              ]
+            },
+            "source": {
+              "snippet": "WW art. 20 lid 1 onderdeel c"
+            }
+          },
+          {
+            "node": "Default",
+            "decision": true,
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "werkloos",
+              "negated": false,
+              "source": {
+                "snippet": "hij werkloos is"
+              }
+            },
+            "source": {
+              "snippet": "WW art. 15"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "WW art. 15"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

@@ -916,7 +916,17 @@ EXPECTED_CHANNEL=(
 # source file of this backend changed: the exec branch plays its one case on the first run, PLAYED 1,
 # with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A)
 # of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=201
+# 201 -> 202 (2026-09-25, card clingo-tarief-decimalen): ww-herleving-inkomen-rgs, new — the RegelSpraak
+# twin of anchor/ww-herleving-inkomen, three `Uitzondering op` blocks that each name the preceding
+# rule as carrier (the first level a chain position above the base, the two deeper levels nested). It
+# was not admitted at 192 -> 194: clingo refused the emission on a range fence, because the frontend
+# types the rate literal 0,8750 at three decimals and clingo's split money × rate encoding took a
+# four-decimal rate only; since this card that encoding brings a unit-free rate of one to three
+# decimals to scale 10^4. No
+# source file of this backend changed: the exec branch plays the ten cases on the first run, PLAYED 10,
+# with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
+# DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=202
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -929,21 +939,21 @@ EXPECTED_PLAYED=201
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-seven of the eighty-one
+# Why the reasons are grouped rather than written one by one: seventy-eight of the eighty-two
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 31 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 26 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 32 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 27 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 30 of the 31 lines refuse on that one
-  # sentence; the 31st, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. 29 of those 30 ARE that asymmetry — the exec branch plays
-  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 30
+  # toolchain does not have, and DrlTranspiler never did. 31 of the 32 lines refuse on that one
+  # sentence; the 32nd, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. 30 of those 31 ARE that asymmetry — the exec branch plays
+  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 31
   # exec-only players: the exec branch refuses it too, on a different sentence (its kenmerk target
   # shares its name with an attribute, a v0 bean-model limit), so it contributes nothing to the gap.
-  # The 26 is 30 exec-only players — those 29 and jutterswet-vouwrand of class (C) — minus 4 goldens
+  # The 27 is 31 exec-only players — those 30 and jutterswet-vouwrand of class (C) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
   # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
@@ -954,7 +964,9 @@ DRL_CHANNEL=(
   # day (card dialect-opgave-boven-berekening): jutterswet-opgave-boven-berekening joins the class,
   # 29 -> 30 lines and 24 -> 25 (199 -> 200 at EXPECTED_PLAYED). Recounted again the same day (card
   # verifier-allocatie-keten): jutterswet-strandmelding joins the class, 30 -> 31 lines and 25 -> 26
-  # (200 -> 201 at EXPECTED_PLAYED).
+  # (200 -> 201 at EXPECTED_PLAYED). Recounted again the same day (card
+  # clingo-tarief-decimalen): ww-herleving-inkomen-rgs joins the class, 31 -> 32 lines and 26 -> 27
+  # (201 -> 202 at EXPECTED_PLAYED).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -986,6 +998,7 @@ DRL_CHANNEL=(
   "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "ww-herleving-inkomen-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   # (B) loader Refusals — 36, and SHARED with the exec branch: both branches read the wire through
   # the same IrLoader, so a v1 node neither carries refuses identically in both. Every one of these
   # names an EXPECTED_CHANNEL entry above with the same reason; they are repeated here because this

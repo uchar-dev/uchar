@@ -1,0 +1,67 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W9",
+        "objectType": "Werknemer",
+        "attributes": {
+          "maandloon": {
+            "number": "2400.00"
+          },
+          "maandinkomen": {
+            "number": "1800.00"
+          },
+          "nieuw maandloon": {
+            "number": "2300.00"
+          },
+          "vervaldatum": {
+            "date": "2025-09-01"
+          },
+          "maxdatum": {
+            "date": "2026-11-30"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "werkloos",
+          "omstandigheid vervallen",
+          "nieuw recht ontstaan"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W9",
+      "characteristic": "recht op uitkering"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W9",
+      "attribute": "inkomensgrens",
+      "value": {
+        "number": "2100.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "W9",
+      "attribute": "verstreken periode"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W9",
+      "attribute": "nieuwe maxdatum",
+      "value": {
+        "date": "2026-11-30"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

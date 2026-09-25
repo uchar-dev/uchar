@@ -193,6 +193,16 @@
 #     60.00, so the input stands (ch. 7.3, ch. 7.8); the standing IS the
 #     assertion. The eleven sibling cases each pin a computed or initialised
 #     value and are not survivors.
+#   - ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json: the
+#     RegelSpraak twin of the anchor's case7, byte-identical case, same reason —
+#     on case3's facts the blokkade default decides do-not-attribute (besluit
+#     false) while the target `recht op uitkering` stands in the case input, and
+#     a false decision displaces the lower defaults and writes nothing, it never
+#     retracts (ch. 7.1, ch. 5.3; ch. 7.8 for a characteristic target). The
+#     presence IS the assertion. The twin carries the first exception level as a
+#     chain position above the base (the dialect's shape) where the anchor nests
+#     it in the base; its other nine cases pin computed attributes and are not
+#     survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -233,7 +243,8 @@ corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
 corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
 corpus/golden/jutterswet-dagentelling-rgs/case3-leeg.json
 corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json
-corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json'
+corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json
+corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
