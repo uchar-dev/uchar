@@ -9176,6 +9176,37 @@ let () =
     ~needle:
       "the initialisation of \"bergloon\" shares its target with an allocation, an object \
        creation or a defaults group of its own level";
+  (* two initialisations on two levels of a chain whose top declares a
+     defaults group: on every instance they share, the fold takes both into
+     one stack, the inherited one above the own one (ch. 7.10), so neither
+     fires as a rule there and nothing is left to refuse. Measured before
+     this arm counted only the types a writer writes as a rule: `2
+     initialisations write "bergloon"`, while ref answered *)
+  let diepwrakvondst =
+    pf_ot ~naam:"Diepwrakvondst" ~meervoud:"Diepwrakvondsten" []
+    |> vervang ~waar:{|"plural": "Diepwrakvondsten",|}
+         ~door:{|"plural": "Diepwrakvondsten", "supertype": "Wrakvondst",|}
+  in
+  both_answer ~name:"two initialisations folded into one stack on a three-level chain"
+    ~ir:
+      (pf_doc ~objecttypen:[ vondst; wrakvondst; diepwrakvondst ] ~defaults:[ wrakgroep "Vondst" ]
+         ~regels:
+           [ init ~ot:"Wrakvondst" ~naam:"wrakbergloon"
+               ~voorwaarde:(pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "gewicht") (pf_l "10.00"))
+               (pf_l "25.00");
+             init ~ot:"Diepwrakvondst" ~naam:"diepwrakbergloon"
+               ~voorwaarde:(pf_cmp "greater" (pf_a ~ot:"Diepwrakvondst" "gewicht") (pf_l "20.00"))
+               (pf_l "30.00") ]
+         ())
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ inst "V1" "Vondst" [ num "gewicht" "30.00" ]; inst "W1" "Wrakvondst" [ num "gewicht" "30.00" ];
+             inst "D1" "Diepwrakvondst" [ num "gewicht" "30.00" ];
+             inst "D2" "Diepwrakvondst" [ num "gewicht" "8.00" ] ]
+         [ pf_leeg ~label:"V1" ~attr:"bergloon" (); pf_is ~label:"W1" ~attr:"bergloon" "25.00";
+           pf_is ~label:"D1" ~attr:"bergloon" "25.00"; pf_leeg ~label:"D2" ~attr:"bergloon" ();
+           pf_cons ]);
   (* the initialisation's guard reads the input (RUNTIME-SEMANTICS ch. 5.4,
      ch. 7.3), so its own earlier write does not switch it off: its value is
      the one its reads have at the fixpoint. The value reads taxatie, which a

@@ -9091,15 +9091,34 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
    (RUNTIME-SEMANTICS ch. 7.10) and excluded here by [absorbed_on], so the two
    never write one instance. A group on ot's own level is WF-050's
    single-writer lift, which the fold leaves alone, and stays refused *)
+let native_types ctx ~ot ~a =
+  let absorbed = Ir_v0.Desugar.absorbed_on ctx.doc ~otype:ot ~attr:a in
+  List.filter_map
+    (fun (t, _) ->
+      if
+        Ir_v0.Checks.subtype_of ctx.doc ~sub:t ~super:ot
+        && not (List.exists (fun x -> norm x = norm t) absorbed)
+      then Some (norm t)
+      else None)
+    ctx.doc.objecttypen
+
+(* A rule and an initialisation co-write where some concrete type is written
+   by both as a rule — not where a stack has folded either of them
+   ([native_types]). Two initialisations folded into one stack on every
+   instance they share are ranked by the stack's block order (RUNTIME-SEMANTICS
+   ch. 7.10), and were refused here although ref and the Drools exec-model
+   branch answer them *)
 let init_writers ctx ~ot ~a =
   let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
+  let mine = native_types ctx ~ot ~a in
+  let co_writes ot' = List.exists (fun t -> List.mem t mine) (native_types ctx ~ot:ot' ~a) in
   let on_target (r : resolved_regel) =
     r.rr_soort <> Some Kenmerktoekenning
     && applies ctx r.rr_geldigheid
     &&
     match r.doel with
     | Some (Attribuut_ref { attribuut = Some a'; objecttype = Some ot'; _ }) ->
-        norm a' = norm a && overlaps ot'
+        norm a' = norm a && co_writes ot'
     | _ -> false
   in
   let inits, comps =

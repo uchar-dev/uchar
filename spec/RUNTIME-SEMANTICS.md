@@ -3185,6 +3185,10 @@ after both. `gewicht` 12,00 gives **bergloon 26,00 and vindloon 18,00** in
 either document order; `gewicht` 8,00 gives bergloon **leeg** and vindloon
 **14,00**; a case input for either target stands.
 
+Two initialisations on one target are ill-formed (`IR-SPEC.md` WF-079, its
+initialisation arm), conditional or not: where both apply nothing ranks
+them, and the guard would let the first to fire decide.
+
 ### 5.5 Creation in the loop
 
 An object creation must be a function of the **fact base**, not of the

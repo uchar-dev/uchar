@@ -8228,6 +8228,16 @@ let wf052 ctx =
    a type below it sees the same pair while it stays outside the gate and
    has it folded once inside. The pairing itself is [chain_pairs], which
    WF-026's chain arm and WF-050's allocation lift read as well. *)
+(* The INITIALISATION arm pairs two initialisation versions the same two ways,
+   conditional or not. A computing pair with conditions may be a guarded case
+   split; an initialisation pair has no such reading, because the guard turns
+   an overlap of the two conditions into an order: in v0 the first to fire
+   fills the target and the other finds it filled. Measured 2026-09-25 on a
+   verifier-clean pair, both conditions holding: the value was 25 or 30 by
+   document order in ref and both Drools branches, and the ASP backend refused
+   the shape. Since the initialisation's guard reads the input (RUNTIME-SEMANTICS
+   ch. 5.4), ref and the Drools exec-model branch find no fixpoint there
+   instead, while the DRL-text branch still answers by document order. *)
 let wf079 ctx =
   let has_defaults otn a =
     List.exists
@@ -8248,51 +8258,74 @@ let wf079 ctx =
         | _ -> None)
       ctx.doc.resolved_regels
   in
+  let initialisations =
+    List.filter_map
+      (fun (r : resolved_regel) ->
+        match (r.rr_soort, r.doel) with
+        | Some Initialisatie, Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ })
+          ->
+            Some (Option.map strip_version r.rr_naam, otn, a, r.rr_geldigheid, r.rr_pointer)
+        | _ -> None)
+      ctx.doc.resolved_regels
+  in
   let writers =
     List.filter_map
       (fun (n, otn, a, g, at) ->
         if has_defaults otn a then None else Some (n, otn, a, g, at))
       computing
   in
-  let rec pairs = function
+  let rec pairs ~sentence = function
     | [] -> []
     | (n1, ot1, a1, g1, at1) :: rest ->
         List.filter_map
           (fun (n2, ot2, a2, g2, _) ->
             let same_target = norm ot1 = norm ot2 && norm a1 = norm a2 in
             if same_target && distinct_form n1 n2 && validity_overlaps g1 g2 then
-              Some
-                (v "WF-079" at1
-                   (Printf.sprintf
-                      "two unconditional computing rules write target (%s, %s) with no \
-                       prioritized defaults — priority is explicit (a defaults group) or \
-                       explicitly absent, never implicit agenda order (ch. 7.7)"
-                      ot1 a1))
+              Some (v "WF-079" at1 (sentence ot1 a1))
             else None)
           rest
-        @ pairs rest
+        @ pairs ~sentence rest
   in
-  let chain =
+  let chain ~sentence versions =
     chain_pairs ctx
       ~ty:(fun (_, t, _, _, _) -> t)
       ~attr:(fun (_, _, a, _, _) -> a)
       ~pairs:(fun (n1, _, _, g1, _) (n2, _, _, g2, _) ->
         distinct_form n1 n2 && validity_overlaps g1 g2)
-      computing
+      versions
     |> List.filter_map (fun ((_, low, a, _, at), (_, high, _, _, _)) ->
            if List.mem ("A:" ^ norm a) (chain_group_keys ctx.doc low) then None
-           else
-             Some
-               (v "WF-079" at
-                  (Printf.sprintf
-                     "two unconditional computing rules write target (%s, %s) through its \
-                      type chain — one declared on %s, one on %s — and no defaults group \
-                      folds them into one stack, so both fire on a %s instance; priority is \
-                      explicit (a defaults group, whose subtype base replaces the inherited \
-                      base, ch. 7.10), never implicit agenda order (ch. 7.7)"
-                     low a high low low)))
+           else Some (v "WF-079" at (sentence low a high)))
   in
-  dedup_reports (pairs writers @ chain)
+  let initialisation_writers =
+    List.filter (fun (_, otn, a, _, _) -> not (has_defaults otn a)) initialisations
+  in
+  dedup_reports
+    (pairs writers ~sentence:(fun ot a ->
+         Printf.sprintf
+           "two unconditional computing rules write target (%s, %s) with no prioritized defaults \
+            — priority is explicit (a defaults group) or explicitly absent, never implicit agenda \
+            order (ch. 7.7)"
+           ot a)
+    @ chain computing ~sentence:(fun low a high ->
+          Printf.sprintf
+            "two unconditional computing rules write target (%s, %s) through its type chain — one \
+             declared on %s, one on %s — and no defaults group folds them into one stack, so both \
+             fire on a %s instance; priority is explicit (a defaults group, whose subtype base \
+             replaces the inherited base, ch. 7.10), never implicit agenda order (ch. 7.7)"
+            low a high low low)
+    @ pairs initialisation_writers ~sentence:(fun ot a ->
+          Printf.sprintf
+            "two initialisations write target (%s, %s) with no prioritized defaults — where both \
+             apply, nothing ranks them: the first to fire would decide, an order the fixpoint does \
+             not define, and a condition on either gives it no priority (ch. 5.4)"
+            ot a)
+    @ chain initialisations ~sentence:(fun low a high ->
+          Printf.sprintf
+            "two initialisations write target (%s, %s) through its type chain — one declared on \
+             %s, one on %s — and no defaults group folds them into one stack, so both write a %s \
+             instance with nothing to rank them (ch. 5.4, ch. 7.10)"
+            low a high low low))
 
 (* WF-054: parent-scoped uniqueness (the scope hop). Since L2 the scope
    binding IS the scoping (B8): a uniqueness carrying one is scoped, one
