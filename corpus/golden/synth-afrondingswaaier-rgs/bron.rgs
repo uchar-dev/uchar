@@ -1,0 +1,33 @@
+Objecttype de Veilingronde (mv: Veilingrondes)
+    de opbrengst Numeriek (geheel getal);
+    de kavels Numeriek (geheel getal);
+    de prijsBenedenaf Numeriek (geheel getal);
+    de prijsBovenaf Numeriek (geheel getal);
+    de prijsRekenkundig Numeriek (geheel getal);
+    de prijsNaarNul Numeriek (geheel getal);
+    de prijsVanNul Numeriek (geheel getal);
+    de prijsFijn Numeriek (getal met 1 decimalen);
+
+Regel prijs benedenaf van een veilingronde
+    geldig altijd
+        De prijsBenedenaf van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar beneden afgerond op 0 decimalen.
+
+Regel prijs bovenaf van een veilingronde
+    geldig altijd
+        De prijsBovenaf van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde naar boven afgerond op 0 decimalen.
+
+Regel prijs rekenkundig van een veilingronde
+    geldig altijd
+        De prijsRekenkundig van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 0 decimalen.
+
+Regel prijs naar nul van een veilingronde
+    geldig altijd
+        De prijsNaarNul van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde richting nul afgerond op 0 decimalen.
+
+Regel prijs van nul van een veilingronde
+    geldig altijd
+        De prijsVanNul van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde weg van nul afgerond op 0 decimalen.
+
+Regel prijs fijn van een veilingronde
+    geldig altijd
+        De prijsFijn van een Veilingronde moet berekend worden als de opbrengst van de Veilingronde gedeeld door de kavels van de Veilingronde rekenkundig afgerond op 1 decimalen.
