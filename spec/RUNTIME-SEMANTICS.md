@@ -387,8 +387,9 @@ maximum of the operands' declared decimals):
 Unbounded targets ("getal", the ch. 2.4 exemption) carry no ceiling.
 
 Examples: 12,34 + 1,2 types at 2 decimals; 1,25 × 1,5 types at 3 decimals
-(sum); 10 ÷ 4 types at 0 decimals although its value is 2,5 — the
-under-report ch. 2.4 closes by rule.
+(sum); 3 × 4, two whole operands, types at 0 decimals and fractional although
+its value is 12, whole (a product is never whole); 10 ÷ 4 types at 0 decimals
+although its value is 2,5 — the under-report ch. 2.4 closes by rule.
 
 ### 2.4 The assignment gate (§6.1.2)
 

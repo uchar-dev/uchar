@@ -4,7 +4,9 @@
 
    Not covered here, deliberately: WV-1.2f (timeline rules — ch. 3, next
    card), WV-2.3 (static result-precision typing — a static property of
-   the emitter/verifier, not of evaluation), and the ch. 5 examples that
+   the emitter/verifier, not of evaluation; its one example with a value
+   side, the product that is never whole, is WV-2.3-maal-niet-heel), and
+   the ch. 5 examples that
    need full IR documents — the corpus cases exercise those (the
    penningdrempel case is the 5.7 trace verbatim). *)
 
@@ -251,6 +253,58 @@ let () =
   expect_num "WV-2.2-o" (Arith.abs_ (n "-3/7")) "3/7";
   (* division by numeric zero is a hard fault; ch. 1.4 point 4 *)
   expect_fault "ch2.2-div-zero" (fun () -> Arith.div_ ~err:no_err (n "5") (n "0"))
+
+(* --- ch. 2.3: the wholeness of a product ---------------------------------- *)
+
+(* WV-2.3-maal-niet-heel: the ch. 2.3 example "3 × 4, two whole operands,
+   types at 0 decimals and fractional although its value is 12". The rest of
+   ch. 2.3 stays outside this suite (see the header); this one example has a
+   reader on both sides. The VALUE is ref's own: the product evaluates to the
+   exact 12. The TYPE is static, and ref reads it through the checks library
+   it links, the verifier's WF-091 derivation: annotated whole, the product
+   draws exactly the wholeness finding; annotated fractional, nothing. *)
+let () =
+  let doc heel =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"uitkomst","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"uitkomst van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"uitkomst","subjectType":"Jutter","source":{"snippet":"De uitkomst van een Jutter"}},"value":{"node":"Binary","op":"times","left":{"node":"Literal","value":{"number":"3"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"3"}},"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}},"type":{"node":"Number","whole":%b,"decimals":0,"sign":"unspecified"},"source":{"snippet":"3 maal 4"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      heel
+  in
+  let zaak =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "uitkomst",
+      "value": { "number": "12" } } ] }|}
+  in
+  let schrijf suffix tekst =
+    let f = Filename.temp_file "ref-wv23" suffix in
+    let oc = open_out f in
+    output_string oc tekst;
+    close_out oc;
+    f
+  in
+  let irf = schrijf ".ir.json" (doc false) and heelf = schrijf ".ir.json" (doc true) in
+  let casef = schrijf ".case.json" zaak in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; heelf; casef ])
+    (fun () ->
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      let final =
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+          c.world
+      in
+      check "WV-2.3-maal-niet-heel-waarde-12" (Case.check c final = []);
+      let bevindingen f = Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier f) in
+      check "WV-2.3-maal-niet-heel-fractioneel-schoon" (bevindingen irf = []);
+      check "WV-2.3-maal-niet-heel-heel-geweigerd"
+        (bevindingen heelf
+        = [ { Ir_v0.Checks.wf = "WF-091"; at = "/rules/rules/0/versions/0/value/type";
+              reason =
+                "wholeness mismatch: the times composite is typed whole, but the type derived from \
+                 its operands is fractional" } ]))
 
 (* --- ch. 2.4: the assignment gate --------------------------------------- *)
 
