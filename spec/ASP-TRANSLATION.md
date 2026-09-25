@@ -2836,14 +2836,14 @@ refused for it.
 multiplication (S18) — shapes and fences without a corpus case:* a
 **value-position `IfThenElse` condition** that is not a comparison
 (`a value-position IfThenElse condition is a comparison over bound
-operands (WF-077; no corpus case for more)`) — a predicate or composite
+operands (no corpus case for more)`) — a predicate or composite
 condition has no corpus case. Its comparison operands may READ binders,
 parameters and literals, and arithmetic combinators (`Binary`,
 `Rounding`, `Clamp`, `TextComposition`) over those are admissible:
 `value_condition` lowers each operand through `expr_term` and harmonises
 the two operand scales exactly as the closed-body comparison route does,
 so the operand backstop (`… must read only binders, parameters or
-literals (WF-077)`) refuses only the attribute/field/characteristic reads
+literals`) refuses only the attribute/field/characteristic reads
 WF-077 already rejects before translation — an unreachable guard on
 WF-clean input (the guard mirrors the verifier's `bound_only_expr`). A
 **`Let` inside a closed body** (a fold, function or lambda body) **now

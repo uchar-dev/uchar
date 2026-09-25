@@ -34,10 +34,11 @@ the broadening clingo faulted the closed_term catch-all (`… a Construct or a L
 
 A binder bound by a Let OUTSIDE the closed body (a rule-level `let_binder`
 helper) is a different, ill-formed shape: `Let(f = <param>) in Fold(+, 0, λacc
-x. acc + x·f)`. ref faults cleanly (`unbound binder "f" (WF-064 should preclude
-this)`); clingo previously ground-crashed (unsafe `LB` variable, exit 65). The
-`closed_term` `Binder_ref` fence now refuses it with a clean TRANSLATION FAULT
-(`the closed body reads binder "f" bound by a Let OUTSIDE it …`) — the parallel
-verifier card (`backlog/new/20260825-closed-body-enclosing-binder.md`) will make
-it WF-064-ill-formed; until it merges this fence catches the form. This witness
+x. acc + x·f)`. ref faults cleanly (`unbound binder "f" (the verifier should
+preclude this)`); clingo previously ground-crashed (unsafe `LB` variable, exit
+65). The `closed_term` `Binder_ref` fence now refuses it with a clean
+TRANSLATION FAULT (`the closed body reads binder "f" bound by a Let OUTSIDE it
+…`) — the parallel verifier card
+(`backlog/new/20260825-closed-body-enclosing-binder.md`) will make it
+WF-064-ill-formed; until it merges this fence catches the form. This witness
 adds only the INSIDE-body Let.
