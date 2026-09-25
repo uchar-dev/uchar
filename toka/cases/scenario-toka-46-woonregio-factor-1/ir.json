@@ -415,6 +415,14 @@
               "node": "Date",
               "precision": "millisecond"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "startpunt variabele periode van 3 maanden",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
           }
         ],
         "characteristics": [
@@ -1578,7 +1586,14 @@
     "consistencies": [],
     "uniquenesses": [],
     "factCreations": [],
-    "startPointDeterminations": [],
+    "startPointDeterminations": [
+      {
+        "node": "StartPointDetermination",
+        "timeline": "variabele periode van 3 maanden",
+        "objectType": "Vlucht",
+        "member": "startpunt variabele periode van 3 maanden"
+      }
+    ],
     "ruleGroups": []
   },
   "diagnostics": []
