@@ -1,0 +1,198 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal gevulde vondstgewichten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "plural": "gewichten"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "aantal gevulde vondstgewichten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal gevulde vondstgewichten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal gevulde vondstgewichten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "ListLiteral",
+                  "type": {
+                    "node": "ListType",
+                    "element": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  "elements": [
+                    {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2.00"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal gevulde waarden van de lijst 1,00 en 2,00"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

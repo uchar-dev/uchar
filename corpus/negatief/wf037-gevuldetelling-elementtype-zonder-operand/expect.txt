@@ -1,0 +1,1 @@
+a filledCount aggregation carries elementType "Vondst" but no source operand
