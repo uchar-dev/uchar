@@ -6601,9 +6601,16 @@ let () =
   in
   List.iter
     (fun (knoop, arg) ->
-      faults_with ~name:("WF-037 bronarm, telling met " ^ knoop ^ " (expr_term)")
-        ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:arg ~bereik:true)
-        ~case_text:bronloze_vouw_case ~needle:(bronarm "count" knoop))
+      if knoop = "a VariableReference" then
+        (* WF-034 refuses the node wherever it stands, at load, so an
+           executor never reaches the fold's source arm with it *)
+        refused_at_load ~name:("WF-037 bronarm, telling met " ^ knoop ^ " (WF-034 bij het laden)")
+          ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:arg ~bereik:true)
+          ~needle:(Ir_v0.Checks.variable_reference_refusal (Some "x"))
+      else
+        faults_with ~name:("WF-037 bronarm, telling met " ^ knoop ^ " (expr_term)")
+          ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:arg ~bereik:true)
+          ~case_text:bronloze_vouw_case ~needle:(bronarm "count" knoop))
     vormen;
   faults_with ~name:"WF-037 bronarm, gevulde telling met a Literal (expr_term)"
     ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"filledCount" ~argumenten:literaal ~bereik:true)
