@@ -284,7 +284,7 @@
               "node": "Fold",
               "type": {
                 "node": "Number",
-                "whole": true,
+                "whole": false,
                 "decimals": 0,
                 "sign": "unspecified"
               },
@@ -302,7 +302,7 @@
                     "name": "acc",
                     "datatype": {
                       "node": "Number",
-                      "whole": true,
+                      "whole": false,
                       "decimals": 0,
                       "sign": "unspecified"
                     }
@@ -354,7 +354,7 @@
                     },
                     "type": {
                       "node": "Number",
-                      "whole": true,
+                      "whole": false,
                       "decimals": 0,
                       "sign": "unspecified"
                     },
@@ -364,7 +364,7 @@
                   },
                   "type": {
                     "node": "Number",
-                    "whole": true,
+                    "whole": false,
                     "decimals": 0,
                     "sign": "unspecified"
                   },
@@ -383,7 +383,7 @@
                 },
                 "type": {
                   "node": "Number",
-                  "whole": true,
+                  "whole": false,
                   "decimals": 0,
                   "sign": "unspecified"
                 },

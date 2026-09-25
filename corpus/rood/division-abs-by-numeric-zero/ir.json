@@ -263,7 +263,7 @@
               },
               "type": {
                 "node": "Number",
-                "whole": true,
+                "whole": false,
                 "decimals": 0,
                 "sign": "nonNegative"
               },
@@ -320,7 +320,7 @@
               },
               "type": {
                 "node": "Number",
-                "whole": true,
+                "whole": false,
                 "decimals": 0,
                 "sign": "unspecified"
               },
