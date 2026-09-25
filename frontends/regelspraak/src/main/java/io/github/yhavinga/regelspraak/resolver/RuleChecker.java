@@ -3295,9 +3295,11 @@ final class RuleChecker {
         int line = sb.getStart().getLine();
         String tijdlijnNaam = RegelSpraakModel.normaliseerTijdlijnNaam(src(sb.tijdlijnNaam()));
         RegelSpraakModel.Tijdlijn tijdlijn = model.tijdlijnOpNaam(tijdlijnNaam);
+        // every refusal below is the verifier's sentence for the document it keeps off disk: WF-032 on the
+        // StartPointDetermination, WF-023 on the rule that writes the anchor
         if (tijdlijn == null) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "startpuntbepaling: tijdlijn '" + tijdlijnNaam + "' is niet gedeclareerd (regel '" + naam + "')", line));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "startpuntbepaling (regel '" + naam
+                    + "'): start point for undeclared timeline '" + tijdlijnNaam + "'", line));
             return;
         }
         if (!tijdlijn.variabelStartpunt())
@@ -3307,16 +3309,14 @@ final class RuleChecker {
                     + "'): start point for fixed-start timeline '" + tijdlijnNaam + "'", line));
         Objecttype subject = model.resolveObjecttype(src(sb.universeelOnderwerp().kaleNaam()));
         if (subject == null) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "startpuntbepaling: onderwerp '" + src(sb.universeelOnderwerp().kaleNaam())
-                    + "' is geen objecttype of rol (regel '" + naam + "')", line));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "startpuntbepaling (regel '" + naam
+                    + "'): object type '" + src(sb.universeelOnderwerp().kaleNaam()) + "' is not declared", line));
             return;
         }
         Expr anker = bouwer.bouwResultaat(sb.expressie());   // §11: the anchor IS a rule's `waarde` slot (see registreer)
         if (!anker.type().isOnbekend() && !(anker.type() instanceof Datatype.DatumInDagen))
-            model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "startpuntbepaling: de expressie moet datum in dagen zijn, niet "
-                    + anker.type().naam() + " (§6.8) (regel '" + naam + "')", line));
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "startpuntbepaling (regel '" + naam + "'): "
+                    + Typering.toekenning(new Datatype.DatumInDagen(), anker.type()), line));
         String lid = "startpunt " + tijdlijnNaam;
         // the synthetic anchor name is reserved: an author-declared attribute of another type under this
         // exact name would otherwise silently merge with the anchor (a latent type-mismatched write).
@@ -3325,9 +3325,12 @@ final class RuleChecker {
         // this one guard through the chain while the others do not would only shift the seam.
         Datatype bestaand = subject.attributen.get(lid);
         if (bestaand != null && !(bestaand instanceof Datatype.DatumInDagen)) {
-            model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "startpuntbepaling: attribuutnaam '" + lid + "' is gereserveerd voor het startpunt-anker "
-                    + "maar al gedeclareerd als " + bestaand.naam() + " (regel '" + naam + "')", line));
+            // an undeclared domain has no kind word, and its own refusal names it
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, bestaand.isOnbekend()
+                    ? "startpuntbepaling: attribuutnaam '" + lid + "' is gereserveerd voor het startpunt-anker "
+                            + "maar al gedeclareerd als " + bestaand.naam() + " (regel '" + naam + "')"
+                    : "startpuntbepaling (regel '" + naam + "'): anchor member '" + lid + "' is "
+                            + Typering.soortWoord(bestaand) + ", must be a day-precision date", line));
             return;
         }
         subject.attributen.putIfAbsent(lid, new Datatype.DatumInDagen());

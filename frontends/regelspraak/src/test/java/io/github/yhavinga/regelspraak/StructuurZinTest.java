@@ -206,6 +206,58 @@ class StructuurZinTest {
                     """));
     }
 
+    // ---- WF-032 (and WF-023): the start point determination
+
+    private static final String STARTPUNT = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de aanvangsdatum Datum in dagen;
+            het volgnummer Numeriek (geheel getal);
+            het meldtijdstip Datum en tijd in millisecondes;
+
+        """;
+
+    private static String startpunt(String tijdlijn, String extra, String zin) {
+        return tijdlijn + STARTPUNT.replace("    het meldtijdstip", extra + "    het meldtijdstip") + """
+            Regel startpunt penningjaar
+                geldig altijd
+                    %s.
+            """.formatted(zin);
+    }
+
+    private static final String VARIABEL = "Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;\n\n";
+
+    @Test void een_startpunt_voor_een_ongedeclareerde_tijdlijn() {
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): start point for undeclared timeline "
+                        + "'penningjaar'"),
+                fouten(startpunt("", "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn "
+                        + "aanvangsdatum")));
+    }
+
+    @Test void een_startpunt_voor_een_ongedeclareerd_onderwerp() {
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): object type 'Strandjutter' is not "
+                        + "declared"),
+                fouten(startpunt(VARIABEL, "", "Het startpunt van het penningjaar voor een Strandjutter wordt bepaald "
+                        + "door de aanvangsdatum van de Strandjutter")));
+    }
+
+    @Test void een_startpunt_dat_geen_dagdatum_is() {
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: a number value is assigned "
+                        + "to a date-day target"),
+                fouten(startpunt(VARIABEL, "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door "
+                        + "zijn volgnummer")));
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): toekenning: a date-ms value is assigned "
+                        + "to a date-day target"),
+                fouten(startpunt(VARIABEL, "", "Het startpunt van het penningjaar voor een Jutter wordt bepaald door "
+                        + "zijn meldtijdstip")));
+    }
+
+    @Test void een_startpuntanker_dat_al_anders_gedeclareerd_is() {
+        assertEquals(List.of("startpuntbepaling (regel 'startpunt penningjaar'): anchor member 'startpunt penningjaar' is "
+                        + "number, must be a day-precision date"),
+                fouten(startpunt(VARIABEL, "    het startpunt penningjaar Numeriek (geheel getal);\n",
+                        "Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn aanvangsdatum")));
+    }
+
     // ---- WF-020: two decision-table rows with one rule name
 
     @Test void twee_tabelrijen_met_een_regelnaam() {
