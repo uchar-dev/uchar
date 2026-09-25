@@ -3310,11 +3310,11 @@ against its base through the very same predicate, so a one-sided pair is
 admitted at a clamp on the same terms and refused on the same terms.
 Measured that day, the verifier-gated zones — golden (166), negatief (359)
 and rood (26), 551 documents — carry no such clamp either, while the parity
-zone's 30, carry two: the casus dump, which gate 11 keeps out of its
-well-formedness leg, and the slice parity slice 24, which that leg holds out on this
-one report (since 2026-09-25, the parity well-formedness card; until then no gate
-put the zone through the verifier). Admitting the class stays one decision for WF-023,
-WF-035, WF-036 and WF-099 together.
+zone's 30 carry two: the casus dump, which gate 11 keeps out of its
+well-formedness leg, and parity slice 24, which that leg holds out on this one
+report (since 2026-09-25, the parity well-formedness card; until then no gate
+put the zone through the verifier). Admitting the class stays one decision for
+WF-023, WF-035, WF-036 and WF-099 together.
 
 Two more shapes, and one coverage gap, are stated and **unwitnessed** —
 which is a weaker thing than stated and pinned. A `Rounding` over a PERCENTAGE
@@ -7378,10 +7378,10 @@ ch. 3.12), and it belongs to whoever measures it.
   golden (166), negatief (359) and rood (26) — 551 documents — moves
   exactly the witness's verdict and not one other report line. The parity
   zone's 30 documents carry two: the casus dump, which gate 11 keeps out of
-  its well-formedness leg, and the slice parity slice 24, which that leg holds out on
-  this one report (since 2026-09-25, the parity well-formedness card; until then no
-  gate put the zone through the verifier). Admitting that class is one
-  decision for WF-035, WF-036, WF-023 and this rule together, not a
+  its well-formedness leg, and parity slice 24, which that leg holds out on
+  this one report (since 2026-09-25, the parity well-formedness card; until
+  then no gate put the zone through the verifier). Admitting that class is
+  one decision for WF-035, WF-036, WF-023 and this rule together, not a
   divergence to introduce at one of the four.
 - **WF-037** Aggregation shape: facet validity per kind MUST hold —
   `emptyFallback` only on `sum`; `dimensionSelection` only on `sum`,
