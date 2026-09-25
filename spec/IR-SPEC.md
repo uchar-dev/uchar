@@ -8318,7 +8318,7 @@ then the wire kept the v0 names each row gives.
 | `characteristic` | string? | v0 `kenmerk`: the target characteristic — **exactly one** of the two targets; absent on an attribute group (a `null` until L5) |
 | `attribute` | string? | v0 `attribuut`: the target attribute |
 | `defaults` | non-empty list of Default | **descending** priority: highest first |
-| `unordered` | boolean | v0 `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds) |
+| `unordered` | boolean? | v0 `ongeordend`: declared-unordered (ch. 7.2 there) — multiple defaults groups on one target are admissible iff **every** one carries it; the group decides jointly, and differing simultaneous decisions route to the §9.5 channel (keyed by the target form; no write — the target keeps what the fact base holds). An absent `unordered` is `false`: the group is not declared unordered |
 | `source`, `validity` | — | v0 `bron` and `geldigheid`; `source` is the source reference of ch. 4 |
 
 **Default**: `decision` (v0 `besluit`, boolean? — characteristic
