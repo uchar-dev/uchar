@@ -1,7 +1,7 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1) at its third write position —
 a prioritized-defaults consequence: the `PrioritizedDefaults` on
 `Berging.vaarwater` (declared `Vaarwater`) carries one default whose
-consequence is a `Literal` `Noord` of domain `Kust` (`initialisatie:
+consequence is a `Literal` `Noord` of domain `Kust` (`initialisation:
 true`). A rule reads `vaarwater` faithfully.
 
     WF-023 FAIL /rules/prioritizedDefaults/0/defaults/0/consequence: a value of
