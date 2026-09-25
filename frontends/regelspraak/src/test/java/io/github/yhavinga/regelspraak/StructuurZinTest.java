@@ -367,6 +367,28 @@ class StructuurZinTest {
                 + "het attribuut 'peildatum' van 'Jutter', een supertype van het onderwerp 'Klipjutter'"), sup.get(0));
     }
 
+    // ---- WF-027: an object creation member that the created type does not declare
+
+    @Test void een_objectcreatie_met_een_onbekend_lid() {
+        assertEquals(List.of("objectcreatie: 'graad' is not a declared attribute of 'Berger'"),
+                fouten("""
+                    Objecttype de Berging (mv: Bergingen)
+                        de opbrengst Numeriek (niet-negatief geheel getal);
+
+                    Objecttype de Berger (mv: Bergers) (bezield)
+                        de rang Numeriek (niet-negatief geheel getal);
+
+                    Feittype bergingsdeelname
+                        de berging Berging
+                        de berger (mv: bergers) Berger
+                    Eén berging heeft meerdere bergers
+
+                    Regel benoem een berger
+                        geldig altijd
+                            Een Berging heeft een berger met graad gelijk aan 3.
+                    """));
+    }
+
     // ---- WF-020: two decision-table rows with one rule name
 
     @Test void twee_tabelrijen_met_een_regelnaam() {

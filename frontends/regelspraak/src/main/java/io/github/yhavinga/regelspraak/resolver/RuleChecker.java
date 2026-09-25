@@ -3028,8 +3028,9 @@ final class RuleChecker {
                                 + waarde.bron() + "'", oc.getStart().getLine()));
             return new ResolvedObjectCreatie.Toekenning(kenmerk, waarde, true);
         }
+        // the member goes out as an attribute initialisation, which the verifier refuses in these words (WF-027)
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "objectcreatie: '" + naam + "' is geen attribuut of kenmerk van " + nieuwType.naam + " (§13.4.6.2)",
+                "objectcreatie: '" + naam + "' is not a declared attribute of '" + nieuwType.naam + "'",
                 oc.getStart().getLine()));
         return new ResolvedObjectCreatie.Toekenning(naam, waarde);
     }
