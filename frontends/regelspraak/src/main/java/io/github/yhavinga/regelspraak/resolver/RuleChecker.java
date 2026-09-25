@@ -1782,7 +1782,8 @@ final class RuleChecker {
      *  same objecttype. A SELF-read (x = x+1, the clamp idiom "x = x, met een maximum van y" included) is the
      *  cycle of one node and gets the same WARNING: the verifier refuses it under WF-045 as it refuses a longer
      *  cycle (measured 2026-09-25), so the Drools no-loop that makes a single writer terminate is no ground to
-     *  pass it in silence. */
+     *  pass it in silence. A computation whose CONDITION reads its own target is refused the same way, so that
+     *  read is the same self-edge; the condition's other reads stay out of the graph, which is the value's. */
     private void keurKringverwijzingen() {
         Map<String, Set<String>> leest = new LinkedHashMap<>();
         for (ResolvedRegel r : model.resolvedRegels) {
@@ -1790,6 +1791,11 @@ final class RuleChecker {
             String doel = d.objecttype().naam + "." + d.attribuut();
             Set<String> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
             verzamelEigenReads(r.waarde(), d.objecttype(), reads);
+            if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING) {
+                Set<String> voorwaarde = new java.util.HashSet<>();
+                verzamelEigenReads(r.voorwaarde(), d.objecttype(), voorwaarde);
+                if (voorwaarde.contains(doel)) reads.add(doel);
+            }
         }
         Set<String> gemeld = new java.util.HashSet<>();
         for (String start : leest.keySet()) {
@@ -1812,6 +1818,26 @@ final class RuleChecker {
         }
         pad.remove(pad.size() - 1);
         return null;
+    }
+
+    /** The own reads of a condition, collected as from a value: the sides of a comparison, the operand of a
+     *  predicate, the bounds of a window, through every composite. The filter and the test of a quantifier fold
+     *  read the element and not the subject, and stay out, as a fold's filter does in a value. */
+    private static void verzamelEigenReads(Conditie c, Objecttype subject, Set<String> uit) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Vergelijking v -> {
+                verzamelEigenReads(v.links(), subject, uit);
+                verzamelEigenReads(v.rechts(), subject, uit);
+            }
+            case Conditie.Predicaat p -> verzamelEigenReads(p.operand(), subject, uit);
+            case Conditie.Periode p -> {
+                verzamelEigenReads(p.vanaf(), subject, uit);
+                verzamelEigenReads(p.tot(), subject, uit);
+            }
+            case Conditie.Samengesteld sg -> sg.onderdelen().forEach(o -> verzamelEigenReads(o, subject, uit));
+            default -> { }
+        }
     }
 
     /** The OWN attributes (same objecttype) an expression reads, as "Objecttype.attribuut" nodes — the doel
