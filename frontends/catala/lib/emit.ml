@@ -131,10 +131,6 @@ and unit_j (e : eenheid) : json =
 (* an expression's own type: never a declaration position *)
 let annotation (d : datatype) : json = datatype ~decl:false d
 
-let geheel_periode (g : geheel_periode) : json =
-  node "WholePeriod"
-    [ ("granularity", enum Spelling.whole_period_granularity g.gp_jaar); ("negated", b g.gp_niet) ]
-
 (* the symbolic role binding (IR-SPEC ch. 2.6): a whole-or-nothing pair of
    plain strings — the back-link of an object creation and the hop of a
    navigated read (Phase 5c subscope lowering). *)
@@ -174,9 +170,6 @@ let rec expr (e : expr) : json =
       node "AttributeReference"
         ([ ("attribute", so attribuut); ("subjectType", so objecttype); source br ]
         @ optional "path" (fun hops -> `List (List.map rol_binding hops)) nb)
-  | Parameter_ref { parameter; bron = br } ->
-      node "ParameterReference" [ ("parameter", so parameter); source br ]
-  | Variabele_ref { naam; bron = br } -> node "VariableReference" [ ("name", so naam); source br ]
   (* the two context nodes (IR-SPEC ch. 4.1, delta B23): a session value
      carries its name and its datatype, the bound day of a day-kind
      definition its datatype. A name outside the closed set is refused in
@@ -264,10 +257,16 @@ let rec expr (e : expr) : json =
       node "Let"
         [ ("type", opt annotation t); ("binder", s binder);
           ("value", expr value); ("body", expr body); source br ]
+  (* The translator builds no ParameterReference and no VariableReference: the
+     plugin writes no parameters, so a parameter reference would resolve
+     against no declaration (WF-034), and a variable read has no executor that
+     carries it. Written, either would reach the verifier or an executor as a
+     refusal; the serialiser refuses first, naming the node. *)
   | other ->
       failwith
         ("Emit.expr: node not produced by the skeleton: "
         ^ (match other with
+          | Parameter_ref _ -> "ParameterReference" | Variabele_ref _ -> "VariableReference"
           | Tekst_reeks _ -> "TextComposition" | Functie _ -> "Aggregation or BuiltinCall"
           | Afgerond _ -> "Rounding" | Begrensd _ -> "Clamp"
           | Dimensie_cel _ -> "DimensionCellRead" | Temporal_read _ -> "TemporalRead"
@@ -288,7 +287,14 @@ and param_list (ps : (string * datatype) list) : json =
   `List (List.map (fun (n, dt) -> `Assoc [ ("name", s n); ("datatype", datatype dt) ]) ps)
 
 and conditie (c : conditie) : json =
-  let whole_period p = optional "wholePeriod" geheel_periode p in
+  (* the translator builds no whole-period qualifier, and the plugin declares
+     no time-dependent attribute or characteristic for one to qualify
+     (WF-043), so a filled one refuses rather than being written *)
+  let whole_period = function
+    | None -> []
+    | Some (_ : geheel_periode) ->
+        failwith "Emit.conditie: condition shape not produced by the skeleton: a wholePeriod qualifier"
+  in
   match c with
   | Vergelijking { op; links; rechts; periode = p; bron = br } ->
       node "Comparison"

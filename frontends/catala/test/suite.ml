@@ -471,7 +471,51 @@ let () =
            {|{ "node": "Parameter", "name": "drempel",
   "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } }|}
          (),
-       "fills parameters") ]
+       "fills parameters");
+      (* the three forms the translator never builds and no reader would take
+         from this plugin: a parameter reference resolves against no declaration
+         (the plugin writes no parameters, WF-034), a variable read has no
+         executor that carries it, and a whole-period qualifier has no
+         time-dependent operand to qualify (WF-043) *)
+      ("a ParameterReference",
+       m1_doc
+         ~regels:
+           (regel ~voorwaarde:None
+              ~waarde:{|{ "node": "ParameterReference", "parameter": "drempel", "source": { "snippet": "de drempel" } }|})
+         (),
+       "node not produced by the skeleton: ParameterReference");
+      ("a VariableReference",
+       m1_doc
+         ~regels:
+           (regel ~voorwaarde:None
+              ~waarde:{|{ "node": "VariableReference", "name": "drempel", "source": { "snippet": "de drempel" } }|})
+         (),
+       "node not produced by the skeleton: VariableReference");
+      ("a wholePeriod qualifier",
+       m1_doc
+         ~regels:
+           (regel ~waarde:getal
+              ~voorwaarde:
+                (Some
+                   {|{ "node": "Comparison", "op": "greater",
+  "left": { "node": "AttributeReference", "attribute": "a", "subjectType": "T", "source": { "snippet": "de a" } },
+  "right": { "node": "Literal", "value": { "number": "0" },
+    "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "0" } },
+  "wholePeriod": { "node": "WholePeriod", "granularity": "year", "negated": false },
+  "source": { "snippet": "de a groter dan 0 gedurende het hele jaar" } }|}))
+         (),
+       "condition shape not produced by the skeleton: a wholePeriod qualifier");
+      ("a wholePeriod qualifier on a characteristic check",
+       m1_doc
+         ~regels:
+           (regel ~waarde:getal
+              ~voorwaarde:
+                (Some
+                   {|{ "node": "CharacteristicCheck", "characteristic": "k", "negated": false,
+  "wholePeriod": { "node": "WholePeriod", "granularity": "month", "negated": true },
+  "source": { "snippet": "niet de hele maand k" } }|}))
+         (),
+       "condition shape not produced by the skeleton: a wholePeriod qualifier") ]
   in
   List.iter
     (fun (what, text, needle) ->
@@ -606,60 +650,5 @@ let () =
       {|"initialisation": true|}; {|"condition": {|}; {|"host": "Zaak"|};
       {|"from": "2026-01-01"|}; {|"to": "2027-01-01"|}; {|"plural": "deelzaken"|};
       {|"kind": "adjectival"|}; {|"kind": "possessive"|}; {|"kind": "nominal"|} ];
-  (* Three renamed forms of this serialiser that no document of its own can
-     carry past the verifier: the whole-period qualifier, since WF-043 wants a
-     temporal operand and the plugin declares no timeline (the object type's
-     timeline tables refuse above); a parameter reference, since the document
-     refuses a filled parameter list; and a variable reference, which the
-     translator never binds. So their proof is the loader's, in both stances:
-     a qualifier of a year and one of a month, the latter negated, and the two
-     references, read back into the rule they were written from. *)
-  Printf.printf "[emit-proef] de vormen die alleen de lader kan bewijzen\n%!";
-  let numu : A.datatype =
-    Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None }
-  in
-  let met_periode : A.conditie =
-    Samengesteld
-      { kwantor = Alle; drempel = 0;
-        onderdelen =
-          [ Vergelijking
-              { op = Groter; links = Some (aref "bedrag"); rechts = Some (lit (Lv_number "0") numu);
-                periode = Some { gp_jaar = true; gp_niet = false }; bron = Some "het hele jaar" };
-            Kenmerk_check
-              { kenmerk = Some "spoedeisend"; negatie = false; eigenaar = None;
-                periode = Some { gp_jaar = false; gp_niet = true }; bron = Some "niet de hele maand";
-                navigatie_binding = None } ];
-        bron = Some "beide" }
-  in
-  let referenties : A.expr =
-    Binair
-      { op = Plus; links = Some (Parameter_ref { parameter = Some "opslag"; bron = Some "de opslag" });
-        rechts = Some (Variabele_ref { naam = Some "X"; bron = Some "X" }); typ = Some numu;
-        bron = Some "de opslag plus X" }
-  in
-  let periode_doc =
-    { proef with
-      resolved_regels =
-        [ regel "toeslag van een zaak" Berekening "toeslag" referenties (Some met_periode) ];
-      prioritized_defaults = [] }
-  in
-  let ptext = Catala_frontend_lib.Emit.to_string periode_doc in
-  let pout = Filename.temp_file "catfe-proef-periode" ".ir.json" in
-  let oc = open_out pout in
-  output_string oc ptext;
-  close_out oc;
-  List.iter
-    (fun needle -> check ("emit-proef : writes " ^ needle) (contains ~needle ptext) ptext)
-    [ {|"wholePeriod": {|}; {|"granularity": "year"|}; {|"granularity": "month"|};
-      {|"node": "ParameterReference"|}; {|"node": "VariableReference"|} ];
-  List.iter
-    (fun (stance, reader) ->
-      let name = "emit-proef : " ^ stance ^ " reads the qualifiers and references back" in
-      match Ir_v0.Loader.document ~reader (Yojson.Safe.from_string ptext) with
-      | back ->
-          let r = List.hd back.resolved_regels in
-          check name (r.rr_voorwaarde = Some met_periode && r.waarde = Some referenties) ptext
-      | exception Ir_v0.Loader.Error (p, m) -> check name false (p ^ ": " ^ m))
-    [ ("the verifier's loader", Ir_v0.Loader.Verifier); ("an executor's loader", Ir_v0.Loader.Executor) ];
   Printf.printf "\n%d checks, %d failures\n%!" !ntests !failures;
   if !failures > 0 then exit 1
