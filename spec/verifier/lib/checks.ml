@@ -2239,6 +2239,14 @@ let numeric_builtin_operand_refusal kind (d : datatype) =
       (Spelling.encode Spelling.builtin_kind kind ^ " operand is " ^ datatype_kind d
      ^ ", must be a number")
 
+(* WF-035 on date ± duration (RUNTIME-SEMANTICS ch. 3.8): a duration operand
+   that is no number, read off its static type ahead of its unit — without it
+   ref and the ASP backend reported a text operand as a number without a time
+   unit. Shared like the two above. *)
+let date_duration_operand_refusal (d : datatype) =
+  "date \xc2\xb1 duration: the duration operand is " ^ datatype_kind d
+  ^ ", must be a number carrying a time unit"
+
 (* like [datatype_kind] but carrying the decimal count and unit a numeric type
    turns on: a WF-076 mismatch on precision or unit renders as "number differs
    from number" under the bare kind, hiding exactly the discrepancy the check
@@ -4445,9 +4453,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            match t with
            | None -> []
            | Some d when not (is_number_like d) ->
-               [ v "WF-035" (sub side)
-                   ("date \xc2\xb1 duration: the duration operand is " ^ datatype_kind d
-                    ^ ", must be a number carrying a time unit") ]
+               [ v "WF-035" (sub side) (date_duration_operand_refusal d) ]
            | Some d -> (
                match unit_of d with
                | None -> [ v "WF-035" (sub side) date_duration_without_time_unit ]

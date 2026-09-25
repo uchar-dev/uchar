@@ -1467,13 +1467,17 @@ let dtduur_lie_case =
   "expected": [ { "kind": "consistent" } ] }
 |}
 
+(* the fence is WF-035's refusal of a duration operand that is no number,
+   read off the declared type in the sentence the verifier and ref speak *)
 let () =
+  let sumtype =
+    Ir_v0.Checks.date_duration_operand_refusal
+      (Ir_v0.Ast.Sum_type { domein = "meldstatus"; constructoren = [] })
+  in
   faults_with ~name:"a sum-typed duration under date arithmetic (declared sum type)"
-    ~ir:dagduur_lie_doc ~case_text:dagduur_lie_case
-    ~needle:Ir_v0.Checks.date_duration_without_time_unit;
+    ~ir:dagduur_lie_doc ~case_text:dagduur_lie_case ~needle:sumtype;
   faults_with ~name:"a sum-typed duration under datum-tijd arithmetic (declared sum type)"
-    ~ir:dtduur_lie_doc ~case_text:dtduur_lie_case
-    ~needle:Ir_v0.Checks.date_duration_without_time_unit
+    ~ir:dtduur_lie_doc ~case_text:dtduur_lie_case ~needle:sumtype
 
 (* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
 
@@ -13901,6 +13905,12 @@ let () =
       ( "WF-035 mixed, pair slot: day date + no time unit", m, "plus", dag, duur "2",
         date_duration_without_time_unit );
       ("WF-035 day: sub-day unit", d, "plus", dag, duur ~u:"uur" "2", sub_day_unit_on_day_date);
+      ( "WF-035 day: a text duration", d, "plus", dag, pf_l ~typ:{|{ "node": "Text" }|} "twee",
+        date_duration_operand_refusal Tekst );
+      ( "WF-035 ms: a text duration", m, "plus", moment, pf_l ~typ:{|{ "node": "Text" }|} "twee",
+        date_duration_operand_refusal Tekst );
+      ( "WF-035 mixed, pair slot: day date + a text duration", m, "plus", dag,
+        pf_l ~typ:{|{ "node": "Text" }|} "twee", date_duration_operand_refusal Tekst );
       ( "WF-035 mixed, pair slot: day date + sub-day unit", m, "plus", dag, duur ~u:"uur" "26",
         sub_day_unit_on_day_date ) ]
 

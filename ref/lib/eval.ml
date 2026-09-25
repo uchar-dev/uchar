@@ -922,6 +922,8 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     Value.fault "%s"
                       (Ir_v0.Checks.date_duration_unknown_unit
                          (Option.value u.afkorting ~default:"?"))))
+        | Some d when not (Ir_v0.Checks.is_number_like d) ->
+            Value.fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
         | _ -> Value.fault "%s" Ir_v0.Checks.date_duration_without_time_unit
       in
       let d = eval_expr env world self ~err le in

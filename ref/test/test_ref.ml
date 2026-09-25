@@ -7135,6 +7135,10 @@ let () =
       ("WV-3.8-datumvorm-ms-plus-kaal", m, bin m moment (duur "26"), date_duration_without_time_unit);
       ("WV-3.8-datumvorm-dag-plus-kaal-in-ms", m, bin m dag (duur "2"), date_duration_without_time_unit);
       ("WV-3.8-datumvorm-dag-plus-uur", d, bin d dag (duur ~u:"uur" "2"), sub_day_unit_on_day_date);
+      ("WV-3.8-datumvorm-dag-plus-tekst", d, bin d dag (litv "twee" Tekst), date_duration_operand_refusal Tekst);
+      ("WV-3.8-datumvorm-ms-plus-tekst", m, bin m moment (litv "twee" Tekst), date_duration_operand_refusal Tekst);
+      ( "WV-3.8-datumvorm-dag-plus-tekst-in-ms", m, bin m dag (litv "twee" Tekst),
+        date_duration_operand_refusal Tekst );
       ("WV-3.8-datumvorm-dag-plus-uur-in-ms", m, bin m dag (duur ~u:"uur" "26"), sub_day_unit_on_day_date) ]
 
 let () =

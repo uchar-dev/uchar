@@ -1971,9 +1971,10 @@ let duration_unit_known ~doc (t : datatype option) =
   | _ -> ()
 
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
-   the verifier and ref speak as well ([Ir_v0.Checks]): no time unit on the
-   duration operand, a sub-day unit on a day-precision date, and a unit that
-   is no time unit — the callers have routed a declared day kind away. *)
+   the verifier and ref speak as well ([Ir_v0.Checks]): a duration operand
+   that is no number, no time unit on it, a sub-day unit on a day-precision
+   date, and a unit that is no time unit — the callers have routed a declared
+   day kind away. *)
 let date_step_unit ~datetime (t : datatype option) =
   match t with
   | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
@@ -1984,6 +1985,8 @@ let date_step_unit ~datetime (t : datatype option) =
       | None ->
           fault "%s"
             (Ir_v0.Checks.date_duration_unknown_unit (Option.value u.afkorting ~default:"?")))
+  | Some d when not (Ir_v0.Checks.is_number_like d) ->
+      fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
   | _ -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit
 
 (* the counted unit for a datum-tijd (millisecond-precision) operand: the
