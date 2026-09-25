@@ -8478,9 +8478,10 @@ argued. Keyed on the DECLARED object-type name, `Strandrecht.uitkering` and
 `Wrakrecht.uitkering` are two keys, and a fence keyed that way does **not**
 fire on a supertype/subtype pair at all. The tempting
 repair — lift the target key to the chain-closed set, now that member
-resolution walks the chain — would make them fire on precisely the shape
-inheritance legitimises: a supertype base plus a subtype base on one
-target would become "two writers" and the construct would be unreachable.
+resolution walks the chain — would make these fences fire on precisely
+the shape inheritance legitimises: a supertype base plus a subtype base on
+one target would become "two writers" and the construct would be
+unreachable.
 In the effective stack that pair is ONE writer, because the subtype's own
 base replaces the inherited one. Any chain-awareness added to these rules
 must therefore ask *"do these two writers survive into one instance's
