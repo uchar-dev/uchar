@@ -2781,12 +2781,20 @@ let run_rule env world (r : resolved_regel) =
                   else
                     World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisatie ->
-                  (* writes only when the target is empty (ch. 5.4) *)
-                  if World.attr self attr <> Value.Empty then (w, false)
+                  (* writes only where the target is empty (ch. 5.4) — apart
+                     from its own write. A case input and a value another
+                     writer placed switch the guard off, so the computed value
+                     wins whichever fires first; the initialisation's own
+                     earlier write does not, so its value is re-evaluated
+                     under freshness like any attribute write. Read off the
+                     running world alone, the guard kept the value the
+                     initialisation computed against a read that another rule
+                     had not yet written: the document order decided *)
+                  if not (World.init_may_write w ~label:self.label ~attr) then (w, false)
                   else
                     let v = eval_expr env w self ~err (req "RuleVersion.value" r.waarde) in
-                    World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr)
-                      v
+                    World.write_attr_init w ~label:self.label ~attr
+                      ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.fault "rule %S: unsupported target shape" (rule_name r)
 
@@ -3073,8 +3081,9 @@ type chain_result = Decided of defaults_decision | Conflict of string | Undecide
    that type — reading the subject extensionally here as well would put the
    supertype's stack and the subtype's on one instance. Each member comes
    with the subject type every root default of it was declared on, and that
-   default is evaluated there. *)
-let run_defaults_group env world ~owner
+   default is evaluated there. [world0] is the input world the
+   initialisation default's justification reads (ch. 7.3). *)
+let run_defaults_group env world ~world0 ~owner
     (members : (prioritized_defaults * string list) list) =
   let l0 = fst (List.hd members) in
   let env = { env with subj = Some l0.pd_onderwerp } in
@@ -3164,9 +3173,16 @@ let run_defaults_group env world ~owner
             if r.default_initialisatie then (
               match l.pd_attribuut with
               | Some a ->
-                  (* an initialisation folded with its condition is justified
-                     only where that condition holds as well *)
-                  World.attr self a = Value.Empty
+                  (* ch. 7.3: justified where the target is empty in the INPUT
+                     facts. Read off the running world instead, the default's
+                     own earlier write switched it off, and the target kept a
+                     value its consequence had computed against a read that
+                     was not final yet. An initialisation folded with its
+                     condition is justified only where that condition holds
+                     as well. *)
+                  (match SMap.find_opt self.label world0.World.instances with
+                  | Some (i0 : World.instance) -> World.attr i0 a = Value.Empty
+                  | None -> true)
                   && (match r.default_voorwaarde with
                      | Some c -> eval_cond env w self ~err c
                      | None -> true)
@@ -3815,7 +3831,7 @@ let evaluate env world =
         (fun (w, ch) (stratum, owner, members) ->
           if stratum > k then (w, ch)
           else
-            let w, c = run_defaults_group env w ~owner members in
+            let w, c = run_defaults_group env w ~world0 ~owner members in
             (w, ch || c))
         (world, false) defaults_groups
     in

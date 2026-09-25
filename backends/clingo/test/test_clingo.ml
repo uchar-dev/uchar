@@ -9176,6 +9176,27 @@ let () =
     ~needle:
       "the initialisation of \"bergloon\" shares its target with an allocation, an object \
        creation or a defaults group of its own level";
+  (* the initialisation's guard reads the input (RUNTIME-SEMANTICS ch. 5.4,
+     ch. 7.3), so its own earlier write does not switch it off: its value is
+     the one its reads have at the fixpoint. The value reads taxatie, which a
+     rule written after it computes from lengte, which a rule written after
+     that computes from gewicht. Measured with the guard read off the running
+     world: ref kept the transient values, V1 0 (the rule) and W1 2 (the
+     folded initialisation default of the Wrakvondst stack) *)
+  both_answer ~name:"an initialisation whose value a later rule computes, as rule and as folded default"
+    ~ir:
+      (pf_doc ~objecttypen:[ vondst; wrakvondst ] ~defaults:[ wrakgroep "Wrakvondst" ]
+         ~regels:
+           [ init ~naam:"standaardbergloon" (pf_bin "times" (pf_l "2") (va "taxatie"));
+             pf_regel ~ot:"Vondst" ~doel:"taxatie" (pf_bin "plus" (va "lengte") (pf_l "1.00"));
+             pf_regel ~ot:"Vondst" ~doel:"lengte" (pf_bin "plus" (va "gewicht") (pf_l "1.00")) ]
+         ())
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ inst "V1" "Vondst" [ num "gewicht" "12.00" ]; inst "W1" "Wrakvondst" [ num "gewicht" "12.00" ] ]
+         [ pf_is ~label:"V1" ~attr:"bergloon" "28.00"; pf_is ~label:"W1" ~attr:"bergloon" "28.00";
+           pf_cons ]);
   faults_with ~name:"a conditional initialisation of a text target"
     ~ir:
       (doc

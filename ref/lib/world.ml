@@ -34,9 +34,15 @@ type t = {
   instances : instance SMap.t; (* by label *)
   order : string list; (* case declaration order, for determinism *)
   channel : error_fact list; (* §9.5: idempotent inserts, insertion order *)
+  init_written : (string * string) list;
+      (* (label, norm attribute) whose current value an initialisation wrote
+         and no other writer has changed since (RUNTIME-SEMANTICS ch. 5.4):
+         the initialisation's own write does not switch its guard off, so
+         its value is re-evaluated under freshness like any attribute write,
+         while a value the case supplied or another writer placed does *)
 }
 
-let empty = { instances = SMap.empty; order = []; channel = [] }
+let empty = { instances = SMap.empty; order = []; channel = []; init_written = [] }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -92,13 +98,29 @@ let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
 let update w inst = { w with instances = SMap.add inst.label inst w.instances }
 
 (* returns (world, changed); empty-over-empty is a no-op,
-   empty-over-value is a change (ch. 1.2g) *)
+   empty-over-value is a change (ch. 1.2g). A change by any writer but an
+   initialisation takes the target out of [init_written]. *)
 let write_attr w ~label ~attr:name ~decl v =
   let i = get w label in
   let v = collapse ~at:(label ^ "." ^ name) decl v in
   let old = attr i name in
   if Arith.equal old v then (w, false)
-  else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
+  else
+    let w = update w { i with attrs = SMap.add (norm name) v i.attrs } in
+    ({ w with init_written = List.filter (( <> ) (label, norm name)) w.init_written }, true)
+
+(* An initialisation's guard (ch. 5.4): the target holds nothing, or nothing
+   but what an initialisation wrote to it. *)
+let init_may_write w ~label ~attr:name =
+  attr (get w label) name = Value.Empty || List.mem (label, norm name) w.init_written
+
+(* The write of an initialisation: as [write_attr], and the target stays its
+   own until another writer changes it. *)
+let write_attr_init w ~label ~attr:name ~decl v =
+  let w, changed = write_attr w ~label ~attr:name ~decl v in
+  let key = (label, norm name) in
+  ((if List.mem key w.init_written then w else { w with init_written = key :: w.init_written }),
+   changed)
 
 (* a timeline write (ch. 3.11, the pro-rata target): idempotence
    compares segment lists exactly — same bounds, value-equal payloads.

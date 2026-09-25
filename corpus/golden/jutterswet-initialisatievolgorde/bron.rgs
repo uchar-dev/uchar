@@ -1,0 +1,18 @@
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen);
+    het berekend gewicht Numeriek (getal met 2 decimalen);
+    het bergloon Numeriek (getal met 2 decimalen);
+    het vindloon Numeriek (getal met 2 decimalen);
+
+Regel standaardbergloon
+    geldig altijd
+        Het bergloon van een Vondst moet geïnitialiseerd worden op 2 maal zijn berekend gewicht
+        indien zijn gewicht groter is dan 10.
+
+Regel standaardvindloon
+    geldig altijd
+        Het vindloon van een Vondst moet geïnitialiseerd worden op zijn berekend gewicht plus 5.
+
+Regel berekend gewicht van een vondst
+    geldig altijd
+        Het berekend gewicht van een Vondst moet berekend worden als het gewicht van de Vondst plus 1.

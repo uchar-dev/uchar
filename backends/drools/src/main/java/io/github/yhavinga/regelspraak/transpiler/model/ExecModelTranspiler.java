@@ -381,8 +381,11 @@ public final class ExecModelTranspiler {
             return skip("regel (meer-periodieke temporele doel — §13.3.6.7, geen producent): " + r.naam());
 
         String doelProp = doel.attribuut();
-        BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doelProp);   // typed write (Phase-H codegen)
         java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doelProp);   // read-back for the idempotent update
+        // typed write (Phase-H codegen); an initialisatie's write is recorded as its own (see initEigen)
+        BiConsumer<Object, Object> doelSetter = r.soort() == ResolvedRegel.Soort.INITIALISATIE
+                ? initSchrijver(Accessors.setter(factClass, doelProp), doelGetter, doelProp)
+                : Accessors.setter(factClass, doelProp);
         // ch. 7.8 (the timeline arm): on a STANDING temporal target an empty fold result decides nothing and the
         // case-supplied input timeline stands whole. The domain holds only ATTRIBUTE targets, but the lookup key
         // carries no member kind while WF-002 admits a kenmerk sharing an attribute's name — so the kenmerk
@@ -446,10 +449,15 @@ public final class ExecModelTranspiler {
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
-        // §9.6 initialisatie assigns only when the doel holds NO value yet — the same leeg-guard the DRL
-        // back-end emits, so a berekening on the same doel wins whenever it applies, order-independently.
-        if (r.soort() == ResolvedRegel.Soort.INITIALISATIE)
-            pattern = pattern.expr(nextId("init"), (Predicate1) (s -> doelGetter.apply(s) == null));
+        // §9.6 initialisatie assigns only when the doel holds NO value yet — apart from its own write
+        // (RUNTIME-SEMANTICS ch. 5.4): a case input and a berekening's value switch the guard off, so the
+        // berekening wins whichever fires first; the initialisatie's own earlier write does not, so the
+        // class-reactive pattern re-fires it when a read changes. With the leeg-guard alone it kept the value
+        // it had computed against a read another rule had not written yet (0 where 26 is right).
+        if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) {
+            final String eigenLid = doelProp;
+            pattern = pattern.expr(nextId("init"), (Predicate1) (s -> initMagSchrijven(s, eigenLid, doelGetter)));
+        }
         pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 version validity window
         // Freshness (the DRL @watch mirrored): a pattern WITHOUT constraints has an EMPTY reactivity mask,
         // so an unconditioned chained berekening computed once (possibly against leeg) and never recomputed
@@ -733,6 +741,32 @@ public final class ExecModelTranspiler {
         var bouwer = PatternDSL.rule(kop(r.naam())).attribute(Rule.Attribute.NO_LOOP, true);
         if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
         return bouwer.build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /** Per subject and attribute, the value an initialisatie last wrote there (RUNTIME-SEMANTICS ch. 5.4): the
+     *  initialisatie's own write does not switch its guard off, any other value does. Keyed by the fact object
+     *  (the generated beans keep Object's identity equality), weakly, because the KieBase and so this map outlive
+     *  every session; a fact of one case never appears in another. One map for every initialisatie of the
+     *  model, so two initialisaties on one target take each other's write for their own and alternate until the
+     *  engine's fire cap, rather than let the first to fire decide. */
+    private final Map<Object, Map<String, Object>> initEigen =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** The initialisatie guard: the doel is empty, or holds exactly what an initialisatie wrote there. */
+    private boolean initMagSchrijven(Object s, String lid, java.util.function.Function<Object, Object> getter) {
+        Object nu = getter.apply(s);
+        if (nu == null) return true;
+        Map<String, Object> eigen = initEigen.get(s);
+        return eigen != null && eigen.containsKey(lid) && java.util.Objects.equals(eigen.get(lid), nu);
+    }
+
+    /** An initialisatie's setter: write, then record what the getter reads back as the initialisatie's own. */
+    private BiConsumer<Object, Object> initSchrijver(BiConsumer<Object, Object> setter,
+            java.util.function.Function<Object, Object> getter, String lid) {
+        return (s, v) -> {
+            setter.accept(s, v);
+            initEigen.computeIfAbsent(s, k -> new java.util.HashMap<>()).put(lid, getter.apply(s));
+        };
     }
 
     /** Write {@code v} to the doel via {@code setter}, then {@code drools.update} ONLY when the value actually CHANGED
@@ -7131,11 +7165,12 @@ public final class ExecModelTranspiler {
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
-        // §9.6: the initialisatie leeg-guard is part of the host's firing condition — mirror it so the marker
+        // §9.6: the initialisatie guard is part of the host's firing condition — mirror it so the marker
         // records "gevuurd" exactly when the initialisatie would actually write (a pre-filled doel does not fire).
         if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) {
             java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doel.attribuut());
-            pattern = pattern.expr(nextId("init"), (Predicate1) (s -> doelGetter.apply(s) == null));
+            final String eigenLid = doel.attribuut();
+            pattern = pattern.expr(nextId("init"), (Predicate1) (s -> initMagSchrijven(s, eigenLid, doelGetter)));
         }
         pattern = geldigGuard(pattern, r.geldigheid());     // §4.2 the marker only records inside the host's window
         Block2<org.drools.model.Drools, Object> body = (drools, s) -> drools.insert(new RuleFired(naam));

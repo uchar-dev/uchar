@@ -1,0 +1,22 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "12.00" }, "bergloon": { "number": "40.00" }, "vindloon": { "number": "3.00" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "berekend gewicht", "value": { "number": "13.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "bergloon", "value": { "number": "40.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "vindloon", "value": { "number": "3.00" } },
+    { "kind": "consistent" }
+  ]
+}

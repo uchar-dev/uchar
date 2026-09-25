@@ -969,7 +969,14 @@ EXPECTED_CHANNEL=(
 # as a far-side consequence). It plays the four cases, PLAYED 4, with ref's and clingo's values. The
 # DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
 # EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=208
+# 208 -> 209 (2026-09-25, an initialisation's guard reads the input): jutterswet-initialisatievolgorde,
+# new, from bron.rgs and hand-computed — two initialisations whose value reads an attribute a rule
+# written after them computes (RUNTIME-SEMANTICS ch. 5.4). The exec branch needed its guard changed:
+# with the leeg-guard alone it kept the value computed against the leeg read (0 and 5 where 26 and 18
+# are right), and now an initialisatie's own write does not switch the guard off. It plays the four
+# cases, PLAYED 4, with ref's and clingo's values. The DRL-text branch keeps the transient values
+# (class (D) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=209
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -982,7 +989,7 @@ EXPECTED_PLAYED=208
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-one of the eighty-five
+# Why the reasons are grouped rather than written one by one: eighty-one of the eighty-six
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -1128,8 +1135,11 @@ DRL_CHANNEL=(
   "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
-  # (D) The ONE golden on which this branch still answers wrong values, two of them in both cases
-  # (measured 2026-09-25). rustwacht is the value-divergence it SHARES with the exec branch —
+  # (D) The TWO goldens on which this branch still answers wrong values (measured 2026-09-25).
+  # jutterswet-initialisatievolgorde: this branch's initialisatie keeps the leeg-guard alone, so a
+  # value computed against a read another rule has not yet written stays (0 and 5 where 26 and 18 are
+  # right); the exec branch was repaired, see EXPECTED_PLAYED. anchor/jutterswet-kustwacht answers two
+  # wrong values in both cases. rustwacht is the value-divergence it SHARES with the exec branch —
   # negation-as-failure is not stratified, so a geen-<kenmerk> rule fires before the positive
   # kenmerk is derived; the exec branch's full reason is in EXCLUDE_KNOWN above, and both branches
   # inherit it from the ported runtime. gevarenwacht is this branch's own: it stays absent where ref,
@@ -1137,6 +1147,7 @@ DRL_CHANNEL=(
   # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
   # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
   "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence on rustwacht, shared with the exec branch (full reason in EXCLUDE_KNOWN); this branch also leaves gevarenwacht absent in both cases, where ref, clingo and the exec branch derive it present (measured 2026-09-25) — the label FAIL does not tell the two apart"
+  "jutterswet-initialisatievolgorde|FAIL|the initialisatie's leeg-guard reads the running fact base, so the value it computed against a read another rule had not yet written stays (bergloon 0 and vindloon 5 where ref, clingo and the exec branch answer 26 and 18); RUNTIME-SEMANTICS ch. 5.4 reads the guard off the input"
   # (E) No case file — nothing to replay, in either branch.
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file"

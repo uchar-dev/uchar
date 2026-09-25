@@ -3165,6 +3165,26 @@ initialisation alone → **25**. Phase 4 restates this guard as the
 defeasible default it is (`CONSTRUCTS.md` row 7); the operational
 account above is what it must reproduce.
 
+**The guard reads the input, not the initialisation's own write.** Ch. 7.3
+states the justification as "the target is empty in the input facts": a
+case input switches the guard off, and so does a value another writer
+places — the computed value above; the initialisation's own earlier write
+does not. Its value is therefore an equation like any attribute write
+(ch. 5.1, and ch. 6.1: attribute writes are revocable): it is re-evaluated
+when a value it reads changes, and the fixpoint does not depend on the
+order in which the rules are written. Read off the running fact base alone,
+the guard kept the value the initialisation had computed against a read
+that another rule had not yet written. Measured on verifier-clean
+documents: the reference interpreter and both Drools branches answered 0
+where the ASP backend answered 26, and with the two rules swapped in the
+document all four answered 26. Worked example (absolute; the golden
+`jutterswet-initialisatievolgorde`): `bergloon` initialised to 2 ×
+`berekend gewicht` where `gewicht` > 10, `vindloon` initialised to
+`berekend gewicht` + 5, and `berekend gewicht` = `gewicht` + 1 written
+after both. `gewicht` 12,00 gives **bergloon 26,00 and vindloon 18,00** in
+either document order; `gewicht` 8,00 gives bergloon **leeg** and vindloon
+**14,00**; a case input for either target stands.
+
 ### 5.5 Creation in the loop
 
 An object creation must be a function of the **fact base**, not of the

@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "12.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "10.00" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": { "gewicht": { "number": "30.00" }, "vindloon": { "number": "7.00" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "bergloon", "value": { "number": "26.00" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "vindloon", "value": { "number": "18.00" } },
+    { "kind": "attributeEmpty", "label": "V2", "attribute": "bergloon" },
+    { "kind": "attributeValue", "label": "V2", "attribute": "vindloon", "value": { "number": "16.00" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "bergloon", "value": { "number": "62.00" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "vindloon", "value": { "number": "7.00" } },
+    { "kind": "consistent" }
+  ]
+}
