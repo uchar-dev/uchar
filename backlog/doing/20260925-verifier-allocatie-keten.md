@@ -35,3 +35,11 @@ concreet type lezen.
 
 May touch: `spec/verifier/**`, `spec/IR-SPEC.md`, `corpus/negatief/**`
 (alle **voorstel**), kaartverplaatsing. Niet in deze kaart: de uitvoerders.
+
+## U-besluiten (hoofdsessie, 2026-09-25, bij de claim)
+
+- U1 Beide: (a) WF-026 keurt per concreet type door de typeketen — een toewijzing wordt nooit in een stapel gevouwen (ch. 7.10 vouwt alleen rekenregels), dus zonder poort: twee toewijzingen op één (type-of-voorouder, attribuut) zijn ill-formed; (b) de toewijzingslift van WF-050 (groep op het ene niveau, toewijzing op het andere) keurt dezelfde keten. De uitvoerders veranderen niet.
+- U2 Zinnen (voorstel; de bouwer stelt vast en meldt letterlijk, zonder regelnummerstaart): `two allocations write target (Hoofdberger, bergloon) through its type chain — one declared on Berger, one on Hoofdberger — and an allocation is never folded into a stack, so both fire on a Hoofdberger instance; at most one allocation writes a target (ch. 3.2)`; voor WF-050 de bestaande liftzin met de ketenclausule. Pointer op de versie van het laagste type; ontdubbeling per (pointer, zin) zoals WF-079. Hergebruik de ketenpredicaten van WF-079 (`checks.ml`), dupliceer geen ketenlogica.
+- U3 Getuigen: negatiefs `wf026-keten-twee-toewijzingen` en `wf050-keten-toewijzing-naast-groep`, rood-eerst (verifier PASS geciteerd), `expect.txt`, NOTE uit echte uitvoer, mutatieproef; de reproductie op de vier uitvoerders (proefdocumenten van de supertype-kaart, `/tmp/supertype/u7/` als die er nog staan, anders eigen) in het Result; elke golden met een supertype blijft schoon (gate 3); toka alleen tellen.
+- U4 Spec: IR-SPEC WF-026 (ch. 3.2) en WF-050 krijgen de ketenclausule; ch. 6.1's zin blijft; RS ch. 7.10 één zin dat een toewijzing niet vouwt en WF-026 daarom zonder poort door de keten spreekt. Naamtabel rc 0; geen D-/U-nummers.
+- U5 Gates 1, 2, 3.
