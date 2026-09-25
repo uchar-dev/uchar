@@ -106,8 +106,9 @@ cp "$CAND/ir.json" "$DEST/" || fail "copy failed"
 if [ -f "$CAND/bron.rgs" ]; then cp "$CAND/bron.rgs" "$DEST/" || fail "copy failed"; fi
 for case in $CASES; do cp "$case" "$DEST/" || fail "copy failed"; done
 for gate in scripts/check-*.sh; do
-    # each gate runs under its own interpreter line: a POSIX `sh` (bash 3.2 in
-    # POSIX mode on macOS) has no process substitution and turns five gates red
+    # each gate runs under its own interpreter line: a POSIX `sh` (dash on
+    # Linux, bash 3.2 in POSIX mode on macOS) cannot parse the five bash gates
+    # (process substitution, arrays) and turns them red
     if ! "$gate" >/dev/null 2>&1; then
         rm -rf "$DEST"
         fail "gate $gate turned red after the copy — admission rolled back"
