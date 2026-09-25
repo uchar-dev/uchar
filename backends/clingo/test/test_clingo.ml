@@ -13192,6 +13192,244 @@ let () =
           | _ -> check "naamtabel: een familie zonder naam" false)
         families
 
+(* THE SPLIT MONEY × RATE WITH A RATE OF FEWER THAN FOUR DECIMALS (the card
+   clingo-tarief-decimalen). The split encoding of ASP-TRANSLATION S18(c) reads
+   its rate at scale 10^4, and until this card [money_mult_shape] admitted a
+   rate TYPED at exactly four decimals. A rate typed at fewer is the same
+   rational at scale 10^4 — 0,875 at three decimals is 8750 at four — so the
+   encoding now brings it there exactly. Left on the ordinary product path such
+   a product meets the 46340 operand fence, which a monthly wage of 2400,00
+   (240000 at scale 2) already exceeds: the RegelSpraak frontend types a numeric
+   literal at its smallest scale, `0,8750` at three decimals, so its emission
+   of anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases while ref
+   and the Drools exec branch played them.
+
+   Every frame below that answers was red on the code before this card: UNSAT
+   on the operand fence at rule level, the catch-all refusal in a closed body.
+   The fence frame pins what the rescale must not do silently: an integer rate
+   times 10^4 can leave clingo's integer range, and a wrapped rate of 0,2704
+   would be a plausible wrong answer. *)
+
+let tarief_doc ~tarief_t ~rate ~product_decimals =
+  replace ~tok:"@TARIEF@" ~by:tarief_t
+    (replace ~tok:"@RATE@" ~by:rate
+       (replace ~tok:"@PD@" ~by:product_decimals
+          {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Werknemer", "animate": true, "plural": "Werknemers",
+        "attributes": [
+          { "node": "Attribute", "name": "maandloon",
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative" } },
+          { "node": "Attribute", "name": "tarief", "datatype": @TARIEF@ },
+          { "node": "Attribute", "name": "inkomensgrens",
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" } } ],
+        "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [] },
+  "rules": {
+    "rules": [
+      { "node": "Rule", "name": "inkomensgrens van een werknemer",
+        "versions": [ {
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "inkomensgrens", "subjectType": "Werknemer",
+            "source": { "snippet": "De inkomensgrens van een Werknemer" } },
+          "value": { "node": "Rounding",
+            "base": { "node": "Binary", "op": "times",
+              "left": { "node": "AttributeReference", "attribute": "maandloon", "subjectType": "Werknemer",
+                "source": { "snippet": "zijn maandloon" } },
+              "right": @RATE@,
+              "type": { "node": "Number", "whole": false, "decimals": @PD@, "sign": "unspecified" },
+              "source": { "snippet": "zijn maandloon maal het tarief" } },
+            "mode": "halfAwayFromZero", "decimals": 2,
+            "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+            "source": { "snippet": "zijn maandloon maal het tarief rekenkundig afgerond op 2 decimalen" } },
+          "initialisation": false, "presentation": "calculation" } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+  "diagnostics": []
+}
+|}))
+
+(* a rate literal as the RegelSpraak frontend writes it: the lexeme as the
+   source spells it, the type at the literal's smallest scale *)
+let tarief_literal ~lexeme ~decimals =
+  Printf.sprintf
+    {|{ "node": "Literal", "value": { "number": "%s" },
+        "type": { "node": "Number", "whole": false, "decimals": %d, "sign": "unspecified" },
+        "source": { "snippet": "%s" } }|}
+    lexeme decimals (String.map (fun c -> if c = '.' then ',' else c) lexeme)
+
+let tarief_ref =
+  {|{ "node": "AttributeReference", "attribute": "tarief", "subjectType": "Werknemer",
+      "source": { "snippet": "zijn tarief" } }|}
+
+let tarief_number ~decimals =
+  Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "nonNegative" }|}
+    (decimals = 0) decimals
+
+let tarief_case ~maandloon ?tarief ~grens () =
+  let tarief_attr =
+    match tarief with
+    | None -> ""
+    | Some t -> Printf.sprintf {|, "tarief": { "number": "%s" }|} t
+  in
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "W1", "objectType": "Werknemer",
+        "attributes": { "maandloon": { "number": "%s" }%s },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "W1", "attribute": "inkomensgrens", "value": { "number": "%s" } },
+    { "kind": "consistent" } ] }
+|}
+    maandloon tarief_attr grens
+
+(* the same product inside a closed body: a fold over a list parameter whose
+   lambda adds, per element x, grondslag × (x × 0,125) rounded to the cent —
+   a rate that reads the element, typed at three decimals *)
+let tarief_fold_doc =
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "heffing",
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" } } ],
+        "characteristics": [] } ],
+    "factTypes": [],
+    "parameters": [
+      { "node": "Parameter", "name": "grondslag",
+        "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative" } },
+      { "node": "Parameter", "name": "kindertallen",
+        "datatype": { "node": "ListType",
+          "element": { "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" } } } ],
+    "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": [] },
+  "rules": {
+    "rules": [
+      { "node": "Rule", "name": "heffing van een jutter",
+        "versions": [ {
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "heffing", "subjectType": "Jutter",
+            "source": { "snippet": "De heffing van een Jutter" } },
+          "value": { "node": "Fold",
+            "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+            "list": { "node": "ParameterReference", "parameter": "kindertallen",
+              "source": { "snippet": "de kindertallen" } },
+            "function": { "node": "Lambda",
+              "parameters": [
+                { "name": "acc", "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" } },
+                { "name": "x", "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" } } ],
+              "body": { "node": "Binary", "op": "plus",
+                "left": { "node": "BinderRef", "name": "acc", "source": { "snippet": "de opgetelde heffing" } },
+                "right": { "node": "Rounding",
+                  "base": { "node": "Binary", "op": "times",
+                    "left": { "node": "ParameterReference", "parameter": "grondslag",
+                      "source": { "snippet": "de grondslag" } },
+                    "right": { "node": "Binary", "op": "times",
+                      "left": { "node": "BinderRef", "name": "x", "source": { "snippet": "het kindertal" } },
+                      "right": { "node": "Literal", "value": { "number": "0.125" },
+                        "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
+                        "source": { "snippet": "0,125" } },
+                      "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
+                      "source": { "snippet": "het kindertal maal 0,125" } },
+                    "type": { "node": "Number", "whole": false, "decimals": 5, "sign": "unspecified" },
+                    "source": { "snippet": "de grondslag maal de weging" } },
+                  "mode": "halfAwayFromZero", "decimals": 2,
+                  "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+                  "source": { "snippet": "de grondslag maal de weging rekenkundig afgerond op 2 decimalen" } },
+                "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+                "source": { "snippet": "de opgetelde heffing plus het kinddeel" } },
+              "source": { "snippet": "de kinddelen opgeteld" } },
+            "init": { "node": "Literal", "value": { "number": "0.00" },
+              "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+              "source": { "snippet": "0,00" } },
+            "source": { "snippet": "de kindertallen gevouwen tot de heffing" } },
+          "initialisation": false, "presentation": "calculation" } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+  "diagnostics": []
+}
+|}
+
+let tarief_fold_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": {
+    "instances": [ { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {
+      "grondslag": { "number": "2400.00" },
+      "kindertallen": { "list": [ { "number": "1" }, { "number": "2" } ] } } },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "heffing", "value": { "number": "900.00" } },
+    { "kind": "consistent" } ] }
+|}
+
+(* ref plays the frame's rows; clingo refuses with UNSAT, and the diagnosed
+   witness carries [needle] *)
+let clingo_fence_fires ~name ~ir ~case_text ~needle =
+  ref_matches ~name ~ir ~case_text;
+  let doc, case = load_pair ~ir ~case_text in
+  let label = name ^ ": clingo's fence fires" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnose program in
+          check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+      | out, Unix.WEXITED (10 | 30) ->
+          let answered =
+            match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
+            | [] -> "clingo answered the rows"
+            | ms -> "clingo answered: " ^ String.concat "; " ms
+          in
+          check (label ^ " (" ^ answered ^ ")") false
+      | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
+      | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+      | _, _ -> check (label ^ " (clingo killed)") false)
+
+let () =
+  let geen_tarief = tarief_number ~decimals:2 in
+  (* the RegelSpraak emission: lexeme 0.8750, typed at three decimals, the
+     product at five *)
+  both_answer ~name:"money x rate: the literal 0.8750 typed at three decimals"
+    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
+  (* a lexeme at three decimals: the term itself arrives at scale 10^3 *)
+  both_answer ~name:"money x rate: the literal 0.875 at three decimals"
+    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.875" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
+  (* a rate attribute declared at three decimals, on both sides of the half:
+     2400,04 × 0,125 = 300,005 rounds away from zero, 2400,03 × 0,125 =
+     300,00375 does not *)
+  let attr3 = tarief_doc ~tarief_t:(tarief_number ~decimals:3) ~rate:tarief_ref ~product_decimals:"5" in
+  both_answer ~name:"money x rate: a three-decimal rate attribute, the half"
+    ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.04" ~tarief:"0.125" ~grens:"300.01" ());
+  both_answer ~name:"money x rate: a three-decimal rate attribute, below the half"
+    ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.03" ~tarief:"0.125" ~grens:"300.00" ());
+  (* a whole-number rate is a rate of zero decimals: 3 is 30000 at scale 10^4 *)
+  let attr0 = tarief_doc ~tarief_t:(tarief_number ~decimals:0) ~rate:tarief_ref ~product_decimals:"2" in
+  both_answer ~name:"money x rate: a whole-number rate attribute"
+    ~ir:attr0 ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"3" ~grens:"7200.00" ());
+  (* 429497 × 10^4 leaves clingo's integer range and would wrap to 2704, a
+     rate of 0,2704 and an answer of 648,96; ref computes the true product *)
+  clingo_fence_fires ~name:"money x rate: a whole-number rate past the rescale range"
+    ~ir:attr0
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"429497" ~grens:"1030792800.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)";
+  (* the closed body: 2400,00 × 0,125 + 2400,00 × 0,250 = 900,00 *)
+  both_answer ~name:"money x rate in a closed body: a three-decimal rate that reads the element"
+    ~ir:tarief_fold_doc ~case_text:tarief_fold_case;
+  (* a lexeme longer than four decimals arrives at scale 10^5; the rescale
+     only multiplies, so this stays the split encoding's loud backstop *)
+  faults_with ~name:"money x rate: a rate lexeme past four decimals"
+    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ())
+    ~needle:"the split money multiplication expects a 2-decimal money and a rate of at most 4 decimals (100,100000)"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
