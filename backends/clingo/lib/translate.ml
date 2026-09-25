@@ -3958,7 +3958,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          refuses gap under a verifier-clean, frontend-emitted document. *)
       let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribuut) in
       (* a TEMPORAL element attribute has no defined moment to rank at, so
-         ref refuses the form outright (ch. 3.6: only som and totaal carry
+         ref refuses the form outright (ch. 3.6: only sum and total carry
          the per-element timeline fold). This arm would rank the asOfDate
          buckets instead — an answer where the other executor refuses.
          Refuse in step. The guard hangs on [el], the anchor
