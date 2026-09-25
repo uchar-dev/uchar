@@ -8932,6 +8932,159 @@ let () =
     ~ir:rechtvaardiging
     ~case_text:(pf_case ~instances:[ erkend ] [ pf_is ~attr:"waardering" "50"; pf_cons ])
 
+(* the initialisation outside the ch. 7.7 desugaring domain (RUNTIME-SEMANTICS
+   ch. 5.4). A CONDITIONAL initialisation is outside it (ch. 7.7: its
+   justification would need the input-emptiness guard conjoined), and so is a
+   windowed one; ref replays both natively, and until the initialisation arm of
+   translate_regel this backend answered every frame below with the wildcard's
+   `rule kind not translated`. The arm writes only where the target is empty
+   and the condition holds; a filled input stands. Beside one computing rule
+   the computed value wins whichever fires first. Where that rule's condition
+   holds and its value is leeg, v0 erases what the initialisation writes and
+   the initialisation writes it again: ref faults on its pass budget, and
+   clingo must refuse there too rather than answer. *)
+let () =
+  let vondst =
+    pf_ot ~naam:"Vondst" ~meervoud:"Vondsten"
+      [ ("gewicht", pf_n2); ("lengte", pf_n2); ("taxatie", pf_n2); ("bergloon", pf_n2);
+        ("soort", {|{ "node": "Text" }|}) ]
+  in
+  let va = pf_a ~ot:"Vondst" in
+  let init ?(doel = "bergloon") ?voorwaarde ?(validity = {|{ "node": "Validity" }|}) ~naam waarde =
+    ( naam,
+      Printf.sprintf
+        {|{ "node": "Rule", "name": "%s", "versions": [ { "initialisation": true,
+      "target": { "node": "AttributeReference", "attribute": "%s", "subjectType": "Vondst", "source": { "snippet": "Het %s van een Vondst" } },
+      "value": %s,%s
+      "validity": %s } ] }|}
+        naam doel doel waarde
+        (match voorwaarde with None -> "" | Some c -> Printf.sprintf {| "condition": %s,|} c)
+        validity )
+  in
+  let groter a w = pf_cmp "greater" (va a) (pf_l w) in
+  let doc ?(defaults = []) regels = pf_doc ~objecttypen:[ vondst ] ~regels ~defaults () in
+  let v1 ?(as_of = "null") attrs rows =
+    pf_case ~as_of
+      ~instances:
+        [ Printf.sprintf
+            {|{ "label": "V1", "objectType": "Vondst", "attributes": { %s }, "roles": {}, "characteristics": [] }|}
+            (String.concat ", " attrs) ]
+      rows
+  in
+  let num a w = Printf.sprintf {|"%s": { "number": "%s" }|} a w in
+  let is w = pf_is ~label:"V1" ~attr:"bergloon" w in
+  let leeg = pf_leeg ~label:"V1" ~attr:"bergloon" () in
+  let standaard = init ~naam:"standaardbergloon" ~voorwaarde:(groter "gewicht" "10.00") (pf_l "25.00") in
+  (* the initialisation as its target's only writer: the three branches *)
+  let alleen = doc [ standaard ] in
+  both_answer ~name:"conditional initialisation: empty target, condition holds" ~ir:alleen
+    ~case_text:(v1 [ num "gewicht" "12.00" ] [ is "25.00"; pf_cons ]);
+  both_answer ~name:"conditional initialisation: empty target, condition fails" ~ir:alleen
+    ~case_text:(v1 [ num "gewicht" "8.00" ] [ leeg; pf_cons ]);
+  both_answer ~name:"conditional initialisation: a filled input stands" ~ir:alleen
+    ~case_text:(v1 [ num "gewicht" "12.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
+  (* a validity window takes an unconditional initialisation out of the
+     desugaring domain as well (ch. 7.7, versioned forms) *)
+  let venster =
+    doc
+      [ init ~naam:"standaardbergloon" ~validity:{|{ "node": "Validity", "from": "2025-01-01" }|}
+          (pf_l "25.00") ]
+  in
+  both_answer ~name:"windowed initialisation: inside its window" ~ir:venster
+    ~case_text:(v1 ~as_of:{|"2025-06-01"|} [ num "gewicht" "8.00" ] [ is "25.00"; pf_cons ]);
+  both_answer ~name:"windowed initialisation: outside its window" ~ir:venster
+    ~case_text:(v1 ~as_of:{|"2024-06-01"|} [ num "gewicht" "8.00" ] [ leeg; pf_cons ]);
+  (* beside one computing rule: bergloon = taxatie indien gewicht > 10, and
+     the initialisation 25,00 indien lengte > 3 *)
+  let naast =
+    doc
+      [ pf_regel ~ot:"Vondst" ~doel:"bergloon" ~voorwaarde:(groter "gewicht" "10.00") (va "taxatie");
+        init ~naam:"standaardbergloon" ~voorwaarde:(groter "lengte" "3.00") (pf_l "25.00") ]
+  in
+  both_answer ~name:"initialisation beside a computation: the computed value wins" ~ir:naast
+    ~case_text:
+      (v1 [ num "gewicht" "12.00"; num "taxatie" "30.00"; num "lengte" "5.00" ] [ is "30.00"; pf_cons ]);
+  both_answer ~name:"initialisation beside a computation that does not fire" ~ir:naast
+    ~case_text:(v1 [ num "gewicht" "8.00"; num "lengte" "5.00" ] [ is "25.00"; pf_cons ]);
+  both_answer ~name:"initialisation beside a computation: neither fires" ~ir:naast
+    ~case_text:(v1 [ num "gewicht" "8.00"; num "lengte" "2.00" ] [ leeg; pf_cons ]);
+  both_answer ~name:"initialisation beside a computation that evaluates leeg, the initialisation silent"
+    ~ir:naast ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "2.00" ] [ leeg; pf_cons ]);
+  (* the v0 divergence: the computation fires and evaluates leeg, the
+     initialisation fires and writes 25,00 *)
+  (let name = "initialisation beside a computation that evaluates leeg: no fixpoint" in
+   let doc, case =
+     load_pair ~ir:naast ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "5.00" ] [ leeg; pf_cons ])
+   in
+   (match ref_report doc case with
+   | _ -> check (name ^ ": ref faults (it evaluated)") false
+   | exception Uchar_ref.Value.Fault m ->
+       check (name ^ ": ref faults (" ^ m ^ ")")
+         (Uchar_ref.Case.contains ~needle:"no fixpoint within 100 passes" m));
+   let label = name ^ ": clingo's fence fires" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnose program in
+           check
+             (label ^ " (" ^ String.concat "; " ws ^ ")")
+             (List.exists
+                (fun w ->
+                  Uchar_ref.Case.contains
+                    ~needle:
+                      "no fixpoint: a computing rule evaluating leeg erases what the \
+                       initialisation of bergloon writes"
+                    w)
+                ws)
+       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d: no refusal)" c) false
+       | _, _ -> check (label ^ " (clingo killed)") false));
+  (* case input on a computed target keeps its fence beside an initialisation *)
+  faults_with ~name:"initialisation beside a computation, input supplied" ~ir:naast
+    ~case_text:(v1 [ num "gewicht" "8.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ])
+    ~needle:"the case supplies input for computed target \"bergloon\"";
+  (* the shapes the arm does not carry, each refused by name *)
+  faults_with ~name:"two initialisations on one target"
+    ~ir:
+      (doc
+         [ standaard;
+           init ~naam:"lengtebergloon" ~voorwaarde:(groter "lengte" "3.00") (pf_l "30.00") ])
+    ~case_text:(v1 [ num "gewicht" "12.00" ] [ is "25.00"; pf_cons ])
+    ~needle:"2 initialisations write \"bergloon\"";
+  faults_with ~name:"an initialisation beside two computing rules"
+    ~ir:
+      (doc
+         [ pf_regel ~ot:"Vondst" ~doel:"bergloon" ~voorwaarde:(groter "gewicht" "10.00") (va "taxatie");
+           ( "zware bergloon",
+             snd
+               (pf_regel ~ot:"Vondst" ~doel:"bergloon" ~voorwaarde:(groter "gewicht" "20.00")
+                  (va "gewicht"))
+             |> vervang ~waar:{|"name": "bergloon van een vondst"|} ~door:{|"name": "zware bergloon"|} );
+           standaard ])
+    ~case_text:(v1 [ num "gewicht" "8.00" ] [ is "25.00"; pf_cons ])
+    ~needle:"the initialisation of \"bergloon\" sits beside 2 computing rules";
+  faults_with ~name:"an initialisation beside a defaults group on its target"
+    ~ir:
+      (doc
+         ~defaults:
+           [ Printf.sprintf
+               {|{ "node": "PrioritizedDefaults", "name": "bergloon naar lengte", "subject": "Vondst",
+          "attribute": "bergloon", "defaults": [ { "node": "Default", "justification": %s,
+          "consequence": %s, "source": { "snippet": "d" } } ], "source": { "snippet": "w" },
+          "validity": { "node": "Validity" } }|}
+               (groter "lengte" "3.00") (pf_l "30.00") ]
+         [ standaard ])
+    ~case_text:(v1 [ num "gewicht" "12.00" ] [ is "25.00"; pf_cons ])
+    ~needle:"the initialisation of \"bergloon\" shares its target with a defaults group";
+  faults_with ~name:"a conditional initialisation of a text target"
+    ~ir:
+      (doc
+         [ init ~doel:"soort" ~naam:"standaardsoort" ~voorwaarde:(groter "gewicht" "10.00")
+             (pf_l ~typ:{|{ "node": "Text" }|} "wrakhout") ])
+    ~case_text:(v1 [ num "gewicht" "12.00" ] [ pf_cons ])
+    ~needle:"the initialisation of \"soort\" writes a target that is neither a number nor a date"
+
 (* an allocation's voorwaarde, read per source: 90 over three jutters *)
 let () =
   let veiling =
