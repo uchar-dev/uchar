@@ -1,0 +1,133 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "0.00"
+          },
+          "lengte": {
+            "number": "5"
+          },
+          "jaartal": {
+            "number": "1950"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "lengte": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "60.00"
+          },
+          "lengte": {
+            "number": "60"
+          },
+          "jaartal": {
+            "number": "1850"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "-1.00"
+          },
+          "lengte": {
+            "number": "12"
+          },
+          "jaartal": {
+            "number": "1850"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V5",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V6",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V7",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar ten minste twee criteria",
+      "label": "V4"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar ten minste twee criteria",
+      "label": "V5"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar ten hoogste een criterium",
+      "label": "V6"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar precies een criterium",
+      "label": "V4"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar precies een criterium",
+      "label": "V5"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar precies een criterium",
+      "label": "V6"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar precies een criterium",
+      "label": "V7"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "keuring naar geen criterium",
+      "label": "V7"
+    }
+  ]
+}

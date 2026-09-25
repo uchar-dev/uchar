@@ -5559,6 +5559,18 @@ public final class ExecModelTranspiler {
             if (schendingen.isEmpty()) return null;
             return obj -> { for (Predicate1<Object> sp : schendingen) if (sp.test(obj)) return true; return false; };
         }
+        // §13.4.8 "… moet voldoen aan geen van / ten minste / ten hoogste / precies n van de volgende criteria": the
+        // assertie holds iff the composite does, so the violation is its negation. The composite is the one rule
+        // conditions and subselections fold (leafCompound: the count of the criteria that hold against the
+        // threshold, ch. 5.10 short circuit included, a leeg operand making its criterion onwaar), so an assertion
+        // and a condition read one quantifier alike. A window among the criteria is WF-112's position and is left to
+        // the caller, which names it; a criterion the fold cannot lower no-ops the rule, as under ALLE.
+        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() != Conditie.Kwantor.ALLE
+                && s.kwantor() != Conditie.Kwantor.DE) {
+            if (Vensterpositie.weigering(s) != null) return null;
+            Predicate1<Object> houdt = leafCompound(s, subject);
+            return houdt == null ? null : obj -> !houdt.test(obj);
+        }
         // §8.2 a whole-period-qualified criterium ("X moet gedurende het gehele jaar gelijk zijn aan Y"): the criterium
         // is satisfied iff the §8.2 check holds, so the VIOLATION is its negation. A literal/own-attr grens (0 globals)
         // is fact-only; a Parameter-global grens is handled by schendingMetGlobal. Symmetric with DrlTranspiler.

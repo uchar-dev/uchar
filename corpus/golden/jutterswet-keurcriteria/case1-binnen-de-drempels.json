@@ -1,0 +1,80 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "2.50"
+          },
+          "lengte": {
+            "number": "12"
+          },
+          "jaartal": {
+            "number": "1850"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "0.00"
+          },
+          "lengte": {
+            "number": "25"
+          },
+          "jaartal": {
+            "number": "1899"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "60.00"
+          },
+          "lengte": {
+            "number": "12"
+          },
+          "jaartal": {
+            "number": "1850"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "oud"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

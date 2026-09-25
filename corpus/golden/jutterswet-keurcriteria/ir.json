@@ -1,0 +1,539 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jaartal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "oud",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "ouderdom van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "oud",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is oud"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "jaartal",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn jaartal"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1900"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1900"
+                }
+              },
+              "source": {
+                "snippet": "zijn jaartal kleiner is dan 1900"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "keuring naar ten minste twee criteria",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht groter is dan 0"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "lengte",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn lengte"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn lengte groter is dan 10"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "jaartal",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn jaartal"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1900"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1900"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn jaartal kleiner is dan 1900"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "aan ten minste twee van de volgende criteria"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Vondst moet voldoen aan ten minste twee van de volgende criteria",
+              "line": 14
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "keuring naar ten hoogste een criterium",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "atMost",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "50"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "50"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht groter is dan 50"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "lengte",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn lengte"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "50"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "50"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn lengte groter is dan 50"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "jaartal",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn jaartal"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1500"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1500"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn jaartal kleiner is dan 1500"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "aan ten hoogste één van de volgende criteria"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Vondst moet voldoen aan ten hoogste één van de volgende criteria",
+              "line": 21
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "keuring naar precies een criterium",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht groter is dan 1"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "lengte",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn lengte"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "20"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "20"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn lengte groter is dan 20"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "aan precies één van de volgende criteria"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Vondst moet voldoen aan precies één van de volgende criteria",
+              "line": 28
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "keuring naar geen criterium",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "none",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht kleiner is dan 0"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "lengte",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn lengte"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn lengte kleiner is dan 0"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "aan geen van de volgende criteria"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Vondst moet voldoen aan geen van de volgende criteria",
+              "line": 34
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

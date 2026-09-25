@@ -905,6 +905,16 @@ public final class DrlTranspiler {
             }
             return schendingen.isEmpty() ? null : "(" + String.join(" || ", schendingen) + ")";
         }
+        // §13.4.8 "… moet voldoen aan geen van / ten minste / ten hoogste / precies n van de volgende criteria": the
+        // assertion holds iff the composite does, so the violation is its plain negation. The composite is lowered
+        // as a rule condition lowers it (the inline fold over the criteria, a leeg operand making its criterion
+        // onwaar), so the exec-model branch, which negates its own fold of the same composite, reads it alike. A
+        // window among the criteria, or a criterion the fold cannot host, leaves a marker, and the caller names it.
+        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() != Conditie.Kwantor.ALLE
+                && s.kwantor() != Conditie.Kwantor.DE) {
+            Frag samengesteld = conditie(acc, s, subject);
+            return samengesteld.marker() ? null : "!( " + samengesteld.text() + " )";
+        }
         // ch. 3.10 a window criterium: violated where the window does not match. The window is total — an unset
         // rekendatum or a leeg bound puts the day outside it — so the plain negation of its constraint is exact.
         // Under GEEN or a counting quantifier it never gets here: that composite has no arm above, and the caller

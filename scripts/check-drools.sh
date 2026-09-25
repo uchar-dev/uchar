@@ -926,7 +926,14 @@ EXPECTED_CHANNEL=(
 # source file of this backend changed: the exec branch plays the ten cases on the first run, PLAYED 10,
 # with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=202
+# 202 -> 203 (2026-09-25, card aantal-bronarm-en-drools-lader): jutterswet-keurcriteria, new and
+# hand-computed — four consistencies whose assertion is a composite under atLeast, atMost, exactly and
+# none, each pinned from both sides of its threshold, a leeg operand among the finds. Before the card the
+# exec-model branch excluded them (transpiler SKIP) and the DRL-text branch left a marker, while ref and
+# clingo answered; both branches now negate the fold their rule conditions carry for these quantifiers,
+# and play its two cases, PLAYED 2, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as
+# well.
+EXPECTED_PLAYED=203
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1195,7 +1202,10 @@ DRL_CHANNEL=(
 # 173 -> 175 (2026-09-25, card frontend-emitterrestanten): jutterswet-dagentelling-rgs and
 # jutterswet-wachtersketen-rgs, new. This branch plays each on the first run with no change of its own,
 # PLAYED 4 and 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=175
+# 175 -> 176 (2026-09-25, card aantal-bronarm-en-drools-lader): jutterswet-keurcriteria, new. This
+# branch plays both cases through the card's consistency arm, PLAYED 2. Reason block at EXPECTED_PLAYED
+# above.
+EXPECTED_DRL_PLAYED=176
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
