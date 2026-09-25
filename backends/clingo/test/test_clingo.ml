@@ -13195,31 +13195,38 @@ let () =
 (* THE SPLIT MONEY × RATE WITH A RATE OF FEWER THAN FOUR DECIMALS (the card
    clingo-tarief-decimalen). The split encoding of ASP-TRANSLATION S18(c) reads
    its rate at scale 10^4, and until this card [money_mult_shape] admitted a
-   rate TYPED at exactly four decimals. A rate typed at one to three decimals is
-   the same rational at scale 10^4 — 0,875 at three decimals is 8750 at four —
-   so the encoding now brings it there exactly. Left on the ordinary product
-   path such a product meets the 46340 operand fence, which a monthly wage of
-   2400,00 (240000 at scale 2) already exceeds: the RegelSpraak frontend types a
-   numeric literal at its smallest scale, `0,8750` at three decimals, so its
-   emission of anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases
-   while ref and the Drools exec branch played them.
+   rate TYPED at exactly four decimals, and only right of the money. A rate
+   of one to three decimals is the same rational at scale 10^4 — 0,875 at
+   three decimals is 8750 at four — so the encoding now brings it there
+   exactly. Left on the ordinary product path such a product meets the 46340
+   operand fence, which a monthly wage of 2400,00 (240000 at scale 2) already
+   exceeds: the RegelSpraak frontend types a numeric literal at its smallest
+   scale, `0,8750` at three decimals, so its emission of
+   anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases while ref
+   and the Drools exec branch played them.
 
    The frames that answer through the split were red on the code before this
    card: UNSAT on the operand fence at rule level, the catch-all refusal in a
-   closed body. Three frames hold its edges. A whole-number rate is not
-   rerouted — its cent rounding is the identity and the ordinary path carries
-   a negative money there, which the split refuses — so that frame answers on
-   both sides of the card. The rescale must not wrap silently: a wrapped rate
-   is a plausible wrong answer. And the split refuses a negative operand where
-   the ordinary rounding path carried a negative times a negative (a positive
-   product): the price of the wider magnitudes, pinned so that a split that
-   learns signs has to say so here. *)
+   closed body. The money may stand on either side of the product. The route
+   is chosen on the decimals the TERMS carry — the literal's lexeme, the
+   declarations, the joins as this encoding computes them — never on a
+   composite's own annotation (RUNTIME-SEMANTICS ch. 2.10): two frames give
+   the rate a composite whose annotation says otherwise. Three frames hold the
+   edges. A whole-number rate is not rerouted — its cent rounding is the
+   identity and the ordinary path carries a negative money there, which the
+   split refuses — so that frame answers on both sides of the card. The
+   rescale must not wrap silently: a wrapped rate is a plausible wrong answer.
+   And the split refuses a negative operand where the ordinary rounding path
+   carried a negative times a negative (a positive product): the price of the
+   wider magnitudes, pinned so that a split that learns signs has to say so
+   here. *)
 
-let tarief_doc ~tarief_t ~rate ~product_decimals =
+let tarief_frame ~tarief_t ~left ~right ~product_decimals =
   replace ~tok:"@TARIEF@" ~by:tarief_t
-    (replace ~tok:"@RATE@" ~by:rate
-       (replace ~tok:"@PD@" ~by:product_decimals
-          {|{ "format": "uchar-ir-v1",
+    (replace ~tok:"@LEFT@" ~by:left
+       (replace ~tok:"@RIGHT@" ~by:right
+          (replace ~tok:"@PD@" ~by:product_decimals
+             {|{ "format": "uchar-ir-v1",
   "model": {
     "objectTypes": [
       { "node": "ObjectType", "name": "Werknemer", "animate": true, "plural": "Werknemers",
@@ -13241,20 +13248,31 @@ let tarief_doc ~tarief_t ~rate ~product_decimals =
             "source": { "snippet": "De inkomensgrens van een Werknemer" } },
           "value": { "node": "Rounding",
             "base": { "node": "Binary", "op": "times",
-              "left": { "node": "AttributeReference", "attribute": "maandloon", "subjectType": "Werknemer",
-                "source": { "snippet": "zijn maandloon" } },
-              "right": @RATE@,
+              "left": @LEFT@,
+              "right": @RIGHT@,
               "type": { "node": "Number", "whole": false, "decimals": @PD@, "sign": "unspecified" },
-              "source": { "snippet": "zijn maandloon maal het tarief" } },
+              "source": { "snippet": "het product" } },
             "mode": "halfAwayFromZero", "decimals": 2,
             "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
-            "source": { "snippet": "zijn maandloon maal het tarief rekenkundig afgerond op 2 decimalen" } },
+            "source": { "snippet": "het product rekenkundig afgerond op 2 decimalen" } },
           "initialisation": false, "presentation": "calculation" } ] } ],
     "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": []
 }
-|}))
+|})))
+
+let maandloon_ref =
+  {|{ "node": "AttributeReference", "attribute": "maandloon", "subjectType": "Werknemer",
+      "source": { "snippet": "zijn maandloon" } }|}
+
+(* the money left of the rate, as the RegelSpraak twin writes it *)
+let tarief_doc ~tarief_t ~rate ~product_decimals =
+  tarief_frame ~tarief_t ~left:maandloon_ref ~right:rate ~product_decimals
+
+(* the rate left of the money: `0,8750 maal het maandloon` *)
+let tarief_doc_links ~tarief_t ~rate ~product_decimals =
+  tarief_frame ~tarief_t ~left:rate ~right:maandloon_ref ~product_decimals
 
 (* a rate literal as the RegelSpraak frontend writes it: the lexeme as the
    source spells it, the type at the literal's smallest scale *)
@@ -13268,6 +13286,15 @@ let tarief_literal ~lexeme ~decimals =
 let tarief_ref =
   {|{ "node": "AttributeReference", "attribute": "tarief", "subjectType": "Werknemer",
       "source": { "snippet": "zijn tarief" } }|}
+
+(* tarief plus a literal, the plus node annotated at [annotated] decimals —
+   whatever its operands derive *)
+let tarief_plus ~lexeme ~decimals ~annotated =
+  Printf.sprintf
+    {|{ "node": "Binary", "op": "plus", "left": %s, "right": %s,
+        "type": { "node": "Number", "whole": false, "decimals": %d, "sign": "unspecified" },
+        "source": { "snippet": "zijn tarief plus %s" } }|}
+    tarief_ref (tarief_literal ~lexeme ~decimals) annotated lexeme
 
 let tarief_number ~decimals =
   Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified" }|}
@@ -13296,8 +13323,10 @@ let tarief_case ~maandloon ?tarief ~grens () =
 (* the same product inside a closed body: a fold over a list parameter whose
    lambda adds, per element x, grondslag × (x × 0,125) rounded to the cent —
    a rate that reads the element, typed at three decimals *)
-let tarief_fold_doc =
-  {|{ "format": "uchar-ir-v1",
+let tarief_fold_frame ~left ~right =
+  replace ~tok:"@LEFT@" ~by:left
+    (replace ~tok:"@RIGHT@" ~by:right
+       {|{ "format": "uchar-ir-v1",
   "model": {
     "objectTypes": [
       { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
@@ -13332,15 +13361,8 @@ let tarief_fold_doc =
                 "left": { "node": "BinderRef", "name": "acc", "source": { "snippet": "de opgetelde heffing" } },
                 "right": { "node": "Rounding",
                   "base": { "node": "Binary", "op": "times",
-                    "left": { "node": "ParameterReference", "parameter": "grondslag",
-                      "source": { "snippet": "de grondslag" } },
-                    "right": { "node": "Binary", "op": "times",
-                      "left": { "node": "BinderRef", "name": "x", "source": { "snippet": "het kindertal" } },
-                      "right": { "node": "Literal", "value": { "number": "0.125" },
-                        "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
-                        "source": { "snippet": "0,125" } },
-                      "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
-                      "source": { "snippet": "het kindertal maal 0,125" } },
+                    "left": @LEFT@,
+                    "right": @RIGHT@,
                     "type": { "node": "Number", "whole": false, "decimals": 5, "sign": "unspecified" },
                     "source": { "snippet": "de grondslag maal de weging" } },
                   "mode": "halfAwayFromZero", "decimals": 2,
@@ -13358,7 +13380,19 @@ let tarief_fold_doc =
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": []
 }
-|}
+|})
+
+let grondslag_ref =
+  {|{ "node": "ParameterReference", "parameter": "grondslag", "source": { "snippet": "de grondslag" } }|}
+
+let weging =
+  {|{ "node": "Binary", "op": "times",
+      "left": { "node": "BinderRef", "name": "x", "source": { "snippet": "het kindertal" } },
+      "right": { "node": "Literal", "value": { "number": "0.125" },
+        "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
+        "source": { "snippet": "0,125" } },
+      "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
+      "source": { "snippet": "het kindertal maal 0,125" } }|}
 
 let tarief_fold_case =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -13408,6 +13442,10 @@ let () =
   both_answer ~name:"money x rate: the literal 0.8750 typed at three decimals"
     ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
     ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
+  (* the same product with the rate left of the money *)
+  both_answer ~name:"money x rate: the literal 0.8750 left of the money"
+    ~ir:(tarief_doc_links ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
   (* a lexeme at three decimals: the term itself arrives at scale 10^3 *)
   both_answer ~name:"money x rate: the literal 0.875 at three decimals"
     ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.875" ~decimals:3) ~product_decimals:"5")
@@ -13420,6 +13458,29 @@ let () =
     ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.04" ~tarief:"0.125" ~grens:"300.01" ());
   both_answer ~name:"money x rate: a three-decimal rate attribute, below the half"
     ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.03" ~tarief:"0.125" ~grens:"300.00" ());
+  both_answer ~name:"money x rate: a three-decimal rate attribute left of the money"
+    ~ir:(tarief_doc_links ~tarief_t:(tarief_number ~decimals:3) ~rate:tarief_ref ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.04" ~tarief:"0.125" ~grens:"300.01" ());
+  (* the route follows the terms, not a composite's annotation: tarief (one
+     decimal) plus 0,375 derives three decimals under an annotation of five *)
+  both_answer ~name:"money x rate: a composite rate annotated past what it derives"
+    ~ir:
+      (tarief_doc ~tarief_t:(tarief_number ~decimals:1)
+         ~rate:(tarief_plus ~lexeme:"0.375" ~decimals:3 ~annotated:5) ~product_decimals:"7")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"0.5" ~grens:"2100.00" ());
+  (* and the other way: tarief (three decimals) plus a literal written with
+     five derives five under an annotation of three, so the product stays on
+     the ordinary path, which carries it at this magnitude *)
+  both_answer ~name:"money x rate: a composite rate annotated below what it derives"
+    ~ir:
+      (tarief_doc ~tarief_t:(tarief_number ~decimals:3)
+         ~rate:(tarief_plus ~lexeme:"0.00000" ~decimals:0 ~annotated:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"100.00" ~tarief:"0.875" ~grens:"87.50" ());
+  (* a literal routes on its lexeme: 0.87500 carries five decimals, typed at
+     three, so it keeps the ordinary path as well *)
+  both_answer ~name:"money x rate: a rate lexeme past four decimals"
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"100.00" ~grens:"87.50" ());
   (* a whole-number rate stays on the ordinary path, which carries the sign *)
   both_answer ~name:"money x rate: a whole-number rate keeps a negative money"
     ~ir:(tarief_doc ~tarief_t:(tarief_number ~decimals:0) ~rate:tarief_ref ~product_decimals:"2")
@@ -13436,15 +13497,12 @@ let () =
     ~ir:attr1
     ~case_text:(tarief_case ~maandloon:"-100.00" ~tarief:"-0.5" ~grens:"50.00" ())
     ~needle:"negative operand under money multiplication is not translated";
-  (* the closed body: 2400,00 × 0,125 + 2400,00 × 0,250 = 900,00 *)
+  (* the closed body: 2400,00 × 0,125 + 2400,00 × 0,250 = 900,00, with the
+     money on either side *)
   both_answer ~name:"money x rate in a closed body: a three-decimal rate that reads the element"
-    ~ir:tarief_fold_doc ~case_text:tarief_fold_case;
-  (* a lexeme longer than four decimals arrives at scale 10^5; the rescale
-     only multiplies, so this stays the split encoding's loud backstop *)
-  faults_with ~name:"money x rate: a rate lexeme past four decimals"
-    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
-    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ())
-    ~needle:"the split money multiplication expects a 2-decimal money and a rate of at most 4 decimals (100,100000)"
+    ~ir:(tarief_fold_frame ~left:grondslag_ref ~right:weging) ~case_text:tarief_fold_case;
+  both_answer ~name:"money x rate in a closed body: the rate left of the money"
+    ~ir:(tarief_fold_frame ~left:weging ~right:grondslag_ref) ~case_text:tarief_fold_case
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
