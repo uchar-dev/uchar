@@ -349,10 +349,11 @@ fi
 # after the build is FAULT — at fire, and equally while the case is read, a crash included; and a
 # run that hits the fire cap without reaching a fixpoint is a FAULT that raises no exception
 # ("geen fixpunt (kringverwijzing?)"). So FAULT does not separate a fault at fire from a refusal
-# of the case, and a case defect lands on either side: measured 2026-09-23, four listed cases get
-# their EXCLUDE from the case reader after the build (ambiguous-case-role-key,
-# unknown-role-target-label, uni-temporal-key-scalar, uu-temporal-key-scalar — six until the card
-# ref-klipvouw-nul moved two to corpus/negatief), and on the vensterheffing document an
+# of the case, and a case defect lands on either side: four listed cases get their EXCLUDE from
+# the case reader after the build (measured 2026-09-25: ambiguous-case-role-key,
+# unknown-role-target-label, uni-temporal-key-scalar, uu-temporal-key-scalar — six when measured
+# 2026-09-23, until the card ref-klipvouw-nul moved two to corpus/negatief), and on the
+# vensterheffing document (measured 2026-09-23) an
 # undeclared attribute gives "EXCLUDE case sets undeclared attribute", while meldwaarde written as
 # {"boolean": true} gives "FAULT IllegalArgumentException: argument type mismatch" and an
 # undeclared characteristic gives "FAULT RuntimeException: kon setter setVerzonnen(boolean) niet
