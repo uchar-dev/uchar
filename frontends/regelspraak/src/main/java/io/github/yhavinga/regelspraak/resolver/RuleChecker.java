@@ -1779,23 +1779,17 @@ final class RuleChecker {
      *  engine caps the run-away instead of hanging, and both back-ends would diverge forever). The spec
      *  does not forbid the writing, so this is a WARNING, not an ERROR: a voorwaarde may break the cycle
      *  at runtime (statically undecidable). Edges: doel-attribuut -> every OWN attribute its value reads,
-     *  same objecttype. A SELF-read (x = x+1) is the cycle of one node and gets the same WARNING: the verifier
-     *  refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools no-loop that
-     *  makes a single writer terminate is no ground to pass it in silence. Left out of the graph is the one
-     *  read the clamp idiom "x = x, met een maximum van y" makes of its own target as the clamp's base, which
-     *  {@code RecursieTest} pins diagnostics-free; a bound that reads the target is an edge like any other. */
+     *  same objecttype. A SELF-read (x = x+1, the clamp idiom "x = x, met een maximum van y" included) is the
+     *  cycle of one node and gets the same WARNING: the verifier refuses it under WF-045 as it refuses a longer
+     *  cycle (measured 2026-09-25), so the Drools no-loop that makes a single writer terminate is no ground to
+     *  pass it in silence. */
     private void keurKringverwijzingen() {
         Map<String, Set<String>> leest = new LinkedHashMap<>();
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.navigatieRol() != null || d.objecttype() == null) continue;
             String doel = d.objecttype().naam + "." + d.attribuut();
             Set<String> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
-            if (r.waarde() instanceof Expr.Begrensd bg && bg.basis() instanceof Expr.AttribuutRef basis
-                    && basis.navigatieRol() == null && basis.objecttype() == d.objecttype()
-                    && doel.equals(d.objecttype().naam + "." + basis.attribuut())) {
-                verzamelEigenReads(bg.minimum(), d.objecttype(), reads);
-                verzamelEigenReads(bg.maximum(), d.objecttype(), reads);
-            } else verzamelEigenReads(r.waarde(), d.objecttype(), reads);
+            verzamelEigenReads(r.waarde(), d.objecttype(), reads);
         }
         Set<String> gemeld = new java.util.HashSet<>();
         for (String start : leest.keySet()) {

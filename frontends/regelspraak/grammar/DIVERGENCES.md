@@ -1345,9 +1345,8 @@ which is the measurement above stated as a property.
   WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
   — …` for the direct self-read, in the author's names, and still writes the
   document, as it does for every cycle (witness: `ZelflezingKringTest`). The
-  clamp idiom "x = x, met een maximum van y" is the one self-read left without
-  it, because `RecursieTest` pins it diagnostics-free; the verifier refuses that
-  form under WF-045 as well (measured the same day).
+  clamp idiom "x = x, met een maximum van y" is such a self-read too: the
+  verifier refuses it under WF-045 as well (measured the same day).
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.
