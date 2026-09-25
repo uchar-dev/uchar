@@ -51,10 +51,12 @@ in the order of `rules.rules`:
 | order of `/rules/rules` | the two `rubriek` rules, then `weegplicht bij dubbele borging` | `weegplicht bij dubbele borging` first, then the two rows | (i) serialisation order |
 
 (i) naming: the desugaring names a row after its table and its row number,
-and the case files pin no rule name. (i) order: the frontend writes a
-document's plain rules before the rows of its tables; `rules.rules` is a set
-of rules evaluated to a fixpoint, so its order carries no meaning. Every
-condition, comparison, literal, target and presentation is equal.
+and the case files pin no rule name. (i) order: `RuleChecker.check` resolves
+a document's plain rules first, then its `Uitzondering op` blocks, then its
+decision tables, and the frontend emits the rules in that order, so the rows
+come last; `rules.rules` is evaluated to a fixpoint, and rule order carries
+no meaning (RUNTIME-SEMANTICS ch. 5.2). Every condition, comparison,
+literal, target and presentation is equal.
 
 At the byte level the `source` records differ in wording on the same nodes:
 the hand-written document writes its text values in single quotes
