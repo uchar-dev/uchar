@@ -102,6 +102,50 @@ class TyperingZinTest {
                 meldingen("De klasse van een Jutter moet gesteld worden op zijn weer."));
     }
 
+    @Test void niet_numerieke_operanden_bij_rekenen() {
+        String r = "De uitkomst van een Jutter moet berekend worden als ";
+        assertEquals(fout("verminderd met: operand of a numeric operator is text"),
+                meldingen(r + "zijn telling verminderd met zijn naam."));
+        assertEquals(fout("maal: operand of a numeric operator is text"),
+                meldingen(r + "zijn telling maal zijn naam naar beneden afgerond op 2 decimalen."));
+        assertEquals(fout("tot de macht: operand of a numeric operator is text"),
+                meldingen(r + "zijn telling tot de macht zijn naam naar beneden afgerond op 2 decimalen."));
+        // a percentage carries '%': the verifier refuses it under a power as a unit
+        assertEquals(fout("tot de macht: power operands must be unitless"),
+                meldingen(r + "zijn telling tot de macht zijn aandeel naar beneden afgerond op 2 decimalen."));
+    }
+
+    @Test void datumrekenkunde() {
+        String d = "De dag van een Jutter moet berekend worden als ";
+        assertEquals(fout("plus: date ± date is ill-formed (date arithmetic takes a date and a duration)"),
+                meldingen(d + "zijn vondstdag plus zijn vondstdag."));
+        assertEquals(fout("plus: date ± duration: the duration operand is text, must be a number carrying a time unit"),
+                meldingen(d + "zijn vondstdag plus zijn naam."));
+        assertEquals(fout("plus: date ± duration: the duration operand carries no time unit"),
+                meldingen(d + "zijn vondstdag plus zijn telling."));
+        assertEquals(fout("plus: 'EUR' is not a recognised time unit or declared day kind"),
+                meldingen(d + "zijn vondstdag plus zijn waarde."));
+        String u = "De uitkomst van een Jutter moet berekend worden als ";
+        assertTrue(meldingen(u + "zijn telling min zijn vondstdag.").contains(
+                "ERROR 28 min: duration − date is ill-formed (subtraction admits the date on the left only)"));
+    }
+
+    @Test void niet_numerieke_operanden_bij_ordenen() {
+        assertEquals(fout("voorwaarde: vergelijking: ordering operand is text"),
+                meldingen("Een Jutter is waardevol indien zijn telling groter is dan zijn naam."));
+        assertEquals(fout("voorwaarde: vergelijking: date-ordering operand is number"),
+                meldingen("Een Jutter is waardevol indien zijn vondstdag eerder is dan zijn telling."));
+    }
+
+    @Test void rekenen_dat_de_verifier_toelaat_houdt_de_eigen_zin() {
+        // the verifier admits a plus over two non-dates and a product with a percentage: no sentence to carry
+        String r = "De uitkomst van een Jutter moet berekend worden als ";
+        assertEquals(fout("operator 'plus' vereist numerieke operanden, kreeg Tekst en Numeriek"),
+                meldingen(r + "zijn naam plus zijn telling."));
+        assertEquals(fout("maal vereist numerieke operanden, kreeg Numeriek en Percentage"),
+                meldingen(r + "zijn telling maal zijn aandeel naar beneden afgerond op 2 decimalen."));
+    }
+
     @Test void tot_de_macht_met_een_eenheid() {
         assertEquals(fout("tot de macht: power operands must be unitless"),
                 meldingen("De uitkomst van een Jutter moet berekend worden als zijn waarde tot de macht 2 naar beneden afgerond op 2 decimalen."));

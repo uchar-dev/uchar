@@ -61,8 +61,8 @@ public final class Typering {
                 String opNaam = op == BinOp.PLUS ? "plus" : "min";
                 if (l.isDatum() && r instanceof Datatype.Numeriek rn && rn.heeftEenheid()) {
                     if (dagsoortEenheidRechts || Tijdrekening.chronoUnit(r) != null) yield Resultaat.ok(l);
-                    yield Resultaat.fout("datum " + opNaam + " vereist een tijdseenheid, kreeg '"
-                            + rn.eenheidOf().afkorting() + "'");
+                    yield Resultaat.fout(opNaam + ": '" + rn.eenheidOf().afkorting()
+                            + "' is not a recognised time unit or declared day kind");   // the verifier's WF-035
                 }
                 yield numeriekBinair(l, r, opNaam, lLit, rLit);
             }
@@ -74,8 +74,13 @@ public final class Typering {
             // composite the Eenheid model can spell (a rate "€/jr", an opaque product "€·m") or, when it cannot (a
             // rate factor, a reciprocal), a LOUD error — a unit it cannot name is never a wire type (besluit 17c).
             case MAAL, GEDEELD_DOOR -> {
-                if (!l.isNumeriek() || !r.isNumeriek())
-                    yield Resultaat.fout(naam(op) + " vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+                if (!l.isNumeriek() || !r.isNumeriek()) {
+                    // WF-035 per operand that is no number; a percentage is a number to the verifier, which
+                    // admits the product with it, so that refusal is RegelSpraak's own (Tabel 11/14)
+                    String zin = perKant("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
+                    yield Resultaat.fout(zin != null ? naam(op) + ": " + zin
+                            : naam(op) + " vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+                }
                 // §4.4 Tabel 13: a product gets the SUM of the operands' decimals ("X,X maal X,XX = X,XXX"),
                 // not the max — so a 2dec × 2dec product is 4dec and §6.1.2 rightly demands an
                 // afronding before it lands in a narrower attribute. §4.5 gedeeld door is an exact
@@ -104,8 +109,11 @@ public final class Typering {
             }
             // §4.7 tot de macht: Numeriek without a unit on either side; result without a unit.
             case TOT_DE_MACHT -> {
-                if (!l.isNumeriek() || !r.isNumeriek())
-                    yield Resultaat.fout("tot de macht vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+                if (!l.isNumeriek() || !r.isNumeriek()) {
+                    // WF-035 per operand that is no number; a percentage's '%' is a unit to the verifier
+                    String zin = perKant("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
+                    yield Resultaat.fout("tot de macht: " + (zin != null ? zin : "power operands must be unitless"));
+                }
                 if (l.eenheidOf() != null || r.eenheidOf() != null)
                     yield Resultaat.fout("tot de macht: power operands must be unitless");   // the verifier's WF-035
                 yield Resultaat.ok(new Datatype.Numeriek(false, maxDec(l, r), Datatype.Teken.ONBEPAALD, null));
@@ -114,8 +122,12 @@ public final class Typering {
     }
 
     private static Resultaat numeriekBinair(Datatype l, Datatype r, String op, boolean lLit, boolean rLit) {
-        if (!l.isGetalachtig() || !r.isGetalachtig())
-            return Resultaat.fout("operator '" + op + "' vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+        if (!l.isGetalachtig() || !r.isGetalachtig()) {
+            String zin = op.equals("plus") || op.equals("min") ? datumRekenzin(op, l, r)
+                    : perKant("operand of a numeric operator is ", l, r, Datatype::isGetalachtig);
+            return Resultaat.fout(zin != null ? op + ": " + zin
+                    : "operator '" + op + "' vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+        }
         String unitFout = eenhedenCompatibel(l, r, op, lLit, rLit, "additive operands have incompatible units");
         if (unitFout != null) return Resultaat.fout(unitFout);
         // §4.1/§4.2/§4.3 (plus/min/verminderd met — the only callers): geheel ± geheel IS geheel, so the
@@ -142,7 +154,7 @@ public final class Typering {
         return switch (op) {
             case KLEINER, KLEINER_OF_GELIJK, GROTER, GROTER_OF_GELIJK -> {
                 if (!l.isGetalachtig() || !r.isGetalachtig())
-                    yield Resultaat.fout("ordeningsvergelijking vereist numerieke operanden, kreeg " + l.naam() + " en " + r.naam());
+                    yield Resultaat.fout("vergelijking: " + perKant("ordering operand is ", l, r, Datatype::isGetalachtig));
                 String u = eenhedenCompatibel(l, r, "vergelijking", lLit, rLit, "ordering operands have incompatible units");
                 yield u != null ? Resultaat.fout(u) : Resultaat.ok(new Datatype.Booleaan());
             }
@@ -151,7 +163,7 @@ public final class Typering {
             // whose prose demands "dezelfde tijd-precisie") — the asymmetry is the spec's, kept as-is.
             case EERDER, EERDER_OF_GELIJK, LATER, LATER_OF_GELIJK -> {
                 if (!l.isDatum() || !r.isDatum())
-                    yield Resultaat.fout("eerder/later vereist datum-operanden, kreeg " + l.naam() + " en " + r.naam());
+                    yield Resultaat.fout("vergelijking: " + perKant("date-ordering operand is ", l, r, Datatype::isDatum));
                 yield Resultaat.ok(new Datatype.Booleaan());
             }
             case GELIJK, ONGELIJK -> {
@@ -443,6 +455,32 @@ public final class Typering {
             return pre + (verifierZin != null ? verifierZin
                     : "eenheden '" + el.weergave() + "' en '" + er.weergave() + "' zijn niet in elkaar om te rekenen");
         return null;
+    }
+
+    /** The verifier's sentence for each operand {@code goed} refuses, in operand order and joined by "; " as its two
+     *  reports would be read; null when both pass. */
+    private static String perKant(String zinBegin, Datatype l, Datatype r,
+                                  java.util.function.Predicate<Datatype> goed) {
+        java.util.List<String> zinnen = new java.util.ArrayList<>();
+        if (!goed.test(l)) zinnen.add(zinBegin + soortWoord(l));
+        if (!goed.test(r)) zinnen.add(zinBegin + soortWoord(r));
+        return zinnen.isEmpty() ? null : String.join("; ", zinnen);
+    }
+
+    /** WF-035's sentences for a plus or min over an operand that is no number (RUNTIME-SEMANTICS ch. 3.8): date
+     *  arithmetic takes a date on the left and a duration, a number carrying a time unit, on the right. Null where
+     *  neither operand is a date: the verifier admits that pair, and RegelSpraak's refusal keeps its own words. */
+    private static String datumRekenzin(String op, Datatype l, Datatype r) {
+        if (l.isDatum() && r.isDatum()) return "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)";
+        if (r.isDatum())
+            return op.equals("min") ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
+                    : "duration + date is ill-formed (the date stands on the left; v0 does not commute)";
+        if (!l.isDatum()) return null;
+        if (!r.isGetalachtig())
+            return "date \u00b1 duration: the duration operand is " + soortWoord(r) + ", must be a number carrying a time unit";
+        Eenheid e = r.eenheidOf();
+        if (e == null) return "date \u00b1 duration: the duration operand carries no time unit";
+        return "'" + e.afkorting() + "' is not a recognised time unit or declared day kind";
     }
 
     /** Whether the verifier refuses a pair of number-like types on units: its {@code units_compatible_adopting}

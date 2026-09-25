@@ -37,7 +37,8 @@ class TyperingTest {
     @Test void plus_datum_en_niet_tijdseenheid_fout() {      // scenario 2: the unit must be a TIJDseenheid
         var r = Typering.reken(BinOp.PLUS, datum(), num("km", "afstand"));
         assertFalse(r.ok());
-        assertTrue(r.fout().contains("tijdseenheid"), r::fout);
+        // the refusal speaks the verifier's WF-035 sentence since the card frontend-emitterrestanten
+        assertTrue(r.fout().contains("is not a recognised time unit"), r::fout);
         assertFalse(Typering.reken(BinOp.MIN, datum(), num("km", "afstand")).ok());
     }
     @Test void plus_datum_en_dagsoort_eenheid_ok() {         // §6.11: a declared dagsoort is a valid duration unit
