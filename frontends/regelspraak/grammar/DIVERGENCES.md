@@ -538,7 +538,7 @@ The dialect does not admit the combination. Option (b) — a defaults group as
 a group member — would need WF-033 to accept one and a statement of what a
 defaults group inside a recursive group means: a spec question with three
 executors behind it, recorded and not taken. The refusal is one ERROR at the
-block's own head, citing §9.10 and this section, with two arms:
+block's own head, with two arms:
 
 - **positional** — the block stands directly after a group's last member,
   where the group would read on if the block were a rule. The arm keys on
@@ -564,10 +564,16 @@ block's own head, citing §9.10 and this section, with two arms:
   `Uitzonderingen ongeordend op` joined it by name (form 2). A later head that
   names a carrier of its own has to join it the same way.
 
-A block for which both hold gets one diagnostic naming both reasons, and a
-refused block stays un-lifted together with its whole base family, as the
-other refusals leave it. The way out the message names is one that holds
-wherever the author follows it: before the document's FIRST group header,
+The membership arm speaks the verifier's WF-033 sentence for the group the lift
+would leave (`group member '<basisregel>' does not resolve to a rule form`),
+after a Dutch context naming the base's group; the positional arm alone keeps
+its Dutch words, citing §9.10 and this section, because the document it keeps
+off disk is well-formed (the block and the rules behind it stand outside the
+group). A block for which both hold gets one diagnostic, the membership arm's,
+with the placement in its context, and a refused block stays un-lifted
+together with its whole base family, as the other refusals leave it. The way
+out the positional message names is one that holds wherever the author
+follows it: before the document's FIRST group header,
 which no group's scope reaches, or behind a definition that ends the group.
 "Before the header of this group" was named until fix round 2 and did not
 hold — with two groups back to back it lands behind the other group's last

@@ -115,12 +115,11 @@ class RegelgroepUitzonderingTest {
         String t = d.message();
         assertTrue(t.contains("regelgroep 'berging'"), () -> "de melding noemt de groep niet: " + t);
         assertTrue(t.contains("direct na het laatste lid"), () -> "de melding noemt de plaats niet: " + t);
-        assertTrue(t.contains("'bergingsbevoegd bij quotum' is lid van regelgroep 'berging'"),
+        assertTrue(t.contains("zijn basisregel is lid van regelgroep 'berging'"),
                 () -> "de melding noemt de basis als groepslid niet: " + t);
-        assertTrue(t.contains("WF-033"), () -> "de melding noemt het gevolg niet: " + t);
-        assertTrue(t.contains("§9.10") && t.contains("§4"), () -> "de melding verwijst niet naar §9.10 en §4: " + t);
-        assertTrue(t.contains("vóór de eerste regelgroepkop van het document ('Regelgroep berging')"),
-                () -> "de melding wijst de uitweg niet: " + t);
+        // the consequence is the verifier's WF-033 sentence for the group the lift would leave
+        assertTrue(t.contains("group member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+                () -> "de melding noemt het gevolg niet: " + t);
         // A refused block stays un-lifted, as every other refusal of the defaults pass leaves it.
         assertTrue(m.prioritizedDefaults.isEmpty(), () -> "een geweigerd blok hoort ongelift te blijven: " + m.prioritizedDefaults);
     }
@@ -134,8 +133,9 @@ class RegelgroepUitzonderingTest {
         assertFalse(m.isOk(), () -> "een gelifte basis in een regelgroep hoort geweigerd te worden: " + m.diagnostics);
         Diagnostic d = enigeFout(m);
         assertEquals(regelVan(src, "Uitzondering op"), d.line(), () -> "de melding hoort op de kop van het blok: " + d);
-        assertTrue(d.message().contains("'bergingsbevoegd bij quotum' is lid van regelgroep 'berging'")
-                        && d.message().contains("WF-033"),
+        assertTrue(d.message().contains("zijn basisregel is lid van regelgroep 'berging'")
+                        && d.message().contains("group member 'bergingsbevoegd bij quotum' does not resolve to a "
+                                + "rule form"),
                 () -> "de melding noemt de basis als groepslid niet: " + d);
         assertFalse(d.message().contains("direct na het laatste lid"),
                 () -> "de plaatsingsreden hoort hier niet te vuren: " + d);
@@ -184,7 +184,11 @@ class RegelgroepUitzonderingTest {
             """;
         String src = MODEL + groepA + groepB + UITZONDERING;
         Diagnostic d = enigeFout(Resolver.resolve(src));
-        assertTrue(d.message().contains("vóór de eerste regelgroepkop van het document ('Regelgroep a')"), d.message());
+        // the membership arm speaks the verifier's WF-033 sentence, with the base's group and the block's place in
+        // its Dutch context
+        assertTrue(d.message().contains("(zijn basisregel is lid van regelgroep 'a', en het blok staat direct na het "
+                + "laatste lid van regelgroep 'b'): group member 'bergingsbevoegd bij quotum' does not resolve to a "
+                + "rule form"), d.message());
         assertFalse(d.message().contains("'Regelgroep b'"), d.message());
         // and the advice, followed, gives a clean document
         String gevolgd = MODEL + BASIS + UITZONDERING
@@ -241,8 +245,8 @@ class RegelgroepUitzonderingTest {
         RegelSpraakModel m = Resolver.resolve(src);
         Diagnostic d = enigeFout(m);
         assertEquals(regelVan(src, "Uitzondering op"), d.line(), () -> "de melding hoort op de kop van het blok: " + d);
-        assertTrue(d.message().contains(
-                        "'Bergingspremie 1' is een rij van beslistabel 'Bergingspremie', lid van regelgroep 'berging'"),
+        assertTrue(d.message().contains("zijn basisregel is een rij van beslistabel 'Bergingspremie', lid van regelgroep "
+                        + "'berging'): group member 'Bergingspremie 1' does not resolve to a rule form"),
                 d.message());
         assertTrue(m.prioritizedDefaults.isEmpty(), "een geweigerd blok hoort ongelift te blijven");
     }

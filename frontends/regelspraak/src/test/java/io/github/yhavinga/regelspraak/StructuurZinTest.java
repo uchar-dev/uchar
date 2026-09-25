@@ -100,4 +100,89 @@ class StructuurZinTest {
                     """));
     }
 
+    // ---- WF-033: a recursive group without a creation member
+
+    @Test void een_recursieve_groep_zonder_creatie() {
+        assertEquals(List.of("recursieve regelgroep 'estafette': recursive group without a creation member"),
+                fouten("""
+                    Objecttype de Wachter (mv: Wachters) (bezield)
+                        de rang Numeriek (geheel getal);
+
+                    Regelgroep estafette is recursief
+                    Regel verhoog de rang
+                        geldig altijd
+                            De rang van een Wachter moet gesteld worden op 1.
+                    """));
+    }
+
+    @Test void een_recursieve_groep_met_alleen_een_feitcreatie_houdt_de_eigen_zin() {
+        // the verifier admits a relation creation as the recursion's carrier (ch. 5.5); §9.10 asks an object creation
+        assertEquals(List.of("recursieve regelgroep 'beseining' zonder objectcreatieregel — de 'is recursief'-markering "
+                        + "kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)"),
+                fouten("""
+                    Objecttype het Kustvak (mv: Kustvakken)
+                        het vakseinaantal Numeriek (geheel getal);
+
+                    Objecttype de Post (mv: Posten)
+                        de hoogte Numeriek (geheel getal);
+
+                    Objecttype het Sein (mv: Seinen)
+                        is gehesen kenmerk (bijvoeglijk);
+
+                    Feittype kustligging
+                        het kustvak Kustvak
+                        de post (mv: posten) Post
+                    Eén kustvak telt meerdere posten
+
+                    Feittype seinvoering
+                        de post Post
+                        het sein (mv: seinen) Sein
+                    Eén post telt meerdere seinen
+
+                    Feittype vakbeseining
+                        het seinvak Kustvak
+                        het vaksein (mv: vakseinen) Sein
+                    Eén seinvak telt meerdere vakseinen
+
+                    Regelgroep beseining is recursief
+                    Regel vakbeseining door het kustvak
+                        geldig altijd
+                            Een vaksein van een Kustvak is een sein van de post van het kustvak
+                            indien het sein gehesen is.
+                    """));
+    }
+
+    // ---- WF-033: an exception block whose base is a group member
+
+    private static final String BERGING = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            is bergingsbevoegd kenmerk (bijvoeglijk);
+            is noodweer verklaard kenmerk (bijvoeglijk);
+            het aantal geborgen wrakken Numeriek (niet-negatief geheel getal);
+
+        Regelgroep berging
+        Regel bergingsbevoegd bij quotum
+            geldig altijd
+                Een Jutter is bergingsbevoegd
+                indien zijn aantal geborgen wrakken groter of gelijk is aan 20.
+
+        """;
+
+    private static final String NOODWEER = """
+        Uitzondering op bergingsbevoegd bij quotum: bergingsbevoegd bij noodweer
+            geldig altijd
+                Een Jutter is bergingsbevoegd
+                indien hij noodweer verklaard is.
+        """;
+
+    @Test void een_uitzonderingsblok_op_een_groepslid() {
+        assertEquals(List.of("Uitzondering op 'bergingsbevoegd bij quotum' (zijn basisregel is lid van regelgroep "
+                        + "'berging'): group member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+                fouten(BERGING + "Parameter de noodweerdrempel : Numeriek (geheel getal)\n\n" + NOODWEER));
+        assertEquals(List.of("Uitzondering op 'bergingsbevoegd bij quotum' (zijn basisregel is lid van regelgroep "
+                        + "'berging', en het blok staat direct na het laatste lid van regelgroep 'berging'): group "
+                        + "member 'bergingsbevoegd bij quotum' does not resolve to a rule form"),
+                fouten(BERGING + NOODWEER));
+    }
+
 }

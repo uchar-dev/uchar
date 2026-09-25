@@ -188,9 +188,14 @@ final class RuleChecker {
             List<ResolvedObjectCreatie> creaties = model.objectCreaties.stream()
                     .filter(oc -> leden.stream().anyMatch(l -> zonderVersie(l).equals(zonderVersie(oc.naam())))).toList();
             if (creaties.isEmpty()) {
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "recursieve regelgroep '" + naam + "' zonder objectcreatieregel — de 'is recursief'-markering "
-                        + "kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)", line));
+                // the verifier admits a relation creation as the carrier too (ch. 5.5): a group with no creation of
+                // either kind is refused in its words, one with a relation creation only in this frontend's (§9.10)
+                boolean feitcreatie = model.feitCreaties.stream()
+                        .anyMatch(fc -> leden.stream().anyMatch(l -> zonderVersie(l).equals(zonderVersie(fc.naam()))));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, feitcreatie
+                        ? "recursieve regelgroep '" + naam + "' zonder objectcreatieregel — de 'is recursief'-markering "
+                                + "kan de keten niet laten voortschrijden (§9.10, gedocumenteerde extensie)"
+                        : "recursieve regelgroep '" + naam + "': recursive group without a creation member", line));
                 continue;
             }
             // each generation of a recursive group mints new instances, so its object creation carries a guard: the
@@ -439,8 +444,10 @@ final class RuleChecker {
      *  <li>MEMBERSHIP — the block's base rule is a group member, wherever the block stands. A later head that
      *      names a base of its own has to join this arm by name.</li>
      *  </ul>
-     *  A refused block stays un-lifted together with its whole base family, as every other refusal of this pass
-     *  leaves it. */
+     *  The membership arm speaks the verifier's WF-033 sentence, with the placement in its Dutch context where that
+     *  holds too; the placement alone keeps this frontend's words, since the document it keeps off disk is
+     *  well-formed. A refused block stays un-lifted together with its whole base family, as every other refusal of
+     *  this pass leaves it. */
     private java.util.Set<ParserRuleContext> regelgroepReikwijdte(RegelSpraakDocumentContext doc) {
         // Keyed on RULE names: a decision-table member stands for the rules of its rows, which is what a block
         // names as its base ("Bergingspremie 1"); the table's own name names no rule at all.
@@ -465,30 +472,32 @@ final class RuleChecker {
             if (kind instanceof ParserRuleContext blok && !(kind instanceof DefinitieContext)
                     && !(kind instanceof RegelGroepContext) && !(kind instanceof RegelContext)
                     && !(kind instanceof BeslistabelContext)) {
-                List<String> redenen = new ArrayList<>();
                 // A header with no member is already a syntax error, and has no last member to stand behind.
-                if (vorige instanceof RegelGroepContext g && !g.groepLid().isEmpty())
-                    redenen.add("het staat direct na het laatste lid van regelgroep '" + src(g.kaleNaam())
-                            + "', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de groep "
-                            + "zouden vallen");
+                String groepErvoor = vorige instanceof RegelGroepContext g && !g.groepLid().isEmpty()
+                        ? src(g.kaleNaam()) : null;
                 String basis = dragerVan(kind);
-                if (basis != null) {
-                    Lidmaatschap l = groepVanLid.get(basis);
-                    // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
-                    // rule" refusal of the lowering, which is the true one there.
-                    if (l != null && !resolvedVan(basis).isEmpty()) {
-                        redenen.add("zijn basisregel '" + basis + "' is "
-                                + (l.tabel() == null ? "lid" : "een rij van beslistabel '" + l.tabel() + "', lid")
-                                + " van regelgroep '" + l.groep() + "', en het liften naar een defaults-groep zou dat "
-                                + "lid uit de regelvormen halen, zodat de groep naar niets meer verwijst (WF-033)");
-                    }
-                }
-                if (!redenen.isEmpty()) {
+                // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
+                // rule" refusal of the lowering, which is the true one there.
+                Lidmaatschap lid = basis == null || resolvedVan(basis).isEmpty() ? null : groepVanLid.get(basis);
+                if (lid != null) {
+                    // the lift takes the member out of the rule forms, and the verifier refuses the group that still
+                    // names it (WF-033); the placement, where it holds too, stays in the context
+                    geweigerd.add(blok);
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, blokKop(blok) + " (zijn basisregel is "
+                            + (lid.tabel() == null ? "lid" : "een rij van beslistabel '" + lid.tabel() + "', lid")
+                            + " van regelgroep '" + lid.groep() + "'" + (groepErvoor == null ? "" : ", en het blok "
+                                    + "staat direct na het laatste lid van regelgroep '" + groepErvoor + "'")
+                            + "): group member '" + basis + "' does not resolve to a rule form",
+                            blok.getStart().getLine()));
+                } else if (groepErvoor != null) {
+                    // the placement alone: every group keeps its members, so the document is well-formed, with the
+                    // block and every rule after it outside the group, and no reader refuses it
                     geweigerd.add(blok);
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, blokKop(blok) + ": een uitzonderingsblok "
                             + "is in het dialect niet toegestaan binnen de reikwijdte van een regelgroep, noch met "
-                            + "een groepslid als basisregel — "
-                            + String.join("; ", redenen) + ". Een regelgroep bestaat alleen om recursie te "
+                            + "een groepslid als basisregel — het staat direct na het laatste lid van regelgroep '"
+                            + groepErvoor + "', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de "
+                            + "groep zouden vallen. Een regelgroep bestaat alleen om recursie te "
                             + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
                             + "(dialect §4) hoort er niet in. Plaats het blok"
                             // a carrier that is itself a block is no base rule: the message names what was written
