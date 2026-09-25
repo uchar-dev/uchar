@@ -4,8 +4,8 @@ A declared subscope: the caller delegates a computation to a callee
 instance and reads one output back over the synthesised back-link. The
 plugin lowers the collapsed `EScopeCall` to one object creation (the args
 become member initialisations on the callee inputs, plus the
-`verbindendeRol` back-link) and the output read to a navigated
-`AttribuutRef`. Own-authored, rights-free.
+`connectingRole` back-link) and the output read to a navigated
+`AttributeReference`. Own-authored, rights-free.
 
 ```catala
 declaration scope Kamer:

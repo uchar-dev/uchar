@@ -1,9 +1,9 @@
 # Genavigeerde kenmerk-lezing in conditie-positie (IR-SPEC ch. 4.1a/5, WF-053)
 
 A boolean OUTPUT of a declared subscope — a characteristic on the callee —
-read as a VOORWAARDE lowers to a navigated `Kenmerk` check over the
+read as a VOORWAARDE lowers to a navigated `CharacteristicCheck` over the
 synthesised back-link (the condition sibling of the value-position
-navigated `AttribuutRef`; no new node). The exception default's guard reads
+navigated `AttributeReference`; no new node). The exception default's guard reads
 `overzees` of the minted `eigenaar` instance over the `Vondstaanslag_eigenaar`
 back-link. Both executors carry the navigated check (anchor
 jutterswet-kustwacht). Own-authored, rights-free.

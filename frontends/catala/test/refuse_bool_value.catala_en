@@ -3,7 +3,7 @@
 Booleans zijn kenmerken; `definition ok equals p = q` (p, q boolean) leest
 p en q in waarde-positie (operanden van de gelijkheid). Een waarde-positie-
 lezing van een kenmerk heeft in het 5a-fragment geen beeld -> een dangling
-AttribuutRef (verifier-clean, maar ref/clingo antwoorden stil fout). De
+AttributeReference (verifier-clean, maar ref/clingo antwoorden stil fout). De
 plugin weigert de boolean-waarde-lezing luid.
 
 ```catala
