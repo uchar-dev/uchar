@@ -344,14 +344,14 @@
                 }
               ],
               "source": {
-                "snippet": "aan ten hoogste één van de volgende criteria"
+                "snippet": "aan ten hoogste \u00e9\u00e9n van de volgende criteria"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan ten hoogste één van de volgende criteria",
+              "snippet": "Een Vondst moet voldoen aan ten hoogste \u00e9\u00e9n van de volgende criteria",
               "line": 21
             }
           }
@@ -430,14 +430,14 @@
                 }
               ],
               "source": {
-                "snippet": "aan precies één van de volgende criteria"
+                "snippet": "aan precies \u00e9\u00e9n van de volgende criteria"
               }
             },
             "validity": {
               "node": "Validity"
             },
             "source": {
-              "snippet": "Een Vondst moet voldoen aan precies één van de volgende criteria",
+              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria",
               "line": 28
             }
           }
