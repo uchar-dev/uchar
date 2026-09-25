@@ -6103,13 +6103,16 @@ let () =
    verifier-SCHOON document antwoordde deze backend 39520 — 19737 + 19783 —
    waar `ref` op de optelling zelf een typefout werpt. Een stellig fout getal
    is het enige wat een backend niet mag produceren, dus de arm weigert nu bij
-   naam. Het corpus pint beide helften (`rood/datumsetbron-somvouw` en zijn
-   `total`-tweeling; `golden/jutterswet-vondstbereik`); wat hier staat is wat
-   het corpus niet kan zeggen — dat `minimum` en `maximum` op HETZELFDE frame
-   dezelfde waarden geven als `first` en `last` hierboven (ch. 1.2e: het is
-   één vouw onder twee namen), en dat de weigering over het DOCUMENT gaat en
-   niet over de casus: ook met een lege bijdragenverzameling, waar geen
-   optelling plaatsvindt, weigert de vertaling. *)
+   naam. Het corpus pint de ordenende helft (`golden/jutterswet-vondstbereik`)
+   en van de optellende alleen de verifierweigering
+   (`negatief/wf091-setbron-som-datum` en zijn `total`-tweeling: WF-091 eist
+   een Number als operand van `sum` en `total`); deze suite pint de weigering
+   van de vertaling. Verder staat hier wat het corpus niet kan zeggen — dat
+   `minimum` en `maximum` op HETZELFDE frame dezelfde waarden geven als
+   `first` en `last` hierboven (ch. 1.2e: het is één vouw onder twee namen),
+   en dat de weigering over het DOCUMENT gaat en niet over de casus: ook met
+   een lege bijdragenverzameling, waar geen optelling plaatsvindt, weigert de
+   vertaling. *)
 
 let () =
   let minimum =
@@ -6151,7 +6154,7 @@ let () =
      `{"number": "0"}` tegen een datumdeclaratie af met "value variant
      \"number\" does not match the declared datatype". Dat de uitkomst niet
      eens op te schrijven is, is scherper dan een pin zou zijn geweest; zij
-     staat in corpus/rood/datumsetbron-totaalvouw/NOTE.md. *)
+     staat in corpus/negatief/wf091-setbron-totaal-datum/NOTE.md. *)
   faults_with ~name:"de datum-setbron-weigering gaat over het document, niet over de casus"
     ~ir:(venster_doc ~kind:"sum" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
     ~case_text:(venster_leeg_case ~attribuut:"eerste vondstdag")

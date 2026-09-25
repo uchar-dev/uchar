@@ -1009,12 +1009,18 @@ supplies: a set with FEWER THAN TWO filled contributors is refused
 too, where `ref` answers without ever performing an addition — the
 single member itself at one contributor, and leeg (som) or 0 (totaal)
 at none. Those two edges are where the two executors part; both are
-recorded in `corpus/rood/datumsetbron-totaalvouw`. Witnesses
-`corpus/rood/datumsetbron-somvouw` and its `total` twin. The *sum* is doubly fenced: each contributor at 46340
-*and* the contributor count at 46340 (`viol` when `46340 < #count{...}`),
-so the accumulated sum provably stays inside 2^31. The bare count
-carries no fence — a `#count` cannot approach 2^31 before grounding
-itself becomes infeasible (recorded, not guarded; ch. 6c).
+recorded in `corpus/negatief/wf091-setbron-totaal-datum/NOTE.md`. Since
+WF-091 (IR-SPEC ch. 4.1) demands a Number as the operand of `sum` and
+`total`, the verifier rejects such a document: its witnesses are
+`corpus/negatief/wf091-setbron-som-datum` and its `total` twin
+`wf091-setbron-totaal-datum`, and this translation's own refusal, kept as
+a second line, is witnessed by the backend's suite
+(`backends/clingo/test/test_clingo.ml`). The *sum* is doubly fenced: each
+contributor at 46340 *and* the contributor count at 46340 (`viol` when
+`46340 < #count{...}`), so the accumulated sum provably stays inside
+2^31. The bare count carries no fence — a `#count` cannot approach 2^31
+before grounding itself becomes infeasible (recorded, not guarded;
+ch. 6c).
 **Minimum / Maximum / Eerste / Laatste** (set-form, ch. 1.2e, ref
 `agg_min`/`agg_max`/`agg_eerste`/`agg_laatste`):
 the SAME contributor gathering as the som over its set source (since
