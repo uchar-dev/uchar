@@ -297,10 +297,14 @@ and site = {
 
 (* where a term's sign is read when the term itself may have wrapped
    ([sign_conds]): a product the multiplicative arm built, from its two
-   operand terms; a product bound to a variable in a helper rule ([coalesce0],
-   [let_binder]), from atoms derived in that helper's own body *)
+   operand terms; a sum the additive arm built, from its value where no range
+   fence of [subject] has fired and from its two operand terms (before their
+   harmonisation) where their signs settle it; a product or sum bound to a
+   variable in a helper rule ([coalesce0], [let_binder]), from atoms derived
+   in that helper's own body *)
 type sign_src =
   | Product of string * string
+  | Sum of { l : string; r : string; minus : bool; subject : string }
   | Bound of { pred : string; subject : string; body : string; inner : string }
 
 type ctx = {
@@ -480,6 +484,14 @@ let rec sign_conds ctx ~neg (t : string) : string list list =
       else
         cross (operand ~neg:false l) (operand ~neg:false r)
         @ cross (operand ~neg:true l) (operand ~neg:true r)
+  | Some (Sum { l; r; minus; subject }) ->
+      (* a sum wraps only where its own range fence fires, so its value is read
+         where no range fence of the subject has fired; beside that, operands
+         whose signs agree fix the sign whatever their magnitudes *)
+      [ Printf.sprintf "(%s) %s 0" t (if neg then "<" else ">");
+        Printf.sprintf
+          "not viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s)" subject ]
+      :: cross (operand ~neg l) (operand ~neg:(if minus then not neg else neg) r)
   | Some (Bound { pred; subject; body; inner }) -> (
       match sign_conds ctx ~neg inner with
       | [] -> []
@@ -5158,7 +5170,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ~body:((base :: ctx.rule_guard) @ bindings)
         [ (tl_raw, 1073741823 / (m / s1)); (tr_raw, 1073741823 / (m / s2)) ];
       let sym = if op = Plus then "+" else "-" in
-      (bindings, Printf.sprintf "(%s%s%s)" tl sym tr, max s1 s2)
+      let term = Printf.sprintf "(%s%s%s)" tl sym tr in
+      ctx.signs <- (term, Sum { l = tl_raw; r = tr_raw; minus = op <> Plus; subject }) :: ctx.signs;
+      (bindings, term, max s1 s2)
   | Binair { op = (Maal | Percentage_van) as op; links; rechts; _ } ->
       (* the multiplicative family (ch. 1.2a + §6.4/§6.8): BOTH operands
          coalesce leeg → 0. The product of two scaled integers is the
