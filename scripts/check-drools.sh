@@ -1084,7 +1084,7 @@ DRL_CHANNEL=(
   # It is the ONLY wrong value this branch still answers: the §13.4.6 class that stood here until
   # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
   # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
-  "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence, identical in both branches (full reason in EXCLUDE_KNOWN)"
+  "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence on rustwacht, shared with the exec branch (full reason in EXCLUDE_KNOWN); this branch also leaves gevarenwacht absent in both cases, where ref, clingo and the exec branch derive it present (measured 2026-09-25) — the label FAIL does not tell the two apart"
   # (E) No case file — nothing to replay, in either branch.
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file"
