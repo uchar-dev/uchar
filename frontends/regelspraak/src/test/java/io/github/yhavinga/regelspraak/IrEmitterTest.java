@@ -278,7 +278,7 @@ class IrEmitterTest {
                 het gewicht Numeriek (geheel getal) met eenheid t;
             """);
         assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
-                        + "twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                        + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
                 dubbel.errors().stream().map(Diagnostic::message).toList());
         assertEquals(4, dubbel.errors().get(0).line(), "de melding staat op de tweede declaratie");
         assertEquals(new java.math.BigDecimal("1000"),
@@ -292,7 +292,7 @@ class IrEmitterTest {
                 het gewicht Numeriek (geheel getal) met eenheid kg;
             """);
         assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
-                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation"),
                 kast.errors().stream().map(Diagnostic::message).toList());
         assertFalse(kast.eenheidstelsels.get("Gewicht").eenheden.containsKey("KG"), "de tweede declaratie is geweigerd");
 

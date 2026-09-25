@@ -527,8 +527,8 @@ public final class DefinitionResolver {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "eenheidstelsel '" + stelsel + "', " + (a.equals(eerder[0]) ? "" : "als '" + eerder[0] + "' ")
                             + "al gedeclareerd voor de eenheid '" + eerder[1] + "': the unit '" + a
-                            + "' is declared twice in the unit system '" + stelsel + "': one Unit per abbreviation "
-                            + "(WF-009)", u.getStart().getLine()));
+                            + "' is declared twice in the unit system '" + stelsel + "': one Unit per abbreviation",
+                    u.getStart().getLine()));
             return true;
         }
         for (String a : afkortingen)

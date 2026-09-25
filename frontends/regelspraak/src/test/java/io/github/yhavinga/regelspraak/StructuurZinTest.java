@@ -458,7 +458,7 @@ class StructuurZinTest {
 
     @Test void een_afkorting_die_twee_keer_gedeclareerd_is() {
         assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
-                        + "twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                        + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
                 fouten("""
                     Eenheidsysteem Gewicht
                         het kilogram kg
@@ -468,7 +468,7 @@ class StructuurZinTest {
                         het gewicht Numeriek (geheel getal) met eenheid t;
                     """));
         assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
-                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation"),
                 fouten("""
                     Eenheidsysteem Gewicht
                         het kilogram kg
