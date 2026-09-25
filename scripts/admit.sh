@@ -103,7 +103,11 @@ done
 #    is the guard, and CI re-checks after commit.
 mkdir -p "$DEST" || fail "cannot create $DEST"
 cp "$CAND/ir.json" "$DEST/" || fail "copy failed"
-if [ -f "$CAND/bron.rgs" ]; then cp "$CAND/bron.rgs" "$DEST/" || fail "copy failed"; fi
+# the optional parts of a golden (corpus/README.md, Layout): a frontend source
+# and the NOTE with the hand computation
+for f in bron.rgs bron.catala_en bron.flogic NOTE.md; do
+    if [ -f "$CAND/$f" ]; then cp "$CAND/$f" "$DEST/" || fail "copy failed"; fi
+done
 for case in $CASES; do cp "$case" "$DEST/" || fail "copy failed"; done
 for gate in scripts/check-*.sh; do
     # each gate runs under its own interpreter line: a POSIX `sh` (dash on
