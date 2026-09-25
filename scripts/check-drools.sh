@@ -900,7 +900,16 @@ EXPECTED_CHANNEL=(
 # jutterswet-wrakboeking-rgs and jutterswet-wrakboekwaarde with the connectingRole their sentences name,
 # and both branches still play them, PLAYED 1 each. Its third new golden, jutterswet-seizoenvouw (the
 # dimension fold), has no case file (NOCASE in both lists). EXPECTED_DRL_PLAYED moves by two as well.
-EXPECTED_PLAYED=199
+# 199 -> 200 (2026-09-25, card dialect-opgave-boven-berekening): jutterswet-opgave-boven-berekening, new
+# and hand-computed — the RegelSpraak frontend's opgave marker (grammar/DIVERGENCES.md §7), lowered to
+# the hardship pattern on the existing wire: per marked attribute an input attribute, the computation
+# moved to an attribute of its own, a defaults group with the opgave above the computation and the
+# authored initialisation below it, and a characteristic with a consistency for a deviating opgave. Two
+# marked attributes, one with an initialisation. No source file of this backend changed: the exec branch
+# plays all twelve cases on the first run, PLAYED 12, with ref's and clingo's values. The DRL-text
+# branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not
+# move.
+EXPECTED_PLAYED=200
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -918,23 +927,25 @@ EXPECTED_PLAYED=199
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 29 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 24 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 30 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 25 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 28 of the 29 lines refuse on that one
-  # sentence; the 29th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. 27 of those 28 ARE that asymmetry — the exec branch plays
-  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 28
+  # toolchain does not have, and DrlTranspiler never did. 29 of the 30 lines refuse on that one
+  # sentence; the 30th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. 28 of those 29 ARE that asymmetry — the exec branch plays
+  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 29
   # exec-only players: the exec branch refuses it too, on a different sentence (its kenmerk target
   # shares its name with an attribute, a v0 bean-model limit), so it contributes nothing to the gap.
-  # The 24 is 28 exec-only players — those 27 and jutterswet-vouwrand of class (C) — minus 4 goldens
+  # The 25 is 29 exec-only players — those 28 and jutterswet-vouwrand of class (C) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
   # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
   # (card dialect-uitzondering-op-uitzondering): until then the header said 22 and 3, which stopped
   # holding when jutterswet-afdrachtstapel arrived (166 -> 167 at EXPECTED_DRL_PLAYED). Recounted
   # again the same day (card verifier-supertype-dubbele-schrijver, fix round): jutterswet-diepwrakbasis
-  # joins the class, 28 -> 29 lines and 23 -> 24 (195 -> 196 at EXPECTED_PLAYED).
+  # joins the class, 28 -> 29 lines and 23 -> 24 (195 -> 196 at EXPECTED_PLAYED). And again the same
+  # day (card dialect-opgave-boven-berekening): jutterswet-opgave-boven-berekening joins the class,
+  # 29 -> 30 lines and 24 -> 25 (197 -> 198 at EXPECTED_PLAYED).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -950,6 +961,7 @@ DRL_CHANNEL=(
   "jutterswet-hardheidsaftrek-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-havenrooster|EXCLUDE|drl-transpiler MARKER: TODO datum-rekenkunde (dagsoort) — the same limit as the exec branch, one sentence earlier: the shared day-kind compiler carries no PARAMETER operand, so this branch markers the arithmetic instead of skipping the rule"
   "jutterswet-nestkenmerk-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-opgave-boven-berekening|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-overzeelezing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"

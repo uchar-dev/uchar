@@ -1,0 +1,88 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "40.00"
+          },
+          "opgegeven waarde": {
+            "number": "50.00"
+          },
+          "gewicht": {
+            "number": "20.00"
+          },
+          "opgegeven bergloon": {
+            "number": "30.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "waarde",
+      "value": {
+        "number": "50.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende waarde",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V",
+      "characteristic": "afwijkende opgave waarde"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V",
+      "characteristic": "ter controle"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "bergloon",
+      "value": {
+        "number": "30.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende bergloon",
+      "value": {
+        "number": "40.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V",
+      "characteristic": "afwijkende opgave bergloon"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave waarde",
+      "label": "V"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave bergloon",
+      "label": "V"
+    }
+  ]
+}

@@ -185,6 +185,14 @@
 #     nothing, and a count that decides nothing leaves the case-supplied input
 #     timeline standing whole (ch. 7.8); the absence and the standing are the
 #     assertions. Its other two cases decide and are not survivors.
+#   - jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json: the
+#     initialisation default at the bottom of the group the opgave marker
+#     generates (grammar/DIVERGENCES.md §7) on an input target — no opgave
+#     and no weight, so neither default above it decides, and its
+#     justification (the target empty in the input facts) fails on the input
+#     60.00, so the input stands (ch. 7.3, ch. 7.8); the standing IS the
+#     assertion. The eleven sibling cases each pin a computed or initialised
+#     value and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -224,7 +232,8 @@ corpus/golden/jutterswet-wachtgeld/case4-geen.json
 corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
 corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
 corpus/golden/jutterswet-dagentelling-rgs/case3-leeg.json
-corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json'
+corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json
+corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

@@ -1,0 +1,54 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "waarde"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "berekende waarde"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave waarde"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "bergloon",
+      "value": {
+        "number": "25.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "berekende bergloon"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave bergloon"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "40.00"
+          },
+          "opgegeven waarde": {
+            "number": "35.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "waarde",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende waarde",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave waarde"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "ter controle"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "bergloon",
+      "value": {
+        "number": "25.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

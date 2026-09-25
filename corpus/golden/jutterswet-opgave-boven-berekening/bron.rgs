@@ -1,0 +1,28 @@
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen);
+    de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+    het gewicht Numeriek (getal met 2 decimalen);
+    het bergloon Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+    is ter controle kenmerk (bijvoeglijk);
+
+// Bron: art. 3d lid 1
+Regel waardering
+    geldig altijd
+        De waarde van een Vondst moet berekend worden als de taxatie van de Vondst verminderd met 5,00.
+
+// Bron: art. 3d lid 2
+Regel bergloon naar gewicht
+    geldig altijd
+        Het bergloon van een Vondst moet berekend worden als het gewicht van de Vondst maal 2
+        indien zijn gewicht gevuld is.
+
+// Bron: art. 3d lid 3
+Regel standaardbergloon
+    geldig altijd
+        Het bergloon van een Vondst moet geïnitialiseerd worden op 25,00.
+
+// Bron: art. 3d lid 5
+Regel controle bij afwijkende waarde
+    geldig altijd
+        Een Vondst is ter controle
+        indien hij afwijkende opgave waarde heeft.
