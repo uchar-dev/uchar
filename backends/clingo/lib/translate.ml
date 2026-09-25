@@ -2397,6 +2397,26 @@ let symbolic_literal_term (typ : datatype) lex =
       | _ -> fault "malformed boolean literal %S" lex)
   | _ -> fault "not a text/enum/boolean literal"
 
+(* WF-037's fold that names its population and hands no source, in the
+   verifier's two sentences and ref's. Every term function that can meet the
+   node names it rather than leaving it to a bottom sentence that describes
+   the position: [expr_term] for the numeric, day-date, sum- and struct-typed
+   folds, [symbolic_term] and [dt_term] for a text, enumeration or datetime
+   first, last, minimum or maximum. The ListLiteral shape is a count's alone,
+   so it reaches [expr_term] only. *)
+let sourceless_fold kind el ~list_literal =
+  let k = Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind in
+  if list_literal then
+    fault
+      "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a listed value is \
+       no source of instances"
+      k el
+  else
+    fault
+      "a %s aggregation carries elementType \"%s\" but no source operand: an instance fold ranges \
+       over a written source"
+      k el
+
 (* a text/enum/boolean operand → (body atoms binding a ground term, the
    term): an own-subject attribute read binds its val atom's value, a literal
    is a bare ground term with no atom. Both are positive, so a leeg attribute
@@ -2424,6 +2444,8 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
          ill-formed in a value position (WF-080)"
         a ot
+  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+      sourceless_fold kind el ~list_literal:false
   | _ ->
       fault
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
@@ -3413,23 +3435,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          without a range the fold is the subject's own read, so its elementType must name the \
          subject type"
         el subject_ot
-  (* WF-037, the verifier's two sentences and ref's arm: a fold that names its
-     population and hands no source. Named rather than left to the bottom
-     sentence below, which describes the position and identifies no construct *)
+  (* WF-037, the verifier's two sentences and ref's arm ([sourceless_fold]):
+     a fold that names its population and hands no source *)
   | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
-      fault
-        "a %s aggregation carries elementType \"%s\" but no source operand: an instance fold \
-         ranges over a written source"
-        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
-        el
+      sourceless_fold kind el ~list_literal:false
   | Functie
       { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ List_literal _ ];
         element_objecttype = Some el; _ } ->
-      fault
-        "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a listed value \
-         is no source of instances"
-        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
-        el
+      sourceless_fold kind el ~list_literal:true
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element
          type was refused above, WF-093 (b)): the single argument of a count that
@@ -5475,6 +5488,8 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
           Printf.sprintf "%s = %s { %s : %s(%s,%s,_) }" dd agg ld pred subject ld;
           Printf.sprintf "%s = %s { %s : %s(%s,%s,%s) }" dm agg lm pred subject dd lm ],
         dd, dm )
+  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+      sourceless_fold kind el ~list_literal:false
   | _ ->
       (* The reason names BOTH sides, because a reader of this line needs to
          know what it may write as well as what it may not. Carried: the
