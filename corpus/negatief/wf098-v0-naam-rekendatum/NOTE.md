@@ -17,7 +17,11 @@ since L4 (`wf098-de-dag-als-contextwaarde`). No reader maps it onto
 
 **Every executor refuses it at load.** The shared OCaml loader, when an
 executor loads the document, refuses the node with this same sentence; the
-verifier's loader loads it so that the rule can cite it.
+verifier's loader loads it so that the rule can cite it. The Drools loader
+stops earlier on this document, at the `TemporalRead` whose `date` the node
+is, a form it does not carry (`Expr:TemporalRead`); where it reaches a
+`ContextValue` named `Rekendatum` in a form it does carry, it refuses the
+name with this same sentence.
 
 **The document.** `corpus/golden/anchor/jutterswet-penningvintage/ir.json`
 with the name of its one `ContextValue` changed from `evaluationDate` to
