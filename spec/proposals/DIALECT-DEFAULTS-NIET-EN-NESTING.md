@@ -772,6 +772,25 @@ conflict key and in what a subtype's base replaces. [M12] The twin's wire
 of §8.2 — first level a chain, deeper levels nested — passes the anchor's
 cases in all three executors.
 
+*[M] 2026-09-25 (card `dialect-uitzondering-op-uitzondering`):* M12
+measured the anchor's wire rewritten into the twin's shape, with the
+anchor's literal typing. The frontend's own emission of the §8.2 source
+has the same tree and the same justifications; it passes the verifier and
+plays all ten cases in ref and in the exec branch, but clingo refuses it on
+all ten (`UNSATISFIABLE — a fail-fast guard fired: viol("arithmetic range
+exceeded (clingo grounds in machine integers)","W1")`, W1 to W10). The
+frontend types the literal `0,8750` at its smallest scale, three decimals,
+and the product at five, where the anchor writes four and six: [P]
+RegelSpraak v2.3.0 §6.1.2 gives a numeric literal no precision of its own
+(0,5 and 0,50 are the same value with the same precision). clingo's split
+money × rate encoding (`money_mult_shape` in
+`backends/clingo/lib/translate.ml`) recognises a rate with exactly four
+decimals only, and on the ordinary product path the range fence fires at a
+maandloon of 2400,00. With only the literal typed at four decimals the
+same emission passes 10/10 in clingo.
+The twin is not admitted; it waits for the card `clingo-tarief-decimalen`
+(§8.5).
+
 ### 5.3 Sibling order and depth
 
 - **Order:** among the children of one carrier, the later-written block
@@ -908,9 +927,12 @@ lid 1, and onderdelen a and b of lid 2 as parallel grounds within lid 2.
 - **Grammar:** nothing for nesting — the header exists. One optional part
   for decision 6: `uitzonderingGroep : UITZONDERINGEN ONGEORDEND ( OP
   uitzonderingBasisNaam )? COLON regel+ ;`, and for decision 4(d) a
-  header `Afwijking van <naam>: <naam>`; the build card makes both
-  whole-phrase header tokens (`UITZONDERINGEN ONGEORDEND OP`,
-  `AFWIJKING_VAN`) on the pattern of `UITZONDERING_OP`. [I] Inert:
+  header `Afwijking van <naam>: <naam>`; the build card makes `Afwijking
+  van` a whole-phrase header token (`AFWIJKING_VAN`) on the pattern of
+  `UITZONDERING_OP`. The `op` of decision 6 needs no token of its own: it
+  is the preposition token `OP`, and `Uitzonderingen` and `ongeordend`
+  are tokens already (built so on 2026-09-25; this sentence first named a
+  second whole-phrase token, `UITZONDERINGEN ONGEORDEND OP`). [I] Inert:
   neither `Uitzonderingen ongeordend op` nor `Afwijking van` parses today.
 - **RuleChecker:** `ordeningsDefaults` (`RuleChecker.java:206-283`)
   becomes a tree build — resolve every block first, build the parent map,
@@ -1265,10 +1287,11 @@ Expected result of the diff:
 
 | Item | Class | Status |
 |---|---|---|
-| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all ten cases on the landed conditions |
+| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all ten cases on the landed conditions; [M] 2026-09-25, the frontend's own emission: ref 10/10, exec branch PLAYED 10, clingo refuses all ten (the literal row below) |
 | herleving and blokkade nested as in the anchor | — | identical after G1 |
-| group name `toekenning art 15` versus `recht op uitkering bij herleving`; `bron` texts | (i) | not compared (bron stripped) |
-| literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | (i) — the lexeme and a literal-typing detail; the result is rounded to 2 decimals | [M] measured on the probe |
+| group name `toekenning art 15` versus `recht op uitkering bij herleving` | (i) — the frontend names a group after its base rule | [M] 2026-09-25: in the diff — `name` is no `source` record, so stripping the source records leaves it standing; this row first said "not compared (bron stripped)" |
+| `source` texts | (i) | not compared (every `source` stripped) |
+| literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | the blockade of the twin — the typing itself is the frontend's documented reading of §6.1.2 and a well-formed wire, but clingo does not carry it | [M] 2026-09-25: clingo `UNSATISFIABLE` on all ten cases (the note in §5.2); with only this literal at 4 decimals, 10/10. This row first classified the difference as (i), "the result is rounded to 2 decimals" |
 | unit `dag` with `canoniek: "dag"`, factor 1, `teken: "ONBEPAALD"` versus `null`/`null`/`null` | (i) — both spellings satisfy WF-092 | [M] measured on the probe |
 | `recht op uitkering` bezittelijk | none: the anchor is bezittelijk since G1 | — |
 
@@ -1361,7 +1384,8 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
   4/4 on 8dd05e25 and plays 10/10 since its repair (§8.1); [M11] a
   characteristic group-default with unordered exceptions and a conflict
   plays 4/4; [M12] the twin's shape played 7/7 on 8dd05e25 and plays 10/10
-  on the landed conditions. The branch lowers a
+  on the landed conditions; [M] on 2026-09-25 the frontend's own emission
+  of §8.2 played 10/10 as well. The branch lowers a
   defaults group to one reduce-rule whose walk recurses into nested groups
   and writes a characteristic only for a `true` decision
   (`ExecModelTranspiler.java:7543-7687`, `:7649`). Its fences do not touch
@@ -1374,7 +1398,8 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
   with the existing sentence "ch. 7 prioritizedDefaults: no defaults
   lowering in this branch", and `EXPECTED_DRL_PLAYED` does not move.
   Carrying them would need a defaults lowering in that branch — a card of
-  its own for all 24 + 3 goldens, not for this plan.
+  its own for all 24 + 2 goldens (G3 and G4; G2 joins them when it is
+  admitted, §8.5), not for this plan.
 - "Green in ref ≡ clingo ≡ Drools" therefore means: ref and clingo pass,
   the exec branch plays (gate 12's `EXPECTED_PLAYED` rises by the number
   of twins that land), the DRL-text branch lists them by name.
@@ -1386,7 +1411,13 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
 3. The goldens card admits G2–G4: corpus directories (not protected), and,
    as proposals on its branch, `scripts/check-drools.sh`
    (`EXPECTED_PLAYED` + 3, class (A) + 3 names) and `scripts/check-noop.sh`
-   (G4's survivor).
+   (G4's survivor). *[M] 2026-09-25:* the card
+   `dialect-uitzondering-op-uitzondering` admitted G3 and G4, with
+   `EXPECTED_PLAYED` + 2, class (A) + 2 names and G4's survivor; G2
+   follows with the card `clingo-tarief-decimalen` once clingo carries its
+   emission (§5.2), with `EXPECTED_PLAYED` + 1, class (A) + 1 name and the
+   anchor's survivor `case7-invoer-staat-tegen-blokkade` for the twin's
+   case7.
 4. The main session lands the row-8 register text of the card's Result.
 
 ## 9. The card's byproducts
