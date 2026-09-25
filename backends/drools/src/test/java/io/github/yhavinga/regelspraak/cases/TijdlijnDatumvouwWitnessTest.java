@@ -89,7 +89,6 @@ class TijdlijnDatumvouwWitnessTest {
         // ref-klipvouw-nul).
         ObjectNode leeg = (ObjectNode) JSON.readTree(TOTAAL_ZAAK);
         ((ObjectNode) leeg.get("input").get("instances").get(0)).set("attributes", JSON.createObjectNode());
-        leeg.remove("expectedFault");
         leeg.set("expected", JSON.readTree(
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
         Path ir = NEGATIEF.resolve(TOTAAL).resolve("ir.json");
