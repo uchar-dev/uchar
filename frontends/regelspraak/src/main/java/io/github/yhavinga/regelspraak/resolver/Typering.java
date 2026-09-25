@@ -61,8 +61,7 @@ public final class Typering {
                 String opNaam = op == BinOp.PLUS ? "plus" : "min";
                 if (l.isDatum() && r instanceof Datatype.Numeriek rn && rn.heeftEenheid()) {
                     if (dagsoortEenheidRechts || Tijdrekening.chronoUnit(r) != null) yield Resultaat.ok(l);
-                    yield Resultaat.fout(opNaam + ": '" + rn.eenheidOf().afkorting()
-                            + "' is not a recognised time unit or declared day kind");   // the verifier's WF-035
+                    yield Resultaat.fout(opNaam + ": " + onbekendeDuureenheid(rn.eenheidOf().afkorting()));
                 }
                 yield numeriekBinair(l, r, opNaam, lLit, rLit);
             }
@@ -475,13 +474,19 @@ public final class Typering {
         if (l.isDatum() && r.isDatum()) return "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)";
         if (r.isDatum())
             return op.equals("min") ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
-                    : "duration + date is ill-formed (the date stands on the left; v0 does not commute)";
+                    : "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)";
         if (!l.isDatum()) return null;
         if (!r.isGetalachtig())
             return "date \u00b1 duration: the duration operand is " + soortWoord(r) + ", must be a number carrying a time unit";
         Eenheid e = r.eenheidOf();
         if (e == null) return "date \u00b1 duration: the duration operand carries no time unit";
-        return "'" + e.afkorting() + "' is not a recognised time unit or declared day kind";
+        return onbekendeDuureenheid(e.afkorting());
+    }
+
+    /** WF-035's sentence for a duration unit that is neither a recognised time unit nor a declared day kind. */
+    private static String onbekendeDuureenheid(String afkorting) {
+        return "date \u00b1 duration: the duration unit '" + afkorting
+                + "' is neither a recognised time unit nor a declared day kind";
     }
 
     /** WF-038's sentences for the operands of an ordering fold ({@code vouw}: its wire name, first, last, minimum or

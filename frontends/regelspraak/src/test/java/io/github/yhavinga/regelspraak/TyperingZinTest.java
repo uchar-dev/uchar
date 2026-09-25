@@ -171,11 +171,15 @@ class TyperingZinTest {
                 meldingen(d + "zijn vondstdag plus zijn naam."));
         assertEquals(fout("plus: date ± duration: the duration operand carries no time unit"),
                 meldingen(d + "zijn vondstdag plus zijn telling."));
-        assertEquals(fout("plus: 'EUR' is not a recognised time unit or declared day kind"),
+        assertEquals(fout("plus: date ± duration: the duration unit 'EUR' is neither a recognised time unit nor a "
+                        + "declared day kind"),
                 meldingen(d + "zijn vondstdag plus zijn waarde."));
         String u = "De uitkomst van een Jutter moet berekend worden als ";
         assertTrue(meldingen(u + "zijn telling min zijn vondstdag.").contains(
                 "ERROR 30 min: duration − date is ill-formed (subtraction admits the date on the left only)"));
+        assertTrue(meldingen(u + "zijn telling plus zijn vondstdag.").contains(
+                "ERROR 30 plus: duration + date is ill-formed (the date stands on the left; date arithmetic does not "
+                        + "commute)"));
     }
 
     @Test void niet_numerieke_operanden_bij_ordenen() {
