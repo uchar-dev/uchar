@@ -38,9 +38,9 @@ relation. On this document the derivation has one answer. `wrakboeking` is
 the only fact type that relates `Wrakrecht` and `Strandrecht`, and the minted
 instance can fill only `geboekt strandrecht`: `boeker` takes a `Wrakrecht`,
 and a creation mints exactly its `createdType` (IR-SPEC ch. 2.2, creation is
-not polymorphic). The subject therefore fills `boeker`, which is the binding
-the hand-written document names. The two documents differ in form, not in
-meaning.
+not polymorphic). The minted instance therefore fills `geboekt strandrecht`,
+the created-side role the hand-written `connectingRole` names, and the
+subject fills `boeker`. The two documents differ in form, not in meaning.
 
 At the byte level one more difference remains, in a `source` record: the
 rule's target snippet reads `De bergingsvergoeding van een Wrakrecht` (the
