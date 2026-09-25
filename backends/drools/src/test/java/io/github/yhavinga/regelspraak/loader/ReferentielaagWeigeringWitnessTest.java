@@ -248,7 +248,7 @@ class ReferentielaagWeigeringWitnessTest {
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("value aggregation over \"vondsten\", which is no attribute of \"Munt\":"
                 + " a value fold reads an attribute per contributor, and a role name is a count source only a count"
-                + " folds (WF-093)"), e.getMessage());
+                + " folds"), e.getMessage());
 
         // a name that is neither an attribute nor a role declares nothing (WF-034)
         ir = golden(MUNTTELLING);
@@ -265,7 +265,7 @@ class ReferentielaagWeigeringWitnessTest {
         bron(ir, 1).put("attribute", "aanmelder").put("subjectType", "Jutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'aanmelder' is not a declared attribute of 'Munt': a value fold's source"
-                + " reads an attribute of each contributor (WF-034)"), e.getMessage());
+                + " reads an attribute of each contributor"), e.getMessage());
     }
 
     // ---------------- the element type of the subject's own read (WF-083 (c)) ----------------
@@ -291,7 +291,7 @@ class ReferentielaagWeigeringWitnessTest {
         bron(ir, 1).put("attribute", "gangbaar");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/value/arguments/0");
         assertTrue(e.getMessage().contains("'gangbaar' is a characteristic of 'Munt', not an attribute — a"
-                + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)"), e.getMessage());
+                + " characteristic endpoint is ill-formed in an aggregation source position"), e.getMessage());
     }
 
     @Test void een_telling_over_een_pad_weigert() throws Exception {

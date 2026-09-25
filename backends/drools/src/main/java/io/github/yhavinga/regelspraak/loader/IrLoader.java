@@ -1757,7 +1757,7 @@ public final class IrLoader {
         }
         if (WAARDEVOUWEN.contains(fk) && kenmerk)
             throw new Documentfout(plek, "'" + a + "' is a characteristic of '" + el.naam + "', not an attribute — a"
-                    + " characteristic endpoint is ill-formed in an aggregation source position (WF-080)");
+                    + " characteristic endpoint is ill-formed in an aggregation source position");
     }
 
     /** The value fold's set source whose name is no member of the element type, judged with the fold SUBJECT, as
@@ -1776,9 +1776,9 @@ public final class IrLoader {
         if (s == null ? isRolnaam(a) : isRolnaamVanaf(s, a))
             throw new Documentfout(plek, "value aggregation over \"" + a + "\", which is no attribute of \""
                     + el.naam + "\": a value fold reads an attribute per contributor, and a role name is a count source"
-                    + " only a count folds (WF-093)");
+                    + " only a count folds");
         throw new Documentfout(plek, "'" + a + "' is not a declared attribute of '" + el.naam + "': a value fold's"
-                + " source reads an attribute of each contributor (WF-034)");
+                + " source reads an attribute of each contributor");
     }
 
     /** WF-083 (c), the element type of the subject's own read: a {@code total} over one source without a range is

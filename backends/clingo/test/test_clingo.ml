@@ -7204,7 +7204,7 @@ let () =
     ~case_text:aantalgevulde_case
     ~needle:
       "'onbekend' is not a declared attribute of 'Vondst': a value fold's source reads an \
-       attribute of each contributor (WF-034)";
+       attribute of each contributor";
   faults_with ~name:"AANTAL_GEVULDE over a role the subject does not reach refuses (WF-034)"
     ~ir:
       (vervang
@@ -11258,7 +11258,7 @@ let () =
     ~case_text:bp_case
     ~needle:
       "'gekeurd' is a characteristic of 'Vondst', not an attribute — a characteristic endpoint is \
-       ill-formed in an aggregation source position (WF-080)"
+       ill-formed in an aggregation source position"
 
 (* THE L2 LOAD REFUSALS, one row per form: every field that left the wire
    with the reference layer, the two role-check nodes and the Onbekend

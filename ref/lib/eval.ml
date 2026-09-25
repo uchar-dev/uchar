@@ -1646,7 +1646,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           if Ir_v0.Checks.has_kenmerk el_decl name then
             Value.fault
               "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-               ill-formed in an aggregation source position (WF-080)"
+               ill-formed in an aggregation source position"
               name el
           else if
             match env.subj with
@@ -1660,7 +1660,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           else
             Value.fault
               "'%s' is not a declared attribute of '%s': a value fold's source reads an attribute \
-               of each contributor (WF-034)"
+               of each contributor"
               name el;
         let members =
           filter_in_order keep

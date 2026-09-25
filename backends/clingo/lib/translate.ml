@@ -1791,7 +1791,7 @@ let set_source_attribute ctx ~subject_ot ~el a =
     if Ir_v0.Checks.has_kenmerk (objecttype ctx el) a then
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-         ill-formed in an aggregation source position (WF-080)"
+         ill-formed in an aggregation source position"
         a el
     else if Ir_v0.Checks.roles_named_from { doc = ctx.doc } ~from_type:subject_ot ~name:a <> [] then
       fault
@@ -1801,7 +1801,7 @@ let set_source_attribute ctx ~subject_ot ~el a =
     else
       fault
         "'%s' is not a declared attribute of '%s': a value fold's source reads an attribute of \
-         each contributor (WF-034)"
+         each contributor"
         a el;
   a
 

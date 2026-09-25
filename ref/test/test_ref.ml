@@ -3045,7 +3045,7 @@ let () =
   expect_fault_msg "WV-3.4b-kenmerk-als-setbron-faalt"
     (fun () -> ev w1 "J1" (vouw Som "gekeurd" "Vondst" pad2 None))
     "'gekeurd' is a characteristic of 'Vondst', not an attribute — a characteristic endpoint \
-     is ill-formed in an aggregation source position (WF-080)"
+     is ill-formed in an aggregation source position"
 
 (* WV-3.4b-toone: the ch. 3.4b clause "a step through a to-ONE role is an
    ordinary step". Multiplicity is a declaration fact and does not enter
@@ -3306,11 +3306,11 @@ let () =
   expect_fault_msg "WV-3.4c-onbereikbare-rolbron-faalt"
     (fun () -> ev_jutter (vouw Aantal_gevulde [ setbron "geborgen vondsten" ] None None))
     "'geborgen vondsten' is not a declared attribute of 'Vondst': a value fold's source reads \
-     an attribute of each contributor (WF-034)";
+     an attribute of each contributor";
   expect_fault_msg "WV-3.4c-onbekende-bron-faalt"
     (fun () -> ev_jutter (vouw Aantal_gevulde [ setbron "onbekend" ] None None))
     "'onbekend' is not a declared attribute of 'Vondst': a value fold's source reads an \
-     attribute of each contributor (WF-034)";
+     attribute of each contributor";
   (* D9's other side, WF-093 (b): a count over a name that IS a member of the
      element type reads values, which a count does not fold — refused by name,
      for an attribute and for a characteristic alike *)
