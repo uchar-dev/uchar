@@ -7860,7 +7860,19 @@ let wf079 ctx =
           rest
         @ chain_pairs rest
   in
-  pairs writers @ chain_pairs computing
+  (* A version paired with several writers of one target repeats one
+     sentence at one pointer (three flat writers, or two flat writers on an
+     ancestor beside one on the subtype); the reader learns nothing from the
+     second copy. *)
+  let seen = Hashtbl.create 8 in
+  List.filter
+    (fun (x : violation) ->
+      let k = (x.at, x.reason) in
+      if Hashtbl.mem seen k then false
+      else (
+        Hashtbl.add seen k ();
+        true))
+    (pairs writers @ chain_pairs computing)
 
 (* WF-054: parent-scoped uniqueness (the scope hop). Since L2 the scope
    binding IS the scoping (B8): a uniqueness carrying one is scoped, one
