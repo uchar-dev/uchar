@@ -765,6 +765,22 @@ migration `spec/proposals/v1-migratie/m4.py`; the parity dump loses its two
 `COMPLEX` allocations to WARNING diagnostics; negatief 407 → 417 with 228 arm
 fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
 landing.
+**L5 landed (2026-09-25, `71f5303d`, card `backlog/done/20260924-l5-bronrecord-en-hernoeming.md`):**
+the source record and the renaming — `source {snippet, line?}` on every
+node that carried a `bron` string, mandatory on `Unresolved` (B26), landed
+first as its own commit range (M7) on which no output of ref, clingo,
+Drools, the red set or the parity zone moved; then every remaining v0 node
+name, key and list key renamed to its IR-SPEC name (B6; `host` for
+`eigenaar`, B10; `subjectType`, `base`/`date`, and the six names IR-SPEC had
+no v0 name for), every enumeration value under one spelling rule (English
+lowerCamel; one translation table per language, checked against the naming
+table), and the v0 `null` absent on the eighteen optional positions;
+`Regelversie` keeps its v0 form (B25 waits for the parity golden); migration
+`spec/proposals/v1-migratie/m5.py`; negatief 417 → 418 with 260 arm
+fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
+landing. With L5 the wire `uchar-ir-v1` is complete and phase 2 of the wire
+migration is closed; the one toolchain pin bump (phase 3) is now due, in the
+new toolchain under uchar; the `toka/` zone stays until the public flip.
 
 ## 10. Rough effort
 

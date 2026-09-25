@@ -2264,8 +2264,8 @@ codestuk raakt en de gates er per familie iets van merken:
 | M4 | **Het typesysteem** | B14, B15, B17 (i), B18 | 2, 3, 5, 6, 12 |
 | M5 | **De regellaag** | B19, B20, B21, B27, B28 | 3, 5, 6, 12 |
 | M6 | **De expressielaag** | B22 (a/b/c), B23, B24-of-niet, B25 | 2, 3 (~8 getuigen), 5, 6, 9, 10, 14 |
-| M7 | **De bronverwijzing** | **B26** | 2, 3, 9, 10, 14 — 551 documenten, maar geen enkele uitvoerder leest het veld, dus gates 5/6/12 mogen niet bewegen; doen ze dat wel, dan leest er tóch iemand |
-| M8 | **De hernoeming** | B6, **B10** (2026-09-19: B10 is een hernoeming geworden en verhuist hierheen uit M2 — voorstel) | **alle veertien** |
+| M7 | **De bronverwijzing** | **B26** | 2, 3, 9, 10, 14 — 551 documenten, maar geen enkele uitvoerder leest het veld, dus gates 5/6/12 mogen niet bewegen; doen ze dat wel, dan leest er tóch iemand — geland in L5 (2026-09-25) |
+| M8 | **De hernoeming** | B6, **B10** (2026-09-19: B10 is een hernoeming geworden en verhuist hierheen uit M2 — voorstel) | **alle veertien** — geland in L5 (2026-09-25) |
 
 **M7 is opzettelijk een eigen kaart en niet bij M6 gevoegd.** B26 raakt meer
 documenten dan elk ander item (551) en verandert geen enkele betekenis — dat
@@ -2289,7 +2289,16 @@ welke families samen landen:
 | L2 | M2 + M3 | B7, B8, B9, B11, B12, B13, B16 | **GELAND 2026-09-24** (`fd3f0a73`, `backlog/done/20260923-l2-referentielaag.md`): de referentielaag; migratie `spec/proposals/v1-migratie/m2.py` met afleiding van de ontbrekende bindingen; negatief 444 → 400 (stempellijst + `expect.txt` per getuige, gate 3 toetst de arm); gate 13 herzien (V15 (b), 38 twists); U11 telbronnaam, U12 `counterpartType`; twee rode cases werden goldens |
 | L3 | M4 | B14, B15, B17 (i), B18 | **GELAND 2026-09-24** (`4439d802`, `backlog/done/20260924-l3-typesysteem.md`): het typesysteem; migratie `spec/proposals/v1-migratie/m3.py` (de 540 vooraf afgeronde toka-factoren exact gereconstrueerd en door de her-emissie bevestigd); negatief 400 → 407; geen uitkomst van gates 5/6/12 bewoog; `UnitSystem` en `DayKind` (zonder B-post) mee |
 | L4 | M5 + M6 | B19, B20, B21, B27, B22 a/b/c, B23 (B24, B25, B28 niet mee) | **GELAND 2026-09-24** (`1cdcd9fc`, `backlog/done/20260924-l4-regel-en-expressielaag.md`): de regel- en expressielaag; migratie `spec/proposals/v1-migratie/m4.py`; negatief 407 → 417; geen uitkomst van gates 5/6/12 bewoog; B24 wacht op de taxonomie van de `Onopgelost`-reden (additief), B25 op de paritygolden, B28 blijft een regellaagvorm (IR-SPEC 3.8) |
-| L5 | M7 + M8 | B26, B6, B10 | **LOOPT** (kaart `backlog/doing/20260924-l5-bronrecord-en-hernoeming.md`; B24, B25 en de posities van het bronrecord gaan niet mee, met hun reden in de kaart): beide mechanisch; M7 blijft de nulmeting, als EERSTE commit van de kaart met een eigen gate-run waarin gates 5/6/12 niet mogen bewegen — zonder eigen regeneratie en herpin |
+| L5 | M7 + M8 | B26, B6, B10 (B24, B25 en de posities van het bronrecord niet mee) | **GELAND 2026-09-25** (`71f5303d`, `backlog/done/20260924-l5-bronrecord-en-hernoeming.md`): het bronrecord als nulmeting in een eigen commitreeks (geen uitvoer van ref, clingo, Drools, rood of toka bewoog), daarna de hernoeming met de ene spellingsregel voor enumwaarden en null → afwezig; migratie `spec/proposals/v1-migratie/m5.py`; negatief 417 → 418; geen uitkomst van gates 5/6/12 bewoog; B24 wacht op de taxonomie van de reden (additief), B25 op de paritygolden, `file`/`column` op de kaart die als eerste posities schrijft |
+
+**Fase 2 afgesloten (2026-09-25).** Met L5 draagt de wire `uchar-ir-v1` geen
+v0-knoopnaam, v0-sleutel of v0-enumwaarde meer, op `Regelversie` met `regel`
+en `inconsistent` na (V13, 0 dragers). Additief open: de reden bij
+`Unresolved` (B24), `file` en `column` in het bronrecord met de
+positieconventies, `statuteAnnotations` op de defaultslaag, en het
+aanscherpen van nullable velden zonder dragers. Fase 3 (T1–T4) is één
+pin-bump in de nieuwe toolchain onder uchar (maintainerbesluit 2026-09-24);
+P11 hoort bij de publieke flip.
 
 Per landing geldt de boekhouding hieronder één keer; de toolchainstappen
 T1–T4 (§ Fase 3) volgen per landing, niet per familie. Wat de proposal

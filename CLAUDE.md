@@ -170,7 +170,7 @@ green. Current gates:
    and MUST fail observably — at load or at
    evaluation (contract widened 2026-09-19) — in **both** executors with the
    pinned fragment in each report (the unsolved-state guard among them:
-   `Onopgelost` reached in evaluation faults with WF-044, never
+   `Unresolved` — the v0 `Onopgelost` — reached in evaluation faults with WF-044, never
    vanishes); an empty red set is a failure, never silently green; and no pinned fragment cites a BOTTOM SENTENCE of `ref` or clingo — a fall-through arm's refusal, which is the same sentence for every form that arm catches because it describes the position and what is carried there rather than the construct rejected. Such a pin witnesses nothing of its own, and where the sentence claims no corpus case reaches it, it makes that claim untrue. The thirty-six sentences are listed in the script with source, function and reason; the fragments are decoded and compared by `ref --bodemzin`, the red path's own reader and matcher, so a JSON-escaped pin cannot slip past, and a standing self-test in the gate fails if that decoding is ever replaced by a text scrape. The cure is a named arm for the form, never a reworded bottom.
 
 9. `scripts/check-catala.sh` — the Catala frontend builds and its
@@ -240,9 +240,9 @@ green. Current gates:
     over the corpus). Not-carried forms never vanish silently: per-form
     auto-refusals (a loader Refusal on a v1 node/section, a transpiler
     marker, a contract violation, a dimensioned/rational/list/struct or
-    granular-parameter input, an objectcreatie, an underivable role
+    granular-parameter input, an object creation, an underivable role
     reference, a name-sharing or ambiguous-reciprocal bean limit — the
-    corpus-exercised temporal case-input forms and the wederkerig
+    corpus-exercised temporal case-input forms and the reciprocal
     self-relation are CARRIED since 2026-08-30) each print their reason,
     grouped, in the gate report, and a reason-carrying value-divergence
     list IN THE SCRIPT (the check-noop survivor pattern) names each
@@ -272,7 +272,9 @@ green. Current gates:
     positions that still carry one — since L2 of the v1 wire migration
     (2026-09-24) the reference positions carry no `type` at all (B13),
     so the twist table lost `AttribuutRef`, `ParameterRef`, `DimensieCel`
-    and `BinderRef` and `EXPECTED_MIN_TWISTS` was re-measured (V15 (b)) —
+    and `BinderRef` (v0 names; since L5 `AttributeReference`,
+    `ParameterReference`, `DimensionCellRead`) and `EXPECTED_MIN_TWISTS` was
+    re-measured (V15 (b)) —
     is deterministically twisted (a convertible
     sister unit, or decimals+1) and ref, clingo and BOTH Drools
     transpiler branches (the exec-model gate-12 path and, since
@@ -283,7 +285,7 @@ green. Current gates:
     Each leg is compared against its OWN untouched status line, with a
     floor: a DRL-text branch that PLAYS nothing fails the gate.
     Reason-carrying exemption positions (the Literal lexeme, the
-    duration operand of date arithmetic, TIJDSDUUR's own unit) are named
+    duration operand of date arithmetic, the `duration` builtin's own unit) are named
     in the script; a bookkeeping clamp FAILS the gate when a
     unit-bearing annotation appears at a node/operator class outside the
     twist table (the §2.10 fourth-class witness arriving), and a
