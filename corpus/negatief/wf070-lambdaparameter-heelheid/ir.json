@@ -1,0 +1,414 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "puntentotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "grondslag",
+        "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "nonNegative"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "kindertallen",
+        "datatype": {
+          "node": "ListType",
+          "element": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+          }
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "ParameterReference",
+                "parameter": "kindertallen",
+                "source": {
+                  "snippet": "de kindertallen"
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "de opgetelde heffing"
+                    }
+                  },
+                  "right": {
+                    "node": "Rounding",
+                    "base": {
+                      "node": "Binary",
+                      "op": "times",
+                      "left": {
+                        "node": "ParameterReference",
+                        "parameter": "grondslag",
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
+                      },
+                      "right": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "1.0000"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 4,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "1,0000"
+                          }
+                        },
+                        "right": {
+                          "node": "Binary",
+                          "op": "dividedBy",
+                          "left": {
+                            "node": "BinderRef",
+                            "name": "x",
+                            "source": {
+                              "snippet": "het kindertal"
+                            }
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2.0000"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 4,
+                              "sign": "unspecified"
+                            },
+                            "source": {
+                              "snippet": "2,0000"
+                            }
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 4,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "het kindertal gedeeld door 2,0000"
+                          }
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 4,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "1,0000 plus het kindertal gedeeld door 2,0000"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 6,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de grondslag maal de wegingsfactor"
+                      }
+                    },
+                    "mode": "halfAwayFromZero",
+                    "decimals": 2,
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de grondslag maal de wegingsfactor rekenkundig afgerond op 2 decimalen"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de opgetelde heffing plus het kinddeel"
+                  }
+                },
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0.00"
+                }
+              },
+              "source": {
+                "snippet": "de kindertallen gevouwen tot de heffing"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "puntentotaal van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "puntentotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het puntentotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "ParameterReference",
+                "parameter": "kindertallen",
+                "source": {
+                  "snippet": "de kindertallen"
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "het opgetelde punt"
+                    }
+                  },
+                  "right": {
+                    "node": "Binary",
+                    "op": "times",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "2"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "het kindertal maal 2"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "het opgetelde punt plus het kindpunt"
+                  }
+                },
+                "source": {
+                  "snippet": "de kindpunten opgeteld"
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "de kindertallen gevouwen tot het puntentotaal"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

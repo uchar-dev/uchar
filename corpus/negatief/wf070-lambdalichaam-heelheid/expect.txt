@@ -1,0 +1,1 @@
+lambda body is number(0 decimals, fractional), but the fold requires number(0 decimals, whole)

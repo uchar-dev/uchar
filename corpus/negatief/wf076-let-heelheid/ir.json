@@ -1,0 +1,167 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vangst",
+        "animate": false,
+        "plural": "Vangsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "deelvangst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "teller",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "noemer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vangstsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vangstsom van een vangst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vangstsom",
+              "subjectType": "Vangst",
+              "source": {
+                "snippet": "De vangstsom van een Vangst"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "binder": "deel",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "deelvangst",
+                "subjectType": "Vangst",
+                "source": {
+                  "snippet": "zijn deelvangst"
+                }
+              },
+              "body": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "BinderRef",
+                  "name": "deel",
+                  "source": {
+                    "snippet": "het deel"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "teller",
+                    "subjectType": "Vangst",
+                    "source": {
+                      "snippet": "zijn teller"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "noemer",
+                    "subjectType": "Vangst",
+                    "source": {
+                      "snippet": "zijn noemer"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn teller gedeeld door zijn noemer"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het deel plus zijn teller gedeeld door zijn noemer"
+                }
+              },
+              "source": {
+                "snippet": "het deel is zijn deelvangst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -2145,8 +2145,8 @@ let datatype_kind = function
    shows its domain for the same reason (a WF-064/069/070 mismatch between
    two enumeration domains rendered as "enumeration, but ... enumeration"),
    and a list shows its element. *)
-let rec datatype_detail dt =
-  let dec_unit decimalen eenheid =
+let rec datatype_detail ?(wholeness = false) dt =
+  let dec_unit geheel decimalen eenheid =
     let u =
       match eenheid with
       | None -> ""
@@ -2154,16 +2154,25 @@ let rec datatype_detail dt =
       | Some { canoniek = Some c; _ } -> ", " ^ c
       | Some _ -> ", unit"
     in
-    Printf.sprintf "(%d decimals%s)" decimalen u
+    let w = if not wholeness then "" else if geheel then ", whole" else ", fractional" in
+    Printf.sprintf "(%d decimals%s%s)" decimalen u w
   in
   match dt with
-  | Numeriek { decimalen; eenheid; _ } -> "number" ^ dec_unit decimalen eenheid
-  | Percentage { decimalen; eenheid; _ } -> "percentage" ^ dec_unit decimalen eenheid
+  | Numeriek { geheel; decimalen; eenheid; _ } -> "number" ^ dec_unit geheel decimalen eenheid
+  | Percentage { geheel; decimalen; eenheid } -> "percentage" ^ dec_unit geheel decimalen eenheid
   | Enumeratie { domein = Some d; _ } -> "enumeration '" ^ d ^ "'"
   | Sum_type { domein; _ } -> "sumtype '" ^ domein ^ "'"
   | Struct_type { domein; _ } -> "struct '" ^ domein ^ "'"
-  | List_type { element } -> "list of " ^ datatype_detail element
+  | List_type { element } -> "list of " ^ datatype_detail ~wholeness element
   | other -> datatype_kind other
+
+(* One of two datatypes a message sets side by side ("X, but Y"): where the
+   two differ only in wholeness, [datatype_detail] renders them alike and the
+   message would name one type twice, so then each side names its
+   wholeness. *)
+let detail_vs a ~against =
+  if datatype_detail a <> datatype_detail against then datatype_detail a
+  else datatype_detail ~wholeness:true a
 
 (* The keuzetype a datatype names (IR-SPEC ch. 2.4) — its VARIANT and its
    declaring domain: an Enumeration's or SumType's domain, looked up THROUGH a
@@ -5385,9 +5394,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             match ty a with
                             | Some ad when ad <> pd ->
                                 [ v "WF-062" at
-                                    ("argument type " ^ datatype_detail ad
+                                    ("argument type " ^ detail_vs ad ~against:pd
                                    ^ " does not match the declared payload "
-                                   ^ datatype_detail pd) ]
+                                   ^ detail_vs pd ~against:ad) ]
                             | _ -> [])
                         | _ -> [])
                    | None, Some _ ->
@@ -5517,8 +5526,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 | Some bt when bt <> mt ->
                     Some
                       (v "WF-064" at
-                         ("the '" ^ c ^ "' arm body is " ^ datatype_detail bt
-                        ^ ", but the match result type is " ^ datatype_detail mt))
+                         ("the '" ^ c ^ "' arm body is " ^ detail_vs bt ~against:mt
+                        ^ ", but the match result type is " ^ detail_vs mt ~against:bt))
                 | _ -> None)
               arms
       in
@@ -5595,8 +5604,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                          match ty value with
                          | Some vt when vt <> fdt ->
                              [ v "WF-073" at
-                                 ("field '" ^ fname ^ "' value is " ^ datatype_detail vt
-                                ^ ", but the declared field datatype is " ^ datatype_detail fdt) ]
+                                 ("field '" ^ fname ^ "' value is " ^ detail_vs vt ~against:fdt
+                                ^ ", but the declared field datatype is " ^ detail_vs fdt ~against:vt) ]
                          | _ -> []))
                    velden)
        | Some d ->
@@ -5626,8 +5635,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    match typ with
                    | Some t when t <> fdt ->
                        [ v "WF-074" (sub "type")
-                           ("field access type " ^ datatype_detail t
-                          ^ " differs from the declared field datatype " ^ datatype_detail fdt) ]
+                           ("field access type " ^ detail_vs t ~against:fdt
+                          ^ " differs from the declared field datatype " ^ detail_vs fdt ~against:t) ]
                    | None -> [ v "WF-074" (sub "type") "field access carries no type" ]
                    | _ -> [])))
        | Some d ->
@@ -5647,7 +5656,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                (Printf.sprintf
                   "the let type (%s) differs from its body type (%s) — the let type must equal the \
                    body type"
-                  (datatype_detail t) (datatype_detail bt)) ]
+                  (detail_vs t ~against:bt) (detail_vs bt ~against:t)) ]
        | None, _ -> [ v "WF-076" (sub "type") "let carries no type" ]
        | _ -> [])
       @ (if mentions_binder binder value then
@@ -5686,8 +5695,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     match ty e with
                     | Some t when t <> ed ->
                         [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
-                            ("element type " ^ datatype_detail t
-                           ^ " differs from the declared element " ^ datatype_detail ed) ]
+                            ("element type " ^ detail_vs t ~against:ed
+                           ^ " differs from the declared element " ^ detail_vs ed ~against:t) ]
                     | _ -> [])
                   elements))
       @ List.concat
@@ -5713,8 +5722,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
            match typ, ty e with
            | Some t, Some bt when t <> bt ->
                [ v "WF-069" (sub name)
-                   ("the " ^ name ^ " branch is " ^ datatype_detail bt
-                  ^ ", but the IfThenElse type is " ^ datatype_detail t) ]
+                   ("the " ^ name ^ " branch is " ^ detail_vs bt ~against:t
+                  ^ ", but the IfThenElse type is " ^ detail_vs t ~against:bt) ]
            | _ -> []
          in
          branch "then" then_ @ branch "else" else_)
@@ -5738,8 +5747,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      match ty a with
                      | Some at' when at' <> pt ->
                          [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
-                             ("argument type " ^ datatype_detail at'
-                            ^ " does not match the parameter datatype " ^ datatype_detail pt) ]
+                             ("argument type " ^ detail_vs at' ~against:pt
+                            ^ " does not match the parameter datatype " ^ detail_vs pt ~against:at') ]
                      | _ -> [])
                    (List.combine arguments fd.fd_parameters)))
            @ (match typ with
@@ -5920,8 +5929,8 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
                 match exp with
                 | Some e when e <> pt ->
                     [ v "WF-070" at
-                        ("lambda parameter '" ^ pn ^ "' is " ^ datatype_detail pt ^ ", expected "
-                       ^ datatype_detail e) ]
+                        ("lambda parameter '" ^ pn ^ "' is " ^ detail_vs pt ~against:e ^ ", expected "
+                       ^ detail_vs e ~against:pt) ]
                 | _ -> [])
               parameters params))
       (* WF-092 at the lambda's own parameter datatypes: they are declared
@@ -5943,8 +5952,8 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
          with
         | Some r, Some b when r <> b ->
             [ v "WF-070" at
-                ("lambda body is " ^ datatype_detail b ^ ", but the fold requires "
-               ^ datatype_detail r) ]
+                ("lambda body is " ^ detail_vs b ~against:r ^ ", but the fold requires "
+               ^ detail_vs r ~against:b) ]
         | _ -> [])
       (* the lambda body is CLOSED (WF-069): it sees only its own parameters,
          never the enclosing scope's binders. Dropping the enclosing [binders]
@@ -8927,8 +8936,8 @@ let wf067 ctx =
              | None, _ -> []
              | Some bt, r when bt <> r ->
                  [ v "WF-067" (at ^ "/body/type")
-                     ("the body is " ^ datatype_detail bt ^ ", but the declared result is "
-                    ^ datatype_detail r) ]
+                     ("the body is " ^ detail_vs bt ~against:r ^ ", but the declared result is "
+                    ^ detail_vs r ~against:bt) ]
              | _ -> [])
            (* a FunctionDef body is closed and top-level: it sees only its own
               parameters, so there are no outer binders to remember (WF-064's

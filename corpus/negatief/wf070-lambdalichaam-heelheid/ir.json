@@ -1,0 +1,196 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Deling",
+        "animate": true,
+        "plural": "Delingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "quotientsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "tellers",
+        "datatype": {
+          "node": "ListType",
+          "element": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+          }
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "quotientsom van een deling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "quotientsom",
+              "subjectType": "Deling",
+              "source": {
+                "snippet": "Het quoti\u00ebntsom van een Deling"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "ParameterReference",
+                "parameter": "tellers",
+                "source": {
+                  "snippet": "de tellers"
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "de opgetelde deling"
+                    }
+                  },
+                  "right": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "source": {
+                        "snippet": "de teller"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "3"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "3"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de teller gedeeld door 3"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de opgetelde deling plus de deeluitkomst"
+                  }
+                },
+                "source": {
+                  "snippet": "de delingen opgeteld"
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "de tellers gevouwen tot het quoti\u00ebntsom"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
