@@ -1298,7 +1298,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       (* WF-069: a Lambda is position-restricted — only the [function] operand
          of a Fold/MapList, evaluated there via [apply_fold_fn], never on its
          own as a value *)
-      Value.fault "a Lambda is position-restricted (WF-069): it is only a Fold/MapList operand"
+      Value.fault "a Lambda is position-restricted: it is only a Fold/MapList operand"
   | If_then_else { condition; then_; else_; _ } ->
       (* ch. 10.2: evaluate the condition under the ordinary comparison
          discipline, then exactly the chosen branch — strict, no coalesce *)
@@ -1888,9 +1888,8 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
              answering it silently, so it refuses by name. *)
           Value.fault
             "a count folds INSTANCES and this node hands it %d value(s) instead — an operand \
-             list or a count without an element type, both refused on the wire (WF-037): \
-             counting them would count the operands, or their filled ones, and never a \
-             population (ch. 3.4a)"
+             list or a count without an element type, both refused on the wire: counting them \
+             would count the operands, or their filled ones, and never a population (ch. 3.4a)"
             (List.length vs))
   | Aantal_gevulde ->
       (* ch. 3.4c: the filled-value count. It reads a VALUE per contributor
@@ -2655,8 +2654,8 @@ let kenmerkwaarde_constant_waar (r : resolved_regel) ~ot ~attr =
       in
       Value.fault
         "rule %S writes %S of %S as a characteristic, with %s: a version without a presentation \
-         and without initialisation writes the boolean constant true and nothing else (WF-022's \
-         value clause). Declined at evaluation"
+         and without initialisation writes the boolean constant true and nothing else. Declined \
+         at evaluation"
         (rule_name r) attr ot waarde
 
 let run_rule env world (r : resolved_regel) =
@@ -3685,7 +3684,7 @@ let evaluate env world =
   while !changed do
     incr rounds;
     if !rounds > n + 2 then
-      Value.fault "no evaluation strata exist — a dependency cycle (WF-045/046) reached ref/";
+      Value.fault "no evaluation strata exist — a dependency cycle reached ref/";
     changed := false;
     Array.iteri
       (fun ci (f : Ir_v0.Checks.dep_form) ->

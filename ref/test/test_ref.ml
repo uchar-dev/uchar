@@ -6784,8 +6784,8 @@ let () =
   let zin ?(regel = "geen herleving") ?(doel = "herleefd") ?(ot = "Recht") waarde =
     Printf.sprintf
       "rule %S writes %S of %S as a characteristic, with %s: a version without a presentation and \
-       without initialisation writes the boolean constant true and nothing else (WF-022's value \
-       clause). Declined at evaluation"
+       without initialisation writes the boolean constant true and nothing else. Declined at \
+       evaluation"
       regel doel ot waarde
   in
   let weigert naam waarde verwacht =
