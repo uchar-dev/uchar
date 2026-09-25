@@ -6236,7 +6236,7 @@ let onopgelost_voorwaarde_case =
 let () =
   faults_with ~name:"WF-044 een Onopgeloste regelvoorwaarde wordt geciteerd, niet weggeslikt"
     ~ir:onopgelost_voorwaarde_doc ~case_text:onopgelost_voorwaarde_case
-    ~needle:"Unresolved condition reached in translation: this rule fails observably (WF-044)"
+    ~needle:"Unresolved condition reached in translation: this rule fails observably"
 
 (* DE GELIJSTE SOM KRIJGT EEN EIGEN ARM (kaart clingo-som-catchall-
    eerlijkheid, 2026-09-19).

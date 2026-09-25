@@ -641,7 +641,7 @@ let fold_members ?binding ?path env world (self : World.instance) ~element =
     | None, None ->
         Value.fault
           "an instance fold over %S carries no range: its relation is written as a range (sourceRole \
-           or sourcePath) and never derived (B12)"
+           or sourcePath) and never derived"
           element
   in
   List.filter (fun (i : World.instance) -> isa env i.otype element) reached
@@ -1032,7 +1032,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
              | Ingevoegd { expr = e } -> eval_expr env world self ~err (req "EmbeddedExpression.expr" e))
            delen)
   | Expr_onopgelost _ ->
-      Value.fault "Unresolved reached in evaluation: this rule fails observably (WF-044)"
+      Value.fault "Unresolved reached in evaluation: this rule fails observably"
   | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value — the only
          expression-level access to the evaluation date *)
@@ -1811,7 +1811,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
     | Some el, [ _ ] when (not ranged) && kind <> Totaal ->
         Value.fault
           "an instance fold over %S carries no range: its relation is written as sourceRole or \
-           sourcePath and never derived (B12)"
+           sourcePath and never derived"
           el
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"
   in
@@ -2338,7 +2338,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
                    | Some (Some z) -> if tot_inclusief then today <= z else today < z
                    | _ -> true)
            | _ -> assert false))
-  | Conditie_onopgelost _ -> Value.fault "Unresolved condition reached in evaluation (WF-044)"
+  | Conditie_onopgelost _ -> Value.fault "Unresolved condition reached in evaluation"
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------
    Two steps stand between a unit SPELLING on a duration node and a verdict

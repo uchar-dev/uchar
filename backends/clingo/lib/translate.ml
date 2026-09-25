@@ -1643,7 +1643,7 @@ let source_join ctx env ~subject ~subject_ot ~el ~bron_rol ~bron_pad ~x =
         | None ->
             fault
               "an instance fold over %S carries no range: its relation is written as sourceRole or \
-               sourcePath and never derived (B12)"
+               sourcePath and never derived"
               el
       in
       ignore subject_ot;
@@ -5289,7 +5289,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Expr_onopgelost _ ->
       (* the unsolved-state guard: an Unresolved node never vanishes —
          the rule that carries it fails observably (WF-044) *)
-      fault "Unresolved reached in translation: this rule fails observably (WF-044)"
+      fault "Unresolved reached in translation: this rule fails observably"
   | Functie { kind = Som; element_objecttype = None; dimensie_selectie = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
@@ -7247,7 +7247,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
          message untrue. Wording follows ref (`Unresolved condition reached in
          …`) so both executors name the same position, and the expression arm
          (`… in translation …`) so the phase stays this backend's own. *)
-      fault "Unresolved condition reached in translation: this rule fails observably (WF-044)"
+      fault "Unresolved condition reached in translation: this rule fails observably"
   | Periode_conditie { vanaf; tot; tot_inclusief; _ } ->
       (* ch. 3.10's evaluation-date gate, ref's arm read in this backend's
          phase. The date is a SESSION constant, so each bound becomes one
