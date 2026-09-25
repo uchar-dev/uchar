@@ -45,6 +45,7 @@ in the Drools backend pins both branches on both clip cases.
 
 Red first, measured on this document: the verifier of main 2f47d80e (md5
 `e0bafac419b97e989317b13194932efe`) reported `verifier: PASS`; with the arm
-(md5 `4aa9ae86163a239aa72a7d7d4f54f678`) the single rejection above.
-Mutation: with the arm's type test switched off (`when false && …`) this
-document passes again and gate 3 names it; `expect.txt` pins the arm.
+(md5 `d2b5ce9992759f07860e95fbecec733e`) the single rejection above.
+Mutation: with the arm's type test switched off (`when false && …`), or
+with `total` removed from the fold branch, this document passes again and
+gate 3 names it; `expect.txt` pins the arm.

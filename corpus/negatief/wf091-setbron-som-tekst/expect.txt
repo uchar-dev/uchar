@@ -1,0 +1,1 @@
+the sum of 'vindplaats' on 'Vondst' folds Text values: a total, sum or pro-rata part is arithmetic over a Number, and Text values are not amounts

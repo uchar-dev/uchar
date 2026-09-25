@@ -34,7 +34,7 @@ phase before fire through `Vouwwaarde.weigering`.
 
 Red first, measured on this document: the verifier of main 2f47d80e (md5
 `e0bafac419b97e989317b13194932efe`) reported `verifier: PASS`; with the arm
-(md5 `4aa9ae86163a239aa72a7d7d4f54f678`) the single rejection above.
+(md5 `d2b5ce9992759f07860e95fbecec733e`) the single rejection above.
 Mutation, arm-exact: with `sum` removed from the fold branch of the arm,
-this document alone of the five witnesses passes again; `expect.txt` pins
-the arm.
+this document and `wf091-setbron-som-tekst` — the two `sum` witnesses of the
+six — pass again; `expect.txt` pins the arm.

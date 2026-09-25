@@ -2707,10 +2707,11 @@ let composite_expectation ctx ~binders (e : expr) :
    number. Every reading of the two folds shares the arm — the subject's
    own temporal total and its gedurende clip, the §7.1 per-element fold,
    the set fold over a plain attribute, the listed sum — because the
-   arithmetic is the same in each. A list is read through its element, the
-   value a list fold adds. An operand whose type nothing declares defers,
-   as everywhere in this rule. Where the arm reports, the identity cross
-   below does not run: there is no derived type to compare with. *)
+   arithmetic is the same in each. A ListType is no Number either: these
+   folds add their contributors, never a list's elements. An operand whose
+   type nothing declares defers, as everywhere in this rule. Where the arm
+   reports, the identity cross below does not run: there is no derived type
+   to compare with. *)
 let wire_type_name = function
   | Numeriek _ | Percentage _ -> "Number"
   | Datum_in_dagen | Datum_tijd -> "Date"
@@ -2721,11 +2722,9 @@ let wire_type_name = function
   | List_type _ -> "ListType"
   | Struct_type _ -> "StructType"
 
-let rec list_element = function List_type { element } -> list_element element | d -> d
-
 let numeric_operand_arm ctx ~binders at (e : expr) =
   let refuse ~head ~verb i a =
-    match Option.map list_element (expr_type ctx ~binders a) with
+    match expr_type ctx ~binders a with
     | Some d when not (is_number_like d) ->
         let operand =
           match a with

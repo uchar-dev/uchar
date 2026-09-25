@@ -1,0 +1,128 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vindplaatsensom",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vindplaats",
+            "datatype": {
+              "node": "Text"
+            },
+            "plural": "vindplaatsen"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindplaatsensom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindplaatsensom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vindplaatsensom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vindplaats",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vindplaats van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "de som van de vindplaats van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
