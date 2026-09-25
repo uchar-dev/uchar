@@ -912,15 +912,16 @@ of that day):* the members inherit the (conjoined) justification of the
 carrier, exactly as a single `Uitzondering op` does (§5.4 (D)): one
 exception or three at once, they remain exceptions on that carrier. The
 anchor `jutterswet-nestkenmerk` writes `nx` in both siblings since its
-repair (card `anker-nestkenmerk-dragervoorwaarde`, §8.3). [M11] The group-default form carries both decisions and the
-conflict key `…/0` in ref, clingo and the exec branch. [P, own code] The
-Catala frontend lowers a chain exception carrying unordered exceptions to
-the same nested form (`frontends/catala/lib/translate.ml:28-31`); it
-refuses unordered exceptions on a shared base (fixture
-`refuse_sharedbase.catala_en`), which the group-default form of §5.2 now
-makes expressible — a Catala-side observation, not work of this card. For
-art. 21 WW this form carries lid 2 and lid 3 as parallel grounds under
-lid 1, and onderdelen a and b of lid 2 as parallel grounds within lid 2.
+repair (card `anker-nestkenmerk-dragervoorwaarde`, §8.3). [M11] The
+group-default form carries both decisions and the conflict key `…/0` in
+ref, clingo and the exec branch. [P, own code] The Catala frontend lowers
+a chain exception carrying unordered exceptions to the same nested form
+(`frontends/catala/lib/translate.ml:28-31`); it refuses unordered
+exceptions on a shared base (fixture `refuse_sharedbase.catala_en`), which
+the group-default form of §5.2 now makes expressible — a Catala-side
+observation, not work of this card. For art. 21 WW this form carries lid 2
+and lid 3 as parallel grounds under lid 1, and onderdelen a and b of lid 2
+as parallel grounds within lid 2.
 
 ### 5.7 Grammar and RuleChecker impact of form 2
 

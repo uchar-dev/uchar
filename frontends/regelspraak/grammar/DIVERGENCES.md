@@ -121,10 +121,9 @@ exists only as its default.
   defaults group.
 - **Unordered:** each `Uitzonderingen ongeordend` block without a carrier becomes
   SIBLING declared-unordered defaults groups (one per member) over one shared
-  target — the
-  `toelagegronden`-anchor shape. Every sibling carries `ongeordend: true`
-  (WF-050: two-or-more defaults groups on one target require the marking on every
-  one).
+  target — the `toelagegronden`-anchor shape. Every sibling carries
+  `ongeordend: true` (WF-050: two-or-more defaults groups on one target require
+  the marking on every one).
   Members deciding differently on one target route to the §9.5 Inconsistentie
   channel; deciding the same reconciles idempotently. On an attribute target the
   members differ in value; on a characteristic target a negated member (form 1,
@@ -179,20 +178,20 @@ whether a negation is admitted is decided in the resolver.
 
 **Where it is admitted** (decision 2): in every rule that becomes a default — the
 body of an `Uitzondering op` or (since form 2) an `Afwijking van`, a member of
-`Uitzonderingen ongeordend`, and the base of an `Uitzondering op` chain. A negated base is the lowest default and
-decides `onwaar`. In a flat model that changes no outcome, since under the
-closed world an unattributed characteristic is false anyway; what the base buys
-there is that the author can write a statute that opens with the negation
-("geen recht heeft …, tenzij …") and hang the exceptions on a named base, as
-Catala's `definition x equals false` does. Under inheritance it does change
-outcomes (RUNTIME-SEMANTICS ch. 7.10): on a subtype, its base replaces the base
-of an ancestor's defaults group on the same characteristic, so a positive
+`Uitzonderingen ongeordend`, and the base of an `Uitzondering op` chain. A negated
+base is the lowest default and decides `onwaar`. In a flat model that changes no
+outcome, since under the closed world an unattributed characteristic is false
+anyway; what the base buys there is that the author can write a statute that opens
+with the negation ("geen recht heeft …, tenzij …") and hang the exceptions on a
+named base, as Catala's `definition x equals false` does. Under inheritance it
+does change outcomes (RUNTIME-SEMANTICS ch. 7.10): on a subtype, its base replaces
+the base of an ancestor's defaults group on the same characteristic, so a positive
 inherited base stops applying to the subtype's instances; on a supertype, the
 group's `onwaar` exceptions stay above a subtype's own base and block it where
 they apply. A plain kenmerk rule is no base — ch. 7.10 folds attribute writers
-only — so a negated subtype base does not switch off an ancestor's plain
-kenmerk rule, which keeps writing on the subtype's instances. All three
-measured 2026-09-24 in ref, clingo and the Drools exec branch.
+only — so a negated subtype base does not switch off an ancestor's plain kenmerk
+rule, which keeps writing on the subtype's instances. All three measured
+2026-09-24 in ref, clingo and the Drools exec branch.
 
 **Lowering.** A negated sentence becomes a default with `besluit: false` on the
 target of its group; the rest is the lowering above. Between reading and
