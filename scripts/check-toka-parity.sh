@@ -5,13 +5,14 @@
 # documented exception to gate-set monotonicity (CLAUDE.md): it leaves the set
 # when the ©-Belastingdienst zone is removed ahead of any public flip. Until
 # then it is unconditional and blocking. NOTE: it is NOT "exactly like gate 10"
-# any more — obligation 4 (the differential replay, added by decision V6-A)
-# needs the FULL toolchain of gates 6 + 12 combined: OCaml/dune (ref + clingo),
+# any more — obligation 5 (the differential replay, added by decision V6-A)
+# needs the FULL toolchain of gates 6 + 12 combined: OCaml/dune (ref + clingo,
+# and since obligation 4 the verifier of gate 3),
 # the clingo binary, AND the Drools shaded jar, on top of gate 10's JDK 21. The
 # CI job (`toka-parity` in .github/workflows/gates.yml) provisions exactly that;
 # on a runner missing any of them this gate fails LOUDLY (never silently green).
 #
-# Five obligations, each loud (the sister-gate contract):
+# Six obligations, each loud (the sister-gate contract):
 #   1. the frontend builds (ANTLR parser + resolver + IR emitter, JDK 21+) and
 #      the TOKA test suite under toka/ compiles + passes against it with a
 #      NON-ZERO test count — a suite that ran nothing is a silent greenlight;
@@ -34,7 +35,15 @@
 #      one source of truth. Gate 2 scans only corpus/, so without this leg the
 #      newly-committed IR wire artifacts would ride only on the more-permissive
 #      ref/clingo/Drools loaders (defense-in-depth for the temporary zone);
-#   4. the DIFFERENTIAL replay (decision V6-A, 2026-08-27): every toka case under
+#   4. every replay slice is WELL-FORMED (the card toka-welgevormd, 2026-09-25):
+#      verifier-clean under gate 3's OCaml verifier, built as gate 3 builds it, so a
+#      slice is held to the rules the public corpus is held to and not only to
+#      schema, round-trip and replay. A slice carries beside its scenario whatever
+#      anchors its model (toka/README.md). The reason-carrying VERIFIER_HOLDOUTS list
+#      names each slice held out with the one rule and pointer it is rejected at; a
+#      holdout that turns clean, or is rejected anywhere else, fails the gate. The
+#      casus dump stays OUTSIDE this leg (see VERIFIER_HOLDOUTS for the reason);
+#   5. the DIFFERENTIAL replay (decision V6-A, 2026-08-27): every toka case under
 #      toka/cases/<scenario>/{ir.json,case.json} replays through ref AND clingo
 #      AND the uchar-IR-loading Drools backend, and its observed outcome in each
 #      executor MUST match the class the parity manifest pins — exact agreement
@@ -42,9 +51,9 @@
 #      per-form EXCLUDE) where one does not. ZERO silent divergences is the hard
 #      rule: a value difference WITHOUT a fault (a ref non-match, a Drools FAIL or
 #      ERROR at fire) reddens the gate. Per-class counts land in the report;
-#   5. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
+#   6. an empty fixture set, zero tests, a stale holdout, or a toka case dir the
 #      manifest does not cover is a FAILURE, never silently green; a missing JDK,
-#      dune (ref/clingo), clingo, or the Drools jar fails loudly.
+#      dune (the verifier, ref/clingo), clingo, or the Drools jar fails loudly.
 #
 # The reason-carrying holdout LIST mirrors gate 7's survivor list: the full casus
 # raises exactly these resolver ERRORs, so `--ir` writes nothing for the whole set.
@@ -85,12 +94,32 @@ TOKA=toka
 EXPECTED_MIN_TESTS=27       # 2026-09-10: measured 27 (the zone's own JUnit suite)
 EXPECTED_MIN_FRAGMENTS=45   # 2026-09-10: measured 45 (.rgs fragments re-emitted byte-identical)
 EXPECTED_MIN_CASES=29       # 2026-09-10: measured 29 (manifest-pinned replay cases)
+EXPECTED_MIN_CLEAN=28       # 2026-09-25: measured 28 (verifier-clean replay slices; the verifier holdouts not counted)
 
 HOLDOUTS=(
   'toka-23-regel-bevestigingstijdstip-vlucht.rgs'   # §4.1 datum+datum casus-quirk
   'toka-45-regel-belasting-op-basis-van-afstand.rgs' # dimensioneel inconsistent (16Y): unitless Bedrag min km-product
 )
 is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ] && return 0; done; return 1; }
+
+# The replay slices the verifier leg (obligation 4) holds out: '<scenario key> <rule> <pointer>', the
+# key resolving to exactly one directory toka/cases/scenario-<key>-*, and the rule and pointer being
+# the slice's WHOLE verifier report. Stale in either direction: a holdout that turns clean, that is
+# rejected at another rule or pointer as well, or whose key resolves to no slice fails the gate.
+#   toka-24 — a property of the casus, not an emitter defect: the clamp's minimum is a literal written
+#             WITH a unit (EUR) over a base whose operands are declared without one — the one-sided pair
+#             WF-099 refuses and IR-SPEC ch. 4.1 leaves open as one decision for WF-023, WF-035,
+#             WF-036 and WF-099 together. The frontend writes the unit the source writes and leaves a
+#             unitless bound unitless for the verifier to adopt; every executor replays the slice.
+# The casus dump (toka/casus/ir.json) is outside the leg altogether. As one document it is
+# overdetermined by nature: its scenarios each write the same targets in their own way, legitimate per
+# scenario and not as one program (the competing writes of WF-026 and WF-079). It also declares less
+# than the slices, which carry the scenario test model: every name-carrying WF-034 in it names one of
+# the four attributes the slices declare and the casus uses without declaring. Measured 2026-09-25:
+# 18 reports. Its role is the parity object of obligation 2, not a well-formed program.
+VERIFIER_HOLDOUTS=(
+  'toka-24 WF-099 /rules/rules/0/versions/0/value/base/minimum'
+)
 
 # 1. build the frontend (main classes) and ensure both tool jars.
 build_out=$(make -C "$FE" compile 2>&1) || { printf '%s\n' "$build_out" | tail -20 >&2; fail "the frontend build is red"; }
@@ -181,15 +210,62 @@ if ! schema_out=$(sh scripts/check-ir-schema.sh $slice_irs 2>&1); then
 fi
 slice_n=$(printf '%s\n' "$slice_irs" | grep -c .)
 
+# 3c. well-formedness (obligation 4): every replay slice verifier-clean, bar the VERIFIER_HOLDOUTS.
+#     Only a failure prints the verifier's report: its messages carry the zone's own names.
+if ! command -v dune >/dev/null 2>&1; then
+  command -v opam >/dev/null 2>&1 && eval "$(opam env)"
+fi
+command -v dune >/dev/null 2>&1 || fail "dune not found (the verifier, ref and clingo need OCaml/dune)"
+dune build --root spec/verifier >/dev/null 2>&1 || fail "the verifier build is red (dune build --root spec/verifier, as gate 3 builds it)"
+VERIFIER=spec/verifier/_build/default/bin/verifier.exe
+[ -x "$VERIFIER" ] || fail "no verifier binary at $VERIFIER after the build"
+VH_DIRS=(); VH_PINS=()
+for e in "${VERIFIER_HOLDOUTS[@]}"; do
+  key=${e%% *}
+  dirs=$(find "$TOKA/cases" -mindepth 1 -maxdepth 1 -type d -name "scenario-$key-*" | sort)
+  nd=$(printf '%s\n' "$dirs" | grep -c .)
+  [ "$nd" -eq 1 ] || fail "verifier holdout '$key' resolves to $nd slice directories, not one — the reason-carrying list is stale"
+  VH_DIRS+=("$(basename "$dirs")"); VH_PINS+=("${e#* }")
+done
+vh_pin_of() { local i; for i in "${!VH_DIRS[@]}"; do [ "${VH_DIRS[$i]}" = "$1" ] && { printf '%s' "${VH_PINS[$i]}"; return 0; }; done; return 1; }
+declare -a VERIFY_FAIL=()
+clean_n=0; vheld_n=0
+while IFS= read -r ir; do
+  scen=$(basename "$(dirname "$ir")")
+  vout=$("$VERIFIER" "$ir" 2>&1); vrc=$?
+  if pin=$(vh_pin_of "$scen"); then
+    got=$(printf '%s\n' "$vout" | sed -n 's/^\(WF-[0-9][0-9]*\) FAIL \([^:]*\):.*/\1 \2/p')
+    if [ $vrc -eq 0 ]; then
+      VERIFY_FAIL+=("$scen: a verifier holdout, but verifier-clean now — the reason-carrying list is stale")
+    elif [ $vrc -ne 1 ] || [ "$got" != "$pin" ]; then
+      printf '%s\n' "$vout" >&2
+      VERIFY_FAIL+=("$scen: a verifier holdout pinned to '$pin', but its report differs (exit $vrc) — a holdout hides no second defect")
+    else
+      vheld_n=$((vheld_n + 1))
+    fi
+  elif [ $vrc -eq 0 ]; then
+    clean_n=$((clean_n + 1))
+  else
+    printf '%s\n' "$vout" >&2
+    VERIFY_FAIL+=("$scen: not verifier-clean (exit $vrc)")
+  fi
+done <<<"$slice_irs"
+if [ ${#VERIFY_FAIL[@]} -gt 0 ]; then
+  echo "check-toka-parity: FAIL — ${#VERIFY_FAIL[@]} replay slice(s) break the well-formedness leg:" >&2
+  for f in "${VERIFY_FAIL[@]}"; do echo "    $f" >&2; done
+  fail "the well-formedness leg found ${#VERIFY_FAIL[@]} slice(s) out of line (every slice verifier-clean, bar the pinned holdouts)"
+fi
+[ "$clean_n" -gt 0 ] || fail "no verifier-clean replay slice (an empty set is a failure)"
+[ "$clean_n" -ge "$EXPECTED_MIN_CLEAN" ] \
+  || fail "$clean_n replay slice(s) verifier-clean, but EXPECTED_MIN_CLEAN pins at least $EXPECTED_MIN_CLEAN — the well-formed set shrank (a new holdout, or a deliberate removal, lowers the floor in the same commit)"
+[ "$vheld_n" -eq "${#VERIFIER_HOLDOUTS[@]}" ] \
+  || fail "$vheld_n of ${#VERIFIER_HOLDOUTS[@]} verifier holdout(s) matched their pinned report — the reason-carrying list is stale"
+
 # 4. the differential replay (decision V6-A): every toka case through ref, clingo, Drools.
 MANIFEST="$TOKA/cases/parity.manifest"
 [ -f "$MANIFEST" ] || fail "no parity manifest at $MANIFEST (the replay leg has nothing pinned)"
 
-# ref + clingo (OCaml) — build at the workspace root; fall back to the opam env.
-if ! command -v dune >/dev/null 2>&1; then
-  command -v opam >/dev/null 2>&1 && eval "$(opam env)"
-fi
-command -v dune   >/dev/null 2>&1 || fail "dune not found (ref+clingo need OCaml/dune)"
+# ref + clingo (OCaml) — build at the workspace root (dune was located in 3c).
 command -v clingo >/dev/null 2>&1 || fail "clingo not found on PATH (the differential needs it)"
 dune build ref backends >/dev/null 2>&1 || fail "the ref/clingo build is red"
 REF=_build/default/ref/bin/runner.exe
@@ -276,6 +352,7 @@ echo ""
 echo "check-toka-parity: PASS"
 echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical, floor $EXPECTED_MIN_FRAGMENTS (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests, floor $EXPECTED_MIN_TESTS"
 echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
+echo "  well-formedness: $clean_n replay slice(s) verifier-clean, floor $EXPECTED_MIN_CLEAN (verifier holdouts: $(printf '%s; ' "${VERIFIER_HOLDOUTS[@]}" | sed 's/; $//')); the casus dump is outside this leg (the parity object, not a well-formed program)"
 echo "  differential replay: $cases_n toka cases (floor $EXPECTED_MIN_CASES) through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
 echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
 echo "    clingo : $clingo_pass PASS / $clingo_fault loud translation-fault / 0 silent diverge"
