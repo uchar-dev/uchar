@@ -296,8 +296,8 @@ bound: WF-075 and the three executors recurse to any depth.
 |---|---|
 | `Uitzondering op B: E1` and `Uitzondering op B: E2`, B a base rule | chain positions above the base: `[E2, E1, B]` |
 | `Uitzondering op E1: F1` and `Uitzondering op E1: F2`, E1 a block | `E1.exceptions = {unordered: false, members: [ExceptionGroup [F2, F1]]}` |
-| `Uitzonderingen ongeordend op E1:` with members U1, U2 | `E1.exceptions = {unordered: true, members: [ExceptionGroup [U1], ExceptionGroup [U2]]}` |
-| `Uitzonderingen ongeordend op B:` with members U1, U2, B a base rule | a group-default directly above the base: `[{exceptions: {unordered: true, members: [[U1], [U2]]}}, B]` |
+| `Uitzonderingen ongeordend op E1:` with members P, Q | `E1.exceptions = {unordered: true, members: [ExceptionGroup [P], ExceptionGroup [Q]]}` |
+| `Uitzonderingen ongeordend op B:` with members P, Q, B a base rule | a group-default directly above the base: `[{exceptions: {unordered: true, members: [[P], [Q]]}}, B]` |
 | `Afwijking van B: A`, B a base rule | a chain position above the base, as a first-level `Uitzondering op` |
 
 The first level stays a chain and does not nest into the base: a subtype's own
