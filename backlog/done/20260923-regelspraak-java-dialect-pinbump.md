@@ -30,3 +30,7 @@ eigen tests; hier alleen kaartverplaatsing.
 
 Niet in deze kaart: het scenario-harnas, de graaf, de uitleg en de dekking
 (kaart regelspraak-java-defaults-in-scenario-en-werkbank).
+
+## Vervallen (2026-09-25, hoofdsessie)
+
+Deze kaart gaat op in de ene pin-bump na de v1-klap (maintainersbesluit 2026-09-24: geen tussentijdse herpins; één bump in de nieuwe regelspraak-java onder uchar zodra de zes spec/golden-kaarten van 2026-09-25 geland zijn). Acceptatie (b) — de drie tweelingen van dialect-uitzondering-op-uitzondering vuren in de toolchain — hoort bij die bump.
