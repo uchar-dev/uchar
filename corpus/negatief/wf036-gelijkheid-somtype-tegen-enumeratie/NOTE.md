@@ -2,7 +2,7 @@ Violates WF-036 (`spec/IR-SPEC.md` ch. 4.6): the rule `uitkering := 5.00
 indien beschikking = Afgewezen` compares a read of `Jutter.beschikking`,
 declared as a SUM TYPE of the domain `beschikking`, with a literal typed as
 an ENUMERATION of a domain of the same name. The two variants of the
-keuzetype family are two families: `domeinen` is one namespace, and one name
+keuzetype family are two families: `domains` is one namespace, and one name
 declares one variant.
 
     WF-036 FAIL /rules/rules/0/versions/0/condition: equality across

@@ -19,5 +19,6 @@ this case is the presence half.
 Falsifiable in one edit: put the group's name back.
 
 Minimal hand-broken variant of `corpus/golden/anchor/jutterswet-nestkenmerk`,
-whose group is named (and named the same as its `regels` index entry, which
-is where the name is read from).
+whose group is named (until M1 it was also named the same as its `regels`
+index entry, which is where the name was read from; the `regels` stubs left
+the wire at M1, delta B3).

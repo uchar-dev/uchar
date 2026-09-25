@@ -19,7 +19,7 @@ count could name any domain it liked. The witness is arm-exact and cheap
 because the path already existed; what it pins is that the derived half
 keeps WF-089's number and WF-089's wording instead of absorbing them.
 
-The soort facet stands aside here by design (`domeinen` is ONE namespace,
+The soort facet stands aside here by design (`domains` is ONE namespace,
 so domain-versus-no-domain is the domain facet's own clause), which is why
 the message is WF-089's one-sided arm and not a soort mismatch. WF-023
 stays quiet for the same reason the reference one-sided case documents: it
