@@ -16,7 +16,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * worden als de x van de Ding plus 1" went to the wire without a word and the verifier answered "WF-045 FAIL …
  * dependency cycle through no recursive creation: ophoog x -> ophoog x", while a cycle over two attributes drew the
  * WARNING "kringverwijzing tussen berekeningen: …". The direct self-read now draws that same WARNING, the clamp idiom
- * "x = x, met een maximum van y" included: the verifier refuses it under WF-045 as well.
+ * "x = x, met een maximum van y" included: the verifier refuses it under WF-045 as well. So does a computation whose
+ * CONDITION reads its own target ("… moet gesteld worden op 5 indien de x van de Ding groter is dan 3"), which the
+ * verifier refuses the same way ("zet x -> zet x", measured before this change).
  */
 class ZelflezingKringTest {
 
@@ -79,6 +81,32 @@ class ZelflezingKringTest {
         Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("begrens x",
                 "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.")));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
+    }
+
+    @Test void een_zelflezing_in_de_voorwaarde_krijgt_de_melding() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("zet x",
+                "De x van een Ding moet gesteld worden op 5 indien de x van de Ding groter is dan 3.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
+        assertEquals(0, d.line());
+    }
+
+    @Test void een_zelflezing_in_een_samengestelde_voorwaarde_krijgt_de_melding() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + """
+
+            Regel zet x
+                geldig altijd
+                    De x van een Ding moet gesteld worden op 5
+                    indien hij aan alle volgende voorwaarden voldoet:
+                    - zijn y is kleiner dan 2
+                    - zijn x is groter dan 3.
+            """));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
+    }
+
+    @Test void een_voorwaarde_op_een_ander_attribuut_zonder_kring_meldt_niets() {
+        RegelSpraakModel m = Resolver.resolve(DING + regel("zet x",
+                "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
     @Test void de_kring_over_twee_attributen_houdt_haar_melding() {
