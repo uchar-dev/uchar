@@ -140,12 +140,14 @@
 #     kenmerk attaches; the absence IS the assertion. The four sibling
 #     cases all decide and are not survivors.
 #   - jutterswet-bergingsdrempel/case3-onder-quotum.json: the frontend-authored
-#     ordered 'Uitzondering op' kenmerk defaults (§4) — 12 wrecks and no noodweer
-#     ground leave BOTH defaults unjustified (below the 20 quotum, the exception
-#     inert without its ground), so bergingsbevoegd stays absent; the absence IS
-#     the assertion (the ordered analogue of the hardheid case3-stilte silence).
+#     ordered kenmerk defaults of an 'Afwijking van' block (§4; an 'Uitzondering
+#     op' until the card dialect-uitzondering-op-uitzondering, same wire) — 12
+#     wrecks and no noodweer ground leave BOTH defaults unjustified (below the 20
+#     quotum, the deviation inert without its ground), so bergingsbevoegd stays
+#     absent; the absence IS the assertion (the ordered analogue of the hardheid
+#     case3-stilte silence).
 #   - jutterswet-bergingsdrempel/case4-onder-noodweer.json: the same defaults group's
-#     floor — 5 wrecks under noodweer stay short of the exception's lowered
+#     floor — 5 wrecks under noodweer stay short of the deviation's lowered
 #     threshold 8, so nothing is attributed; the absence IS the assertion (the
 #     ordered analogue of hardheid case4-hardheidsgrens). The two deciding
 #     siblings (case1-quotum, case2-noodweer) are not survivors.
@@ -165,6 +167,15 @@
 #     as the card kenmerkinvoer-en-invoer-boven-berekening does not choose its
 #     option 7-ii, which would flip the expectation to absent. The nine sibling
 #     cases all pin computed attributes and are not survivors.
+#   - jutterswet-nestkenmerk-rgs/case1-y-wint.json: the RegelSpraak twin of the
+#     anchor's case1-y-wint, byte-identical case, same reason — the sub-decision
+#     do-not-attribute (false, from ny) displaces the true below it, so
+#     vrijgesteld stays absent; the observable outcome coincides with a
+#     do-nothing run, yet the case pins the nested reading against a FLATTENING
+#     executor, which would manufacture a conflict here. The twin carries the
+#     unordered group as a group-default above the base (the dialect's shape)
+#     where the anchor nests it in the base; its other three cases decide
+#     observably and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -201,7 +212,8 @@ corpus/golden/jutterswet-paasvondst/case5-leeg.json
 corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json
 corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
 corpus/golden/jutterswet-wachtgeld/case4-geen.json
-corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json'
+corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
+corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2

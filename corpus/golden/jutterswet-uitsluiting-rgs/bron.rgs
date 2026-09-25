@@ -1,0 +1,29 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is vergunning geweigerd kenmerk (bijvoeglijk);
+    is weigering herroepen kenmerk (bijvoeglijk);
+    is herroeping vervallen kenmerk (bijvoeglijk);
+    is uitgesloten kenmerk (bijvoeglijk);
+    is penninggerechtigd kenmerk (bijvoeglijk);
+
+// Bron: art. 4, eerste laag
+Regel uitsluiting van het penningrecht
+    geldig altijd
+        Een Jutter is uitgesloten
+        indien hij vergunning geweigerd is.
+
+// Bron: art. 4, tweede laag
+Uitzondering op uitsluiting van het penningrecht: herroepen weigering
+    geldig altijd
+        Een Jutter is niet uitgesloten
+        indien hij weigering herroepen is.
+
+// Bron: art. 4, derde laag
+Uitzondering op herroepen weigering: vervallen herroeping
+    geldig altijd
+        Een Jutter is uitgesloten
+        indien hij herroeping vervallen is.
+
+Regel penninggerechtigd tenzij uitgesloten
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien hij niet uitgesloten is.

@@ -1,0 +1,24 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is nx kenmerk (bijvoeglijk);
+    is ny kenmerk (bijvoeglijk);
+    is nz kenmerk (bijvoeglijk);
+    is vrijgesteld kenmerk (bijvoeglijk);
+
+// Bron: nx: vrijgesteld, tenzij een uitzondering geldt
+Regel vrijstelling van een jutter
+    geldig altijd
+        Een Jutter is vrijgesteld
+        indien hij nx is.
+
+Uitzonderingen ongeordend op vrijstelling van een jutter:
+// Bron: ny
+Regel vrijstelling vervalt bij ny
+    geldig altijd
+        Een Jutter is niet vrijgesteld
+        indien hij ny is.
+
+// Bron: nz
+Regel vrijstelling bij nz
+    geldig altijd
+        Een Jutter is vrijgesteld
+        indien hij nz is.

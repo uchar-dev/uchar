@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "nz"
+        ]
+      },
+      {
+        "label": "N",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "nx",
+          "nz"
+        ]
+      },
+      {
+        "label": "O",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "ny",
+          "nz"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "N",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "O",
+      "characteristic": "vrijgesteld"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
