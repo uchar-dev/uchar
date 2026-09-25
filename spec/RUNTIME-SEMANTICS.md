@@ -5516,7 +5516,14 @@ instances, with nothing to rank them, so the pair is refused as two such
 rules on one type are (`IR-SPEC.md` WF-079; witness
 `corpus/negatief/wf079-keten-kale-schrijvers`). A rule beside a group the
 level declares **itself** is likewise not this chapter's business: that is
-WF-050's single-writer lift, refused at the document.
+WF-050's single-writer lift, refused at the document. An allocation is never
+folded — this section folds ordinary rules only — so WF-026 speaks through
+the chain without a gate: an allocation over a type and one over an ancestor
+both write the type's instances whatever defaults groups the chain declares,
+and so do an allocation and a defaults group on two levels of one chain,
+which WF-050's lift refuses the same way (`IR-SPEC.md` WF-026 and WF-050;
+witnesses `corpus/negatief/wf026-keten-twee-toewijzingen` and
+`corpus/negatief/wf050-keten-toewijzing-naast-groep`).
 
 **A rule carrying a VALIDITY WINDOW is not folded**, and is refused by name
 instead. A windowed base would put version selection inside the stack, and
