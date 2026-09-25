@@ -229,15 +229,22 @@ final class RuleChecker {
      *  names. Such a rule that is still in resolvedRegels after the lift belongs to a tree or block the lowering
      *  refused, with an ERROR of its own. */
     private static java.util.Set<String> blokRegelnamen(RegelSpraakDocumentContext doc) {
-        java.util.Set<String> namen = new java.util.HashSet<>();
-        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) {
+        java.util.Set<String> namen = knoopNamen(doc);
+        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc))
             namen.add(src(u.uitzonderingBasisNaam()));
-            namen.add(src(u.regelNaam()));
-        }
-        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
+        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc))
             if (g.OP() != null) namen.add(src(g.uitzonderingBasisNaam()));
+        return namen;
+    }
+
+    /** The names of the rules written as a node of a defaults tree: each 'Uitzondering op' and 'Afwijking van'
+     *  block's own name and each member of an 'Uitzonderingen ongeordend' block. A carrier among these is no base
+     *  rule: the carrier is looked up among the blocks first. */
+    private static java.util.Set<String> knoopNamen(RegelSpraakDocumentContext doc) {
+        java.util.Set<String> namen = new java.util.HashSet<>();
+        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) namen.add(src(u.regelNaam()));
+        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc))
             for (RegelContext lid : g.regel()) namen.add(src(lid.regelNaam()));
-        }
         return namen;
     }
 
@@ -442,6 +449,7 @@ final class RuleChecker {
         // The way out names the FIRST group header: nothing before it is in any group's scope, whereas "before
         // the header of the group at hand" can itself sit behind another group's last member.
         String eersteGroep = doc.regelGroep().isEmpty() ? null : src(doc.regelGroep().get(0).kaleNaam());
+        java.util.Set<String> knoopNamen = knoopNamen(doc);
         ParseTree vorige = null;
         for (ParseTree kind : doc.children == null ? List.<ParseTree>of() : doc.children) {
             if (kind instanceof ParserRuleContext blok && !(kind instanceof DefinitieContext)
@@ -473,7 +481,9 @@ final class RuleChecker {
                             + String.join("; ", redenen) + ". Een regelgroep bestaat alleen om recursie te "
                             + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
                             + "(dialect §4) hoort er niet in. Plaats het blok"
-                            + (dragerVan(kind) != null ? " en zijn basisregel" : "")
+                            // a carrier that is itself a block is no base rule: the message names what was written
+                            + (basis == null ? "" : knoopNamen.contains(basis) ? " en zijn drager"
+                                    : " en zijn basisregel")
                             + " buiten elke regelgroep: vóór de eerste regelgroepkop van het document ('Regelgroep "
                             + eersteGroep + "'), of achter een definitie die de groep afsluit",
                             blok.getStart().getLine()));

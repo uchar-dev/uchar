@@ -529,6 +529,24 @@ class UitzonderingOpUitzonderingTest {
                 + "lid van een 'Uitzonderingen ongeordend:'-blok zonder drager"), d.message());
     }
 
+    @Test void na_een_regelgroep_noemt_de_melding_de_drager_van_een_genest_blok() {
+        // The way out names what the block hangs on: its carrier where that is itself a block, the base rule where
+        // the carrier is one.
+        String groep = "\nRegelgroep andere regels"
+                + regel("iets anders", "Een Jutter is bergingsbevoegd", "hij betwist is");
+        String herroeping = op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is");
+        for (String blok : List.of(op("herroeping", "verval", UIT, "hij vervallen is"),
+                ongeordendOp("herroeping", regel("verval", UIT, "hij vervallen is")))) {
+            Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + herroeping + groep + blok));
+            assertTrue(d.message().contains("het staat direct na het laatste lid van regelgroep 'andere regels'"),
+                    d.message());
+            assertTrue(d.message().contains("Plaats het blok en zijn drager buiten elke regelgroep"), d.message());
+        }
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + groep
+                + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is")));
+        assertTrue(d.message().contains("Plaats het blok en zijn basisregel buiten elke regelgroep"), d.message());
+    }
+
     // -------------------------------------------------------------------- a shared conjunct is judged once
 
     @Test void een_marker_in_de_basisvoorwaarde_wordt_eenmaal_gemeld() {
