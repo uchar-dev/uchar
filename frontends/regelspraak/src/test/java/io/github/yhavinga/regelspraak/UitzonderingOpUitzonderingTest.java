@@ -670,7 +670,32 @@ class UitzonderingOpUitzonderingTest {
                 + op("herroeping", "verval", UIT, "hij vervallen is")));
         ExceptionGroup groep = g.defaults().get(0).excepties().leden().get(0);
         assertEquals("art. 4, derde laag", groep.defaults().get(0).bron());
-        assertNull(groep.bron(), "een uitzonderingsgroep is geen blok en draagt geen eigen annotatie");
+        assertEquals("Uitzondering op herroeping", groep.bron(),
+                "een kop maakt de uitzonderingsgroep: zij draagt de tekst van de kop, de annotatie staat op de default");
+    }
+
+    @Test void een_uitzonderingsgroep_en_een_groepsdefault_dragen_hun_kop_als_bron() {
+        // A head, not a rule, makes an exception group and a group-default, so each carries the head's text up to
+        // the carrier's name, as every hand-written anchor that nests gives these nodes a source.
+        PrioritizedDefaults g = enigeGroep(Resolver.resolve(MODEL + BASIS
+                + ongeordendOp("uitsluiting",
+                        regel("herroeping", NIET_UIT, "hij herroepen is"),
+                        regel("betwisting", NIET_UIT, "hij betwist is"))
+                + ongeordendOp("herroeping", regel("verval", UIT, "hij vervallen is"))
+                + op("betwisting", "bevestiging", UIT, "hij hersteld is")
+                + op("betwisting", "tweede bevestiging", UIT, "hij geschorst is")));
+        Default groepsdefault = g.defaults().get(0);
+        assertEquals("Uitzonderingen ongeordend op uitsluiting", groepsdefault.bron());
+        for (ExceptionGroup lid : groepsdefault.excepties().leden())
+            assertEquals("Uitzonderingen ongeordend op uitsluiting", lid.bron());
+        List<Default> leden = ongeordend(groepsdefault);
+        assertEquals("Uitzonderingen ongeordend op herroeping", leden.get(0).excepties().leden().get(0).bron());
+        assertEquals("Uitzondering op betwisting", leden.get(1).excepties().leden().get(0).bron(),
+                "de geordende groep van twee blokken draagt de kop die zij delen");
+        assertTrue(compact(Resolver.resolve(MODEL + BASIS
+                + ongeordendOp("uitsluiting", regel("herroeping", NIET_UIT, "hij herroepen is"))))
+                .contains("\"source\":{\"snippet\":\"Uitzonderingenongeordendopuitsluiting\"}"),
+                "de bron staat op de wire");
     }
 
     @Test void een_testdocument_aanvaardt_afwijking_van_en_ongeordend_op() {

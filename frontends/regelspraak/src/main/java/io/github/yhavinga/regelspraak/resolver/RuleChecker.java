@@ -841,7 +841,8 @@ final class RuleChecker {
             List<Default> keten = new ArrayList<>();
             if (wortelKinderen.get(0).soort == Blok.LID)   // one unordered block: a group-default directly above the base
                 keten.add(new Default(null, null, null, false,
-                        uitzonderingenVan(wortelKinderen, basisConjuncten, doel.kenmerk()), null));
+                        uitzonderingenVan(wortelKinderen, basisConjuncten, doel.kenmerk()),
+                        kopTekst(wortelKinderen.get(0).blok)));
             else
                 for (Knoop k : wortelKinderen) keten.add(0, defaultVan(k, basisConjuncten, doel.kenmerk()));
             keten.add(defaultVan(basisRegel, doel.kenmerk()));
@@ -980,19 +981,34 @@ final class RuleChecker {
 
     /** The exception groups of a carrier: one ordered group holding its ordered children, the later-written one
      *  first; or one group per member of its 'Uitzonderingen ongeordend op' block, unordered. Null without
-     *  children. An exception group is no block and carries no annotation of its own; each block's annotation
-     *  stands on the default it becomes. */
+     *  children. A head makes an exception group, not a rule, so the group's source is the head's text
+     *  ({@link #kopTekst}) and each block's annotation stands on the default the block becomes. */
     private Default.Excepties uitzonderingenVan(List<Knoop> kinderen, List<Conditie> dragerConjuncten, boolean kenmerk) {
         if (kinderen.isEmpty()) return null;
         if (kinderen.get(0).soort == Blok.LID) {
             List<ExceptionGroup> leden = new ArrayList<>();
             for (Knoop lid : kinderen)
-                leden.add(new ExceptionGroup(List.of(defaultVan(lid, dragerConjuncten, kenmerk)), null));
+                leden.add(new ExceptionGroup(List.of(defaultVan(lid, dragerConjuncten, kenmerk)),
+                        kopTekst(lid.blok)));
             return new Default.Excepties(true, leden);
         }
         List<Default> keten = new ArrayList<>();
         for (Knoop k : kinderen) keten.add(0, defaultVan(k, dragerConjuncten, kenmerk));   // later-written stacks higher
-        return new Default.Excepties(false, List.of(new ExceptionGroup(keten, null)));
+        return new Default.Excepties(false, List.of(new ExceptionGroup(keten, kopTekst(kinderen.get(0).blok))));
+    }
+
+    /** The written head of a block up to its carrier's name — "Uitzondering op herroeping", "Uitzonderingen
+     *  ongeordend op vrijstelling van een jutter" — as the source text of the exception group or group-default the
+     *  head makes: an ordered group holds the 'Uitzondering op' blocks of one carrier, whose heads all read so; a
+     *  member's group and a group-default come from their block's head. Each hand-written anchor that nests gives
+     *  every exception group and group-default a source. Built from the head's tokens and the carrier's name as
+     *  {@link DefinitionResolver#src} gives it, so a comment standing between them does not enter the text. */
+    private static String kopTekst(ParserRuleContext blok) {
+        if (blok instanceof UitzonderingRegelContext u)
+            return u.getStart().getText().replaceAll("\\s+", " ") + " " + src(u.uitzonderingBasisNaam());
+        UitzonderingGroepContext g = (UitzonderingGroepContext) blok;
+        return g.UITZONDERINGEN().getText() + " " + g.ONGEORDEND().getText() + " " + g.OP().getText() + " "
+                + src(g.uitzonderingBasisNaam());
     }
 
     /** One flat 'all' over the carrier's conjuncts and the node's own condition, its source the conjuncts' sources

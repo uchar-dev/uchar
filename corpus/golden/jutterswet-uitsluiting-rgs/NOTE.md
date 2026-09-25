@@ -78,6 +78,14 @@ waarop een genest conflict zou worden gesleuteld, en een groep van één lid
 kent geen conflict. De drie rechtvaardigingen zijn gelijk, conjunct voor
 conjunct en in dezelfde volgorde. Geen verschil van klasse (ii) of (iii).
 
+De `source`-records vallen buiten deze diff. Het anker draagt citaten:
+`art. 4` op de groep en `art. 4, eerste laag` tot `derde laag` op de
+defaults. De tweeling draagt op elke default de `// Bron:`-annotatie van
+haar blok, op de groep die van de basisregel, en op haar geneste
+uitzonderingsgroep de kop die de groep maakt, `Uitzondering op herroepen
+weigering`: een kop en geen regel maakt een uitzonderingsgroep, dus er
+staat geen annotatie boven. Het anker heeft geen uitzonderingsgroep.
+
 ## Cases
 
 De vier cases van het anker, byte-gelijk. Gemeten op dit `ir.json`: ref en

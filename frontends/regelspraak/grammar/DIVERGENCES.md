@@ -305,8 +305,12 @@ base replaces the inherited base whole (RUNTIME-SEMANTICS ch. 7.10), and
 exceptions nested in it would go with it. With single-member exception groups
 the chain and the nested shape order the defaults identically and decide
 identically on every input (ch. 7.9). A group-default carries no justification of
-its own (WF-075). Neither an `ExceptionGroup` nor a group-default is written as a
-block, so neither carries an annotation; a nested block's `// Bron:` annotation
+its own (WF-075). A head makes an `ExceptionGroup` and a group-default, not a rule,
+so no annotation belongs to either; each carries the head's text up to the
+carrier's name as its source: `Uitzondering op E1` on the ordered group of E1's
+children, whose heads all read so, and `Uitzonderingen ongeordend op X` on each
+member's group and on the group-default of that block. Every hand-written anchor
+that nests gives these nodes a source. A nested block's `// Bron:` annotation
 stands on its own default (next subsection).
 
 **`Uitzondering op X` is restrictive.** The justification of the default the
@@ -444,15 +448,17 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
 - nesting (form 2): a nested block's annotation lands on its own default inside
   the `ExceptionGroup`. Every lifted rule becomes a default in one place
   (`RuleChecker.defaultVan`), so the nested lowering inherits the placement. The
-  `ExceptionGroup` itself and a group-default carry no annotation: neither is
-  written as a block, so no annotation stands above either (witness
+  `ExceptionGroup` itself and a group-default carry the text of the head that
+  made them, not an annotation (form 2, above; witness
   `UitzonderingOpUitzonderingTest`);
 - an annotation written above the `Uitzonderingen ongeordend:` header belongs
   to no rule — an annotation belongs to the rule directly below it, and the
-  header is none — so it reaches no default and no group. It used to vanish
-  without a word; it now draws a WARNING that names it, instead of being hung
-  on a member the author did not choose. The same WARNING, citing §9.10,
-  covers an annotation above a `Regelgroep` header (fix round, 2026-09-23).
+  header is none — so it reaches no default and no group (the group-default an
+  `Uitzonderingen ongeordend op` header makes carries the header's own text,
+  form 2). It used to vanish without a word; it now draws a WARNING that names
+  it, instead of being hung on a member the author did not choose. The same
+  WARNING, citing §9.10, covers an annotation above a `Regelgroep` header (fix
+  round, 2026-09-23).
   The group's own `bron` is no place for it: on a `ResolvedRegelGroep` that
   record's snippet is the group's name (the `source` of its `RuleGroup`). A
   `Beslistabel` header is the one header whose annotation does reach the wire,

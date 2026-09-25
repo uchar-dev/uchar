@@ -8,9 +8,10 @@ import java.util.List;
  * via {@link Default#excepties}. An exception group carries NO target of its own. The RegelSpraak resolver builds
  * it from the dialect's defaults tree ({@code grammar/DIVERGENCES.md} §4, form 2): one ordered group holding the
  * children of an exception, later-written first, or one group per member of an {@code Uitzonderingen ongeordend
- * op} block. It is no block of its own, so there it carries no annotation ({@link #bron} null).
+ * op} block. A head makes it, not a rule, so there it carries the head's text as {@link #bron}: "Uitzondering op
+ * E1" for the ordered group of E1's children, "Uitzonderingen ongeordend op E1" for a member's group.
  *
  * @param defaults the member's priority chain, highest first (at least one)
- * @param bron     the statute/source annotation, or null
+ * @param bron     the source text, or null
  */
 public record ExceptionGroup(List<Default> defaults, String bron) {}

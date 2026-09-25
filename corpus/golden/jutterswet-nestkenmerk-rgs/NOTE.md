@@ -66,6 +66,16 @@ Het conflictfeit houdt dezelfde sleutel `Jutter.vrijgesteld/0`: de
 uitzonderingsgroepen hangen in beide documenten aan default 0 van de
 wortelketen. Geen verschil van klasse (ii) of (iii).
 
+De `source`-records vallen buiten deze diff; elk knooppunt van de
+defaults-laag draagt er in beide documenten een. Het anker draagt
+omschrijvingen: `art. 7: de vrijstelling met een geneste uitzondering` op
+de groep, `uitzondering ny: niet vrijgesteld` en `uitzondering nz:
+vrijgesteld` op de uitzonderingsgroepen. De tweeling draagt op elke default
+de `// Bron:`-annotatie van zijn blok, op de groep die van de basisregel,
+en op de groepsdefault en beide uitzonderingsgroepen de kop die ze maakt,
+`Uitzonderingen ongeordend op vrijstelling van een jutter`: een kop en geen
+regel maakt die knopen, dus er staat geen annotatie boven.
+
 ## Cases
 
 De vier cases van het anker, byte-gelijk. Gemeten op dit `ir.json`: ref en

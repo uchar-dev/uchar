@@ -98,7 +98,10 @@
                         "snippet": "ny"
                       }
                     }
-                  ]
+                  ],
+                  "source": {
+                    "snippet": "Uitzonderingen ongeordend op vrijstelling van een jutter"
+                  }
                 },
                 {
                   "node": "ExceptionGroup",
@@ -136,9 +139,15 @@
                         "snippet": "nz"
                       }
                     }
-                  ]
+                  ],
+                  "source": {
+                    "snippet": "Uitzonderingen ongeordend op vrijstelling van een jutter"
+                  }
                 }
               ]
+            },
+            "source": {
+              "snippet": "Uitzonderingen ongeordend op vrijstelling van een jutter"
             }
           },
           {
