@@ -38,11 +38,12 @@ two cases pin absolute values (`kadegeld` 5 and 9, `standaardvaarwater`
 Measured 2026-09-25 with the two mutants over the golden and rood zones:
 each turns this golden red and leaves every other document clean.
 
-**What the verifier compares byte for byte.** A rule that compares two
-datatypes whole (WF-062, WF-064, WF-066 to WF-070, WF-073, WF-074, WF-076)
-compares the domain name in them byte for byte: on a probe outside the
-corpus, a `Let` typed `VAARWATER` over a body typed `Vaarwater` is refused
-under WF-076. This golden carries no such position.
+**The rules that compare two datatypes whole** (WF-049, WF-061, WF-062,
+WF-064, WF-066 to WF-070, WF-072 to WF-074, WF-076) matched a domain name
+byte for byte until later on 2026-09-25 — on a probe outside the corpus, a
+`Let` typed `VAARWATER` over a body typed `Vaarwater` was refused under
+WF-076 — and match it case-insensitively since (IR-SPEC ch. 2.1). This golden
+carries no such position; `jutterswet-meldtermijnen` carries three.
 
 **Until L2** the one drift sat on the `Match` scrutinee's own type, an
 attribute reference typed `VAARWATER`. Since L2 a reference carries no type

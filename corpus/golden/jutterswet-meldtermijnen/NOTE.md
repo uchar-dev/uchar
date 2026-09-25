@@ -238,3 +238,33 @@ answers: that a position with a per-instance term stayed out of reach of the
 ASP carrier while `ref` played it. It no longer does. What is still out of
 reach there is the other half — a duty that names its parties as a VALUE —
 and that needs a new kind of datatype, not a wider fence.
+
+## The domain name in another case (since 2026-09-25)
+
+`standaardpositie` also spells the domain `meldstatus` as **`MELDSTATUS`** at
+three positions, and `meldpositie` beside it keeps one spelling throughout, so
+the two rules differ in these three spellings and in their init: the fold's
+own `type`, the `Construct` of the `Vervuld` arm of the outer `Match`, and the
+`then` branch of the `IfThenElse` under the `Dagverloop` arm. Each sits in a
+rule that compares two datatypes whole — the fold against its lambda body, its
+init and its accumulator parameter (WF-070), a `Match` against an arm body
+(WF-064), an `IfThenElse` against a branch (WF-069) — and IR-SPEC ch. 2.1
+matches a name case-insensitively, so the golden is verifier-clean. Until
+2026-09-25 those rules compared the domain name byte for byte and refused the
+document, measured:
+
+    WF-070 FAIL /rules/rules/1/versions/0/value/init: fold init datatype
+    differs from the accumulator type
+    WF-070 FAIL /rules/rules/1/versions/0/value/function: lambda parameter
+    'stand' is sumtype 'meldstatus', expected sumtype 'MELDSTATUS'
+    WF-070 FAIL /rules/rules/1/versions/0/value/function: lambda body is
+    sumtype 'meldstatus', but the fold requires sumtype 'MELDSTATUS'
+    WF-064 FAIL /rules/rules/1/versions/0/value/function/body: the 'Vervuld'
+    arm body is sumtype 'MELDSTATUS', but the match result type is sumtype
+    'meldstatus'
+    WF-069 FAIL …/function/body/arms/0/body/arms/0/body/then: the then branch
+    is sumtype 'MELDSTATUS', but the IfThenElse type is sumtype 'meldstatus'
+
+`ref` and the ASP backend replay the five cases with the pinned values, the
+spellings changing nothing; the Drools backend refuses the document at load,
+as before (`Datatype:SumType`).

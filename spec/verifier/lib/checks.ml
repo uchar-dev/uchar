@@ -3414,13 +3414,34 @@ let rec enum_use_site ctx at (d : datatype) : violation list =
       List.concat_map (fun (_, fd) -> enum_use_site ctx at fd) velden
   | _ -> []
 
+(* Two datatypes are the same datatype when they agree the way IR-SPEC
+   ch. 2.1 matches names: every name a datatype carries — its domain, an
+   enumeration value, a constructor, a field — case-insensitively (WF-001),
+   and everything else by value, a unit byte for byte (WF-091). Every rule
+   that compares two datatypes whole compares them with this. *)
+let rec same_datatype a b =
+  let same_name x y = norm x = norm y in
+  match (a, b) with
+  | Enumeratie { domein = d1; waarden = w1 }, Enumeratie { domein = d2; waarden = w2 } ->
+      Option.equal same_name d1 d2 && List.equal (Option.equal same_name) w1 w2
+  | Sum_type { domein = d1; constructoren = c1 }, Sum_type { domein = d2; constructoren = c2 } ->
+      same_name d1 d2
+      && List.equal
+           (fun (n1, p1) (n2, p2) -> same_name n1 n2 && Option.equal same_datatype p1 p2)
+           c1 c2
+  | Struct_type { domein = d1; velden = v1 }, Struct_type { domein = d2; velden = v2 } ->
+      same_name d1 d2
+      && List.equal (fun (n1, t1) (n2, t2) -> same_name n1 n2 && same_datatype t1 t2) v1 v2
+  | List_type { element = e1 }, List_type { element = e2 } -> same_datatype e1 e2
+  | _ -> a = b
+
 (* Two constructor lists agree when they carry the same constructors in the
-   same order with structurally equal payloads (names case-insensitively,
-   the WF-001 identity rule; payloads by the datatype equality WF-049 uses). *)
+   same order with the same payloads (names case-insensitively, the WF-001
+   identity rule; payloads by [same_datatype]). *)
 let constructors_agree (a : (string * datatype option) list)
     (b : (string * datatype option) list) =
   List.length a = List.length b
-  && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && p1 = p2) a b
+  && List.for_all2 (fun (n1, p1) (n2, p2) -> norm n1 = norm n2 && Option.equal same_datatype p1 p2) a b
 
 (* The declared field list of a domain, iff it is declared (in [domeinen])
    as a StructType — the nominal source of truth for WF-072..074, the
@@ -3431,11 +3452,11 @@ let struct_decl ctx domein : (string * datatype) list option =
   | _ -> None
 
 (* Two field lists agree when they carry the same fields in the same order
-   with structurally equal datatypes (names ci; datatypes by value equality —
-   the WF-061 constructors_agree pattern). *)
+   with the same datatypes (names ci; datatypes by [same_datatype] — the
+   WF-061 constructors_agree pattern). *)
 let fields_agree (a : (string * datatype) list) (b : (string * datatype) list) =
   List.length a = List.length b
-  && List.for_all2 (fun (n1, d1) (n2, d2) -> norm n1 = norm n2 && d1 = d2) a b
+  && List.for_all2 (fun (n1, d1) (n2, d2) -> norm n1 = norm n2 && same_datatype d1 d2) a b
 
 (* WF-072's use-site cross, as a datatype WALK — the struct sibling of
    [enum_use_site], and for the same measured reason. A `StructType` carries an
@@ -5354,7 +5375,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 @
                 (* the node's type is the timeline's element datatype *)
                 (match (typ, find_ci ot.attributen a) with
-                | Some t, Some (Some decl) when t <> decl ->
+                | Some t, Some (Some decl) when not (same_datatype t decl) ->
                     [ v "WF-049" (sub "type")
                         "the read's type must equal the timeline's element datatype" ]
                 | None, _ ->
@@ -5369,7 +5390,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    [ v "WF-049" (sub "base")
                        ("temporal read of parameter '" ^ p ^ "', which is not granular") ])
                 @ (match (typ, par.par_datatype) with
-                  | Some t, Some decl when t <> decl ->
+                  | Some t, Some decl when not (same_datatype t decl) ->
                       [ v "WF-049" (sub "type")
                           "the read's type must equal the timeline's element datatype" ]
                   | None, _ ->
@@ -5418,7 +5439,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        (match payload, argument with
                         | Some pd, Some a -> (
                             match ty a with
-                            | Some ad when ad <> pd ->
+                            | Some ad when not (same_datatype ad pd) ->
                                 [ v "WF-062" at
                                     ("argument type " ^ detail_vs ad ~against:pd
                                    ^ " does not match the declared payload "
@@ -5549,7 +5570,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             List.filter_map
               (fun (c, binder, body) ->
                 match expr_type ctx ~binders:(arm_binders c binder) body with
-                | Some bt when bt <> mt ->
+                | Some bt when not (same_datatype bt mt) ->
                     Some
                       (v "WF-064" at
                          ("the '" ^ c ^ "' arm body is " ^ detail_vs bt ~against:mt
@@ -5628,7 +5649,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      | None -> [] (* alien: reported above *)
                      | Some (_, fdt) -> (
                          match ty value with
-                         | Some vt when vt <> fdt ->
+                         | Some vt when not (same_datatype vt fdt) ->
                              [ v "WF-073" at
                                  ("field '" ^ fname ^ "' value is " ^ detail_vs vt ~against:fdt
                                 ^ ", but the declared field datatype is " ^ detail_vs fdt ~against:vt) ]
@@ -5659,7 +5680,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        ("'" ^ veld ^ "' is not a declared field of struct '" ^ domein ^ "'") ]
                | Some (_, fdt) -> (
                    match typ with
-                   | Some t when t <> fdt ->
+                   | Some t when not (same_datatype t fdt) ->
                        [ v "WF-074" (sub "type")
                            ("field access type " ^ detail_vs t ~against:fdt
                           ^ " differs from the declared field datatype " ^ detail_vs fdt ~against:t) ]
@@ -5677,7 +5698,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (* the body sees the binder, typed by its value *)
       let body_binders = (binder, ty value) :: binders in
       (match typ, expr_type ctx ~binders:body_binders lbody with
-       | Some t, Some bt when t <> bt ->
+       | Some t, Some bt when not (same_datatype t bt) ->
            [ v "WF-076" (sub "type")
                (Printf.sprintf
                   "the let type (%s) differs from its body type (%s) — the let type must equal the \
@@ -5719,7 +5740,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                (List.mapi
                   (fun i e ->
                     match ty e with
-                    | Some t when t <> ed ->
+                    | Some t when not (same_datatype t ed) ->
                         [ v "WF-066" (sub (Printf.sprintf "elements/%d" i))
                             ("element type " ^ detail_vs t ~against:ed
                            ^ " differs from the declared element " ^ detail_vs ed ~against:t) ]
@@ -5746,7 +5767,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       @ wf077_condition (sub "condition") condition
       @ (let branch name e =
            match typ, ty e with
-           | Some t, Some bt when t <> bt ->
+           | Some t, Some bt when not (same_datatype t bt) ->
                [ v "WF-069" (sub name)
                    ("the " ^ name ^ " branch is " ^ detail_vs bt ~against:t
                   ^ ", but the IfThenElse type is " ^ detail_vs t ~against:bt) ]
@@ -5771,7 +5792,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 (List.mapi
                    (fun i (a, (_, pt)) ->
                      match ty a with
-                     | Some at' when at' <> pt ->
+                     | Some at' when not (same_datatype at' pt) ->
                          [ v "WF-068" (sub (Printf.sprintf "arguments/%d" i))
                              ("argument type " ^ detail_vs at' ~against:pt
                             ^ " does not match the parameter datatype " ^ detail_vs pt ~against:at') ]
@@ -5797,7 +5818,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                 "fold accumulator is list-typed — it must be a first-order non-list datatype" ]
         | _ -> [])
       @ (match typ, ty init with
-        | Some at', Some it when at' <> it ->
+        | Some at', Some it when not (same_datatype at' it) ->
             [ v "WF-070" (sub "init") "fold init datatype differs from the accumulator type" ]
         | _ -> [])
       (* WF-069/070: the (accumulator, element) function, its closed body *)
@@ -5821,7 +5842,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       fold_source_check ctx ~binders (sub "list") list
       (* WF-070: the node type equals the source's list type *)
       @ (match typ, ty list with
-        | Some t, Some s when t <> s ->
+        | Some t, Some s when not (same_datatype t s) ->
             [ v "WF-070" (sub "type") "filter result type must equal the source list type" ]
         | _ -> [])
       @ walk_expr ctx ~binders ~subject ~body (sub "list") list
@@ -5953,7 +5974,7 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
            (List.map2
               (fun (pn, pt) exp ->
                 match exp with
-                | Some e when e <> pt ->
+                | Some e when not (same_datatype e pt) ->
                     [ v "WF-070" at
                         ("lambda parameter '" ^ pn ^ "' is " ^ detail_vs pt ~against:e ^ ", expected "
                        ^ detail_vs e ~against:pt) ]
@@ -5976,7 +5997,7 @@ and check_fold_fn ctx ~binders ~subject at ~params ~result (fn : fold_fn) : viol
            ( result,
              expr_type ctx ~binders:(List.map (fun (n, dt) -> (n, Some dt)) parameters) lbody )
          with
-        | Some r, Some b when r <> b ->
+        | Some r, Some b when not (same_datatype r b) ->
             [ v "WF-070" at
                 ("lambda body is " ^ detail_vs b ~against:r ^ ", but the fold requires "
                ^ detail_vs r ~against:b) ]
@@ -8960,7 +8981,7 @@ let wf067 ctx =
                   fd.fd_result )
               with
              | None, _ -> []
-             | Some bt, r when bt <> r ->
+             | Some bt, r when not (same_datatype bt r) ->
                  [ v "WF-067" (at ^ "/body/type")
                      ("the body is " ^ detail_vs bt ~against:r ^ ", but the declared result is "
                     ^ detail_vs r ~against:bt) ]

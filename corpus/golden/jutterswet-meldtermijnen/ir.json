@@ -671,7 +671,7 @@
               "node": "Fold",
               "type": {
                 "node": "SumType",
-                "domain": "meldstatus",
+                "domain": "MELDSTATUS",
                 "constructors": [
                   {
                     "name": "Openstaand",
@@ -874,7 +874,7 @@
                                 "node": "Construct",
                                 "type": {
                                   "node": "SumType",
-                                  "domain": "meldstatus",
+                                  "domain": "MELDSTATUS",
                                   "constructors": [
                                     {
                                       "name": "Openstaand",
@@ -1011,7 +1011,7 @@
                         "node": "Construct",
                         "type": {
                           "node": "SumType",
-                          "domain": "meldstatus",
+                          "domain": "MELDSTATUS",
                           "constructors": [
                             {
                               "name": "Openstaand",
