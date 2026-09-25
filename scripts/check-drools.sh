@@ -909,7 +909,14 @@ EXPECTED_CHANNEL=(
 # plays all twelve cases on the first run, PLAYED 12, with ref's and clingo's values. The DRL-text
 # branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not
 # move.
-EXPECTED_PLAYED=200
+# 200 -> 201 (2026-09-25, card verifier-allocatie-keten): jutterswet-strandmelding, new and
+# hand-computed — an object creation of the supertype beside a defaults group on the subtype. It is
+# the one document whose creation WF-050's creation chain arm must NOT report: the created instance is
+# a plain Strandrecht, which does not inherit the subtype's stack, so the group never runs on it. No
+# source file of this backend changed: the exec branch plays its one case on the first run, PLAYED 1,
+# with ref's and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A)
+# of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=201
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -922,7 +929,7 @@ EXPECTED_PLAYED=200
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-six of the eighty
+# Why the reasons are grouped rather than written one by one: seventy-seven of the eighty-one
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -943,9 +950,11 @@ DRL_CHANNEL=(
   # (card dialect-uitzondering-op-uitzondering): until then the header said 22 and 3, which stopped
   # holding when jutterswet-afdrachtstapel arrived (166 -> 167 at EXPECTED_DRL_PLAYED). Recounted
   # again the same day (card verifier-supertype-dubbele-schrijver, fix round): jutterswet-diepwrakbasis
-  # joins the class, 28 -> 29 lines and 23 -> 24 (195 -> 196 at EXPECTED_PLAYED). And again the same
+  # joins the class, 28 -> 29 lines and 23 -> 24 (196 -> 197 at EXPECTED_PLAYED). And again the same
   # day (card dialect-opgave-boven-berekening): jutterswet-opgave-boven-berekening joins the class,
-  # 29 -> 30 lines and 24 -> 25 (197 -> 198 at EXPECTED_PLAYED).
+  # 29 -> 30 lines and 24 -> 25 (199 -> 200 at EXPECTED_PLAYED). Recounted again the same day (card
+  # verifier-allocatie-keten): jutterswet-strandmelding joins the class, 30 -> 31 lines and 25 -> 26
+  # (200 -> 201 at EXPECTED_PLAYED).
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -966,6 +975,7 @@ DRL_CHANNEL=(
   "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-schorsing|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-strandmelding|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-tariefrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-uitsluiting-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-vangstheffing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"

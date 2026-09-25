@@ -1,0 +1,32 @@
+Objecttype het Strandrecht (mv: Strandrechten)
+    de grondslag Numeriek (niet-negatief getal met 2 decimalen);
+    de uitkering Numeriek (niet-negatief getal met 2 decimalen);
+
+Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+
+Objecttype de Melding (mv: Meldingen)
+    de omvang Numeriek (niet-negatief getal met 2 decimalen);
+    de gemelde uitkering Numeriek (niet-negatief getal met 2 decimalen);
+
+Feittype strandmelding
+    de melding Melding
+    het gemeld strandrecht Strandrecht
+Eén melding meldt één gemeld strandrecht
+
+Regel maak een strandrecht bij elke melding
+    geldig altijd
+        Een Melding heeft een gemeld strandrecht met uitkering gelijk aan zijn omvang.
+
+Regel uitkering van een wrakrecht
+    geldig altijd
+        De uitkering van een Wrakrecht moet gesteld worden op 5,00.
+
+Uitzondering op uitkering van een wrakrecht: uitkering van een groot wrakrecht
+    geldig altijd
+        De uitkering van een Wrakrecht moet gesteld worden op 9,00
+        indien zijn grondslag groter is dan 100.
+
+Regel lees de gemelde uitkering
+    geldig altijd
+        De gemelde uitkering van een Melding moet gesteld worden op de uitkering van zijn gemeld strandrecht.
+

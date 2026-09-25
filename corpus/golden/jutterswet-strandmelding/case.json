@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {
+          "omvang": {
+            "number": "50.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "150.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "150.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "gemelde uitkering",
+      "value": {
+        "number": "50.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "uitkering",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "uitkering",
+      "value": {
+        "number": "9.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
