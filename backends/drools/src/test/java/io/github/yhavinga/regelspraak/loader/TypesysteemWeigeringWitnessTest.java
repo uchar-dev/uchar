@@ -247,7 +247,7 @@ class TypesysteemWeigeringWitnessTest {
             ir = golden(PENNINGJAAR);
             ((ArrayNode) ir.at(STELSEL + "/units")).add(((ObjectNode) ir.at(euro).deepCopy()).put("abbreviation", tweede));
             assertTrue(weigert(ir, STELSEL + "/units/1/abbreviation").getMessage().endsWith(": the unit '" + tweede
-                    + "' is declared twice in the unit system 'Munt': one Unit per abbreviation (WF-009)"), tweede);
+                    + "' is declared twice in the unit system 'Munt': one Unit per abbreviation"), tweede);
         }
     }
 

@@ -7,7 +7,6 @@ resolves by.
 
     WF-009 FAIL /model/unitSystems/0/units/2/abbreviation: the unit 't' is
     declared twice in the unit system 'Gewicht': one Unit per abbreviation
-    (WF-009)
 
 Until L3 a unit system was a map keyed by the unit, so a second declaration of
 one abbreviation could not be written. Since L3 it is a list (card

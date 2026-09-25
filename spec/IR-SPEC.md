@@ -1425,8 +1425,8 @@ Worked examples (expected values exact):
   it, the Drools loader refused it (measured 2026-09-24 on a second `t` with
   another factor) — so the verifier refuses the second declaration at its
   own position: "the unit '<a>' is declared twice in the unit system '<s>':
-  one Unit per abbreviation (WF-009)", the sentence the Drools loader writes
-  too (witness `wf009-dubbele-afkorting`). *v0 mirror note:* a conversion cycle
+  one Unit per abbreviation", the sentence the Drools loader writes too
+  (witness `wf009-dubbele-afkorting`). *v0 mirror note:* a conversion cycle
   silently makes the re-entered unit its own base; an *unknown* target is
   worse — v0 adopts the unknown name as the canonical, so two units both
   declared against the same unknown target silently become convertible

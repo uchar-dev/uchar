@@ -984,7 +984,7 @@ public final class IrLoader {
             Eenheid e = unit(u, up, es);
             if (botsing(es.eenheden.keySet(), e.afkorting()) != null)
                 throw new Documentfout(up + "/abbreviation", "the unit '" + e.afkorting() + "' is declared twice in"
-                        + " the unit system '" + es.naam + "': one Unit per abbreviation (WF-009)");
+                        + " the unit system '" + es.naam + "': one Unit per abbreviation");
             es.eenheden.put(e.afkorting(), e);
             if (u.has("spellings"))
                 for (String spelling : tekstLijst(u, up, "spellings")) es.aliassen.put(spelling, e);

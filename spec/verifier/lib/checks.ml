@@ -1296,7 +1296,7 @@ let wf009 ctx =
                v "WF-009" at
                  (Printf.sprintf
                     "the unit '%s' is declared twice in the unit system '%s': one Unit per \
-                     abbreviation (WF-009)"
+                     abbreviation"
                     a sn))
       in
       let lookup c =
