@@ -222,7 +222,9 @@ dune build --root spec/verifier >/dev/null 2>&1 || fail "the verifier build is r
 VERIFIER=spec/verifier/_build/default/bin/verifier.exe
 [ -x "$VERIFIER" ] || fail "no verifier binary at $VERIFIER after the build"
 VH_DIRS=(); VH_PINS=()
-for e in "${VERIFIER_HOLDOUTS[@]}"; do
+# The list may be empty: bash 3.2 under set -u calls "${a[@]}" on an empty array unbound, so every
+# expansion of the list goes through the ${a[@]+...} form.
+for e in ${VERIFIER_HOLDOUTS[@]+"${VERIFIER_HOLDOUTS[@]}"}; do
   key=${e%% *}
   dirs=$(find "$TOKA/cases" -mindepth 1 -maxdepth 1 -type d -name "scenario-$key-*" | sort)
   nd=$(printf '%s\n' "$dirs" | grep -c .)
@@ -354,7 +356,8 @@ echo ""
 echo "check-toka-parity: PASS"
 echo "  re-emission: $casus_n casus dump(s), $frag_n .rgs re-emitted byte-identical, floor $EXPECTED_MIN_FRAGMENTS (holdouts: ${HOLDOUTS[*]}); TOKA suite $tests tests, floor $EXPECTED_MIN_TESTS"
 echo "  schema: $slice_n replay slice(s) metaschema-valid + byte-round-trip (gate-2 discipline, explicit mode)"
-echo "  well-formedness: $clean_n replay slice(s) verifier-clean, floor $EXPECTED_MIN_CLEAN (verifier holdouts: $(printf '%s; ' "${VERIFIER_HOLDOUTS[@]}" | sed 's/; $//')); the casus dump is outside this leg (the parity object, not a well-formed program)"
+vh_list=$(printf '%s; ' ${VERIFIER_HOLDOUTS[@]+"${VERIFIER_HOLDOUTS[@]}"} | sed 's/; $//')
+echo "  well-formedness: $clean_n replay slice(s) verifier-clean, floor $EXPECTED_MIN_CLEAN (verifier holdouts: ${vh_list:-none}); the casus dump is outside this leg (the parity object, not a well-formed program)"
 echo "  differential replay: $cases_n toka cases (floor $EXPECTED_MIN_CASES) through ref, clingo, Drools (slices under $TOKA/cases/), ZERO silent divergences"
 echo "    ref    : $ref_pass PASS / 0 diverge  (the 100% oracle carries every toka case)"
 echo "    clingo : $clingo_pass PASS / $clingo_fault loud translation-fault / 0 silent diverge"
