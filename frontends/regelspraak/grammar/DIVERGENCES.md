@@ -209,9 +209,9 @@ makes it false anyway.
 **Refusals and the warning** (witness: `NietInUitzonderingTest`):
 
 - a negated kenmerktoekenning in a plain `Regel` — no exception, no member of
-  an unordered block, no base of a chain — is an ERROR that cites §9.2, §3.5,
-  WF-022 and this section ("een gewone regel kan een kenmerk niet ontkennen
-  …").
+  an unordered block, no base of a chain — is an ERROR in the verifier's WF-022
+  sentence for the value the rule would write (`regel '<naam>':
+  characteristic target's value must be the boolean constant true`).
   Measured on the frontend before this card: the sentence went to disk as an
   undeclared characteristic `niet uitgesloten` with `diagnostics: []`, for the
   verifier to refuse under WF-022; in an `Uitzondering op` it drew "schrijft een

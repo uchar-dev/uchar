@@ -283,12 +283,9 @@ final class RuleChecker {
             if (!gemeld.add(zonderVersie(r.naam()))) continue;
             Expr.AttribuutRef doel = (Expr.AttribuutRef) r.doel();
             int tabel = tabelregel(r.naam());
+            // the lowered rule writes false into the characteristic, which the verifier refuses in these words
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "regel '" + zonderVersie(r.naam()) + "'"
-                    + tabelVanRij(r.naam()) + ": een gewone regel kan een kenmerk niet ontkennen (§9.2) — zonder "
-                    + "toekenning is '" + doel.attribuut() + "' al onwaar (§3.5), en een gewone regel kent een kenmerk "
-                    + "op de wire alleen 'waar' toe (WF-022). Een ontkenning ('is niet', 'heeft geen', 'is geen', 'is niet een') "
-                    + "staat alleen in een regel die een default wordt: het lichaam van een 'Uitzondering op', een lid van "
-                    + "'Uitzonderingen ongeordend', of de basisregel van een 'Uitzondering op'-keten (dialect §4)",
+                    + tabelVanRij(r.naam()) + ": characteristic target's value must be the boolean constant true",
                     tabel >= 0 ? tabel : doel.bron() == null ? 0 : doel.bron().line()));
         }
     }

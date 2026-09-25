@@ -162,11 +162,8 @@ class NietInUitzonderingTest {
                     indien hij geschorst is.
             """.formatted(resultaat));
         Diagnostic d = enigeFout(m);
-        assertTrue(d.message().startsWith("regel 'vlak'"), d.message());
-        assertTrue(d.message().contains("§9.2") && d.message().contains("dialect §4"),
-                () -> "de weigering noemt §9.2 en het dialect §4 niet: " + d.message());
-        assertTrue(d.message().contains("staat alleen in een regel die een default wordt"),
-                () -> "de weigering noemt de toegelaten plaatsen niet: " + d.message());
+        // the lowered rule writes false into the characteristic, which the verifier refuses in these words
+        assertEquals("regel 'vlak': characteristic target's value must be the boolean constant true", d.message());
         assertFalse(d.message().contains("ander doel"), "niet de misleidende doelmelding van meting 1");
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
@@ -182,7 +179,7 @@ class NietInUitzonderingTest {
                     indien hij vergunning geweigerd is.
             """);
         Diagnostic d = enigeFout(m);
-        assertTrue(d.message().startsWith("regel 'vlak'") && d.message().contains("§9.2"), d.message());
+        assertEquals("regel 'vlak': characteristic target's value must be the boolean constant true", d.message());
     }
 
     @Test void een_vlakke_ontkenning_met_twee_versies_weigert_eenmaal() {
@@ -211,8 +208,8 @@ class NietInUitzonderingTest {
             | 1 | waar | 5 |
             """);
         Diagnostic d = enigeFout(m);
-        assertTrue(d.message().contains("een rij van beslistabel 'Uitsluitingstabel'") && d.message().contains("§9.2"),
-                d.message());
+        assertTrue(d.message().contains("een rij van beslistabel 'Uitsluitingstabel'")
+                && d.message().contains("characteristic target's value must be the boolean constant true"), d.message());
         assertEquals(9, d.line(), "de regel van de tabelkop in het document, niet die in de apart geparste rij");
     }
 
