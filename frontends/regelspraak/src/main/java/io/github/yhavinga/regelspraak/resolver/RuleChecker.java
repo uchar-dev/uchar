@@ -1779,14 +1779,23 @@ final class RuleChecker {
      *  engine caps the run-away instead of hanging, and both back-ends would diverge forever). The spec
      *  does not forbid the writing, so this is a WARNING, not an ERROR: a voorwaarde may break the cycle
      *  at runtime (statically undecidable). Edges: doel-attribuut -> every OWN attribute its value reads,
-     *  same objecttype; a SELF-read (x = x+1) is excluded — no-loop makes the single writer terminate. */
+     *  same objecttype. A SELF-read (x = x+1) is the cycle of one node and gets the same WARNING: the verifier
+     *  refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools no-loop that
+     *  makes a single writer terminate is no ground to pass it in silence. Left out of the graph is the one
+     *  read the clamp idiom "x = x, met een maximum van y" makes of its own target as the clamp's base, which
+     *  {@code RecursieTest} pins diagnostics-free; a bound that reads the target is an edge like any other. */
     private void keurKringverwijzingen() {
         Map<String, Set<String>> leest = new LinkedHashMap<>();
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef d) || d.navigatieRol() != null || d.objecttype() == null) continue;
             String doel = d.objecttype().naam + "." + d.attribuut();
             Set<String> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
-            verzamelEigenReads(r.waarde(), d.objecttype(), doel, reads);
+            if (r.waarde() instanceof Expr.Begrensd bg && bg.basis() instanceof Expr.AttribuutRef basis
+                    && basis.navigatieRol() == null && basis.objecttype() == d.objecttype()
+                    && doel.equals(d.objecttype().naam + "." + basis.attribuut())) {
+                verzamelEigenReads(bg.minimum(), d.objecttype(), reads);
+                verzamelEigenReads(bg.maximum(), d.objecttype(), reads);
+            } else verzamelEigenReads(r.waarde(), d.objecttype(), reads);
         }
         Set<String> gemeld = new java.util.HashSet<>();
         for (String start : leest.keySet()) {
@@ -1803,7 +1812,7 @@ final class RuleChecker {
         if (!bezocht.add(hier)) return null;
         pad.add(hier);
         for (String naar : leest.getOrDefault(hier, Set.of())) {
-            if (naar.equals(start) && pad.size() > 1) return new ArrayList<>(pad);
+            if (naar.equals(start)) return new ArrayList<>(pad);   // one node: a self-read
             List<String> diep = zoekKring(start, naar, leest, bezocht, pad);
             if (diep != null) return diep;
         }
@@ -1811,36 +1820,33 @@ final class RuleChecker {
         return null;
     }
 
-    /** The OWN attributes (same objecttype) an expression reads, as "Objecttype.attribuut" nodes —
-     *  {@code zelf} (the doel itself) excluded: a self-read terminates via no-loop. */
-    private static void verzamelEigenReads(Expr e, Objecttype subject, String zelf, Set<String> uit) {
+    /** The OWN attributes (same objecttype) an expression reads, as "Objecttype.attribuut" nodes — the doel
+     *  itself included, since a self-read is a cycle too ({@link #keurKringverwijzingen}). */
+    private static void verzamelEigenReads(Expr e, Objecttype subject, Set<String> uit) {
         if (e instanceof Expr.AttribuutRef a) {
-            if (a.navigatieRol() == null && a.objecttype() == subject) {
-                String node = subject.naam + "." + a.attribuut();
-                if (!node.equals(zelf)) uit.add(node);
-            }
+            if (a.navigatieRol() == null && a.objecttype() == subject) uit.add(subject.naam + "." + a.attribuut());
         } else if (e instanceof Expr.Binair b) {
-            verzamelEigenReads(b.links(), subject, zelf, uit);
-            verzamelEigenReads(b.rechts(), subject, zelf, uit);
+            verzamelEigenReads(b.links(), subject, uit);
+            verzamelEigenReads(b.rechts(), subject, uit);
         } else if (e instanceof Expr.Functie f) {
-            for (Expr a : f.argumenten()) verzamelEigenReads(a, subject, zelf, uit);
+            for (Expr a : f.argumenten()) verzamelEigenReads(a, subject, uit);
         } else if (e instanceof Expr.Afgerond af) {
-            verzamelEigenReads(af.basis(), subject, zelf, uit);
+            verzamelEigenReads(af.basis(), subject, uit);
         } else if (e instanceof Expr.Begrensd bg) {
-            verzamelEigenReads(bg.basis(), subject, zelf, uit);
-            verzamelEigenReads(bg.minimum(), subject, zelf, uit);
-            verzamelEigenReads(bg.maximum(), subject, zelf, uit);
+            verzamelEigenReads(bg.basis(), subject, uit);
+            verzamelEigenReads(bg.minimum(), subject, uit);
+            verzamelEigenReads(bg.maximum(), subject, uit);
         } else if (e instanceof Expr.TekstReeks tr) {
             for (Expr.TekstReeks.Deel d : tr.delen())
-                if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, zelf, uit);
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) verzamelEigenReads(i.expr(), subject, uit);
         } else if (e instanceof Expr.DimensieCel dc) {
-            verzamelEigenReads(dc.attribuut(), subject, zelf, uit);
+            verzamelEigenReads(dc.attribuut(), subject, uit);
         } else if (e instanceof Expr.Let l) {
             // ch. 4.10: since the let-lowering card a rule value is a Let CHAIN, so both halves carry reads —
             // a variabelendeel definition (the value) as much as the expression that reads it (the body).
             // Stopping at the Let would drop every §11 variable's edge out of the cycle graph.
-            verzamelEigenReads(l.value(), subject, zelf, uit);
-            verzamelEigenReads(l.body(), subject, zelf, uit);
+            verzamelEigenReads(l.value(), subject, uit);
+            verzamelEigenReads(l.body(), subject, uit);
         }
     }
 

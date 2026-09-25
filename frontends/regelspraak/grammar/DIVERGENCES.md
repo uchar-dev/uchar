@@ -1341,8 +1341,13 @@ which is the measurement above stated as a property.
 - A computation of X that reads X, directly or through another attribute, is a
   dependency cycle the verifier refuses under WF-045 with or without the marker;
   with the marker the cycle runs through the generated group and WF-046 and
-  WF-051 speak as well. Measured 2026-09-25. The frontend warns about a
-  transitive cycle and says nothing about a direct self-read, marker or not.
+  WF-051 speak as well. Measured 2026-09-25. The frontend gives both the same
+  WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
+  — …` for the direct self-read, in the author's names, and still writes the
+  document, as it does for every cycle (witness: `ZelflezingKringTest`). The
+  clamp idiom "x = x, met een maximum van y" is the one self-read left without
+  it, because `RecursieTest` pins it diagnostics-free; the verifier refuses that
+  form under WF-045 as well (measured the same day).
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.
