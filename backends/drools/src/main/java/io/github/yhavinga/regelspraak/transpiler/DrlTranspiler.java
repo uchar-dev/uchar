@@ -894,8 +894,10 @@ public final class DrlTranspiler {
      *  and leeg/gevuld use the plain negation (their empty cells are complementary).
      *  Returns null when no faithful negation exists — the caller marks the rule. */
     private String schendingConstraint(Acc acc, Conditie assertie, Objecttype subject) {
-        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
-            // §13.4.8: "alle criteria moeten gelden" — inconsistent when ANY criterion is violated.
+        if (assertie instanceof Conditie.Samengesteld s
+                && (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE)) {
+            // §13.4.8: "alle criteria moeten gelden" — inconsistent when ANY criterion is violated. The quantifier
+            // the reads the same on a composite (RUNTIME-SEMANTICS ch. 5.10: all and the need h = n).
             // OR the per-criterion violations; an un-lowerable criterion no-ops the whole rule.
             java.util.List<String> schendingen = new java.util.ArrayList<>();
             for (Conditie deel : s.onderdelen()) {

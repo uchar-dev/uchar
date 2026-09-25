@@ -5549,7 +5549,9 @@ public final class ExecModelTranspiler {
      *  operand is leeg (the typeringen leegwaarde tables make it onwaar -> inconsistent). null -> skip. */
     private Predicate1<Object> schending(Conditie assertie, Objecttype subject) {
         // §13.4.8: "alle criteria moeten gelden" -> inconsistent when ANY criterion is violated (OR the schendingen).
-        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
+        // The quantifier the reads the same on a composite (RUNTIME-SEMANTICS ch. 5.10: all and the need h = n).
+        if (assertie instanceof Conditie.Samengesteld s
+                && (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE)) {
             List<Predicate1<Object>> schendingen = new ArrayList<>();
             for (Conditie deel : s.onderdelen()) {
                 Predicate1<Object> sp = schending(deel, subject);
@@ -5738,7 +5740,8 @@ public final class ExecModelTranspiler {
             Predicate2<Object, Object> venster = vensterToets(per, subject);
             return venster == null ? null : (s, rd) -> !venster.test(s, rd);
         }
-        if (assertie instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
+        if (assertie instanceof Conditie.Samengesteld s
+                && (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE)) {
             List<Predicate2<Object, Object>> schendingen = new ArrayList<>();
             for (Conditie deel : s.onderdelen()) {
                 Predicate1<Object> zonder = Conditie.bevatPeriode(deel) ? null : schending(deel, subject);
