@@ -50,11 +50,41 @@ class TyperingZinTest {
             Regel r
                 geldig altijd
                     %s
+
+            Objecttype de Vondst (mv: Vondsten)
+                is gewogen kenmerk (bijvoeglijk);
+
+            Feittype vondstmelding
+                de melder Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén melder heeft meerdere vondsten
             """.formatted(zin));
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
 
     static List<String> fout(String zin) { return List.of("ERROR 30 " + zin); }
+
+    @Test void venstergrens_telwoord_volledige_periode_en_kenmerkwaarde() {
+        assertEquals(fout("periodevergelijking: window bound is text, must be a date"),
+                meldingen("De uitkomst van een Jutter moet gesteld worden op 5 vanaf zijn naam."));
+        String kwantor = "Een Jutter is waardevol indien hij aan ten minste %s van de volgende voorwaarden voldoet:\n"
+                + "                    - zijn telling is groter dan 1\n"
+                + "                    - zijn uitkomst is groter dan 2.";
+        assertEquals(fout("telwoord van een kwantificatie: counting quantifier with threshold 0 < 1"),
+                meldingen(kwantor.formatted("0")));
+        // a decimal telwoord reaches the wire as 0, a number the author did not write
+        assertEquals(fout("telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn"),
+                meldingen(kwantor.formatted("1,5")));
+        assertEquals(List.of("ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod "
+                        + "qualifier on a non-time-dependent operand"),
+                meldingen("Een Jutter is waardevol indien zijn telling gedurende het gehele jaar groter is dan 5."));
+        assertTrue(meldingen("Een Jutter is waardevol indien hij gedurende het gehele jaar waardevol is.").contains(
+                "ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a "
+                        + "non-time-dependent characteristic"));
+        assertEquals(fout("kenmerkwaardetoekenning 'gewogen': characteristic initialisation's value must be a "
+                        + "boolean-typed expression"),
+                meldingen("Een Jutter heeft een vondst met gewogen gelijk aan 5."));
+    }
 
     @Test void datumprecisie() {
         assertEquals(fout("voorwaarde: gelijk: equality across date precisions"),

@@ -78,6 +78,9 @@ class VouwOperandZinTest {
         assertTrue(meldingen(o + "het totaal van de vondstnaam van alle vondsten van de Jutter.").contains(
                 "ERROR 26 totaal van: the total of 'vondstnaam' on 'Vondst' folds Text values: a total, sum or "
                         + "pro-rata part is arithmetic over a Number, and Text values are not amounts"));
+        assertEquals(fout("leegwaarde-alternatief van een sommatie: sum fallback is text, must be numeric"),
+                meldingen(o + "de som van de vondstwaarde van alle vondsten van de Jutter of zijn naam als die er niet "
+                        + "zijn."));
         // the verifier names a parameter by its name and any other operand by its position
         assertTrue(meldingen(o + "de som van de havennaam.").contains(
                 "ERROR 26 som van: the sum of the parameter 'havennaam' folds Text values: a total, sum or pro-rata "
@@ -117,6 +120,9 @@ class VouwOperandZinTest {
                 meldingen(u + "de maximale waarde van zijn telling en zijn aandeel."));
         assertEquals(fout("eerste van vereist datumexpressies, kreeg Numeriek"),
                 meldingen(u + "de eerste van zijn telling en zijn hulp."));
+        assertEquals(fout("leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg Percentage (§5.8.2)"),
+                meldingen(u + "de som van de vondstwaarde van alle vondsten van de Jutter of zijn aandeel als die er "
+                        + "niet zijn."));
         assertEquals(fout("de wortel van vereist numerieke operanden, kreeg Tekst"),
                 meldingen(u + "de wortel van zijn naam naar beneden afgerond op 2 decimalen."));
     }

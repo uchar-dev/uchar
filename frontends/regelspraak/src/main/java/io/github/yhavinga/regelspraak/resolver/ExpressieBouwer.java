@@ -609,11 +609,16 @@ final class ExpressieBouwer {
         Expr leegwaarde = leegwaardeVan(f);
         // §4.10/§5.8.2: the fallback substitutes for the sum's RESULT, so it must be numeriek
         // (a Tekst/Datum fallback would otherwise emit a type-mixed DRL ternary that throws at
-        // fire time). Onbekend = no claim, so it is not flagged.
+        // fire time). Onbekend = no claim, so it is not flagged. The verifier refuses every such fallback but a
+        // percentage (WF-038), so the others carry its sentence.
         if (leegwaarde != null && !leegwaarde.type().isNumeriek() && !leegwaarde.type().isOnbekend())
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg "
-                            + leegwaarde.type() + " (§5.8.2)", f.getStart().getLine()));
+                    leegwaarde.type().isGetalachtig()
+                            ? "leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg "
+                                    + leegwaarde.type().naam() + " (§5.8.2)"
+                            : "leegwaarde-alternatief van een sommatie: sum fallback is "
+                                    + Typering.soortWoord(leegwaarde.type()) + ", must be numeric",
+                    f.getStart().getLine()));
         // declared-names-only IR: an aggregation over a SET read ("de <x> van alle <elem>") whose written form binds NO
         // declared member of the (known) element type is Onopgelost — with a WARNING — so both back-ends
         // marker it instead of accumulating over a getter that does not exist (an uncompilable DRL package /

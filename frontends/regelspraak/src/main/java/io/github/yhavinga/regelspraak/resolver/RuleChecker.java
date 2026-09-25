@@ -2860,9 +2860,14 @@ final class RuleChecker {
         // two branches disagree about what the type has (a binding on the left, an ERROR on the right).
         String kenmerk = nieuwType.kenmerkNaam(naam);
         if (kenmerk != null) {
+            // the verifier refuses a value that is typed and no boolean (WF-027); a boolean-typed expression it
+            // admits, where §13.4.6.4 demands the literal, so that refusal keeps its own words
             if (!(waarde instanceof Expr.Literal lit && lit.type() instanceof Datatype.Booleaan))
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "kenmerkwaardetoekenning '" + kenmerk + "' vereist waar of onwaar (§13.4.6.4), niet '"
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, waarde.type() != null
+                        && !waarde.type().isOnbekend() && !(waarde.type() instanceof Datatype.Booleaan)
+                        ? "kenmerkwaardetoekenning '" + kenmerk + "': characteristic initialisation's value must be "
+                                + "a boolean-typed expression"
+                        : "kenmerkwaardetoekenning '" + kenmerk + "' vereist waar of onwaar (§13.4.6.4), niet '"
                                 + waarde.bron() + "'", oc.getStart().getLine()));
             return new ResolvedObjectCreatie.Toekenning(kenmerk, waarde, true);
         }
@@ -3416,9 +3421,8 @@ final class RuleChecker {
         }
         for (Expr grens : new Expr[]{van, tot})
             if (grens != null && grens.type() != null && !grens.type().isOnbekend() && !grens.type().isDatum())
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "een periodevergelijking (§8.4.3) vereist datum-expressies als grenzen, niet "
-                                + grens.type().naam() + ": '" + grens.bron() + "'", p.getStart().getLine()));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "periodevergelijking: window bound is "
+                        + Typering.soortWoord(grens.type()) + ", must be a date", p.getStart().getLine()));
         for (String fout : new String[]{periodeGrensFout(van, "vanaf"), periodeGrensFout(tot, "tot")})
             if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, p.getStart().getLine()));
         return new Conditie.Periode(van, tot, p.TOT_EN_MET() != null, bron(p));
@@ -3501,7 +3505,7 @@ final class RuleChecker {
         // unparseable value all reach drempelVan as < 1; flag it rather than let it collapse
         // the rule to always-true (minstens(0) is vacuously true). An over-size N is fine —
         // it is a faithfully unsatisfiable "false", so it is not an error.
-        keurDrempel(kwantor, drempel, (k != null ? k : heel).getStart().getLine());
+        keurDrempel(kwantor, k, (k != null ? k : heel).getStart().getLine());
         // §13.4.14.6 the indentation-blind bullet grammar (bullet : (DASH|DOTDOT|BULLET)+, WS skipped) can ABSORB a
         // dedented sibling bullet (a leaf OR another nested compound) into a preceding nested compound's list, so a
         // COUNTING quantifier AND-merges what the spec OR-s/counts -> a fired-WRONG result (the DRL oracle computed a
@@ -3528,11 +3532,22 @@ final class RuleChecker {
      *  unparseable value reaches {@link #drempelVan} as &lt; 1 and would collapse a ten-minste/ten-hoogste/precies to
      *  vacuously-true (minstens(0) always holds), so flag it. Shared by {@link #bouwSamengesteld} and the depth-aware
      *  re-nesting {@link #bouwUitKnopen} (which builds inner compounds directly, bypassing bouwSamengesteld). */
-    private void keurDrempel(Conditie.Kwantor kwantor, int drempel, int regel) {
+    private void keurDrempel(Conditie.Kwantor kwantor, VoorwaardeKwantificatieContext k, int regel) {
+        int drempel = drempelVan(k);
         if ((kwantor == Conditie.Kwantor.TEN_MINSTE || kwantor == Conditie.Kwantor.TEN_HOOGSTE
                 || kwantor == Conditie.Kwantor.PRECIES) && drempel < 1)
-            model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn", regel));
+            // a whole number reaches the wire as written and the verifier refuses it in WF-041's words; a decimal
+            // or fraction reaches it as 0, a number the author did not write, so that refusal keeps its own words
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, geheelTelwoord(k)
+                    ? "telwoord van een kwantificatie: counting quantifier with threshold " + drempel + " < 1"
+                    : "telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn", regel));
+    }
+
+    /** Whether the telwoord is written as a whole number that {@link #telwoordWaarde} reads as such. */
+    private static boolean geheelTelwoord(VoorwaardeKwantificatieContext k) {
+        if (k == null || k.telwoord() == null || k.telwoord().NUMBER() == null) return false;
+        try { Integer.parseInt(k.telwoord().NUMBER().getText()); return true; }
+        catch (NumberFormatException e) { return false; }
     }
 
     // ---- §13.4.14.6 depth-aware bullet re-nesting (column-driven) ----------------------------------------------
@@ -3607,7 +3622,7 @@ final class RuleChecker {
             if (c != null) {
                 Conditie.Kwantor kw = kwantorVan(c.voorwaardeKwantificatie());
                 int drempel = drempelVan(c.voorwaardeKwantificatie());
-                keurDrempel(kw, drempel, c.getStart().getLine());   // a degenerate inner telwoord must still be flagged
+                keurDrempel(kw, c.voorwaardeKwantificatie(), c.getStart().getLine());   // a degenerate inner telwoord must still be flagged
                 uit.add(new Conditie.Samengesteld(kw, drempel, bouwUitKnopen(k.kinderen()), bron(c)));
             }
             else if (k.ctx().elementaireVoorwaarde() != null)
@@ -3964,8 +3979,15 @@ final class RuleChecker {
      *  whole-period NEGATION of a static check is just as ill-defined). */
     private Conditie keurGeheelPeriode(Conditie c, Conditie.GeheelPeriode periode, Bron bron) {
         if (periode == null || onderwerpIsTemporeel(c)) return c;
-        model.diagnostics.add(new Diagnostic(Severity.ERROR,
-            "de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk "
+        // the verifier refuses the qualifier on a comparison, a predicate and an own characteristic (WF-043); a
+        // navigated characteristic and the other condition kinds it does not check, so those keep their own words
+        String zin = c instanceof Conditie.Vergelijking || c instanceof Conditie.Predicaat
+                ? "wholePeriod qualifier on a non-time-dependent operand"
+                : c instanceof Conditie.Kenmerk k && k.navigatie() == null
+                ? "wholePeriod qualifier on a non-time-dependent characteristic" : null;
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, zin != null
+            ? "de check op volledige periode (gedurende de/het gehele jaar/maand): " + zin
+            : "de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk "
             + "onderwerp worden toegepast (§8.2): " + bron, 0));
         return new Conditie.Onopgelost(bron, null);   // the ERROR above is this marker's diagnosis
     }
