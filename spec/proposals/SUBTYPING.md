@@ -385,6 +385,12 @@ distinct keys today**, and the §7 anchor cannot trip over them: the
 fences never look at the pair. The earlier claim that the anchor would
 trip its own fences was wrong, and it is withdrawn here.
 
+*History (2026-09-25):* this measurement predates the card
+verifier-supertype-dubbele-schrijver, since which WF-079 is read per
+concrete type and, outside the gate of `RUNTIME-SEMANTICS.md` ch. 7.10,
+refuses the chain pair — two unconditional computing versions on one
+attribute of a type and of its ancestor (`IR-SPEC.md` WF-079).
+
 **The real hazard is the naive repair.** A session implementing
 extensional quantification will be tempted to lift the target key to
 the chain-closed set, so that a group on `Strandrecht.uitkering` is
@@ -1520,7 +1526,9 @@ whole — a settled point does not ratify the section that carries it.
    and never on a chain-closed target key. Measured: today they key on
    the declared type name and do not fire on a supertype/subtype pair,
    so the hazard is the naive lift, not the anchor — a new obligation
-   on the verifier, not a restatement (§4.2).
+   on the verifier, not a restatement (§4.2). *History (2026-09-25):*
+   since the card verifier-supertype-dubbele-schrijver WF-079 refuses
+   the chain pair outside the ch. 7.10 gate (§4.2).
 5. A subtype never edits an inherited exception; it neutralises one by
    declaring its own with the same justification. The layer boundary
    carries no field and no rule — the subtype's exceptions win,

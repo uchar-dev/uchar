@@ -31,7 +31,9 @@
      exception groups (row 5c, ch. 7.9: form-a default / group-default; WF-075)
    - a shared non-trivial base under all members of a root-level unordered
      group -> REFUSED (PHASE4-DEFAULTS §7; workable later by base-duplication)
-   - context (reentrant) variable   -> REFUSED (see below; besluit 6 finding)
+   - context (reentrant) variable   -> attribute; its own default a defaults-group
+                                       base, a caller override a generated highest
+                                       default above it (see below)
    - assertion                      -> consistency rule
    - enum (payload-carrying)        -> SumType + Construct/Match (row 36)
    - enum (all-nullary)             -> Enumeration domain + value Literal/Match
@@ -45,18 +47,25 @@
    - top-level function + call      -> FunctionDef + Invoke (row 10, DMN BKM)
    - struct type / literal / .field -> StructType / StructLiteral / FieldAccess
                                        (row 5c; a struct is a value, WF-071/074)
-   - subscope call, tuple payloads, Sort/Find/Map2/argmin,
+   - a subscope call other than a declared or a per-element one
+     (PHASE5C-TUTORIAL §3, §3a), tuple payloads, Sort/Find/Map2/argmin,
      scope-capturing bodies, plain-value topdefs -> REFUSED (§4 fences)
 
-   The context (reentrant) finding. Besluit 6 wants a caller override of a
-   context variable compiled as a TOP default (Reading B: the caller's value
-   beats the scope's own computation). In a single-scope 5a program the
-   only override source is the case dossier, and RUNTIME-SEMANTICS ch. 7.8
-   places the virtual input default BELOW the ordinary defaults ("computation
-   displaces input" — Reading A). So a defaults target with case input gives
-   Reading A, never Reading B; realising Reading B needs an actual
-   caller-override highest default, which needs a subscope call — refused in 5a.
-   Context variables are therefore refused loudly here.
+   The context (reentrant) variables (PHASE5-CATALA decision 6). A caller
+   override of a context variable is Reading B: the caller's value beats the
+   scope's own computation. The variable is an ordinary attribute; its own
+   default becomes the base of a defaults group, and the override of a
+   calling scope (a declared subscope call) becomes a generated highest
+   default on that group, source "context-override <name>", which reads the
+   caller over the back-link ([build_subscope]; the merge is in
+   [file_to_document]). A context variable without an own default keeps the
+   member-initialisation route. Refused: a boolean context variable with an
+   own default, an own default that is a root-level unordered group, and an
+   override that is a branching tree. Where no scope calls the variable's
+   scope, the only overrider is the case dossier, and RUNTIME-SEMANTICS
+   ch. 7.8 places the virtual input default BELOW the ordinary defaults
+   ("computation displaces input" — Reading A): a case-supplied value there
+   gives Reading A, never Reading B.
 
    The empty-operand rule. Catala reads every variable hard (error_empty:
    an empty value is a fatal NoValueProvided), while the IR's arithmetic

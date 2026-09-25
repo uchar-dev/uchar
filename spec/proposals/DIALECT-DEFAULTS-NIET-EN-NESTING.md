@@ -1450,6 +1450,11 @@ grondslag 10,00:
 
 A `Strandrecht` instance gives 10,00 everywhere.
 
+*History (2026-09-25):* the verifier row predates the card
+verifier-supertype-dubbele-schrijver, which took option (b) below: WF-079
+is read per concrete type and rejects this probe in both source orders,
+citing the rule on `Wrakrecht` (the negatief `wf079-keten-kale-schrijvers`).
+
 **Root cause.** Two statements in the repository contradict each other.
 The verifier's WF-079 comment: [Q, own code] "A bare rule on the supertype
 and a bare rule on the subtype are not two writers: the subtype's rule IS

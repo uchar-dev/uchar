@@ -294,10 +294,10 @@ documents), outside the repository.
   frontend accepts a `context` variable of a scope that no other scope of
   the program calls, and lowers its own default to the base of a defaults
   group, as it does for a called scope (`frontends/catala/lib/translate.ml`,
-  `top_default_vars`, `:2336-2369`; the refusal the header comment at
-  `:51-59` still describes no longer exists — the code at `:1297-1302`
-  says so). The only overrider of such a scope in uchar is the case
-  dossier, and the dossier gets Reading A. Measured on a probe scope
+  `top_default_vars`, `:2345-2378`; the code at `:1306-1311` and the
+  header comment at `:34-36` and `:54-68` say so). The only overrider of
+  such a scope in uchar is the case dossier, and the dossier gets Reading
+  A. Measured on a probe scope
   `Kamer` (`input grondslag`, `context drempel` defined as 10,
   `uitkomst = grondslag - drempel`; the frontend's IR is verifier-clean):
   with a case that supplies grondslag 50 and drempel 7, ref, clingo and the
@@ -771,7 +771,7 @@ onwaar (`decision: false`), above a default justified by a characteristic
 `decision: false` default, landed) and is not measured here. The Catala
 frontend refuses the same shape for a `context` characteristic ("a
 characteristic highest default is not wired",
-`frontends/catala/lib/translate.ml:1715-1719`). Not in the first build card.
+`frontends/catala/lib/translate.ml:1724-1728`). Not in the first build card.
 
 ### 5.9 The semantic variant (the alternative)
 
@@ -812,10 +812,10 @@ sugar; not proposed.
   marker's.
 - *A different lowering.* The Catala frontend prepends the override onto
   the callee's own chain, whose own default it forces into a defaults-group
-  base (`frontends/catala/lib/translate.ml:1710-1765`, `:2446-2467`); its
+  base (`frontends/catala/lib/translate.ml:1719-1774`, `:2455-2476`); its
   refused flanks follow from that — an own default that is a root-level
   unordered group ("a caller highest default above an unordered group is a
-  recorded besluit-6 flank", `:1723-1728`), a branching override, a
+  recorded besluit-6 flank", `:1732-1737`), a branching override, a
   characteristic target. [I] The marker's lowering moves the authored
   writers whole onto `berekende X` and gives X a fresh two-default group,
   so it needs no case split on the shape of the authored writers: a
@@ -964,9 +964,10 @@ consistentielowering van de Drools-exectak (voorstel §5.6, alternatief d).
    kenmerkinvoer-en-invoer-boven-berekening does not choose its option
    7-ii"; with (7-ii) decided against, it can cite ch. 7.8.
 3. **A stale header comment in the Catala frontend**
-   (`frontends/catala/lib/translate.ml:34` and `:51-59`) says `context`
+   (`frontends/catala/lib/translate.ml:34` and `:51-59`) said `context`
    variables are refused; since decision 6 was executed (2026-08-24) the
-   code lowers them (`:1297-1302`, `:1812-1847`).
+   code lowers them (`:1306-1311`, `:1821-1856`). *Resolved at the
+   landing:* the comment (`:34-36`, `:54-68`) describes the lowering.
 4. **A `context` variable of a scope that no scope calls** gets Reading A
    from the case dossier (§2.5: 40 against Catala's 43). Whether that is a
    recorded flank, a refusal, or a case for the lowering of §5.3 in the
