@@ -1,0 +1,109 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "datumsom",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "peildatum",
+        "datatype": {
+          "node": "Date",
+          "precision": "day"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "vaststellingsdatum",
+        "datatype": {
+          "node": "Date",
+          "precision": "day"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "datumsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "datumsom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De datumsom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "ParameterReference",
+                  "parameter": "peildatum",
+                  "source": {
+                    "snippet": "de peildatum"
+                  }
+                },
+                {
+                  "node": "ParameterReference",
+                  "parameter": "vaststellingsdatum",
+                  "source": {
+                    "snippet": "de vaststellingsdatum"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de som van de peildatum en de vaststellingsdatum"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

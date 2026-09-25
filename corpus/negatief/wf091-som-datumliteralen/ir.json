@@ -1,0 +1,104 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "datumsom",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "datumsom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "datumsom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De datumsom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "date": "2025-01-01"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "1 januari 2025"
+                  }
+                },
+                {
+                  "node": "Literal",
+                  "value": {
+                    "date": "2025-12-01"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "1 december 2025"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de som van 1 januari 2025 en 1 december 2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
