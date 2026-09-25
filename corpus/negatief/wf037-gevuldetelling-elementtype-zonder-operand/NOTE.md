@@ -45,7 +45,10 @@ Measured before the arm on this document, with a case outside the corpus
                   (TODO aggregatie AANTAL_GEVULDE)
 
 Both OCaml refusals were bottom sentences of `scripts/check-rood.sh`: they
-name the position and not the construct.
+name the position and not the construct. Since the arm `ref` and the ASP
+backend refuse the form in the verifier's sentence, each from a named arm
+beside its residual one (`ref/test/test_ref.ml` pins `ref`'s, lines
+`WF-037-elementtype-*`); both Drools branches keep the refusals above.
 
 Rood-eerst, measured on this document. Verifier before the arm (source
 `spec/verifier/lib/checks.ml` md5 `2e9dd78483864a00da56bd327406f635`,

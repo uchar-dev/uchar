@@ -3413,6 +3413,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          without a range the fold is the subject's own read, so its elementType must name the \
          subject type"
         el subject_ot
+  (* WF-037, the verifier's two sentences and ref's arm: a fold that names its
+     population and hands no source. Named rather than left to the bottom
+     sentence below, which describes the position and identifies no construct *)
+  | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
+      fault
+        "a %s aggregation carries elementType \"%s\" but no source operand: an instance fold \
+         ranges over a written source"
+        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
+        el
+  | Functie
+      { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ List_literal _ ];
+        element_objecttype = Some el; _ } ->
+      fault
+        "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a listed value \
+         is no source of instances"
+        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
+        el
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element
          type was refused above, WF-093 (b)): the single argument of a count that
