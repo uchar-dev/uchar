@@ -18,7 +18,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * WARNING "kringverwijzing tussen berekeningen: …". The direct self-read now draws that same WARNING, the clamp idiom
  * "x = x, met een maximum van y" included: the verifier refuses it under WF-045 as well. So does a computation whose
  * CONDITION reads its own target ("… moet gesteld worden op 5 indien de x van de Ding groter is dan 3"), which the
- * verifier refuses the same way ("zet x -> zet x", measured before this change).
+ * verifier refuses the same way ("zet x -> zet x", measured before this change). Beyond the self-read the graph
+ * mirrors the reads of RUNTIME-SEMANTICS ch. 5.1 and 6.1: what a rule's condition reads is an edge as much as what
+ * its value reads, and a characteristic is a node as much as an attribute. Measured before that change, each of the
+ * following was refused by the verifier under WF-045 and passed the frontend without a word: a cycle through a
+ * condition over another attribute ("a -> b -> a"), a characteristic attribution reading its own characteristic
+ * ("oud -> oud"), two characteristics reading each other, plain or negated ("oud -> versleten -> oud"), and a
+ * characteristic and an attribute reading each other ("oud -> x -> oud").
  */
 class ZelflezingKringTest {
 
@@ -42,6 +48,11 @@ class ZelflezingKringTest {
     private static List<String> kringmeldingen(RegelSpraakModel m) {
         return m.diagnostics.stream().map(Diagnostic::message).filter(t -> t.startsWith("kringverwijzing")).toList();
     }
+
+    private static final String DING_KENMERK = DING + """
+            is oud kenmerk (bijvoeglijk);
+            is versleten kenmerk (bijvoeglijk);
+        """;
 
     private static final String STAART =
             " — herberekening bereikt mogelijk geen fixpunt (de engine begrenst het aantal activaties)";
@@ -106,6 +117,47 @@ class ZelflezingKringTest {
     @Test void een_voorwaarde_op_een_ander_attribuut_zonder_kring_meldt_niets() {
         RegelSpraakModel m = Resolver.resolve(DING + regel("zet x",
                 "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+    }
+
+    @Test void een_kring_door_een_voorwaarde_over_een_ander_attribuut_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING
+                + regel("a", "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3.")
+                + regel("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.y -> Ding.x" + STAART, d.message());
+    }
+
+    @Test void een_kenmerkregel_die_haar_eigen_kenmerk_leest_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien hij oud is.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.oud" + STAART, d.message());
+    }
+
+    @Test void een_kring_over_twee_kenmerken_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien hij versleten is.")
+                + regel("versleten", "Een Ding is versleten indien hij oud is.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + STAART, d.message());
+    }
+
+    @Test void een_kring_over_twee_ontkende_kenmerken_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien hij niet versleten is.")
+                + regel("versleten", "Een Ding is versleten indien hij niet oud is.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + STAART, d.message());
+    }
+
+    @Test void een_kring_over_een_kenmerk_en_een_attribuut_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien zijn x groter is dan 3.")
+                + regel("x", "De x van een Ding moet gesteld worden op 5 indien hij oud is.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.x -> Ding.oud" + STAART, d.message());
+    }
+
+    @Test void een_kenmerk_in_de_voorwaarde_zonder_kring_meldt_niets() {
+        RegelSpraakModel m = Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien zijn x groter is dan 3.")
+                + regel("y", "De y van een Ding moet gesteld worden op 1 indien hij oud is."));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 
