@@ -14,4 +14,6 @@ measured 2026-09-25 on this document: `EVALUATION FAULT: duration operand is
 text, must be a date` and `TRANSLATION FAULT:` with the same sentence. Until
 then `ref` faulted at evaluation (`duration: expected two dates, got
 "gisteren" and 2026-02-28`) and the ASP backend in its own words (`duration
-operand is not statically a day-precision date`). `expect.txt` pins the arm.
+operand is not statically a day-precision date`). The Drools loader refuses
+the document at load in the same sentence, at the same pointer (measured
+2026-09-25). `expect.txt` pins the arm.

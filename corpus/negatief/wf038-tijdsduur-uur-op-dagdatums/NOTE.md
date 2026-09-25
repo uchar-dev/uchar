@@ -14,6 +14,8 @@ The sentence is spelled once, `duration_sub_day_on_day_dates` in
 the ASP backend speak it too — measured 2026-09-25 on this document:
 `EVALUATION FAULT: sub-day duration unit on day-precision operands
 (millisecond precision required)` and `TRANSLATION FAULT:` with the same
-sentence. Until then `ref` said `sub-day duration needs datum-tijd
-operands` and the ASP backend the same with `(a day-precision date has no
-time-of-day)` behind it. `expect.txt` pins the arm.
+sentence. Until then `ref` said `sub-day duration needs datum-tijd operands`
+and the ASP backend the same with `(a day-precision date has no
+time-of-day)` behind it. The Drools loader refuses the document at load in
+the same sentence, at the same pointer (measured 2026-09-25). `expect.txt`
+pins the arm.
