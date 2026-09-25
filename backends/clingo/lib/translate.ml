@@ -6062,7 +6062,7 @@ and dk_cond ctx ~stack ~day (c : conditie) : bool =
       if negatie then not hit else hit
   | _ ->
       fault
-        "a day-kind condition of this form is not evaluated (a day-kind condition admits \
+        "a day-kind condition of this form is not evaluated (this translation evaluates \
          comparisons, composites, leeg/gevuld tests and nested day-kind tests)"
 
 and dk_holds ctx ~stack (name : string) (day : int) : bool =
