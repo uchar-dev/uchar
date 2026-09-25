@@ -577,7 +577,7 @@ and this backend); declared factors and stelsel never enter.
   ending in the `days_from_civil` re-encode (the `(14 − MO)/12`
   March-shift term is 0 because the month is always 3 or 4; written
   anyway so the file has one re-encode shape). Its own fence:
-  `eerste-paasdag of a year before 1 is not translated` — below year 1
+  `easterSunday of a year before 1 is not translated` — below year 1
   the chain's intermediates go negative and gringo's toward-zero
   division stops being the floor the era re-encode needs; ref computes
   those years, so the fence is a loud narrowing, never a silent wrong
@@ -1155,7 +1155,7 @@ which is exactly this shape): `ref` CARRIES the listed som — its
 contributor arm reads the operand list whenever `elementType` is
 absent, whatever the kind — while this backend does not, since every
 som arm it has ranges a `#sum` over an instance source a listed fold
-never supplies. That refusal is now a NAMED one (`a som over listed
+never supplies. That refusal is now a NAMED one (`a sum over listed
 operands is not translated …`) rather than the expression fall-through,
 for the reason the catch-all inventory below records. Its guard takes
 TWO wire fields, not one: an absent `elementType` means listed
@@ -2494,7 +2494,7 @@ member of the element type '…'`; negatief
 `wf093-telling-over-attribuutbron`), on the same ground: a
 count folds the contributors, and such a source hands it values). The LISTED
 som left this catch-all on 2026-09-19 WITHOUT being translated: it has
-a named arm of its own (`a som over listed operands is not translated
+a named arm of its own (`a sum over listed operands is not translated
 …`) and is refused exactly as before. The reason it needed a name is
 the catch-all's own sentence:
 `corpus/rood/som-fallback-always-evaluated` fell here, so "no corpus
