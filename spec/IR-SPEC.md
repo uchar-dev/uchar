@@ -6108,11 +6108,12 @@ ch. 3.12), and it belongs to whoever measures it.
   recorded as a flank rather than claimed shut. One bookkeeping line
   belongs beside it: **no gate runs the verifier over the parity zone** —
   gate 3 walks the three corpus zones — so every verdict quoted here about
-  a parity document is a measurement, never a pin — until 2026-09-25, when the
-  parity well-formedness card gave gate 11 a leg that holds the replay slices
-  verifier-clean, parity slice 24 held out by name, the casus dump outside it. The
-  second wave's descent
-  covered the sum-in-sum chain only; the CONTAINER half is (h) below.
+  a parity document is a measurement, never a pin. *Since 2026-09-25 (the
+  parity well-formedness card) gate 11 does put the replay slices through
+  the verifier — 28 of 29 clean, parity slice 24 held out by name on its
+  WF-099 report — while the casus dump stays outside that leg; the sentence
+  records the state on its date.* The second wave's descent covered the
+  sum-in-sum chain only; the CONTAINER half is (h) below.
   *Measured and
   still open at the same twelve positions:* WF-007's precision-form check,
   which is a per-datatype predicate rather than a walk (`{"geheel": true,
