@@ -1525,8 +1525,9 @@ document either way. A fully clipped-away — or
 absent — value timeline totals 0, never leeg: the clip's presence
 turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
 an absent timeline stays leeg). The operand is a Number — WF-091
-(`IR-SPEC.md` ch. 4.1) — so this 0 always lands in a numeric slot. Worked example (the
-`jutterswet-getijdenwacht` emitter golden, verbatim in gates 5–6):
+(`IR-SPEC.md` ch. 4.1) — so this 0 always lands in a numeric slot. Worked
+example (the `jutterswet-getijdenwacht` emitter golden, verbatim in gates
+5–6):
 10/month through 2023 and 11/month January–June 2024, clipped to
 [2023-07-01, 2024-02-01) → 6×10 + 1×11 = 71; the comparison clip
 "> 10" keeps the 11-segment → 6×11 = 66; a carrier without periods, and
