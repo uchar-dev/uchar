@@ -102,13 +102,15 @@ done
 #    grep); for the just-copied untracked files the pre-copy grep above
 #    is the guard, and CI re-checks after commit.
 mkdir -p "$DEST" || fail "cannot create $DEST"
-cp "$CAND/ir.json" "$DEST/" || fail "copy failed"
+# a failed copy removes the half-made directory, or the refusal would leave
+# the corpus touched
+cp "$CAND/ir.json" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }
 # the optional parts of a golden (corpus/README.md, Layout): a frontend source
 # and the NOTE with the hand computation
 for f in bron.rgs bron.catala_en bron.flogic NOTE.md; do
-    if [ -f "$CAND/$f" ]; then cp "$CAND/$f" "$DEST/" || fail "copy failed"; fi
+    if [ -f "$CAND/$f" ]; then cp "$CAND/$f" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; fi
 done
-for case in $CASES; do cp "$case" "$DEST/" || fail "copy failed"; done
+for case in $CASES; do cp "$case" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; done
 for gate in scripts/check-*.sh; do
     # each gate runs under its own interpreter line: a POSIX `sh` (dash on
     # Linux, bash 3.2 in POSIX mode on macOS) cannot parse the five bash gates
