@@ -75,8 +75,11 @@ so the mistake cannot pass any of the three executors.
 the hand-written absolutes and not read off any executor; the Drools backend
 replays them (gate 12), so ref ≡ clingo ≡ Drools. NOOP-REFUTING: all
 twenty-one derived values are computed and absent from the raw input, so a
-do-nothing run mismatches every one of them (gate 7). Gate 13 twists this
-golden's `kg` annotations like any other: the `Clamp` node's own
-annotation is derived on both Drools legs and reaches only `ref` and
-`clingo`. Until L2 the `AttribuutRef` positions probed all four legs; since
-L2 a reference carries no annotation (B13).
+do-nothing run mismatches every one of them (gate 7). Gate 13 twists the
+three `Clamp` annotations (`kg` to a sister unit with factor 10^9) and nothing
+else: the four bound literals carry their own value's unit and are exempt
+(ch. 2.10), and the attribute references carry no annotation (B13). Both
+Drools legs derive a clamp's type from its base and hold no annotation there,
+so the twist probes `ref` and `clingo` only. Measured 2026-09-25 on the
+twisted copy: `ref` and `clingo` PASS (25 expectations), the exec-model and
+DRL-text branches PLAYED 1.

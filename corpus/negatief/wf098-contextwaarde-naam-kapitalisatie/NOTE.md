@@ -56,14 +56,25 @@ backend and the Drools backend are untouched by this card. It left one honest
 residue: a HAND-BUILT document that skipped the verifier still reached the
 executors with a recapitalised name and still split them — the wire rule bounds
 conforming documents, not every input a runner can be handed. Since the L4 fix
-round that residue is closed as well: every executor refuses the name at load
-with the verifier's own sentence.
+round that residue is closed as well: the executors refuse the name at load
+with the verifier's own sentence. Measured 2026-09-25 on this document with the
+source golden's `case.json`: `ref` and the ASP backend both answer `IR LOAD
+ERROR at /rules/rules/0/versions/0/value/date/name: context value
+'EvaluationDate' is not one of the two admissible names evaluationDate,
+evaluationYear: the context-value name is a closed set, spelled byte for byte`.
+The Drools loader carries the same sentence (`IrLoader`, witnessed by
+`RegelEnExpressielaagWeigeringWitnessTest`), but on this document it stops one
+node earlier, on the temporal read: `EXCLUDE loader: form not carried by the v0
+Drools backend: Expr:TemporalRead (unknown expression node)`.
 
-**Cost: none** (measured 2026-09-10 on the v0 wire). Over the four zones plus
-the parity zone — 578 documents before these two witnesses, 580 after — the
-wire carried **14** `Constante` nodes over
-**6** documents in exactly **two** spellings, `de dag` (11) and `Rekendatum` (3),
-both admissible verbatim. Not one document predating the rule moves.
+**Cost: none.** Measured 2026-09-25: the golden and red zones (293 documents)
+carry **3** `ContextValue` nodes over **3** documents, all named
+`evaluationDate`, admissible byte for byte; the parity zone (30 documents)
+carries none; in the negatief zone the name is the defect of the four WF-098
+witnesses and `evaluationDate` elsewhere. When the rule came (2026-09-10, v0
+wire, 580 documents), the wire carried 14 `Constante` nodes over 6 documents in
+two spellings, `de dag` (11) and `Rekendatum` (3), both then admissible
+verbatim, and no document predating the rule moved.
 
 A hand-broken variant of
 `corpus/golden/anchor/jutterswet-penningvintage/ir.json` — one character
@@ -71,12 +82,14 @@ recapitalised, a one-line diff (`evaluationDate` → `EvaluationDate`);
 schema-valid, since the schema leaves a context value's `name` a free string
 for this rule to close.
 
-Falsifiable, arm-exact: replace the `| Constante { naam; _ } -> (…)` branch of
-`walk_expr` in `spec/verifier/lib/checks.ml` with `| Constante _ -> []` and this
-case turns clean together with its one sister — 580 documents compared, exactly
-two verdicts moved, not one report line elsewhere. Relax the comparison from
-`List.mem n [ … ]` to a `norm` one and this case turns clean ALONE, its sister
-staying refused: the ci relapse is a one-document move.
+Falsifiable, arm-exact (measured 2026-09-25 over the 731 documents of the
+golden, rood and negatief zones): let the context-value branch of `walk_expr` in
+`spec/verifier/lib/checks.ml` (`Constante` in memory) report nothing and this
+case turns clean together with the three other WF-098 witnesses
+(`wf098-onbekende-contextwaarde-naam`, `wf098-de-dag-als-contextwaarde`,
+`wf098-v0-naam-rekendatum`), and no report line moves elsewhere. Make the
+comparison in `context_value_refusal` case-insensitive and this case turns clean
+ALONE, the other three staying refused: the ci relapse is a one-document move.
 
 Since L4 the node is a `ContextValue` (delta B23) and its name is written in
 `name`: the bound day of a day-kind definition is its own node, `BoundDay`,

@@ -22,8 +22,9 @@ Three sibling `PrioritizedDefaults` entries on `Jutter.wachtgeld`, each with
 `unordered: true` (WF-050: two-or-more default groups on one target require
 the marking on every one) and a single attribute default (no `decision`,
 `consequence` the value).
-All three members leave `rules`; until L1 each kept a `Regel` stub in
-`regels`, which left the wire with M1 (B3). Because a RegelSpraak kenmerk
+The rule list `rules.rules` is empty: the three members exist only as these
+three groups in `rules.prioritizedDefaults` (since M1, delta B3, a lowered
+member keeps no stub in the rule list). Because a RegelSpraak kenmerk
 assignment is monotone `waar`, a
 genuine §9.5 conflict is only expressible on an **attribute** target (two
 members writing different values) — hence the attribute group here.

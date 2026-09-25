@@ -1,4 +1,4 @@
-# jutterswet-vaarwaterspelling — the ci witness of WF-088/WF-089
+# jutterswet-vaarwaterspelling — the ci witness of WF-088/WF-089 until L2
 
 A `Kadeplaats` has a `vaarwater` of the declared enumeration domain
 `Vaarwater` (`Wad`, `Zeegat`, `Ruimzee`) and a `kadegeld` a `Match` over
@@ -13,17 +13,29 @@ reference carries no type of its own (B13), so the drift has no wire
 position left on the scrutinee: the spelling `VAARWATER` survives only in
 the `Match`'s source snippet (`match VAARWATER`), measured 2026-09-25.
 
+What the document pins since L2, measured 2026-09-25 with two verifier
+mutants over the 293 golden and red documents: comparing domain names byte
+for byte in WF-089 and WF-090 turns none of them red, this golden included,
+so the ci clause below has no golden witness left; refusing every `Match`
+over a declared enumeration turns exactly two red, this golden and
+`jutterswet-vaarwatertoeslag-catala`, whose rule `berekening vaarwatertarief`
+has the same shape — a `Match` over the enumeration attribute `vaarwater`
+with three nullary arms. Every executor treats the two alike: `ref` and the
+ASP backend replay both, and the Drools backend refuses both at load
+(`Expr:Match`). This golden therefore pins nothing the catala golden does
+not pin as well.
+
 Why the case exists: WF-089 (domain identity, `spec/IR-SPEC.md` ch. 2.4)
 compares a use site's domain against the declaration's **ci**, following
 WF-001's naming rule, and WF-023 does the same at every write position.
 That ci clause was normative but unpinned — making the comparison
 case-sensitive left the whole negatief corpus red and the whole golden
-corpus clean, so nothing failed. This document is the falsifier: it is
-verifier-clean only because the comparison is ci.
+corpus clean, so nothing failed. Until L2 this document was the falsifier:
+it was verifier-clean only because the comparison is ci.
 
     Falsifiable: drop the ci normalisation from the domain-identity
     comparison in the verifier (compare the two domain names byte for
-    byte) and this golden alone turns red — measured:
+    byte) and this golden alone turned red — measured before L2:
 
         FAIL: document corpus/golden/jutterswet-vaarwaterspelling/ir.json
         is not verifier-clean:
