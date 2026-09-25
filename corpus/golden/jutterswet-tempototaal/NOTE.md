@@ -7,9 +7,9 @@ byte-identically):
 
 | rule | operator | operand | operand type | result type |
 |---|---|---|---|---|
-| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (`set = true`, **not** timeline-declared) | `€/mnd` | **`€/mnd`** |
+| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (a set read over the role `vondst`, **not** timeline-declared) | `€/mnd` | **`€/mnd`** |
 | `bewaarsom`  | `de som van`     | the same set read | `€/mnd` | `€/mnd` |
-| `bewaargeld` | `het totaal van` | `zijn bewaarvergoeding per maand` (`set = false`, timeline-declared) | `€/mnd` | **`€`** |
+| `bewaargeld` | `het totaal van` | `zijn bewaarvergoeding per maand` (the subject's own attribute, timeline-declared) | `€/mnd` | **`€`** |
 
 Read the first two rows together: **the set reading of "het totaal van" is
 an alias of "de som van"** — same operand, same result type, on the wire.

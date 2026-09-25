@@ -9,7 +9,7 @@ table names and does not carry.
 
 | this golden | operator | operand | operand type | result type |
 |---|---|---|---|---|
-| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (`set = true`, **timeline-declared**, `voor elke maand`) | `€/mnd` | **`€`** |
+| `bewaarlast` | `het totaal van` | `het bewaartarief van alle vondsten van de Jutter` (a set read over the role `vondst`, **timeline-declared**, `voor elke maand`) | `€/mnd` | **`€`** |
 
 Two folds happen, in this order (RUNTIME-SEMANTICS ch. 3.6 and §7.1):
 

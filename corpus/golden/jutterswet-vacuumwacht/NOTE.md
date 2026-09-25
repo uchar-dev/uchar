@@ -40,7 +40,7 @@ Daarbij geldt (in beide regels):
 * **`vacuumteken` — the vacuum, *d* ≥ *n*.** Two members, threshold two:
   the hits can never exceed it, so the outcome stands true **before the
   first member**. Nothing is read at all — the division included. This is
-  the at-most twin of the `at-least`/`exactly` degenerate cases that
+  the at-most twin of the `atLeast`/`exactly` degenerate cases that
   `jutterswet-seinwacht` pins above the member count.
 * **`stopteken` — the stop below the member count, *d* < *n*.** Four
   members, threshold two, with the division third. Once two members have

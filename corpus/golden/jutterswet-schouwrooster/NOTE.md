@@ -116,9 +116,10 @@ document the spelling lives in, not a document that computes with it.
   coverage. Worth knowing before anyone treats its presence as evidence that
   strict date ordering is exercised.
 - **A `Dagsoort` declaration in a `bron.rgs`**, and with it the first
-  frontend-emitted `Dagsoortdefinitie` entries in `regels`. Gate 10 re-emits
-  this source byte-identically, so the frontend's day-kind path — declaration,
-  the plural on the day kind, compound condition — is pinned end to end.
+  frontend-emitted `DayKindDefinition` entries in `dayKindDefinitions`.
+  Gate 10 re-emits this source byte-identically, so the frontend's day-kind
+  path — declaration, the plural on the day kind, compound condition — is
+  pinned end to end.
 
 ## What is deliberately absent
 
