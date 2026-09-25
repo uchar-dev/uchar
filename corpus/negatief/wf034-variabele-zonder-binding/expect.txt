@@ -1,0 +1,1 @@
+variable reference 'vrijstelling' resolves against no binding: a rule-local variable is a Let, read by a BinderRef

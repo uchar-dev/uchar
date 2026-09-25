@@ -6939,6 +6939,32 @@ let () =
     (World.attr (World.get (run_datum (contextwaarde Ir_v0.Spelling.evaluation_date)) "J1") "peildatum"
     = Value.date_of_iso "2026-03-15")
 
+(* WV-4.1-variabele (WF-034): a VariableReference is the frontend's marker
+   for a variable its resolver could not bind, and the wire serializes no
+   binding site, so it resolves against nothing. ref loads the wire as an
+   executor and refuses it there, at the verifier's pointer and in the
+   verifier's sentence (the ref side of
+   corpus/negatief/wf034-variabele-zonder-binding) *)
+let () =
+  let irf = Filename.temp_file "ref-wf034" ".ir.json" in
+  let oc = open_out irf in
+  output_string oc
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"heffing","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"heffing van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"heffing","subjectType":"Jutter","source":{"snippet":"De heffing"}},"value":{"node":"VariableReference","name":"x","source":{"snippet":"x"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|};
+  close_out oc;
+  let bevinding =
+    List.filter
+      (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-034")
+      (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf))
+  in
+  (match Ir_v0.Loader.load_file irf with
+  | (_ : Ir_v0.Ast.document) -> check "WV-4.1-variabele-weigert-bij-laden (the document loads)" false
+  | exception Ir_v0.Loader.Error (at, m) ->
+      check
+        ("WV-4.1-variabele-weigert-bij-laden (" ^ at ^ ": " ^ m ^ ")")
+        (m = Ir_v0.Checks.variable_reference_refusal (Some "x")
+        && bevinding = [ { Ir_v0.Checks.wf = "WF-034"; at; reason = m } ]));
+  Sys.remove irf
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

@@ -521,7 +521,13 @@ let () =
     (fun (what, text, needle) ->
       Printf.printf "[emit-refuse] %s\n%!" what;
       let name = what ^ " : the serialiser refuses naming " ^ needle in
-      match Catala_frontend_lib.Emit.to_string (Ir_v0.Loader.document (Yojson.Safe.from_string text)) with
+      (* the verifier's stance loads every form: an executor refuses a
+         VariableReference at load (WF-034), and the serialiser's own refusal
+         is the subject here *)
+      match
+        Catala_frontend_lib.Emit.to_string
+          (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string text))
+      with
       | (_ : string) -> check name false "the serialiser wrote a document"
       | exception Failure m -> check name (contains ~needle m) m)
     emit_refusals;

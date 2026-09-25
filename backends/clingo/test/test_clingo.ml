@@ -11030,10 +11030,14 @@ let () =
    stand with their chapters (ch3.4b, ch3.9a, WF-110 above); the quantifier
    fold's missing range is the one added here. *)
 let () =
+  (* the base documents load in the verifier's stance: the reading document
+     carries a VariableReference, which an executor refuses at load (WF-034,
+     the L5 table's stance split); every row below is a structural refusal,
+     which both stances make before that *)
   let loads name ir =
     let irf = write_temp ".ir.json" ir in
     let outcome =
-      match Ir_v0.Loader.load_file irf with
+      match Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf with
       | (_ : Ir_v0.Ast.document) -> None
       | exception Ir_v0.Loader.Error (path, m) -> Some (path ^ ": " ^ m)
     in
@@ -12332,8 +12336,11 @@ let () =
    `rules` included), a v0 enumeration value, or a null on a field L5 made
    absent (refused as the field's own type error). Where the stances split —
    a severity outside the one wire severity, the v0 spelling of a context
-   value — an executor refuses at load in the rule's sentence and the
-   verifier loads the document so that its rule names it. *)
+   value, a VariableReference (the frontend's marker of a variable it could
+   not bind) — an executor refuses at load in the rule's sentence and the
+   verifier loads the document so that its rule names it. The base holds a
+   BinderRef where that row writes the VariableReference, so that it loads in
+   both stances. *)
 type l5_rij =
   | Knoop of string  (* the node's discriminator, in its v0 spelling *)
   | Sleutel of string * string  (* the L5 key, written under its v0 name *)
@@ -12692,7 +12699,7 @@ let () =
           {
             "validity": {"node": "Validity"},
             "target": {"node": "AttributeReference", "attribute": "uitkering", "subjectType": "Jutter"},
-            "value": {"node": "VariableReference", "name": "x"},
+            "value": {"node": "BinderRef", "name": "x"},
             "initialisation": false,
             "presentation": "calculation"
           }
@@ -13118,7 +13125,10 @@ let () =
       ( "de v0-spelling Rekendatum als contextwaarde",
         "/rules/rules/0/versions/0/condition/parts/1/left/date",
         Waarde ("name", `String "Rekendatum"), "WF-098",
-        Option.get (Ir_v0.Checks.context_value_refusal "Rekendatum") ) ]
+        Option.get (Ir_v0.Checks.context_value_refusal "Rekendatum") );
+      ( "een variabeleverwijzing zonder binding", "/rules/rules/8/versions/0/value",
+        Waarde ("node", `String "VariableReference"), "WF-034",
+        Ir_v0.Checks.variable_reference_refusal (Some "x") ) ]
 
 (* THE OCAML TRANSLATION TABLE AGAINST THE NAME TABLE (delta B6: every
    enumeration value in its IR-SPEC spelling). [Ir_v0.Spelling] is the one

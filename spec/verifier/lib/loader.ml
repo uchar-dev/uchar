@@ -1706,11 +1706,15 @@ let presentatie_annotaties (j : json) : string list =
    a marker that has no text to quote. And so are the three values the schema
    does not admit and a verifier rule refuses by name: the quantifier `the` on
    a QuantifierFold (WF-108 (a), [Checks.quantifier_fold_the_refusal]) and a
-   severity `error`, `info` or null (WF-113 (a), [Checks.severity_refusal]). *)
+   severity `error`, `info` or null (WF-113 (a), [Checks.severity_refusal]).
+   So is a VariableReference (WF-034, [Checks.variable_reference_refusal]):
+   the marker of a variable the frontend could not bind resolves against
+   nothing, and an executor that met it only at evaluation would refuse it in
+   a residual arm's words. *)
 type reader = Verifier | Executor
 
 (* The executor's refusals, after the structural load: every Literal,
-   ContextValue, Unresolved, QuantifierFold and Diagnostic node of the
+   ContextValue, VariableReference, Unresolved, QuantifierFold and Diagnostic node of the
    document as written, in document order, a literal's variant crossed
    against its type before its string is read. A literal without a type is
    WF-034's typeless value node, with no type to cross its variant against;
@@ -1739,6 +1743,9 @@ let executor_refusals (j : json) =
             match Checks.context_value_refusal (str (path / "name") (field path kvs "name")) with
             | Some sentence -> fail (path / "name") sentence
             | None -> ())
+        | Some (`String "VariableReference") ->
+            let name = match List.assoc_opt "name" kvs with Some (`String s) -> Some s | _ -> None in
+            fail path (Checks.variable_reference_refusal name)
         | Some (`String "Unresolved") ->
             if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
         | Some (`String "QuantifierFold") -> (

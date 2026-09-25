@@ -393,6 +393,18 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
    with the loader like the sentence above. *)
 let context_value_names = Spelling.context_value_names
 
+(* WF-034 on a VariableReference (IR-SPEC ch. 4.1): the node is the
+   frontend's marker for a variable its resolver could not bind, and the wire
+   serializes no variable binding site — a rule-local variable is a Let, read
+   by a BinderRef (ch. 4.10) — so the reference resolves against nothing.
+   Shared with the loader: every executor refuses it at load in this
+   sentence. *)
+let variable_reference_refusal naam =
+  (match naam with
+   | Some n -> "variable reference '" ^ n ^ "'"
+   | None -> "a variable reference without a name")
+  ^ " resolves against no binding: a rule-local variable is a Let, read by a BinderRef"
+
 (* WF-035 on date ± duration (RUNTIME-SEMANTICS ch. 3.8): the two forms
    whose sentence ref and the ASP backend speak as well when a document
    reaches them without the verifier, so that the three readers say one
@@ -5284,7 +5296,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
           [ v "WF-034" at
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
-  | Variabele_ref _ -> [] (* binding sites are not serialized in v0 — OPEN *)
+  | Variabele_ref { naam; _ } -> [ v "WF-034" at (variable_reference_refusal naam) ]
   | Constante { naam; _ } -> (
       (* WF-098 (maintainer decision 2026-09-10): the context-value name is a
          CLOSED SET, not a reference. Nothing in the document declares it, so
