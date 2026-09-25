@@ -388,7 +388,11 @@ is written with this header; its `ir.json` is byte-identical to the one its
   carrier: such a member is a defaults group of its own beside the other members,
   not a node of a tree. The message names `Uitzonderingen ongeordend op
   <basisregel>:`, whose members can carry. Before form 2 the same document drew
-  "groepslid '…' leverde geen kenmerktoekenning/gelijkstelling op";
+  "groepslid '…' leverde geen kenmerktoekenning/gelijkstelling op". Recorded,
+  not built: lowering such a member's sibling group to the chain `[F, member]`,
+  the member as its base and the block F that names it above it. The way out
+  the message names asks for a base rule, which parallel grounds without a
+  common base do not have;
 - per edge, the fences of the first level: the target (WF-050), the validity window
   (the group carries one), and one version per rule.
 
