@@ -52,16 +52,20 @@ import java.util.Map;
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
  * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, the
- * model's {@code functionDefs} extension, an integer beyond a Java {@code int}, and an unknown {@code node}
- * discriminator inside the {@link Expr} / {@link Conditie} / {@link Datatype} sealed hierarchies
- * (a struct/list literal, a MapList/Invoke, …). The differential gate turns a Refusal into a
- * reason-carrying exclusion. A document that is not well-formed is no form at all: the container, the
- * declaration lists, the M1 nodes ({@code ObjectType}, {@code Attribute}, {@code Characteristic},
- * {@code TimelineFacet}, {@code Domain} with its datatype) and each {@code Diagnostic} are read as strictly as the
- * OCaml loader reads them — exact keys, the node discriminator, the JSON types, WF-001/WF-002 name identity — and a
- * defect there is a {@link Documentfout} naming its JSON position, a hard error. One step stricter: a Diagnostic's
- * message must be a string, as the schema types it, where the OCaml loader admits a null so that WF-113 can name it.
- * Every datatype, at any position, carries its discriminator.
+ * model's {@code functionDefs} extension, an integer beyond a Java {@code int}, and a member of the schema's
+ * expression or datatype union that has no record in the {@link Expr} / {@link Datatype} sealed hierarchies
+ * (a struct/list literal, a MapList/Invoke, a temporal read, …), which the refusal calls a node unknown to them. The
+ * differential gate turns a Refusal into a reason-carrying exclusion. A document that is not well-formed is no form
+ * at all: the container, the declaration lists, the M1 nodes ({@code ObjectType}, {@code Attribute},
+ * {@code Characteristic}, {@code TimelineFacet}, {@code Domain} with its datatype) and each {@code Diagnostic} are
+ * read as strictly as the OCaml loader reads them — exact keys, the node discriminator, the JSON types,
+ * WF-001/WF-002 name identity — and a defect there is a {@link Documentfout} naming its JSON position, a hard
+ * error. So is a node name that the schema's union at its position does not have, refused at the discriminator in
+ * the shared loader's sentence ({@code unknown expr node "<v>"}, {@code unknown condition node "<v>"},
+ * {@code unknown datatype node "<v>"}, {@code unknown TextCompositionPart node "<v>"}); until the L5 landing's fix
+ * round such a name was a Refusal, so a document no reader can read was filed as a form this backend does not carry.
+ * One step stricter: a Diagnostic's message must be a string, as the schema types it, where the OCaml loader admits a
+ * null so that WF-113 can name it. Every datatype, at any position, carries its discriminator.
  *
  * <p><b>The reference layer (L2 of the v1 wire migration).</b> A reference to a declared thing carries its
  * symbolic form only, and the bindings are the one source of every relation this backend walks: the navigation of
@@ -367,7 +371,8 @@ public final class IrLoader {
         lijst(root, "", "diagnostics", (p, n) -> m.diagnostics.add(diagnostic(p, n)));
         // §6.1 (Phase 4) the prioritized-defaults extension, parsed AFTER the declarations so a default's
         // condition/value resolves its objecttype/parameter references against the fully-built model. A malformed
-        // defaults bundle (an unknown inner node, a missing target) raises a loud Refusal from these parsers.
+        // defaults bundle (a missing subject or target) raises a loud Refusal from these parsers; an unknown inner
+        // node is a Documentfout, as it is at every other position.
         if (rules.has("prioritizedDefaults"))
             lijst(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
         keurOnderwerpen();
@@ -1109,13 +1114,14 @@ public final class IrLoader {
             case "Text" -> new Datatype.Tekst();
             case "Boolean" -> new Datatype.Booleaan();
             case "Enumeration" -> new Datatype.Enumeratie(text(n, "domain"), stringList(n.get("values")));
-            // no form at all, refused at the discriminator in the shared loader's words: Onbekend, because IR-SPEC
-            // ch. 2.4's datatype union has no member for an unknown type (a marker leaves its type out and a derived
-            // position the producer could not type is null), the four datatype nodes of the L2 shape, which no
-            // document carries since L3, and the three of the v0 shape that L5 renamed
-            case "Onbekend", "Numeriek", "Percentage", "DatumInDagen", "DatumTijd", "Tekst", "Booleaan", "Enumeratie" ->
-                    throw new Documentfout(pad + "/node", "unknown datatype node \"" + node + "\"");
-            default -> throw new Refusal("Datatype:" + node, "unknown datatype node");
+            // the members of IR-SPEC ch. 2.4's datatype union that have no record here: a form this backend does not
+            // carry
+            case "SumType", "ListType", "StructType" -> throw new Refusal("Datatype:" + node, "unknown datatype node");
+            // any other name is no node of this format, refused at the discriminator in the shared loader's words:
+            // Onbekend among them, because the union has no member for an unknown type (a marker leaves its type out
+            // and a derived position the producer could not type is null), the four datatype nodes of the L2 shape,
+            // which no document carries since L3, and the three of the v0 shape that L5 renamed
+            default -> throw new Documentfout(pad + "/node", "unknown datatype node \"" + node + "\"");
         };
     }
 
@@ -1196,8 +1202,9 @@ public final class IrLoader {
         return Map.entry(node, new Sleutels(verplicht, List.of(optioneel)));
     }
 
-    /** Every expression node this loader reads, with the schema's keys. A node kind outside the table is a form this
-     *  backend does not carry and reaches the dispatch's refusal; the union's selection is read inside its union. The
+    /** Every expression node this loader reads, with the schema's keys; an instance-set union's selection is read
+     *  inside its union. A node kind outside the table reaches the dispatch's refusal: a form this backend does not
+     *  carry where the schema's expression union has the kind, no node of this format where it does not. The
      *  temporal read is such a form, and its keys stand here all the same: a key of its v0 shape is refused by name
      *  before the form is refused. */
     private static final Map<String, Sleutels> EXPRESSIE = Map.ofEntries(
@@ -1332,10 +1339,6 @@ public final class IrLoader {
                 if (geheugen == null) throw new Documentfout(p + "/name", contextwaardeWeigering(naam.asText()));
                 yield new Expr.Constante(geheugen, contextType(n, CONTEXTWAARDE_TYPE), bron(n));
             }
-            // the expression nodes of the v0 shape that L4 replaced and L5 renamed: no node of this format
-            case "Functie", "Constante", "TekstReeks", "Binair", "Afgerond", "Begrensd", "AttribuutRef", "DimensieCel",
-                 "ParameterRef", "VariabeleRef", "Onopgelost" ->
-                    throw new Documentfout(padVan(n) + "/node", "unknown expr node \"" + node + "\"");
             // reden null: it is the FRONTEND's own field (the WARNING it raises over a surviving marker)
             // and the wire carries no such key, so a marker read off the wire has none to recover. IR-SPEC
             // ch. 4.4: an absent type is an unknown one, and the record holds null for it.
@@ -1388,7 +1391,14 @@ public final class IrLoader {
                                     + " of its own (WF-110 (b))");
                 yield new Expr.InstanceSetUnion(List.copyOf(takken), bron(n));
             }
-            default -> throw new Refusal("Expr:" + node, "unknown expression node");
+            // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
+            // carry (the temporal read's keys are checked all the same, see EXPRESSIE)
+            case "TemporalRead", "Construct", "Match", "StructLiteral", "FieldAccess", "ListLiteral", "Lambda",
+                 "Invoke", "Fold", "MapList", "FilterList", "ListLength" ->
+                    throw new Refusal("Expr:" + node, "unknown expression node");
+            // any other name is no node of this format, refused at the discriminator in the shared loader's words: a
+            // node of the v0 shape that L4 replaced or L5 renamed, a node of another union, or no node at all
+            default -> throw new Documentfout(padVan(n) + "/node", "unknown expr node \"" + node + "\"");
         };
     }
 
@@ -1777,10 +1787,9 @@ public final class IrLoader {
         return switch (node) {
             case "LiteralChunk" -> new Expr.TekstReeks.Letterlijk(text(d, "text"));
             case "EmbeddedExpression" -> new Expr.TekstReeks.Ingevoegd(expr(knoopVeld(d, "expr")));
-            // the two parts of the v0 shape that L5 renamed: no node of this format
-            case "Letterlijk", "Ingevoegd" -> throw new Documentfout(padVan(d) + "/node",
-                    "unknown TextCompositionPart node \"" + node + "\"");
-            default -> throw new Refusal("TekstReeks.Deel:" + node, "unknown tekstreeks part");
+            // any other name is no node of this format — the two parts of the v0 shape that L5 renamed among them —
+            // refused at the discriminator in the shared loader's words
+            default -> throw new Documentfout(padVan(d) + "/node", "unknown TextCompositionPart node \"" + node + "\"");
         };
     }
 
@@ -1915,10 +1924,10 @@ public final class IrLoader {
                 if (!n.has("source")) throw new Documentfout(padVan(n), MARKER_ZONDER_BRON);
                 yield new Conditie.Onopgelost(bron(n), null);   // frontend-internal field, absent from the wire
             }
-            // the condition nodes of the v0 shape that L5 renamed: no node of this format
-            case "Vergelijking", "Predicaat", "Kenmerk", "Periode", "Samengesteld", "Kwantorvouw", "Onopgelost" ->
-                    throw new Documentfout(padVan(n) + "/node", "unknown condition node \"" + node + "\"");
-            default -> throw new Refusal("Conditie:" + node, "unknown condition node");
+            // this backend carries every member of IR-SPEC ch. 4.5's condition union, so any other name is no node of
+            // this format, refused at the discriminator in the shared loader's words: a node of the v0 shape that L5
+            // renamed, a node of another union, or no node at all
+            default -> throw new Documentfout(padVan(n) + "/node", "unknown condition node \"" + node + "\"");
         };
     }
 

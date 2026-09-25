@@ -21,10 +21,11 @@ in tests.
   its IR-SPEC name, every enumeration value read through the one translation table
   `ir/Spelling.java` that the emitter writes with — into the frontend IR record types the
   transpiler consumes, which keep their v0 form. A form the backend does not carry
-  (another `format`, the `functionDefs` section, an unknown `Expr`/`Conditie`/`Datatype`
-  node — a v1 struct/list/match, a temporal read, …) is a **loud per-form `Refusal`**; a
-  document that is not well-formed — a v0 node name, key, list or enumeration value
-  among its defects — is a `Documentfout` naming its JSON pointer, in the shared OCaml
+  (another `format`, the `functionDefs` section, a node of the schema's expression or
+  datatype union with no record here — a v1 struct/list/match, a temporal read, …) is a
+  **loud per-form `Refusal`**; a document that is not well-formed — a node name outside
+  the schema's union at its position, a v0 node name among them, or a v0 key, list or
+  enumeration value — is a `Documentfout` naming its JSON pointer, in the shared OCaml
   loader's words, never a `Refusal`.
 - `cases/CaseRunner.java`, `cases/DroolsBackendMain.java` — the case runner and the
   jar-only CLI the gate drives.
