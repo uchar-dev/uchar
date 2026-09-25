@@ -4809,5 +4809,13 @@ final class RuleChecker {
     // The condition checks need an operand's datatype; that is now the type the
     // ExpressieBouwer computes for the resolved Expr, so inference and IR can never
     // diverge — they are the same code path.
-    private Datatype infer(ExpressieContext e) { return bouwer.bouw(e).type(); }
+    /** The type check builds an operand the rule's own resolution already built, so a diagnostic this build repeats
+     *  verbatim is that build's and is reported once; one only this build raises is kept, never swallowed. */
+    private Datatype infer(ExpressieContext e) {
+        int voor = model.diagnostics.size();
+        Datatype type = bouwer.bouw(e).type();
+        for (int i = model.diagnostics.size() - 1; i >= voor; i--)
+            if (model.diagnostics.subList(0, voor).contains(model.diagnostics.get(i))) model.diagnostics.remove(i);
+        return type;
+    }
 }

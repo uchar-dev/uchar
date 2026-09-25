@@ -98,6 +98,19 @@ class VouwOperandZinTest {
                 .contains("ERROR 26 de (absolute) tijdsduur van … tot …: duration operand is number, must be a date"));
     }
 
+    @Test void een_gebrek_in_een_voorwaarde_eenmaal_gemeld() {
+        // the condition's type check builds its operands a second time; the verifier reports each defect once, and
+        // the same defect on both sides of one comparison twice, at two pointers
+        assertEquals(fout("maximale waarde van: operand of the maximum ordering fold is text, must be a number or a date"),
+                meldingen("Een Jutter is waardevol indien de maximale waarde van zijn telling en zijn naam groter is dan 5."));
+        String duur = "de (absolute) tijdsduur van … tot …: duration operand is number, must be a date";
+        assertEquals(fout(duur), meldingen("Een Jutter is waardevol indien de tijdsduur van zijn vondstdag tot zijn "
+                + "telling in hele dagen groter is dan 5."));
+        assertEquals(List.of("ERROR 26 " + duur, "ERROR 26 " + duur), meldingen("Een Jutter is waardevol indien de "
+                + "tijdsduur van zijn vondstdag tot zijn telling in hele dagen groter is dan de tijdsduur van zijn "
+                + "vondstdag tot zijn hulp in hele dagen."));
+    }
+
     @Test void wat_de_verifier_toelaat_houdt_de_eigen_zin() {
         String u = "De uitkomst van een Jutter moet berekend worden als ";
         assertEquals(fout("maximale waarde van vereist numerieke operanden, kreeg Percentage"),
