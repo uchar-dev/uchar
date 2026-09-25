@@ -38,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p><b>Its edges.</b> A sentence the verifier builds around a variable is written in the frontend with the same
  * template, so that its fixed pieces are the verifier's (Typering's clamp and keuzetype-domain sentences). An English
  * literal without a word of {@link #ENGELS} escapes; the list holds the words of the sentences the frontend speaks,
- * measured when this test was written. The two sources are found by walking up from the working directory, and a
- * missing source FAILS, as in {@link VouwsoortenGrensTest}.
+ * measured when this test was written and again when the structural refusals took the verifier's sentences. The two
+ * sources are found by walking up from the working directory, and a missing source FAILS, as in
+ * {@link VouwsoortenGrensTest}.
  */
 class LezerszinGrensTest {
 
@@ -55,7 +56,8 @@ class LezerszinGrensTest {
             + "neither nor recognised declared without carries carry which and has with into under not comparable "
             + "calendar positions amounts parameter operator numeric unitless power additive whole "
             + "millisecond-precision day-precision sub-day recursive unguarded object fixed-start fewer two enumeration "
-            + "domain label").split(" "));
+            + "domain label priority complemented element slot aggregation duplicate rules validity anchor "
+            + "navigated").split(" "));
 
     /** Words that make a fragment Dutch; none of them is an English word. */
     private static final Set<String> NEDERLANDS = Set.of(("de het een van niet geen met voor bij naar zijn wordt moet "
@@ -70,8 +72,9 @@ class LezerszinGrensTest {
             "so this emitter has no verified wire shape for it",
             "the second line of the same refusal");
 
-    /** A floor on the fragments read, so an extractor that reads nothing is no silent green (measured: 99). */
-    private static final int MIN_FRAGMENTEN = 95;
+    /** A floor on the fragments read, so an extractor that reads nothing is no silent green (measured: 99; 153 once
+     *  the structural refusals spoke the verifier's sentences). */
+    private static final int MIN_FRAGMENTEN = 149;
 
     private static final Pattern WOORD = Pattern.compile("[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\\-']*");
     private static final Pattern SPECIFIER = Pattern.compile("%[sdS]");

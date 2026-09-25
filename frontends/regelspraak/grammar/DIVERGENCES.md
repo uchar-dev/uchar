@@ -1426,14 +1426,17 @@ the same way).
 
 Where the verifier refuses the document a resolver refusal would have written,
 the message is the verifier's sentence after a Dutch context prefix (the unit,
-typing, fold-operand and value refusals; witnesses `EenheidZinTest`,
-`TyperingZinTest`, `VouwOperandZinTest`), and `LezerszinGrensTest` requires
+typing, fold-operand and value refusals, and the structural ones: a rule form,
+a group, a declaration, a start point, a window's position and bounds, a
+count's shape, a set reading; witnesses `EenheidZinTest`, `TyperingZinTest`,
+`VouwOperandZinTest`, `StructuurZinTest`), and `LezerszinGrensTest` requires
 every English fragment of the resolver's and the emitter's refusals to stand in
 the verifier's string literals, so a sentence the verifier rewords turns it red.
 The refusals listed here keep their Dutch words because no reader refuses that
 document, measured on 2026-09-25 by changing a valid emission to exactly the
-defect and running the verifier on it, or because no document can carry the
-defect: a unit beside a unitless number literal at plus, min and assignment (`€
+defect, or by emitting it with the refusal switched off, and running the
+verifier on it, or because no document can carry the defect: a unit beside a
+unitless number literal at plus, min and assignment (`€
 plus 5`, `€ := 5`), where the verifier adopts the literal's unit and RegelSpraak
 adopts it in a comparison only; plus or min where neither operand is a date and
 one is no number; a percentage in a product, a quotient, a minimum, a maximum, a
@@ -1457,10 +1460,31 @@ onwaar (§13.4.6.4); an object creation of the subject's own type whose sentence
 names no role for the new object, where the derivation from the type pair links
 nothing (RUNTIME-SEMANTICS ch. 5.5) and the verifier admits the unlinked
 document; the whole-period qualifier on a navigated characteristic or on a
-condition that is no comparison, predicate or characteristic check. Refusals of
-the source text itself (syntax, the desugaring of decision tables and exception
-blocks, the dialect's fences, forms this frontend does not lower) have no reader
-either, because no document carries them.
+condition that is no comparison, predicate or characteristic check; a recursive
+group whose only creation member is a relation creation, which §9.10 does not
+count as the recursion's carrier and the verifier admits (ch. 5.5); overlapping
+versions of a day-kind definition, which WF-021 does not compare (the verifier
+refuses such a document under WF-031, for a second definition or a bounded
+window, a wider defect); a window bound that navigates where no path is
+derivable — a read of another object type, a sub- or supertype of the subject
+included, that no fact type reaches, or a written navigation without a
+derivable path — since the emitter then writes no navigation: it refuses the
+model, or writes the zero-hop self-reference as the subject's own read, which
+the verifier admits; a set reading outside a fold source whose path the
+emitter cannot derive or whose hops are all to-one, and a set reading as a
+count's source that names no member of the element type; an attribute or
+parameter typed with an undeclared domain, which has no wire spelling, since
+the wire writes a domain's datatype where it is used; an extension block
+directly after a group's last member over a base that is no group member,
+where the document is well-formed with the block and the rules behind it
+outside the group; a member of an `Uitzonderingen ongeordend` block that writes
+another target than the members before it, since the lowering writes every
+member on the first member's target, a well-formed document. Refusals of the
+source text itself (syntax, the desugaring of decision tables and exception
+blocks, the dialect's fences — among them a member of an unordered block that
+is no kenmerktoekenning or gelijkstelling, or yields no rule at all — and forms
+this frontend does not lower) have no reader either, because no document
+carries them.
 
 ---
 
