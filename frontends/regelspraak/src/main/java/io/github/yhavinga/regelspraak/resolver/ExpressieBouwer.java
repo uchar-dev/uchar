@@ -1628,15 +1628,18 @@ final class ExpressieBouwer {
     private void meldAggregatie(Expr.FunctieKind kind, List<Expr> argumenten, FunctieAanroepContext f) {
         List<Datatype> typen = argumenten.stream().map(Expr::type).toList();
         String fout = switch (kind) {
-            case MINIMUM -> Typering.getalAggregatie("minimale waarde van", typen);
-            case MAXIMUM -> Typering.getalAggregatie("maximale waarde van", typen);
+            case MINIMUM -> verifierzin("minimale waarde van", Typering.getalAggregatie("minimale waarde van", typen),
+                    Typering.ordeningsvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), typen));
+            case MAXIMUM -> verifierzin("maximale waarde van", Typering.getalAggregatie("maximale waarde van", typen),
+                    Typering.ordeningsvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), typen));
             // §4.10 Tabel 21 (som van): operands "moeten wel allemaal numeriek zijn" — the strict Numeriek
             // reading, DECIDED consistent with MIN/MAX (Tabel 22/23, identical wording): the spec adds an
             // explicit Percentage row + prose exactly where it admits one (§5.1/§5.3 comparison tables) and
             // explicitly excludes Percentage where it means to (§6.7 maal) — Tabel 21 does neither. The
             // "gespecialiseerd numeriek datatype" sentence (§3.3.5) does not override the tables (see
             // grammar/DIVERGENCES.md). A Percentage som-operand is now a type error, no longer silently summed.
-            case SOM -> Typering.getalAggregatie("som van", typen);
+            case SOM -> verifierzin("som van", Typering.getalAggregatie("som van", typen),
+                    rekenvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), argumenten));
             // §4.6 Tabel 16 (wortel van) / §4.9 Tabel 20 (absolute waarde van): the single operand must be Numeriek.
             // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" produced a Numeriek
             // result with NO diagnostic; ABSOLUTE_WAARDE propagates the operand type, so "absolute waarde van (<datum>)"
@@ -1653,16 +1656,21 @@ final class ExpressieBouwer {
             // via totaalOperandFout: a unit-BEARING operand must carry a tijdseenheid denominator; a UNITLESS
             // operand is admitted, because the spec's own §7.1 worked example totals a unitless Bedrag (the
             // temporality lives in the timeline, not the unit) — see grammar/DIVERGENCES.md.
-            case TOTAAL -> totaalOperandFout(argumenten);
-            case EERSTE  -> Typering.datumAggregatie("eerste van", Spelling.AGGREGATION_KIND.spelling(kind), typen);
-            case LAATSTE -> Typering.datumAggregatie("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), typen);
+            case TOTAAL -> verifierzin("totaal van", totaalOperandFout(argumenten),
+                    rekenvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), argumenten));
+            case EERSTE  -> verifierzin("eerste van",
+                    Typering.datumAggregatie("eerste van", Spelling.AGGREGATION_KIND.spelling(kind), typen),
+                    Typering.ordeningsvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), typen));
+            case LAATSTE -> verifierzin("laatste van",
+                    Typering.datumAggregatie("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), typen),
+                    Typering.ordeningsvouwZin(Spelling.AGGREGATION_KIND.spelling(kind), typen));
             // §6.12 / §13.4.17.21-.24: a time-of-day component is defined only on a datum-TIJD — a plain
             // "Datum in dagen" has no hour/minute/second. The DATE parts (jaar/maand/dag) accept any date, so
             // they are NOT checked. Onbekend is skipped (no claim); only a concrete DatumInDagen is a violation.
             case UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> tijdComponentFout(typen);
             // §4.16/§4.17 typeringen: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
             // SAME tijd-precisie.
-            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(kind, typen);
+            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(typen);
             // WF-038's scope sentence, spelled out rather than left to the default arm: the filled
             // count is NOT a numeric fold. Its test is presence, so every operand type counts
             // (decision G8, RUNTIME-SEMANTICS ch. 3.4c) — a getalAggregatie check here would
@@ -1855,7 +1863,7 @@ final class ExpressieBouwer {
         if (typen.size() != 1 || typen.get(0).isOnbekend()) return null;
         Datatype d = typen.get(0);
         if (!(d instanceof Datatype.Numeriek n))
-            return "eerste paasdag van vereist een numerieke expressie (een geheel jaartal), kreeg " + d.naam() + " (§4.19 Tabel 29)";
+            return paasdagZin(d);
         // Reject only a DECLARED decimal precision (getal met N decimalen) or a unit — NOT a !geheel() flag. A whole-year
         // ARITHMETIC operand ("het jaar uit X plus 1" = Easter of the next year, or "2024 plus 1") is spec-legal (§6.13:
         // "Het jaartal wordt gespecificeerd door een geheel getal"), but Typering.numeriekBinair types every plus/min as
@@ -1864,8 +1872,41 @@ final class ExpressieBouwer {
         // arithmetic year (an unbounded "getal" — statically indistinguishable from arithmetic — is likewise admitted; the
         // 4-cijfer value range stays a runtime concern).
         if (n.decimalen() > 0 || n.heeftEenheid())
-            return "eerste paasdag van vereist een geheel getal zonder eenheid (een 4-cijferig jaartal), kreeg " + d.naam() + " (§4.19 Tabel 29)";
+            return paasdagZin(d);
         return null;
+    }
+
+    /** The verifier refuses every operand this check refuses (WF-038: a whole unitless number or nothing). */
+    private static String paasdagZin(Datatype d) {
+        return "eerste paasdag van: easterSunday operand is " + Typering.soortWoord(d) + ", must be a whole unitless number";
+    }
+
+    /** The verifier's sentence in place of RegelSpraak's refusal {@code fout} where the verifier refuses the same
+     *  operands ({@code zin} non-null), after the Dutch context {@code voorvoegsel}; RegelSpraak's own words where it
+     *  admits them. */
+    private static String verifierzin(String voorvoegsel, String fout, String zin) {
+        return fout == null ? null : zin != null ? voorvoegsel + ": " + zin : fout;
+    }
+
+    /** WF-091's sentence for an arithmetic fold ({@code vouw}: sum or total on the wire) over an operand that is no
+     *  number, one per such operand and joined by "; ", naming the operand as the verifier does. Null where every
+     *  operand is a number to the verifier, a percentage included. */
+    private static String rekenvouwZin(String vouw, List<Expr> argumenten) {
+        List<String> zinnen = new ArrayList<>();
+        for (int i = 0; i < argumenten.size(); i++) {
+            Expr a = argumenten.get(i);
+            Datatype d = a.type();
+            if (d.isOnbekend() || d.isGetalachtig()) continue;
+            String operand = a instanceof Expr.AttribuutRef r && r.attribuut() != null && r.objecttype() != null
+                    ? "'" + r.attribuut() + "' on '" + r.objecttype().naam + "'"
+                    : a instanceof Expr.ParameterRef p && p.parameter() != null ? "the parameter '" + p.parameter().naam() + "'"
+                    : "its operand " + i;
+            String t = Typering.typeNaam(d);
+            zinnen.add("the " + vouw + " of " + operand + " folds " + t + " values: a total, sum or pro-rata part is "
+                    + "arithmetic over a Number, and " + (d.isDatum() ? "Date values are calendar positions"
+                            : t + " values are not amounts"));
+        }
+        return zinnen.isEmpty() ? null : String.join("; ", zinnen);
     }
 
     /** §4.20 Tabel 30 (totaal van): the operand is "numeriek met een eenheid per tijdseenheid". The NUMERIEK
@@ -1902,15 +1943,16 @@ final class ExpressieBouwer {
      *  datumexpressie AND have the SAME tijd-precisie — both {@link Datatype.DatumInDagen} or both {@link Datatype.DatumTijd}.
      *  A non-datum operand (a Numeriek passed where a datum belongs) or a concrete mixed pair (Datum-in-dagen tot
      *  Datum-en-tijd) is spec-illegal but otherwise silently emits code neither back-end can run (rsTijdsduur wants a
-     *  Temporal). Onbekend is skipped (no claim). Returns the diagnostic (citing §4.16 for tijdsduur, §4.17 for absolute), or
-     *  null. */
-    private static String tijdsduurPrecisieFout(Expr.FunctieKind kind, List<Datatype> typen) {
-        String sectie = kind == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR ? "§4.17" : "§4.16";
+     *  Temporal). Onbekend is skipped (no claim). The verifier refuses both in WF-038, so the diagnostic is its sentence
+     *  after the Dutch context; null where the operands are legal. */
+    private static String tijdsduurPrecisieFout(List<Datatype> typen) {
         Datatype ref = null;
         for (Datatype d : typen) {
             if (d.isOnbekend()) continue;                       // no claim
             if (!d.isDatum())                                   // §4.16/§4.17: both operands must be a datumexpressie
-                return "de (absolute) tijdsduur van … tot … vereist twee datumexpressies, kreeg " + d.naam() + " (" + sectie + ")";
+                return "de (absolute) tijdsduur van … tot …: " + String.join("; ", typen.stream()
+                        .filter(x -> !x.isOnbekend() && !x.isDatum())
+                        .map(x -> "duration operand is " + Typering.soortWoord(x) + ", must be a date").toList());
             if (ref == null) ref = d;
             else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie: WF-038
                 return "de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both must share one "

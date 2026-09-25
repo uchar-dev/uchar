@@ -484,6 +484,41 @@ public final class Typering {
         return "'" + e.afkorting() + "' is not a recognised time unit or declared day kind";
     }
 
+    /** WF-038's sentences for the operands of an ordering fold ({@code vouw}: its wire name, first, last, minimum or
+     *  maximum): each operand that is no number and no date, then two families (numbers and dates) or dates of two
+     *  precisions among the rest, in the verifier's order and joined by "; ". Null where the verifier admits the
+     *  operands; an unknown type makes no claim. */
+    static String ordeningsvouwZin(String vouw, java.util.List<Datatype> typen) {
+        java.util.List<String> zinnen = new java.util.ArrayList<>();
+        java.util.Set<String> families = new java.util.LinkedHashSet<>();
+        for (Datatype d : typen) {
+            if (d.isOnbekend()) continue;
+            if (d.isGetalachtig()) families.add("getal");
+            else if (d instanceof Datatype.DatumInDagen) families.add("dag");
+            else if (d instanceof Datatype.DatumTijd) families.add("milliseconde");
+            else zinnen.add("operand of the " + vouw + " ordering fold is " + soortWoord(d) + ", must be a number or a date");
+        }
+        if (families.size() > 1)
+            zinnen.add(families.contains("getal")
+                    ? vouw + " orders operands of two comparable families, numbers and dates, which share no ordering"
+                    : vouw + " orders dates of two precisions (day and millisecond), which share no order");
+        return zinnen.isEmpty() ? null : String.join("; ", zinnen);
+    }
+
+    /** The type name the verifier writes in WF-091's numeric-operand sentence ({@code wire_type_name}). */
+    static String typeNaam(Datatype t) {
+        return switch (t) {
+            case Datatype.Numeriek n -> "Number";
+            case Datatype.Percentage p -> "Number";
+            case Datatype.Tekst x -> "Text";
+            case Datatype.Booleaan b -> "Boolean";
+            case Datatype.DatumInDagen d -> "Date";
+            case Datatype.DatumTijd d -> "Date";
+            case Datatype.Enumeratie e -> "Enumeration";
+            case Datatype.Onbekend o -> throw new IllegalStateException("Typering: een onbekend type heeft geen typenaam");
+        };
+    }
+
     /** Whether the verifier refuses a pair of number-like types on units: its {@code units_compatible_adopting}
      *  (IR-SPEC ch. 4.6) — a unitless numeric literal on either side adopts the other side's unit, and otherwise
      *  both sides are unitless or carry convertible units. */
