@@ -528,6 +528,132 @@
             }
           }
         ]
+      },
+      {
+        "node": "Consistency",
+        "name": "keuring naar een samengesteld criterium",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "exactly",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "lengte",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn lengte"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "20"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "20"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn lengte is groter dan 20"
+                  }
+                },
+                {
+                  "node": "Compound",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "50"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "50"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn gewicht is groter dan 50"
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "less",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "jaartal",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn jaartal"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "1860"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "1860"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn jaartal is kleiner dan 1860"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860."
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Vondst moet voldoen aan precies \u00e9\u00e9n van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste \u00e9\u00e9n van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860.",
+              "line": 40
+            }
+          }
+        ]
       }
     ],
     "uniquenesses": [],

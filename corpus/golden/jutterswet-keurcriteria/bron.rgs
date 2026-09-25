@@ -34,3 +34,11 @@ Regel keuring naar geen criterium
         Een Vondst moet voldoen aan geen van de volgende criteria:
         - zijn gewicht is kleiner dan 0
         - zijn lengte is kleiner dan 0.
+
+Regel keuring naar een samengesteld criterium
+    geldig altijd
+        Een Vondst moet voldoen aan precies één van de volgende criteria:
+        - zijn lengte is groter dan 20
+        - er wordt voldaan aan ten minste één van de volgende criteria:
+        .. zijn gewicht is groter dan 50
+        .. zijn jaartal is kleiner dan 1860.

@@ -1,11 +1,12 @@
 # jutterswet-keurcriteria
 
-Four **consistencies whose assertion is a composite under a counting or a
+Five **consistencies whose assertion is a composite under a counting or a
 negating quantifier** (IR-SPEC ch. 4.5, the `Compound` row; RUNTIME-SEMANTICS
 ch. 3.9a for the counting reading, ch. 5.10 for the reading order): a `Vondst`
 must meet at least two, at most one, exactly one and none of a list of
-criteria, each consistency over criteria of its own, so that one find can
-meet all four. The assertion holds where the composite holds, and the
+criteria, and exactly one of a list whose second criterion is itself a
+composite, each consistency over criteria of its own, so that one find can
+meet all five. The assertion holds where the composite holds, and the
 consistency is violated where it does not (the card
 aantal-bronarm-en-drools-lader).
 
@@ -20,25 +21,32 @@ the raw input.
     K2  ten hoogste één van: gewicht > 50, lengte > 50, jaartal < 1500
     K3  precies één van:     gewicht > 1, lengte > 20
     K4  geen van:            gewicht < 0, lengte < 0
+    K5  precies één van:     lengte > 20,
+                             ten minste één van: gewicht > 50, jaartal < 1860
 
 Hand-computed, the number of criteria that hold per find (a leeg operand
-makes its criterion onwaar, ch. 1.2d):
+makes its criterion onwaar, ch. 1.2d); under K5 the nested composite is one
+criterion, and it holds where one of its own two does (the column in
+brackets counts those):
 
-    find  gewicht lengte jaartal   K1  K2  K3  K4   oud
-    V1       2.50     12    1850    3   0   1   0   yes
-    V2       0.00     25    1899    2   0   1   0   yes
-    V3      60.00     12    1850    3   1   1   0   yes
-    V4       0.00      5    1950    0   0   0   0   no
-    V5       leeg     12    leeg    1   0   0   0   no
-    V6      60.00     60    1850    3   2   2   0   yes
-    V7      -1.00     12    1850    2   0   0   1   yes
+    find  gewicht lengte jaartal   K1  K2  K3  K4  K5      oud
+    V1       2.50     12    1850    3   0   1   0   1 (1)   yes
+    V2       0.00     25    1899    2   0   1   0   1 (0)   yes
+    V3      60.00     12    1850    3   1   1   0   1 (2)   yes
+    V4       0.00      5    1950    0   0   0   0   0 (0)   no
+    V5       leeg     12    leeg    1   0   0   0   0 (0)   no
+    V6      60.00     60    1850    3   2   2   0   2 (2)   yes
+    V7      -1.00     12    1850    2   0   0   1   1 (1)   yes
 
 `case1-binnen-de-drempels.json` holds V1, V2 and V3 and expects the channel
 empty: every consistency holds for all three, K1 exactly at its threshold on
-V2 and K2 exactly at its on V3. `case2-over-de-drempels.json` holds V4 to V7
-and pins every violation: K1 below its threshold on V4 (0) and V5 (1, the
-leeg operands counting as criteria that do not hold), K2 above it on V6 (2),
-K3 below it on V4, V5 and V7 (0) and above it on V6 (2), and K4 on V7 (1). An
+V2 and K2 exactly at its on V3, and K5 on V1 and V3 through its nested
+criterion alone — on V3 with both of that criterion's own two holding, which
+counts once. `case2-over-de-drempels.json` holds V4 to V7 and pins every
+violation: K1 below its threshold on V4 (0) and V5 (1, the leeg operands
+counting as criteria that do not hold), K2 above it on V6 (2), K3 below it on
+V4, V5 and V7 (0) and above it on V6 (2), K4 on V7 (1), and K5 below it on V4
+and V5 (0) and above it on V6 (2). An
 inconsistency pin is a pin of presence, so the non-violations are pinned by
 case 1 and nowhere else.
 
@@ -51,6 +59,15 @@ violation as the negation of the fold their rule conditions already carry
 for these quantifiers, and play both cases with the values above. Swapping
 that negation for the fold itself, in either branch, fails case 1 in that
 branch (measured).
+
+K5 came with the fix round of the card. Before it the exec-model branch
+excluded that consistency (transpiler SKIP, `schending buiten Phase-D
+scope`): its fold lowered one level of criteria and no composite among them,
+while the DRL-text branch, `ref` and the ASP backend answered it as above.
+Since then it folds a nested composite as one criterion, at any depth, as the
+DRL-text branch lowers it. Making `ten minste` strict in that fold fails case
+1 in the exec-model branch, on K5 at V1 (measured). Case 2 gained the three K5
+pins; case 1 did not change.
 
 The document is emitted from `bron.rgs` by the RegelSpraak frontend. Until
 the card it was written by hand: the frontend parsed the subject-led form

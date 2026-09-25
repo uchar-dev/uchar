@@ -5562,15 +5562,18 @@ public final class ExecModelTranspiler {
             return obj -> { for (Predicate1<Object> sp : schendingen) if (sp.test(obj)) return true; return false; };
         }
         // §13.4.8 "… moet voldoen aan geen van / ten minste / ten hoogste / precies n van de volgende criteria": the
-        // assertie holds iff the composite does, so the violation is its negation. The composite is the one rule
-        // conditions and subselections fold (leafCompound: the count of the criteria that hold against the
-        // threshold, ch. 5.10 short circuit included, a leeg operand making its criterion onwaar), so an assertion
-        // and a condition read one quantifier alike. A window among the criteria is WF-112's position and is left to
-        // the caller, which names it; a criterion the fold cannot lower no-ops the rule, as under ALLE.
+        // assertie holds iff the composite does, so the violation is its negation. The composite is folded as a
+        // subject-local condition (subjectConditie: the count of the criteria that hold against the threshold, ch.
+        // 5.10 short circuit included, a leeg operand making its criterion onwaar), and a composite nested among the
+        // criteria is one criterion that holds as its own fold does, at any depth — as the DRL-text branch lowers the
+        // same composite as a rule condition. One level deep this is the fold leafCompound makes; before the card
+        // aantal-bronarm-en-drools-lader's fix round a nested composite no-oped the rule here while the DRL-text
+        // branch, ref and the ASP backend answered it. A window among the criteria is WF-112's position and is left
+        // to the caller, which names it; a criterion the fold cannot lower no-ops the rule, as under ALLE.
         if (assertie instanceof Conditie.Samengesteld s && s.kwantor() != Conditie.Kwantor.ALLE
                 && s.kwantor() != Conditie.Kwantor.DE) {
             if (Vensterpositie.weigering(s) != null) return null;
-            Predicate1<Object> houdt = leafCompound(s, subject);
+            Predicate1<Object> houdt = subjectConditie(s, subject);
             return houdt == null ? null : obj -> !houdt.test(obj);
         }
         // §8.2 a whole-period-qualified criterium ("X moet gedurende het gehele jaar gelijk zijn aan Y"): the criterium
