@@ -315,17 +315,18 @@ class AantalUnieTest {
 
     @Test
     void de_waarde_operanden_houden_hun_eigen_weigering() {
-        // the half that did not move: the head of the refusal is the one of 2026-09-20, word for word
+        // the half that did not move: the arity refusal, in the verifier's WF-037 sentence
         List<Diagnostic> ds = fouten(WAARDE_OPERANDEN);
         assertEquals(1, ds.size(), () -> "verwacht één fout, kreeg: " + ds);
         String msg = ds.get(0).message();
-        assertTrue(msg.contains("noemt 2 operanden"), () -> "de melding telt de operanden niet: " + msg);
-        assertTrue(msg.contains("geen opgesomde vorm"), () -> "de melding noemt de vorm niet: " + msg);
-        assertTrue(msg.contains("WF-037"), () -> "de melding citeert de ariteitsregel niet: " + msg);
-        // and the tail corrects what the head would mislead about on its own: the source language
-        // DOES spell a concatenation, it just is not this sentence's
-        assertTrue(msg.contains("niet elke operand is een rolselectie"),
-                () -> "de melding zegt niet waarom de unie-route hier niet opent: " + msg);
+        assertTrue(msg.contains("this node carries 2 operands"), () -> "de melding telt de operanden niet: " + msg);
+        assertTrue(msg.contains("a count folds INSTANCES and has no LISTED form"),
+                () -> "de melding noemt de vorm niet: " + msg);
+        assertTrue(msg.contains("the only reading an operand list leaves a count is the number of FILLED operands"),
+                () -> "de melding is de ariteitszin van de verifier niet: " + msg);
+        // value operands open no union route, so the Dutch context carries no union reason
+        assertFalse(msg.contains("geen unie van selecties"),
+                () -> "de melding noemt een unie-reden waar geen unie-route opende: " + msg);
     }
 
     @Test

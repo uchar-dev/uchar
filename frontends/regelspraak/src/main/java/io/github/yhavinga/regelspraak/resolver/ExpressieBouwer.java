@@ -643,11 +643,12 @@ final class ExpressieBouwer {
         if (kind == Expr.FunctieKind.AANTAL_GEVULDE
                 && !(argumenten.size() == 1
                      && argumenten.get(0) instanceof Expr.AttribuutRef zb && zb.set())) {
+            // written, the fold carries no element type, which the verifier refuses in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "het aantal gevulde waarden van vereist een setlezing als bron: deze vouw leest een WAARDE "
-                            + "per bijdrager, dus haar bron noemt de leden ('… van alle <meervoud> van …') — '"
-                            + bron.snippet() + "' noemt er geen, en het gevulde aantal van één eigen waarde is "
-                            + "0 of 1 (WF-037, IR-SPEC ch. 4.3)", f.getStart().getLine()));
+                    "gevulde telling '" + bron.snippet() + "': the filled count is an INSTANCE fold and MUST carry "
+                            + "an element type: without one its argument is no fold source at all, and the count has "
+                            + "no contributors whose values it could test for presence (ch. 4.3)",
+                    f.getStart().getLine()));
             // the aggregation's OWN type, not the unknown sentinel: a refused fold must still leave a
             // well-formed marker (IR-SPEC ch. 2.4), exactly as keurVouwbron's three refusals do
             return new Expr.Onopgelost(type, bron, null);   // the ERROR above is this marker's diagnosis
@@ -1454,11 +1455,11 @@ final class ExpressieBouwer {
         return null;
     }
 
-    /** Why the §5.7 union route did not open for the count being built — appended to
-     *  {@link #tellingAriteitFout}'s refusal, so one sentence says both what the wire refuses (an
-     *  operand list under a count) and why the form that WOULD have carried this sentence does not
-     *  apply. Set by {@link #bouwInstantieUnie} on every null return and read immediately after, the
-     *  {@code aggregatieReden} contract the Drools backend uses on the same kind of question. */
+    /** Why the §5.7 union route did not open for the count being built — the Dutch context of
+     *  {@link #tellingAriteitFout}'s refusal, so one diagnostic says both what the wire refuses (an
+     *  operand list under a count, in the verifier's sentence) and why the form that WOULD have carried
+     *  this sentence does not apply. Set by {@link #bouwInstantieUnie} on every null return and read immediately
+     *  after, the {@code aggregatieReden} contract the Drools backend uses on the same kind of question. */
     private String unieWeigering;
 
     /** §5.7/§4.11 build the CONCATENATION of subject expressions under "het aantal" as an
@@ -1744,37 +1745,16 @@ final class ExpressieBouwer {
      *  {@link #tellingBronFout}'s. */
     private String tellingAriteitFout(List<Expr> argumenten, FunctieAanroepContext f) {
         if (argumenten.size() < 2) return null;
-        return "opgesomde telling: '" + bron(f).snippet() + "' noemt " + argumenten.size()
-                + " operanden — een telling vouwt de INSTANTIES waar zij over gaat en heeft geen "
-                + "opgesomde vorm; de brontaal spelt er geen (§5.8.1 telt over onderwerpexpressies, "
-                + "typeringen §4.11 sluit de waardelezing uit), dus er is geen operandenlijst om te "
-                + "lezen. De enige lezing die een lijst een telling overlaat is 'tel de gevulde "
-                + "operanden', en die betekenis draagt AANTAL_GEVULDE over een setbron — een eigen "
-                + "soort op de wire (besluit 2026-09-20) (WF-037, IR-SPEC ch. 4.3)"
-                + unieStaart(f);
-    }
-
-    /** The §5.7 half of the refusal above, appended so ONE diagnostic says both halves. The head
-     *  refuses the operand LIST and says the source language spells none; since 2026-09-20 that is
-     *  true of the list and false of the SENTENCE — §5.7 spells a concatenation of subject
-     *  expressions and typeringen §4.11 admits it under this very operator — so the head would
-     *  mislead on its own. The tail therefore OPENS by naming the apparent contradiction ("wat de
-     *  kop over de LIJST zegt is waar; over de ZIN niet"), because a reader who meets "spelt er
-     *  geen" and "spelt wél" in one sentence with nothing between them reads a bug, not a
-     *  distinction. The concatenation has a wire form of its own (an InstanceSetUnion under
-     *  the count, WF-110), and this tail says why that route did not open here: because the operands
-     *  are not subject expressions at all, or because {@link #bouwInstantieUnie} refused them for a
-     *  reason of its own. */
-    private String unieStaart(FunctieAanroepContext f) {
-        if (!(f instanceof AantalFuncContext)) return "";
-        String staart = ". Wat de kop over de LIJST zegt is waar; over de ZIN niet — de brontaal spelt "
-                + "wél een CONCATENATIE van ONDERWERPexpressies (§5.7, typeringen §4.11), en die telt "
-                + "instanties in plaats van waarden, dus zij is geen operandenlijst maar een lijst "
-                + "SELECTIES: zij bereikt de wire sinds 2026-09-20 als één InstanceSetUnion onder de "
-                + "telling (WF-110). Die route opent hier niet — ";
-        return staart + (unieWeigering != null ? unieWeigering
-                : "niet elke operand is een rolselectie; een concatenatie onder 'het aantal' bestaat "
-                        + "uit ONDERWERPexpressies en uit niets anders (typeringen §4.11)");
+        // where the §5.7 union route opened and {@link #bouwInstantieUnie} refused it, its reason is the context
+        // the author needs, so it stands in the Dutch prefix; the listed count itself is the verifier's sentence
+        return "opgesomde telling '" + bron(f).snippet() + "'"
+                + (f instanceof AantalFuncContext && unieWeigering != null
+                        ? ", geen unie van selecties: " + unieWeigering : "")
+                + ": a count folds INSTANCES and has no LISTED form, and this node carries " + argumenten.size()
+                + " operands: the source language spells a count over a subject expression alone (ch. 4.3), so "
+                + "there is no articulated operand list to admit — the only reading an operand list leaves a count "
+                + "is the number of FILLED operands, and that meaning belongs to the filled count over its set "
+                + "source, never to this kind";
     }
 
     /** WF-037's count-source arm (IR-SPEC ch. 4.3, maintainer decision 2026-09-23): a count MUST
@@ -1795,16 +1775,15 @@ final class ExpressieBouwer {
      *  The grammar is untouched; the source language's count takes a subject expression, and the
      *  refusal belongs where the element is derived, not in the parse. */
     private String tellingBronFout(List<Expr> argumenten, FunctieAanroepContext f) {
-        String botsing = aantalAttribuutBotsing(argumenten, f);
-        if (botsing != null) return botsing;
-        String overType = tellingOverObjecttype(argumenten, f);
-        if (overType != null) return overType;
-        String operand = argumenten.isEmpty() ? "geen operand" : "'" + bron(f).snippet() + "'";
-        return "telling zonder bron: " + operand + " noemt geen instanties om te tellen — een "
-                + "telling vouwt de INSTANTIES van een onderwerpexpressie (§5.8.1, typeringen §4.11) "
-                + "en draagt daarom een elementtype; zonder elementtype telt zij haar OPERAND en niet "
-                + "een populatie. Een eigen waarde, een getal, een parameter of een lijst is geen "
-                + "bron (WF-037, IR-SPEC ch. 4.3, besluit 2026-09-23)";
+        // one wire defect, the count without an element type, in the verifier's sentence; the Dutch context names
+        // what the operand turned out to be where that tells the author more
+        String context = aantalAttribuutBotsing(argumenten, f);
+        if (context == null) context = tellingOverObjecttype(argumenten, f);
+        return "telling zonder bron" + (argumenten.isEmpty() ? "" : " '" + bron(f).snippet() + "'")
+                + (context == null ? "" : ", " + context) + ": the count is an INSTANCE fold and MUST carry an "
+                + "element type: without one its argument is no fold source at all — and with no argument there is "
+                + "none — so the count has no contributors to count, only its operand, whatever that operand holds "
+                + "(ch. 4.3)";
     }
 
     /** "het aantal Vondsten": a count whose one operand names an OBJECT TYPE — by name or plural, bare, with an
@@ -1816,44 +1795,18 @@ final class ExpressieBouwer {
      *  as a universal subject or a reference back to one (§5.5.1, §13.4.1). The one document-wide range, "van alle
      *  &lt;objecttype&gt;", is the uniqueness check's own subject expression (§8.1.6) and no aggregation operand.
      *
-     *  <p>The refusal predates this sentence; what the sentence replaces is the generic one, which told an
-     *  author who named a population that the operand "names no instances". Only an operand that resolved to
-     *  NOTHING declared qualifies — a bare name kept as a {@link Expr.VariabeleRef}, or an unresolved one — so
-     *  a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is never re-read. The
-     *  way out is named from the rule's subject when exactly one role reaches the type from it
-     *  ({@link RegelSpraakModel#verbindendeRolBinding}) and that role is plural; otherwise the sentence gives
-     *  the general spelling.
-     *  Null when the operand names no type. */
+     *  <p>The refusal is {@link #tellingBronFout}'s, in the verifier's sentence; this names the object type in its
+     *  Dutch context, so an author who named a population learns which one the count read as a type. Only an
+     *  operand that resolved to NOTHING declared qualifies — a bare name kept as a {@link Expr.VariabeleRef}, or an
+     *  unresolved one — so a parameter, a "Daarbij geldt" variable or an attribute that shares a type's name is
+     *  never re-read. Null when the operand names no type. */
     private String tellingOverObjecttype(List<Expr> argumenten, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext af) || argumenten.size() != 1) return null;
         if (!(argumenten.get(0) instanceof Expr.VariabeleRef || argumenten.get(0) instanceof Expr.Onopgelost)) return null;
         String operand = src(af.primaireExpressie(0)).replaceAll("^\\((.*)\\)$", "$1").trim();
         String kern = operand.replaceFirst("(?i)^(de|het|een|alle)\\s+", "");
         Objecttype type = MeervoudMatcher.vindObjecttype(model.objecttypen.values(), kern);
-        if (type == null) return null;
-        String uitweg = "";
-        RegelSpraakModel.RolBindingRef paar = model.verbindendeRolBinding(huidigSubject, type);
-        RegelSpraakModel.Feittype ft = paar == null ? null : model.feittypen.get(paar.feittype());
-        if (ft != null) {
-            // Only a PLURAL role is a way out: the sentence says a count needs one, and counting a to-one role
-            // ("het aantal aanmelders" of a Vondst, which has one) answers 0 or 1, never a population.
-            for (RegelSpraakModel.Rol r : ft.rollen)
-                if (r.naam().equals(paar.rol()) && r.meervoudig())
-                    uitweg = " — vanaf " + huidigSubject.naam + " is dat de rol '"
-                            + (r.meervoud() != null ? r.meervoud() : r.naam()) + "' (feittype " + ft.naam + ")";
-        }
-        return "telling zonder bron, over een objecttype: '" + bron(f).snippet() + "' noemt het objecttype "
-                + type.naam + " zonder onderwerp waarvandaan het geteld wordt, en zou zo alle instanties van "
-                + type.naam + " in het document tellen — die telling kent de brontaal niet. RegelSpraak v2.3.0 "
-                + "telt de instanties van een meervoudige onderwerpexpressie (§5.8.1, typeringen §4.11); "
-                + "meervoudig is alleen een concatenatie, een selectie met een meervoudig object of een "
-                + "meervoudige rol, of een subselectie (§5.8), en elk daarvan hangt aan een onderwerp dat de "
-                + "regel per instantie bindt (§5.5.3). Een objecttype staat in een onderwerpketen alleen "
-                + "enkelvoudig: als universeel onderwerp of als verwijzing daarnaar (§5.5.1, §13.4.1). De "
-                + "enige documentbrede reikwijdte, 'van alle "
-                + "<objecttype>', hoort bij de uniciteitscontrole (§8.1.6) en is geen aggregatie. Tel via een "
-                + "rol vanaf het onderwerp ('het aantal <rol> van <onderwerp>', §5.5.5)" + uitweg
-                + " (WF-037, IR-SPEC ch. 4.3)";
+        return type == null ? null : "over het objecttype " + type.naam;
     }
 
     /** The source-less count whose words also spell a DECLARED attribute: "het aantal gewogen posten
@@ -1863,23 +1816,15 @@ final class ExpressieBouwer {
      *  parse is the count. It is NOT reinterpreted as the attribute here, unlike the parameter
      *  fallback in {@link #bouwFunctie}: the article-less spelling (§13.3.2.6 makes the article
      *  optional) already reads the attribute, and no source measured reads such an attribute under
-     *  "het aantal" — a second reading would widen the language rather than resolve it. The refusal
-     *  therefore names the collision and that spelling, instead of the generic sentence that leaves
-     *  the author guessing why a declared name is refused. Null when there is no such attribute. */
+     *  "het aantal" — a second reading would widen the language rather than resolve it. The refusal is
+     *  {@link #tellingBronFout}'s, in the verifier's sentence; this names the collision in its Dutch context,
+     *  so the author sees why a declared name is refused. Null when there is no such attribute. */
     private String aantalAttribuutBotsing(List<Expr> argumenten, FunctieAanroepContext f) {
         if (!(f instanceof AantalFuncContext af) || argumenten.size() != 1
                 || !(argumenten.get(0) instanceof Expr.AttribuutRef a) || a.objecttype() == null) return null;
         String naam = "aantal " + a.attribuut();
         if (a.objecttype().attribuut(naam) == null) return null;
-        String operand = src(af.primaireExpressie(0));
-        return "telling zonder bron, of een attribuut: '" + bron(f).snippet() + "' leest als telling van '"
-                + operand + "', en '" + a.attribuut() + "' noemt geen rol om "
-                + "te tellen — maar '" + naam + "' is een gedeclareerd attribuut van " + a.objecttype().naam
-                + ". De brontaal leidt de zin op beide manieren af (§13.4.17.3: getalaggregatie of "
-                + "attribuutvanonderwerp) en de grammatica kiest de telling, die zonder instantiebron niet "
-                + "welgevormd is (WF-037, IR-SPEC ch. 4.3, typeringen §4.11). Bedoel je het attribuut, "
-                + "schrijf dan 'aantal " + operand + "' — zonder lidwoord, dat bij een "
-                + "attribuutverwijzing optioneel is (§13.3.2.6)";
+        return "waar '" + naam + "' een gedeclareerd attribuut van " + a.objecttype().naam + " is";
     }
 
     /** §4.19 Tabel 29 (eerste paasdag van): the single operand is "een numerieke expressie zonder eenheid ... altijd een

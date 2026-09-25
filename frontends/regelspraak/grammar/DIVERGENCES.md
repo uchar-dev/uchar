@@ -1077,7 +1077,7 @@ Why not simply delete the tail:
   that is deleted stops being registered. Fenced and written down, it stays
   readable; deleted, the next reader rediscovers it from scratch.
 - The refusal is the same either way. What differs is only whether the author
-  gets a named refusal citing the rule, or a syntax error.
+  gets a named refusal in the verifier's sentence, or a syntax error.
 
 This is the same posture `AantalSetbronTest` records one decision earlier: when
 the wire narrows, the frontend's fence moves and its grammar does not.
@@ -1108,14 +1108,18 @@ So the grammar's `( COMMA primaireExpressie )* ( EN primaireExpressie )?` is now
   production is no longer a divergence: it spells what the source language
   spells.
 - operands that are **waardelezingen** ("de gewogen vangst van de Jutter") stay
-  the widening, and `tellingAriteitFout` keeps refusing them word for word.
+  the widening, and `tellingAriteitFout` keeps refusing them.
 
-The refusal's message gained a TAIL rather than a rewrite, because its head
-would now mislead on its own: it says the source language spells no listed form,
-which is true of the list and false of the sentence. The tail names the §5.7
-route and says why it did not open here — the operands are not rolselecties, or
-`bouwInstantieUnie` refused them for a reason of its own. Three such
-reasons, each an ERROR that keeps the document off disk:
+The refusal's message gained a TAIL rather than a rewrite, because its Dutch
+head would have misled on its own: it said the source language spells no
+listed form, which is true of the list and false of the sentence. Since
+2026-09-25 the message is the verifier's WF-037 sentence for the listed count
+after the written count, and the tail that named the §5.7 route for value
+operands left with the head it corrected. Where the route opened and
+`bouwInstantieUnie` refused it for a reason of its own, that reason stands in
+the Dutch context before the sentence (`opgesomde telling '<zin>', geen unie
+van selecties: <reden>: a count folds INSTANCES …`). Three such reasons, each an
+ERROR that keeps the document off disk:
 
 - **two populations** ("het aantal aangemelde vondsten van de Jutter en
   duinkavels van de Jutter"): one count answers a cardinality over ONE declared
@@ -1170,13 +1174,16 @@ count over ALL instances of a type, and measured that it does not:
 So the form stays refused, and nothing reaches the wire. The refusal is older
 than the card (WF-037's source-less-count arm), but its sentence said that the
 operand "names no instances to count", which is untrue for an author who named
-a population. The sentence now states the norm and the way out — count through
-a role from the rule's subject, naming that role when exactly one reaches the
-type from it and it is plural (a to-one role counts 0 or 1, never a
-population) — for every spelling that reaches it: bare, with an article or "alle", the
-type's own name, the plural in lower case, in parentheses. Only an operand that
-resolved to nothing declared qualifies, so a parameter or a "Daarbij geldt"
-variable that shares a type's name keeps the generic sentence. A subselection
+a population. The card's sentence stated the norm and the way out — count
+through a role from the rule's subject. Since 2026-09-25 the refusal is the
+verifier's WF-037 sentence for a count without an element type, and the object
+type the operand named stands in its Dutch context (`telling zonder bron
+'<zin>', over het objecttype <T>: the count is an INSTANCE fold …`), for every
+spelling that reaches it: bare, with an article or "alle", the type's own name,
+the plural in lower case, in parentheses; the norm and the way out are this
+section's. Only an operand that resolved to nothing declared qualifies, so a
+parameter or a "Daarbij geldt" variable that shares a type's name keeps the
+generic context. A subselection
 over a bare type ("het aantal Vondsten die gewogen zijn") parses another way
 and is refused by the subselection fence of §5.6 with its own sentence.
 Witness: `TypemeervoudTellingTest`.

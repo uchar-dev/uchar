@@ -165,13 +165,12 @@ class AantalGevuldeDialectTest {
 
     // ---------------- refusal fixtures ----------------
 
-    /** WF-037's filled-count shape, in the frontend's own words. Pinned whole: the sentence names the
-     *  CONSTRUCT, not just the position, so it stays a witness of this kind and no other. */
+    /** WF-037's filled-count shape, in the verifier's sentence after the Dutch context. Pinned whole: the
+     *  sentence names the CONSTRUCT, not just the position, so it stays a witness of this kind and no other. */
     static final String NIET_SET =
-            "het aantal gevulde waarden van vereist een setlezing als bron: deze vouw leest een WAARDE per "
-            + "bijdrager, dus haar bron noemt de leden ('… van alle <meervoud> van …') — 'het aantal gevulde "
-            + "waarden van het gewicht van de Vondst' noemt er geen, en het gevulde aantal van één eigen "
-            + "waarde is 0 of 1 (WF-037, IR-SPEC ch. 4.3)";
+            "gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': the filled count is an "
+            + "INSTANCE fold and MUST carry an element type: without one its argument is no fold source at all, and "
+            + "the count has no contributors whose values it could test for presence (ch. 4.3)";
 
     @Test void een_niet_set_bron_wordt_luid_geweigerd() {
         RegelSpraakModel m = resolve("""
@@ -180,7 +179,8 @@ class AantalGevuldeDialectTest {
                 geldig altijd
                     Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van de Vondst.
             """);
-        List<Diagnostic> ds = m.diagnostics.stream().filter(d -> d.message().contains("WF-037")).toList();
+        List<Diagnostic> ds = m.diagnostics.stream()
+                .filter(d -> d.message().contains("the filled count is an INSTANCE fold")).toList();
         assertEquals(1, ds.size(), () -> "verwacht één WF-037-melding, kreeg: " + m.diagnostics);
         assertEquals(NIET_SET, ds.get(0).message());
         assertEquals(Severity.ERROR, ds.get(0).severity());
@@ -264,7 +264,8 @@ class AantalGevuldeDialectTest {
 
     @Test void een_botsende_rolnaam_verschuift_luid_en_niet_stil() {
         RegelSpraakModel m = Resolver.resolve(BOTSENDE_NAAM);
-        List<Diagnostic> ds = m.diagnostics.stream().filter(d -> d.message().contains("WF-037")).toList();
+        List<Diagnostic> ds = m.diagnostics.stream()
+                .filter(d -> d.message().contains("the filled count is an INSTANCE fold")).toList();
         assertEquals(1, ds.size(), () -> "de botsing verschuift zonder melding: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
         assertTrue(ds.get(0).message().contains("'het aantal gevulde waarden van de Jutter'"),

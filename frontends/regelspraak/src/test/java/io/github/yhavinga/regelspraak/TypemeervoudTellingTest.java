@@ -54,7 +54,8 @@ class TypemeervoudTellingTest {
     }
 
     private static List<Diagnostic> overType(RegelSpraakModel m) {
-        return m.diagnostics.stream().filter(d -> d.message().startsWith("telling zonder bron, over een objecttype")).toList();
+        return m.diagnostics.stream().filter(d -> d.message().startsWith("telling zonder bron '")
+                && d.message().contains("', over het objecttype ")).toList();
     }
 
     @ParameterizedTest
@@ -72,13 +73,12 @@ class TypemeervoudTellingTest {
         assertEquals(1, ds.size(), () -> "verwacht één typetellingsmelding voor '" + expressie + "', kreeg: " + m.diagnostics);
         Diagnostic d = ds.get(0);
         assertEquals(Severity.ERROR, d.severity(), "ERROR: irModus schrijft het document dan niet");
-        String t = d.message();
-        assertTrue(t.contains("noemt het objecttype Vondst zonder onderwerp waarvandaan het geteld wordt"), t);
-        assertTrue(t.contains("die telling kent de brontaal niet"), t);
-        assertTrue(t.contains("§5.8)") && t.contains("§5.5.3") && t.contains("§13.4.1") && t.contains("§8.1.6"), t);
-        assertTrue(t.contains("WF-037"), t);
-        // the way out, named from the rule's subject: the one role that reaches Vondst from Jutter
-        assertTrue(t.contains("vanaf Jutter is dat de rol 'vondsten' (feittype vondstaanmelding)"), t);
+        // the type the operand named, in the Dutch context; the count without an element type, in the verifier's
+        // WF-037 sentence
+        assertEquals("telling zonder bron '" + expressie.replace("(", "").replace(")", "") + "', over het objecttype "
+                + "Vondst: the count is an INSTANCE fold and MUST carry an element type: without one its argument is no "
+                + "fold source at all — and with no argument there is none — so the count has no contributors to "
+                + "count, only its operand, whatever that operand holds (ch. 4.3)", d.message());
         assertEquals(1, m.errors().size(), () -> "precies één fout: " + m.errors());
     }
 
@@ -87,7 +87,7 @@ class TypemeervoudTellingTest {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal Jutters"));
         List<Diagnostic> ds = overType(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
-        assertTrue(ds.get(0).message().contains("noemt het objecttype Jutter"), ds.get(0).message());
+        assertTrue(ds.get(0).message().contains(", over het objecttype Jutter: "), ds.get(0).message());
         assertFalse(ds.get(0).message().contains("vanaf Jutter is dat de rol"), ds.get(0).message());
     }
 
@@ -103,7 +103,7 @@ class TypemeervoudTellingTest {
         RegelSpraakModel m = Resolver.resolve(src);
         List<Diagnostic> ds = overType(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
-        assertTrue(ds.get(0).message().contains("noemt het objecttype Jutter"), ds.get(0).message());
+        assertTrue(ds.get(0).message().contains(", over het objecttype Jutter: "), ds.get(0).message());
         assertFalse(ds.get(0).message().contains("is dat de rol"), ds.get(0).message());
     }
 
@@ -121,14 +121,16 @@ class TypemeervoudTellingTest {
         String src = "Parameter de vondsten : Numeriek (niet-negatief geheel getal)\n\n" + MODEL + regel("het aantal vondsten");
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(overType(m).isEmpty(), () -> "de typezin hoort hier niet: " + m.diagnostics);
-        assertTrue(m.errors().stream().anyMatch(d -> d.message().startsWith("telling zonder bron: ")),
+        assertTrue(m.errors().stream().anyMatch(d -> d.message()
+                        .startsWith("telling zonder bron 'het aantal vondsten': ")),
                 () -> "de algemene bronloze-tellingzin ontbreekt: " + m.diagnostics);
     }
 
     @Test void een_operand_die_geen_type_noemt_houdt_de_algemene_zin() {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal gewogen vangst van de Jutter"));
         assertTrue(overType(m).isEmpty(), () -> "de typezin hoort hier niet: " + m.diagnostics);
-        assertTrue(m.errors().stream().anyMatch(d -> d.message().startsWith("telling zonder bron: ")),
+        assertTrue(m.errors().stream().anyMatch(d -> d.message()
+                        .startsWith("telling zonder bron 'het aantal gewogen vangst van de Jutter': ")),
                 () -> "de algemene bronloze-tellingzin ontbreekt: " + m.diagnostics);
     }
 }

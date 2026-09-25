@@ -78,7 +78,8 @@ class AantalZonderBronTest {
         assertEquals(1, ds.size(), () -> "verwacht één bronloze-tellingmelding voor '" + expressie + "', kreeg: "
                 + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertTrue(ds.get(0).message().contains("WF-037"), ds.get(0).message());
+        assertTrue(ds.get(0).message().contains("the count is an INSTANCE fold and MUST carry an element type"),
+                ds.get(0).message());
         // ERROR is what keeps the document off disk: irModus writes nothing when the model has one
         assertFalse(m.errors().isEmpty());
     }

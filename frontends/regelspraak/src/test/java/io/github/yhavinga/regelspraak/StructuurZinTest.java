@@ -498,6 +498,59 @@ class StructuurZinTest {
 
         """;
 
+    // ---- WF-037: the shape of a count
+
+    private static List<String> telling(String expressie) {
+        return fouten(TELMODEL + """
+            Regel aantal gewogen posten
+                geldig altijd
+                    Het aantal gewogen posten van een Jutter moet berekend worden als %s.
+            """.formatted(expressie));
+    }
+
+    private static final String OPGESOMD = ": a count folds INSTANCES and has no LISTED form, and this node carries 2 "
+            + "operands: the source language spells a count over a subject expression alone (ch. 4.3), so there is no "
+            + "articulated operand list to admit — the only reading an operand list leaves a count is the number of "
+            + "FILLED operands, and that meaning belongs to the filled count over its set source, never to this kind";
+
+    @Test void een_opgesomde_telling() {
+        assertEquals(List.of("opgesomde telling 'het aantal de gewogen vangst van de Jutter en de gewogen bijvangst van de "
+                + "Jutter'" + OPGESOMD), telling("het aantal de gewogen vangst van de Jutter en de gewogen bijvangst van "
+                + "de Jutter"));
+        // the union route opened and was refused: its reason stays in the Dutch context
+        assertEquals(List.of("opgesomde telling 'het aantal vondsten van de Jutter en kavels van de Jutter', geen unie van "
+                + "selecties: de selecties tellen over verschillende populaties ('Vondst' en 'Kavel'); één telling "
+                + "antwoordt een aantal over ÉÉN gedeclareerd type, en of twee selecties dan een instantie kunnen delen "
+                + "is een vraag over de subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))"
+                + OPGESOMD), telling("het aantal vondsten van de Jutter en kavels van de Jutter"));
+    }
+
+    private static final String BRONLOOS = ": the count is an INSTANCE fold and MUST carry an element type: without one "
+            + "its argument is no fold source at all — and with no argument there is none — so the count has no "
+            + "contributors to count, only its operand, whatever that operand holds (ch. 4.3)";
+
+    @Test void een_telling_zonder_bron() {
+        assertEquals(List.of("telling zonder bron 'het aantal gewogen vangst van de Jutter'" + BRONLOOS),
+                telling("het aantal gewogen vangst van de Jutter"));
+        assertEquals(List.of("telling zonder bron 'het aantal drempel'" + BRONLOOS), telling("het aantal drempel"));
+        assertEquals(List.of("telling zonder bron 'het aantal Vondsten', over het objecttype Vondst" + BRONLOOS),
+                telling("het aantal Vondsten"));
+        assertEquals(List.of("telling zonder bron 'het aantal gewogen posten van de Jutter', waar 'aantal gewogen posten' "
+                + "een gedeclareerd attribuut van Jutter is" + BRONLOOS), telling("het aantal gewogen posten van de Jutter"));
+    }
+
+    @Test void een_gevulde_telling_zonder_setbron() {
+        assertEquals(List.of("gevulde telling 'het aantal gevulde waarden van het gewicht van de Vondst': the filled count "
+                        + "is an INSTANCE fold and MUST carry an element type: without one its argument is no fold "
+                        + "source at all, and the count has no contributors whose values it could test for presence "
+                        + "(ch. 4.3)"),
+                fouten(TELMODEL + """
+                    Regel aantal gewogen vondsten
+                        geldig altijd
+                            Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van de Vondst.
+                    """));
+    }
+
     // ---- WF-053 and WF-093: a set reading outside a fold source
 
     @Test void een_setlezing_als_waarde() {

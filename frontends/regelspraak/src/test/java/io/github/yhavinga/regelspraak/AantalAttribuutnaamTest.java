@@ -56,11 +56,11 @@ class AantalAttribuutnaamTest {
         List<Diagnostic> ds = fouten(m);
         assertEquals(1, ds.size(), () -> "verwacht één fout voor '" + expressie + "', kreeg: " + m.diagnostics);
         String zin = ds.get(0).message();
-        assertTrue(zin.contains("'aantal gewogen posten' is een gedeclareerd attribuut van Jutter"), zin);
-        assertTrue(zin.contains("WF-037"), zin);
-        // the advice names the spelling that reads the attribute: the same words without "het"
-        String bedoeld = expressie.replace("(", "").replace(")", "").substring("het ".length());
-        assertTrue(zin.contains("schrijf dan '" + bedoeld + "'"), zin);
+        // the collision in the Dutch context, the count without an element type in the verifier's WF-037 sentence
+        String geschreven = expressie.replace("(", "").replace(")", "");
+        assertTrue(zin.startsWith("telling zonder bron '" + geschreven + "', waar 'aantal gewogen posten' een "
+                + "gedeclareerd attribuut van Jutter is: "), zin);
+        assertTrue(zin.contains("the count is an INSTANCE fold and MUST carry an element type"), zin);
     }
 
     @Test void het_aangeraden_lidwoordloze_spelling_leest_het_attribuut() {
@@ -76,7 +76,8 @@ class AantalAttribuutnaamTest {
         RegelSpraakModel m = Resolver.resolve(MODEL + regel("het aantal gewogen vangst van de Jutter"));
         List<Diagnostic> ds = fouten(m);
         assertEquals(1, ds.size(), () -> "kreeg: " + m.diagnostics);
-        assertTrue(ds.get(0).message().startsWith("telling zonder bron: "), ds.get(0).message());
+        assertTrue(ds.get(0).message().startsWith("telling zonder bron 'het aantal gewogen vangst van de Jutter': "),
+                ds.get(0).message());
         assertFalse(ds.get(0).message().contains("gedeclareerd attribuut"), ds.get(0).message());
     }
 }
