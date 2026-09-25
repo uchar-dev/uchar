@@ -46,7 +46,10 @@ Both OCaml refusals were bottom sentences of `scripts/check-rood.sh`: they
 name the position and not the construct. Since the arm `ref` and the ASP
 backend refuse the form in the verifier's sentence, each from a named arm
 beside its residual one (`ref/test/test_ref.ml` pins `ref`'s, lines
-`WF-037-elementtype-*`); both Drools branches keep the refusals above.
+`WF-037-elementtype-*`). Since the card aantal-bronarm-en-drools-lader
+the Drools loader refuses the form too, at load and in the verifier's
+sentence, so neither branch reaches the refusals above
+(`backends/drools/src/test/java/io/github/yhavinga/regelspraak/loader/TellingBronarmWitnessTest.java`).
 
 Rood-eerst, measured on this document. Verifier before the arm (source
 `spec/verifier/lib/checks.ml` md5 `2e9dd78483864a00da56bd327406f635`,

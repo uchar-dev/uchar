@@ -1408,8 +1408,16 @@ public final class IrLoader {
      *  granularity (a builtin's field, unknown on this node). */
     private Expr aggregation(JsonNode n) {
         String p = padVan(n);
-        Expr.FunctieKind fk = enumWaarde(Spelling.AGGREGATION_KIND, "Aggregation.kind", tekst(n, p, "kind"),
-                p + "/kind");
+        String soort = tekst(n, p, "kind");
+        Expr.FunctieKind fk = enumWaarde(Spelling.AGGREGATION_KIND, "Aggregation.kind", soort, p + "/kind");
+        // WF-037: a ListLiteral is a node this backend does not read at all, so reading the argument first would
+        // refuse the node and not the shape; the shape is judged on the raw node before the argument is read
+        JsonNode rauw = n.get("arguments");
+        if (rauw != null && rauw.isArray() && rauw.size() == 1 && "ListLiteral".equals(text(rauw.get(0), "node"))
+                && n.hasNonNull("elementType") && n.get("elementType").isTextual()) {
+            String weigering = bronWeigering(soort, n.get("elementType").asText(), rauw);
+            if (weigering != null) throw new Documentfout(p, weigering);
+        }
         List<Expr> args = new ArrayList<>();
         elementen(n, "arguments", a -> args.add(expr(a)));
         String elementType = optTekst(n, p, "elementType");
@@ -1447,6 +1455,10 @@ public final class IrLoader {
         // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
         RolBindingRef br = rolBinding(n, p, "sourceRole");
         if (br != null) rolBindingen.put(f, br);
+        // WF-037: a fold that names its population and hands no source. Asked after the range, so a path beside it
+        // is refused first under WF-102 (c), as ref and the ASP backend refuse it first
+        String bronloos = bronWeigering(soort, elementType, rauw);
+        if (bronloos != null) throw new Documentfout(p, bronloos);
         if (eenBron && (n.has("sourceRole") || n.has("sourcePath"))) keurVouwbron(n, p, fk, f);
         plekken.put(f, p);
         return f;
@@ -1473,6 +1485,30 @@ public final class IrLoader {
                 bron(n), granulariteit);
         plekken.put(f, p);
         return f;
+    }
+
+    /** WF-037 (IR-SPEC ch. 4.3), the verifier's sentences for a fold that names its population and hands no source:
+     *  no argument, under every kind; one {@code ListLiteral} under a count or a filled count; and under those two
+     *  kinds one node of any other kind but an {@code AttributeReference}, the source — a union under a count
+     *  excepted, which is WF-110 (c)'s. The kind and the node are named as the wire spells them, the node with its
+     *  article on the verifier's rule (an before a vowel). Null when the fold carries no {@code elementType} or has
+     *  its source. Without it both branches played a count whose one argument was a literal, a parameter or a
+     *  marker, counting the instances its range reaches, and the DRL-text branch played the filled count the same
+     *  way and a count without an argument beside its range (measured before the card
+     *  aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope note. */
+    static String bronWeigering(String soort, String elementType, JsonNode argumenten) {
+        if (elementType == null || argumenten == null || !argumenten.isArray()) return null;
+        String kop = "a " + soort + " aggregation carries elementType \"" + elementType + "\"";
+        if (argumenten.isEmpty())
+            return kop + " but no source operand: an instance fold ranges over a written source";
+        if (argumenten.size() != 1 || !(soort.equals("count") || soort.equals("filledCount"))) return null;
+        String knoop = text(argumenten.get(0), "node");
+        if (knoop == null || knoop.isEmpty() || knoop.equals("AttributeReference")) return null;
+        if (knoop.equals("ListLiteral"))
+            return kop + " and a ListLiteral operand: a listed value is no source of instances";
+        if (knoop.equals("InstanceSetUnion") && soort.equals("count")) return null;
+        return kop + " and " + ("AEIOU".indexOf(knoop.charAt(0)) >= 0 ? "an " : "a ") + knoop
+                + " operand: the source of an instance fold is an AttributeReference over its range";
     }
 
     /** The shared loader's sentence for two range spellings on one fold. */
