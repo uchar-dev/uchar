@@ -126,7 +126,7 @@ class DrlCreatieKoppelingWitnessTest {
     // ---------------- WF-027: a non-boolean characteristic initialisation faults ----------------
 
     @Test void een_niet_booleaanse_kenmerkwaarde_faalt_in_beide_takken() throws Exception {
-        // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5 (WF-027)".
+        // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5".
         Path ir = kenmerkGetal();
         for (boolean viaDrl : new boolean[] { false, true }) {
             RuntimeException e = assertThrows(RuntimeException.class,

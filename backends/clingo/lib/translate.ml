@@ -87,7 +87,7 @@ let rec clip_member_qualifications (c : conditie) =
       if periode <> None then
         fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
-           over the whole timeline (WF-097)" naam
+           over the whole timeline" naam
   | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
   | _ -> ()
 (* a declared name or case label lands between double-quotes in the
@@ -1796,7 +1796,7 @@ let set_source_attribute ctx ~subject_ot ~el a =
     else if Ir_v0.Checks.roles_named_from { doc = ctx.doc } ~from_type:subject_ot ~name:a <> [] then
       fault
         "value aggregation over %S, which is no attribute of %S: a value fold reads an attribute \
-         per contributor, and a role name is a count source only a count folds (WF-093 (a))"
+         per contributor, and a role name is a count source only a count folds"
         a el
     else
       fault
@@ -2550,7 +2550,7 @@ let ctor_functor tag =
    its OWN declaration, never by any target attribute) *)
 let sum_constructors = function
   | Some (Sum_type { constructoren; _ }) -> constructoren
-  | _ -> fault "a sum-type node without its SumType annotation (WF-061 should preclude this)"
+  | _ -> fault "a sum-type node without its SumType annotation (the verifier should preclude this)"
 
 let ctor_payload_datatype constructoren tag =
   match List.find_opt (fun (n, _) -> norm n = norm tag) constructoren with
@@ -2689,7 +2689,7 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
          && Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a ->
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-         ill-formed in a value position (WF-080)"
+         ill-formed in a value position"
         a ot
   | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
@@ -2705,11 +2705,11 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
 let struct_type_of ctx (e : expr) : string * (string * datatype) list =
   match static_type ctx e with
   | Some (Struct_type { domein; velden }) -> (domein, velden)
-  | _ -> fault "a struct node without its StructType annotation (WF-072 should preclude this)"
+  | _ -> fault "a struct node without its StructType annotation (the verifier should preclude this)"
 
 let struct_type_of_datatype = function
   | Some (Struct_type { domein; velden }) -> (domein, velden)
-  | _ -> fault "a StructLiteral without its StructType annotation (WF-073 should preclude this)"
+  | _ -> fault "a StructLiteral without its StructType annotation (the verifier should preclude this)"
 
 (* the ground term for a record VALUE (RUNTIME-SEMANTICS ch. 11.1): the
    normalised declaring-domain functor over the fields in FIXED DECLARATION
@@ -3497,10 +3497,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         if Ir_v0.Checks.has_kenmerk (objecttype ctx ot) a then
           fault
             "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-             ill-formed in a value position (WF-080)"
+             ill-formed in a value position"
             a ot
         else
-          fault "%S is not a declared attribute of %S: a value position reads an attribute (WF-034)"
+          fault "%S is not a declared attribute of %S: a value position reads an attribute"
             a ot;
       if attr_temporal ctx ~otype:ot ~attr:a then
         fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
@@ -3540,7 +3540,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (fun (r : rol) ->
             if r.rol_meervoudig then
               fault
-                "navigation over the to-many role %S in a scalar slot is refused (WF-053)"
+                "navigation over the to-many role %S in a scalar slot is refused"
                 (Option.value r.rol_naam ~default:"?"))
           roles;
         let atoms, target =
@@ -3577,7 +3577,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
       in
       if List.length branches < 2 then
-        fault "an instance-set union carries at least TWO selections, found %d (WF-110)"
+        fault "an instance-set union carries at least TWO selections, found %d"
           (List.length branches);
       (* the SECOND LINE for WF-110 (d): one population for the whole union.
          Out of reach through a well-formed document, and here for the reason
@@ -3598,7 +3598,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   "an instance-set union ranges over TWO populations (%S and %S): a count answers a \
                    cardinality over ONE declared type, and whether two selections can then share an \
                    instance is a question about the subtype lattice that deduplication would have to \
-                   answer (WF-110 (d))"
+                   answer"
                   el0 el)
             rest);
       ctx.fresh <- ctx.fresh + 1;
@@ -3612,7 +3612,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             | None ->
                 fault
                   "an instance-set selection carries no elementType: a selection ranges over a \
-                   declared population (WF-110)"
+                   declared population"
           in
           let rb = b.isb_source_role in
           let bx = fresh ctx "XU" in
@@ -3655,7 +3655,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Instance_set_union _ ->
       fault
         "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \
-         §5.7 concatenation, and only an instance count consumes them (WF-110)"
+         §5.7 concatenation, and only an instance count consumes them"
   (* WF-093 (b), the verifier's sentence and ref's check, judged before the
      range's shape as the verifier and the Drools loader judge it: a count
      source names a role, and a name that is a MEMBER of the element type —
@@ -4510,7 +4510,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                  kenmerkGranulariteit enum and WF-034 refuses the value, so
                  key existence and value existence now coincide and this
                  predicate is exact again. *)
-              fault "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
+              fault "gedurende over %S, which is not a temporal characteristic" k;
             if not negatie then fun v t -> Printf.sprintf "ktl(S,%s,%s,%s)" (str k) v t
             else begin
               (* ch. 3.6, the NEGATED clip: the complement of the
@@ -4620,8 +4620,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               | Kenmerk_check _ -> cond_fn part
               | _ ->
                   fault
-                    "a composite gedurende member is an own temporal characteristic check \
-                     (WF-055; the static-guard and nested forms are recorded flanks)"
+                    "a composite gedurende member is an own temporal characteristic check (the static-guard and nested forms are recorded flanks)"
             in
             List.fold_left
               (fun acc part ->
@@ -5384,7 +5383,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          is 0 (a sum term is not numeric); it is carried by [attr_sum_typed]'s
          write path, never fitted. *)
       match ctor_payload_datatype (sum_constructors typ) constructor_ with
-      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
           let f = ctor_functor constructor_ in
           let payload_scale = pow10 (decimals_of_datatype (Some d)) in
@@ -5415,7 +5414,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | Some (atoms, var, scale, _) ->
           note_binder_read ctx ~subject ~subject_ot e naam;
           (atoms, var, scale)
-      | None -> fault "unbound binder %S in the ASP translation (WF-064 should preclude this)" naam)
+      | None -> fault "unbound binder %S in the ASP translation (the verifier should preclude this)" naam)
   | Let { binder; body; _ } when not (reads_binder binder body) ->
       (* ch. 10.6 clause 3: an UNREAD binder evaluates nothing. The value is
          not translated at all — no atoms, no range fence, no §9.5 deposit —
@@ -5531,10 +5530,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let (accname, acct), (xname, xt), body =
         match functie with
         | Fn_lambda { parameters = [ (a, at); (x, xt) ]; body; _ } -> ((a, at), (x, xt), body)
-        | Fn_lambda _ -> fault "a fold lambda takes exactly two parameters (WF-070)"
+        | Fn_lambda _ -> fault "a fold lambda takes exactly two parameters"
         | Fn_name _ ->
             (* WF-069 rejects this before translation; an unreachable backstop *)
-            fault "a named FunctionDef as a fold operand is refused (WF-069: the operand must be an inline lambda)"
+            fault "a named FunctionDef as a fold operand is refused (the operand must be an inline lambda)"
       in
       let base_body = Printf.sprintf "lpres(%s)" lterm in
       emit ctx "%s(%s,0,%s) :- %s." fa lterm init_term
@@ -6072,7 +6071,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
            it by name rather than fold an empty timeline to a vacuous pass. *)
         fault
           "whole-period qualifier on a comparison with no time-dependent attribute of %S among \
-           its operands (WF-043)"
+           its operands"
           subject_ot
   in
   units_identical_ok ~what:"a whole-period comparison"
@@ -6215,7 +6214,7 @@ and day_kind_definition ctx (name : string) : resolved_dagsoort =
       ctx.doc.resolved_dagsoorten
   with
   | Some d -> d
-  | None -> fault "day kind %S has no definition (WF-031)" name
+  | None -> fault "day kind %S has no definition" name
 
 (* --- the day-kind predicate, evaluated here ---------------------------- *)
 
@@ -6380,10 +6379,10 @@ and dk_holds ctx ~stack (name : string) (day : int) : bool =
   if List.exists (fun n -> norm n = norm name) stack then
     fault
       "day-kind reference cycle at %S: a day-kind definition that references itself has no \
-       fixpoint (WF-085)"
+       fixpoint"
       name;
   match (day_kind_definition ctx name).rd_voorwaarde with
-  | None -> fault "day kind %S has a definition without a condition (WF-031)" name
+  | None -> fault "day kind %S has a definition without a condition" name
   | Some c -> dk_cond ctx ~stack:(name :: stack) ~day c
 
 (* --- the extension table ------------------------------------------------ *)
@@ -6765,8 +6764,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let le = req "Comparison.left" links and re = req "Comparison.right" rechts in
       if not (is_datetime_operand ctx (Some le) && is_datetime_operand ctx (Some re)) then
         fault
-          "a datum-tijd comparison against a non-datum-tijd operand has no order here (WF-036: \
-           one instant, one representation; ref faults the unordered comparison)";
+          "a datum-tijd comparison against a non-datum-tijd operand has no order here (one instant, one representation; ref faults the unordered comparison)";
       let day_sym, ms_sym =
         match op with
         | Eerder | Kleiner -> ("<", "<")
@@ -6905,7 +6903,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
             let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
             if role.rol_meervoudig then
               fault
-                "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+                "the navigated check reaches the to-many role %S in a scalar condition"
                 (Option.value role.rol_naam ~default:"?");
             Some role
       in
@@ -6926,8 +6924,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
              (objecttype ctx declared_on).kenmerk_granulariteit)
       then
         fault
-          "whole-period qualifier on %S, which is not a time-dependent characteristic of %S \
-           (WF-043)"
+          "whole-period qualifier on %S, which is not a time-dependent characteristic of %S"
           k declared_on;
       let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
       ctx.fresh <- ctx.fresh + 1;
@@ -6980,7 +6977,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let role = Eval.bound_role env rb (* D53: the hop is the binding *) in
       if role.rol_meervoudig then
         fault
-          "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+          "the navigated check reaches the to-many role %S in a scalar condition"
           (Option.value role.rol_naam ~default:"?");
       let n = fresh ctx "N" in
       [ Printf.sprintf "rol(%s,%s,%s)" subject (str (role_canonical role)) n;
@@ -7017,7 +7014,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       then
         fault
           "role check: the subject %S does not fill the role %S of %S, so no link of it can hold \
-           the subject there (WF-034)"
+           the subject there"
           subject_ot role fact_type;
       let canonical = role_canonical other in
       (match counterpart_type with
@@ -7026,7 +7023,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           (* ref's two refusals word for word: a counterpart outside the other
              role's declared filler would narrow to nobody, a silent false *)
           if Ir_v0.Checks.effective_ot ctx.doc ct = None then
-            fault "role check: the counterpart type %S is no declared object type (WF-034)" ct;
+            fault "role check: the counterpart type %S is no declared object type" ct;
           if
             not
               (Ir_v0.Checks.subtype_of ctx.doc ~sub:ct
@@ -7034,7 +7031,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
           then
             fault
               "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
-               declares (WF-034)"
+               declares"
               ct
               (Option.value other.rol_objecttype_naam ~default:"?")
               (Option.value other.rol_naam ~default:"?"));
@@ -7642,7 +7639,7 @@ and venster_grenzen ctx ~subject ~subject_ot vanaf tot =
   let v = match vanaf with Some e -> Some (bound "from" e) | None -> None in
   let t = match tot with Some e -> Some (bound "to" e) | None -> None in
   if v = None && t = None then
-    fault "a period condition without any bound has no window to gate on (WF-042)";
+    fault "a period condition without any bound has no window to gate on";
   (v, t)
 
 and construct_ground_term ctx typ constructor_ argument =
@@ -7650,8 +7647,8 @@ and construct_ground_term ctx typ constructor_ argument =
   let f = ctor_functor constructor_ in
   match (ctor_payload_datatype constructoren constructor_, argument) with
   | None, None -> f
-  | None, Some _ -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
-  | Some _, None -> fault "unary constructor %S built without an argument (WF-062)" constructor_
+  | None, Some _ -> fault "nullary constructor %S built with an argument" constructor_
+  | Some _, None -> fault "unary constructor %S built without an argument" constructor_
   | Some d, Some (Literal { variant; _ }) ->
       ignore ctx;
       Printf.sprintf "%s(%d)" f
@@ -7692,7 +7689,7 @@ and project_field ctx ~base ~bterm ~veld : string * string * int =
   let domein, velden = struct_type_of ctx base in
   let idx, fdt =
     let rec find i = function
-      | [] -> fault "field %S is not a declared field of struct %S (WF-074)" veld domein
+      | [] -> fault "field %S is not a declared field of struct %S" veld domein
       | (n, dt) :: tl -> if norm n = norm veld then (i, dt) else find (i + 1) tl
     in
     find 0 velden
@@ -7728,7 +7725,7 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       | Some (atoms, var, _, _) ->
           note_binder_read ctx ~subject ~subject_ot e naam;
           (atoms, var)
-      | None -> fault "unbound binder %S in a struct field access (WF-064 should preclude this)" naam)
+      | None -> fault "unbound binder %S in a struct field access (the verifier should preclude this)" naam)
   | Field_access { base; veld; _ } ->
       let batoms, bterm = struct_base ctx ~subject ~subject_ot base in
       let unif, fvar, _fscale = project_field ctx ~base ~bterm ~veld in
@@ -7752,7 +7749,7 @@ and struct_literal_term ctx ~subject ~subject_ot ~typ ~velden : string list * st
         let fexpr =
           match List.find_opt (fun (n, _) -> norm n = norm fname) velden with
           | Some (_, e) -> e
-          | None -> fault "StructLiteral is missing declared field %S (WF-073)" fname
+          | None -> fault "StructLiteral is missing declared field %S" fname
         in
         let a, t, s = expr_term ctx ~subject ~subject_ot fexpr in
         if s <> value_scale (Some fdt) then
@@ -7845,7 +7842,7 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
           (* WF-063: an enumeration alternative is nullary, so its arm binds
              nothing; the pattern is the label's own ground term *)
           match binder with
-          | Some b -> fault "enumeration match arm %S carries a binder %S (WF-063)" ctor b
+          | Some b -> fault "enumeration match arm %S carries a binder %S" ctor b
           | None -> (symbolic_literal_term (Option.get scrut_typ) ctor, None))
         else
           let constructoren = sum_constructors scrut_typ in
@@ -7856,8 +7853,8 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
               let pv = fresh ctx "P" in
               ( Printf.sprintf "%s(%s)" f pv,
                 Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)), Some d)) )
-          | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
-          | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+          | Some _, None -> fault "unary match arm %S lacks a binder" ctor
+          | None, Some _ -> fault "nullary match arm %S carries a binder" ctor
       in
       let scrut_atoms = arm_scrut pattern in
       let saved_guard = ctx.rule_guard and saved_binders = ctx.binders in
@@ -7907,17 +7904,17 @@ and list_source ctx ~subject ~subject_ot (e : expr) : string * int =
         element_scale_of
           (match typ with
           | Some (List_type { element }) -> element
-          | _ -> fault "a MapList without its ListType annotation (WF-070)")
+          | _ -> fault "a MapList without its ListType annotation")
       in
       ctx.fresh <- ctx.fresh + 1;
       let mapid = Printf.sprintf "lm%d(%s)" ctx.fresh inner in
       let (pname, pt), body =
         match functie with
         | Fn_lambda { parameters = [ (pn, pt) ]; body; _ } -> ((pn, pt), body)
-        | Fn_lambda _ -> fault "a MapList lambda takes exactly one parameter (WF-070)"
+        | Fn_lambda _ -> fault "a MapList lambda takes exactly one parameter"
         | Fn_name _ ->
             (* WF-069 rejects this before translation; an unreachable backstop *)
-            fault "a named FunctionDef as a MapList operand is refused (WF-069: the operand must be an inline lambda)"
+            fault "a named FunctionDef as a MapList operand is refused (the operand must be an inline lambda)"
       in
       let base = [ Printf.sprintf "lelem(%s,I,V)" inner ] in
       let saved = ctx.binders and saved_r = ctx.param_reach in
@@ -8034,10 +8031,10 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
             ctx.doc.function_defs
         with
         | Some d -> d
-        | None -> fault "unknown function %S (WF-068)" functie
+        | None -> fault "unknown function %S" functie
       in
       if List.length arguments <> List.length fd.fd_parameters then
-        fault "function %S invoked with the wrong arity (WF-068)" functie;
+        fault "function %S invoked with the wrong arity" functie;
       let argbinds =
         List.map2
           (fun (pn, pdt) arg ->
@@ -8062,7 +8059,7 @@ and body_branches ctx ~guard_body ~witness (e : expr) : (string list * string * 
          declared payload scale. *)
       let constructoren = sum_constructors typ in
       (match ctor_payload_datatype constructoren constructor_ with
-      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
           let pscale = pow10 (decimals_of_datatype (Some d)) in
           let f = ctor_functor constructor_ in
@@ -8113,8 +8110,8 @@ and match_branches ctx ~guard_body ~witness ?pending scrutinee arms =
             let pv = fresh ctx "P" in
             ( Printf.sprintf "%s = %s(%s)" sv f pv,
               Some (norm b, ([], pv, pow10 (decimals_of_datatype (Some d)), Some d)) )
-        | Some _, None -> fault "unary match arm %S lacks a binder (WF-063)" ctor
-        | None, Some _ -> fault "nullary match arm %S carries a binder (WF-063)" ctor
+        | Some _, None -> fault "unary match arm %S lacks a binder" ctor
+        | None, Some _ -> fault "nullary match arm %S carries a binder" ctor
       in
       let saved = ctx.binders in
       (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
@@ -8186,7 +8183,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
              closed-body read must be self-contained — the parallel verifier card makes it \
              WF-ill-formed)"
             naam
-      | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
+      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" naam)
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
       match typ with
@@ -8236,7 +8233,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
          The payload's binding atoms travel out with the term, so the caller's
          rule body binds them (the fold base rule is the corpus site). *)
       match ctor_payload_datatype (sum_constructors typ) constructor_ with
-      | None -> fault "nullary constructor %S built with an argument (WF-062)" constructor_
+      | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
           let payload_scale = pow10 (decimals_of_datatype (Some d)) in
           let atoms, term, scale = closed_term ctx ~guard_body ~witness arg in
@@ -8256,7 +8253,7 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
             match List.assoc_opt (norm naam) ctx.binders with
             | Some (_, var, _, _) -> var
             | None ->
-                fault "unbound binder %S in a closed-body field access (WF-064 should preclude this)"
+                fault "unbound binder %S in a closed-body field access (the verifier should preclude this)"
                   naam)
         | _ -> fault "a closed-body field access reads a bound struct binder (no corpus case for more)"
       in
@@ -8382,7 +8379,7 @@ and sum_operand ctx (e : expr) : string =
   | Binder_ref { naam; _ } -> (
       match List.assoc_opt (norm naam) ctx.binders with
       | Some (_, var, _, _) -> var
-      | None -> fault "unbound binder %S in a closed body (WF-064 should preclude this)" naam)
+      | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" naam)
   | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
   | _ ->
       fault
@@ -8635,7 +8632,7 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
     if not (opt o) then
       fault
         "a value-position IfThenElse condition operand must read only binders, parameters or \
-         literals (WF-077)"
+         literals"
   in
   match c with
   | Vergelijking { op; links; rechts; periode = None; _ } ->
@@ -8655,8 +8652,7 @@ and value_condition ctx ~subject ~subject_ot (c : conditie) : string list * stri
         Printf.sprintf "%s %s %s" lt (cmp_complement op) rt )
   | _ ->
       fault
-        "a value-position IfThenElse condition is a comparison over bound operands (WF-077; no \
-         corpus case for more)"
+        "a value-position IfThenElse condition is a comparison over bound operands (no corpus case for more)"
 
 (* ch. 10.2 at an ORDINARY expression position — an IfThenElse inside a Let
    body that is NOT the body's whole outcome, so [value_branches] cannot split
@@ -8929,7 +8925,7 @@ let schrijf_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
 let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
-    fault "pro-rata base %S is not a temporal attribute (WF-056)" b;
+    fault "pro-rata base %S is not a temporal attribute" b;
   (* the pro-rata sister of [refuse_date_timeline_total]: the part is the
      base scaled by true days over bucket days, so a DATE base leaked its
      day number as an amount — measured 2026-09-23, base 2024-01-18 over one
@@ -8956,14 +8952,14 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
   then
     (* mirror ref's fault — a non-temporal characteristic must never
        silently prorate to an empty timeline (a hunted gap) *)
-    fault "gedurende over %S, which is not a temporal characteristic (WF-056)" k;
+    fault "gedurende over %S, which is not a temporal characteristic" k;
   (match (Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a,
           Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit b) with
   | Some (Some tg), Some (Some bg) ->
       if tg <> g then
-        fault "pro-rata bucket granularity differs from the target's declared granularity (WF-056)";
-      if bg < g then fault "pro-rata base granularity is finer than the bucket (WF-056)"
-  | _ -> fault "pro-rata target and base carry declared granularities (WF-056)");
+        fault "pro-rata bucket granularity differs from the target's declared granularity";
+      if bg < g then fault "pro-rata base granularity is finer than the bucket"
+  | _ -> fault "pro-rata target and base carry declared granularities");
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "pr%d" ctx.fresh in
   emit_bucket_calendar ctx ~p ~g;
@@ -9021,12 +9017,12 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
       (List.exists
          (fun (n, _) -> norm n = norm k)
          (objecttype ctx ot).kenmerk_granulariteit)
-  then fault "gedurende over %S, which is not a temporal characteristic (WF-058)" k;
+  then fault "gedurende over %S, which is not a temporal characteristic" k;
   (match Ir_v0.Checks.find_ci (objecttype ctx ot).attribuut_granulariteit a with
   | Some (Some tg) ->
       if tg <> g then
-        fault "day-count bucket granularity differs from the target's declared granularity (WF-058)"
-  | _ -> fault "day-count target carries a declared granularity (WF-058)");
+        fault "day-count bucket granularity differs from the target's declared granularity"
+  | _ -> fault "day-count target carries a declared granularity");
   let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   if ta > max_int31 / 366 then
     fault "day-count target decimals exceed the guarded machine-integer range";
@@ -9443,7 +9439,7 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
                boolean-constant arms above are the v0 form, byte-for-byte. *)
             let batoms = bool_atoms ctx ~subject ~subject_ot e in
             head_body ctx (Printf.sprintf "heeft(%s,%s)" term (str m)) (body @ batoms)
-        | None -> fault "characteristic initialisation of %S without a value (WF-027)" m)
+        | None -> fault "characteristic initialisation of %S without a value" m)
       else if attr_sum_typed ctx ~otype:nieuw ~attr:m || attr_struct_typed ctx ~otype:nieuw ~attr:m
       then begin
         (* a sum-/struct-typed initialisation (the tutorial passes an [Individual]
@@ -9609,7 +9605,7 @@ let rec translate_chain ctx ~is_char ~subject ~subject_ot ~base ~path ~root
   let own_just ?(extra = []) n (r : default) =
     if r.default_initialisatie then (
       if not root then
-        fault "an initialisation default inside an exception group is ill-formed (WF-075)";
+        fault "an initialisation default inside an exception group is ill-formed";
       match has_input with
       | Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ]
       | None -> fault "initialisation default on characteristic defaults")
@@ -9983,13 +9979,13 @@ let translate_verdeling ctx i (v : resolved_verdeling) =
      verifier-clean input *)
   (match (methode, v.rato_attribuut, v.maximum_attribuut) with
   | Gelijke_delen, Some _, _ ->
-      fault "an equal-shares allocation with a ratio attribute is ill-formed (WF-025)"
+      fault "an equal-shares allocation with a ratio attribute is ill-formed"
   | (Gelijke_delen | Op_volgorde), None, Some _ ->
-      fault "an allocation maximum requires the weighted split (WF-025)"
+      fault "an allocation maximum requires the weighted split"
   | _ -> ());
   (match (methode, v.groepeer_attribuut) with
   | (Gelijke_delen | Naar_rato), Some _ ->
-      fault "an ordering key on a non-ordered allocation is ill-formed (WF-025)"
+      fault "an ordering key on a non-ordered allocation is ill-formed"
   | _ -> ());
   let name = Option.value v.vd_naam ~default:"verdeling" in
   (* the §9.5 channel key: a deposit out of the condition (a division
@@ -10687,7 +10683,7 @@ let translate (doc : document) (case : Case.t) : string =
   | at :: _ ->
       fault
         "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
-         where a datatype is declared (WF-007)"
+         where a datatype is declared"
         at);
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
      read off the case's dates), so the store starts empty at every call —

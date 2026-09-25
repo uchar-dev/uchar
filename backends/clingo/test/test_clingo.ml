@@ -2338,7 +2338,7 @@ let clip_case = clip_case_with ~ctls:(borg_tl ^ ", " ^ aangesteld_tl) ~expected:
 let clip_case_bare = clip_case_with ~ctls:borg_tl ~expected:"0"
 
 let () =
-  let needle = {|gedurende over "aangesteld", which is not a temporal characteristic (WF-055)|} in
+  let needle = {|gedurende over "aangesteld", which is not a temporal characteristic|} in
   (* the bare arm: one non-temporal characteristic IS the whole clip *)
   faults_with ~name:"gedurende clip over a non-temporal characteristic"
     ~ir:
@@ -4683,7 +4683,7 @@ let () =
               ())
          ())
     ~case_text:(gpv_case ~tijdlijn:"" ~waar:true)
-    ~needle:"no time-dependent attribute of \"Schuit\" among its operands (WF-043)";
+    ~needle:"no time-dependent attribute of \"Schuit\" among its operands";
   (* the bound rides INSIDE the per-segment rule, so only a ground or
      subject-free one is carried *)
   faults_with ~name:"ch3.9 grens die het onderwerp leest"
@@ -7186,7 +7186,7 @@ let () =
          ~waar:{|{ "node": "AttributeReference", "attribute": "gewicht", "subjectType": "Vondst",|}
          ~door:{|{ "node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter",|})
     ~case_text:aantalgevulde_case
-    ~needle:"a role name is a count source only a count folds (WF-093 (a))";
+    ~needle:"a role name is a count source only a count folds";
   (* WF-034, split from WF-093 (a) as the verifier and the Drools loader
      split it: a name that is neither a member of the element type nor a role
      reachable from the fold subject declares nothing on the element type — a
@@ -10992,7 +10992,7 @@ let () =
   faults_with ~name:"WF-080 een kenmerk op een waardepositie" ~ir:(doc (pf_a "vrijgesteld")) ~case_text
     ~needle:
       "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
-       is ill-formed in a value position (WF-080)";
+       is ill-formed in a value position";
   (* the same characteristic as a compared operand reaches [symbolic_term],
      which names it rather than falling to its bottom sentence *)
   faults_with ~name:"WF-080 een kenmerk als vergelijkingsoperand"
@@ -11007,7 +11007,7 @@ let () =
     ~case_text
     ~needle:
       "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic endpoint \
-       is ill-formed in a value position (WF-080)";
+       is ill-formed in a value position";
   faults_with ~name:"WF-080 een kenmerk als setbron van een waardevouw"
     ~ir:
       (vervang

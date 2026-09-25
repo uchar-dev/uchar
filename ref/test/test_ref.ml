@@ -427,7 +427,7 @@ let () =
   (match Arith.factor jr_half with
   | exception Value.Fault m ->
       check "verify-wf092-halfvorm-faalt-luid"
-        (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it (WF-092)")
+        (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it")
   | _ -> check "verify-wf092-halfvorm-faalt-luid" false);
   (* and it faults where it would otherwise have lied: the restatement
      that used to read the missing factor as 1 (2 jr + 12 mnd = 3 jr) *)
@@ -441,7 +441,7 @@ let () =
   | exception Value.Fault m ->
       check "verify-wf092-halfvorm-b-faalt-luid"
         (m
-       = "unit mnd carries conversion factor 1 but names no canonical unit to convert into (WF-092)")
+       = "unit mnd carries conversion factor 1 but names no canonical unit to convert into")
   | _ -> check "verify-wf092-halfvorm-b-faalt-luid" false);
   expect_fault "verify-wf092-halfvorm-b-faalt-in-omrekening" (fun () ->
       Arith.add (nu mnd_half_b "12") (nu jr "2"))
@@ -3248,7 +3248,7 @@ let () =
   in
   expect_fault_msg "WV-3.4c-bereikbare-rolbron-faalt"
     (fun () -> ev_jutter (vouw Aantal_gevulde [ telbron ] None None))
-    "a role name is a count source only a count folds (WF-093 (a))";
+    "a role name is a count source only a count folds";
   expect_fault_msg "WV-3.4c-onbereikbare-rolbron-faalt"
     (fun () -> ev_jutter (vouw Aantal_gevulde [ setbron "geborgen vondsten" ] None None))
     "'geborgen vondsten' is not a declared attribute of 'Vondst': a value fold's source reads \
@@ -3763,7 +3763,7 @@ let () =
   (* WF-042's bound-less window has no gate to compute *)
   expect_fault_msg "WV-3.10-venster-zonder-grens"
     (fun () -> gate (Some "2024-06-15") (venster ~incl:false ()))
-    "without any bound has no window to gate on (WF-042)";
+    "without any bound has no window to gate on";
   (* the mirror note's SECOND bound: the window under a quantifier that counts
      or complements its verdict. The boundary is the one measured on the other
      three executors — `all` and `the` carried, the rest refused — and it is pinned
@@ -4067,7 +4067,7 @@ let () =
               wachter "W2" "20" [ ("voorligger", [ "W3" ]) ];
               wachter "W3" "30" [] ]);
        false
-     with Case.Error m -> Case.contains ~needle:"WF-013" m)
+     with Case.Error m -> Case.contains ~needle:"the reverse leg of" m)
 
 (* --- ch. 5.8 rule 4: the zero-hop self-reference (WF-053, D10) ----------- *)
 
@@ -6001,7 +6001,7 @@ let () =
               { op = Groter; links = Some (aref "dagvergoeding" "Berger");
                 rechts = Some (litv "40" num0);
                 periode = Some { gp_jaar = true; gp_niet = false }; bron = None })))
-    "WF-043"
+    "whole-period qualifier on a comparison whose operands are not a time-dependent attribute"
 
 (* WV-3.10-geldigheid-datumlezing: the validity gate reads its three dates —
    the case's asOfDate and the form's validity.from / .to — through the
@@ -6824,7 +6824,7 @@ let () =
   expect_fault_msg "WV-4.1-kenmerk-op-een-waardepositie-faalt"
     (fun () -> run (aref "vrijgesteld" "Jutter"))
     "'vrijgesteld' is a characteristic of 'Jutter', not an attribute — a characteristic \
-     endpoint is ill-formed in a value position (WF-080)";
+     endpoint is ill-formed in a value position";
   check "WV-2.10-kenmerk-heeft-geen-statisch-type"
     (Eval.static_type (env_of (doc (aref "leeftijd" "Jutter"))) (aref "vrijgesteld" "Jutter") = None);
   (* WF-083 (c): a total without a range is the subject's own read, so its

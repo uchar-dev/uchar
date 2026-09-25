@@ -190,7 +190,7 @@ let attr_decl env ~otype ~attr =
 let function_def env name : function_def =
   match List.find_opt (fun (d : function_def) -> norm d.fd_naam = norm name) env.doc.function_defs with
   | Some d -> d
-  | None -> Value.fault "unknown function %S (WF-068 should preclude this)" name
+  | None -> Value.fault "unknown function %S (the verifier should preclude this)" name
 
 let kenmerk_temporal (ot : objecttype) name =
   List.exists (fun (k, _) -> norm k = norm name) ot.kenmerk_granulariteit
@@ -440,7 +440,7 @@ let whole_period_kenmerk env ~(ot : string) ~(inst : World.instance option) ~ken
     (gp : geheel_periode) =
   if not (kenmerk_temporal (objecttype env ot) kenmerk) then
     Value.fault
-      "whole-period qualifier on %S, which is not a time-dependent characteristic of %S (WF-043)"
+      "whole-period qualifier on %S, which is not a time-dependent characteristic of %S"
       kenmerk ot;
   let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
   let true_periods =
@@ -474,7 +474,7 @@ let rec clip_member_qualifications (c : conditie) =
       if periode <> None then
         Value.fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
-           over the whole timeline (WF-097)" naam
+           over the whole timeline" naam
   | Samengesteld { onderdelen; _ } -> List.iter clip_member_qualifications onderdelen
   | _ -> ()
 
@@ -650,7 +650,7 @@ let nav_target env world (self : World.instance) ~(bindings : rol_binding list) 
   List.iter
     (fun (r : rol) ->
       if r.rol_meervoudig then
-        Value.fault "navigation over the to-many role %S in a scalar slot is refused (WF-053)"
+        Value.fault "navigation over the to-many role %S in a scalar slot is refused"
           (Option.value r.rol_naam ~default:"?"))
     roles;
   let rec walk (cur : World.instance) = function
@@ -847,11 +847,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
         if Ir_v0.Checks.has_kenmerk (objecttype env ot) name then
           Value.fault
             "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-             ill-formed in a value position (WF-080)"
+             ill-formed in a value position"
             name ot
         else
-          Value.fault "%S is not a declared attribute of %S: a value position reads an attribute \
-                       (WF-034)" name ot;
+          Value.fault "%S is not a declared attribute of %S: a value position reads an attribute" name ot;
       (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
          attribute in a scalar slot is refused; the only bridges are
          the dedicated collapses (the temporal total handles its own
@@ -870,7 +869,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           if not (own_read env self ot) then
             Value.fault
               "a read of %S on %S without navigation bindings is the subject's own read, but the \
-               subject is %S (WF-053)"
+               subject is %S"
               name ot self.otype;
           World.attr self name
       | Some bindings -> (
@@ -1136,12 +1135,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                    Match WF-064, Invoke WF-068, struct WF-073/074, fold family
                    WF-070). Kept as an honest fault, never an assert: an
                    unverified document can still reach it. *)
-                "match has no arm for enumeration value %S (unreachable on a verifier-clean \
-                 document: WF-063/WF-088/WF-089 bind the arms to the declaration the scrutinee \
-                 reads from, WF-023/WF-067 bind every value written into it)"
+                "match has no arm for enumeration value %S (unreachable on a verifier-clean document)"
                 label
           | Some (_, Some b, _) ->
-              Value.fault "match arm for enumeration value %S carries a binder %S (WF-063)" label b
+              Value.fault "match arm for enumeration value %S carries a binder %S" label b
           | Some (_, None, body) -> eval_expr env world self ~err body)
       | Value.Ctor (tag, payload) -> (
           match List.find_opt (fun (c, _, _) -> norm c = norm tag) arms with
@@ -1158,9 +1155,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                    for a function body — for every value ENTERING that
                    declaration. An honest fault for an unverified document,
                    never an assert. *)
-                "match has no arm for constructor %S (unreachable on a verifier-clean document: \
-                 WF-063/WF-061/WF-089 bind the arms to the declaration the scrutinee reads from, \
-                 WF-023/WF-067 bind every value written into it)"
+                "match has no arm for constructor %S (unreachable on a verifier-clean document)"
                 tag
           | Some (_, binder, body) ->
               let locals =
@@ -1168,9 +1163,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 | None, None -> env.locals
                 | Some b, Some v -> SMap.add (norm b) (Now v) env.locals
                 | Some _, None ->
-                    Value.fault "match arm for nullary constructor %S carries a binder (WF-063)" tag
+                    Value.fault "match arm for nullary constructor %S carries a binder" tag
                 | None, Some _ ->
-                    Value.fault "match arm for unary constructor %S lacks a binder (WF-063)" tag
+                    Value.fault "match arm for unary constructor %S lacks a binder" tag
               in
               (* the binder's static type is the matched constructor's declared
                  payload, read off the scrutinee's own type *)
@@ -1198,7 +1193,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       match SMap.find_opt (norm naam) env.locals with
       | Some (Now v) -> v
       | Some (Later read) -> read ()
-      | None -> Value.fault "unbound binder %S (WF-064 should preclude this)" naam)
+      | None -> Value.fault "unbound binder %S (the verifier should preclude this)" naam)
   | Let { binder; value; body; _ } ->
       (* ch. 10.6, the three clauses. (1) LAZY, ONCE: [value] is evaluated in
          the ENCLOSING scope (WF-076 — the binder is invisible in its own
@@ -1277,10 +1272,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                  wrong-typed field — not a WF rule, but the same fence in both
                  executors). Kept as an honest fault, never an assert. *)
               Value.fault
-                "field %S is not present on the record value (unreachable on a verifier-clean \
-                 document: WF-090 binds every struct value to the struct domain of the declaration \
-                 it comes from or enters, and WF-072 binds every struct type in the model and \
-                 expression layers to that domain's declared field list)"
+                "field %S is not present on the record value (unreachable on a verifier-clean document)"
                 veld)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
   | List_literal { elements; _ } ->
@@ -1305,7 +1297,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          so termination is structural *)
       let fd = function_def env functie in
       if List.length arguments <> List.length fd.fd_parameters then
-        Value.fault "function %S invoked with %d arguments, expected %d (WF-068)" functie
+        Value.fault "function %S invoked with %d arguments, expected %d" functie
           (List.length arguments) (List.length fd.fd_parameters);
       let args = map_in_order (eval_expr env world self ~err) arguments in
       if List.exists (fun v -> v = Value.Empty) args then Value.Empty
@@ -1360,7 +1352,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
          where a VALUE was wanted; it denotes instances and has none. *)
       Value.fault
         "an instance-set union stands where a value is read: it denotes the INSTANCES of a \
-         §5.7 concatenation, and only an instance count consumes them (WF-110)"
+         §5.7 concatenation, and only an instance count consumes them"
 
 (* apply a fold-family [function] operand (IR-SPEC ch. 4.8) — an inline
    lambda or a named FunctionDef — to already-evaluated arguments. Bodies are
@@ -1380,7 +1372,7 @@ and apply_fold_fn env world self ~err (fn : fold_fn) (args : Value.t list) : Val
 and eval_closed_body env world self ~err (parameters : (string * datatype) list) body
     (args : Value.t list) : Value.t =
   if List.length parameters <> List.length args then
-    Value.fault "closed body applied to %d arguments, expected %d (WF-068/069/070)"
+    Value.fault "closed body applied to %d arguments, expected %d"
       (List.length args) (List.length parameters);
   let locals =
     List.fold_left2
@@ -1525,7 +1517,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
             | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie; _ } ->
                 if not (kenmerk_temporal ot_decl k) then
                   Value.fault
-                    "gedurende over %S, which is not a temporal characteristic (WF-055)" k;
+                    "gedurende over %S, which is not a temporal characteristic" k;
                 let periods =
                   Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
                 in
@@ -1563,8 +1555,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                   | _ ->
                       Value.fault
                         "a composite gedurende member is an own temporal characteristic \
-                         check (WF-055; the static-guard and nested forms are recorded \
-                         flanks)"
+                         check (the static-guard and nested forms are recorded flanks)"
                 in
                 List.fold_left
                   (fun acc part -> Timeline.intersect_periods acc (member_periods part))
@@ -1650,8 +1641,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           then
             Value.fault
               "value aggregation over %S, which is no attribute of %S: a value fold reads an \
-               attribute per contributor, and a role name is a count source only a count folds \
-               (WF-093 (a))"
+               attribute per contributor, and a role name is a count source only a count folds"
               name el
           else
             Value.fault
@@ -1791,7 +1781,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                     "an instance-set union ranges over TWO populations (%S and %S): a count answers a \
                      cardinality over ONE declared type, and whether two selections can then share an \
                      instance is a question about the subtype lattice that deduplication would have to \
-                     answer (WF-110 (d))"
+                     answer"
                     el0 el)
               rest);
         let seen = Hashtbl.create 16 in
@@ -1986,14 +1976,14 @@ and venster_grenzen env world (self : World.instance) ~err vanaf tot =
   let v = match vanaf with Some e -> Some (bound "from" e) | None -> None in
   let t = match tot with Some e -> Some (bound "to" e) | None -> None in
   if v = None && t = None then
-    Value.fault "a period condition without any bound has no window to gate on (WF-042)";
+    Value.fault "a period condition without any bound has no window to gate on";
   let day = function
     | None -> None (* an absent bound is open *)
     | Some Value.Empty -> Some None (* a leeg bound never matches *)
     | Some (Value.Date z) -> Some (Some z)
     | Some other ->
         Value.fault
-          "a period condition's bound is %s, which is not a day-precision date (WF-042, WF-111)"
+          "a period condition's bound is %s, which is not a day-precision date"
           (Value.to_string other)
   in
   (* both [day] calls can FAULT (a bound that is not a date), and OCaml
@@ -2047,7 +2037,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
         | None, None ->
             Value.fault
               "whole-period qualifier on a comparison whose operands are not a time-dependent \
-               attribute of %S and a scalar bound (WF-043)"
+               attribute of %S and a scalar bound"
               self.otype
       in
       let tested = Option.value (World.timeline self attr) ~default:[] in
@@ -2155,7 +2145,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       let role = bound_role env rb (* D53: the hop is the binding *) in
       if role.rol_meervoudig then
         Value.fault
-          "the navigated check reaches the to-many role %S in a scalar condition (WF-053)"
+          "the navigated check reaches the to-many role %S in a scalar condition"
           (Option.value role.rol_naam ~default:"?");
       (* the reached type, taken from the DECLARATION: on the qualified form
          the time-dependence cross must fire whether or not a link is there *)
@@ -2258,7 +2248,7 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       if not (fills env self.otype own) then
         Value.fault
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
-           hold the subject there (WF-034)"
+           hold the subject there"
           self.otype role fact_type;
       let linked = role_links world self other in
       let linked =
@@ -2268,12 +2258,12 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
             (* a counterpart outside the other role's declared filler would
                narrow to nobody and answer a silent false: refused by name *)
             if Ir_v0.Checks.effective_ot env.doc ct = None then
-              Value.fault "role check: the counterpart type %S is no declared object type (WF-034)"
+              Value.fault "role check: the counterpart type %S is no declared object type"
                 ct;
             if not (fills env ct other) then
               Value.fault
                 "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
-                 declares (WF-034)"
+                 declares"
                 ct
                 (Option.value other.rol_objecttype_naam ~default:"?")
                 (Option.value other.rol_naam ~default:"?");
@@ -2405,18 +2395,18 @@ and day_kind_definition env (name : string) : resolved_dagsoort =
       env.doc.resolved_dagsoorten
   with
   | Some d -> d
-  | None -> Value.fault "day kind %S has no definition (WF-031)" name
+  | None -> Value.fault "day kind %S has no definition" name
 
 and day_kind_matches env world self ~err (name : string) (day : int) : bool =
   if List.exists (fun n -> norm n = norm name) !day_kind_stack then
     Value.fault
       "day-kind reference cycle at %S: a day-kind definition that references itself has no \
-       fixpoint (WF-085)"
+       fixpoint"
       name;
   let def = day_kind_definition env name in
   let c = match def.rd_voorwaarde with
     | Some c -> c
-    | None -> Value.fault "day kind %S has a definition without a condition (WF-031)" name
+    | None -> Value.fault "day kind %S has a definition without a condition" name
   in
   let saved = !day_kind_stack in
   day_kind_stack := name :: saved;
@@ -2510,14 +2500,14 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       in
       if target_gran <> g then
         Value.fault
-          "pro-rata bucket granularity differs from the target's declared granularity (WF-056)";
+          "pro-rata bucket granularity differs from the target's declared granularity";
       let base_gran =
         match Ir_v0.Checks.find_ci ot_decl.attribuut_granulariteit b with
         | Some (Some bg) -> bg
-        | _ -> Value.fault "pro-rata base %S is not a temporal attribute (WF-056)" b
+        | _ -> Value.fault "pro-rata base %S is not a temporal attribute" b
       in
       if base_gran < g then
-        Value.fault "pro-rata base granularity is finer than the bucket (WF-056)";
+        Value.fault "pro-rata base granularity is finer than the bucket";
       (match Ir_v0.Checks.find_ci ot_decl.attributen b with
       | Some (Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ })) ->
           (* ch. 3.7: a rate base restates by its exact factor FIRST —
@@ -2529,7 +2519,7 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
             if not (kenmerk_temporal ot_decl k) then
-              Value.fault "gedurende over %S, which is not a temporal characteristic (WF-056)" k;
+              Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
             Value.fault
@@ -2563,13 +2553,13 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       in
       if target_gran <> g then
         Value.fault
-          "day-count bucket granularity differs from the target's declared granularity (WF-058)";
+          "day-count bucket granularity differs from the target's declared granularity";
       clip_member_qualifications c;
       let true_periods =
         match c with
         | Kenmerk_check { kenmerk = Some k; navigatie_binding = None; negatie = false; _ } ->
             if not (kenmerk_temporal ot_decl k) then
-              Value.fault "gedurende over %S, which is not a temporal characteristic (WF-058)" k;
+              Value.fault "gedurende over %S, which is not a temporal characteristic" k;
             Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
         | _ ->
             Value.fault
@@ -3013,11 +3003,11 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                         | Value.Bool false | Value.Empty -> w
                         | v ->
                             Value.fault
-                              "characteristic initialisation of %S is not boolean: %s (WF-027)"
+                              "characteristic initialisation of %S is not boolean: %s"
                               m (Value.to_string v))
                     | None ->
                         Value.fault
-                          "characteristic initialisation of %S without a value (WF-027)" m)
+                          "characteristic initialisation of %S without a value" m)
                   else
                     let v = eval_expr env w self ~err (req "MemberInit.value" t.toe_waarde) in
                     fst
@@ -3366,8 +3356,7 @@ let run_uniciteit_unie env world (u : resolved_uniciteit_unie) =
     let name = Option.value u.uu_naam ~default:"<uniciteitsunie>" in
     if List.length u.bronnen < 2 then
       Value.fault
-        "a uniqueness union carries at least two sources (WF-030; the v0 resolver never \
-         produces fewer)";
+        "a uniqueness union carries at least two sources (the v0 resolver never produces fewer)";
     (* one row per (instance × source) — v0 SUMS the per-source counts,
        so an instance reached through two sources contributes its tuple
        twice and duplicates against itself, exactly like the runtime *)
@@ -3586,7 +3575,7 @@ let evaluate env world =
   | at :: _ ->
       Value.fault
         "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
-         where a datatype is declared (WF-007)"
+         where a datatype is declared"
         at);
   (* fail fast on unverified input: the cycle-tolerant strata below are
      sound only on WF-045/046-clean documents (every cycle then passes

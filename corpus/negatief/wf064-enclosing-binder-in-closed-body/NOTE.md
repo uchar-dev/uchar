@@ -22,7 +22,7 @@ otherwise well-formed, so before this clause it passed the verifier and
 reached both executors, which faulted *differently*: `ref` faults cleanly
 at evaluation —
 
-    EVALUATION FAULT: unbound binder "f" (WF-064 should preclude this)
+    EVALUATION FAULT: unbound binder "f" (the verifier should preclude this)
 
 — while the ASP backend drops the free binder into an unsafe rule and
 `clingo` grounding-crashes ungracefully (`'LB3' is unsafe`, gringo stops,

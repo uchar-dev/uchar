@@ -431,8 +431,7 @@ public final class IrLoader {
                 if (ot != null && a.attribuut() != null && ot.attribuut(a.attribuut()) == null
                         && ot.kenmerkNaam(a.attribuut()) != null)
                     throw new Documentfout(plekken.get(a), "'" + a.attribuut() + "' is a characteristic of '" + ot.naam
-                            + "', not an attribute — a characteristic endpoint is ill-formed in a value position"
-                            + " (WF-080)");
+                            + "', not an attribute — a characteristic endpoint is ill-formed in a value position");
                 // WF-053, IR-SPEC ch. 4.1a: a read without bindings is the subject's own, so it names the subject
                 // type itself — a supertype is another type, even where it declares the member. Both branches
                 // refused such a read before, with a generic reason; refused here in the sentence ref and the
@@ -510,7 +509,7 @@ public final class IrLoader {
         if (vuller != null && !s.isEen(vuller))
             throw new Documentfout(plekken.get(r) + "/role", "role check: the subject \"" + s.naam
                     + "\" does not fill the role \"" + rb.rol() + "\" of \"" + rb.feittype()
-                    + "\", so no link of it can hold the subject there (WF-034)");
+                    + "\", so no link of it can hold the subject there");
     }
 
     /** The declared fact type of that name in the WF-001 form (case and runs of blanks folded), or null. */
@@ -1927,13 +1926,13 @@ public final class IrLoader {
                 if (tegenpartij != null) {
                     if (ander == null)
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
-                                + tegenpartij + "\" is no declared object type (WF-034)");
+                                + tegenpartij + "\" is no declared object type");
                     RegelSpraakModel.Rol overzijde = ft.wederkerig ? gebonden : andereRol(ft, gebonden);
                     Objecttype vuller = overzijde == null ? null : ot(overzijde.objecttypeNaam());
                     if (vuller != null && !ander.isEen(vuller))
                         throw new Documentfout(p + "/counterpartType", "role check: the counterpart type \""
                                 + tegenpartij + "\" is no subtype of \"" + vuller.naam + "\", the filler the role \""
-                                + overzijde.naam() + "\" declares (WF-034)");
+                                + overzijde.naam() + "\" declares");
                 }
                 Conditie.Rollidmaatschap r = new Conditie.Rollidmaatschap(rol, ander, bron(n),
                         waarheid(n, p, "negated"));

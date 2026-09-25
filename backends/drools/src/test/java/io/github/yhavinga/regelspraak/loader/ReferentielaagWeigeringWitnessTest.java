@@ -137,7 +137,7 @@ class ReferentielaagWeigeringWitnessTest {
 
         rm.put("counterpartType", "Kustwacht");
         e = weigert(ir, vw + "/counterpartType");
-        assertTrue(e.getMessage().contains("the counterpart type \"Kustwacht\" is no declared object type (WF-034)"),
+        assertTrue(e.getMessage().contains("the counterpart type \"Kustwacht\" is no declared object type"),
                 e.getMessage());
 
         rm.put("counterpartType", 2);
@@ -212,7 +212,7 @@ class ReferentielaagWeigeringWitnessTest {
         rolcheck(ir, 0).put("role", "wachtjutter");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/0/versions/0/condition/role");
         assertTrue(e.getMessage().contains("role check: the subject \"Wachtpost\" does not fill the role"
-                + " \"wachtjutter\" of \"wachtindeling\", so no link of it can hold the subject there (WF-034)"),
+                + " \"wachtjutter\" of \"wachtindeling\", so no link of it can hold the subject there"),
                 e.getMessage());
     }
 
@@ -221,7 +221,7 @@ class ReferentielaagWeigeringWitnessTest {
         rolcheck(ir, 2).put("counterpartType", "Wachtpost");
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/2/versions/0/condition/counterpartType");
         assertTrue(e.getMessage().contains("role check: the counterpart type \"Wachtpost\" is no subtype of"
-                + " \"Jutter\", the filler the role \"wachtjutter\" declares (WF-034)"), e.getMessage());
+                + " \"Jutter\", the filler the role \"wachtjutter\" declares"), e.getMessage());
         // ⊑ admits the declared filler itself: the check then narrows nothing, and it loads
         rolcheck(ir, 2).put("counterpartType", "Jutter");
         IrLoader.loadAll(ir);
@@ -326,7 +326,7 @@ class ReferentielaagWeigeringWitnessTest {
                 + "\"source\":{\"snippet\":\"hij bemand gelijk is aan onwaar\"}}"));
         IrLoader.Documentfout e = weigert(ir, "/rules/rules/1/versions/0/condition/left");
         assertTrue(e.getMessage().contains("'bemand' is a characteristic of 'Wachtpost', not an attribute — a"
-                + " characteristic endpoint is ill-formed in a value position (WF-080)"), e.getMessage());
+                + " characteristic endpoint is ill-formed in a value position"), e.getMessage());
     }
 
     // ---------------- fixtures ----------------

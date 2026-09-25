@@ -198,7 +198,7 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      the integer-scaling translation cannot scale) — the shared loader
      refuses it in both, last-line behind the verifier's rejection *)
   | "number", None ->
-      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
+      fail "%s: a value against a declaration without a datatype" at
   | "date", Some Datum_in_dagen -> date_at ~at (as_string ())
   | "dateTime", Some Datum_tijd -> datetime_at ~at (as_string ())
   | "boolean", Some Booleaan -> (
@@ -226,7 +226,7 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
      datatype-less declaration splits the executors, so the shared loader
      refuses it in both *)
   | "list", None ->
-      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
+      fail "%s: a value against a declaration without a datatype" at
   (* the record value form (RUNTIME-SEMANTICS ch. 11.3): exactly the declared
      fields, in declaration order, each loaded recursively against its field
      datatype. Fail fast on a missing, extra, wrong-typed or leeg field — the
@@ -247,7 +247,7 @@ let rec value_of_json ~at (decl : datatype option) (j : Yojson.Safe.t) : Value.t
            velden)
   (* WF-059/WF-018 backstop, widened to the record value *)
   | "struct", None ->
-      fail "%s: a value against a declaration without a datatype (WF-059 for attributes, WF-018 for parameters)" at
+      fail "%s: a value against a declaration without a datatype" at
   | _, Some _ -> fail "%s: value variant %S does not match the declared datatype" at variant
   | _, None -> fail "%s: value variant %S against an unknown datatype" at variant
 
@@ -272,8 +272,7 @@ and constructor_of_json ~at (decl : datatype option) kvs ctor_j : Value.t =
   | Some _ -> fail "%s: a constructor value against a non-sum-type declaration" at
   | None ->
       fail
-        "%s: a constructor value against a declaration without a datatype (WF-059 for \
-         attributes, WF-018 for parameters)"
+        "%s: a constructor value against a declaration without a datatype"
         at
 
 (* The segment list of a timeline-variant value, or None for any other
@@ -623,7 +622,7 @@ let materialise_relations (doc : document) (world : World.t) =
                     in
                     fail
                       "role %S: %S already links %s under the to-one role %S%s; the reverse leg of \
-                       %S -> %S conflicts (WF-013 to-one)"
+                       %S -> %S conflicts"
                       key t
                       (String.concat ", " existing)
                       store_key hoe i.label t

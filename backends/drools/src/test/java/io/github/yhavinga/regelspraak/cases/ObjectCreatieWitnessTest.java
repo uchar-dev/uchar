@@ -206,7 +206,7 @@ class ObjectCreatieWitnessTest {
     @Test void een_niet_booleaanse_kenmerktoekenning_faalt_met_wf027() throws Exception {
         // The fourth value, and the one the empty arm must stay SEPARABLE from: a non-boolean initialisation is
         // a FAULT, never a silently unset mark. ref on this mutated model faults too, with the same rule:
-        // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5 (WF-027)".
+        // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5".
         Path ir = kenmerkWaarde("""
                 { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "5" } }""", "lit-getal");
         RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,

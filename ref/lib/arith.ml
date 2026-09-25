@@ -65,11 +65,11 @@ let factor (e : Ir_v0.Ast.eenheid) =
   match (e.factor_naar_canoniek, e.canoniek) with
   | Some f, Some _ -> rational f
   | Some f, None ->
-      fault "unit %s carries conversion factor %s but names no canonical unit to convert into (WF-092)"
+      fault "unit %s carries conversion factor %s but names no canonical unit to convert into"
         (show_eenheid e) (Ir_v0.Checks.rationaal_render f)
   | None, None -> Q.one
   | None, Some c ->
-      fault "unit %s names canonical unit %S but carries no conversion factor into it (WF-092)"
+      fault "unit %s names canonical unit %S but carries no conversion factor into it"
         (show_eenheid e) c
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
