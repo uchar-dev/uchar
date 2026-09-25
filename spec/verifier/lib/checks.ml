@@ -446,9 +446,9 @@ let date_duration_unknown_unit abbr =
 
 (* WF-038 on the duration builtins (IR-SPEC ch. 4.3): the counted unit on the
    node type is a time unit or a declared day kind, in the same three
-   readers *)
-let duration_unknown_unit abbr =
-  "duration: the counted unit '" ^ abbr
+   readers; the sentence names the builtin's own kind *)
+let duration_unknown_unit kind abbr =
+  Spelling.encode Spelling.builtin_kind kind ^ ": the counted unit '" ^ abbr
   ^ "' is neither a recognised time unit nor a declared day kind"
 
 let context_value_refusal name =
@@ -4795,7 +4795,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                             if day_kind_unit ctx u then []
                             else
                               [ v "WF-038" at
-                                  (duration_unknown_unit (Option.value u.afkorting ~default:"?")) ])))
+                                  (duration_unknown_unit f.kind
+                                     (Option.value u.afkorting ~default:"?")) ])))
          | _ -> [])
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): first/last/

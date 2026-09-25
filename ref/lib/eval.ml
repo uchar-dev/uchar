@@ -992,7 +992,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     | Some k -> `Day_kind k
                     | None ->
                         Value.fault "%s"
-                          (Ir_v0.Checks.duration_unknown_unit
+                          (Ir_v0.Checks.duration_unknown_unit kind
                              (Option.value u.afkorting ~default:"?"))))
             | _ ->
                 Value.fault "duration without a recognised time unit on its node type"

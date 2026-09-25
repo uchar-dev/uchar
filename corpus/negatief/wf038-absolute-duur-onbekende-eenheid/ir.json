@@ -1,0 +1,262 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "geboortedatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "peildatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jutleeftijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kwartaalspan",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kw"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandafstand",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "vadem"
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "Berekening jutleeftijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jutleeftijd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De jutleeftijd van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "geboortedatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "peildatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "jr"
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Berekening kwartaalspan",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kwartaalspan",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De kwartaalspan van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "geboortedatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "peildatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kw"
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Berekening maandafstand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandafstand",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De maandafstand van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "absoluteDuration",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "geboortedatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn geboortedatum"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "peildatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn peildatum"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "vadem"
+                }
+              },
+              "source": {
+                "snippet": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

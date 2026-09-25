@@ -7052,7 +7052,9 @@ let () =
 
 (* WV-3.8-duur-onbekende-eenheid (WF-038): the counted unit of a duration is
    a time unit or a declared day kind; any other is refused in the verifier's
-   sentence (the ref side of corpus/negatief/wf038-duur-onbekende-eenheid) *)
+   sentence, which names the builtin's own kind (the ref side of
+   corpus/negatief/wf038-duur-onbekende-eenheid and
+   wf038-absolute-duur-onbekende-eenheid) *)
 let () =
   let vadem : Ir_v0.Ast.datatype =
     Numeriek
@@ -7061,25 +7063,31 @@ let () =
           Some { afkorting = Some "vadem"; stelsel = None; canoniek = None; factor_naar_canoniek = None;
                  noemer = None } }
   in
-  let duur : Ir_v0.Ast.expr =
+  let duur kind : Ir_v0.Ast.expr =
     Functie
-      { kind = Tijdsduur; argumenten = [ aref "van" "Jutter"; aref "tot" "Jutter" ];
+      { kind; argumenten = [ aref "van" "Jutter"; aref "tot" "Jutter" ];
         element_objecttype = None; leegwaarde = None; filter = None; dimensie_selectie = None;
         typ = Some vadem; bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
   in
-  let doc =
+  let doc kind =
     { empty_doc with
       objecttypen =
         [ ot "Jutter" [ ("van", Some Datum_in_dagen); ("tot", Some Datum_in_dagen); ("spanne", Some vadem) ] [] ];
-      resolved_regels = [ rr "spanne" Berekening (Some (aref "spanne" "Jutter")) (Some duur) None ] }
+      resolved_regels = [ rr "spanne" Berekening (Some (aref "spanne" "Jutter")) (Some (duur kind)) None ] }
   in
-  expect_fault_msg "WV-3.8-duur-onbekende-eenheid-faalt"
-    (fun () ->
-      Eval.evaluate (env_of doc)
-        (World.add_instance World.empty
-           (inst "J1" "Jutter"
-              [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01") ])))
-    (Ir_v0.Checks.duration_unknown_unit "vadem")
+  List.iter
+    (fun (name, kind) ->
+      match
+        Eval.evaluate (env_of (doc kind))
+          (World.add_instance World.empty
+             (inst "J1" "Jutter"
+                [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01") ]))
+      with
+      | exception Value.Fault m ->
+          check (name ^ " (got: " ^ m ^ ")") (m = Ir_v0.Checks.duration_unknown_unit kind "vadem")
+      | _ -> check (name ^ " (no fault at all)") false)
+    [ ("WV-3.8-duur-onbekende-eenheid-faalt", Ir_v0.Ast.Tijdsduur);
+      ("WV-3.8-absolute-duur-onbekende-eenheid-faalt", Ir_v0.Ast.Absolute_tijdsduur) ]
 
 (* WV-3.8-datumvorm (WF-035): the form of date ± x is decided on the date
    type of either precision — two dates, a duration on the left, or a date on
