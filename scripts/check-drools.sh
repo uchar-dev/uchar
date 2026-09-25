@@ -247,6 +247,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
+  "jutterswet-seizoenvouw|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
@@ -855,9 +856,10 @@ EXPECTED_CHANNEL=(
 # got its source inside the hand-written jutterswet-rangaflopend itself (the emission is byte for byte
 # the hand-written document), which this branch already played.
 # Both branches play all four on the first run, PLAYED 1, 5, 3 and 2, with ref's and clingo's values.
-# jutterswet-wrakboeking-rgs carries no connectingRole, because the frontend writes none on a creation,
-# and this branch plays it too, deriving the back-link from the type pair; the 134 -> 135 block above
-# attributes the carrier's playing to its explicit binding, which is therefore not the only route.
+# jutterswet-wrakboeking-rgs carried no connectingRole then, because the frontend wrote none on a creation
+# (until the 197 -> 199 block below), and this branch played it too, deriving the back-link from the type
+# pair; the 134 -> 135 block above attributes the carrier's playing to its explicit binding, which is
+# therefore not the only route.
 # EXPECTED_DRL_PLAYED moves by four.
 # 192 -> 194 (2026-09-25, card dialect-uitzondering-op-uitzondering): jutterswet-uitsluiting-rgs and
 # jutterswet-nestkenmerk-rgs, new — the RegelSpraak twins of anchor/jutterswet-uitsluiting (an exception on
@@ -873,7 +875,8 @@ EXPECTED_CHANNEL=(
 # the minted Strandrecht back from its subject through the back-link, so its case fails when the creation
 # does not run, where the twin's case stays green. No source file of this backend changed: both branches
 # play its one case on the first run, PLAYED 1 each, with ref's and clingo's values, deriving the
-# back-link from the type pair as they do for the twin. EXPECTED_DRL_PLAYED moves by one as well.
+# back-link from the type pair as they did then for the twin (until the 197 -> 199 block below).
+# EXPECTED_DRL_PLAYED moves by one as well.
 # 195 -> 196 (2026-09-25, card ref-klipvouw-nul, fix round): jutterswet-aandelensom, new and
 # hand-computed — a set sum over a percentage attribute, the one fold in the corpus whose operand is a
 # `%` number and so the witness of that clause of WF-091's numeric-operand arm (IR-SPEC ch. 4.1). No
@@ -888,7 +891,16 @@ EXPECTED_CHANNEL=(
 # values — the lowest type's rule replaces the inherited base and the inherited exception stays above
 # it. The DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
 # EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=197
+# 197 -> 199 (2026-09-25, card frontend-emitterrestanten): jutterswet-dagentelling-rgs and
+# jutterswet-wachtersketen-rgs, new — the RegelSpraak twins of anchor/jutterswet-dagentelling (the day
+# count, which the frontend now types as a count) and anchor/jutterswet-wachtersketen (the self-typed
+# recursive creation, whose back-link the frontend now writes as the role the sentence names), each with
+# the anchor's case files. No source file of this backend changed: both branches play both on the first
+# run, PLAYED 4 and 2, with ref's and clingo's values, as they play the anchors. The same card re-emitted
+# jutterswet-wrakboeking-rgs and jutterswet-wrakboekwaarde with the connectingRole their sentences name,
+# and both branches still play them, PLAYED 1 each. Its third new golden, jutterswet-seizoenvouw (the
+# dimension fold), has no case file (NOCASE in both lists). EXPECTED_DRL_PLAYED moves by two as well.
+EXPECTED_PLAYED=199
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -901,7 +913,7 @@ EXPECTED_PLAYED=197
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-five of the seventy-eight
+# Why the reasons are grouped rather than written one by one: seventy-five of the seventy-nine
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -1040,6 +1052,7 @@ DRL_CHANNEL=(
   "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence, identical in both branches (full reason in EXCLUDE_KNOWN)"
   # (E) No case file — nothing to replay, in either branch.
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
+  "jutterswet-seizoenvouw|NOCASE|a golden with no case file"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file"
 )
 # The count that closes the direction a played-by-default list cannot see: a NEW golden that plays in
@@ -1144,7 +1157,10 @@ DRL_CHANNEL=(
 # EXPECTED_PLAYED above.
 # 172 -> 173 (2026-09-25, card ref-klipvouw-nul, fix round): jutterswet-aandelensom, new. This branch
 # plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=173
+# 173 -> 175 (2026-09-25, card frontend-emitterrestanten): jutterswet-dagentelling-rgs and
+# jutterswet-wachtersketen-rgs, new. This branch plays each on the first run with no change of its own,
+# PLAYED 4 and 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=175
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

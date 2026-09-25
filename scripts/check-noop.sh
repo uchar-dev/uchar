@@ -178,6 +178,13 @@
 #     unordered group as a group-default above the base (the dialect's shape)
 #     where the anchor nests it in the base; its other three cases decide
 #     observably and are not survivors.
+#   - jutterswet-dagentelling-rgs/case3-leeg.json and
+#     jutterswet-dagentelling-rgs/case4-input-blijft.json: the RegelSpraak
+#     twin of anchor/jutterswet-dagentelling, byte-identical cases, the
+#     anchor's two reasons — a day count over no condition periods writes
+#     nothing, and a count that decides nothing leaves the case-supplied input
+#     timeline standing whole (ch. 7.8); the absence and the standing are the
+#     assertions. Its other two cases decide and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -215,7 +222,9 @@ corpus/golden/jutterswet-bergingsdrempel/case3-onder-quotum.json
 corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
 corpus/golden/jutterswet-wachtgeld/case4-geen.json
 corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
-corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json'
+corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
+corpus/golden/jutterswet-dagentelling-rgs/case3-leeg.json
+corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
