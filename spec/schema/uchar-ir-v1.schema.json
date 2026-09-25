@@ -2306,7 +2306,7 @@
         "threshold": {
           "type": "integer",
           "minimum": 1,
-          "description": "The counting quantifier's threshold — Compound's field, under Compound's rule (WF-041: at least 1). Written EXACTLY under atLeast / atMost / exactly and omitted under all / none, which is where this node diverges from Compound (there the field is always present and a zero nobody reads): a field that is meaningful in one position and inert everywhere else can say anything. The conditional below is the wire half of WF-108 (e); the verifier cites the rule."
+          "description": "The counting quantifier's threshold — Compound's field, under Compound's rule (WF-041: at least 1). Written EXACTLY under atLeast / atMost / exactly and omitted under all / none, which is where this node diverges from Compound (there the field is written under every quantifier and read only under the three counting ones): a field that is meaningful in one position and inert everywhere else can say anything. The conditional below is the wire half of WF-108 (e); the verifier cites the rule."
         },
         "elementType": {
           "type": [

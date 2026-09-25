@@ -5,13 +5,13 @@ this document names none — so it states a quantification nothing can be measur
 against.
 
 The field is present EXACTLY under the three counting quantifiers here, unlike
-`Compound`, which carries it always and writes a 0 nobody reads. That
-divergence is the reason this directory can exist at all: a field that is
-meaningful in one position and inert everywhere else can say anything (the
-WF-083 (c) defect), so on this node the absence is checked rather than filled
-in. Reading a missing threshold as 0 would be worse than refusing — WF-041
-refuses a written 0 for the same vocabulary, so the silent default would
-produce exactly the document the other rule rejects.
+`Compound`, which writes it under every quantifier and reads it only under the
+three counting ones. That divergence is the reason this directory can exist at
+all: a field that is meaningful in one position and inert everywhere else can
+say anything (the WF-083 (c) defect), so on this node the absence is checked
+rather than filled in. Reading a missing threshold as 0 would be worse than
+refusing — WF-041 refuses a written 0 for the same vocabulary, so the silent
+default would produce exactly the document the other rule rejects.
 
 **History, recorded rather than elided.** Until 2026-09-16 this directory was
 `wf108-kwantorvouw-telkwantor` and the same `ir.json` violated WF-108 (a): the
