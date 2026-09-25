@@ -5787,8 +5787,9 @@ is not restated for these three — it is what the comparison gives.
 
 **`threshold` is present exactly where it is read.** It sits on the wire
 only under the three counting quantifiers, and is ABSENT under `all` and
-`none` — where `Compound` carries it always and writes a zero nobody
-reads. That divergence is deliberate and is the argument two paragraphs
+`none`. `Compound` writes it under every quantifier and reads it only under
+the three counting ones, so under `all`, `none` and `the` it is a number
+nobody reads. That divergence is deliberate and is the argument two paragraphs
 up, applied to this node's own field: a field that is meaningful in one
 position and inert everywhere else is the "a field nobody reads is a
 field that can say anything" defect of WF-083 (c), and `Compound`'s shape
