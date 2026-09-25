@@ -2808,6 +2808,10 @@ snippet. Every reader, the verifier included, refuses an empty snippet at
 load with the sentence "a source snippet is never empty: a node without
 source text carries no source", under no WF number: the schema requires at
 least one character, so no document can carry the defect as a witness.
+The schema admits `line` in every source record, so every reader loads it
+on whichever node carries it, refuses a value below 1 at load with the
+sentence "a source line is at least 1", under no WF number for the same
+reason, and drops it where its model has no line number.
 `file` and `column` are not written yet: their conventions — the base of
 `line` and `column`, the form of `file`, and what `snippet` means beside a
 position — belong to the first producer that writes positions, and the
