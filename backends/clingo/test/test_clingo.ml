@@ -11958,6 +11958,9 @@ let () =
       ( "source met line 0",
         (groep, {|"source": { "snippet": "Regelgroep heffingsregels", "line": 0 }|}),
         Ir_v0.Loader.source_line_refusal );
+      ( "source met line 0 op een andere knoop",
+        (heffing, {|"source": { "snippet": "De heffing", "line": 0 }|}),
+        Ir_v0.Loader.source_line_refusal );
       ( "source met line -1 op een andere knoop",
         (heffing, {|"source": { "snippet": "De heffing", "line": -1 }|}),
         Ir_v0.Loader.source_line_refusal );
@@ -11975,6 +11978,25 @@ let () =
               check ("M7-laadtabel: " ^ vorm ^ " (" ^ stand ^ "): " ^ e) (Uchar_ref.Case.contains ~needle e))
         beide)
     rows;
+  (* a line on a node that keeps none — the base's Literal, and the rule
+     target's AttributeReference twisted here — loads in both stances and is
+     not kept: the in-memory node has no line, its snippet is its bron, and
+     the two carriers that do keep a line keep their own *)
+  List.iter
+    (fun (stand, reader) ->
+      let wat = "M7-laadtabel: een line op een Literal en een AttributeReference laadt en valt weg (" ^ stand ^ ")" in
+      match laad ~reader (vervang base ~waar:heffing ~door:{|"source": { "snippet": "De heffing", "line": 4 }|}) with
+      | Error e -> check (wat ^ ": " ^ e) false
+      | Ok doc ->
+          let versie i = (List.nth doc.resolved_regels i : Ir_v0.Ast.resolved_regel) in
+          check wat
+            ((match (versie 0).doel with
+              | Some (Attribuut_ref { bron = Some "De heffing"; _ }) -> true
+              | _ -> false)
+            && (match (versie 1).waarde with Some (Literal { bron = Some "10"; _ }) -> true | _ -> false)
+            && List.map (fun (c : Ir_v0.Ast.resolved_consistentie) -> c.cons_line) doc.consistenties = [ 12; 0 ]
+            && List.map (fun (g : Ir_v0.Ast.resolved_regel_groep) -> g.rgr_line) doc.regel_groepen = [ 3 ]))
+    beide;
   check "M7-laadtabel: de zin van de lege snippet"
     (Ir_v0.Loader.empty_snippet_refusal
     = "a source snippet is never empty: a node without source text carries no source");
