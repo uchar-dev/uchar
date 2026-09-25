@@ -1085,10 +1085,12 @@ DRL_CHANNEL=(
   "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
-  # (D) The one value-divergence this branch SHARES with the exec branch — negation-as-failure is not
-  # stratified, so a geen-<kenmerk> rule fires before the positive kenmerk is derived. The exec
-  # branch's full reason is in EXCLUDE_KNOWN above; both branches inherit it from the ported runtime.
-  # It is the ONLY wrong value this branch still answers: the §13.4.6 class that stood here until
+  # (D) The ONE golden on which this branch still answers wrong values, two of them in both cases
+  # (measured 2026-09-25). rustwacht is the value-divergence it SHARES with the exec branch —
+  # negation-as-failure is not stratified, so a geen-<kenmerk> rule fires before the positive
+  # kenmerk is derived; the exec branch's full reason is in EXCLUDE_KNOWN above, and both branches
+  # inherit it from the ported runtime. gevarenwacht is this branch's own: it stays absent where ref,
+  # clingo and the exec branch derive it present. The §13.4.6 class that stood here until
   # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
   # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
   "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence on rustwacht, shared with the exec branch (full reason in EXCLUDE_KNOWN); this branch also leaves gevarenwacht absent in both cases, where ref, clingo and the exec branch derive it present (measured 2026-09-25) — the label FAIL does not tell the two apart"
