@@ -79,11 +79,11 @@ class TyperingZinTest {
         // a decimal telwoord reaches the wire as 0, a number the author did not write
         assertEquals(fout("telwoord van een kwantificatie moet een positief geheel getal (>= 1) zijn"),
                 meldingen(kwantor.formatted("1,5")));
-        assertEquals(List.of("ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod "
+        assertEquals(List.of("ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod "
                         + "qualifier on a non-time-dependent operand"),
                 meldingen("Een Jutter is waardevol indien zijn telling gedurende het gehele jaar groter is dan 5."));
         assertTrue(meldingen("Een Jutter is waardevol indien hij gedurende het gehele jaar waardevol is.").contains(
-                "ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a "
+                "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier on a "
                         + "non-time-dependent characteristic"));
         assertEquals(fout("kenmerkwaardetoekenning 'gewogen': characteristic initialisation's value must be a "
                         + "boolean-typed expression"),
@@ -95,7 +95,7 @@ class TyperingZinTest {
      *  document written, and {@code WF-043 FAIL /rules/rules/0/versions/0/condition: wholePeriod qualifier on a
      *  non-time-dependent operand}. */
     @Test void volledige_periode_over_een_samengestelde_operand() {
-        String zin = "ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier "
+        String zin = "ERROR 30 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier "
                 + "on a non-time-dependent operand";
         assertEquals(List.of(zin), meldingen("Een Vondst is gewogen indien zijn vondstsaldo plus 1 gedurende het gehele "
                 + "jaar groter is dan 5."));

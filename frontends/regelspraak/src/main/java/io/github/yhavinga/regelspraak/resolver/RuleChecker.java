@@ -4074,7 +4074,7 @@ final class RuleChecker {
         model.diagnostics.add(new Diagnostic(Severity.ERROR, zin != null
             ? "de check op volledige periode (gedurende de/het gehele jaar/maand): " + zin
             : "de check op volledige periode (gedurende de/het gehele jaar/maand) kan alleen op een tijdsafhankelijk "
-            + "onderwerp worden toegepast (§8.2): " + bron, 0));
+            + "onderwerp worden toegepast (§8.2): " + bron, bron.line()));
         return new Conditie.Onopgelost(bron, null);   // the ERROR above is this marker's diagnosis
     }
 
