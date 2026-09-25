@@ -50,9 +50,15 @@ the same assertion under `all`. Since the card both branches lower the
 violation as the negation of the fold their rule conditions already carry
 for these quantifiers, and play both cases with the values above. Swapping
 that negation for the fold itself, in either branch, fails case 1 in that
-branch (measured). No `bron.rgs`: the RegelSpraak frontend parses the
-subject-led form ("Een Vondst moet voldoen aan ten minste twee van de
-volgende criteria: …") and does not lift a composite consistency to the
-wire under any quantifier, `alle` included (a warning, `consistentieregel
-wordt nog niet (volledig) naar IR/DRL omgezet`); the document is written by
-hand.
+branch (measured).
+
+The document is emitted from `bron.rgs` by the RegelSpraak frontend. Until
+the card it was written by hand: the frontend parsed the subject-led form
+("Een Vondst moet voldoen aan ten minste twee van de volgende criteria: …")
+and lifted a composite consistency only under `alle` with criteria that
+named the subject in full, leaving every other one off the wire with a
+warning (`consistentieregel wordt nog niet (volledig) naar IR/DRL
+omgezet`); since the card it lifts the composite under every quantifier and
+reads "zijn …" in the criteria against the onderwerp. Re-emitted from the
+source, the document differs from the hand-written one in its source
+snippets alone; the two case files did not change.

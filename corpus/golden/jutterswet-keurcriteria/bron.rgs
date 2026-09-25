@@ -1,0 +1,36 @@
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen);
+    de lengte Numeriek (geheel getal);
+    het jaartal Numeriek (geheel getal);
+    is oud kenmerk (bijvoeglijk);
+
+Regel ouderdom van een vondst
+    geldig altijd
+        Een Vondst is oud
+        indien zijn jaartal kleiner is dan 1900.
+
+Regel keuring naar ten minste twee criteria
+    geldig altijd
+        Een Vondst moet voldoen aan ten minste twee van de volgende criteria:
+        - zijn gewicht is groter dan 0
+        - zijn lengte is groter dan 10
+        - zijn jaartal is kleiner dan 1900.
+
+Regel keuring naar ten hoogste een criterium
+    geldig altijd
+        Een Vondst moet voldoen aan ten hoogste één van de volgende criteria:
+        - zijn gewicht is groter dan 50
+        - zijn lengte is groter dan 50
+        - zijn jaartal is kleiner dan 1500.
+
+Regel keuring naar precies een criterium
+    geldig altijd
+        Een Vondst moet voldoen aan precies één van de volgende criteria:
+        - zijn gewicht is groter dan 1
+        - zijn lengte is groter dan 20.
+
+Regel keuring naar geen criterium
+    geldig altijd
+        Een Vondst moet voldoen aan geen van de volgende criteria:
+        - zijn gewicht is kleiner dan 0
+        - zijn lengte is kleiner dan 0.

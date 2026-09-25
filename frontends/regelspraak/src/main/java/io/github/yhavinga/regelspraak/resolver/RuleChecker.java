@@ -2469,8 +2469,8 @@ final class RuleChecker {
             }
         }
         // A membership criterion ("moet een <kenmerk|rol> zijn"), elfproef /
-        // numeriek-met-exact, a compound under GEEN or a counting kwantor, or a computed/unresolved
-        // subject: forms whose "inconsistent" we cannot express as a faithful violation rule. (The
+        // numeriek-met-exact, or a computed/unresolved subject: forms whose "inconsistent" we cannot
+        // express as a faithful violation rule. (The
         // cross-type "verenigd met" uniqueness left this list when ResolvedUniciteitUnie landed.)
         // Surface the gap as a WARNING rather than lift it into a silent inert rule (which would
         // both drop the check and lose the diagnostic the §13.4.7/.11/.12 path still gives).
@@ -2617,18 +2617,19 @@ final class RuleChecker {
     }
 
     /** The single-criterion assertions whose negation the transpiler can emit as a
-     *  faithful violation rule: a comparison, or an emptiness predicate. Everything else
-     *  (membership, elfproef, numeriek-met-exact, unstructured) is left to a WARNING. */
+     *  faithful violation rule: a comparison, or an emptiness predicate, and a compound of them
+     *  under any quantifier. Everything else (membership, elfproef, numeriek-met-exact,
+     *  unstructured) is left to a WARNING. */
     private static boolean transpileerbaar(Conditie c) {
         if (c instanceof Conditie.Vergelijking) return true;
         if (c instanceof Conditie.Predicaat p)
             return p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD;
-        // An ALLE compound is the violation = OR of the criteria's violations (transpiler), lowerable
-        // when every criterion is. GEEN and the counting kwantoren (ten minste/hoogste/precies) need a
-        // satisfied-criterion count the single violation rule cannot express yet — left to a WARNING.
+        // A compound is lowerable when every criterion is: under ALLE the violation is the OR of the
+        // criteria's violations, under GEEN and the counting kwantoren (ten minste/hoogste/precies) the
+        // negation of the count of the criteria that hold against the drempel — both Drools branches carry
+        // it since the card aantal-bronarm-en-drools-lader, as ref and the ASP backend did.
         if (c instanceof Conditie.Samengesteld s)
-            return s.kwantor() == Conditie.Kwantor.ALLE && !s.onderdelen().isEmpty()
-                    && s.onderdelen().stream().allMatch(RuleChecker::transpileerbaar);
+            return !s.onderdelen().isEmpty() && s.onderdelen().stream().allMatch(RuleChecker::transpileerbaar);
         return false;
     }
 
@@ -3231,6 +3232,10 @@ final class RuleChecker {
         else if (rd.startpuntBepaling() != null) // §13.4.12 — so "zijn <attribuut>" in the anchor + voorwaarde resolves
             return model.resolveObjecttype(src(rd.startpuntBepaling().universeelOnderwerp().kaleNaam()));
         else if (rd.consistentieRegel() != null) {
+            // §13.4.8 the subject-led samengestelde consistentieregel names its onderwerp ("Een Vondst moet
+            // voldoen aan …"), so "zijn …" in its criteria resolves against it
+            if (rd.consistentieRegel().samengesteldeConsistentie() != null)
+                return bouwer.resolveOnderwerp(rd.consistentieRegel().samengesteldeConsistentie().onderwerp());
             EnkelvoudigeConsistentieRegelContext e = rd.consistentieRegel().enkelvoudigeConsistentieRegel();
             return e != null && e.expressie() != null
                     && bouwer.bouw(e.expressie()) instanceof Expr.AttribuutRef a ? a.objecttype() : null;
