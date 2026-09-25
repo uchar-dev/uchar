@@ -266,5 +266,6 @@ document, measured:
     is sumtype 'MELDSTATUS', but the IfThenElse type is sumtype 'meldstatus'
 
 `ref` and the ASP backend replay the five cases with the pinned values, the
-spellings changing nothing; the Drools backend refuses the document at load,
-as before (`Datatype:SumType`).
+spellings changing nothing; the Drools backend refuses the document at load
+in both branches, as before: `EXCLUDE loader: form not carried by the v0
+Drools backend: Datatype:ListType (unknown datatype node)`.
