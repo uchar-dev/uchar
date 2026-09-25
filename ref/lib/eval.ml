@@ -350,8 +350,8 @@ let owner_hosts (doc : document) ~(otype : string) ~(kenmerk : string option)
      the object it is hosted on (ch. 2.2) *)
   | Some e when not (Ir_v0.Checks.subtype_of doc ~sub:otype ~super:e) ->
       Value.fault
-        "characteristic check %S is hosted on %S while the subject is %S: the owner names the \
-         object the check is about (WF-100), and this reader has no other object to read"
+        "characteristic check %S is hosted on %S while the subject is %S: the host names the \
+         object the check is about, and this reader has no other object to read"
         (Option.value kenmerk ~default:"?") e otype
   | _ -> ()
 
