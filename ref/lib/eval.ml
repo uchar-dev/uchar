@@ -3361,7 +3361,7 @@ let vintage_read_params (doc : document) : string list =
     | Temporal_read
         { basis = Parameter_ref { parameter = Some p; _ };
           datum = Constante { naam = Some n; _ }; _ }
-      when norm n = norm Ir_v0.Spelling.evaluation_date ->
+      when n = Ir_v0.Spelling.evaluation_date ->
         if not (List.exists (fun q -> norm q = norm p) !acc) then acc := p :: !acc
     | Temporal_read { basis; datum; _ } ->
         expr basis;
