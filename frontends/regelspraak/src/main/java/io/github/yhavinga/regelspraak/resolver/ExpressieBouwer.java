@@ -711,13 +711,14 @@ final class ExpressieBouwer {
      * behavioural, so a refused fold must leave a WELL-FORMED document that faults observably (WF-044) in
      * every executor — the red-zone shape, not an ill-formed one.
      *
-     * <p>(a) A NESTED set step ("… van alle X van alle Y van de Z"). The uchar wire describes a fold source
-     * with ONE relation: one {@code elementType} plus one {@code sourceRole} (IR-SPEC ch. 4.3). A
-     * two-step written range is not expressible on it, and the emitter's derivation ranges from the RULE
-     * SUBJECT to the innermost element type — so the outer step disappears without a trace and the fold
-     * runs over the wrong set. Where no relation joins subject and element that was caught downstream
-     * (WF-048, until L2; since then the emitter refuses a fold it cannot bind); where one happens to exist it
-     * is verifier-CLEAN and silently wrong, which is the shape this refusal exists for.
+     * <p>(a) A NESTED set step ("… van alle X van alle Y van de Z"). Since WF-102 the uchar wire carries a
+     * written multi-step range as {@code sourcePath} (IR-SPEC ch. 4.3) where {@link #bereikPad} binds it off
+     * the chain, and such a chain returns before this route (the first check below). A chain it declines
+     * has the one-step spelling alone, one {@code elementType} plus one {@code sourceRole}, and the emitter's
+     * derivation ranges from the RULE SUBJECT to the innermost element type — so the outer step disappears
+     * without a trace and the fold runs over the wrong set. Where no relation joins subject and element that
+     * was caught downstream (WF-048, until L2; since then the emitter refuses a fold it cannot bind); where
+     * one happens to exist it is verifier-CLEAN and silently wrong, which is the shape this refusal exists for.
      *
      * <p>(b) An intermediate TO-ONE step ("… van alle X van de Y van de Z"), the same loss along a third
      * route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is not the subject
@@ -751,8 +752,8 @@ final class ExpressieBouwer {
                             + "(§13.4.17) — '" + bron(f) + "'", f.getStart().getLine()));
             return new Expr.Onopgelost(type, bron(f), null);
         }
-        // The emitter derives a bronRol only for a navigation-free member fold over a resolved element type
-        // (IrEmitter.bronRolBinding); outside that shape there is no by-pair guess to contradict.
+        // The emitter derives a sourceRole only for a navigation-free member fold over a resolved element type
+        // (IrEmitter.vouwbereik); outside that shape there is no by-pair guess to contradict.
         if (bron.objecttype() == null || huidigSubject == null) return null;
         if (bron.navigatieRol() != null || !bron.navigatiePad().isEmpty()) return null;
         String geschreven = primaireNaam(o);
@@ -1688,8 +1689,9 @@ final class ExpressieBouwer {
      *  the node was emitted anyway: "het aantal gewogen vangst van de Jutter" (an own attribute),
      *  "het aantal 3", "het aantal (3 plus 4)", "het aantal drempel" (a parameter), "het aantal
      *  Vondsten" — each an AANTAL with {@code elementObjecttype: null}, all with
-     *  {@code diagnostics: []}. The verifier now rejects that shape, and {@code ref} used to answer
-     *  it with the operand counted, not a population ({@link io.github.yhavinga.regelspraak
+     *  {@code diagnostics: []}, in the v0 wire spelling of that date; on the L5 wire the shape is a
+     *  {@code count} without {@code elementType}. The verifier now rejects that shape, and {@code ref}
+     *  used to answer it with the operand counted, not a population ({@link io.github.yhavinga.regelspraak
      *  .AantalZonderBronTest}).
      *
      *  <p>ERROR for the same reason as the arity arm: {@link Resolver#irModus} then writes nothing.
@@ -2347,7 +2349,7 @@ final class ExpressieBouwer {
      * names.
      *
      * <p>Empty — leaving the caller's existing behaviour untouched — for every shape this does not decide:
-     * a single written step (whose range IS one relation, spelled {@code bronRol}), a non-set onderwerp, an
+     * a single written step (whose range IS one relation, spelled {@code sourceRole}), a non-set onderwerp, an
      * anchor that denotes neither the subject's object type nor the subject itself, a step that resolves to
      * no role or to several, a reciprocal fact type, and a walk that does not land on the element type the
      * head noun already bound. Declining the WHOLE path rather than binding part of it is what keeps the
