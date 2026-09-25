@@ -2699,7 +2699,7 @@ evaluation moment. v1 specifies the **clip**: the produced timeline is
 intersected with the window,
 
 ```
-written(tl, window) = tl restricted to [vanaf, tot)
+written(tl, window) = tl restricted to [from, to)
 ```
 
 and the write proceeds with the clipped timeline. Worked example: the
