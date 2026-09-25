@@ -187,8 +187,11 @@ witness — an embedded double-quote on both the value and literal sides).
 
 ### S3. Rules and write targets
 
-A `ResolvedRegel` translates by kind. **Characteristic attribution**
-(`KENMERKTOEKENNING`, value `waar`): `heeft(S,k) :- is_a(S,ot),
+Each version of a `Rule` translates by kind, which the wire does not
+write: a version with a `presentation` tag computes, one with
+`initialisation: true` initialises, and one with neither attributes the
+characteristic its `target` names. **Characteristic attribution**
+(value `{"boolean": true}`): `heeft(S,k) :- is_a(S,ot),
 ⟨condition atoms⟩.` — negation-as-failure gives the absent case for
 free, and WF-045/046 stratification makes the negated reads sound.
 **Computation/equation** (`calculation`/`equation`) to a scalar
@@ -984,7 +987,7 @@ translation fault.
 and `V = #sum { G,X : ⟨body⟩ }` at the element attribute's scale —
 an instance without the attribute contributes no tuple, and the empty
 tuple set is clingo's native 0, which the **fallback-0** facet reads
-directly (ref `agg_som (Some 0)`). A som WITHOUT a `leegwaarde` adds a
+directly (ref `agg_som (Some 0)`). A som WITHOUT an `emptyFallback` adds a
 **presence guard** — a per-subject helper `sompN(S)` that holds iff at
 least one contributor exists, carried by the reading rule — so the empty
 set leaves the term underivable and the result is leeg, not 0 (ref
@@ -1022,7 +1025,7 @@ skipped (the join is the skip, as for the som), and the extreme IS one
 contributed value — no accumulation, so no range fence — with a
 **mandatory presence guard** `extpN(S)`: `#min`/`#max` over the empty
 set yield `#sup`/`#inf`, which must never escape into a value, so an
-all-empty or empty set derives nothing (ref → Empty). A `leegwaarde` on
+all-empty or empty set derives nothing (ref → Empty). An `emptyFallback` on
 min/max is ignored, mirroring ref. **Eerste and laatste ride this
 very arm** (card eerste-laatste-setvouw-kloof, 2026-09-19): they are
 the same ordering fold over the contributed VALUES — ch. 1.2e, and
@@ -1160,10 +1163,10 @@ operands is not translated …`) rather than the expression fall-through,
 for the reason the catch-all inventory below records. Its guard takes
 TWO wire fields, not one: an absent `elementType` means listed
 *or* dimension cell, because WF-037 grants the DIMENSION som an
-explicit arity exemption (one operand, a `dimensieSelectie`, no stamp),
+explicit arity exemption (one operand, a `dimensionSelection`, no stamp),
 and that form is not listed — `ref` refuses it earlier and on its own
 ground, `dimension selection not implemented in this card`. So the
-named arm demands an absent `dimensieSelectie` too, and the dimension
+named arm demands an absent `dimensionSelection` too, and the dimension
 som keeps the fall-through.
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
@@ -2455,7 +2458,7 @@ exact share or the clipped cap is the written minimum then decides
 ref's write fault, no corpus case) — while the unrounded aligned form,
 which used to floor silently where ref faults a non-fitting write, now
 carries the runtime exactness viol instead of a silent divergence;
-a som fallback other than 0 — a NON-zero `leegwaarde` literal (the
+a som fallback other than 0 — a NON-zero `emptyFallback` literal (the
 fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
@@ -2501,7 +2504,7 @@ the catch-all's own sentence:
 case exercises it" was false while that witness stood — the same
 untruth WF-044's condition arm had just removed from the condition
 half. The form is `sum` with an absent `elementType` AND an
-absent `dimensieSelectie`: the first rules out the instance folds
+absent `dimensionSelection`: the first rules out the instance folds
 (every som arm this backend carries demands the stamp present), and the
 second is needed because absence of the stamp alone means listed *or*
 dimension cell — WF-037 exempts the dimension som from the arity rule,
@@ -2513,8 +2516,11 @@ re-falsify the sentence by exercising the catch-all again. What keeps
 the catch-all keeps it truthfully: `total`'s temporal subject-own arms
 carry an absent `elementType`, so absence does not mean "listed"
 there; the `count` listed form is no som; and no document in any zone
-carries a `dimensieSelectie` on a `Functie` at all (measured
-2026-09-19: zero over corpus and parity);
+carries a `dimensionSelection` on a `sum` (measured 2026-09-19 over
+corpus and parity, when the field was `dimensieSelectie` on a `Functie`,
+and again 2026-09-25: the only carrier since is the negatief witness
+`wf037-aantalgevulde-dimensieselectie`, on a `filledCount` that WF-037
+refuses);
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
