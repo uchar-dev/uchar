@@ -3188,10 +3188,10 @@ final class RuleChecker {
             return;
         }
         if (!tijdlijn.variabelStartpunt())
-            // §9.9 defines the startpuntbepaling for a tijdlijn MET variabel startpunt; a fixed-startpunt
-            // tijdlijn getting one is a model inconsistency — warn, but lower it (the anchor is inert there).
-            model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                    "startpuntbepaling: tijdlijn '" + tijdlijnNaam + "' heeft geen variabel startpunt (§3.8) (regel '" + naam + "')", line));
+            // §9.9 defines the startpuntbepaling for a tijdlijn MET variabel startpunt, and the verifier refuses one
+            // for a fixed-startpunt tijdlijn (WF-032), so the frontend refuses it too, in the verifier's words
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "startpuntbepaling (regel '" + naam
+                    + "'): start point for fixed-start timeline '" + tijdlijnNaam + "'", line));
         Objecttype subject = model.resolveObjecttype(src(sb.universeelOnderwerp().kaleNaam()));
         if (subject == null) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR,

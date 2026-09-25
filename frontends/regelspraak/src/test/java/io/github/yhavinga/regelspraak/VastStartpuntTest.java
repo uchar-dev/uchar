@@ -189,4 +189,27 @@ class VastStartpuntTest {
         assertEquals(emissie(attribuut("voor elk jaar")),
                 emissie(attribuut("voor elk jaar startend op dag 1 van maand 1")));
     }
+
+    /** WF-032: a start point determination anchors a timeline declared with a VARIABLE start (§9.9), and the verifier
+     *  refuses one for a fixed-start timeline. Measured on the frontend before this: a WARNING, the document written,
+     *  and {@code WF-032 FAIL /rules/startPointDeterminations/0: start point for fixed-start timeline 'penningjaar'}. */
+    @Test void een_startpuntbepaling_voor_een_tijdlijn_met_vast_startpunt_wordt_geweigerd() {
+        String bepaling = """
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de aanvangsdatum Datum in dagen;
+
+            Regel startpunt penningjaar
+                geldig altijd
+                    Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn aanvangsdatum.
+            """;
+        RegelSpraakModel vast = Resolver.resolve(
+                "Tijdlijn het penningjaar heeft tijdvakken van een jaar startend op dag 1 van maand 1;\n" + bepaling);
+        assertEquals(List.of("ERROR startpuntbepaling (regel 'startpunt penningjaar'): start point for fixed-start "
+                        + "timeline 'penningjaar'"),
+                vast.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList());
+        RegelSpraakModel variabel = Resolver.resolve(
+                "Tijdlijn het penningjaar heeft tijdvakken van een jaar met variabel startpunt;\n" + bepaling);
+        assertTrue(variabel.errors().isEmpty(), () -> "onverwachte fout: " + variabel.errors());
+    }
 }
