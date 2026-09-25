@@ -415,6 +415,21 @@ let date_duration_without_time_unit =
 let sub_day_unit_on_day_date =
   "sub-day time unit on a day-precision date (millisecond precision required)"
 
+(* The other WF-035 forms of date ± duration, in the same three readers: two
+   dates, a duration on the left, and a unit that is neither a time unit nor
+   a declared day kind. *)
+let date_plus_date_refusal =
+  "date \xc2\xb1 date is ill-formed (date arithmetic takes a date and a duration)"
+
+let duration_before_date_refusal ~minus =
+  if minus then
+    "duration \xe2\x88\x92 date is ill-formed (subtraction admits the date on the left only)"
+  else "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)"
+
+let date_duration_unknown_unit abbr =
+  "date \xc2\xb1 duration: the duration unit '" ^ abbr
+  ^ "' is neither a recognised time unit nor a declared day kind"
+
 let context_value_refusal name =
   if List.mem name context_value_names then None
   else
@@ -4341,22 +4356,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        if day_kind_unit ctx u then []
                        else
                          [ v "WF-035" (sub side)
-                             ("'" ^ Option.value u.afkorting ~default:"?"
-                              ^ "' is not a recognised time unit or declared day kind") ]))
+                             (date_duration_unknown_unit (Option.value u.afkorting ~default:"?")) ]))
          in
          match op, lt, rt with
          | (Plus | Min), Some l, Some r when is_date l && is_date r ->
-             [ v "WF-035" at
-                 "date \xc2\xb1 date is ill-formed (date arithmetic takes a date and a \
-                  duration)" ]
+             [ v "WF-035" at date_plus_date_refusal ]
          | Min, _, Some r when is_date r ->
-             [ v "WF-035" at
-                 "duration \xe2\x88\x92 date is ill-formed (subtraction admits the date on \
-                  the left only)" ]
+             [ v "WF-035" at (duration_before_date_refusal ~minus:true) ]
          | Plus, _, Some r when is_date r ->
-             [ v "WF-035" at
-                 "duration + date is ill-formed (the date stands on the left; v0 does \
-                  not commute)" ]
+             [ v "WF-035" at (duration_before_date_refusal ~minus:false) ]
          | (Plus | Min), Some l, _ when is_date l -> duration_side "right" rt l
          | _ -> [])
       @ (match links with Some e -> walk_expr ctx ~binders ~subject ~body (sub "left") e | None -> [])

@@ -1,1 +1,1 @@
-duration + date is ill-formed (the date stands on the left; v0 does not commute)
+duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)

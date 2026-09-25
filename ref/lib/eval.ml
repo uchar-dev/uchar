@@ -906,12 +906,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let minus = op = Min in
       let dur_e =
         if date_typed le && date_typed re then
-          Value.fault "date \xc2\xb1 date is ill-formed"
+          Value.fault "%s" Ir_v0.Checks.date_plus_date_refusal
         else if date_typed le then re
         else
-          Value.fault "duration %s date is ill-formed (the date stands on the left; v0 does \
-                       not commute)"
-            (if minus then "\xe2\x88\x92" else "+")
+          Value.fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
       in
       let unit_ =
         match static_type env dur_e with
@@ -928,12 +926,9 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 match day_kind_of_unit env u with
                 | Some k -> `Day_kind k
                 | None ->
-                    (* clingo's sentence per form: it names datum-tijd
-                       arithmetic apart from date arithmetic *)
-                    Value.fault "%s unit %S is neither a recognised time unit nor a declared day kind"
-                      (if static_type env le = Some Datum_tijd then "datum-tijd arithmetic"
-                       else "date arithmetic")
-                      (Option.value u.afkorting ~default:"?")))
+                    Value.fault "%s"
+                      (Ir_v0.Checks.date_duration_unknown_unit
+                         (Option.value u.afkorting ~default:"?"))))
         | _ -> Value.fault "%s" Ir_v0.Checks.date_duration_without_time_unit
       in
       let d = eval_expr env world self ~err le in
