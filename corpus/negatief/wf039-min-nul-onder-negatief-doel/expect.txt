@@ -1,0 +1,1 @@
+literal '-0' is written into a target under a negative sign restriction

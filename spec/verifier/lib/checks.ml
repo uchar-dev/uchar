@@ -229,16 +229,21 @@ let time_unit_sub_day = function
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde -> true
   | Tu_jaar | Tu_kwartaal | Tu_maand | Tu_week | Tu_dag -> false
 
-(* The sign of a number variant's string. *)
-let lexeme_negative s =
-  let s = String.trim s in
-  String.length s > 0 && s.[0] = '-'
-
+(* The sign of the VALUE a number variant's string spells (the grammar of
+   WF-081: an integer, a decimal or a rational). Zero whenever the numerator
+   is all zeros — `-0`, `0.00` and `0/5` alike — and negative only with a
+   leading '-' before a value that is not zero: the lexeme's minus is no sign
+   of its own. *)
 let lexeme_zero s =
   let s = String.trim s in
   let s = if String.length s > 0 && (s.[0] = '-' || s.[0] = '+')
           then String.sub s 1 (String.length s - 1) else s in
-  s <> "" && String.for_all (fun c -> c = '0' || c = ',' || c = '.') s
+  let numerator = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
+  numerator <> "" && String.for_all (fun c -> c = '0' || c = ',' || c = '.') numerator
+
+let lexeme_negative s =
+  let s = String.trim s in
+  String.length s > 0 && s.[0] = '-' && not (lexeme_zero s)
 
 (* WF-039's sign clause: a numeric literal under a sign restriction satisfies
    it — the restriction of its own type, or, where the literal is written

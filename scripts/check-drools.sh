@@ -948,7 +948,12 @@ EXPECTED_CHANNEL=(
 # the exec branch plays its fifteen cases on the first run, PLAYED 15, with ref's and clingo's
 # values. The DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
 # EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=205
+# 205 -> 206 (2026-09-25, WF-039 reads the literal's value): jutterswet-nulspelling, new and
+# hand-computed — a zero spelled -0.00 written into a nonNegative target and -0 compared under its own
+# nonNegative type, which the verifier refused while it read the sign off the lexeme. No source file of
+# this backend changed: the exec branch plays its two cases on the first run, PLAYED 2, with ref's and
+# clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=206
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -961,7 +966,7 @@ EXPECTED_PLAYED=205
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: seventy-nine of the eighty-three
+# Why the reasons are grouped rather than written one by one: eighty of the eighty-four
 # entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
@@ -1229,7 +1234,10 @@ DRL_CHANNEL=(
 # 176 -> 177 (2026-09-25, the WF-052 decision): jutterswet-opvolgerversies, new. This branch plays its
 # three cases on the first run with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED
 # above.
-EXPECTED_DRL_PLAYED=177
+# 177 -> 178 (2026-09-25, WF-039 reads the literal's value): jutterswet-nulspelling, new. This branch
+# plays its two cases on the first run with no change of its own, PLAYED 2. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=178
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
