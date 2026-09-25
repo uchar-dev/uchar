@@ -28,7 +28,12 @@ fail() { echo "check-regelspraak: FAIL — $*" >&2; exit 1; }
 # is the number of bron.rgs sources, which no other gate reads (gate 2 floors the ir.json beside
 # them, so a deleted source would otherwise cost frontend coverage in silence).
 EXPECTED_MIN_TESTS=173    # 2026-09-10: measured 173 (frontends/regelspraak, `make test`)
-EXPECTED_MIN_GOLDENS=38   # 2026-09-10: measured 38 (corpus/golden/**/bron.rgs)
+EXPECTED_MIN_GOLDENS=80   # 2026-09-25: measured 80 (corpus/golden/**/bron.rgs). RAISED from 38
+                          # (measured 2026-09-10): five sources give object creation, the power, a
+                          # rounding other than floor, the ordered allocation and a decision table
+                          # with rows their first RegelSpraak golden (the card
+                          # rgs-getuigen-bronloze-constructen), and two dialect twins arrived beside
+                          # them; at 38, 42 sources could go without this gate failing
 
 command -v java  >/dev/null 2>&1 || fail "java not found (the frontend needs JDK 21+)"
 command -v javac >/dev/null 2>&1 || fail "javac not found (the frontend needs JDK 21+, not a bare JRE)"
