@@ -163,6 +163,11 @@
             ],
             "validity": {
               "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "strandmelding",
+              "role": "gemeld strandrecht"
             }
           }
         ]
