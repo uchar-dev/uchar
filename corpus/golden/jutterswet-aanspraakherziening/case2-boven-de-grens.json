@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanspraken": {
+            "list": [
+              {
+                "constructor": "Erkend",
+                "payload": {
+                  "number": "15.00"
+                }
+              },
+              {
+                "constructor": "Erkend",
+                "payload": {
+                  "number": "7.25"
+                }
+              },
+              {
+                "constructor": "Vervallen"
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "herziene som",
+      "value": {
+        "number": "17.25"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

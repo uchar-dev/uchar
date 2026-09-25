@@ -5893,7 +5893,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                      | _ -> [])
                    (List.combine arguments fd.fd_parameters)))
            @ (match typ with
-             | Some t when t <> fd.fd_result ->
+             | Some t when not (same_datatype t fd.fd_result) ->
                  [ v "WF-068" (sub "type")
                      "invoke result type differs from the declared function result" ]
              | _ -> []))
