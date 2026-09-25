@@ -158,8 +158,7 @@ public final class Typering {
                 if (!zelfdeFamilie(l, r))
                     yield Resultaat.fout("gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam());
                 if (anderePrecisie(l, r)) yield Resultaat.fout("gelijk: equality across date precisions");
-                String e = enumDomeinFout(l, r, "gelijk/ongelijk vereist");
-                if (e != null) yield Resultaat.fout(e);
+                if (anderDomein(l, r)) yield Resultaat.fout("gelijk: equality across different enumeration domains");
                 if (l.isGetalachtig()) {
                     String u = eenhedenCompatibel(l, r, "gelijk", lLit, rLit, "equality operands have incompatible units");
                     if (u != null) yield Resultaat.fout(u);
@@ -282,8 +281,9 @@ public final class Typering {
             return "kan een waarde van type " + waarde.naam() + " niet toekennen aan een " + doel.naam();
         if (anderePrecisie(doel, waarde))
             return "toekenning: a " + soortWoord(waarde) + " value is assigned to a " + soortWoord(doel) + " target";
-        String e = enumDomeinFout(doel, waarde, "toekenning vereist");
-        if (e != null) return e;
+        if (anderDomein(doel, waarde))
+            return "toekenning: a value of the enumeration domain '" + ((Datatype.Enumeratie) waarde).domein()
+                    + "' is assigned to a target of the enumeration domain '" + ((Datatype.Enumeratie) doel).domein() + "'";
         if (!doel.isGetalachtig()) return null;
         String eenheidFout = eenhedenCompatibel(doel, waarde, "toekenning", false, waardeLit,
                 "assignment across incompatible units");
@@ -400,12 +400,12 @@ public final class Typering {
 
     /** Tabel 36/43 rij 7 (vergelijking) and Tabel 61 rij 7 (toekenning): both sides must be the SAME
      *  enumeration — two attributes of DIFFERENT declared domains used to pass silently on class equality
-     *  (a comparison that could only be label-coincidence, an assignment that puts a foreign label in). */
-    private static String enumDomeinFout(Datatype a, Datatype b, String wat) {
-        if (a instanceof Datatype.Enumeratie ea && b instanceof Datatype.Enumeratie eb
-                && !ea.domein().equals(eb.domein()))
-            return wat + " dezelfde enumeratie, kreeg " + ea.naam() + " en " + eb.naam() + " (rij 7)";
-        return null;
+     *  (a comparison that could only be label-coincidence, an assignment that puts a foreign label in). The
+     *  verifier refuses both (WF-036's equality arm, WF-023's domain clause), and the callers carry its
+     *  sentences. */
+    private static boolean anderDomein(Datatype a, Datatype b) {
+        return a instanceof Datatype.Enumeratie ea && b instanceof Datatype.Enumeratie eb
+                && !ea.domein().equals(eb.domein());
     }
 
     /** Unit rule (§4 note): both unitless, or both present and inter-convertible. {@code waar} is the

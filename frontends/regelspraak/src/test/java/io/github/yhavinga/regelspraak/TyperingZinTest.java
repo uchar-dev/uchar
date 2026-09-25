@@ -71,6 +71,14 @@ class TyperingZinTest {
                         + "must share one precision)"));
     }
 
+    @Test void keuzetypedomein() {
+        assertEquals(fout("voorwaarde: gelijk: equality across different enumeration domains"),
+                meldingen("Een Jutter is waardevol indien zijn staat gelijk is aan zijn weer."));
+        assertEquals(fout("gelijkstelling: toekenning: a value of the enumeration domain 'Weerklasse' is assigned to "
+                        + "a target of the enumeration domain 'Keurklasse'"),
+                meldingen("De klasse van een Jutter moet gesteld worden op zijn weer."));
+    }
+
     @Test void tot_de_macht_met_een_eenheid() {
         assertEquals(fout("tot de macht: power operands must be unitless"),
                 meldingen("De uitkomst van een Jutter moet berekend worden als zijn waarde tot de macht 2 naar beneden afgerond op 2 decimalen."));
