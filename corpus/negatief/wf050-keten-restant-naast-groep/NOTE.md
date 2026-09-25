@@ -8,6 +8,14 @@ writes what is left into the `onverdeelde rest` of the `Berging`
 (`sourceType` `Berging`, `remainderAttribute` `onverdeelde rest`).
 `Wrakberging` is a `Berging`.
 
+    WF-050 FAIL /rules/prioritizedDefaults/0: an allocation also writes
+    defaults target 'Wrakberging.onverdeelde rest' through its type chain —
+    the group declared on Wrakberging, the allocation's remainder on Berging —
+    and an allocation is never folded into a stack, so an instance of
+    Wrakberging has both writers
+
+The report sits at the defaults group, as the flat lift's does.
+
 **Why a `Wrakberging` has both writers.** The allocation runs for every
 `Berging`, a `Wrakberging` included, and writes the remainder on it; the
 group decides the `onverdeelde rest` of every `Wrakberging`. The fold of
@@ -67,3 +75,14 @@ no defaults lowering.
 **The arm.** WF-050's flat lift keys on the group's declared subject, where
 `Wrakberging.onverdeelde rest` and `Berging.onverdeelde rest` are two keys;
 before the chain arm the verifier passed this document (`verifier: PASS`).
+The chain arm reads the two writes an allocation makes — its shares on
+`targetType`, its remainder on `sourceType` — against the group's subject,
+and reports when the two types lie on one chain, the one a strict ancestor
+of the other (`chain_lower` in `spec/verifier/lib/checks.ml`). `expect.txt`
+pins the chain arm on the remainder half.
+
+Falsifiable, arm-exact: dropping the remainder write from the chain arm's
+list (in `wf050`, `[ ("shares", vd.doel_type, vd.doel_attribuut);
+("remainder", vd.bron_type, vd.restant_attribuut) ]` reduced to its shares
+entry) turns this case clean and nothing else — 729 documents compared over
+golden, rood and negatief, one verdict moved (measured 2026-09-25).

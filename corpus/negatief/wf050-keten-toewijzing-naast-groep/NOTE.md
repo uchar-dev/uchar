@@ -6,6 +6,19 @@ is above 1); `verdeel de opbrengst van een berging` distributes the
 `opbrengst` of a `Berging` over the `bergingsaandeel` of all its bergers
 (`targetType` `Berger`). `Hoofdberger` is a `Berger`.
 
+    WF-050 FAIL /rules/prioritizedDefaults/0: an allocation also writes
+    defaults target 'Hoofdberger.bergingsaandeel' through its type chain — the
+    group declared on Hoofdberger, the allocation's shares on Berger — and an
+    allocation is never folded into a stack, so an instance of Hoofdberger has
+    both writers
+
+The report sits at the defaults group, as the flat lift's does. The mirror
+placement — the group on `Berger`, the allocation over the hoofdbergers only
+— is refused by the same arm, naming the group on `Berger` and the
+allocation's shares on `Hoofdberger`; there the reference interpreter and
+the exec-model branch find no fixpoint either and the ASP backend derives
+`H1.bergingsaandeel = [7;1000]` (measured 2026-09-25).
+
 **Why a `Hoofdberger` has both writers.** `targetType` is the population an
 allocation ranges over, read extensionally (ch. 2.2), so the allocation
 writes the `bergingsaandeel` of every `Berger` linked to the berging, a
@@ -72,3 +85,17 @@ interpreter, the ASP backend and the exec-model branch agree (H1
 **The arm.** WF-050's flat lift keys on the group's declared subject, where
 `Hoofdberger.bergingsaandeel` and `Berger.bergingsaandeel` are two keys;
 before the chain arm the verifier passed this document (`verifier: PASS`).
+The chain arm reads the two writes an allocation makes — its shares on
+`targetType`, its remainder on `sourceType` — against the group's subject,
+and reports when the two types lie on one chain, the one a strict ancestor
+of the other (`chain_lower` in `spec/verifier/lib/checks.ml`, the predicate
+WF-079's and WF-026's chain arms read as well). It has no gate: an
+allocation is never folded into the group's stack. `expect.txt` pins the
+chain arm on the shares half; `corpus/negatief/wf050-keten-restant-naast-groep`
+pins the remainder half.
+
+Falsifiable, arm-exact: dropping the shares write from the chain arm's list
+(in `wf050`, `[ ("shares", vd.doel_type, vd.doel_attribuut); ("remainder",
+vd.bron_type, vd.restant_attribuut) ]` reduced to its remainder entry) turns
+this case clean and nothing else — 729 documents compared over golden, rood
+and negatief, one verdict moved (measured 2026-09-25).

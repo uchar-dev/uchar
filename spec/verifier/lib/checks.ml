@@ -634,6 +634,67 @@ let chain_group_keys doc t =
     doc.objecttypen
   |> List.sort_uniq compare
 
+(* --- the chain arms of the single-writer fences ---------------------------
+
+   WF-026, WF-050's allocation lift and WF-079 key their flat arms on the
+   DECLARED type (the single-writer note at wf026), where
+   'Berger.bergingsaandeel' and 'Hoofdberger.bergingsaandeel' are two keys.
+   Their chain arms pair two writers of one attribute declared on two types
+   of one chain, the one a strict ancestor of the other. The writer on the
+   ancestor writes the lower type's instances too, so the lower type is the
+   first concrete type both write, and each arm reports there. The pairing is
+   defined once, here. What differs per rule is which writers it pairs and
+   whether a gate applies: WF-079's pair is folded into one stack inside the
+   gate of RUNTIME-SEMANTICS ch. 7.10, and an allocation is never folded, so
+   WF-026 and WF-050 have no gate. *)
+
+(* Two writers [x] and [y], their declared types read by [ty]: [Some (lower,
+   upper)] when the one type is a strict ancestor of the other, the writer on
+   the lower type first; [None] for one type, and for two types on no common
+   chain, whose populations share no instance. *)
+let chain_lower ctx ~ty x y =
+  let tx = ty x and ty_y = ty y in
+  if norm tx = norm ty_y then None
+  else if is_sub ctx ~sub:tx ~super:ty_y then Some (x, y)
+  else if is_sub ctx ~sub:ty_y ~super:tx then Some (y, x)
+  else None
+
+(* Every chain pair of one writer list, lower writer first: two writers of one
+   attribute ([attr]) that [chain_lower] places on one chain and that the
+   rule's own pairing condition [pairs] admits. *)
+let chain_pairs ctx ~ty ~attr ~pairs writers =
+  let rec go = function
+    | [] -> []
+    | w1 :: rest ->
+        List.filter_map
+          (fun w2 ->
+            if norm (attr w1) = norm (attr w2) && pairs w1 w2 then chain_lower ctx ~ty w1 w2
+            else None)
+          rest
+        @ go rest
+  in
+  go writers
+
+(* Two versions belong to different forms when their version-stripped names
+   differ under WF-020's comparison; a version of a nameless form pairs with
+   every other version (WF-107 reports the missing name). *)
+let distinct_form n1 n2 = match (n1, n2) with Some x, Some y -> norm x <> norm y | _ -> true
+
+(* One report per (pointer, sentence). A version paired with several writers
+   of one target repeats one sentence at one pointer (three flat writers, or
+   two flat writers on an ancestor beside one on the subtype); the reader
+   learns nothing from the second copy. *)
+let dedup_reports (reports : violation list) =
+  let seen = Hashtbl.create 8 in
+  List.filter
+    (fun (x : violation) ->
+      let k = (x.at, x.reason) in
+      if Hashtbl.mem seen k then false
+      else (
+        Hashtbl.add seen k ();
+        true))
+    reports
+
 let attr_of ot name = find_ci ot.attributen name
 let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributen
 let has_kenmerk ot name = mem_ci (some_names ot.kenmerken) name
@@ -1624,7 +1685,10 @@ let wf025 ctx =
    one instance's effective stack", never "do these two targets close over
    the same member". WF-079's chain arm asks exactly that of two bare
    computing rules: outside the gate of RUNTIME-SEMANTICS ch. 7.10 both
-   survive onto a subtype instance, inside it the fold makes them one. *)
+   survive onto a subtype instance, inside it the fold makes them one.
+   WF-026's chain arm and WF-050's allocation lift ask it of an allocation,
+   which no stack absorbs: both writers always survive onto the lower type's
+   instances, so those arms have no gate. *)
 let wf026 ctx =
   let named =
     List.map
@@ -1641,10 +1705,7 @@ let wf026 ctx =
               | Some a, Some b, Some c, Some d -> norm a = norm b && norm c = norm d
               | _ -> false
             in
-            let distinct_form =
-              match n1, n2 with Some a, Some b -> norm a <> norm b | _ -> true
-            in
-            if same_target && distinct_form then
+            if same_target && distinct_form n1 n2 then
               Some (v "WF-026" at1
                       (Printf.sprintf "two allocations write target (%s, %s)"
                          (Option.value dt1 ~default:"?") (Option.value da1 ~default:"?")))
@@ -1652,7 +1713,30 @@ let wf026 ctx =
           rest
         @ pairs rest
   in
-  pairs named
+  (* The chain arm: `targetType` is the population an allocation ranges over
+     (IR-SPEC ch. 3.2), so an allocation over an ancestor writes the lower
+     type's instances as well, and the fold of RUNTIME-SEMANTICS ch. 7.10
+     takes ordinary rules only. Two allocations on one chain are two writers
+     whatever defaults groups the chain declares: no gate. *)
+  let chain =
+    List.filter_map
+      (fun (n, dt, da, at) ->
+        match (dt, da) with Some t, Some a -> Some (n, t, a, at) | _ -> None)
+      named
+    |> chain_pairs ctx
+         ~ty:(fun (_, t, _, _) -> t)
+         ~attr:(fun (_, _, a, _) -> a)
+         ~pairs:(fun (n1, _, _, _) (n2, _, _, _) -> distinct_form n1 n2)
+    |> List.map (fun ((_, low, a, at), (_, high, _, _)) ->
+           v "WF-026" at
+             (Printf.sprintf
+                "two allocations write target (%s, %s) through its type chain — one ranging \
+                 over %s, one over %s — and an allocation is never folded into a stack, so an \
+                 instance of %s receives both shares; at most one allocation writes a target \
+                 (ch. 3.2), and a second share needs an attribute %s declares itself"
+                low a high low low low))
+  in
+  dedup_reports (pairs named @ chain)
 
 (* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
    2026-09-04, third wave). An allocation is not an expression, so the
@@ -7671,7 +7755,7 @@ let wf050 ctx =
                match l.pd_attribuut with
                | None -> []
                | Some a ->
-                   if
+                   (if
                      List.exists
                        (fun (vd : resolved_verdeling) ->
                          (match (vd.doel_type, vd.doel_attribuut) with
@@ -7688,7 +7772,37 @@ let wf050 ctx =
                      [ v "WF-050" at
                          ("an allocation also writes defaults target '" ^ l.pd_onderwerp ^ "."
                         ^ a ^ "'") ]
-                   else []))
+                   else [])
+                   (* The lift's chain arm, over the same two writes an
+                      allocation makes — its shares on `targetType`, its
+                      remainder on `sourceType` — placed on the group's chain
+                      by [chain_lower]. An allocation is never folded into the
+                      group's stack (RUNTIME-SEMANTICS ch. 7.10 folds ordinary
+                      rules only), so on the lower type's instances both write
+                      the target, above the group or below it: no gate. *)
+                   @ dedup_reports
+                       (List.concat_map
+                          (fun (vd : resolved_verdeling) ->
+                            List.filter_map
+                              (fun (part, wt, wa) ->
+                                match (wt, wa) with
+                                | Some t, Some wa when norm wa = norm a -> (
+                                    match chain_lower ctx ~ty:Fun.id l.pd_onderwerp t with
+                                    | Some (low, _) ->
+                                        Some
+                                          (v "WF-050" at
+                                             (Printf.sprintf
+                                                "an allocation also writes defaults target \
+                                                 '%s.%s' through its type chain — the group \
+                                                 declared on %s, the allocation's %s on %s — \
+                                                 and an allocation is never folded into a \
+                                                 stack, so an instance of %s has both writers"
+                                                l.pd_onderwerp a l.pd_onderwerp part t low))
+                                    | None -> None)
+                                | _ -> None)
+                              [ ("shares", vd.doel_type, vd.doel_attribuut);
+                                ("remainder", vd.bron_type, vd.restant_attribuut) ])
+                          ctx.doc.verdelingen)))
          )
        ctx.doc.prioritized_defaults)
 
@@ -7783,7 +7897,8 @@ let wf052 ctx =
    reported once, at the version on the lower type: that type is the first
    concrete type both fire on, and the key set only grows down the chain, so
    a type below it sees the same pair while it stays outside the gate and
-   has it folded once inside. *)
+   has it folded once inside. The pairing itself is [chain_pairs], which
+   WF-026's chain arm and WF-050's allocation lift read as well. *)
 let wf079 ctx =
   let has_defaults otn a =
     List.exists
@@ -7792,9 +7907,6 @@ let wf079 ctx =
         | Some la -> norm l.pd_onderwerp = norm otn && norm la = norm a
         | None -> false)
       ctx.doc.prioritized_defaults
-  in
-  let distinct_form n1 n2 =
-    match (n1, n2) with Some x, Some y -> norm x <> norm y | _ -> true
   in
   let computing =
     List.filter_map
@@ -7831,48 +7943,27 @@ let wf079 ctx =
           rest
         @ pairs rest
   in
-  let rec chain_pairs = function
-    | [] -> []
-    | (n1, ot1, a1, g1, at1) :: rest ->
-        List.filter_map
-          (fun (n2, ot2, a2, g2, at2) ->
-            let lower =
-              if norm ot1 = norm ot2 || norm a1 <> norm a2 then None
-              else if is_sub ctx ~sub:ot1 ~super:ot2 then Some (ot1, a1, at1, ot2)
-              else if is_sub ctx ~sub:ot2 ~super:ot1 then Some (ot2, a2, at2, ot1)
-              else None
-            in
-            match lower with
-            | Some (low, a, at, high)
-              when distinct_form n1 n2
-                   && validity_overlaps g1 g2
-                   && not (List.mem ("A:" ^ norm a) (chain_group_keys ctx.doc low)) ->
-                Some
-                  (v "WF-079" at
-                     (Printf.sprintf
-                        "two unconditional computing rules write target (%s, %s) through its \
-                         type chain — one declared on %s, one on %s — and no defaults group \
-                         folds them into one stack, so both fire on a %s instance; priority is \
-                         explicit (a defaults group, whose subtype base replaces the inherited \
-                         base, ch. 7.10), never implicit agenda order (ch. 7.7)"
-                        low a high low low))
-            | _ -> None)
-          rest
-        @ chain_pairs rest
+  let chain =
+    chain_pairs ctx
+      ~ty:(fun (_, t, _, _, _) -> t)
+      ~attr:(fun (_, _, a, _, _) -> a)
+      ~pairs:(fun (n1, _, _, g1, _) (n2, _, _, g2, _) ->
+        distinct_form n1 n2 && validity_overlaps g1 g2)
+      computing
+    |> List.filter_map (fun ((_, low, a, _, at), (_, high, _, _, _)) ->
+           if List.mem ("A:" ^ norm a) (chain_group_keys ctx.doc low) then None
+           else
+             Some
+               (v "WF-079" at
+                  (Printf.sprintf
+                     "two unconditional computing rules write target (%s, %s) through its \
+                      type chain — one declared on %s, one on %s — and no defaults group \
+                      folds them into one stack, so both fire on a %s instance; priority is \
+                      explicit (a defaults group, whose subtype base replaces the inherited \
+                      base, ch. 7.10), never implicit agenda order (ch. 7.7)"
+                     low a high low low)))
   in
-  (* A version paired with several writers of one target repeats one
-     sentence at one pointer (three flat writers, or two flat writers on an
-     ancestor beside one on the subtype); the reader learns nothing from the
-     second copy. *)
-  let seen = Hashtbl.create 8 in
-  List.filter
-    (fun (x : violation) ->
-      let k = (x.at, x.reason) in
-      if Hashtbl.mem seen k then false
-      else (
-        Hashtbl.add seen k ();
-        true))
-    (pairs writers @ chain_pairs computing)
+  dedup_reports (pairs writers @ chain)
 
 (* WF-054: parent-scoped uniqueness (the scope hop). Since L2 the scope
    binding IS the scoping (B8): a uniqueness carrying one is scoped, one

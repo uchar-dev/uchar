@@ -1,0 +1,1 @@
+an allocation also writes defaults target 'Wrakberging.onverdeelde rest' through its type chain — the group declared on Wrakberging, the allocation's remainder on Berging — and an allocation is never folded into a stack, so an instance of Wrakberging has both writers
