@@ -1814,6 +1814,8 @@ public final class ExecModelTranspiler {
      *  Returns a (subject -&gt; BigDecimal) {@link WaardeFn} that reads no globals, or null for any other operand —
      *  a non-temporal attribute (-&gt; the instance {@link #aggregatie}), a §13.3.6.7 multi-period / set / unresolvable
      *  navigation, or a compound / unstructured filter (-&gt; honest skip; §8.4 compounds are a later increment).
+     *  A temporal attribute whose declaration is not a number yields null as well, with {@link #tijdlijnReden} set
+     *  to the {@code Vouwwaarde.tijdlijnWeigering} sentence, and the caller skips the rule on that reason.
      *  Mirrors DrlTranspiler.tijdreeksAggregatie — the only temporal expression that collapses to a scalar (§5.1.1). */
     private WaardeFn tijdreeksTotaal(Expr.Functie f, Objecttype subject) {
         if (f.kind() != Expr.FunctieKind.TOTAAL || f.argumenten().size() != 1) return null;
