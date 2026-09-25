@@ -2,7 +2,7 @@
 
 *Status: PROPOSAL · 2026-09-25 · working prose, not normative. The
 deliverable of the card
-`backlog/doing/20260923-kenmerkinvoer-en-invoer-boven-berekening.md`, the
+`backlog/done/20260923-kenmerkinvoer-en-invoer-boven-berekening.md`, the
 card of its own that decision 7 of `DIALECT-DEFAULTS-NIET-EN-NESTING.md`
 §10 split off. It records what the executors do with case input on a
 defaults target of either kind (§2, measured), weighs the card's three
@@ -70,7 +70,8 @@ names, not wire names.
    and a consistency that deposits one §9.5 fact when opgave and
    computation are both filled and differ (§5). [M] That lowering, written
    by hand on the L5 wire, replays in ref, clingo and the Drools exec
-   branch on thirteen cases (proofs B2 and B3), each with a failing flip.
+   branch on thirteen cases (the lowering and initialisation proofs of
+   §5.4), each with a failing flip.
    It changes neither the wire nor ch. 7.8. The semantic variant — an
    input default above the ordinary defaults, per target, in ch. 7.8 — is
    the recorded alternative (§5.9).
@@ -458,15 +459,15 @@ the Catala frontend's `context` lowering already has (`PHASE5-CATALA.md`
 decision 6): §5 gives the spelling, the lowering, the explanation and the
 handling of contradicting facts; §6 gives the build card as text.
 
-*Reasons.* (a) The wire carries the lowering today: [M] proofs B2 and B3
-replay in ref, clingo and the Drools exec branch (§5.4). (b) Reading B stays
-program structure and case input stays Reading A, which
-`DIALECT-DEFAULTS-NIET-EN-NESTING.md` §6 said the form-3 card should not
-reopen. (c) The case says by the attribute it fills whether a value is a
-fact (`<naam>`) or an opgave (`opgegeven <naam>`). (d) The materialised
-computation gives an explanation and a contradiction check something to
-read, which a displaced default never leaves behind (ch. 7.1: default
-evaluation is speculative).
+*Reasons.* (a) The wire carries the lowering today: [M] the lowering and
+initialisation proofs replay in ref, clingo and the Drools exec branch
+(§5.4). (b) Reading B stays program structure and case input stays Reading
+A, which `DIALECT-DEFAULTS-NIET-EN-NESTING.md` §6 said the form-3 card
+should not reopen. (c) The case says by the attribute it fills whether a
+value is a fact (`<naam>`) or an opgave (`opgegeven <naam>`). (d) The
+materialised computation gives an explanation and a contradiction check
+something to read, which a displaced default never leaves behind (ch. 7.1:
+default evaluation is speculative).
 
 *One refinement of the main session's sketch.* The sketch placed the
 contradiction in a consistency over the materialised value. This proposal
@@ -583,8 +584,8 @@ For a marked attribute X of object type T, in L5 wire terms:
      the group's initialisation default (`initialisation: true`, its value
      as `consequence`), the lowest (ch. 7.3). It stays on X: its
      justification is "X is empty in the input facts", which on
-     `berekende X` — never in the input — would always hold (§5.4, proof
-     B3).
+     `berekende X` — never in the input — would always hold (§5.4, the
+     initialisation proof).
 
    No gevuld test is written: a default whose consequence evaluates leeg
    falls through (ch. 7.1). Without an opgave the computation decides;
@@ -613,7 +614,7 @@ where noted: the group is named `waarde`, the deviation characteristic is
 adjectival (the kind steers spelling, not execution — the WW anchor's
 NOTE measured the same for its target). Verifier `PASS` on each document.
 
-**Proof B2** (the lowering of §5.3). Pinned expectations per case:
+**The lowering proof** (the lowering of §5.3). Pinned expectations per case:
 
 | Case | Input | Pinned |
 |---|---|---|
@@ -641,8 +642,9 @@ rule "controle opgave waarde"), but the channel carries: (empty)`, clingo
 the same in its words, the exec branch `FAIL …: verwacht inconsistent
 (controle opgave waarde), werkelijk consistent`.
 
-**Proof B3** (B2 plus an authored initialisation of 25,00 on `waarde`,
-kept on `waarde` as the group's initialisation default):
+**The initialisation proof** (the lowering proof plus an authored
+initialisation of 25,00 on `waarde`, kept on `waarde` as the group's
+initialisation default):
 
 | Case | Input | Pinned |
 |---|---|---|
@@ -658,22 +660,23 @@ fail in all three. [I] Had the initialisation moved to `berekende waarde`,
 case2 would give 25.00 over the input 60.00, and case3 would report a
 deviation between the opgave 50.00 and the initialisation value 25.00.
 
-**Proof B** (the same as B2, but the guard inside the consistency: one
-assertion `Compound` `atLeast` 1 of `Predicate` `empty` on `opgegeven
-waarde`, `Predicate` `empty` on `berekende waarde`, and `Comparison`
-`equal` of the two; no deviation characteristic). Ref and clingo pass the
-same seven value cases and fail the same three flips. The Drools exec
-branch excludes the document on every case: `EXCLUDE transpiler SKIP:
-consistentie: controle opgave waarde — consistentie (schending buiten
-Phase-D scope): controle opgave waarde`. Its consistency lowering takes an
-`all` compound, leeg and gevuld predicates, characteristic checks and
-comparisons, and returns nothing for any other compound
-(`ExecModelTranspiler.java:5533-5577`, "other compound: later"; the reason
-at `:5734`).
+**The guard proof** (the same as the lowering proof, but the guard inside
+the consistency: one assertion `Compound` `atLeast` 1 of `Predicate`
+`empty` on `opgegeven waarde`, `Predicate` `empty` on `berekende waarde`,
+and `Comparison` `equal` of the two; no deviation characteristic). Ref and
+clingo pass the same seven value cases and fail the same three flips. The
+Drools exec branch excludes the document on every case: `EXCLUDE
+transpiler SKIP: consistentie: controle opgave waarde — consistentie
+(schending buiten Phase-D scope): controle opgave waarde`. Its consistency
+lowering takes an `all` compound, leeg and gevuld predicates,
+characteristic checks and comparisons, and returns nothing for any other
+compound (`ExecModelTranspiler.java:5550-5594`, "other compound: later";
+the reason at `:5751`).
 
 The probes live in `/tmp/kenmerkinvoer/` on the measuring machine
-(`proef-b/`, `proef-b2/`, `proef-b3/`, each with its `maak.py`), outside
-the repository.
+(`proef-b2/` the lowering proof, `proef-b3/` the initialisation proof,
+`proef-b/` the guard proof, each with its `maak.py`), outside the
+repository.
 
 ### 5.5 The explanation
 
@@ -705,8 +708,9 @@ follows from it (§5.4):
   computation that said otherwise — the trace `PHASE4-DEFAULTS.md` §4.1
   asks a deviation to leave.
 - An opgave without a computable value (no facts) is no contradiction and
-  deposits nothing (B2 `case4`, B3 `case3`); nor does an opgave equal to
-  the computation (B2 `case2`).
+  deposits nothing (the lowering proof's `case4`, the initialisation
+  proof's `case3`); nor does an opgave equal to the computation (the
+  lowering proof's `case2`).
 - The characteristic `afwijkende opgave X` is readable by rules, so an
   author can route a deviating case (to a manual check, say); the §9.5
   fact itself is not rule-readable in v1 (ch. 7.2).
@@ -716,10 +720,10 @@ characteristic — rejected: the deviation would leave no trace, which is
 what the hardship pattern exists to avoid. (c) A choice per marker between
 the two — not proposed: a second spelling for a choice no case asks for
 yet. (d) One consistency with the guard in an `atLeast` 1 assertion
-(proof B) — one generated name fewer, but outside the Drools exec branch's
-consistency lowering today; taking it adds an arm there (the violation of
-"at least one part holds" is "every part violated"), which is backend work
-outside a frontend card.
+(the guard proof) — one generated name fewer, but outside the Drools exec
+branch's consistency lowering today; taking it adds an arm there (the
+violation of "at least one part holds" is "every part violated"), which is
+backend work outside a frontend card.
 
 ### 5.7 Refusals, the warning, and the first card's limits
 
@@ -736,7 +740,7 @@ Each refusal is an ERROR at the declaration's line, naming its reason:
   with a unit);
 - the marker on a time-dependent attribute (WF-086: no temporal defaults
   target) or a dimensioned one (fenced by the Drools exec branch's
-  defaults lowering, `ExecModelTranspiler.java:7597-7598`);
+  defaults lowering, `ExecModelTranspiler.java:7614-7615`);
 - an allocation or an object-creation initialisation that writes X (their
   retargeting is not in the first card);
 - a writer of X on a supertype or subtype of the declaring type (the
@@ -849,8 +853,8 @@ Catala-frontend genereert het voor `context` (PHASE5-CATALA besluit 6).
 Deze kaart geeft het RegelSpraak-dialect er een declaratie voor. Geen
 wire-, spec-, verifier- of uitvoerderswijziging: de lowering hieronder is
 met de hand op de L5-wire gemeten en speelt in ref, clingo en de
-Drools-exectak (voorstel §5.4, proeven B2 en B3: dertien cases, elk met
-een omgekeerde tegencase).
+Drools-exectak (voorstel §5.4, de lowering- en de initialisatieproef:
+dertien cases, elk met een omgekeerde tegencase).
 
 ## Ontwerp (voorstel §5.1–5.6)
 
@@ -917,7 +921,7 @@ een omgekeerde tegencase).
 
 - (a) Inertheid gemeten, niet aangenomen (de methode van `DIVERGENCES.md`
   §6): elk vlak RegelSpraak-document dat de werkbank bereikt, door het
-  frontend vóór en na het token, IR plus diagnostics vergeleken; de 73
+  frontend vóór en na het token, IR plus diagnostics vergeleken; alle
   `bron.rgs`-goldens byte-identiek via gate 10.
 - (b) Rood-eerst JUnit-getuigen: de vijf stukken van de lowering (namen,
   volgorde, `source.snippet`), elke weigering en de waarschuwing, met de
@@ -970,9 +974,9 @@ consistentielowering van de Drools-exectak (voorstel §5.6, alternatief d).
 5. **The characteristic marker** (§5.8) waits for a statute that needs an
    opgave "not present" above a computed attribution.
 6. **The Drools exec branch lowers no consistency whose assertion is a
-   compound other than `all`** (`ExecModelTranspiler.java:5577`): any such
-   consistency is excluded, whatever card writes it. Found by proof B; no
-   golden carries one today.
+   compound other than `all`** (`ExecModelTranspiler.java:5594`): any such
+   consistency is excluded, whatever card writes it. Found by the guard
+   proof; no golden carries one today.
 7. **The explanation** (§5.5) depends on the regelspraak-java card that
    makes the explanation read defaults groups at all
    (`backlog/new/20260923-regelspraak-java-defaults-in-scenario-en-werkbank.md`);
