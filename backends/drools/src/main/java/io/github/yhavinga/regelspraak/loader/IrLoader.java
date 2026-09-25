@@ -33,6 +33,8 @@ import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
 import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Tijdlijn;
+import io.github.yhavinga.regelspraak.kern.Tijdrekening;
+import io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid;
 import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
 
 import java.math.BigDecimal;
@@ -376,6 +378,7 @@ public final class IrLoader {
         if (rules.has("prioritizedDefaults"))
             lijst(rules, "/rules", "prioritizedDefaults", (p, n) -> prioritizedDefaults.add(prioritizedDefaults(n)));
         keurOnderwerpen();
+        keurTypering();
         return m;
     }
 
@@ -1280,8 +1283,11 @@ public final class IrLoader {
             }
             case "Binary" -> {
                 String p = padVan(n);
-                yield new Expr.Binair(enumWaarde(Spelling.BINARY_OP, "Binary.op", tekst(n, p, "op"), p + "/op"),
+                Expr.Binair b = new Expr.Binair(
+                        enumWaarde(Spelling.BINARY_OP, "Binary.op", tekst(n, p, "op"), p + "/op"),
                         expr(knoopVeld(n, "left")), expr(knoopVeld(n, "right")), typeVeld(n), bron(n));
+                plekken.put(b, p);
+                yield b;
             }
             case "Aggregation" -> aggregation(n);
             case "BuiltinCall" -> builtinCall(n);
@@ -2584,5 +2590,244 @@ public final class IrLoader {
             if (!e.isObject()) throw new Documentfout(padVan(a) + "/" + i, "expected a JSON object, got " + kort(e));
             f.accept(e);
         }
+    }
+
+    // --- WF-035 / WF-038: the operand typing of date arithmetic and of the builtins --------------------------------
+
+    /** The operand typing the verifier refuses under WF-035 (date ± duration: the form, and the duration's unit) and
+     *  WF-038 (the operand of a square root or an absolute value, and the duration clause), refused here at load in
+     *  the sentence the verifier, {@code ref} and the ASP backend share ({@code spec/verifier/lib/checks.ml}), at the
+     *  pointer the verifier names. Without it both branches lowered what they could and answered for the rest in
+     *  words of their own: a duration plus a date PLAYED with the operands silently commuted, a text operand under a
+     *  square root faulted at fire, and the other forms were refused as rules out of scope (measured 2026-09-25).
+     *  Asked once the whole document is read, as the verifier asks it: a reference's type is its declaration's, a
+     *  binder read's its binding's ({@link EffectieveEenheid#typeVan}), and a type the document does not give
+     *  defers, as the verifier defers on it. */
+    private void keurTypering() {
+        EffectieveEenheid typen = new EffectieveEenheid(lets);
+        for (ResolvedRegel r : m.resolvedRegels) {
+            keurTypen(r.waarde(), typen);
+            keurTypen(r.voorwaarde(), typen);
+        }
+        for (ResolvedDagsoort d : m.resolvedDagsoorten) keurTypen(d.voorwaarde(), typen);
+        for (ResolvedObjectCreatie oc : m.objectCreaties) {
+            for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) keurTypen(t.waarde(), typen);
+            keurTypen(oc.voorwaarde(), typen);
+        }
+        for (ResolvedVerdeling v : m.verdelingen) keurTypen(v.voorwaarde(), typen);
+        for (ResolvedConsistentie c : m.consistenties) keurTypen(c.assertie(), typen);
+        for (ResolvedFeitCreatie fc : m.feitCreaties) keurTypen(fc.voorwaarde(), typen);
+        for (PrioritizedDefaults pd : prioritizedDefaults)
+            for (Default d : pd.defaults()) keurTypenStandaard(d, typen);
+    }
+
+    private void keurTypenStandaard(Default d, EffectieveEenheid typen) {
+        keurTypen(d.voorwaarde(), typen);
+        keurTypen(d.consequentie(), typen);
+        if (d.excepties() != null)
+            for (ExceptionGroup g : d.excepties().leden())
+                for (Default x : g.defaults()) keurTypenStandaard(x, typen);
+    }
+
+    /** Every node below a value position. Exhaustive over the sealed union, so a node the union grows is a compile
+     *  error here rather than a subtree the walk skips. */
+    private void keurTypen(Expr e, EffectieveEenheid typen) {
+        switch (e) {
+            case null -> { }
+            case Expr.Binair b -> {
+                keurDatumrekening(b, typen);
+                keurTypen(b.links(), typen);
+                keurTypen(b.rechts(), typen);
+            }
+            case Expr.Functie f -> {
+                keurBouwsteen(f, typen);
+                for (Expr x : f.argumenten()) keurTypen(x, typen);
+                keurTypen(f.leegwaarde(), typen);
+                keurTypen(f.filter(), typen);
+            }
+            case Expr.Afgerond x -> keurTypen(x.basis(), typen);
+            case Expr.Begrensd x -> {
+                keurTypen(x.basis(), typen); keurTypen(x.minimum(), typen); keurTypen(x.maximum(), typen);
+            }
+            case Expr.TekstReeks t -> {
+                for (Expr.TekstReeks.Deel d : t.delen())
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurTypen(i.expr(), typen);
+            }
+            case Expr.Let l -> { keurTypen(l.value(), typen); keurTypen(l.body(), typen); }
+            case Expr.IfThenElse k -> {
+                keurTypen(k.conditie(), typen); keurTypen(k.dan(), typen); keurTypen(k.anders(), typen);
+            }
+            case Expr.InstanceSetUnion u -> {
+                for (Expr.InstanceSetUnion.Tak t : u.takken()) keurTypen(t.filter(), typen);
+            }
+            case Expr.DimensieCel c -> { }
+            case Expr.Literal x -> { }
+            case Expr.AttribuutRef x -> { }
+            case Expr.ParameterRef x -> { }
+            case Expr.VariabeleRef x -> { }
+            case Expr.BinderRef x -> { }
+            case Expr.Constante x -> { }
+            case Expr.Onopgelost x -> { }
+        }
+    }
+
+    private void keurTypen(Conditie c, EffectieveEenheid typen) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Vergelijking v -> { keurTypen(v.links(), typen); keurTypen(v.rechts(), typen); }
+            case Conditie.Predicaat p -> keurTypen(p.operand(), typen);
+            case Conditie.Periode p -> { keurTypen(p.vanaf(), typen); keurTypen(p.tot(), typen); }
+            case Conditie.Samengesteld x -> { for (Conditie o : x.onderdelen()) keurTypen(o, typen); }
+            case Conditie.Kwantorvouw kv -> { keurTypen(kv.filter(), typen); keurTypen(kv.toets(), typen); }
+            case Conditie.Rollidmaatschap r -> { }
+            case Conditie.Kenmerk k -> { }
+            case Conditie.Regelversie x -> { }
+            case Conditie.Onopgelost x -> { }
+            case Conditie.VerreRollidmaatschap x -> { }
+        }
+    }
+
+    /** WF-035 on plus and min (RUNTIME-SEMANTICS ch. 3.8): the form is decided on the date type of either precision
+     *  — two dates, a duration on the left, or a date on the left and the step — and the step's duration is a number
+     *  whose unit is a time unit, sub-day only on a millisecond-precision date, or a declared day kind. */
+    private void keurDatumrekening(Expr.Binair b, EffectieveEenheid typen) {
+        if (b.op() != Expr.BinOp.PLUS && b.op() != Expr.BinOp.MIN) return;
+        Datatype l = typen.typeVan(b.links());
+        Datatype r = typen.typeVan(b.rechts());
+        if (!isDatumType(l) && !isDatumType(r)) return;
+        String p = plekken.get(b);
+        if (isDatumType(l) && isDatumType(r)) throw new Documentfout(p, DATUM_PLUS_DATUM);
+        if (!isDatumType(l)) throw new Documentfout(p, duurVoorDatumWeigering(b.op() == Expr.BinOp.MIN));
+        Eenheid u = r == null ? null : r.eenheidOf();
+        if (u != null) {
+            String tijd = Tijdrekening.chronoUnit(u);
+            if (tijd != null) {
+                if (SUBDAG.contains(tijd) && l instanceof Datatype.DatumInDagen)
+                    throw new Documentfout(p, SUBDAG_OP_DAGDATUM);
+            } else if (m.dagsoortVoorEenheid(u.afkorting()) == null)
+                throw new Documentfout(p + "/right", datumstapOnbekendeEenheid(afkortingVan(u)));
+        } else if (bekendType(r) && !r.isGetalachtig())
+            throw new Documentfout(p + "/right", datumstapOperandWeigering(r));
+        else if (bekendType(r)) throw new Documentfout(p + "/right", DATUMSTAP_ZONDER_TIJDSEENHEID);
+    }
+
+    /** WF-038 on the builtins that type their operands here: a square root and an absolute value take a number; a
+     *  duration takes two dates of one precision and counts in its node type's unit, a time unit — sub-day only over
+     *  millisecond-precision operands — or a declared day kind. In the verifier's order and at its pointers. */
+    private void keurBouwsteen(Expr.Functie f, EffectieveEenheid typen) {
+        Expr.FunctieKind k = f.kind();
+        List<Expr> args = f.argumenten();
+        String p = plekken.get(f);
+        if ((k == Expr.FunctieKind.WORTEL || k == Expr.FunctieKind.ABSOLUTE_WAARDE) && args.size() == 1) {
+            Datatype t = typen.typeVan(args.get(0));
+            if (bekendType(t) && !t.isGetalachtig()) throw new Documentfout(p, numeriekeOperandWeigering(k, t));
+            return;
+        }
+        if ((k != Expr.FunctieKind.TIJDSDUUR && k != Expr.FunctieKind.ABSOLUTE_TIJDSDUUR) || args.size() != 2) return;
+        Datatype ta = typen.typeVan(args.get(0));
+        Datatype tb = typen.typeVan(args.get(1));
+        for (int i = 0; i < 2; i++) {
+            Datatype t = i == 0 ? ta : tb;
+            if (bekendType(t) && !t.isDatum()) throw new Documentfout(p + "/arguments/" + i, duurOperandWeigering(k, t));
+        }
+        if (isDatumType(ta) && isDatumType(tb) && ta.getClass() != tb.getClass())
+            throw new Documentfout(p, duurGemengdePrecisie(k));
+        Datatype typ = f.type();
+        if (typ == null) throw new Documentfout(p, duurZonderKnooptype(k));
+        Eenheid u = typ.eenheidOf();
+        if (u == null) throw new Documentfout(p, duurZonderTijdseenheid(k));
+        String tijd = Tijdrekening.chronoUnit(u);
+        if (tijd != null) {
+            if (SUBDAG.contains(tijd) && (ta instanceof Datatype.DatumInDagen || tb instanceof Datatype.DatumInDagen))
+                throw new Documentfout(p, duurSubdagOpDagdatums(k));
+        } else if (m.dagsoortVoorEenheid(u.afkorting()) == null)
+            throw new Documentfout(p, duurOnbekendeEenheid(k, afkortingVan(u)));
+    }
+
+    /** The calendar units below a day, as {@link Tijdrekening#chronoUnit} names them. */
+    private static final java.util.Set<String> SUBDAG = java.util.Set.of("HOURS", "MINUTES", "SECONDS", "MILLIS");
+
+    private static boolean isDatumType(Datatype t) {
+        return t != null && t.isDatum();
+    }
+
+    /** Whether the document gives this type: an absent or unknown one defers, as the verifier's does. */
+    private static boolean bekendType(Datatype t) {
+        return t != null && !t.isOnbekend();
+    }
+
+    private static String afkortingVan(Eenheid u) {
+        return u.afkorting() == null ? "?" : u.afkorting();
+    }
+
+    /** The verifier's name of a datatype in these sentences ({@code datatype_kind}); an unknown type is never named,
+     *  it defers. */
+    static String typeSoort(Datatype d) {
+        return switch (d) {
+            case Datatype.Numeriek x -> "number";
+            case Datatype.Percentage x -> "percentage";
+            case Datatype.Tekst x -> "text";
+            case Datatype.Booleaan x -> "boolean";
+            case Datatype.DatumInDagen x -> "date-day";
+            case Datatype.DatumTijd x -> "date-ms";
+            case Datatype.Enumeratie x -> "enumeration";
+            case Datatype.Onbekend x -> throw new IllegalArgumentException("an unknown type defers and is never named");
+        };
+    }
+
+    // The sentences below are the shared OCaml ones, word for word (spec/verifier/lib/checks.ml).
+
+    static final String DATUM_PLUS_DATUM =
+            "date \u00b1 date is ill-formed (date arithmetic takes a date and a duration)";
+
+    static String duurVoorDatumWeigering(boolean min) {
+        return min ? "duration \u2212 date is ill-formed (subtraction admits the date on the left only)"
+                : "duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)";
+    }
+
+    static final String DATUMSTAP_ZONDER_TIJDSEENHEID =
+            "date \u00b1 duration: the duration operand carries no time unit";
+
+    static final String SUBDAG_OP_DAGDATUM =
+            "sub-day time unit on a day-precision date (millisecond precision required)";
+
+    static String datumstapOnbekendeEenheid(String afkorting) {
+        return "date \u00b1 duration: the duration unit '" + afkorting
+                + "' is neither a recognised time unit nor a declared day kind";
+    }
+
+    static String datumstapOperandWeigering(Datatype d) {
+        return "date \u00b1 duration: the duration operand is " + typeSoort(d)
+                + ", must be a number carrying a time unit";
+    }
+
+    static String numeriekeOperandWeigering(Expr.FunctieKind k, Datatype d) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeSoort(d) + ", must be a number";
+    }
+
+    static String duurOperandWeigering(Expr.FunctieKind k, Datatype d) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " operand is " + typeSoort(d) + ", must be a date";
+    }
+
+    static String duurGemengdePrecisie(Expr.FunctieKind k) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " operands mix date precisions (both must share one precision)";
+    }
+
+    static String duurZonderKnooptype(Expr.FunctieKind k) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " without a node type (the counted unit is the node type's unit)";
+    }
+
+    static String duurZonderTijdseenheid(Expr.FunctieKind k) {
+        return Spelling.BUILTIN_KIND.spelling(k) + " without a recognised time unit on its node type";
+    }
+
+    static String duurSubdagOpDagdatums(Expr.FunctieKind k) {
+        return "sub-day " + Spelling.BUILTIN_KIND.spelling(k)
+                + " unit on day-precision operands (millisecond precision required)";
+    }
+
+    static String duurOnbekendeEenheid(Expr.FunctieKind k, String afkorting) {
+        return Spelling.BUILTIN_KIND.spelling(k) + ": the counted unit '" + afkorting
+                + "' is neither a recognised time unit nor a declared day kind";
     }
 }
