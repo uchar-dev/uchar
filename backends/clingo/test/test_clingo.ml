@@ -6169,6 +6169,73 @@ let () =
     ~ir:(venster_doc ~kind:"sum" ~attribuut:"vondstdatum" ~doel:"eerste vondstdag")
     ~case_text:(venster_singleton_case ~attribuut:"eerste vondstdag" ~waarde:"2025-06-30")
 
+(* --- de TIJDLIJN-helft: eigen tijdlijntotaal, klip en pro-rata-basis over
+   een datum -----------------------------------------------------------------
+
+   De tijdlijnzuster van de setbron-weigering hierboven, op de drie vormen
+   die een datum met roosterperioden of dagbreuken VERMENIGVULDIGEN: de eigen
+   tijdlijntotaal, de gedurende-klip en de pro-rata-basis. Sinds de kaart
+   ref-klipvouw-nul eist WF-091 (IR-SPEC ch. 4.1) een Number als operand van
+   `sum` en `total` en als pro-rata-basis, dus hun drie documenten zijn
+   negatiefs zonder casus en draaien door geen uitvoerder. Deze vertaling
+   houdt haar eigen weigering als tweede linie, met de zinnen ongewijzigd; het
+   corpus pint alleen de verifierweigering, deze suite pint die van de
+   vertaling. Per vorm het document van de negatief
+   (`corpus/negatief/wf091-tijdlijntotaal-datum`, `wf091-klipvouw-datum`,
+   `wf091-prorata-datumbasis`; geminificeerd, als JSON gelijk) met de invoer
+   van de vroegere rode casus. De weigering hangt aan de DECLARATIE, dus de
+   casus bepaalt alleen wat de vertaling te lezen krijgt. *)
+
+let tijdlijntotaal_datum_doc =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"bewaarvergoeding per maand","datatype":{"node":"Date","precision":"day"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"bewaargeld","datatype":{"node":"Date","precision":"day"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"spellings":["\u20ac","euro","euros"]}]},{"node":"UnitSystem","name":"Bewaartijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Bewaartijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"bewaargeld van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"bewaargeld","subjectType":"Jutter","source":{"snippet":"Het bewaargeld van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"bewaarvergoeding per maand","subjectType":"Jutter","source":{"snippet":"zijn bewaarvergoeding per maand"}}],"elementType":"Jutter","type":{"node":"Date","precision":"day"},"source":{"snippet":"het totaal van zijn bewaarvergoeding per maand"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let klipvouw_datum_doc =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"wachtvergoeding per maand","datatype":{"node":"Date","precision":"day"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}}],"characteristics":[{"node":"Characteristic","name":"wachtplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]},{"node":"ObjectType","name":"Klipjutter","supertype":"Jutter","animate":true,"plural":"Klipjutters","attributes":[{"node":"Attribute","name":"wachtsom","datatype":{"node":"Date","precision":"day"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"wachtsom van een klipjutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"wachtsom","subjectType":"Klipjutter","source":{"snippet":"De wachtsom van een Klipjutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"wachtvergoeding per maand","subjectType":"Klipjutter","source":{"snippet":"zijn wachtvergoeding per maand"}}],"elementType":"Klipjutter","filter":{"node":"CharacteristicCheck","characteristic":"wachtplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij wachtplichtig is"}},"type":{"node":"Date","precision":"day"},"source":{"snippet":"het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let prorata_datumbasis_doc =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Date","precision":"day"},"timeline":{"node":"TimelineFacet","granularity":"year","count":1}},{"node":"Attribute","name":"borgdeel","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"month","type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let () =
+  faults_with ~name:"WF-091 tweede linie: de eigen tijdlijntotaal over een datum weigert bij naam"
+    ~ir:tijdlijntotaal_datum_doc
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+      "attributes": { "bewaarvergoeding per maand": { "date": "2024-01-15" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+    ~needle:
+      "the total over the timeline of \"bewaarvergoeding per maand\" on \"Jutter\" multiplies \
+       DATE-valued timeline segments";
+  faults_with ~name:"WF-091 tweede linie: de gedurende-klip over een datum weigert bij naam"
+    ~ir:klipvouw_datum_doc
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "K1", "objectType": "Klipjutter",
+      "attributes": { "wachtvergoeding per maand": { "timeline": [
+        { "from": "2023-07-01", "to": "2023-09-01", "value": { "date": "2024-01-15" } } ] } },
+      "roles": {}, "characteristics": [],
+      "characteristicTimelines": { "wachtplichtig": [ { "from": "2023-07-01", "to": "2023-08-01" } ] } } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+    ~needle:
+      "the gedurende-clipped total over the timeline of \"wachtvergoeding per maand\" on \
+       \"Klipjutter\" multiplies DATE-valued timeline segments";
+  faults_with ~name:"WF-091 tweede linie: de pro-rata-basis over een datum weigert bij naam"
+    ~ir:prorata_datumbasis_doc
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+      "attributes": { "borgtarief": { "timeline": [
+        { "from": "2024-01-01", "to": "2025-01-01", "value": { "date": "2024-01-18" } } ] } },
+      "roles": {}, "characteristics": [],
+      "characteristicTimelines": { "borgplichtig": [ { "from": "2024-01-01", "to": "2024-02-01" } ] } } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+    ~needle:
+      "the pro-rata part (timeProportionalPart) of the base \"borgtarief\" on \"Jutter\" scales \
+       a DATE-valued base"
+
 (* WF-044 op de CONDITIE-positie.
 
    De expressie-arm van deze vertaler werpt de onopgelost-fout al sinds de
