@@ -277,8 +277,15 @@ final class ExpressieBouwer {
             Expr[] mm = grenzen(s.begrenzing());
             // §6.1.4: each bound must be order-comparable with the bounded value (same numeric
             // family, unit-convertible) — else the clamp is meaningless and lowers to invalid DRL.
-            if (mm[0] != null) meldBegrenzing(basis, mm[0], "minimum", s);
-            if (mm[1] != null) meldBegrenzing(basis, mm[1], "maximum", s);
+            // the base is one position: a non-numeric base is reported once, as the verifier reports it
+            String basisFout = Typering.begrenzingsBasis(basis.type());
+            if (basisFout != null)
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(
+                        RegelSpraakModel.Severity.ERROR, basisFout, s.getStart().getLine()));
+            else {
+                if (mm[0] != null) meldBegrenzing(basis, mm[0], "minimum", s);
+                if (mm[1] != null) meldBegrenzing(basis, mm[1], "maximum", s);
+            }
             return new Expr.Begrensd(basis, mm[0], mm[1], bron);
         }
         // GEEN GETUIGE: expressie heeft zeven gelabelde takken en alle zeven staan hierboven, dus geen

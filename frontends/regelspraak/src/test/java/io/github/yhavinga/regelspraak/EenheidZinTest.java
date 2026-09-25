@@ -85,5 +85,8 @@ class EenheidZinTest {
                 "De datumkopie van een Jutter moet gesteld worden op zijn vondstdatum, met een minimum van 0."));
         assertEquals(fout("clamp minimum is text, must be numeric"), meldingen("",
                 "De uitkomst van een Jutter moet gesteld worden op zijn telling, met een minimum van zijn naam."));
+        // the base is one position, reported once as the verifier reports it, however many bounds the clamp has
+        assertEquals(fout("clamp base is text, must be numeric"), meldingen("",
+                "De naamkopie van een Jutter moet gesteld worden op zijn naam, met een minimum van 0 en een maximum van 5."));
     }
 }

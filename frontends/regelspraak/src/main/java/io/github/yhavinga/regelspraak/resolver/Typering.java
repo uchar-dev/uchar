@@ -184,14 +184,21 @@ public final class Typering {
      *  side is Onbekend (no claim). */
     public static String begrenzing(Datatype basis, Datatype grens, String welke) {
         if (basis.isOnbekend() || grens.isOnbekend()) return null;
-        if (!basis.isGetalachtig())
-            return "clamp base is " + soortWoord(basis) + ", must be numeric";
+        String basisFout = begrenzingsBasis(basis);
+        if (basisFout != null) return basisFout;
         if (!grens.isGetalachtig())
             return "clamp " + welke + " is " + soortWoord(grens) + ", must be numeric";
         Eenheid eb = basis.eenheidOf(), eg = grens.eenheidOf();
         if (eb != null && eg != null && !eb.convertibleNaar(eg))
             return "clamp " + welke + " and base have incompatible units";
         return null;
+    }
+
+    /** §6.1.4 the bounded value must be Numeriek/Percentage: the verifier's WF-035 sentence for the clamp's base, or
+     *  null. The base is one position whatever the number of bounds, so a caller reports it once. */
+    public static String begrenzingsBasis(Datatype basis) {
+        if (basis.isOnbekend() || basis.isGetalachtig()) return null;
+        return "clamp base is " + soortWoord(basis) + ", must be numeric";
     }
 
     /** §4.12/4.13 Tabel 22/23 — minimale/maximale waarde van (getalaggregatiefunctie): every
