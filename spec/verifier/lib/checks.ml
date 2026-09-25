@@ -4928,8 +4928,15 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       argument of a count. Keyed on the kind and the arity and
                       NOT on elementType, so a count that carries a source
                       of its own beside the union is reported once — by clause
-                      (c), which is what is wrong with it — instead of twice. *)
-                   walk_expr ctx ~binders ~subject ~union_ok:(f.kind = Aantal && arity = 1) p a)
+                      (c), which is what is wrong with it — instead of twice.
+                      Under any other kind that carries an elementType the
+                      union stands at the fold source, and the fold-source arm
+                      of WF-037 above names it as the operand that is no
+                      source: reported once, there, in the sentence ref, the
+                      ASP backend and the Drools loader give. *)
+                   walk_expr ctx ~binders ~subject
+                     ~union_ok:((f.kind = Aantal && arity = 1) || non_source <> None)
+                     p a)
              f.argumenten)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
          timeline operation; its condition is an own temporal
