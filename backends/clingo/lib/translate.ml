@@ -82,7 +82,7 @@ let rec clip_member_qualifications (c : conditie) =
       let naam = Option.value kenmerk ~default:"?" in
       if eigenaar <> None then
         fault
-          "owner on the gedurende clip member %S: the clip reads the subject's own \
+          "host on the gedurende clip member %S: the clip reads the subject's own \
            characteristic timeline (WF-097)" naam;
       if periode <> None then
         fault
