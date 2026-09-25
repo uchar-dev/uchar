@@ -40,3 +40,9 @@ May touch: `backends/clingo/**`, `corpus/golden/ww-herleving-inkomen-rgs/**`
 (nieuw), `scripts/check-noop.sh` en `scripts/check-drools.sh`
 (**voorstel**), kaartverplaatsing. Niet in deze kaart: de literaltypering
 van de frontend (die draagt de toka-pariteit) en de ankers.
+
+## U-besluiten (hoofdsessie, 2026-09-25, bij de claim)
+
+- U1 De gesplitste geld-×-tariefcodering in `backends/clingo/lib/translate.ml` (`money_mult_shape`, r. ~8130–8150) draagt een tarief met ten hoogste vier decimalen door het tarief exact naar schaal vier te brengen (0,875 op schaal 3 = 8750 op schaal 4); geen verandering voor tarieven die al vier decimalen dragen; een check in `backends/clingo/test/test_clingo.ml` (mandaat) met rood-eerst op de WW-emissie (de literal op drie decimalen).
+- U2 De tweeling `corpus/golden/ww-herleving-inkomen-rgs/`: de bron uit `spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §8.2 (sinds de fixronde van dialect-uitzondering-op-uitzondering draagt de emissie twee `source`-records meer op de uitzonderingsgroepen), emissie als `ir.json` (gate 10 byte-identiek), de tien ankercases byte-gelijk, NOTE met de structurele diff en triage (ook het naamverschil van de groep: `name` is geen `source`), ref ≡ clingo ≡ Drools-exec; gate 7: `case7-invoer-staat-tegen-blokkade` als overlever met de reden van het anker (**voorstel**); gate 12: `EXPECTED_PLAYED` +1 en klasse (A) van `DRL_CHANNEL` +1 met de koptelling (**voorstel**; de hoofdsessie telt de pins van parallelle kaarten op). De registerzin voor CONSTRUCTS rij 8 (de toelating) in het Result.
+- U3 Gates 1–8, 10, 12, 13.
