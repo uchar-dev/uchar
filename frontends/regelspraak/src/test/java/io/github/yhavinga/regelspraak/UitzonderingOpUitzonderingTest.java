@@ -529,6 +529,29 @@ class UitzonderingOpUitzonderingTest {
                 + "lid van een 'Uitzonderingen ongeordend:'-blok zonder drager"), d.message());
     }
 
+    // -------------------------------------------------------------------- a shared conjunct is judged once
+
+    @Test void een_marker_in_de_basisvoorwaarde_wordt_eenmaal_gemeld() {
+        // The exception repeats the base's condition, the very same node: one marker, one WARNING, and WF-113 (b)
+        // holds with the marker twice on the wire.
+        RegelSpraakModel m = Resolver.resolve(MODEL + regel("uitsluiting", UIT, "de Jutter een zeewaardige ploeg is")
+                + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is"));
+        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.diagnostics);
+        assertEquals(1, m.diagnostics.stream().filter(d -> d.message().startsWith("onopgelost: ")).count(),
+                () -> "verwachtte één melding voor de ene marker: " + m.diagnostics);
+        String json = IrEmitter.emit(m);
+        assertEquals(2, Verslag.markerBronnen(json).size(), "de marker staat in de basis en in de conjunctie");
+        Verslag.verantwoord(json);
+    }
+
+    @Test void een_venster_onder_geen_in_de_basisvoorwaarde_weigert_eenmaal() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL
+                + regel("uitsluiting", UIT, "hij aan geen van de volgende voorwaarden voldoet:\n"
+                        + "        - het is de periode vanaf dd. 01-01-2024\n        - hij is geschorst")
+                + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is")));
+        assertTrue(d.message().contains("WF-112"), d.message());
+    }
+
     // -------------------------------------------------------------------- annotations and the scenario layer
 
     @Test void de_annotatie_van_een_genest_blok_staat_op_zijn_eigen_default() {

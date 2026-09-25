@@ -185,6 +185,11 @@ CONSISTENT           : 'consistent'           ; // 'de gegevens zijn consistent'
 // 'Uitzondering'), so the two never collide. Inert on official v2.3.0 documents (the phrase and the
 // keywords below occur nowhere in the flat corpus).
 UITZONDERING_OP : 'Uitzondering' WSP 'op' ; // ordered exception block header (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2)
+// 'Afwijking van' opens a deviation: a block above a named BASE rule that carries its own condition only, where
+// 'Uitzondering op' conjoins its carrier's (grammar/DIVERGENCES.md §4, form 2). Whole-phrase, as UITZONDERING_OP:
+// it wins by maximal munch only when the complete phrase is present, so a lone 'Afwijking' stays a name word. Inert
+// on official v2.3.0 documents and on every source in the repository (the phrase occurs in none of them).
+AFWIJKING_VAN : 'Afwijking' WSP 'van' ; // deviation block header (grammar/DIVERGENCES.md §4)
 
 // --- GegevensSpraak phrases ---
 EXTENSIE_VAN_OBJECTTYPE : 'Extensie' WSP 'van' WSP 'objecttype'         ; // §13.3.1.2

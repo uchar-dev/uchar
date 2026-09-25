@@ -50,20 +50,25 @@ regelSpraakDocument
 // posture regelGroep and scenariotoetsen already take (the header tokens occur nowhere in v2.3.0 source). The
 // resolver lowers them to PrioritizedDefaults nodes; official documents parse EXACTLY as before.
 //
-// Ordered exception: 'Uitzondering op <basisregel>: <naam>' then a normal rule body (geldig-clause +
-// kenmerktoekenning/gelijkstelling + optional indien). Stacks above the named base rule; the resolver resolves
-// the base, enforces the SAME target, and builds one PrioritizedDefaults group (exception default(s) above,
-// base default below).
-// The base name runs up to the ':' (it never contains one); the exception's own name is a regelNaam (up to
+// Ordered exception: 'Uitzondering op <drager>: <naam>' then a normal rule body (geldig-clause +
+// kenmerktoekenning/gelijkstelling + optional indien). The carrier is a base rule, another exception or deviation,
+// or a member of an unordered block; the blocks form a tree under a base rule, and the resolver lowers each tree
+// to one PrioritizedDefaults group: the first level as chain positions above the base, deeper levels as nested
+// exception groups, the later-written sibling higher. 'Uitzondering op' is restrictive: the resolver conjoins the
+// carrier's justification with the block's own condition. 'Afwijking van <basisregel>: <naam>' shares the
+// production: a chain position above a BASE rule only, with its own condition only (grammar/DIVERGENCES.md §4).
+// The carrier name runs up to the ':' (it never contains one); the block's own name is a regelNaam (up to
 // 'geldig'), so the body's regelVersie+ is reached exactly as a §13.4.2 regel is.
-uitzonderingRegel     : UITZONDERING_OP uitzonderingBasisNaam COLON regelNaam regelVersie+ ;
-uitzonderingBasisNaam : ~( COLON | GELDIG | GELDIG_CAP )+ ; // base-rule name, bounded by the ':'
+uitzonderingRegel     : ( UITZONDERING_OP | AFWIJKING_VAN ) uitzonderingBasisNaam COLON regelNaam regelVersie+ ;
+uitzonderingBasisNaam : ~( COLON | GELDIG | GELDIG_CAP )+ ; // carrier name, bounded by the ':'
 
 // Unordered group: 'Uitzonderingen ongeordend:' scopes CONSECUTIVE ordinary regels that write ONE shared
-// target (the §9.5 surface). The resolver builds sibling declared-unordered defaults groups (one per member); members
-// deciding differently on one target route to the §9.5 channel. Like regelGroep, the group ends at the first
-// construct that is not a regel, so it is inert on any non-extension document.
-uitzonderingGroep     : UITZONDERINGEN ONGEORDEND COLON regel+ ;
+// target (the §9.5 surface). Without a carrier the resolver builds sibling declared-unordered defaults groups (one
+// per member); with 'op <drager>' the members are unordered exceptions on that carrier, each inheriting the
+// carrier's justification, lowered to one exception group per member. Members deciding differently route to the
+// §9.5 channel. Like regelGroep, the group ends at the first construct that is not a regel, so it is inert on any
+// non-extension document.
+uitzonderingGroep     : UITZONDERINGEN ONGEORDEND ( OP uitzonderingBasisNaam )? COLON regel+ ;
 
 // §9.10 Regelgroep — a DOCUMENTED EXTENSION, not a §13 production (v2.3.0 gives regelgroep no written
 // form; see grammar/DIVERGENCES.md '§9.10 recursie / regelgroep'). A `Regelgroep <naam>` header,
@@ -74,9 +79,10 @@ uitzonderingGroep     : UITZONDERINGEN ONGEORDEND COLON regel+ ;
 // non-extension document. The name is a `kaleNaam` (it stops at `is` and at the `Regel` keyword, so it
 // never swallows the marker or the first member). REGELGROEP is listed before `regel` in the document
 // alternation so a leading 'Regelgroep' opens a group, not a bare rule. An extension block (`Uitzondering
-// op`, `Uitzonderingen ongeordend`) is no member either, and the resolver REFUSES one that stands directly
-// after a group's last member or whose base rule is a member (grammar/DIVERGENCES.md §4, "Interaction with
-// Regelgroep"): the group exists only to mark recursion, and without the refusal it ended there in silence.
+// op`, `Afwijking van`, `Uitzonderingen ongeordend`) is no member either, and the resolver REFUSES one that
+// stands directly after a group's last member or whose base rule is a member (grammar/DIVERGENCES.md §4,
+// "Interaction with Regelgroep"): the group exists only to mark recursion, and without the refusal it ended
+// there in silence.
 regelGroep : REGELGROEP kaleNaam ( IS RECURSIEF )? groepLid+ ;
 groepLid   : regel | beslistabel ;
 

@@ -4,6 +4,7 @@ import io.github.yhavinga.regelspraak.ir.Conditie;
 import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
 import io.github.yhavinga.regelspraak.ir.Expr;
 import io.github.yhavinga.regelspraak.ir.Default;
+import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
 import io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie;
 import io.github.yhavinga.regelspraak.ir.Geldigheid;
 import io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie;
@@ -195,9 +196,9 @@ final class RuleChecker {
 
     // ==============================================================================================
     // §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) prioritized-defaults lowering — the uchar DIALECT EXTENSION
-    // 'Uitzondering op' / 'Uitzonderingen ongeordend'. Recognition only ever lowers the extension's OWN
-    // blocks; a flat rule family is NEVER folded into a defaults group (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2
-    // rejects that — the source never encoded the priority). Both forms LIFT already-resolved ResolvedRegels
+    // 'Uitzondering op' / 'Afwijking van' / 'Uitzonderingen ongeordend'. Recognition only ever lowers the extension's
+    // OWN blocks; a flat rule family is NEVER folded into a defaults group (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2
+    // rejects that — the source never encoded the priority). All forms LIFT already-resolved ResolvedRegels
     // out of resolvedRegels into PrioritizedDefaults nodes: WF-050 forbids both a rule AND a defaults group on
     // one target, so the lifted rule's semantics now live in the defaults group alone. See
     // grammar/DIVERGENCES.md for the surface + lowering.
@@ -211,11 +212,11 @@ final class RuleChecker {
     }
 
     /** §4 lower the extension blocks into {@link PrioritizedDefaults} nodes. Fails fast (a clear ERROR, and the block
-     *  stays un-lifted) on a block within a Regelgroep's scope, an unknown base, a target mismatch, an unsupported
-     *  base kind, or a multi-version rule. */
+     *  stays un-lifted) on a block within a Regelgroep's scope, an unknown carrier, a cycle, a target mismatch, an
+     *  unsupported base kind, or a multi-version rule. */
     private void defaults(RegelSpraakDocumentContext doc) {
         java.util.Set<ParserRuleContext> geweigerd = regelgroepReikwijdte(doc);
-        ordeningsDefaults(doc, geweigerd);
+        boomDefaults(doc, geweigerd);
         groepsDefaults(doc, geweigerd);
         java.util.Set<String> blokNamen = blokRegelnamen(doc);
         keurVlakkeOntkenningen(blokNamen);   // before the single-writer check: a refused negation is no second writer
@@ -223,17 +224,20 @@ final class RuleChecker {
         keurNooitAfleidend();
     }
 
-    /** The names of the rules written in an extension block: each 'Uitzondering op' block's own name and its base's,
-     *  and each member of an 'Uitzonderingen ongeordend' block. Such a rule that is still in resolvedRegels after the
-     *  lift belongs to a family or block the lowering refused, with an ERROR of its own. */
+    /** The names of the rules written in an extension block: each 'Uitzondering op' or 'Afwijking van' block's own
+     *  name and its carrier's, each member of an 'Uitzonderingen ongeordend' block, and the carrier such a block
+     *  names. Such a rule that is still in resolvedRegels after the lift belongs to a tree or block the lowering
+     *  refused, with an ERROR of its own. */
     private static java.util.Set<String> blokRegelnamen(RegelSpraakDocumentContext doc) {
         java.util.Set<String> namen = new java.util.HashSet<>();
         for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) {
             namen.add(src(u.uitzonderingBasisNaam()));
             namen.add(src(u.regelNaam()));
         }
-        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc))
+        for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
+            if (g.OP() != null) namen.add(src(g.uitzonderingBasisNaam()));
             for (RegelContext lid : g.regel()) namen.add(src(lid.regelNaam()));
+        }
         return namen;
     }
 
@@ -449,8 +453,8 @@ final class RuleChecker {
                     redenen.add("het staat direct na het laatste lid van regelgroep '" + src(g.kaleNaam())
                             + "', waar de groep stil eindigt, zodat het blok en elke regel erna buiten de groep "
                             + "zouden vallen");
-                if (kind instanceof UitzonderingRegelContext u) {
-                    String basis = src(u.uitzonderingBasisNaam());
+                String basis = dragerVan(kind);
+                if (basis != null) {
                     Lidmaatschap l = groepVanLid.get(basis);
                     // Only where the lift would happen: a base that resolves to no rule gets the ordinary "no base
                     // rule" refusal of the lowering, which is the true one there.
@@ -469,7 +473,7 @@ final class RuleChecker {
                             + String.join("; ", redenen) + ". Een regelgroep bestaat alleen om recursie te "
                             + "markeren (§9.10) en omvat alleen regels en beslistabellen; een defaults-blok "
                             + "(dialect §4) hoort er niet in. Plaats het blok"
-                            + (kind instanceof UitzonderingRegelContext ? " en zijn basisregel" : "")
+                            + (dragerVan(kind) != null ? " en zijn basisregel" : "")
                             + " buiten elke regelgroep: vóór de eerste regelgroepkop van het document ('Regelgroep "
                             + eersteGroep + "'), of achter een definitie die de groep afsluit",
                             blok.getStart().getLine()));
@@ -483,6 +487,14 @@ final class RuleChecker {
     /** A rule's place in a Regelgroep: the group, and the decision table it is a row of (null for a plain
      *  rule member). */
     private record Lidmaatschap(String groep, String tabel) {}
+
+    /** The carrier an extension block names — the rule before the ':' of 'Uitzondering op', 'Afwijking van' and
+     *  'Uitzonderingen ongeordend op' — or null for a block that names none. */
+    private static String dragerVan(ParseTree blok) {
+        if (blok instanceof UitzonderingRegelContext u) return src(u.uitzonderingBasisNaam());
+        if (blok instanceof UitzonderingGroepContext g && g.OP() != null) return src(g.uitzonderingBasisNaam());
+        return null;
+    }
 
     /** WF-022, producer side (fix round 2, 2026-09-23): a rule writes a declared attribute or characteristic of
      *  its OWN universal subject. The frontend builds a target on the subject only, so a sentence that names
@@ -588,17 +600,32 @@ final class RuleChecker {
         for (var v : model.verdelingen) vensterPositie(v.voorwaarde());
         for (var c : model.consistenties) vensterPositie(c.assertie());
         for (var fc : model.feitCreaties) vensterPositie(fc.voorwaarde());
-        for (var pd : model.prioritizedDefaults) vensterPositieDefaults(pd.defaults());
+        java.util.Set<Conditie> gezien = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (var pd : model.prioritizedDefaults) vensterPositieDefaults(pd.defaults(), gezien);
     }
 
-    private void vensterPositieDefaults(List<Default> defaults) {
+    /** The defaults tree's justifications and consequences. A restrictive exception repeats its carrier's conjuncts,
+     *  the very same nodes, so each node is walked once: a window under a counting quantifier in a base's condition
+     *  is one refusal, not one per exception above it. */
+    private void vensterPositieDefaults(List<Default> defaults, java.util.Set<Conditie> gezien) {
         if (defaults == null) return;
         for (Default d : defaults) {
-            vensterPositie(d.voorwaarde());
+            vensterPositieEenmaal(d.voorwaarde(), gezien);
             vensterPositieIn(d.consequentie());
             if (d.excepties() != null)
-                for (var groep : d.excepties().leden()) vensterPositieDefaults(groep.defaults());
+                for (var groep : d.excepties().leden()) vensterPositieDefaults(groep.defaults(), gezien);
         }
+    }
+
+    /** {@link #vensterPositie}, entering an 'all' part by part so a conjunct shared by several justifications is
+     *  judged once. An 'all' itself neither complements nor counts, so skipping its own check changes nothing. */
+    private void vensterPositieEenmaal(Conditie c, java.util.Set<Conditie> gezien) {
+        if (c == null || !gezien.add(c)) return;
+        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
+            for (Conditie d : s.onderdelen()) vensterPositieEenmaal(d, gezien);
+            return;
+        }
+        vensterPositie(c);
     }
 
     private void vensterPositie(Conditie c) {
@@ -672,106 +699,352 @@ final class RuleChecker {
 
     /** The head a refusal names an extension block by, in the spelling the other §4 refusals use. */
     private static String blokKop(ParserRuleContext blok) {
-        if (blok instanceof UitzonderingRegelContext u) return "Uitzondering op '" + src(u.uitzonderingBasisNaam()) + "'";
-        if (blok instanceof UitzonderingGroepContext) return "Uitzonderingen ongeordend";
+        if (blok instanceof UitzonderingRegelContext u)
+            return (u.AFWIJKING_VAN() != null ? "Afwijking van '" : "Uitzondering op '") + src(u.uitzonderingBasisNaam()) + "'";
+        if (blok instanceof UitzonderingGroepContext g)
+            return g.OP() != null ? "Uitzonderingen ongeordend op '" + src(g.uitzonderingBasisNaam()) + "'"
+                    : "Uitzonderingen ongeordend";
         return blok.getStart().getText();
     }
 
-    /** The ordered form: each base rule with one-or-more 'Uitzondering op &lt;base&gt;' blocks becomes ONE
-     *  defaults group — the exception default(s) above the base default, descending priority. Later-written
-     *  blocks stack HIGHER (PRIORITIZED-DEFAULTS-EVOLUTIE §4.2). The base rule and every exception leave
-     *  resolvedRegels. */
-    private void ordeningsDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
-        java.util.LinkedHashMap<String, List<UitzonderingRegelContext>> perBasis = new java.util.LinkedHashMap<>();
-        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc))
-            perBasis.computeIfAbsent(DefinitionResolver.src(u.uitzonderingBasisNaam()), k -> new ArrayList<>()).add(u);
+    // ----------------------------------------------------------------------------------------------------------
+    // Form 2 (maintainer decisions 4-6 of 2026-09-23; grammar/DIVERGENCES.md §4). The blocks form a TREE: every
+    // 'Uitzondering op' and 'Afwijking van' block, and every member of an 'Uitzonderingen ongeordend op' block,
+    // names one carrier; a carrier that is no block is the base rule its tree hangs under, and each tree becomes one
+    // defaults group. Every block is resolved before anything is lifted: removing the lifted rules family by family,
+    // as the first card did, turned the lookup of a carrier that is itself an exception into "not found".
+    // ----------------------------------------------------------------------------------------------------------
 
-        for (var en : perBasis.entrySet()) {
-            String basisNaam = en.getKey();
-            List<UitzonderingRegelContext> excepties = en.getValue();
-            if (excepties.stream().anyMatch(geweigerd::contains)) continue;   // refused at its head already
-            int line = excepties.get(0).getStart().getLine();
+    /** What a node of the defaults tree is: an 'Uitzondering op' block, an 'Afwijking van' block, or a member of an
+     *  'Uitzonderingen ongeordend op' block. */
+    private enum Blok { UITZONDERING, AFWIJKING, LID }
 
-            List<ResolvedRegel> basis = resolvedVan(basisNaam);
-            if (basis.isEmpty()) {
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "Uitzondering op '" + basisNaam + "': geen basisregel met die naam gevonden — de basis moet "
-                        + "een gewone platte regel (kenmerktoekenning of gelijkstelling) zijn" + basisReden(basisNaam), line));
-                continue;
+    /** One node of the defaults tree. */
+    private static final class Knoop {
+        final Blok soort;
+        /** The block a refusal stands at: the node's own block, or the 'Uitzonderingen ongeordend op' block of a
+         *  member. */
+        final ParserRuleContext blok;
+        final String naam;
+        final String drager;
+        final String kop;
+        final int line;
+        /** The carrier when it is a node itself; null when the carrier is the base rule {@link #wortel}. */
+        Knoop ouder;
+        /** The base rule the node's tree hangs under, once known. */
+        String wortel;
+        /** Refused by an ERROR of its own, or hanging under a refused node or a cycle: no tree lifts it. */
+        boolean fout;
+        ResolvedRegel regel;
+        final List<Knoop> kinderen = new ArrayList<>();
+
+        Knoop(Blok soort, ParserRuleContext blok, String naam, String drager, String kop, int line) {
+            this.soort = soort; this.blok = blok; this.naam = naam; this.drager = drager; this.kop = kop;
+            this.line = line;
+        }
+    }
+
+    /** Builds the defaults tree of every 'Uitzondering op', 'Afwijking van' and 'Uitzonderingen ongeordend op'
+     *  block and lowers each tree to one {@link PrioritizedDefaults} group (the lowering of
+     *  spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md §5.2): the children of the base are chain positions above
+     *  it, the later-written one higher; the children of a node nest in that node's default as one ordered
+     *  exception group; the members of an 'Uitzonderingen ongeordend op' block become one exception group each,
+     *  unordered, under a node or as a group-default directly above the base. A refused node keeps its whole tree
+     *  un-lifted, as a refused family always stayed; every refusal is one ERROR at the block that makes it. */
+    private void boomDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
+        List<Knoop> knopen = new ArrayList<>();
+        java.util.Set<String> losseLeden = new java.util.HashSet<>();
+        for (ParseTree kind : doc.children == null ? List.<ParseTree>of() : doc.children) {
+            if (kind instanceof UitzonderingRegelContext u)
+                knopen.add(new Knoop(u.AFWIJKING_VAN() != null ? Blok.AFWIJKING : Blok.UITZONDERING, u,
+                        src(u.regelNaam()), src(u.uitzonderingBasisNaam()), blokKop(u), u.getStart().getLine()));
+            else if (kind instanceof UitzonderingGroepContext g && g.OP() != null) {
+                if (!geweigerd.contains(g)) kopAnnotatie(g, blokKop(g), "dialect §4", g.getStart().getLine());
+                for (RegelContext lid : g.regel())
+                    knopen.add(new Knoop(Blok.LID, g, src(lid.regelNaam()), src(g.uitzonderingBasisNaam()), blokKop(g),
+                            g.getStart().getLine()));
+            } else if (kind instanceof UitzonderingGroepContext g)
+                for (RegelContext lid : g.regel()) losseLeden.add(src(lid.regelNaam()));
+        }
+        if (knopen.isEmpty()) return;
+
+        // 1. the carrier of each node: another node by name, else a base rule. A block refused at its head
+        //    (geweigerd) says nothing more; a member block says its carrier once.
+        Map<String, Knoop> perNaam = new java.util.HashMap<>();
+        for (Knoop k : knopen) perNaam.putIfAbsent(k.naam, k);
+        java.util.Set<ParserRuleContext> gemeld =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Knoop k : knopen) {
+            k.ouder = perNaam.get(k.drager);
+            if (k.ouder != null) continue;
+            String reden = losseLeden.contains(k.drager) ? losLidAlsDrager(k)
+                    : resolvedVan(k.drager).isEmpty() ? onbekendeDrager(k) : null;
+            if (reden == null) { k.wortel = k.drager; continue; }
+            k.fout = true;
+            if (!geweigerd.contains(k.blok) && gemeld.add(k.blok)) fout(k.line, reden);
+        }
+
+        // 2. the base rule of each node, found by walking the carriers upward; a walk that comes back to a node
+        //    it passed is a cycle, which has no base rule and is refused once, with its path
+        for (Knoop k : knopen) {
+            if (k.fout || k.wortel != null) continue;
+            List<Knoop> pad = new ArrayList<>();
+            Knoop h = k;
+            while (!h.fout && h.wortel == null && !pad.contains(h)) { pad.add(h); h = h.ouder; }
+            if (pad.contains(h)) {
+                List<Knoop> kring = pad.subList(pad.indexOf(h), pad.size());
+                Knoop eerste = kring.stream().min(java.util.Comparator.comparingInt(knopen::indexOf)).orElseThrow();
+                if (kring.stream().noneMatch(c -> geweigerd.contains(c.blok))) {
+                    List<String> namen = new ArrayList<>();
+                    Knoop c = eerste;
+                    do { namen.add("'" + c.naam + "'"); c = c.ouder; } while (c != eerste);
+                    namen.add("'" + eerste.naam + "'");
+                    fout(eerste.line, kring(eerste, String.join(" -> ", namen)));
+                }
             }
-            if (basis.size() > 1) { multiVersieFout("basisregel", basisNaam, line); continue; }
+            for (Knoop p : pad) {
+                if (h.fout || h.wortel == null) p.fout = true;
+                else p.wortel = h.wortel;
+            }
+        }
+
+        // 3. per tree, in the order its first block was written: the base, then every node top-down
+        Map<String, List<Knoop>> perWortel = new LinkedHashMap<>();
+        for (Knoop k : knopen) if (!k.fout) perWortel.computeIfAbsent(k.wortel, w -> new ArrayList<>()).add(k);
+        java.util.Set<ResolvedRegel> gelift = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (var e : perWortel.entrySet()) {
+            String wortel = e.getKey();
+            List<Knoop> boom = e.getValue();
+            if (boom.stream().anyMatch(k -> geweigerd.contains(k.blok))) continue;   // refused at a head already
+            List<Knoop> wortelKinderen = new ArrayList<>();
+            for (Knoop k : boom) (k.ouder == null ? wortelKinderen : k.ouder.kinderen).add(k);
+            Knoop kop = wortelKinderen.get(0);
+            List<ResolvedRegel> basis = resolvedVan(wortel);
+            if (basis.size() > 1) { multiVersieFout("basisregel", wortel, kop.line); continue; }
             ResolvedRegel basisRegel = basis.get(0);
             if (geweigerdeDoelen.contains(basisRegel)) continue;   // its target is refused already, and by name
             DefaultsDoel doel = doelVan(basisRegel);
             if (doel == null || basisRegel.soort() == ResolvedRegel.Soort.INITIALISATIE) {
-                model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                        "Uitzondering op '" + basisNaam + "': de basisregel is geen kenmerktoekenning of gelijkstelling "
-                        + "(bv. een initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)", line));
+                fout(kop.line, kop.kop + ": de basisregel is geen kenmerktoekenning of gelijkstelling (bv. een "
+                        + "initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)");
                 continue;
             }
+            if (!keurKinderen(null, wortel, wortelKinderen, basisRegel, doel)) continue;
 
-            List<Default> excDefaults = new ArrayList<>();
-            boolean fout = false;
-            for (UitzonderingRegelContext u : excepties) {
-                String exNaam = DefinitionResolver.src(u.regelNaam());
-                List<ResolvedRegel> ex = resolvedVan(exNaam);
-                if (ex.isEmpty()) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "Uitzondering op '" + basisNaam + "': de uitzondering '" + exNaam + "' leverde geen "
-                            + "kenmerktoekenning/gelijkstelling op (§4)", u.getStart().getLine()));
-                    fout = true; break;
-                }
-                if (ex.size() > 1) { multiVersieFout("uitzondering", exNaam, u.getStart().getLine()); fout = true; break; }
-                if (geweigerdeDoelen.contains(ex.get(0))) { fout = true; break; }   // refused already, by name
-                DefaultsDoel exDoel = doelVan(ex.get(0));
-                if (exDoel == null || ex.get(0).soort() == ResolvedRegel.Soort.INITIALISATIE) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "Uitzondering op '" + basisNaam + "': de uitzondering '" + exNaam + "' is geen "
-                            + "kenmerktoekenning of gelijkstelling (bv. een initialisatie) (§4)", u.getStart().getLine()));
-                    fout = true; break;
-                }
-                // Default carries no per-default geldigheid: mixed windows are unrepresentable on the defaults
-                // group, so a diverging window must refuse — the same fence the multi-version case gets.
-                if (!ex.get(0).geldigheid().equals(basisRegel.geldigheid())) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "Uitzondering op '" + basisNaam + "': uitzondering '" + exNaam + "' draagt een ander "
-                            + "geldigheidsvenster dan de basisregel — de defaults-groep draagt één venster; splits per venster "
-                            + "of maak de vensters gelijk (§4)", u.getStart().getLine()));
-                    fout = true; break;
-                }
-                if (!doel.gelijk(exDoel)) {
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "Uitzondering op '" + basisNaam + "': uitzondering '" + exNaam + "' schrijft een ander doel ("
-                            + doelTekst(exDoel) + ") dan de basisregel (" + doelTekst(doel) + ") — een uitzondering moet "
-                            + "hetzelfde onderwerp en kenmerk/attribuut betreffen (§4, WF-050)", u.getStart().getLine()));
-                    fout = true; break;
-                }
-                excDefaults.add(defaultVan(ex.get(0), doel.kenmerk()));
-            }
-            if (fout) continue;
-            java.util.Collections.reverse(excDefaults);   // later-written Uitzondering-op stacks higher
-
-            List<Default> defaults = new ArrayList<>(excDefaults);
-            defaults.add(defaultVan(basisRegel, doel.kenmerk()));
-            PrioritizedDefaults groep = defaultsVan(basisNaam, doel, false, defaults, basisRegel.geldigheid(),
+            List<Conditie> basisConjuncten = conjuncten(basisRegel.voorwaarde());
+            List<Default> keten = new ArrayList<>();
+            if (wortelKinderen.get(0).soort == Blok.LID)   // one unordered block: a group-default directly above the base
+                keten.add(new Default(null, null, null, false,
+                        uitzonderingenVan(wortelKinderen, basisConjuncten, doel.kenmerk()), null));
+            else
+                for (Knoop k : wortelKinderen) keten.add(0, defaultVan(k, basisConjuncten, doel.kenmerk()));
+            keten.add(defaultVan(basisRegel, doel.kenmerk()));
+            PrioritizedDefaults groep = defaultsVan(wortel, doel, false, keten, basisRegel.geldigheid(),
                     annotatieTekst(basisRegel.bronAnnotaties()));
             model.prioritizedDefaults.add(groep);
-            pdHerkomst.put(groep, new Herkomst(line, "Uitzondering op '" + basisNaam + "'"));
-
-            model.resolvedRegels.remove(basisRegel);
-            for (UitzonderingRegelContext u : excepties) {
-                String exNaam = DefinitionResolver.src(u.regelNaam());
-                model.resolvedRegels.removeIf(rr -> rr.naam().equals(exNaam));
-            }
+            pdHerkomst.put(groep, new Herkomst(kop.line, kop.kop));
+            gelift.add(basisRegel);
+            for (Knoop k : boom) gelift.add(k.regel);
         }
+        model.resolvedRegels.removeIf(gelift::contains);
     }
 
-    /** The unordered group: each 'Uitzonderingen ongeordend:' block becomes SIBLING declared-unordered defaults
-     *  groups (one per member) over ONE shared target — the §9.5 surface. Every sibling carries
-     *  {@code ongeordend} (WF-050: two-or-more defaults groups on one target require it). All members leave
-     *  resolvedRegels. */
+    /** Checks the children of one carrier ({@code drager} null: the base rule), top-down: which kinds may stand
+     *  together, then each child's own body and its edge, then its subtree. Whether the subtree is sound; every
+     *  refusal speaks once, and below a refused node nothing is checked any more. */
+    private boolean keurKinderen(Knoop drager, String dragerNaam, List<Knoop> kinderen, ResolvedRegel basis,
+                                 DefaultsDoel doel) {
+        boolean goed = true;
+        List<Knoop> geordend = kinderen.stream().filter(k -> k.soort != Blok.LID).toList();
+        List<ParserRuleContext> blokken = kinderen.stream().filter(k -> k.soort == Blok.LID).map(k -> k.blok)
+                .distinct().toList();
+        if (!blokken.isEmpty() && (!geordend.isEmpty() || blokken.size() > 1)) {
+            ParserRuleContext blok = geordend.isEmpty() ? blokken.get(1) : blokken.get(0);
+            fout(blok.getStart().getLine(), blokKop(blok) + ": de drager '" + dragerNaam + "' heeft ook "
+                    + (geordend.isEmpty() ? "een ander 'Uitzonderingen ongeordend op'-blok"
+                            : "geordende uitzonderingen (" + opsomming(geordend.stream().map(k -> k.naam).toList()) + ")")
+                    + " — de kinderen van één drager vormen óf één geordende keten ('Uitzondering op', 'Afwijking van') "
+                    + "óf de leden van één ongeordend blok, want de voorrang daartussen ligt nergens vast. Schrijf ze "
+                    + "allemaal geordend, of neem ze allemaal als lid op in één blok 'Uitzonderingen ongeordend op "
+                    + dragerNaam + ":' (dialect §4)");
+            goed = false;
+        }
+        for (Knoop k : kinderen) {
+            if (!keurKnoop(k, drager, dragerNaam, basis, doel)) { goed = false; continue; }
+            if (!keurKinderen(k, k.naam, k.kinderen, basis, doel)) goed = false;
+        }
+        return goed;
+    }
+
+    /** One node's own body and its edge to its carrier: the body resolves to one plain version; an 'Afwijking van'
+     *  hangs directly under the base; a subtype does not write under an inherited node; the window is the group's;
+     *  the target is the group's (WF-050). The checks and their texts at the first level are the first card's. */
+    private boolean keurKnoop(Knoop k, Knoop drager, String dragerNaam, ResolvedRegel basis, DefaultsDoel doel) {
+        List<ResolvedRegel> r = resolvedVan(k.naam);
+        if (r.isEmpty()) {
+            fout(k.line, k.kop + ": " + metLidwoord(k) + " leverde geen kenmerktoekenning/gelijkstelling op (§4)");
+            return false;
+        }
+        if (r.size() > 1) { multiVersieFout(wat(k), k.naam, k.line); return false; }
+        ResolvedRegel regel = r.get(0);
+        if (geweigerdeDoelen.contains(regel)) return false;   // refused already, by name
+        DefaultsDoel eigen = doelVan(regel);
+        if (eigen == null || regel.soort() == ResolvedRegel.Soort.INITIALISATIE) {
+            fout(k.line, k.kop + ": " + metLidwoord(k) + " is geen kenmerktoekenning of gelijkstelling (bv. een "
+                    + "initialisatie) (§4)");
+            return false;
+        }
+        if (k.soort == Blok.AFWIJKING && drager != null) {
+            fout(k.line, k.kop + ": '" + drager.naam + "' is " + soortTekst(drager) + ", geen basisregel — een "
+                    + "afwijking erft geen voorwaarde en staat daarom alleen direct boven een basisregel; midden in de "
+                    + "boom zou zij beslissen waar de voorwaarde van haar drager niet geldt. Schrijf 'Uitzondering op "
+                    + drager.naam + ": " + k.naam + "' als zij de voorwaarde van '" + drager.naam + "' erft, of "
+                    + "'Afwijking van " + k.wortel + ": " + k.naam + "' met de volledige voorwaarde (dialect §4)");
+            return false;
+        }
+        if (drager != null && eigen.kenmerk() == doel.kenmerk() && eigen.naam().equalsIgnoreCase(doel.naam())
+                && eigen.onderwerp() != doel.onderwerp() && eigen.onderwerp().isEen(doel.onderwerp())) {
+            String sub = eigen.onderwerp().naam, sup = doel.onderwerp().naam;
+            fout(k.line, k.kop + ": '" + drager.naam + "' is " + soortTekst(drager) + " van " + sup + ", en "
+                    + aanduiding(k) + " schrijft voor het subtype " + sub + " — een subtype erft de uitzonderingen van "
+                    + "zijn supertype met wat eronder genest is, en adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). "
+                    + "Schrijf een eigen uitzondering van " + sub + " op een basisregel van " + sub + ", met de volledige "
+                    + "voorwaarde van '" + drager.naam + "' en de eigen voorwaarde: de eigen uitzonderingen van " + sub
+                    + " gaan vóór de geërfde, dus zij beslist precies waar beide gelden (dialect §4)");
+            return false;
+        }
+        // Default carries no per-default geldigheid: mixed windows are unrepresentable on the defaults group, so a
+        // diverging window must refuse — the same fence the multi-version case gets.
+        if (!regel.geldigheid().equals(basis.geldigheid())) {
+            fout(k.line, k.kop + ": " + aanduiding(k) + " draagt een ander geldigheidsvenster dan de basisregel — de "
+                    + "defaults-groep draagt één venster; splits per venster of maak de vensters gelijk (§4)");
+            return false;
+        }
+        if (!doel.gelijk(eigen)) {
+            fout(k.line, k.kop + ": " + aanduiding(k) + " schrijft een ander doel (" + doelTekst(eigen) + ") dan "
+                    + (drager == null ? "de basisregel" : (k.soort == Blok.LID ? "zijn" : "haar") + " drager '"
+                            + dragerNaam + "'")
+                    + " (" + doelTekst(doel) + ") — een " + wat(k) + " moet hetzelfde onderwerp en kenmerk/attribuut "
+                    + "betreffen (§4, WF-050)");
+            return false;
+        }
+        k.regel = regel;
+        return true;
+    }
+
+    /** The default a node becomes. An 'Uitzondering op' block and a member of an 'Uitzonderingen ongeordend op'
+     *  block are restrictive: the justification is one flat 'all' of the carrier's conjuncts followed by the node's
+     *  own, since ch. 7.9 decides a default's exception groups before and regardless of its own justification, and
+     *  ch. 7.1 asks the frontend for self-contained justifications. Where the carrier contributes no conjunct (an
+     *  unconditional base) the node keeps the condition it was written with. An 'Afwijking van' block carries its
+     *  own condition only. */
+    private Default defaultVan(Knoop k, List<Conditie> dragerConjuncten, boolean kenmerk) {
+        Conditie eigen = k.regel.voorwaarde();
+        Conditie rechtvaardiging = k.soort == Blok.AFWIJKING || dragerConjuncten.isEmpty()
+                ? (eigen != null ? eigen : ALTIJD)
+                : conjunctie(dragerConjuncten, eigen);
+        return defaultVan(k.regel, kenmerk, rechtvaardiging,
+                uitzonderingenVan(k.kinderen, conjuncten(rechtvaardiging), kenmerk));
+    }
+
+    /** The exception groups of a carrier: one ordered group holding its ordered children, the later-written one
+     *  first; or one group per member of its 'Uitzonderingen ongeordend op' block, unordered. Null without
+     *  children. An exception group is no block and carries no annotation of its own; each block's annotation
+     *  stands on the default it becomes. */
+    private Default.Excepties uitzonderingenVan(List<Knoop> kinderen, List<Conditie> dragerConjuncten, boolean kenmerk) {
+        if (kinderen.isEmpty()) return null;
+        if (kinderen.get(0).soort == Blok.LID) {
+            List<ExceptionGroup> leden = new ArrayList<>();
+            for (Knoop lid : kinderen)
+                leden.add(new ExceptionGroup(List.of(defaultVan(lid, dragerConjuncten, kenmerk)), null));
+            return new Default.Excepties(true, leden);
+        }
+        List<Default> keten = new ArrayList<>();
+        for (Knoop k : kinderen) keten.add(0, defaultVan(k, dragerConjuncten, kenmerk));   // later-written stacks higher
+        return new Default.Excepties(false, List.of(new ExceptionGroup(keten, null)));
+    }
+
+    /** One flat 'all' over the carrier's conjuncts and the node's own condition, its source the conjuncts' sources
+     *  joined by " en " — the shape the hand-written anchors give a nested justification. */
+    private static Conditie conjunctie(List<Conditie> dragerConjuncten, Conditie eigen) {
+        List<Conditie> delen = new ArrayList<>(dragerConjuncten);
+        plat(eigen, delen);
+        String tekst = delen.stream().map(d -> d.bron() == null ? "" : d.bron().snippet())
+                .collect(java.util.stream.Collectors.joining(" en "));
+        Bron plek = eigen == null ? null : eigen.bron();
+        return new Conditie.Samengesteld(Conditie.Kwantor.ALLE, 0, List.copyOf(delen),
+                plek == null ? Bron.synthetisch(tekst) : new Bron(plek.file(), plek.line(), plek.column(), tekst));
+    }
+
+    /** The conjuncts of a justification: the parts of an 'all', flattened at any depth; another quantifier stays
+     *  one conjunct, and no justification (or the empty 'all') has none. */
+    private static List<Conditie> conjuncten(Conditie c) {
+        List<Conditie> uit = new ArrayList<>();
+        plat(c, uit);
+        return uit;
+    }
+
+    private static void plat(Conditie c, List<Conditie> uit) {
+        if (c == null) return;
+        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE) {
+            for (Conditie d : s.onderdelen()) plat(d, uit);
+            return;
+        }
+        uit.add(c);
+    }
+
+    private static String wat(Knoop k) {
+        return switch (k.soort) { case UITZONDERING -> "uitzondering"; case AFWIJKING -> "afwijking"; case LID -> "groepslid"; };
+    }
+
+    private static String aanduiding(Knoop k) { return wat(k) + " '" + k.naam + "'"; }
+
+    /** The node as the first card's texts name it: "de uitzondering 'E'", "groepslid 'M'". */
+    private static String metLidwoord(Knoop k) { return (k.soort == Blok.LID ? "" : "de ") + aanduiding(k); }
+
+    private static String soortTekst(Knoop k) {
+        return switch (k.soort) {
+            case UITZONDERING -> "een uitzondering";
+            case AFWIJKING -> "een afwijking";
+            case LID -> "een lid van een 'Uitzonderingen ongeordend op'-blok";
+        };
+    }
+
+    private String onbekendeDrager(Knoop k) {
+        if (k.soort == Blok.AFWIJKING)
+            return k.kop + ": geen basisregel met die naam gevonden" + basisReden(k.drager) + " — de drager van een "
+                    + "afwijking is een gewone platte regel (kenmerktoekenning of gelijkstelling) (dialect §4)";
+        return k.kop + ": geen basisregel met die naam gevonden, en ook geen uitzondering of afwijking"
+                + basisReden(k.drager) + " — noem als drager een gewone platte regel (kenmerktoekenning of "
+                + "gelijkstelling), een 'Uitzondering op'- of 'Afwijking van'-blok, of een lid van een 'Uitzonderingen "
+                + "ongeordend op'-blok (dialect §4)";
+    }
+
+    private static String losLidAlsDrager(Knoop k) {
+        return k.kop + ": '" + k.drager + "' is een lid van een 'Uitzonderingen ongeordend:'-blok zonder drager — zo'n "
+                + "lid is een eigen defaults-groep naast de andere leden en geen drager. Schrijf de leden onder een "
+                + "basisregel ('Uitzonderingen ongeordend op <basisregel>:'): een lid van zo'n blok kan wel drager zijn "
+                + "(dialect §4)";
+    }
+
+    private static String kring(Knoop k, String pad) {
+        return k.kop + ": de dragers vormen een kring (" + pad + ") — een uitzondering hangt aan één drager, en de "
+                + "keten van dragers eindigt bij de basisregel die de defaults-groep draagt; een kring heeft geen "
+                + "basisregel. Laat één blok van de kring een gewone platte regel of een blok buiten de kring als drager "
+                + "noemen (dialect §4)";
+    }
+
+    private void fout(int line, String bericht) {
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, bericht, line));
+    }
+
+    /** The unordered group without a carrier: each 'Uitzonderingen ongeordend:' block becomes SIBLING
+     *  declared-unordered defaults groups (one per member) over ONE shared target — the §9.5 surface. Every sibling
+     *  carries {@code ongeordend} (WF-050: two-or-more defaults groups on one target require it). All members leave
+     *  resolvedRegels. A block with 'op &lt;drager&gt;' hangs in a defaults tree ({@link #boomDefaults}). */
     private void groepsDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
         for (UitzonderingGroepContext g : DefinitionResolver.alleUitzonderingGroepen(doc)) {
+            if (g.OP() != null) continue;           // a member of a defaults tree
             if (geweigerd.contains(g)) continue;   // refused at its head already
             int line = g.getStart().getLine();
             kopAnnotatie(g, "Uitzonderingen ongeordend", "dialect §4", line);
@@ -836,11 +1109,16 @@ final class RuleChecker {
      *  survive — and since every lifted rule becomes a default HERE, a nested exception inherits the placement
      *  by construction. */
     private Default defaultVan(ResolvedRegel r, boolean kenmerk) {
-        Conditie rechtvaardiging = r.voorwaarde() != null ? r.voorwaarde() : ALTIJD;
+        return defaultVan(r, kenmerk, r.voorwaarde() != null ? r.voorwaarde() : ALTIJD, null);
+    }
+
+    /** The same with a given justification and nested exception groups: the default a node of a defaults tree
+     *  becomes. */
+    private Default defaultVan(ResolvedRegel r, boolean kenmerk, Conditie rechtvaardiging, Default.Excepties excepties) {
         String bron = annotatieTekst(r.bronAnnotaties());
         return kenmerk
-                ? new Default(!ontkend(r), rechtvaardiging, null, false, null, bron)
-                : new Default(null, rechtvaardiging, r.waarde(), false, null, bron);
+                ? new Default(!ontkend(r), rechtvaardiging, null, false, excepties, bron)
+                : new Default(null, rechtvaardiging, r.waarde(), false, excepties, bron);
     }
 
     /** The annotations of one block as the single string a {@code bron} field holds: the non-blank entries in
