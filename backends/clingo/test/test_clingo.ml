@@ -13329,15 +13329,19 @@ let () =
 (* THE SPLIT MONEY × RATE WITH A RATE OF FEWER THAN FOUR DECIMALS (the card
    clingo-tarief-decimalen). The split encoding of ASP-TRANSLATION S18(c) reads
    its rate at scale 10^4, and until this card [money_mult_shape] admitted a
-   rate TYPED at exactly four decimals, and only right of the money. A rate
-   of one to three decimals is the same rational at scale 10^4 — 0,875 at
-   three decimals is 8750 at four — so the encoding now brings it there
-   exactly. Left on the ordinary product path such a product meets the 46340
-   operand fence, which a monthly wage of 2400,00 (240000 at scale 2) already
-   exceeds: the RegelSpraak frontend types a numeric literal at its smallest
-   scale, `0,8750` at three decimals, so its emission of
-   anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases while ref
-   and the Drools exec branch played them.
+   rate TYPED at exactly four decimals, and only right of the money. It read
+   the type, and the RegelSpraak frontend types a numeric literal at its
+   smallest scale: `0,8750` at three decimals, although its lexeme — and so
+   its term — carries four. The product fell to the ordinary product path,
+   whose 46340 operand fence a monthly wage of 2400,00 (240000 at scale 2)
+   already exceeds, and the frontend's emission of anchor/ww-herleving-inkomen
+   was UNSAT in clingo on all ten cases while ref and the Drools exec branch
+   played them. The route now reads the decimals of the TERMS, so that literal
+   enters the split with k = 1, unmultiplied. A rate WRITTEN or DECLARED at one
+   to three decimals — `0,875`, an attribute at three — is the same rational
+   at scale 10^4 (875 at 10^3 is 8750 at 10^4), and the encoding brings it
+   there exactly; in the corpus only synth3-letbeslag (a rate of 0,10) takes
+   that rescale. The two routes are pinned apart below, on the program text.
 
    The frames that answer through the split were red on the code before this
    card: UNSAT on the operand fence at rule level, the catch-all refusal in a
@@ -13353,7 +13357,7 @@ let () =
    And the split refuses a negative operand where the ordinary rounding path
    carried a negative times a negative (a positive product): the price of the
    wider magnitudes, pinned so that a split that learns signs has to say so
-   here. *)
+   here; so does zero beside a negative operand (a zero product). *)
 
 let tarief_frame ~tarief_t ~left ~right ~product_decimals =
   replace ~tok:"@TARIEF@" ~by:tarief_t
@@ -13542,7 +13546,7 @@ let tarief_fold_case =
 
 (* ref plays the frame's rows; clingo refuses with UNSAT, and the diagnosed
    witness carries [needle] *)
-let clingo_fence_fires ~name ~ir ~case_text ~needle =
+let clingo_fence_fires ?(without = []) ~name ~ir ~case_text ~needle () =
   ref_matches ~name ~ir ~case_text;
   let doc, case = load_pair ~ir ~case_text in
   let label = name ^ ": clingo's fence fires" in
@@ -13552,7 +13556,11 @@ let clingo_fence_fires ~name ~ir ~case_text ~needle =
       match Solve.run_clingo program with
       | _, Unix.WEXITED 20 ->
           let ws = Solve.diagnose program in
-          check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+          let has n = List.exists (fun w -> Uchar_ref.Case.contains ~needle:n w) ws in
+          (* [without]: witnesses that must NOT fire — a fence that answers for
+             the wrong reason names a cause the document does not have *)
+          check (label ^ " (" ^ String.concat "; " ws ^ ")")
+            (has needle && not (List.exists has without))
       | out, Unix.WEXITED (10 | 30) ->
           (* the rows can hold a value clingo cannot represent — that is why
              the fence exists — so reading them may fault; that fault is part
@@ -13567,6 +13575,22 @@ let clingo_fence_fires ~name ~ir ~case_text ~needle =
       | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
       | _, _ -> check (label ^ " (clingo killed)") false)
+
+(* the translated program carries every [present] fragment and none of the
+   [absent] ones: a pin on the ROUTE a product takes, which a value check
+   cannot see when two routes give the same value *)
+let program_holds ~name ~ir ~case_text ~present ~absent =
+  let doc, case = load_pair ~ir ~case_text in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (name ^ " (translation fault: " ^ m ^ ")") false
+  | program ->
+      let has f = Uchar_ref.Case.contains ~needle:f program in
+      let missing = List.filter (fun f -> not (has f)) present
+      and unwanted = List.filter has absent in
+      check
+        (Printf.sprintf "%s (missing: [%s]; unwanted: [%s])" name (String.concat "; " missing)
+           (String.concat "; " unwanted))
+        (missing = [] && unwanted = [])
 
 let () =
   (* the literal frames declare a tarief attribute they do not read *)
@@ -13626,12 +13650,44 @@ let () =
   clingo_fence_fires ~name:"money x rate: a one-decimal rate past the rescale range"
     ~ir:attr1
     ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"429496.8" ~grens:"1030792320.00" ())
-    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)";
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)" ();
   (* -100,00 × -0,5 = 50,00: the split refuses each negative operand *)
   clingo_fence_fires ~name:"money x rate: two negative operands below four decimals"
     ~ir:attr1
     ~case_text:(tarief_case ~maandloon:"-100.00" ~tarief:"-0.5" ~grens:"50.00" ())
-    ~needle:"negative operand under money multiplication is not translated";
+    ~needle:"negative operand under money multiplication is not translated" ();
+  (* the zero form of the same flank: zero beside a negative operand is a zero
+     product, which the ordinary rounding path carried, and the split refuses
+     the negative operand all the same *)
+  clingo_fence_fires ~name:"money x rate: a negative money beside a zero rate below four decimals"
+    ~ir:attr3
+    ~case_text:(tarief_case ~maandloon:"-100.00" ~tarief:"0.000" ~grens:"0.00" ())
+    ~needle:"negative operand under money multiplication is not translated" ();
+  clingo_fence_fires ~name:"money x rate: a zero money beside a negative rate below four decimals"
+    ~ir:attr1
+    ~case_text:(tarief_case ~maandloon:"0.00" ~tarief:"-0.5" ~grens:"0.00" ())
+    ~needle:"negative operand under money multiplication is not translated" ();
+  (* 214748,4 at scale 10^1 is 2147484; times 10^3 it wraps to a NEGATIVE
+     number. Only the range fence may answer: the rate is positive, so a
+     negative-operand witness would name a cause the document does not have *)
+  clingo_fence_fires ~name:"money x rate: a rate past the rescale range is no negative operand"
+    ~ir:attr1
+    ~case_text:(tarief_case ~maandloon:"1.00" ~tarief:"214748.4" ~grens:"214748.40" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under money multiplication is not translated" ] ();
+  (* the two routes, on the program text. The WW twin's literal: annotated at
+     three decimals, its term carries four, so it enters the split with k = 1 —
+     unmultiplied, and without a rescale fence *)
+  program_holds ~name:"money x rate: the literal 0.8750 enters the split with k = 1"
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ())
+    ~present:[ "*((8750)/100)" ] ~absent:[ "(8750*"; "|(8750)| >" ];
+  (* a literal written at three decimals: its term arrives at scale 10^3 and is
+     multiplied up by 10 under its own fence, max_int31 / 10 *)
+  program_holds ~name:"money x rate: the literal 0.875 is multiplied up to scale 10^4 under its fence"
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.875" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ())
+    ~present:[ "*(((875*10))/100)"; "|(875)| > 214748364" ] ~absent:[];
   (* the closed body: 2400,00 × 0,125 + 2400,00 × 0,250 = 900,00, with the
      money on either side *)
   both_answer ~name:"money x rate in a closed body: a three-decimal rate that reads the element"
