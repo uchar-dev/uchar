@@ -13470,17 +13470,18 @@ let () =
     ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"0.5" ~grens:"2100.00" ());
   (* and the other way: tarief (three decimals) plus a literal written with
      five derives five under an annotation of three, so the product stays on
-     the ordinary path, which carries it at this magnitude *)
+     the ordinary path, which carries it while both terms stay within its
+     46340 operand fence (12500 at scale 10^5) *)
   both_answer ~name:"money x rate: a composite rate annotated below what it derives"
     ~ir:
       (tarief_doc ~tarief_t:(tarief_number ~decimals:3)
          ~rate:(tarief_plus ~lexeme:"0.00000" ~decimals:0 ~annotated:3) ~product_decimals:"5")
-    ~case_text:(tarief_case ~maandloon:"100.00" ~tarief:"0.875" ~grens:"87.50" ());
-  (* a literal routes on its lexeme: 0.87500 carries five decimals, typed at
+    ~case_text:(tarief_case ~maandloon:"100.00" ~tarief:"0.125" ~grens:"12.50" ());
+  (* a literal routes on its lexeme: 0.12500 carries five decimals, typed at
      three, so it keeps the ordinary path as well *)
   both_answer ~name:"money x rate: a rate lexeme past four decimals"
-    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
-    ~case_text:(tarief_case ~maandloon:"100.00" ~grens:"87.50" ());
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.12500" ~decimals:3) ~product_decimals:"5")
+    ~case_text:(tarief_case ~maandloon:"100.00" ~grens:"12.50" ());
   (* a whole-number rate stays on the ordinary path, which carries the sign *)
   both_answer ~name:"money x rate: a whole-number rate keeps a negative money"
     ~ir:(tarief_doc ~tarief_t:(tarief_number ~decimals:0) ~rate:tarief_ref ~product_decimals:"2")

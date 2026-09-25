@@ -2319,6 +2319,95 @@ let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
     Printf.sprintf "(%s*%d)" tr k
   end
 
+let decimals_of_scale s =
+  let rec go s d = if s = 1 then Some d else if s mod 10 = 0 then go (s / 10) (d + 1) else None in
+  if s < 1 then None else go s 0
+
+(* the decimals the TERM of [e] carries: the scale [expr_term] and
+   [closed_term] give it, derived the way they derive it — a literal from its
+   lexeme, a reference from its declaration, a binder from its binding, a
+   field from its struct's declaration, a join by the rule its arm applies (a
+   division at the out-scale max(s_L, s_R, write_scale)). Never a composite's
+   own annotation (RUNTIME-SEMANTICS ch. 2.10). [scope] carries the Lets
+   peeled above the product with the decimals of their values. [None] where
+   the term is not a number or no rule is written here: such an operand keeps
+   the ordinary product path. *)
+let rec term_decimals ctx scope (e : expr) : int option =
+  let numeric = function
+    | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> Some decimalen
+    | _ -> None
+  in
+  let both f l r =
+    match (Option.bind l (term_decimals ctx scope), Option.bind r (term_decimals ctx scope)) with
+    | Some a, Some b -> Some (f a b)
+    | _ -> None
+  in
+  match e with
+  | Literal { variant; typ = Some (Numeriek _ | Percentage _) | None; _ } ->
+      Some (lexeme_decimals (Ir_v0.Loader.literal_lexeme variant))
+  | Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ } -> (
+      match Ir_v0.Checks.effective_ot ctx.doc ot with
+      | Some o -> Option.bind (Ir_v0.Checks.find_ci o.attributen a) numeric
+      | None -> None)
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci ctx.doc.parameters p with
+      | Some par -> numeric par.par_datatype
+      | None -> None)
+  | Binder_ref { naam; _ } -> (
+      match List.assoc_opt (norm naam) scope with
+      | Some d -> d
+      | None -> (
+          match List.assoc_opt (norm naam) ctx.binders with
+          | Some (_, _, s, _) -> decimals_of_scale s
+          | None -> None))
+  | Field_access { base; veld; _ } -> (
+      match static_type ctx base with
+      | Some (Struct_type { velden; _ }) -> (
+          match List.find_opt (fun (n, _) -> norm n = norm veld) velden with
+          | Some (_, fdt) -> numeric (Some fdt)
+          | None -> None)
+      | _ -> None)
+  | Binair { op = Plus | Min | Verminderd_met; links; rechts; _ } -> both max links rechts
+  | Binair { op = Maal; links; rechts; _ } -> both ( + ) links rechts
+  | Binair { op = Percentage_van; links; rechts; _ } -> both (fun a b -> a + b + 2) links rechts
+  | Binair { op = Gedeeld_door; links; rechts; _ } ->
+      Option.bind (decimals_of_scale ctx.write_scale) (fun w ->
+          both (fun a b -> max (max a b) w) links rechts)
+  | Binair { op = Gedeeld_door_abs; _ } -> Some 5
+  | Afgerond { decimalen; _ } -> Some decimalen
+  | Let { binder; value; body; _ } ->
+      term_decimals ctx ((norm binder, term_decimals ctx scope value) :: scope) body
+  | _ -> None
+
+(* the money × rate product under [basis] (possibly under ch. 10.6 Lets) that
+   the split encoding carries, and the side the money stands on: [Some false]
+   left, [Some true] right, [None] for any other product. The money is a term
+   at two decimals, the rate a term at four — or at one to three, where the
+   split carries more than the ordinary product path. A unit-carrying operand
+   stays on that path: the split refuses it ([unit_free_ok]), the ordinary
+   path admits the factor-free product ([mul_units_ok]). A whole-number rate
+   stays too: its cent rounding is the identity, so the ordinary path carries
+   every sign, while the split refuses a negative operand (Catala's
+   Mult_mon_int, ASP-TRANSLATION S19). With two money-like operands the left
+   one is the money. *)
+let money_mult_roles ctx (basis : expr) : bool option =
+  let rate ~money d r =
+    match d with
+    | Some 4 -> true
+    | Some d -> d >= 1 && d < 4 && eff_unit ctx money = None && eff_unit ctx r = None
+    | None -> false
+  in
+  let rec go scope = function
+    | Let { binder; value; body; _ } -> go ((norm binder, term_decimals ctx scope value) :: scope) body
+    | Binair { op = Maal; links = Some l; rechts = Some r; _ } ->
+        let dl = term_decimals ctx scope l and dr = term_decimals ctx scope r in
+        if dl = Some 2 && rate ~money:l dr r then Some false
+        else if dr = Some 2 && rate ~money:r dl l then Some true
+        else None
+    | _ -> None
+  in
+  go [] basis
+
 (* --- sum types (RUNTIME-SEMANTICS ch. 9; ASP-TRANSLATION S14) ------------ *)
 
 (* a constructor VALUE or PATTERN is a ground term whose functor is the
@@ -8143,46 +8232,15 @@ and filter_condition ctx (c : conditie) : string list =
         "a FilterList condition here is a sum-typed (in)equality over the bound element (no \
          corpus case for more)"
 
-(* is [basis] a money × rate product (possibly under ch. 10.6 Lets)? — a
-   2-decimal money multiplied by a rate of one to four decimals: the
-   [Mult_mon_rat] shape the Catala plugin wraps in Rounding{halfAwayFromZero,2}
-   (§5) at four, and a RegelSpraak rate literal, which the frontend types at its
-   smallest scale, at fewer. The naive product wraps int31 at tutorial
-   magnitude, so it takes the split encoding, which brings the rate to scale
-   10^4 first ([money_mult_rate]). *)
-and money_mult_shape ctx (basis : expr) : bool =
-  (* the peeled Lets' binders are in scope of the product, so a binder
-     operand takes the type its Let's value has (B13: a binder read carries
-     none of its own) *)
-  let typ scope e =
-    match e with
-    | Binder_ref { naam; _ } when List.mem_assoc (norm naam) scope -> List.assoc (norm naam) scope
-    | _ -> static_type ctx e
-  in
-  let dec scope e =
-    match typ scope e with
-    | Some (Numeriek { decimalen; _ } | Percentage { decimalen; _ }) -> Some decimalen
-    | _ -> None
-  in
-  let rec go scope = function
-    | Let { binder; value; body; _ } -> go ((norm binder, typ scope value) :: scope) body
-    | Binair { op = Maal; links = Some m; rechts = Some r; _ } -> (
-        dec scope m = Some 2
-        &&
-        match dec scope r with
-        | Some 4 -> true
-        (* below four decimals the product is rerouted only where the split
-           carries more than the ordinary product path. A unit-carrying operand
-           stays: the split refuses it ([unit_free_ok]), the ordinary path admits
-           the factor-free product ([mul_units_ok]). A whole-number rate stays:
-           its cent rounding is the identity, so the ordinary path carries every
-           sign, while the split refuses a negative operand (Catala's
-           Mult_mon_int, ASP-TRANSLATION S19) *)
-        | Some d -> d >= 1 && d < 4 && eff_unit ctx m = None && eff_unit ctx r = None
-        | None -> false)
-    | _ -> false
-  in
-  go [] basis
+(* is [basis] a money × rate product (possibly under ch. 10.6 Lets) the split
+   encoding carries? — a 2-decimal money times a rate of one to four
+   decimals, the money on either side ([money_mult_roles]): the [Mult_mon_rat]
+   shape the Catala plugin wraps in Rounding{halfAwayFromZero,2} (§5) at four,
+   and a RegelSpraak rate literal, which the frontend types at its smallest
+   scale, at fewer. The naive product wraps int31 at tutorial magnitude, so it
+   takes the split encoding, which brings the rate to scale 10^4 first
+   ([money_mult_rate]). *)
+and money_mult_shape ctx (basis : expr) : bool = money_mult_roles ctx basis <> None
 
 (* the split money multiplication (S-section (c)): rounding a 2-decimal money
    M times a rate R, brought to scale 10^4 by [money_mult_rate], to the cent.
@@ -8200,6 +8258,12 @@ and money_mult_shape ctx (basis : expr) : bool =
 and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string * int =
   let saved_b = ctx.binders and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
   let saved_d = ctx.demands in
+  (* the money's side, read before the peel binds anything — as the guard read it *)
+  let swapped =
+    match money_mult_roles ctx basis with
+    | Some s -> s
+    | None -> fault "money multiplication base is not a money × rate product (money_mult_shape gated this)"
+  in
   let rec peel = function
     | Let { binder; body; _ } when not (reads_binder binder body) ->
         (* ch. 10.6 clause 3: an unread binder evaluates nothing *)
@@ -8216,7 +8280,8 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
         (req "money multiplication left" links, req "money multiplication right" rechts)
     | _ -> fault "money multiplication base is not a times composite (money_mult_shape gated this)"
   in
-  let m, r = peel basis in
+  let l, r = peel basis in
+  let m, r = if swapped then (r, l) else (l, r) in
   numeric_ok ctx (Some m);
   numeric_ok ctx (Some r);
   unit_free_ok ctx (Some m);
@@ -8255,8 +8320,12 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
 and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * int =
   let m, r =
     match basis with
-    | Binair { op = Maal; links; rechts; _ } ->
-        (req "money multiplication left" links, req "money multiplication right" rechts)
+    | Binair { op = Maal; links; rechts; _ } -> (
+        let l = req "money multiplication left" links and r = req "money multiplication right" rechts in
+        match money_mult_roles ctx basis with
+        | Some swapped -> if swapped then (r, l) else (l, r)
+        | None ->
+            fault "money multiplication base is not a money × rate product (money_mult_shape gated this)")
     | _ -> fault "a closed-body money multiplication base is not a bare times composite"
   in
   numeric_ok ctx (Some m);
