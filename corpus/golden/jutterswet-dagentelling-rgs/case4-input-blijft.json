@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "borgdagen": {
+            "timeline": [
+              {
+                "from": "2024-03-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "99"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "borgdagen",
+      "timeline": [
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "99"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

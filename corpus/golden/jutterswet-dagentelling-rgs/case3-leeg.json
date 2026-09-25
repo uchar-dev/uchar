@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "borgdagen",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "jaardagen",
+      "timeline": []
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

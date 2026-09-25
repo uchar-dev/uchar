@@ -1,0 +1,12 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is borgplichtig kenmerk (bijvoeglijk) voor elke maand;
+    de borgdagen Numeriek (niet-negatief geheel getal) voor elke maand;
+    de jaardagen Numeriek (niet-negatief geheel getal) voor elk jaar;
+
+Regel borgdagen van een jutter
+    geldig altijd
+        De borgdagen van een Jutter moet berekend worden als het aantal dagen in de maand dat hij borgplichtig is.
+
+Regel jaardagen van een jutter
+    geldig altijd
+        De jaardagen van een Jutter moet berekend worden als het aantal dagen in het jaar dat hij borgplichtig is.
