@@ -5,7 +5,7 @@ read as a VOORWAARDE lowers to a navigated `CharacteristicCheck` over the
 synthesised back-link (the condition sibling of the value-position
 navigated `AttributeReference`; no new node). The exception default's guard reads
 `overzees` of the minted `eigenaar` instance over the `Vondstaanslag_eigenaar`
-back-link. Both executors carry the navigated check (anchor
+back-link. `ref` and clingo carry the navigated check (anchor
 jutterswet-kustwacht). Own-authored, rights-free.
 
 ```catala

@@ -14,9 +14,11 @@ uitzonderingssport boven de basis; haar voorwaarde leest `overzees` van
 de eigenaar over de gesynthetiseerde terugkoppeling heen. Dat is de
 genavigeerde kenmerk-lezing in conditie-positie (IR-SPEC ch. 4.1a/5,
 WF-053; geen nieuwe knoop — de wire-knoop `CharacteristicCheck` met
-`navigation`, beide executoren dragen hem, anker
-jutterswet-kustwacht). Eigen auteurschap, rechtenvrij; de eigenaarregel
-draait in de fixpoint van de aanslag op de gemunte instantie.
+`navigation`, anker jutterswet-kustwacht). `ref` en clingo dragen hem; van
+de Drools-backend speelt de exec-modeltak deze golden en weigert de
+DRL-teksttak haar, omdat die tak de defaultslaag (`prioritizedDefaults`)
+niet draagt. Eigen auteurschap, rechtenvrij; de eigenaarregel draait in de
+fixpoint van de aanslag op de gemunte instantie.
 
 ```catala
 declaration scope Eigenaar:
