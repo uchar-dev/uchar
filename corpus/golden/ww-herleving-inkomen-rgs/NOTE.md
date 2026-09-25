@@ -67,9 +67,9 @@ Default 1  (besluit waar,   als: W)                        -- toekenning art 15
 
 Gemeten op beide `ir.json` met elk `source`-record recursief weggelaten en
 de sleutels gesorteerd (de methode van `spec/proposals/PHASE5D-DIFF.md`
-§2–3): 140 regels van de genormaliseerde diff, in elf blokken. Het
-objecttype, de rekenregels, de besluiten en de rechtvaardigingen zijn
-gelijk, op de vier verschillen hieronder na.
+§2–3): 140 regels van de genormaliseerde diff (`diff`, de regels met `<` of
+`>`), in elf blokken. Het objecttype, de rekenregels, de besluiten en de
+rechtvaardigingen zijn gelijk, op de vier verschillen hieronder na.
 
 | verschil | anker | tweeling | triage |
 |---|---|---|---|
