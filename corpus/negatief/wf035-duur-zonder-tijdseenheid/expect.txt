@@ -1,0 +1,1 @@
+date ± duration: the duration operand carries no time unit
