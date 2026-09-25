@@ -225,6 +225,46 @@ input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 result derives no effectiveness and the input stands (ref's
 no-write-on-empty, RS ch. 7.8).
 
+**Initialisation** (`initialisation: true`). Inside the ch. 7.7
+desugaring domain — one unconditional, version-free initialisation
+beside at most one version-free computing rule — the pair is read as a
+defaults group before translation and the initialisation becomes the
+initialisation default (S10). Outside it — a conditional or a windowed
+initialisation, which ch. 7.7 leaves to the native reading — it
+translates natively, as ref replays it (RS ch. 5.4):
+
+```
+val(S,a,⟨term⟩) :- isa(S,ot), ⟨exclusions⟩, ⟨condition⟩, not inputfilled(S,a)
+                   [, not comp_decides(S,a)], ⟨bindings⟩, ⟨fit guards⟩.
+```
+
+`inputfilled/2` is a case fact beside the untouched input `val/3`: the
+guard reads the input (RS ch. 5.4), so a supplied value stands, the
+initialisation's own write never switches the guard off, and the head is
+not its own negative premise. Beside one computing rule that writes a
+concrete type of the initialisation's chain as a rule too, that rule
+derives `comp_decides(S,a)` with its own val body and `comp_fires(S,a)`
+with its base and condition; the head needs `not comp_decides(S,a)`, so
+the computed value wins. Where `comp_fires` holds without
+`comp_decides`, v0 erases what the initialisation writes and the
+initialisation writes it again, and ref faults on its pass budget; there
+`viol("no fixpoint: a computing rule evaluating leeg erases what the
+initialisation of a writes, and the initialisation writes it again
+(ch. 5.7)",S)` fires as well, unless the rule is a standing one (S10),
+which writes nothing on leeg. The value's fences carry the write guard
+(`ctx.rule_guard`): ref evaluates the value only where it writes. Where
+the chain of a concrete type declares a defaults group on the target, the
+rule is folded into that type's stack as its initialisation default,
+condition and all (RS ch. 7.10, S10), and `⟨exclusions⟩`
+(`not is_a(S,t)` per such type) keeps the rule's own head off it.
+Witnesses: `jutterswet-voorwaardelijke-initialisatie` (the three
+branches of the guard), `jutterswet-wrakinitialisatie` (the folded
+initialisation beside the rule on the supertype's own instances) and
+`jutterswet-initialisatievolgorde` (a value that a rule written later
+computes, conditional through this arm and unconditional through the
+desugaring); the co-writer and divergence shapes are pinned in the
+backend's own suite.
+
 A **text/enum scalar target** takes the sum/struct-target route: the
 value — a text/enum literal or an own-subject text/enum attribute
 read, lowered by `symbolic_term` (S2's ground terms) — rides straight
@@ -250,7 +290,8 @@ target. Witness: `jutterswet-vensterheffing`.
 Not translated, loudly (S19 carries the full list):
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
 on non-standing computed targets; a `standing` target outside its own
-domain; boolean computed targets (above).
+domain; boolean computed targets (above); the initialisation shapes the
+native arm has no guard for (above).
 
 ### S4. Expression terms
 
@@ -1274,7 +1315,11 @@ X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
 group elides the conflict machinery entirely). An `initialisation`
 default additionally requires `not grpG_has_input(S)`: initialisation
 yields to case input by definition (RS ch. 7.3, and the virtual
-input default of ch. 7.8 that sits above it).
+input default of ch. 7.8 that sits above it). An initialisation that the
+fold of RS ch. 7.10 took into a stack keeps its condition, whose atoms
+join that body. Every default of a composed stack is translated on the
+level that declared it: an own read in it names that type, not the
+stack's owner (RS ch. 7.10; `jutterswet-wrakinitialisatie`).
 
 **Standing input** (RS ch. 7.8): case input on a defeasible target
 enters as `inputval/3` (S2) and re-enters the model through
@@ -2905,6 +2950,33 @@ form loudly — a documented limit **conform to the norm**: the two
 executors diverge here in *expressiveness*, never in *value*, the
 exact-to-the-rounding-point rule made visible on the backend that must
 round every step.
+
+*Initialisations outside the desugaring domain (S3) — the shapes the
+native arm has no guard for:* **two initialisations that write one
+concrete type as rules** (`… initialisations write "a": the first to
+fire writes and the others find the target filled, an order among
+writers that no guard on the fact base reproduces (no corpus case)`) —
+WF-079's initialisation arm refuses such a pair first, flat and through
+the chain, so on verifier-clean input the fault is a backstop, while two
+initialisations the fold takes into one stack are no pair (the stack's
+block order ranks them, RS ch. 7.10); an initialisation beside **two
+computing rules** on its target (`the initialisation of "a" sits beside
+… computing rules on its target: their v0 meaning is the order in which
+they fire (no corpus case)`) — a guarded case split WF-079 admits,
+whose firing order this arm has no guard for; an initialisation beside
+**an allocation, a creation-time write or a defaults group of its own
+level** (`the initialisation of "a" shares its target with an
+allocation, an object creation or a defaults group of its own level:
+ch. 5.4 places an initialisation beside ordinary rules only (no corpus
+case)`) — the last is WF-050's single-writer lift, refused first, and a
+defaults group on another level of the chain is no co-writer because the
+fold takes the initialisation into that stack; a target that is
+**neither a number nor a date** (`the initialisation of "a" writes a
+target that is neither a number nor a date, and only those are
+translated here (no corpus case)`) — text, enumeration, boolean, sum,
+struct and date-time targets, which ref replays; and a **temporal
+target**, refused in ref's words (`temporal attribute "a" as a target:
+temporal writes are not implemented`).
 
 *Environment and input fences:* a **control character < 0x20** in a
 name or label — the one character class the ASP string encoding cannot

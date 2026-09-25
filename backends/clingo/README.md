@@ -244,15 +244,16 @@ spec bug.
   which ch. 7.7 excludes, or a windowed one — translates natively, as
   ref replays it (RS ch. 5.4): its `val` head needs the condition and
   `not inputfilled(S,a)`, a case fact beside the untouched input `val`,
-  so a supplied value stands. Beside one computing rule on the target,
-  declared on its type or on another type of its chain, the head also
+  so a supplied value stands. Beside one computing rule on the target
+  that writes a concrete type of its chain as a rule too, the head also
   needs `not comp_decides(S,a)`, which that rule derives with its own
   val body: the computed value wins. Where the rule fires and evaluates
   leeg (`comp_fires` without `comp_decides`), v0 erases what the
   initialisation writes and the initialisation writes it again; ref
   faults on its pass budget, and a `viol/2` witness makes clingo refuse
   too, unless the rule is a ch. 7.8 standing one, which writes nothing on
-  leeg. Two initialisations or two computing rules on one target, an
+  leeg. Two initialisations that write one concrete type as rules
+  (WF-079 refuses them first), two computing rules on one target, an
   allocation, a creation-time write or a defaults group of its own level
   (WF-050's) beside it, and a target that is no number or date are
   refused by name. A defaults group on another level of the chain is no
