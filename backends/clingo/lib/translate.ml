@@ -4340,7 +4340,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (List.tl onderdelen)
         | _ ->
             fault
-              "unsupported gedurende condition shape (WF-055: an own temporal \
+              "unsupported gedurende condition shape (an own temporal \
                characteristic, a per-segment comparison of an own temporal attribute, or \
                an all composite of such shapes)"
       in
@@ -5921,7 +5921,7 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
   | Constante { naam = Some n; _ } ->
       fault
         "day-kind condition reads the session value %S — a day-kind condition admits the bound \
-         day (BoundDay) and no context value (WF-031)"
+         day (BoundDay) and no context value"
         n
   | Literal { variant; typ; _ } -> (
       let lex = Ir_v0.Loader.literal_lexeme variant in
@@ -6062,8 +6062,8 @@ and dk_cond ctx ~stack ~day (c : conditie) : bool =
       if negatie then not hit else hit
   | _ ->
       fault
-        "a day-kind condition of this form is not evaluated (WF-031 admits comparisons, \
-         composites, leeg/gevuld tests and nested day-kind tests)"
+        "a day-kind condition of this form is not evaluated (a day-kind condition admits \
+         comparisons, composites, leeg/gevuld tests and nested day-kind tests)"
 
 and dk_holds ctx ~stack (name : string) (day : int) : bool =
   if List.exists (fun n -> norm n = norm name) stack then

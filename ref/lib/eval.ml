@@ -1575,7 +1575,7 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
                   (List.tl onderdelen)
             | _ ->
                 Value.fault
-                  "unsupported gedurende condition shape (WF-055: an own temporal \
+                  "unsupported gedurende condition shape (an own temporal \
                    characteristic, a per-segment comparison of an own temporal attribute, \
                    or an all composite of such shapes)"
           in
