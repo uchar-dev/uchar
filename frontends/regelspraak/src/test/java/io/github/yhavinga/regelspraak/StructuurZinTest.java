@@ -258,6 +258,115 @@ class StructuurZinTest {
                         "Het startpunt van het penningjaar voor een Jutter wordt bepaald door zijn aanvangsdatum")));
     }
 
+    // ---- WF-112 and WF-111: the time window's position and bounds
+
+    @Test void een_venster_onder_een_tellende_kwantor() {
+        assertEquals(List.of("periodevergelijking onder 'ten minste 1' (als lid van een samengestelde voorwaarde): a time "
+                        + "window under none or a counting quantifier: the window gates the RULE, and no reading is "
+                        + "specified for a verdict that is counted or complemented"),
+                fouten("""
+                    Objecttype de Jutter (mv: Jutters) (bezield)
+                        de premie Numeriek (geheel getal);
+                        is gemeld kenmerk (bijvoeglijk);
+
+                    Regel premie
+                        geldig altijd
+                            De premie van een Jutter moet gesteld worden op 10
+                            indien hij aan ten minste één van de volgende voorwaarden voldoet:
+                            - het is de periode vanaf dd. 01-01-2024
+                            - hij is gemeld.
+                    """));
+    }
+
+    private static final String VENSTER = """
+        Parameter de peilparameter : Datum in dagen
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de peildatum Datum in dagen;
+            de knipdatum Datum in dagen voor elke maand;
+            het meldmoment Datum en tijd in millisecondes;
+            de premie Numeriek (geheel getal);
+
+        Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+            de klipdatum Datum in dagen;
+
+        Objecttype het Strandvak (mv: Strandvakken)
+            de opendatum Datum in dagen;
+
+        Feittype vaktoewijzing
+            de vakhouder Jutter
+            het strandvak Strandvak
+        Eén vakhouder heeft één strandvak
+
+        """;
+
+    private static List<String> venster(String extra, String subject, String venster) {
+        return fouten(VENSTER + extra + """
+            Regel premie
+                geldig altijd
+                    De premie van een %s moet gesteld worden op 10
+                    %s.
+            """.formatted(subject, venster));
+    }
+
+    private static final String GRENSSTAART = " — a bound is a date literal or an own scalar date attribute of the "
+            + "subject; the general date expression is an OPEN wire decision";
+
+    @Test void een_venstergrens_buiten_de_twee_vormen() {
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de peilparameter'): the from bound of a time window is "
+                + "the parameter 'peilparameter'" + GRENSSTAART), venster("", "Jutter", "vanaf de peilparameter"));
+        assertEquals(List.of("periodevergelijking (de tot-grens 'de peilparameter'): the to bound of a time window is "
+                + "the parameter 'peilparameter'" + GRENSSTAART),
+                venster("", "Jutter", "van dd. 01-01-2024 tot de peilparameter"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van het strandvak van de Jutter'): the "
+                + "from bound of a time window is a navigated read of 'opendatum'" + GRENSSTAART),
+                venster("", "Jutter", "vanaf de opendatum van het strandvak van de Jutter"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak'): the from bound of a "
+                + "time window is a navigated read of 'opendatum'" + GRENSSTAART),
+                venster("", "Jutter", "vanaf de opendatum van zijn strandvak"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn peildatum plus 1 dg'): the from bound of a time "
+                + "window is a computed date expression" + GRENSSTAART), venster("", "Jutter", "vanaf zijn peildatum plus 1 dg"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn knipdatum'): the from bound of a time window is "
+                + "the time-dependent attribute 'knipdatum'" + GRENSSTAART), venster("", "Jutter", "vanaf zijn knipdatum"));
+    }
+
+    @Test void een_venstergrens_van_millisecondeprecisie() {
+        String zin = ": the from bound of a time window is a millisecond-precision date: the window is a range of civil "
+                + "days and no clause reads an instant bound";
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn meldmoment')" + zin),
+                venster("", "Jutter", "vanaf zijn meldmoment"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'dd. 1-7-2026 08:30:00.000')" + zin),
+                venster("", "Jutter", "vanaf dd. 1-7-2026 08:30:00.000"));
+    }
+
+    @Test void een_venstergrens_op_een_sub_of_supertype_met_een_relatie_is_een_navigatie() {
+        String relatie = """
+            Feittype klipmaatschap
+                de maat Jutter
+                de klipmaat Klipjutter
+            Eén maat heeft één klipmaat
+
+            """;
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de klipdatum van de Klipjutter'): the from bound of a "
+                + "time window is a navigated read of 'klipdatum'" + GRENSSTAART),
+                venster(relatie, "Jutter", "vanaf de klipdatum van de Klipjutter"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de peildatum van de Jutter'): the from bound of a time "
+                + "window is a navigated read of 'peildatum'" + GRENSSTAART),
+                venster(relatie, "Klipjutter", "vanaf de peildatum van de Jutter"));
+    }
+
+    @Test void een_venstergrens_op_een_sub_of_supertype_zonder_relatie_houdt_de_eigen_zin() {
+        // this frontend reads the name as another instance, and without a relation to it that read has no wire form
+        List<String> sub = venster("", "Jutter", "vanaf de klipdatum van de Klipjutter");
+        assertEquals(1, sub.size(), sub::toString);
+        assertTrue(sub.get(0).startsWith("periodevergelijking (§8.4.3): de vanaf-grens 'de klipdatum van de Klipjutter' "
+                + "is het attribuut 'klipdatum' van 'Klipjutter', een subtype van het onderwerp 'Jutter'"), sub.get(0));
+        List<String> sup = venster("", "Klipjutter", "vanaf de peildatum van de Jutter");
+        assertEquals(1, sup.size(), sup::toString);
+        assertTrue(sup.get(0).startsWith("periodevergelijking (§8.4.3): de vanaf-grens 'de peildatum van de Jutter' is "
+                + "het attribuut 'peildatum' van 'Jutter', een supertype van het onderwerp 'Klipjutter'"), sup.get(0));
+    }
+
     // ---- WF-020: two decision-table rows with one rule name
 
     @Test void twee_tabelrijen_met_een_regelnaam() {

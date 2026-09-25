@@ -60,14 +60,14 @@ class PeriodegrensTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "Jutter     | vanaf de peilparameter                   | de parameter 'peilparameter'",
-            "Jutter     | vanaf de opendatum van het strandvak van de Jutter | een genavigeerde of verzamelende lezing van 'opendatum'",
-            "Jutter     | vanaf de opendatum van zijn strandvak    | een ander objecttype dan het onderwerp 'Jutter'",
-            "Jutter     | vanaf zijn meldmoment                    | het datum-tijd-attribuut 'meldmoment'",
-            "Jutter     | vanaf zijn peildatum plus 1 dg           | een berekende datumexpressie",
-            "Jutter     | vanaf zijn knipdatum                     | het tijdsafhankelijke attribuut 'knipdatum'",
-            "Jutter     | vanaf dd. 1-7-2026 08:30:00.000          | een datum-tijd",
-            "Jutter     | van dd. 01-01-2024 tot de peilparameter  | de tot-grens",
+            "Jutter     | vanaf de peilparameter                   | the from bound of a time window is the parameter",
+            "Jutter     | vanaf de opendatum van het strandvak van de Jutter | a navigated read of 'opendatum'",
+            "Jutter     | vanaf de opendatum van zijn strandvak    | a navigated read of 'opendatum'",
+            "Jutter     | vanaf zijn meldmoment                    | is a millisecond-precision date",
+            "Jutter     | vanaf zijn peildatum plus 1 dg           | a computed date expression",
+            "Jutter     | vanaf zijn knipdatum                     | the time-dependent attribute 'knipdatum'",
+            "Jutter     | vanaf dd. 1-7-2026 08:30:00.000          | is a millisecond-precision date",
+            "Jutter     | van dd. 01-01-2024 tot de peilparameter  | the to bound of a time window is the parameter",
             "Jutter     | vanaf de klipdatum van de Klipjutter     | een subtype van het onderwerp 'Jutter'",
             "Klipjutter | vanaf de peildatum van de Jutter         | een supertype van het onderwerp 'Klipjutter'"
     })
@@ -76,7 +76,9 @@ class PeriodegrensTest {
         List<Diagnostic> fouten = m.errors();
         assertEquals(1, fouten.size(), () -> "verwachtte precies één fout voor '" + venster + "', kreeg: " + m.diagnostics);
         String t = fouten.get(0).message();
-        assertTrue(t.contains("WF-111") && t.contains("§8.4.3"), t);
+        // the verifier's WF-111 sentence; a sub- or supertype read that no relation reaches has no wire form, so that
+        // refusal keeps its own words, which cite the rule
+        assertTrue(t.contains(" bound of a time window is ") || t.contains("WF-111") && t.contains("§8.4.3"), t);
         assertTrue(t.contains(fragment), () -> "de melding noemt '" + fragment + "' niet: " + t);
         // an ERROR keeps the document off disk: Resolver.irModus writes nothing
         assertFalse(m.isOk());

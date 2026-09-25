@@ -658,7 +658,7 @@ class UitzonderingOpUitzonderingTest {
                 + regel("uitsluiting", UIT, "hij aan geen van de volgende voorwaarden voldoet:\n"
                         + "        - het is de periode vanaf dd. 01-01-2024\n        - hij is geschorst")
                 + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is")));
-        assertTrue(d.message().contains("WF-112"), d.message());
+        assertTrue(d.message().contains("a time window under none or a counting quantifier"), d.message());
     }
 
     // -------------------------------------------------------------------- annotations and the scenario layer

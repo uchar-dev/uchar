@@ -57,7 +57,8 @@ class VensterKwantorTest {
     void een_venster_onder_geen_of_een_tellende_kwantor_weigert(String kwantor, String woorden) {
         RegelSpraakModel m = Resolver.resolve(onder(kwantor));
         Diagnostic d = enigeFout(m);
-        assertTrue(d.message().contains("WF-112") && d.message().contains("'" + woorden + "'"), d.message());
+        assertTrue(d.message().contains("a time window under none or a counting quantifier")
+                && d.message().contains("'" + woorden + "'"), d.message());
         assertFalse(m.isOk(), "een ERROR houdt het document van de schijf");
     }
 
@@ -73,7 +74,8 @@ class VensterKwantorTest {
                         • zijn peildatum is gevuld.
             """;
         Diagnostic d = enigeFout(Resolver.resolve(src));
-        assertTrue(d.message().contains("WF-112") && d.message().contains("'geen van de'"), d.message());
+        assertTrue(d.message().contains("a time window under none or a counting quantifier")
+                && d.message().contains("'geen van de'"), d.message());
     }
 
     @Test void een_venster_onder_alle_blijft_schoon() {
