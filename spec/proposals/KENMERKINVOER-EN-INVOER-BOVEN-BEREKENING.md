@@ -959,10 +959,14 @@ consistentielowering van de Drools-exectak (voorstel §5.6, alternatief d).
    a protected path outside this card's reach) calls case7's expectation
    provisional until this card decides, and names options 7-i and 7-ii.
    Once the sentence of §4.1 lands, the paragraph can cite ch. 7.8 instead.
+   *Resolved at the landing:* the bullet cites ch. 7.8 (a proposal on the
+   protected path).
 2. **Gate 7's survivor reason for case7** (`scripts/check-noop.sh:157-167`,
    protected) says the case is pinned "as long as the card
    kenmerkinvoer-en-invoer-boven-berekening does not choose its option
-   7-ii"; with (7-ii) decided against, it can cite ch. 7.8.
+   7-ii"; with (7-ii) decided against, it can cite ch. 7.8. *Resolved at
+   the landing:* the reason cites ch. 7.8 (a proposal on the protected
+   script).
 3. **A stale header comment in the Catala frontend**
    (`frontends/catala/lib/translate.ml:34` and `:51-59`) said `context`
    variables are refused; since decision 6 was executed (2026-08-24) the
