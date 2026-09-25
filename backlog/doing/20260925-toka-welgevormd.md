@@ -50,3 +50,11 @@ bestaat (CLAUDE.md, corpusregels).
 May touch: `toka/**`, `scripts/check-toka-parity.sh` (**voorstel**),
 kaartverplaatsing; `frontends/regelspraak/**` alleen als (b) een
 emitterfout blijkt.
+
+## U-besluiten (hoofdsessie, 2026-09-25, bij de claim)
+
+- U1 Slices: elke slice krijgt het ene element van `rules.startPointDeterminations` van `toka/casus/ir.json` (toka-43 en toka-44 dragen het al) — mechanisch, met een script buiten de repo (niets citeren), in de sleutelvolgorde van het schema; daarna verifier over alle 29 slices; gate 11 (metaschema, her-emissie en de 29 replays in ref, clingo en Drools) onbewogen — een veranderde replay-uitkomst is een nulmeting die je vastlegt en niet wegwerkt.
+- U2 toka-24 (WF-099 op een begrenzingsgrens): zoek uit of de emitter de eenheid van de basis op een literal-grens hoort te zetten (WF-099: een eenheidloze literal neemt de eenheid van de basis over — dus vuurt de regel alleen bij een échte eenheidsbotsing; vergelijk met een golden met een `Clamp`), en of de casus daar een eigenaardigheid heeft zoals toka-45. Emitterfout: fix in `frontends/regelspraak/` met een rood-eerst JUnit-getuige en meld het (vóór de pin-bump); casus-eigen: holdout met reden.
+- U3 Gate 11 (**voorstel**, `scripts/check-toka-parity.sh`): een been "elke slice is verifier-schoon" met een reden-dragende holdoutlijst die faalt als hij verouderd is (het patroon van `HOLDOUTS`), en het casusdocument buiten dat been met de reden (overbepaald door zijn aard: de scenario's schrijven hetzelfde doel elk anders).
+- U4 `toka/README.md`: de slice-regel (een slice draagt naast zijn scenario wat zijn model verankert) en de welgevormdheidsstand; geen inhoud uit de zone in README, Result of commits.
+- U5 Gates 1, 2, 3, 4, 11 (de replays van de zone zitten in 11); als U2 de emitter raakt ook 10 en 12.
