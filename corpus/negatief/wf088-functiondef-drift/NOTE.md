@@ -5,7 +5,7 @@ family of positions the rule reaches only through its **nested** walk: a
 
 The declaring enumeration `bergingsstatus` has two values (`Geborgen`,
 `Vermist`); the `bergingsmelding` sum type's `Gemeld` payload repeats
-them faithfully in `domeinen`, and the three use sites repeat a third
+them faithfully in `domains`, and the three use sites repeat a third
 value `Verspoeld` that no declaration has. The verifier reports:
 
     WF-088 FAIL /model/functionDefs/0/parameters/0
