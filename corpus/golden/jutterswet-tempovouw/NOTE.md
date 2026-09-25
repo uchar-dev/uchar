@@ -14,7 +14,7 @@ table names and does not carry.
 Two folds happen, in this order (RUNTIME-SEMANTICS ch. 3.6 and §7.1):
 
 1. **per element, over time.** Each `Vondst`'s own `bewaartarief` timeline
-   collapses first, at that attribute's own granularity (`MAAND`): every
+   collapses first, at that attribute's own granularity (`month`): every
    segment contributes `value × whole grid units of its span` (§4.20 Tabel 30).
 2. **over the set.** Only those per-member scalars are summed. An element that
    brings no timeline contributes nothing; an empty set totals `0`

@@ -2,9 +2,9 @@
 
 The sixth of the quantifier-fold family, and the one cell of its grid where the
 matrix reads something that is not on the contributor: its bound is a
-`ParameterRef`. `jutterswet-schouwploeg` and `jutterswet-vuurtoren` compare the
-element's own attribute with a LITERAL; here the same comparison is made against
-a parameter whose value arrives with the case.
+`ParameterReference`. `jutterswet-schouwploeg` and `jutterswet-vuurtoren`
+compare the element's own attribute with a LITERAL; here the same comparison is
+made against a parameter whose value arrives with the case.
 
 ```
 Parameter: de keurgrens : Numeriek (geheel getal)
@@ -31,7 +31,7 @@ When it was written, for the reason the rest of the non-temporal family was:
 unqualified comparison was refused (`setlezing buiten een vouwbron`, a message
 that cited WF-096 until L2). Measured again at L2 (2026-09-24) on the frontend
 of this repository: all five sentences above now lower, the four conditions to
-a `Kwantorvouw`, without a diagnostic; where the lowering declines — measured
+a `QuantifierFold`, without a diagnostic; where the lowering declines — measured
 with "ten minste 0 van de loodsen" — the refusal cites WF-053 since L2 (`… hier
 wordt één waarde verwacht, en een meervoudige stap in een lezing vraagt een
 aggregatie (WF-053, IR-SPEC ch. 4.1a)`). The document is still the hand-written
@@ -77,7 +77,7 @@ Reading the cells:
   bound of 6 — which a reader using `groter of gelijk` would get wrong in that
   case alone.
 - **case 4 is the vacuum, and the three quantifiers part company on it**
-  (ch. 3.9a's vacuous clause is about ALLE and GEEN; a count of 0 answers the
+  (ch. 3.9a's vacuous clause is about `all` and `none`; a count of 0 answers the
   threshold on its own and answers it **nee**).
 - **case 5 pins the RANGE and the leeg member together**: two posts in one run
   read opposite on every column, and L2's second loods has no `ervaring` at all.

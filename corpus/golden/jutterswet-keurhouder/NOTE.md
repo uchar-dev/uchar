@@ -2,7 +2,7 @@
 
 The **characteristic-check owner** witness (WF-100, `spec/IR-SPEC.md` ch. 4.6
 (q1); `spec/RUNTIME-SEMANTICS.md` ch. 5.8b). It is the corpus's first golden
-carrying an `eigenaar` on a characteristic check at all: before this document
+carrying a `host` on a characteristic check at all: before this document
 the field appeared in the negatief zone only, so no gated, replayed case pinned
 what a reader does with it.
 
@@ -52,9 +52,9 @@ do-nothing run mismatches both.
 The field is authoritative (maintainer decision 2026-09-10). Two twists, each
 measured on this document:
 
-- `eigenaar` -> `"Jutter"` (a declared type that does not declare `gekeurd`):
+- `host` -> `"Jutter"` (a declared type that does not declare `gekeurd`):
   the verifier refuses it, WF-100. That is the negatief witness.
-- `eigenaar` -> a type that DOES declare `gekeurd` but is not the subject's:
+- `host` -> a type that DOES declare `gekeurd` but is not the subject's:
   **WF-109 refuses it** (ch. 4.6 (q2), 2026-09-19) — the host names no object
   this position binds. *Until that rule the same twist was verifier-CLEAN and
   refused by both OCaml executors at run time, the reading that used to answer
@@ -64,11 +64,11 @@ measured on this document:
   The executors still fault on the document, fail-fast, and their own suites
   keep asserting the sentence: `ref/test/test_ref.ml` (ch. 5.8b) and
   `backends/clingo/test/test_clingo.ml`.
-- `eigenaar` -> a SUPERTYPE of `Vondst` that declares `gekeurd`: clean, and the
+- `host` -> a SUPERTYPE of `Vondst` that declares `gekeurd`: clean, and the
   answers do not move — satisfaction is extensional (`T ⊑ O`). Pointed at a
   strict SUBTYPE instead it is WF-109 again, on the partial-population flank
   (`corpus/negatief/wf109-gastheer-deelpopulatie`): only some `Vondst`en are
   one.
-- `eigenaar` -> `null` on both rules: the answers do not move. An absent owner
-  and an owner naming the subject's own type are the same reading, which is
+- `host` removed from both rules: the answers do not move. An absent host
+  and a host naming the subject's own type are the same reading, which is
   why every other golden in the corpus is unaffected by the rule.

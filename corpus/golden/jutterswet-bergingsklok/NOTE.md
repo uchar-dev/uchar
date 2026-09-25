@@ -13,8 +13,8 @@ all three executors answer the same.
 One day kind, `springtijdag`: a day whose day-of-month is 1 or 15 — a
 **monthly** recurrence, deliberately, so that the step form crosses month
 ends and the count form spans several occurrences without needing a long
-walk. The definition is a top-level `TEN_MINSTE 1` composite over two
-`DAG_UIT` comparisons on `de dag`, which is the §9.8 shape of the source's
+walk. The definition is a top-level `atLeast 1` composite over two
+`dayOf` comparisons on `de dag`, which is the §9.8 shape of the source's
 own Christmas-day example with the year dropped.
 
 `springtijdagen` is the declared unit of `bergingsbestek`, `bergingsspanne`

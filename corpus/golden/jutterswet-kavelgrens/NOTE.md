@@ -27,14 +27,13 @@ noordbuurbreedte := de kavelbreedte van de noordbuur van het Duinkavel
 zuidbuurbreedte  := de kavelbreedte van de zuidbuur van het Duinkavel
 ```
 
-The IR carries `wederkerig: false` and `meervoudig: false` on both roles
-— a declared plural (`noordburen`, `zuidburen`) does NOT make a role
-to-many; the cardinality comes from the `Eén … heeft één …` sentence,
-and the wire shows `meervoud` and `meervoudig` side by side to say so.
-The emitter binds both reads by NAME
-(`navigatieBindingen [{kavelgrens, noordbuur}]` and
-`[{kavelgrens, zuidbuur}]`); the by-pair derivation is ambiguous on a
-self-typed pair by construction and is never reached.
+The IR carries `reciprocal: false` on the fact type and `many: false` on both
+roles — a declared plural (`noordburen`, `zuidburen`) does NOT make a role
+to-many; the cardinality comes from the `Eén … heeft één …` sentence, and the
+wire shows `plural` and `many` side by side to say so. The emitter binds both
+reads by NAME (`path [{kavelgrens, noordbuur}]` and `[{kavelgrens, zuidbuur}]`);
+the by-pair derivation is ambiguous on a self-typed pair by construction and is
+never reached.
 
 ## The three cases: one chain, three spellings
 
@@ -73,15 +72,14 @@ zuidbuur, so ch. 5.8 rule 1 reads leeg. Establishing a relation in both
 directions is not inventing one — a mirror that over-fired would find a
 kavelbreedte at the ends of the chain.
 
-Each case carries a seventh expectation, `{"kind": "consistent"}`: the
-§9.5 error channel is empty. Hand-confirmed from the wire rather than
-from a run — the document declares `consistenties`, `uniciteiten`,
-`verdelingen`, `objectCreaties`, `feitCreaties` and `regelGroepen` all
-EMPTY and carries no prioritized defaults, and its two rules are plain
-navigated attribute assignments, so no construct that deposits an error
-fact is present at all. It is pinned anyway, because without the pin a
-spurious channel deposit — the one class of wrong answer that changes no
-attribute — would be invisible here.
+Each case carries a seventh expectation, `{"kind": "consistent"}`: the §9.5
+error channel is empty. Hand-confirmed from the wire rather than from a run —
+the document declares `consistencies`, `uniquenesses`, `allocations`,
+`objectCreations`, `factCreations` and `ruleGroups` all EMPTY and carries no
+prioritized defaults, and its two rules are plain navigated attribute
+assignments, so no construct that deposits an error fact is present at all. It
+is pinned anyway, because without the pin a spurious channel deposit — the one
+class of wrong answer that changes no attribute — would be invisible here.
 
 ## Red-first
 

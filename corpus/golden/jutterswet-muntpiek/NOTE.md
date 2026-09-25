@@ -2,7 +2,7 @@
 
 The min/max sibling of `corpus/golden/jutterswet-munttelling`. That golden
 pins the exclusion direction of `IR-SPEC.md` ch. 2.2 on the count and on the
-sum; this one pins it on `MINIMUM` and `MAXIMUM`, the two arms that aggregate
+sum; this one pins it on `minimum` and `maximum`, the two arms that aggregate
 by comparing rather than by accumulating and that no golden narrowed before.
 
 The arrangement is the same and deliberately so: `vondstaanmelding` relates

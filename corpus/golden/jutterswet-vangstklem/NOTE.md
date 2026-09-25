@@ -31,7 +31,7 @@ Het bandgewicht  … als het ruwgewicht van de Vangst, met een minimum van 1 t
 ## The restating, by hand (ch. 2.6, exact factors; ch. 2.7, minimum first)
 
 The clamp compares and returns in the **base's** unit — ch. 2.10 gives a
-composite position its effective type from the `basis`, and `kg` is
+composite position its effective type from the `base`, and `kg` is
 canonical here, so each bound is restated by its own factor:
 
 | bound     | as written | × factor | in `kg`     |
@@ -76,6 +76,7 @@ the hand-written absolutes and not read off any executor; the Drools backend
 replays them (gate 12), so ref ≡ clingo ≡ Drools. NOOP-REFUTING: all
 twenty-one derived values are computed and absent from the raw input, so a
 do-nothing run mismatches every one of them (gate 7). Gate 13 twists this
-golden's `kg` annotations like any other: the `Begrensd` node's own
+golden's `kg` annotations like any other: the `Clamp` node's own
 annotation is derived on both Drools legs and reaches only `ref` and
-`clingo`, while the `AttribuutRef` positions probe all four legs.
+`clingo`. Until L2 the `AttribuutRef` positions probed all four legs; since
+L2 a reference carries no annotation (B13).

@@ -44,7 +44,7 @@ eye and the clock time is the only new variable.
 - **G1** is the plain forward and backward walk on the day part: from 11 March
   the matching days are 15 March, 1 April, 15 April; from 9 March backwards,
   1 March, 15 February, 1 February. 09:15:30 rides through both.
-- **G2 is the row that catches a re-derived clock, and it is the MIN half
+- **G2 is the row that catches a re-derived clock, and it is the minus half
   that does the catching.** The melding falls *on* a springtijdag at
   **23:59:59**, one second before midnight. Forward the start does not count,
   so the step lands on 1 April, at 23:59:59 and not at 00:00:00. Backward is

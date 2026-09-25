@@ -1,10 +1,10 @@
 # jutterswet-vondstvenster
 
-The **EERSTE/LAATSTE over a set source** witness (ASP-TRANSLATION S8). A
+The **`first`/`last` over a set source** witness (ASP-TRANSLATION S8). A
 `Jutter`'s `eerste vondstdag`/`laatste vondstdag` fold the `vondstdatum` of its
-aanmeldings-`vondsten` — the set-typed `Aggregation EERSTE`/`LAATSTE` arm, which
+aanmeldings-`vondsten` — the set-typed `Aggregation first`/`last` arm, which
 rides the same contributor gathering and the same `#min`/`#max` aggregation as
-`jutterswet-vondstpiek`'s MINIMUM/MAXIMUM, because it is the same fold.
+`jutterswet-vondstpiek`'s `minimum`/`maximum`, because it is the same fold.
 
 **What this golden exists to falsify.** `RUNTIME-SEMANTICS.md` ch. 1.2e states
 that eerste/laatste are ORDERING folds — a `<`/`>` fold over the contributed

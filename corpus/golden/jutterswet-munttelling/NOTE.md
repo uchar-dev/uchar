@@ -27,8 +27,8 @@ three now keep reach and population apart the same way.
 `Munt` also declares one own attribute, `jaartal`, which the case supplies and
 the expectations echo: the type is a real subtype with its own member, not a
 renaming, and the bean that `extends Vondst` carries both. `gewicht`, the
-attribute the SOM folds, is declared on `Vondst` and read off `Munt` elements —
-the inclusion direction of the same clause, riding along on the same two
+attribute the `sum` folds, is declared on `Vondst` and read off `Munt` elements
+— the inclusion direction of the same clause, riding along on the same two
 declarations.
 
 ## Case derivation (hand-computed, absolute)

@@ -13,8 +13,8 @@ case 2.
 | `dossiervoering` | `dossierhouder` (Jutter, to-one) / `dossier` (Dossier, plural `dossiers`, **to-one**) → **1:1** |
 | creation 1 | per penninggerechtigde Jutter a Penning: `bedrag := vondstwaarde`, characteristic `uitgereikt` set; back-link over `penningbezit` |
 | creation 2 | per penninggerechtigde Jutter a Dossier; back-link over `dossiervoering`, and **blocked** when the to-one `dossier` role is already filled TOWARD the subject in the input world (the subject fills the other role, `dossierhouder`) |
-| rules | `aantal penningen` = AANTAL(penningen); `penningtotaal` = SOM(bedrag of all penningen) or 0; `aantal dossiers` = AANTAL(dossiers) |
-| consistenties | `penningcontrole`: every Penning is `uitgereikt`. `houderscontrole`: `aantal houder` of the Penning ≥ 1 |
+| rules | `aantal penningen` = `count(penningen)`; `penningtotaal` = `sum(bedrag of all penningen)` or 0; `aantal dossiers` = `count(dossiers)` |
+| consistencies | `penningcontrole`: every Penning is `uitgereikt`. `houderscontrole`: `aantal houder` of the Penning ≥ 1 |
 
 ## Case 2 — both creation guards observable, and the ch. 5.7a recomputation
 

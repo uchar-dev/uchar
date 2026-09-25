@@ -25,7 +25,7 @@ opvolgeraantal  := het aantal opvolgers van de Wachter
 ```
 
 The emitter binds both by NAME: the navigated read carries
-`navigatieBindingen [{ketenband, voorligger}]`, the count carries
+`path [{ketenband, voorligger}]`, the count carries
 `sourceRole {ketenband, opvolger}`. Neither reaches the by-pair derivation,
 which is ambiguous on a self-typed pair by construction.
 
@@ -64,7 +64,7 @@ one — a mirror that over-fired would read a rangnummer here.
 ## Red-first
 
 Measured on the directed reading this golden replaces (the loader
-mirroring only `wederkerig` fact types), same wire, same cases:
+mirroring only `reciprocal` fact types), same wire, same cases:
 
 ```
 case1  oracle: PASS (6 expectations)            decision-independent

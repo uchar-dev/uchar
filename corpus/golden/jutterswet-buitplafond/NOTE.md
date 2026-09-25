@@ -2,7 +2,7 @@
 
 The **exact naar-rato-with-maximum** witness (ASP-TRANSLATION S12, the
 proportional-with-cap admission narrowed 2026-08-28). One allocation
-(`NAAR_RATO`, RUNTIME-SEMANTICS ch. 4.2) distributes a strandbuit's
+(`proportional`, RUNTIME-SEMANTICS ch. 4.2) distributes a strandbuit's
 `buitopbrengst` over its `buitjutters` in proportion to each jutter's
 `aandeelgewicht`, capped per jutter by `buitplafond`, writing each share
 into `buitdeel` and the undivided remainder into `buitrest` (ch. 4.3/4.4).

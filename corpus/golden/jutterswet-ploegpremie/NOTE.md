@@ -9,7 +9,7 @@ Een Bergingsploeg is wisselvallig indien de dagvergoeding van GEEN VAN DE
 bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40.
 ```
 
-A forall (and its GEEN twin) over the members of a linked set, each member
+A forall (and its `none` twin) over the members of a linked set, each member
 tested on its own whole-period timeline value against a scalar bound.
 `IR-SPEC.md` ch. 4.5 (`QuantifierFold`, WF-108); semantics
 `RUNTIME-SEMANTICS.md` ch. 3.9a, whose worked-example table this golden pins
@@ -17,15 +17,15 @@ cell for cell.
 
 ## Why two rules and not one
 
-`ALLE` and `GEEN` are the two quantifiers this document runs — its counting
+`all` and `none` are the two quantifiers this document runs — its counting
 sibling `jutterswet-reddingsvloot` runs the other three over the same §8.2
 matrix — and the corpus carries both in one document on purpose. They are
-not each other's negation: `GEEN` complements the
+not each other's negation: `none` complements the
 matrix PER MEMBER, so the cases below can hold a ploeg for which neither
 characteristic is attributed (case 2 and 3 — one berger is above the bound, so
-`ALLE` fails; another is not, so `GEEN` fails too) and one for which both are
-(case 4, the empty set, vacuous under both). A reader that computed `GEEN` as
-`not ALLE` fails case 2, case 3 and case 4 alike.
+`all` fails; another is not, so `none` fails too) and one for which both are
+(case 4, the empty set, vacuous under both). A reader that computed `none` as
+`not all` fails case 2, case 3 and case 4 alike.
 
 ## The seven cells
 
@@ -57,12 +57,12 @@ passes vacuously" is that behaviour written down. The corpus pins it rather
 than inheriting it silently.
 
 **Case 7 is the cell where vacuous changes sign**, and it is the reason the
-pair is two cases and not one. Under `ALLE` an absent timeline is harmless; under
-`GEEN` it is fatal, because the member SATISFIES its matrix vacuously and `GEEN`
+pair is two cases and not one. Under `all` an absent timeline is harmless; under
+`none` it is fatal, because the member SATISFIES its matrix vacuously and `none`
 denies exactly that. So a ploeg whose only berger has no dagvergoeding reads
 wisselvallig **nee**, while a ploeg with no bergers at all reads **ja** — two
 different vacua, and only the second is the empty conjunction. Case 6 cannot
-make that distinction on its own: its berger at 50 already decides `GEEN`
+make that distinction on its own: its berger at 50 already decides `none`
 before the empty member is reached.
 
 `asOfDate` is 2026-03-15 in every case and is **irrelevant to the verdict** —

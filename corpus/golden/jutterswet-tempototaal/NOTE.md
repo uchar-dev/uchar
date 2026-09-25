@@ -44,7 +44,7 @@ makes it machine-checkable.
 
 ## The flank this closed
 
-Before the decision the emitter stripped the noemer for `TOTAAL`
+Before the decision the emitter stripped the noemer for `total`
 *unconditionally*, so the set reading was typed as something no executor
 can produce. Measured on the minimal source of `bewaarlast` (one `€/mnd`
 attribute, one set-fold), both targets, before and after:
@@ -62,12 +62,12 @@ target €,     AFTER:   ERROR (line 17): berekening: toekenning:
 
 The fix moved a runtime fault to a compile-time diagnostic and made the
 honest declaration the accepted one. On the wire it is one field:
-`Aggregation{kind: TOTAAL}.type.unit.denominator` is now **held** when the
+`Aggregation{kind: total}.type.unit.denominator` is now **held** when the
 operand is a set read, and still **dropped** when it is not.
 
 The strip itself is untouched, and so is every temporal golden: all 28
 `bron.rgs` goldens re-emit byte-identically (gate 10). No corpus
-`TOTAAL` node before this one carried a unit at all, which is exactly why
+`total` node before this one carried a unit at all, which is exactly why
 the flank was reachable in valid source and pinned nowhere.
 
 ## Why there was no case file — and when it arrived
@@ -110,7 +110,7 @@ EVALUATION FAULT: incompatible units: EUR vs EUR
 whole-unit count, so the `€/mnd` unit survived the collapse and the `€`
 target rejected it. The §4.20 strip was a static claim of the frontend
 that `ref` performed on neither route. No gate saw it, because every
-other temporal `TOTAAL` in the corpus is unitless (in
+other temporal `total` in the corpus is unitless (in
 `jutterswet-getijdenwacht`, `jutterswet-penningjaar`, `synth2-clip-over-prorata`,
 `synth2-clip-cond-over-prorata` and `anchor/jutterswet-dubbelwacht` the
 operand carries no unit at all, so the strip is a no-op).

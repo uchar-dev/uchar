@@ -6,9 +6,9 @@ Own-authored Jutterswet material (strandjutten / getijden domain). A
 datum-tijd targets:
 
 - `eerstehoogwater` = **de eerste van** zijn ochtendhoogwater en zijn
-  avondhoogwater  (EERSTE, the earliest instant);
+  avondhoogwater  (`first`, the earliest instant);
 - `laatstehoogwater` = **de laatste van** zijn ochtendhoogwater en zijn
-  avondhoogwater  (LAATSTE, the latest instant).
+  avondhoogwater  (`last`, the latest instant).
 
 ## The ordering (RUNTIME-SEMANTICS ch. 3.8 + ch. 1.2e)
 
@@ -18,8 +18,8 @@ A datum-tijd is one instant: its millisecond count since
 `0 <= MSOD < 86 400 000`. Total ms `= D·86 400 000 + MSOD`. Because
 `MSOD` never reaches a full day, ordering by total ms **is** the
 lexicographic ordering `(D, MSOD)`: the civil day dominates, the
-ms-of-day only breaks ties on the same day. EERSTE returns the minimum
-instant, LAATSTE the maximum (`agg_eerste`/`agg_laatste` over
+ms-of-day only breaks ties on the same day. `first` returns the minimum
+instant, `last` the maximum (`agg_eerste`/`agg_laatste` over
 `scalar_cmp`; the fold returns the winning **value**, so ties are
 value-neutral). An empty operand is skipped (ch. 1.2e); all-empty
 derives nothing (leeg).
@@ -52,8 +52,8 @@ avondhoogwater   2026-03-15T18:47:00 -> (20527, 67 620 000)  total 1 773 600 420
 Same D, so stage 1 (extreme over the civil day) is a tie; stage 2 (the
 extreme over the ms-of-day among that day's operands) decides:
 
-- EERSTE = min = **2026-03-15T06:12:00**
-- LAATSTE = max = **2026-03-15T18:47:00**
+- `first` = min = **2026-03-15T06:12:00**
+- `last` = max = **2026-03-15T18:47:00**
 
 This leg is load-bearing: without the ms-of-day tie-break the pair would
 be ambiguous on the shared civil day.
@@ -70,8 +70,8 @@ avondhoogwater   2026-03-16T00:20:00 -> (20528,  1 200 000)  total 1 773 620 400
 
 Total ms: ochtend (1 773 618 600 000) < avond (1 773 620 400 000), so:
 
-- EERSTE = min = **2026-03-15T23:50:00** (day 20527)
-- LAATSTE = max = **2026-03-16T00:20:00** (day 20528)
+- `first` = min = **2026-03-15T23:50:00** (day 20527)
+- `last` = max = **2026-03-16T00:20:00** (day 20528)
 
 Load-bearing: the ochtend ms-of-day (85 800 000) is *larger* than the
 avond ms-of-day (1 200 000); a fold that compared ms first would pick
@@ -82,7 +82,7 @@ avond as the earliest — wrong. The civil day must dominate.
 - Instance **H1**: `ochtendhoogwater` = 2026-03-15T06:12:00,
   `avondhoogwater` empty. The empty operand contributes no tuple, so the
   single present operand is both the min and the max:
-  EERSTE = LAATSTE = **2026-03-15T06:12:00**.
+  `first` = `last` = **2026-03-15T06:12:00**.
 - Instance **H2**: both operands empty. No tuple derives; the fold is
   underivable — `eerstehoogwater` and `laatstehoogwater` stay **leeg**.
 

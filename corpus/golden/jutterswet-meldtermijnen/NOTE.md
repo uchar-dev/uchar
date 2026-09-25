@@ -28,7 +28,7 @@ term" is not expressible as a fold at all.
 |---|---|
 | domain `meldstatus` | `SumType`: `Openstaand(dagen)`, `Vervuld`, `Geschonden` |
 | domain `gebeurtenis` | `SumType`: `Dagverloop(dagen)`, `Melding` |
-| objecttype `Meldplicht` | the reified duty (`bezield: false`) |
+| object type `Meldplicht` | the reified duty (`animate: false`) |
 | attribute `Meldplicht.termijn` | whole number — the term this duty was given |
 | attribute `Meldplicht.meldreeks` | `ListType` of `gebeurtenis` — this duty's own register |
 | attribute `Meldplicht.meldpositie` | `meldstatus` — the own-term target |

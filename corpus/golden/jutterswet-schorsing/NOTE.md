@@ -3,7 +3,7 @@
 Exercises form 1 of the uchar-dialect defaults extension
 (`frontends/regelspraak/grammar/DIVERGENCES.md` §4): a negated
 characteristic decision in an `Uitzondering op` block, lowered by the
-RegelSpraak frontend to a default with `besluit: false` on the base's own
+RegelSpraak frontend to a default with `decision: false` on the base's own
 target. The law is the Jutterswet (`corpus/jutterswet/wet-v4.md`):
 
 - **Art. 3 (penningrecht)** grants the right to the penning to the erkende
@@ -42,15 +42,15 @@ default the block becomes, and the base's also on the group.
 One `PrioritizedDefaults` (kenmerk `recht op de penning`, onderwerp
 `Jutter`, named after the base), defaults in descending priority:
 
-1. **exception default** — `besluit false`, justified by `vergunning
-   geschorst`; `bron` "Jutterswet art. 4bis".
-2. **base default** — `besluit true`, justified by `aantal aangemelde
-   vondsten >= 12`; `bron` "Jutterswet art. 3".
+1. **exception default** — `decision false`, justified by `vergunning
+   geschorst`; `source` "Jutterswet art. 4bis".
+2. **base default** — `decision true`, justified by `aantal aangemelde
+   vondsten >= 12`; `source` "Jutterswet art. 3".
 
 The target is the declared characteristic `recht op de penning`: the
 frontend reads `geen recht op de penning` verbatim first, finds no
 characteristic of that whole name, and binds the rest. Both rules leave
-`resolvedRegels` (WF-050: one writer per target), and `diagnostics` is
+`rules` (WF-050: one writer per target), and `diagnostics` is
 empty.
 
 A `false` decision writes nothing (RUNTIME-SEMANTICS ch. 7.1; ch. 5.3's

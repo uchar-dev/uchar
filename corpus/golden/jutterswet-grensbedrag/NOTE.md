@@ -1,6 +1,6 @@
 # jutterswet-grensbedrag
 
-The **Begrensd (clamp)** witness (ASP-TRANSLATION S6/S19). A `Jutter`'s
+The **`Clamp`** witness (ASP-TRANSLATION S6/S19). A `Jutter`'s
 2-decimal `ruwbedrag` is clamped three ways, one per term-position the encoding
 gained: `ondergrens` (min-only), `bovengrens` (max-only), `bandbreedte`
 (min+max). The integer-literal bounds sit at scale 10^0 while the base rides

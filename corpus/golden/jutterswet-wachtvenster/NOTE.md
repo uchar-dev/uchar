@@ -1,6 +1,6 @@
-# jutterswet-wachtvenster — the time window inside an ALLE quantifier fold
+# jutterswet-wachtvenster — the time window inside an `all` quantifier fold
 
-The **period condition** (`RUNTIME-SEMANTICS.md` ch. 3.10, wire `Periode`)
+The **period condition** (`RUNTIME-SEMANTICS.md` ch. 3.10, wire `TimeWindow`)
 at the three positions a quantifier fold and an aggregation give it, each
 read per member with the MEMBER as the window's subject:
 
@@ -19,14 +19,14 @@ Het wachttal van een Schouwploeg moet berekend worden als het aantal
 
 | rule | wire position of the window |
 |---|---|
-| `paraat` | the `toets` of an `ALLE` `Kwantorvouw` (ch. 3.9a) |
-| `bevoegd` | the `filter` of an `ALLE` `Kwantorvouw`; the toets is `gediplomeerd` |
-| `dienstwachttal` | the die/dat `filter` of an `AANTAL` (ch. 3.4a) |
+| `paraat` | the `test` of an `all` `QuantifierFold` (ch. 3.9a) |
+| `bevoegd` | the `filter` of an `all` `QuantifierFold`; the `test` is `gediplomeerd` |
+| `dienstwachttal` | the die/dat `filter` of a `count` (ch. 3.4a) |
 | `wachttal` | none — the control, the unfiltered count of the same range |
 
 The bound is `vanaf de aanstelling van de wacht`: the member's own scalar
 date attribute, one of the two bound shapes WF-111 admits, and the window
-sits only under `ALLE`, the position WF-112 admits. The window is open
+sits only under `all`, the position WF-112 admits. The window is open
 above.
 
 ## Why this document exists
@@ -56,7 +56,7 @@ above in `bron.rgs` form:
   expecting {'..', BULLET, '-'}`;
 - a window in the die/dat subselection of the fold is refused ("de
   'die/dat'-deelselectie … wordt niet omgezet en zou stil wegvallen");
-- a window in the subselection of the count becomes an `Onopgelost` marker
+- a window in the subselection of the count becomes an `Unresolved` marker
   ("'het is de periode' blijft als marker op de wire staan").
 
 So the document is written against the schema, as `jutterswet-schouwploeg`
@@ -84,13 +84,13 @@ table).
 ## The three cases, computed by hand before any executor ran
 
 A wacht is **in dienst** on day D iff its own aanstelling is filled and on
-or before D: `vanaf` is inclusive, the window is open above, a leeg bound
+or before D: `from` is inclusive, the window is open above, a leeg bound
 never matches, and an unset evaluation date never matches (ch. 3.10).
 
 **`case1-medio-2024`, D = 2024-06-15.** In dienst: W1, W2 (on D itself),
 W4, W6. Not: W3 (after D), W5 (no aanstelling).
 
-| ploeg | in dienst | paraat (ALLE in dienst) | bevoegd (ALLE in-dienst gediplomeerd) | dienstwachttal | wachttal |
+| ploeg | in dienst | paraat (`all` in dienst) | bevoegd (`all` in-dienst gediplomeerd) | dienstwachttal | wachttal |
 |---|---|---|---|---|---|
 | S1 | W1, W2 | **ja** | nee (W2) | 2 | 2 |
 | S2 | W4 | nee (W3) | **ja** | 1 | 2 |
@@ -131,7 +131,7 @@ another answer.
 |---|---|---|
 | the bound read on the PLOEG (its own aanstelling) | S1 paraat nee, bevoegd ja, dienstwachttal 0; S2 paraat ja, bevoegd nee, dienstwachttal 2 | S1 ja, nee, 2; S2 nee, ja, 1 |
 | the window ignored (always in dienst) | S2 bevoegd nee, S3 bevoegd nee, dienstwachttal = wachttal | ja, ja, 1 and 1 |
-| `vanaf` exclusive | S1 paraat nee, bevoegd ja, dienstwachttal 1 | ja, nee, 2 |
+| `from` exclusive | S1 paraat nee, bevoegd ja, dienstwachttal 1 | ja, nee, 2 |
 | a leeg bound read as open | S3 paraat ja, bevoegd nee, dienstwachttal 2 | nee, ja, 1 |
 | the filter dropped from the fold | S2 and S3 bevoegd nee | ja |
 | an unset evaluation date read as a match | `case3` S1 and S2 paraat ja, dienstwachttal 2, 2, 1 for S1–S3 | nee, and 0 everywhere |

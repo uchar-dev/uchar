@@ -56,12 +56,12 @@ the node.
 ## The four folds, and what each of them is for
 
 `ervaren` / `onervaren` are the SAME matrix under the two quantifiers, so
-the pair shows on every case that `GEEN` is not `not ALLE`: the two are
+the pair shows on every case that `none` is not `not all`: the two are
 computed per member, not over the fold's verdict.
 
 `bevoegd` / `sluitend` are the second matrix SHAPE (a characteristic check
 instead of a comparison) and they carry the NIET prefix. `sluitend` is
-`GEEN` over a NEGATED matrix — "geen van de wachten is niet gediplomeerd" —
+`none` over a NEGATED matrix — "geen van de wachten is niet gediplomeerd" —
 and it must answer exactly what `bevoegd` answers, in every cell. That is
 the whole point of the pair: on a non-temporal matrix the negation belongs
 to the MATRIX and is evaluated per member (ch. 3.9a: `test` is an ordinary
@@ -78,7 +78,7 @@ empty SET from a member that happens to be empty.
 
 The bound is 5 and the comparison is STRICT (`groter dan`).
 
-| case | the ploeg's wachten (dienstjaren, diploma) | wachttal | ervaren (ALLE >5) | onervaren (GEEN >5) | bevoegd (ALLE dipl) | sluitend (GEEN ¬dipl) |
+| case | the ploeg's wachten (dienstjaren, diploma) | wachttal | ervaren (`all` >5) | onervaren (`none` >5) | bevoegd (`all` dipl) | sluitend (`none` ¬dipl) |
 |---|---|---|---|---|---|---|
 | 1 | S1: 8 ja, 6 ja | 2 | **ja** | nee | **ja** | **ja** |
 | 2 | S1: 8 ja, 3 nee | 2 | nee | nee | nee | nee |
@@ -87,8 +87,8 @@ The bound is 5 and the comparison is STRICT (`groter dan`).
 | 4 | S1: geen wachten | 0 | **ja** | **ja** | **ja** | **ja** |
 | 5 | S1: leeg ja, 3 ja | 2 | nee | **ja** | **ja** | **ja** |
 
-**Case 2 is the `GEEN` ≠ `not ALLE` cell.** S1 holds one wacht above the
-bound and one below it, so `ALLE` fails on the second and `GEEN` fails on
+**Case 2 is the `none` ≠ `not all` cell.** S1 holds one wacht above the
+bound and one below it, so `all` fails on the second and `none` fails on
 the first: neither characteristic is attributed. A reader that computed
 `onervaren` as the complement of `ervaren` would attribute it here.
 
@@ -99,7 +99,7 @@ over the same population. An executor that quantified over every
 at 3 into S2's fold and read S2 as not ervaren.
 
 **Case 3 pins the strictness at the bound** (5 is not greater than 5) and is
-the cell where `GEEN` is true with a non-empty set.
+the cell where `none` is true with a non-empty set.
 
 **Case 4 is the vacuous cell**: an empty contributor set reads **waar**
 under BOTH quantifiers (ch. 3.9a). `wachttal` is 0 in the same case, so the
@@ -108,11 +108,11 @@ cell says out loud that the set really is empty and not merely unreachable.
 **Case 5 is the leeg cell.** W1 has no `dienstjaren` at all. An ordering
 comparison over leeg is FALSE (ch. 1.2d), so W1 fails the matrix: `ervaren`
 is onwaar. It does not SATISFY the matrix either, so it is no witness for
-`GEEN`, and with W2 at 3 nobody is above the bound — `onervaren` is waar.
+`none`, and with W2 at 3 nobody is above the bound — `onervaren` is waar.
 Leeg is therefore not a third truth value here and not a vacuous pass: that
 is the difference with `jutterswet-ploegpremie` case 7, where an ABSENT
 TIMELINE passes the whole-period matrix vacuously and thereby BREAKS
-`GEEN`. The two goldens pin opposite answers for superficially similar
+`none`. The two goldens pin opposite answers for superficially similar
 inputs, on purpose.
 
 `asOfDate` is null in every case: nothing in this document is

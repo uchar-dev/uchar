@@ -1,9 +1,9 @@
 # jutterswet-havenrooster — a PARAMETER inside a day-kind voorwaarde
 
 WF-031 admits one (`IR-SPEC.md` ch. 3.7: "dates, date-components,
-eerste-paasdag, literals, parameters and other day-kind names"), and until
+`easterSunday`, literals, parameters and other day-kind names"), and until
 2026-09-19 **no document in any zone carried one** — measured with the
-day-kind card: zero `ParameterRef` nodes under any `resolvedDagsoorten`. A
+day-kind card: zero `ParameterReference` nodes under any `dayKindDefinitions`. A
 clause that no witness exercises is the spec-level green subset, and this
 golden is what removes it.
 

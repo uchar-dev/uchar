@@ -109,8 +109,8 @@ document the spelling lives in, not a document that computes with it.
   to a diagnosis. Since L4 the bound day carries no name, so that mutant has
   no wire form, and a `ContextValue` named `de dag` is refused by WF-098
   (`corpus/negatief/wf098-de-dag-als-contextwaarde`).
-- **A bare `LATER` comparison.** `LATER_OF_GELIJK` already existed (3
-  documents); the strict `LATER` existed nowhere in the repository. It arrives
+- **A bare `later` comparison.** `laterOrEqual` already existed (3
+  documents); the strict `later` existed nowhere in the repository. It arrives
   inside a day-kind condition, which no executor evaluates — so the operator
   is on the wire, schema-valid and verifier-checked, with **zero** executed
   coverage. Worth knowing before anyone treats its presence as evidence that

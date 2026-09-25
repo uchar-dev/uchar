@@ -5,15 +5,15 @@ elk takfilter dat daar `niet gemerkt` schrijft, schrijft hier
 
     aan GEEN van de volgende voorwaarden voldoen: gemerkt zijn
 
-Dezelfde zin, dezelfde uitkomst, een andere wire-vorm — een
-`Samengesteld(GEEN, [Kenmerk gemerkt, negatie=false])` in plaats van een
-`Kenmerk(gemerkt, negatie=true)`. Model, case en alle elf verwachtingen zijn
-letterlijk die van `jutterswet-uniestratum`; wie de twee `ir.json`'s naast
-elkaar legt ziet alleen de filters verschillen.
+Dezelfde zin, dezelfde uitkomst, een andere wire-vorm — een `Compound(none,
+[CharacteristicCheck gemerkt, negated=false])` in plaats van een
+`CharacteristicCheck(gemerkt, negated=true)`. Model, case en alle elf
+verwachtingen zijn letterlijk die van `jutterswet-uniestratum`; wie de twee
+`ir.json`'s naast elkaar legt ziet alleen de filters verschillen.
 
 ## Waarom de spelling ertoe doet
 
-Een samengestelde met GEEN, TEN_HOOGSTE of PRECIES is NEGATIE-ACHTIG:
+Een samengestelde met `none`, `atMost` of `exactly` is NEGATIE-ACHTIG:
 `RUNTIME-SEMANTICS.md` ch. 6.1 zegt het en de verifier voert het uit (haar
 `dep_cond` noemt het "negation-like: conservative"). De verdictwissel hangt
 daar op leden die NIET gelden, dus een kenmerklezing eronder beslist zoals een
@@ -32,8 +32,8 @@ Gemeten op dit document, vóór die reparatie:
 Dezelfde ordefoutklasse als bij de zuster, langs een spelling die de reparatie
 van die zuster níet dekte. De wandeling draagt nu een conservatieve
 negatiecontext mee, precies zoals de verifier hem doorgeeft: eenmaal negatief,
-behoudend negatief — een tweede negatie heft de eerste niet op. ALLE, DE en
-TEN_MINSTE geven de context dóór in plaats van hem om te zetten, zodat een
+behoudend negatief — een tweede negatie heft de eerste niet op. `all`, `the` en
+`atLeast` geven de context dóór in plaats van hem om te zetten, zodat een
 positieve lezing eronder positief blijft en geen regel voor niets zakt; die
 helft staat gepind in `VouwfilterStratumAnalyseTest`.
 

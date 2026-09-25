@@ -18,7 +18,7 @@ Het bootal van een Sleepvloot moet berekend worden als het aantal boten
 
 ## Waarom deze golden apart staat
 
-Onder `ALLE` en `GEEN` mag een uitvoerder de NIET-prefix opvouwen door de
+Onder `all` en `none` mag een uitvoerder de NIET-prefix opvouwen door de
 KWANTOR om te klappen (∀c.¬P = ¬∃c.P), en twee van de drie doen dat ook. Een
 DREMPEL heeft geen kwantor om in over te gaan: er bestaat geen kwantificatie
 die "ten minste 2" wordt als je hem ontkent. De ontkenning wordt daarom per
@@ -29,7 +29,7 @@ heelperiodetoets totaal is.
 Dat is nieuwe code in twee lagen (de frontend schrijft de prefix onder een
 tellende kwantor naar de wire; de Drools-exec-tak past hem op de telling toe)
 en het is een normatieve zin. Zonder deze golden had geen enkele corpuscel
-hem geraakt: `jutterswet-reddingsvloot` draagt overal `niet: false`.
+hem geraakt: `jutterswet-reddingsvloot` draagt overal `negated: false`.
 
 ## De cellen, met de hand berekend vóór enige uitvoerder draaide
 
@@ -48,7 +48,7 @@ complement daarvan binnen hun eigen bereik.
 gevallen onder de drempel van 2.
 
 **Case 1 is discriminerend, en dat is gemeten en niet aangenomen.** Hetzelfde
-document met `niet: false` en verder niets veranderd faalt op VIER cellen, in
+document met `negated: false` en verder niets veranderd faalt op VIER cellen, in
 `ref` en in de Drools-exec-tak:
 
 ```

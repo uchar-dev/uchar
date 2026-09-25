@@ -6,7 +6,7 @@ admits, so uchar's own frontend (`getalWaarde : NUMBER PERCENT_SIGN`,
 RegelSpraak.g4:973; resolver `ExpressieBouwer.java:200`) emits a
 **`Literal` typed as a percentage** (a `Number` with the unit `%`) — the
 round-trip gate 10 never exercised before (the two existing %-goldens use `%`
-only as the left operand of `PERCENTAGE_VAN`, which the frontend types as a
+only as the left operand of `percentageOf`, which the frontend types as a
 plain `Number`).
 
 Chosen grammar positions (both admitted, verified by a quick emit test):
@@ -17,7 +17,7 @@ Chosen grammar positions (both admitted, verified by a quick emit test):
    `Literal{value: {"number": "21"}, type: Number with unit %}`.
 2. **comparison RHS** (`vergelijkingsTekenGesplitst : GELIJK IS AAN`):
    `… indien het vondsttarief van de Vondst gelijk is aan 21%.` →
-   the comparison's `rechts` is
+   the comparison's `right` is
    `Literal{value: {"number": "21"}, type: Number with unit %}`.
 
 The frontend types a `Percentage (geheel getal)` attribute and a bare `21%`

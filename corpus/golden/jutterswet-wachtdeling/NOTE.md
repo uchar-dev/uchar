@@ -4,7 +4,7 @@ The **counting-quantifier** half of the short-circuit witness
 (`RUNTIME-SEMANTICS.md` ch. 5.10). `jutterswet-ploegaandeel` pins the
 conjunctive case; this golden pins that the rule is ONE rule over all
 five quantifiers, in both directions — a stop that fixes the outcome
-**false** (GEEN) and a stop that fixes it **true** (TEN MINSTE).
+**false** (`none`) and a stop that fixes it **true** (`atLeast`).
 
 ## What it pins
 
@@ -28,11 +28,11 @@ Daarbij geldt (in beide regels):
         naar beneden afgerond op 0 decimalen.
 ```
 
-Member 1 is TRUE exactly where member 2 would divide by zero. GEEN then
+Member 1 is TRUE exactly where member 2 would divide by zero. `none` then
 stops at the first hit (the outcome is false and cannot change); TEN
 MINSTE 1 stops at the same hit (the outcome is true and cannot change).
 Two different verdicts, one stop — which is the point: the stop follows
-from the quantifier's own trigger, never from a special case for ALLE.
+from the quantifier's own trigger, never from a special case for `all`.
 
 Without the short circuit both executors fault on `W1` — measured on
 this exact golden on the parent commit, 2026-09-06:

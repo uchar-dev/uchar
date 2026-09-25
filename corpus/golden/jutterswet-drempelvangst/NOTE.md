@@ -19,18 +19,17 @@ Daarbij geldt:
     de vangst is het drempelgewicht van de Jutter.
 ```
 
-* **`drempelgewicht` — the STRUCTURE-SENSITIVE read.** `de drempel` is
-  read as the right-hand side of a §5.6 subselectie comparison. The
-  resolver decides there on the *shape* of the resolved subtree (only a
-  literal or a parameter may be a subselectie RHS — an attribute would
-  mis-bind against the element), so the variable is **substituted**
-  there and no `Let` is emitted: the wire carries `filter =
-  Vergelijking(gewicht > Literal 5)`. Had it been lowered to a
-  `BinderRef`, the shape test would have failed on the opaque leaf, the
-  filter would have degraded to `Conditie.Onopgelost` and the whole
-  aggregation would have become a marker — `19` would have turned into
-  a WF-044 unsolved-state fault. That is a **wrong answer**, not a lost
-  optimisation, which is why the boundary is normative.
+* **`drempelgewicht` — the STRUCTURE-SENSITIVE read.** `de drempel` is read as
+  the right-hand side of a §5.6 subselectie comparison. The resolver decides
+  there on the *shape* of the resolved subtree (only a literal or a parameter
+  may be a subselectie RHS — an attribute would mis-bind against the element),
+  so the variable is **substituted** there and no `Let` is emitted: the wire
+  carries `filter = Comparison(gewicht > Literal 5)`. Had it been lowered to a
+  `BinderRef`, the shape test would have failed on the opaque leaf, the filter
+  would have degraded to an `Unresolved` marker (`Conditie.Onopgelost` in the
+  frontend) and the whole aggregation would have become a marker — `19` would
+  have turned into a WF-044 unsolved-state fault. That is a **wrong answer**,
+  not a lost optimisation, which is why the boundary is normative.
 * **`drempelaandeel` — the ORDINARY read.** `de vangst` is read twice in
   plain arithmetic, so it lowers exactly as ch. 4.10 says: **one** `Let`
   with **two** `BinderRef`s. Sharing is visible on the wire.

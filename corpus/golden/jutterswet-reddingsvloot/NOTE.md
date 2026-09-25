@@ -1,7 +1,7 @@
 # jutterswet-reddingsvloot — the COUNTING quantifiers over a linked instance set
 
 The third of the quantifier-fold family. `jutterswet-ploegpremie` runs the §8.2
-whole-period matrix under ALLE and GEEN; `jutterswet-schouwploeg` runs an
+whole-period matrix under `all` and `none`; `jutterswet-schouwploeg` runs an
 ordinary condition under the same two; this one runs the same §8.2 matrix under
 all three COUNTING quantifiers, each of them at its threshold from both sides.
 
@@ -25,7 +25,7 @@ document's cells verbatim.
 `bron.rgs` is the source: the §8.2-qualified sentence is exactly what
 `RuleChecker.kwantorvouw` lowers, and since this card it lowers all five
 quantifiers rather than two, carrying the written telwoord as the fold's
-`drempel`. Gate 10 re-emits the document byte-identically.
+`threshold`. Gate 10 re-emits the document byte-identically.
 
 ## What each fold is for
 
@@ -62,7 +62,7 @@ comparison the wrong way round (`>` for `>=`, or `<` for `<=`) fails case 1 or
 case 2 by name.
 
 **Case 3 is the empty set, and it is the cell that shows there is no vacuum rule
-here.** ALLE and GEEN both read waar on an empty contributor set
+here.** `all` and `none` both read waar on an empty contributor set
 (`jutterswet-ploegpremie` case 4 pins that); the counting quantifiers simply read
 the count, which is 0 — so *krap* holds while *inzetbaar* and *paraat* do not.
 No single "an empty set means true" principle produces this row. `sloeptal` is 0

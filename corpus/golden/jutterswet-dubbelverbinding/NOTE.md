@@ -101,11 +101,11 @@ heeft een winterschuit), `ligprijs` S1 leeg en S2 = 35, en de
   voorwaarde op het ANKER — een kenmerk en een vergelijking — en zit de
   per-doel-selectie in de laatste stap van het `path` en in het kenmerk van
   de `ligprijs`-regel.
-- **Een SOM/MINIMUM/MAXIMUM over dit typepaar.** Het argument van zo'n
+- **Een `sum`/`minimum`/`maximum` over dit typepaar.** Het argument van zo'n
   vouw is een ATTRIBUUTnaam, geen rolnaam, dus een uitvoerder die geen
   symbolische rolbinding van de wire leest houdt alleen de
   by-pair-zoektocht over — en die is hier ambigu. Deze golden vouwt
-  daarom uitsluitend AANTAL, waar de geschreven elementrol de join
+  daarom uitsluitend `count`, waar de geschreven elementrol de join
   eenduidig maakt. Dat een bindingloze consument het paar luid ambigu
   blijft vinden is opzet, geen gebrek: het is wat een stille verkeerde
   join voorkomt.

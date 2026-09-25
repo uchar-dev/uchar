@@ -30,7 +30,7 @@ bergingsforfait:
 for a variable part: `Let b = <read> in <arithmetic over b>`, the binder
 read as a `BinderRef` in the body and typed as the bound value is — which
 is what the emitter does and what every other `Let` in the corpus shows.
-Default 2 is unconditional (a `Samengesteld ALLE` over zero parts), so
+Default 2 is unconditional (a `Compound` under `all` over zero parts), so
 the group always decides and there is a member for a fall-through to land
 on — without it the interesting cases would end in "nothing written"
 rather than in a decision.

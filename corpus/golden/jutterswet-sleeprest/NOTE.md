@@ -1,8 +1,8 @@
 # jutterswet-sleeprest — hand computation
 
-Witnesses the **factor-1 unit admission** (ASP-TRANSLATION S6): a MAAL of a
+Witnesses the **factor-1 unit admission** (ASP-TRANSLATION S6): a `times` of a
 unitless factor with a unit-carrying attribute, consumed by a restating
-position (MIN) whose other side is a unitless literal that adopts the unit.
+position (`minus`) whose other side is a unitless literal that adopts the unit.
 Every unit meeting here is factor-FREE — no `factorToCanonical` is ever
 applied — so the reference interpreter's exact-rational result equals the
 raw integer arithmetic, and clingo replays it exactly (ref ≡ clingo ≡

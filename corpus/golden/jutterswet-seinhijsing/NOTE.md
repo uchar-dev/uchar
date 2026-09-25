@@ -3,7 +3,7 @@
 The **host** witness (WF-109, `spec/IR-SPEC.md` ch. 4.6 (q2);
 `spec/RUNTIME-SEMANTICS.md` ch. 5.5 and ch. 5.8b worked example B). It is the
 corpus's first golden carrying the shape the RegelSpraak frontend actually
-emits an `eigenaar` on: the guard of a §13.4.7 fact creation that names a
+emits a `host` on: the guard of a §13.4.7 fact creation that names a
 characteristic of the DOEL. Until 2026-09-19 that shape could not be a golden
 at all — the verifier admitted it, both Drools branches played it, and `ref`
 and the ASP backend refused it — so the only owner shape that replayed

@@ -13,7 +13,7 @@ WF-048 demanded). Since L2 a fold's range is written and never derived
 (`spec/proposals/V1-WIREMIGRATIE.md` B12): the wire carries the one binding
 `muntvondst` / `gevonden munt` on BOTH counts, and the second count's source
 names the bound role by its declared name, `gevonden munt`, while the written
-`Munten van de Jutter` stays in `bron`.
+`Munten van de Jutter` stays in `source`.
 
 *The population name.* Until 2026-09-16 the count's element word was looked up
 as the SINGULAR of an object type or as a role name, so a written plural that

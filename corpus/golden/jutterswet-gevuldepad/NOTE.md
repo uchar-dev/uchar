@@ -7,11 +7,11 @@ Bergplaats, and several Boten may share one. The fold counts the filled
 Jutter" — two relations stacked, so the source is a `sourcePath` rather
 than a `sourceRole`.
 
-Under `AANTAL` this shape is ill-formed, and the ground is its source:
+Under `count` this shape is ill-formed, and the ground is its source:
 `vangstgewicht` is a member of the element type, and a count folds
 INSTANCES, never a value read per contributor. The verifier reports it as
 WF-093 (b), and ref and the ASP backend refuse it in that sentence
-(measured 2026-09-24 on this document with `AANTAL` for `AANTAL_GEVULDE`).
+(measured 2026-09-24 on this document with `count` for `filledCount`).
 Since L2 WF-093 (b) carries the ground WF-096 carried until then; WF-096 left
 with L2 (`spec/proposals/V1-WIREMIGRATIE.md` B11). A count whose source names
 a role is refused over a `sourcePath` for another reason: a count's range is

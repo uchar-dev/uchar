@@ -1,7 +1,7 @@
 # jutterswet-ketenkwantor
 
 A COUNTING quantifier over a multi-step range: the quantifier fold
-(`IR-SPEC.md` ch. 4.5, WF-108 (c)) with a two-step `bronPad`, read as the
+(`IR-SPEC.md` ch. 4.5, WF-108 (c)) with a two-step `sourcePath`, read as the
 FLAT UNION of `RUNTIME-SEMANTICS.md` ch. 3.4b (ch. 3.9a shares the range of
 ch. 3.4a/3.4b). A Jutter voert Boten, a Boot bergt Vondsten, and one Vondst
 may be geborgen by more than one Boot (the `berging` relation is
@@ -20,7 +20,7 @@ twice. The second rule is also what makes every case refute a
 do-nothing executor (gate 7): a case whose only verdict is an absent
 kenmerk is satisfied by the raw input.
 
-Under `AANTAL` a count over this range is ill-formed: a count's range is one
+Under `count` a count over this range is ill-formed: a count's range is one
 step, spelled `sourceRole` (WF-102 (c)), and the verifier, ref and the ASP
 backend refuse it in one sentence (`corpus/negatief/wf102-bronpad-op-niet-setbron`).
 Until L2 WF-096 fenced the same node (`wf096-aantal-setbron-bronpad`, removed
@@ -41,8 +41,8 @@ bind its first step (the `bereikPad` guard in `RuleChecker.kwantorvouw`),
 and the same holds with "van de gevoerde boten" instead of "van alle".
 The document is therefore hand-written: the one-step sentences "… van de
 geborgen vondsten van de Boot …" were emitted by the frontend and their
-`Kwantorvouw`s carried over with the subject moved to the Jutter and
-`bronRol` replaced by the two-step `bronPad` (bemanning/gevoerde boot,
+`QuantifierFold`s carried over with the subject moved to the Jutter and
+`sourceRole` replaced by the two-step `sourcePath` (bemanning/gevoerde boot,
 berging/geborgen vondst).
 
 ## The cells, computed by hand before any executor ran
@@ -55,7 +55,7 @@ in the terms of `IR-SPEC.md` ch. 4.3's COUNT bullet: `voorkomens` counts
 join tuples (boot, vondst), each element once per intermediate that
 reaches it; `tussen` is the nested reading's count of counts, which
 counts INTERMEDIATE INSTANCES (here the boten whose inner count is
-non-empty). A fourth reading, the RANGE-FREE one that ignores `bronPad`
+non-empty). A fourth reading, the RANGE-FREE one that ignores `sourcePath`
 and counts every Vondst in the world that satisfies the matrix, is
 `populatie`; case 4 exists for it.
 

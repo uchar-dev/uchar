@@ -50,7 +50,7 @@ months of its own span; the member totals then add over the set.
 
 - **J1 = 36 + 12 = 48 €.** V1 contributes nothing and, more to the point,
   refuses nothing.
-- **J2 = 0 €.** `TOTAAL` over an empty set is 0 unconditionally (§4.20), and
+- **J2 = 0 €.** `total` over an empty set is 0 unconditionally (§4.20), and
   the set is empty because the type filter removed the one instance the role
   reaches. An executor reading the links alone would have V2's bucket scalar
   in hand and no period to integrate it over.

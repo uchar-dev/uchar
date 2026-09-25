@@ -1,7 +1,7 @@
 # jutterswet-sluitsom — the listed value fold whose operand NAVIGATES
 
 Own-authored Jutterswet material (strandjutten domain). The witness this
-golden exists for: a **listed value fold** (`LAATSTE` over two listed
+golden exists for: a **listed value fold** (`last` over two listed
 operands, IR-SPEC §5.8.3) whose **second operand is an ordinary navigated
 read** — `het ijkloon van de bewarende jutter`, one hop over the fact type
 `bewaring` from the `Vondst` subject to the `Jutter` who keeps it.
@@ -25,16 +25,16 @@ scope of WF-083 is not a claim in prose but a case that fails the moment
 the scope is dropped.
 
 Measured on this document, both spellings of the verifier (re-measured at L4,
-2026-09-24; the scope is the `arity = 1` of `source_position` in
-`spec/verifier/lib/checks.ml`):
+2026-09-24, and at L5, 2026-09-25; the scope is the `arity = 1` of
+`source_position` in `spec/verifier/lib/checks.ml`):
 
 ```
 scope removed (the whole "a fold source never navigates" family unscoped):
-    WF-053 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1: navigation
-                bindings on a fold source are ill-formed (the fold's relation
-                is its range, sourceRole or sourcePath)
-    WF-083 FAIL /rules/resolvedRegels/0/versions/0/value/arguments/1:
-                fold-source objecttype 'Jutter' is not the fold's anchor
+    WF-053 FAIL /rules/rules/0/versions/0/value/arguments/1: a path on a
+                fold source is ill-formed (the fold's relation is its range,
+                sourceRole or sourcePath)
+    WF-083 FAIL /rules/rules/0/versions/0/value/arguments/1:
+                fold-source subjectType 'Jutter' is not the fold's anchor
                 'Vondst' (a fold without a range reads the subject's own
                 attribute) …
 scope in place:  verifier PASS
@@ -56,7 +56,7 @@ both measured against `frontends/regelspraak` on this branch:
 
 1. `de laatste van …` is restricted there to date expressions
    (`laatste van vereist datumexpressies, kreeg Numeriek`), while the
-   numeric `EERSTE`/`LAATSTE` pair is admitted IR — `jutterswet-peildatum`
+   numeric `first`/`last` pair is admitted IR — `jutterswet-peildatum`
    pins it;
 2. on a form it does accept, the emitter writes a listed fold without an
    `elementType` and leaves the pronoun operand (`haar meldloon`) unresolved
@@ -68,15 +68,15 @@ both measured against `frontends/regelspraak` on this branch:
 So the document is hand-written from declarations in the same idiom as
 `jutterswet-tempovouw` (fact type `bewaring`: `bewarende jutter` — Jutter,
 `vondst`/`vondsten` — Vondst), and it carries the navigation the way the
-frontend spells it where it can. Since L2 that is the symbolic
-`navigatieBindingen` hop alone: the written `navigatieRol` left the wire
-(`spec/proposals/V1-WIREMIGRATIE.md` B11), and the binding is the only route
-a reader takes. Until L2 the document carried both, so the bound route was
+frontend spells it where it can. Since L2 that is the symbolic `path` hop alone
+(`navigatieBindingen` until L5): the written `navigatieRol` left the wire
+(`spec/proposals/V1-WIREMIGRATIE.md` B11), and the binding is the only route a
+reader takes. Until L2 the document carried both, so the bound route was
 exercised and not merely the derivable one.
 
 ## Hand-derivation of the expected values
 
-`LAATSTE` over listed operands returns the **maximum** of the operands
+`last` over listed operands returns the **maximum** of the operands
 that carry a value; an empty operand is skipped, and all-empty derives
 nothing (RUNTIME-SEMANTICS ch. 1.2e — the same law
 `jutterswet-peildatum` pins on `hoogloon`).
@@ -106,7 +106,7 @@ V5: no meldloon, linked to J1        -> max(30) = 30
 ```
 
 V3 pins that an unreachable hop contributes nothing rather than faulting;
-V4 pins the all-empty corner (`attributeEmpty`, not 0 — `LAATSTE` has no
+V4 pins the all-empty corner (`attributeEmpty`, not 0 — `last` has no
 empty-source fallback); V5 pins the mirror of V3, where only the hop
 carries a value.
 
@@ -119,7 +119,7 @@ needed.
 ## Annotation indifference (gate 13)
 
 One unit-bearing `type` annotation, inside the twist table: the
-`Aggregation`/`LAATSTE` result. Until L2 there were four — the three
+`Aggregation`/`last` result. Until L2 there were four — the three
 `AttribuutRef` positions (the rule's target, the own operand, the navigated
 operand) carried one each, and since L2 a reference carries no `type` (B13).
 Measured then on the twisted copy — ref, the ASP backend, the Drools

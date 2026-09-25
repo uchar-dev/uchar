@@ -57,7 +57,7 @@ ms is `D × 86 400 000 + MS`.
 The ordering is lexicographic on the pair — the civil day decides, the
 ms-of-day breaks the tie:
 
-| label | vs the literal | `tijdig` (EERDER) | `verlaat` (LATER) |
+| label | vs the literal | `tijdig` (`earlier`) | `verlaat` (`later`) |
 |---|---|---|---|
 | A1 | same day, MS one lower | present | absent |
 | A2 | same day, MS one higher | absent | present |
@@ -80,17 +80,17 @@ it: for a millisecond-precision date literal it wrote the day-first source snipp
 hand-written wire, the pattern the Catala and `jutterswet-getijdenpaar`
 goldens already follow, carrying the canonical lexeme on purpose.
 
-Since 2026-09-22 (card `p5-datumtijd-lexeem`) the emitter writes the ISO
-lexeme into the literal's value (`waarde` until L4, the `dateTime` variant
-of `value` since) and keeps the snippet in `bron`, and WF-095 admits the ISO
-lexeme alone. This golden stays hand-written for one reason that
-is not the lexeme: its references read `haar meldstip` (an `Aanmelding` is
-feminine, a lens decision of the card that wrote it), and the RegelSpraak
-grammar has no `haar`, so the frontend cannot emit these `bron` strings.
-The emitter's own route for that literal is held by `jutterswet-sluitstip`
-instead, which is a `bron.rgs` golden.
+Since 2026-09-22 (card `p5-datumtijd-lexeem`) the emitter writes the ISO lexeme
+into the literal's value (`waarde` until L4, the `dateTime` variant of `value`
+since) and keeps the snippet in `source` (`bron` until L5), and WF-095 admits
+the ISO lexeme alone. This golden stays hand-written for one reason that is not
+the lexeme: its references read `haar meldstip` (an `Aanmelding` is feminine, a
+lens decision of the card that wrote it), and the RegelSpraak grammar has no
+`haar`, so the frontend cannot emit these source snippets. The emitter's own
+route for that literal is held by `jutterswet-sluitstip` instead, which is a
+`bron.rgs` golden.
 
-The snippet `15-03-2026 12:00:00.000` in this document's `bron` is no
+The snippet `15-03-2026 12:00:00.000` in this document's `source` is no
 longer a wire lexeme: written into `value`
 (`{"dateTime": "15-03-2026 12:00:00.000"}`) it is refused by WF-095
 (`corpus/negatief/wf095-bronsnippet`). Every executor refuses it at load

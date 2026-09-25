@@ -32,7 +32,7 @@ van de unie leeg te maken, en `J4` dat de lege unie **0** is en nooit leeg
 
 ## Wat er op de wire staat
 
-Een `Aggregation` met `kind: "AANTAL"`, ÉÉN argument — een `InstanceSetUnion`
+Een `Aggregation` met `kind: "count"`, ÉÉN argument — een `InstanceSetUnion`
 met twee `InstanceSetBranch`-selecties — en zonder `elementType`, `filter` en
 `sourceRole`: de telling noemt geen eigen bron, want de selecties dragen
 populatie, relatie en deelselectie elk voor zich (WF-110 (c)).

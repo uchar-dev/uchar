@@ -16,19 +16,19 @@ on the characteristic `bergingsbevoegd`. Own Jutterswet-flavoured domain
 
 ## Lowering
 
-One `PrioritizedDefaults` (kenmerk `bergingsbevoegd`, onderwerp `Jutter`),
+One `PrioritizedDefaults` (characteristic `bergingsbevoegd`, subject `Jutter`),
 defaults in descending priority:
 
-1. **exception default** — `besluit true`, justified by `noodweer verklaard
+1. **exception default** — `decision true`, justified by `noodweer verklaard
    AND aantal geborgen wrakken >= 8`.
-2. **base default** — `besluit true`, justified by
+2. **base default** — `decision true`, justified by
    `aantal geborgen wrakken >= 20`.
 
-Both the base rule and the exception leave `resolvedRegels` (WF-050
+Both the base rule and the exception leave `rules` (WF-050
 single-writer: their semantics live in the defaults). Until L1 each also kept
 a `Regel` stub in the `regels` register, which left the wire with the M1
 card (B3). The base rule's `geldig altijd` is carried onto the defaults as
-`geldigheid {vanaf:null, tot:null}`.
+a `validity` with neither `from` nor `to`.
 
 ## Case derivations (hand-computed, absolute)
 

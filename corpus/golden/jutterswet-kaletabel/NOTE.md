@@ -11,15 +11,15 @@ emission (gate 10).
 `bron.rgs` declares a Jutter with a `wrakkental`, one rule that computes the
 `wrakkenloon` from it, and a decision table `Wrakkenbonus` that has a header row
 and no data rows. A table without rows has nothing to lower, so the frontend
-writes no rule for it and says so in a WARNING on line 10, the line where the
+writes no rule for it and says so in a `warning` on line 10, the line where the
 table starts:
 
 > beslistabel 'Wrakkenbonus' heeft geen tabelinhoud (alleen een kop) — wordt
 > niet naar IR/DRL omgezet
 
-That WARNING is the whole of `diagnostics`. WF-113 (a) holds: severity
-`WARNING`, a non-empty message, an integer line. The document carries no
-`Onopgelost` node, so (b) has nothing to account for here; the two red documents
+That `warning` is the whole of `diagnostics`. WF-113 (a) holds: severity
+`warning`, a non-empty message, an integer line. The document carries no
+`Unresolved` node, so (b) has nothing to account for here; the two red documents
 under `corpus/rood/wf044-onopgelost-*` are its witnesses.
 
 ## Hand computation
@@ -37,7 +37,7 @@ outcome.
 
 Both cases also expect `consistent`: the document has no consistency rule.
 
-The `wrakkenbonus` expectation is what ties the WARNING to an observable fact:
+The `wrakkenbonus` expectation is what ties the `warning` to an observable fact:
 the sentence the frontend reports as not converted leaves its attribute empty
 in every executor. The no-op guard (gate 7) fails on both cases, because the
 input carries no `wrakkenloon`.

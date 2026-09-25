@@ -4,7 +4,7 @@ The witness for `RUNTIME-SEMANTICS.md` ch. 3.10's **second** case: a
 period condition on a TEMPORAL target. Here the window does not decide
 whether the rule applies. It cuts the timeline the rule writes:
 
-    written(tl, window) = tl restricted to [vanaf, tot)
+    written(tl, window) = tl restricted to [from, to)
 
 A `Strandpachter` has a yearly `pachttarief`, two month-granular temporal
 characteristics (`vergund`, `aanwezig`) and a scalar `ingangsdatum`. There
@@ -47,7 +47,7 @@ moment, and the clip has no counterpart to it.
   `maandpacht` (365 for March, 182.5 for half of April) are written as
   in case 1.
 - P3's timelines all lie in 2024 (and its `aanwezig` in June 2025), and
-  its `ingangsdatum` 1 October comes after the window's `tot`. All three
+  its `ingangsdatum` 1 October comes after the window's `to`. All three
   targets are empty. A scalar gate would have fired `maandpacht` on
   2025-03-20 and written P3's twelve 2024 months. The clip writes none.
 

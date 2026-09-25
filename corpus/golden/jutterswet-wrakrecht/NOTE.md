@@ -42,7 +42,7 @@ Four rule shapes, one per thing to prove:
 
 Two `PrioritizedDefaults` groups, one per subject, each with the exception
 above the base. The base rules carry no `indien`, so their defaults take the
-vacuously true justification (`ALLE` over no parts, "altijd") WF-050 requires.
+vacuously true justification (`all` over no parts, "altijd") WF-050 requires.
 Both aggregations carry a `sourceRole` naming the one relation. Since L2 every
 range is written and none is derived (`spec/proposals/V1-WIREMIGRATIE.md`
 B12). Until then this mattered here and not in a flat golden: WF-048's

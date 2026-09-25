@@ -10,7 +10,7 @@ kind, as long as the reference graph stays acyclic.
   comparison of two date literals), the shape of the one pre-existing
   day-kind witness (`jutterswet-vormenkabinet`);
 - `hoogschouwdag` — its condition **references** `schouwdag` (a
-  `Predicaat` of soort `DAGSOORT`). The reference graph is the single edge
+  `Predicate` of kind `dayKind`). The reference graph is the single edge
   `hoogschouwdag -> schouwdag`; acyclic, so WF-085 is satisfied, and both
   conditions are pure, so WF-031 is satisfied.
 

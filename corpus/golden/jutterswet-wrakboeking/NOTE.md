@@ -31,7 +31,7 @@ target, an allocation target and a defaults target all correctly take,
 because those forms iterate an extension instead of minting one instance —
 and this document turns into
 
-    WF-045 FAIL /rules/resolvedRegels/0/versions/0: dependency cycle through no
+    WF-045 FAIL /rules/rules/0/versions/0: dependency cycle through no
     recursive creation: bereken de bergingsvergoeding van een wrakrecht -> boek
     een strandrecht bij elk wrakrecht -> bereken de bergingsvergoeding van een
     wrakrecht

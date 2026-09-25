@@ -3,8 +3,8 @@
 The fourth of the quantifier-fold family, and the cell of its grid that
 `jutterswet-reddingsvloot` leaves open. That golden runs the three counting
 quantifiers over the §8.2 WHOLE-PERIOD matrix; `jutterswet-schouwploeg` runs an
-ordinary, non-temporal condition under ALLE and GEEN. This one crosses the two:
-counting quantifiers over a matrix with no period qualifier anywhere in the
+ordinary, non-temporal condition under `all` and `none`. This one crosses the
+two: counting quantifiers over a matrix with no period qualifier anywhere in the
 document.
 
 ```

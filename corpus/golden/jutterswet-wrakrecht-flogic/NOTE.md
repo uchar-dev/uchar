@@ -31,54 +31,55 @@ carries the full table. The four things this document needs from it:
 
 ## The frontend diff, category by category
 
-The method is the one Phase 5d used for the `-catala` pair: put the two
-emitted documents side by side and account for **every** difference.
-Against `corpus/golden/jutterswet-wrakrecht/ir.json` there are **35
-differing lines**, counted on the twin's side of the diff (re-measured at L2,
-at L3 and at L4, 2026-09-24), in three categories — 19 + 8 + 8 — and no
-fourth. Until the v1 wire there were 52: the 8 `onderwerpBron` lines left the
-wire at L2 (`spec/proposals/V1-WIREMIGRATIE.md` B11), the 5 lines of category
-(iv) left with the `regels` index (B3), and 4 lines of category (ii) left at
-L4, when both documents came to write the literal's value with a point
-(B22).
+The method is the one Phase 5d used for the `-catala` pair: put the two emitted
+documents side by side and account for **every** difference. Against
+`corpus/golden/jutterswet-wrakrecht/ir.json` there are **41 differing lines**,
+counted on the twin's side of the diff (re-measured at L5, 2026-09-25; 35 at L2,
+at L3 and at L4), in three categories — 25 + 8 + 8 — and no fourth. At L5 each
+of the two citations this document does not write became a `source` record on
+the twin's side, four lines where the v0 wire had one. Until the v1 wire there
+were 52: the 8 `onderwerpBron` lines left the wire at L2
+(`spec/proposals/V1-WIREMIGRATIE.md` B11), the 5 lines of category (iv) left
+with the `regels` index (B3), and 4 lines of category (ii) left at L4, when both
+documents came to write the literal's value with a point (B22).
 
-**(i) Source provenance — `bron` (19 lines).**
-Every such string differs, because each document quotes its own source: `"zijn grondslag"`
-against `"?S.grondslag"`, `"het Strandrecht betwist is"` against
-`"?S : betwist"`, `"de som van … of 0,00 als die er niet zijn"` against
-`"sum{?V | ?V = ?K.'geregistreerde strandrechten'.uitkering}"`. No
-executor reads the field. One sub-case is the
-**absence** of a citation rather than a different one: on each base's
-vacuously true justification the twin quotes `"altijd"` where this document
-writes `null`, because an unconditional Horn rule states no justification
-to quote. The node itself — `ALLE` over no parts, the shape WF-050 asks
-for — is identical in both.
+**(i) Source provenance — `source` (25 lines: 19 snippet lines, and three more
+for each of the two records the twin alone writes).** Every such string differs,
+because each document quotes its own source: `"zijn grondslag"` against
+`"?S.grondslag"`, `"het Strandrecht betwist is"` against `"?S : betwist"`, `"de
+som van … of 0,00 als die er niet zijn"` against `"sum{?V | ?V =
+?K.'geregistreerde strandrechten'.uitkering}"`. No executor reads the field. One
+sub-case is the **absence** of a citation rather than a different one: on each
+base's vacuously true justification the twin quotes `"altijd"` in a `source`
+where this document writes none, because an unconditional Horn rule states no
+justification to quote. The node itself — `all` over no parts, the shape WF-050
+asks for — is identical in both.
 
-**(ii) The literal's own type annotation (8 lines: 4 `whole`, 4
-`decimals`).** `"5,00"` against `"5.00"`, and with it the annotation
-`whole/decimals` on the literal node (`true/0` against `false/2`). The Dutch
-decimal comma is RegelSpraak's lexeme; F-logic writes the point, and the
-frontend derives the literal's scale from the lexeme it was given. Since L4
-the two spellings stand in `bron` only (category (i)): both documents write
-the value with a point, `{"number": "5.00"}` (B22), where until L4 the
-`waarde` lexemes differed too (4 more lines). This difference already
-exists between the hand-written anchor and the RegelSpraak twin — the
-anchor also spells `5.00` with scale 2 — and all four executors pin the
-same absolute values across it. That is the effective-type law of
-`RUNTIME-SEMANTICS.md` §2.10 doing its job: consumers derive from
-declarations, never from the wire annotation, which is what gate 13
+**(ii) The literal's own type annotation (8 lines: 4 `whole`, 4 `decimals`).**
+`"5,00"` against `"5.00"`, and with it the annotation `whole/decimals` on the
+literal node (`true/0` against `false/2`). The Dutch decimal comma is
+RegelSpraak's lexeme; F-logic writes the point, and the frontend derives the
+literal's scale from the lexeme it was given. Since L4 the two spellings stand
+in the source snippet only (category (i)): both documents write the value with a
+point, `{"number": "5.00"}` (B22), where until L4 the `waarde` lexemes differed
+too (4 more lines). This difference already exists between the hand-written
+anchor and the RegelSpraak twin — the anchor also spells `5.00` with scale 2 —
+and all four executors pin the same absolute values across it. That is the
+effective-type law of `RUNTIME-SEMANTICS.md` §2.10 doing its job: consumers
+derive from declarations, never from the wire annotation, which is what gate 13
 enforces mechanically.
 
 **(iii) Declared surface names F-logic has no grammar for (8 lines:
-3 object-type `plural`, 1 `animate`, the role's `naam` and `meervoud`, 2
-`sourceRole.rol`).** The three object types carry no `plural`, the to-many
-role's `meervoud` is `null`, and `animate` is `false` on the Kustgemeente. F-logic declares neither grammatical number
+3 object-type `plural`, 1 `animate`, the role's `name` and `plural`, 2
+`sourceRole.role`).** The three object types carry no `plural`, neither does
+the to-many role, and `animate` is `false` on the Kustgemeente. F-logic
+declares neither grammatical number
 nor animacy, so the frontend leaves them unset rather than inventing them.
 The role is consequently named by one label, `geregistreerde
 strandrechten`, where the RegelSpraak twin carries the singular/plural pair
 — and the shared case files key on exactly that string, which the twin
-matches on `Rol.meervoud` and this document on `Rol.naam` (the reference
-interpreter matches a role by either). `sourceRole.rol` follows the same
+matches on `Role.plural` and this document on `Role.name` (the reference
+interpreter matches a role by either). `sourceRole.role` follows the same
 label. The shape "to-many with no declared plural" is not new here:
 `corpus/golden/jutterswet-kaveltelling` already carries it and plays in
 every executor.
@@ -95,8 +96,8 @@ object types with the same attributes, characteristics, datatypes and
 `supertype`; the fact type with the same name and the same role fillers;
 the same three `Rule` forms; the same two `PrioritizedDefaults` groups
 with the same members in the same order (exception above base); the same
-conditions; the same SOM and AANTAL with the same `elementType` and
-the same `sourceRole.feittype`. A semantic difference here would be a defect
+conditions; the same `sum` and `count` with the same `elementType` and
+the same `sourceRole.factType`. A semantic difference here would be a defect
 in the lowering, not a finding about the languages.
 
 ## External executor: Flora-2 on the inheritance skeleton

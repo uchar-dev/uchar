@@ -21,10 +21,10 @@ van een jutter` is de enige schrijver van `vrijgesteld`.
 
 ### De defaults (het geneste kenmerkdoel `vrijgesteld`)
 
-Default 0 is een form-a-default: een eigen besluit plus een `excepties` met
-twee leden, gemarkeerd `ongeordend`. De voorwaarde van elke broer is één
-`Samengesteld` met kwantor `ALLE`: eerst de voorwaarde van de drager, dan
-de eigen voorwaarde, plat, zonder geneste `ALLE`:
+Default 0 is een form-a-default: een eigen besluit plus een `exceptions` met
+twee leden, gemarkeerd `unordered`. De voorwaarde van elke broer is één
+`Compound` met kwantor `all`: eerst de voorwaarde van de drager, dan
+de eigen voorwaarde, plat, zonder geneste `all`:
 
 ```
 Default 0  (besluit waar,   als: nx)                    -- de grond
@@ -52,7 +52,7 @@ zelfstandige rechtvaardiging krijgt door conjunctie met die van de
 omhullende laag, en zo staat het hier op de wire, in dezelfde vorm als in
 het anker `ww-herleving-inkomen`. Dat geldt voor de leden van een
 ongeordende uitzonderingsgroep net als voor een enkele uitzondering
-(maintainersbesluit 2026-09-23). De nesting en de markering `ongeordend`
+(maintainersbesluit 2026-09-23). De nesting en de markering `unordered`
 blijven staan: de nesting legt vast dat de broers vóór het eigen besluit
 van default 0 gaan, de markering dat de broers elkaar niet verdringen maar
 samen worden verzoend.
@@ -114,7 +114,7 @@ rechtvaardiging geeft. De cases pinnen alleen het conjunct `nx` in de broer
 
 **WF-050** — precies één defaults-bundel, één schrijver, één doel: het
 kenmerk `vrijgesteld` (exact één van kenmerk/attribuut). Elke default heeft
-de vorm van een kenmerkdoel, een `besluit` en geen `consequentie`, ook in de
+de vorm van een kenmerkdoel, een `decision` en geen `consequence`, ook in de
 subdefaults (de vormtoets recurseert). Geen gewone regel of objectcreatie
 schrijft `vrijgesteld`.
 
@@ -123,9 +123,9 @@ schrijft `vrijgesteld`.
 `nx` opnieuw zonder een lid toe te voegen. De afhankelijkheidsgraaf blijft
 acyclisch.
 
-**WF-075** — de `excepties` van default 0 dragen twee uitzonderingsgroepen,
-dus de markering `ongeordend` is verplicht, en zij staat er. Elke groep
-draagt één gewone default zonder eigen `excepties`. Geen subdefault is een
+**WF-075** — de `exceptions` van default 0 dragen twee uitzonderingsgroepen,
+dus de markering `unordered` is verplicht, en zij staat er. Elke groep
+draagt één gewone default zonder eigen `exceptions`. Geen subdefault is een
 initialisatie- of invoerdefault, en geen default is inhoudsloos.
 
 ## De vier cases — handberekening

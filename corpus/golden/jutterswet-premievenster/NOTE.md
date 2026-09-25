@@ -1,7 +1,7 @@
 # jutterswet-premievenster
 
-The **period condition** (`IR-SPEC.md` ch. 4.5 `TimeWindow`, v0 wire node
-`Periode`) on a SCALAR target: the evaluation-date gate of
+The **period condition** (`IR-SPEC.md` ch. 4.5 `TimeWindow`, the wire node
+since L5, `Periode` until then) on a SCALAR target: the evaluation-date gate of
 `RUNTIME-SEMANTICS.md` ch. 3.10. This is that chapter's first witness —
 until 2026-09-20 no corpus document executed the construct at all, and
 the two OCaml executors refused it while the chapter specified it in six
@@ -20,7 +20,7 @@ and nothing else.
 | `overgangspremie` | 30 | `vanaf 2025-01-01` — open above |
 | `aanlooppremie` | 10 | `tot 2024-01-01` — open below |
 | `bergloon` | 5 | `vanaf de meldatum van de Vondst` — an own scalar bound |
-| `borgpremie` | 15 | an `ALLE` composite: `geborgen` **and** `van 2024-01-01 tot 2025-01-01` |
+| `borgpremie` | 15 | an `all` composite: `geborgen` **and** `van 2024-01-01 tot 2025-01-01` |
 
 The windows are the chapter's own: [2024-01-01, 2025-01-01) with the
 boundary dates 2024-12-31 and 2025-01-01, and the "tot en met 2024-12-31"
@@ -33,8 +33,8 @@ meldatum at all.
 
 | clause (ch. 3.10) | where it is pinned |
 |---|---|
-| `vanaf` inclusive | `case2-op-de-vanafgrens` — `vondstpremie` is 50 **on** 2024-01-01 |
-| `tot` exclusive | `case4-op-de-totgrens` — `vondstpremie` is empty **on** 2025-01-01 (the worked example's "does not") |
+| `from` inclusive | `case2-op-de-vanafgrens` — `vondstpremie` is 50 **on** 2024-01-01 |
+| `to` exclusive | `case4-op-de-totgrens` — `vondstpremie` is empty **on** 2025-01-01 (the worked example's "does not") |
 | "tot en met" inclusive | `case3-laatste-dag` — `naseizoenpremie` is 20 on 2024-12-31 (the worked example's third sentence) |
 | an absent bound is open | `overgangspremie` in `case4`, `aanlooppremie` in `case5` |
 | an unset evaluation date never matches | `case6-tijdvrij` — `asOfDate` null, every window empty, only the control fires |
@@ -45,9 +45,9 @@ meldatum at all.
 the only rule that fires.
 
 `borgpremie` carries the window at the OTHER wire position: as a member of
-an `ALLE` composite beside a characteristic check. V1 is `geborgen` and V2
+an `all` composite beside a characteristic check. V1 is `geborgen` and V2
 is not, so V2's `borgpremie` is empty in all six cases without the window
-ever being read — `ref` stops an `ALLE` at the first false member — while
+ever being read — `ref` stops an `all` at the first false member — while
 V1's follows the window exactly. Until 2026-09-20 that shape lived only in
 `corpus/golden/jutterswet-vormenkabinet`, as a construct no executor
 carried; it is here because a witness cabinet is scaffolding and this is
@@ -60,16 +60,16 @@ backend 14 expectations per case, both Drools branches `PLAYED 6`.
 
 ## The bound shapes this document carries, and the one it does not
 
-WF-111 (maintainer decision 2026-09-23; before that ch. 3.10's v0 mirror
-note) bounds what a window bound may BE: a date literal or the subject's
-own scalar date attribute. Both shapes are carried here (four literal
-windows, one own-attribute window), which makes this document WF-111's
-passing golden. The general date expression is an OPEN wire decision and
-ill-formed until it is taken; its failing witness is
+WF-111 (maintainer decision 2026-09-23; before that ch. 3.10's v0 mirror note)
+bounds what a window bound may BE: a date literal or the subject's own scalar
+date attribute. Both shapes are carried here (four literal windows, one
+own-attribute window), which makes this document WF-111's passing golden. The
+general date expression is an OPEN wire decision and ill-formed until it is
+taken; its failing witness is
 `corpus/negatief/wf111-periodegrens-parameterdatum`, which was the red case
-`periodegrens-parameterdatum` until that day. The same holds for the
-window's POSITION: `borgpremie`'s `ALLE` member is WF-112's passing golden,
-and the window under `GEEN` is `corpus/negatief/wf112-periodevenster-tellende-kwantor`.
+`periodegrens-parameterdatum` until that day. The same holds for the window's
+POSITION: `borgpremie`'s `all` member is WF-112's passing golden, and the window
+under `none` is `corpus/negatief/wf112-periodevenster-tellende-kwantor`.
 
 The chapter's SECOND case is a period condition on a TEMPORAL target,
 where the window clips the written timeline instead of gating the rule.

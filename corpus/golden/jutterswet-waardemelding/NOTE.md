@@ -1,19 +1,19 @@
 # jutterswet-waardemelding
 
 The negated leeg/gevuld test (`IR-SPEC.md` ch. 4, Predicate row, field
-`negated`; `RUNTIME-SEMANTICS.md` ch. 1.2). `negatie` is the inner,
+`negated`; `RUNTIME-SEMANTICS.md` ch. 1.2). `negated` is the inner,
 per-value negation of the test: negated leeg is gevuld, negated gevuld is
 leeg. The whole-period qualifier's own negation is a different field
-(`GeheelPeriode.niet`, ch. 3.9) and does not occur here.
+(`WholePeriod.negated`, ch. 3.9) and does not occur here.
 
 Three rules, each writing a constant under one negated predicate:
 
 - meldpremie := 40 if the lengte of the Schuit is **niet leeg**
-  (LEEG, `negatie: true`, own attribute);
+  (`empty`, `negated: true`, own attribute);
 - the Schuit is ongemeten if its lengte is **niet gevuld**
-  (GEVULD, `negatie: true`, own attribute);
+  (`filled`, `negated: true`, own attribute);
 - werfpremie := 25 if the tarief of the werf of the Schuit is **niet leeg**
-  (LEEG, `negatie: true`, one bound navigation step over `ligplaats`).
+  (`empty`, `negated: true`, one bound navigation step over `ligplaats`).
 
 ## Hand computation
 
@@ -46,12 +46,12 @@ instead. The unnegated twin and the unbound written step are pinned in the
 backends' own suites (`LeegNegatieWitnessTest`, `test_clingo.ml`), not
 here, because a golden carries one expectation set. Under a whole-period
 qualifier the test is refused, and four red cases hold that refusal and
-close the square soort × negatie: `corpus/rood/leegnegatie-heel-tijdvak`
+close the square `kind` × `negated`: `corpus/rood/leegnegatie-heel-tijdvak`
 and `corpus/rood/gevuldnegatie-heel-tijdvak` for the negated tests, whose
 threshold is not normed, and `corpus/rood/leegtest-heel-tijdvak` and
 `corpus/rood/gevuldtest-heel-tijdvak` for the unnegated ones, which
 ch. 3.9 norms and no executor runs.
 
 No `bron.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
-never writes `negatie` on these two soorten. The document is hand-written
+never writes `negated: true` on these two kinds. The document is hand-written
 IR, and the rules illustrate the form; no Jutterswet article renders them.

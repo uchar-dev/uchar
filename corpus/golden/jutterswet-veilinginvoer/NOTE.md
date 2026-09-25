@@ -1,7 +1,7 @@
 # jutterswet-veilinginvoer
 
 The **case-input-on-an-allocation-target** witness (ASP-TRANSLATION S10/S12).
-One equal-shares allocation (`GELIJKE_DELEN`, RUNTIME-SEMANTICS ch. 4.2)
+One equal-shares allocation (`equalShares`, RUNTIME-SEMANTICS ch. 4.2)
 distributes a strandveiling's `veilingopbrengst` over its `veilingjutters`
 into each jutter's `veilingdeel`, writing the undivided remainder into
 `veilingrestant` (ch. 4.4). The case pre-fills `veilingdeel` on every jutter,

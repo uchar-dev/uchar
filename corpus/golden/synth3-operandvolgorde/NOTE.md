@@ -15,10 +15,10 @@ vangstsom := Let deel = zijn deelvangst
 
 Two operand positions, each with an observable effect of its own:
 
-* `links` — a read of `deel`. When `deelvangst` is absent the need is
+* `left` — a read of `deel`. When `deelvangst` is absent the need is
   leeg, so the read raises the ch. 10.6 **barrier** and the whole `Let`
   is leeg. A barrier ends the evaluation of everything after it.
-* `rechts` — a division whose dividend is filled and whose divisor is
+* `right` — a division whose dividend is filled and whose divisor is
   absent. That is a §9.5 **producer** (ch. 5.6, ch. 1.2's `gedeeld door`
   row): it yields leeg *and* deposits a channel fact.
 
@@ -31,11 +31,11 @@ cannot tell you, because `leeg plus …` coalesces either way.
 
 | Vangst | `deelvangst` | `teller` | `noemer` | `vangstsom` | channel |
 |--------|--------------|----------|----------|-------------|---------|
-| V1 | *absent* | 4 | *absent* | **leeg** | **none** — `links` barriers, `rechts` is never reached |
+| V1 | *absent* | 4 | *absent* | **leeg** | **none** — `left` barriers, `right` is never reached |
 | V3 | 5 | 4 | 2 | 5 + (4 ÷ 2) = **7** | none |
 
 Pinned: `consistent` — the model carries **no** channel fact at all.
-That absence is the order pin. Evaluate `rechts` first and V1's
+That absence is the order pin. Evaluate `right` first and V1's
 division is reached before the barrier: it deposits, the model is
 inconsistent, and the pin breaks.
 

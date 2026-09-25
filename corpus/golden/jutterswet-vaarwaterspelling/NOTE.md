@@ -4,11 +4,14 @@ A `Kadeplaats` has a `vaarwater` of the declared enumeration domain
 `Vaarwater` (`Wad`, `Zeegat`, `Ruimzee`) and a `kadegeld` a `Match` over
 that attribute derives: `Wad` → 2, `Zeegat` → 5, `Ruimzee` → 9.
 
-The single point of the case: the `Match` scrutinee — an `AttribuutRef`
-reading `vaarwater` — spells its domain **`VAARWATER`**, in another case
-than the declaration's `Vaarwater`. Every value label is repeated
-exactly, in declaration order, so WF-088 is satisfied on its own terms;
-the only difference is the case of the domain NAME.
+The single point of the case, until L2: the `Match` scrutinee — an
+`AttribuutRef` reading `vaarwater` — spelled its domain **`VAARWATER`**, in
+another case than the declaration's `Vaarwater`. Every value label was
+repeated exactly, in declaration order, so WF-088 was satisfied on its own
+terms; the only difference was the case of the domain NAME. Since L2 a
+reference carries no type of its own (B13), so the drift has no wire
+position left on the scrutinee: the spelling `VAARWATER` survives only in
+the `Match`'s source snippet (`match VAARWATER`), measured 2026-09-25.
 
 Why the case exists: WF-089 (domain identity, `spec/IR-SPEC.md` ch. 2.4)
 compares a use site's domain against the declaration's **ci**, following
@@ -31,8 +34,8 @@ verifier-clean only because the comparison is ci.
 
     while every negatief case keeps failing for its own declared rule.
     The report carries the pointer of the wire it was taken on; since L4 a
-    rule's value sits at `/rules/resolvedRegels/<r>/versions/<v>/value`
-    (delta B19).
+    rule's value sits at `/rules/<list>/<r>/versions/<v>/value` (delta B19),
+    and since L5 that list is `rules` (delta B6).
 
 Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
 a wire-level spelling that neither frontend emits — both derive a

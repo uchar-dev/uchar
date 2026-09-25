@@ -17,7 +17,7 @@ it on the landing variable alone; in `ref` the path is walked whole and the
 type filter applies to the flat union. Two spellings of one rule, and nothing
 but a golden held them together.
 
-`SOM` and `MINIMUM` sit side by side because the path feeds both arms and they
+`sum` and `minimum` sit side by side because the path feeds both arms and they
 fail differently: a wrongly included instance shifts a sum and REPLACES an
 extreme. Measured on this document with the element filter removed from both
 OCaml executors, J1 answers 1.00 and 22.00 instead of 5.00 and 12.00.
@@ -50,7 +50,7 @@ non-member unless the landing is narrowed, and the sum is 22.00 instead of
 12.00.
 
 J2 is the empty population over a non-empty reach, and it separates the two
-empty-set rules on one row: `MINIMUM` has no fallback and is empty, `SOM`
+empty-set rules on one row: `minimum` has no fallback and is empty, `sum`
 carries an `emptyFallback` of 0 and writes it.
 
 J3 is the DIAMOND: both boats bergen the same `M3`, so the flat union has to

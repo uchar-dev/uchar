@@ -9,7 +9,7 @@ it was not unit-bearing, so a verifier that OVER-rejected at that arm left
 every gate green. Since L2 a cell read carries no type of its own (B13), and
 the reference arms of all three rules left the wire with it (the index rows
 WF-089, WF-090 and WF-091 in `IR-SPEC.md`). What the golden pins since then:
-the verifier passes a well-formed `DimensieCel` over a unit-bearing
+the verifier passes a well-formed `DimensionCellRead` over a unit-bearing
 dimensioned attribute, the cell's own shape checks stay live (WF-034,
 `corpus/negatief/wf034-dimensiecel-*`), and gate 10 re-emits it byte for
 byte.
@@ -33,14 +33,14 @@ Het voorjaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht in voorjaar.
 ```
 
-The frontend lowers `zijn vondstgewicht in voorjaar` to a `DimensieCel` over
-an inner `AttribuutRef`. Since L2 neither node carries a type of its own
-(`spec/proposals/V1-WIREMIGRATIE.md` B13): the cell read's type is the
-dimensioned attribute's declared datatype (`kg` of system `Gewicht`, factor
-1 to `kg`), and every consumer reads it from that declaration
-(`RUNTIME-SEMANTICS.md` §2.10). Until L2 both nodes carried a copy of that
-datatype, unit sub-object included; WF-091 crossed the cell read's copy at
-this arm and the inner reference's in the same walk.
+The frontend lowers `zijn vondstgewicht in voorjaar` to a `DimensionCellRead`
+over an inner `AttributeReference`. Since L2 neither node carries a type of its
+own (`spec/proposals/V1-WIREMIGRATIE.md` B13): the cell read's type is the
+dimensioned attribute's declared datatype (`kg` of system `Gewicht`, factor 1 to
+`kg`), and every consumer reads it from that declaration (`RUNTIME-SEMANTICS.md`
+§2.10). Until L2 both nodes carried a copy of that datatype, unit sub-object
+included; WF-091 crossed the cell read's copy at this arm and the inner
+reference's in the same walk.
 
 **Two-sided, measured until L2.** The document was verifier-clean, and a
 mutant that fired at the `DimensieCel` arm on every unit-bearing use site
@@ -56,7 +56,7 @@ WF-091 FAIL /rules/resolvedRegels/0/waarde/type: unit mismatch: dimension-cell
   (factor 1 to 'kg')
 ```
 
-Since L2 that mutant has no wire form: a `type` on a `DimensieCel` is an
+Since L2 that mutant has no wire form: a `type` on a `DimensionCellRead` is an
 unknown field and is refused at load (the L2 load table in
 `backends/clingo/test/test_clingo.ml`), and the negatief
 `wf091-dimensiecel-eenheid` left the corpus with that field

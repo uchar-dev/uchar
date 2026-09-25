@@ -14,7 +14,7 @@ case of the domain NAME, at both halves of the identity rule:
   `DOSSIER` (the `type` of the reference at `/rules/resolvedRegels/0/waarde/base`
   on the wire of that time); since L2 a reference carries no type of its own
   (B13), so this half has no wire position left;
-- the WRITE half, `/rules/resolvedRegels/1/versions/0/value/type`: the
+- the WRITE half, `/rules/rules/1/versions/0/value/type`: the
   `StructLiteral` assigned into `spiegel` is typed `DOSSIER` while the target
   attribute declares `dossier`.
 
@@ -65,9 +65,10 @@ What does NOT pin it, both variants measured under that same mutant:
         WF-090 FAIL /rules/resolvedRegels/1/waarde/fields/1/value/base/type:
         ... (idem)
 
-Both measured reports carry the pointers of the wire they were taken on;
-since L4 a rule's value sits at `/rules/resolvedRegels/<r>/versions/<v>/value`
-(delta B19).
+Both measured reports and the two variants carry the names of the wire they
+were taken on: since M1 the model's `domeinen` map is the list `domains`,
+since L4 a rule's value sits at `/rules/<list>/<r>/versions/<v>/value` (delta
+B19), and since L5 that list is `rules` (delta B6).
 
 Only drift at a use site against an unchanged declaration pins the ci
 clause — which is what this document, and only this document, carries.

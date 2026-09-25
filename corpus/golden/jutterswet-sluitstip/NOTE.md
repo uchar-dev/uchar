@@ -6,7 +6,7 @@ precision. Until
 a datum-tijd literal's `waarde`, and WF-095 admitted it as a second
 spelling for that reason. The emitter now writes the canonical ISO lexeme
 into the literal's value — since L4 the `dateTime` variant of `value` — and
-keeps the snippet in `bron`, as it already did for a day-precision date
+keeps the snippet in `source`, as it already did for a day-precision date
 (WF-084), and WF-095 admits the ISO lexeme alone. This
 golden holds that route: gate 10 re-emits it from `bron.rgs`
 byte-identically, gate 3 holds it WF-095-clean, and gates 5, 6 and 12
@@ -17,11 +17,11 @@ replay it on the values below.
 The source writes the depot's closing instant three ways, and every one
 emits the same lexeme `2026-07-01T08:30:00.000`:
 
-| rule | source spelling (`bron`) | `value.dateTime` |
+| rule | source spelling (`source.snippet`) | `value.dateTime` |
 |---|---|---|
 | `Sluitstip` (a write) | `dd. 1-7-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
-| `Kenmerktoekenning tijdig` (EERDER) | `01-07-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
-| `Kenmerktoekenning verlaat` (LATER) | `1-07-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
+| `Kenmerktoekenning tijdig` (`earlier`) | `01-07-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
+| `Kenmerktoekenning verlaat` (`later`) | `1-07-2026 08:30:00.000` | `2026-07-01T08:30:00.000` |
 
 The `dd. ` prefix and the one-digit day and month belong to the source
 token (§13.2.19/.21) and never to the lexeme. The day comes first in the
@@ -50,7 +50,7 @@ days); 2026-07-01 adds 31 + 28 + 31 + 30 + 31 + 30 = 181, so **20 635**.
 
 V4 carries no `afgiftestip`.
 
-| label | vs the literal | `tijdig` (EERDER) | `verlaat` (LATER) | `sluitstip` |
+| label | vs the literal | `tijdig` (`earlier`) | `verlaat` (`later`) | `sluitstip` |
 |---|---|---|---|---|
 | V1 | same day, MS one lower | present | absent | the literal |
 | V2 | same day, MS one higher | absent | present | the literal |

@@ -28,15 +28,14 @@ Het aanvoergeld van een Jutter moet berekend worden als
     zijn aanvoerwaarde plus het aanvoertarief.                              <- value
 ```
 
-Since L2 a `ParameterRef`'s type is its parameter's declared datatype, unit
-sub-object included (`kg` of system `Gewicht`, factor 1 to `kg`; `EUR` of
+Since L2 a `ParameterReference`'s type is its parameter's declared datatype,
+unit sub-object included (`kg` of system `Gewicht`, factor 1 to `kg`; `EUR` of
 system `Munt`, factor 1 to `EUR`), read from the declaration
-(`RUNTIME-SEMANTICS.md` §2.10). Until L2 each `ParameterRef` on the wire
-carried a byte-copy of that datatype, and WF-091 crossed exactly that copy
-against the declaration, facet by facet. The unit facet was the one no other
-rule could reach: a kilogram/tonne copy is *compatible* (same canonical
-unit, factor 1000), so WF-035's and WF-023's convertibility crosses admit it
-by construction.
+(`RUNTIME-SEMANTICS.md` §2.10). Until L2 each `ParameterRef` on the wire carried
+a byte-copy of that datatype, and WF-091 crossed exactly that copy against the
+declaration, facet by facet. The unit facet was the one no other rule could
+reach: a kilogram/tonne copy is *compatible* (same canonical unit, factor 1000),
+so WF-035's and WF-023's convertibility crosses admit it by construction.
 
 **Two-sided, measured until L2.** The document was verifier-clean, and it
 was a POSITIVE witness: a mutant that fired at the `ParameterRef` arm on
@@ -53,7 +52,7 @@ WF-091 FAIL /rules/resolvedRegels/0/voorwaarde/rechts/type: unit mismatch:
   system 'Gewicht' (factor 1 to 'kg')
 ```
 
-Since L2 that mutant has no wire form: a `type` on a `ParameterRef` is an
+Since L2 that mutant has no wire form: a `type` on a `ParameterReference` is an
 unknown field and is refused at load (the L2 load table in
 `backends/clingo/test/test_clingo.ml`), and the negatief
 `wf091-parameterref-eenheid` left the corpus with that field

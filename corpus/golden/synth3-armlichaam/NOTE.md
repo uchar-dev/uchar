@@ -35,7 +35,7 @@ arms over one accumulator, and case 4 pins the fold base.
 over the same `grondslag = 60` and faults in both executors on a `0` divisor —
 but it is NOT this document minus its branch node. It carries no `Let` at all
 (its body is `acc + grondslag / x` directly), its element type is
-`NIET_NEGATIEF`, its list is `[2, 0]`, and it writes another attribute. It
+`nonNegative`, its list is `[2, 0]`, and it writes another attribute. It
 establishes that the numeric-zero fence exists in closed-body context; it
 isolates nothing about what keeps that fence quiet here.
 
@@ -57,15 +57,15 @@ are unmoved for reasons that are themselves checks: case 2's arm was the anders
 arm all along, and case 4 never enters the body. That is the measurement the
 pinned values rest on.
 
-The element type is `teken: ONBEPAALD` on purpose, and that is a CONTRACT
+The element type is `sign: unspecified` on purpose, and that is a CONTRACT
 choice rather than a stylistic one. With the sign declaration of
-`jutterswet-kinderdeler` (`NIET_NEGATIEF`) the condition `x >= 0` would be
+`jutterswet-kinderdeler` (`nonNegative`) the condition `x >= 0` would be
 vacuously true and the anders arm unreachable — a one-armed witness dressed as
 a two-armed one. Worse, it would be silently so: measured on a copy of this
-document with the element flipped to `NIET_NEGATIEF`, the verifier still passes
+document with the element flipped to `nonNegative`, the verifier still passes
 and ref and clingo BOTH still replay cases 2 and 3 to the same values, negative
 kindertallen and all. No executor enforces a declared sign on a list-element
-case input, so under `NIET_NEGATIEF` those two cases would sit outside the
+case input, so under `nonNegative` those two cases would sit outside the
 declared contract with nothing to catch them.
 
 ## What the ASP translation does with it, verbatim

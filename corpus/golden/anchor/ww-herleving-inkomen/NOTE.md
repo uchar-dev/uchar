@@ -91,24 +91,24 @@ recht dat kan eindigen of herleven.
 Afgeleide attributen: `inkomensgrens`, `verstreken periode` (in hele dagen),
 `nieuwe maxdatum`. Doel-kenmerk van de defaults: `recht op uitkering`.
 
-Het doelkenmerk is bezittelijk (`kind: BEZITTELIJK` op zijn `Characteristic`;
+Het doelkenmerk is bezittelijk (`kind: possessive` op zijn `Characteristic`;
 tot L1 `kenmerkSoorten`, B5), de drie invoerkenmerken zijn bijvoeglijk. De
 soort stuurt alleen de spelling in een RegelSpraak-bron:
 `heeft (geen) recht op uitkering` in plaats van
 `is (niet) recht op uitkering`. Ze staat zo omdat een RegelSpraak-tweeling van
 dit anker die spelling schrijft en byte-identiek op dit anker moet uitkomen.
-De uitvoering hangt er niet van af: met `BIJVOEGLIJK` en met `BEZITTELIJK`
+De uitvoering hangt er niet van af: met `adjectival` en met `possessive`
 geven ref, clingo en de Drools-exectak dezelfde uitkomsten op alle tien cases,
 krijgt clingo hetzelfde ASP-programma en krijgt de Drools-bean hetzelfde veld.
 
 ### De defaults (het genest kenmerk-doel `recht op uitkering`)
 
 De rose tree van art. 15 → 20-1-c → 21-1 → 21-2-a, als één defaults-bundel
-met `Default.excepties`-nesting (elke uitzondering wordt eerst beslist en
+met `Default.exceptions`-nesting (elke uitzondering wordt eerst beslist en
 verdringt haar drager wanneer zij beslist). De voorwaarde van elke geneste
-default is één `Samengesteld` met kwantor `ALLE`: eerst de conjuncten van
+default is één `Compound` met kwantor `all`: eerst de conjuncten van
 haar drager in dezelfde volgorde, dan die van haar eigen voorwaarde, plat,
-zonder geneste `ALLE`:
+zonder geneste `all`:
 
 ```
 Default grant  (besluit waar,  als: werkloos)                                  -- art. 15
@@ -180,8 +180,8 @@ geen toe. `inkomensgrens` is een *apart afgeleid* attribuut dat de
 default-justificaties voedt (de termijn/grens-toets als eigen afleiding), niet
 het defaults-doel. De afhankelijkheidsgraaf blijft acyclisch.
 
-**WF-075** — elke `excepties` draagt precies één exception group (één
-`ExceptionGroup`), dus `ongeordend` is op elk niveau onwaar (twee of meer leden
+**WF-075** — elke `exceptions` draagt precies één exception group (één
+`ExceptionGroup`), dus `unordered` is op elk niveau onwaar (twee of meer leden
 zouden de ongeordend-markering eisen). Grant, einde en herleving zijn
 form-a-defaults (eigen besluit *plus* geneste excepties); de blokkade is een
 gewone default zonder excepties. Geen enkele default is contentloos.

@@ -24,10 +24,10 @@ Daarbij geldt:
 
 | rule | quantifier | members (wire order) | trigger row pinned |
 |------|------------|----------------------|--------------------|
-| `hoogsteteken` | TEN HOOGSTE 1 | ploegomvang = 0 · vangstwaarde > 0 · **aandeel > 0** | `at-most`, threshold exceeded |
-| `preciesteken` | PRECIES 1 | ploegomvang = 0 · vangstwaarde > 0 · **aandeel > 0** | `exactly`, threshold exceeded |
-| `minsteteken` | TEN MINSTE 3 | **aandeel > 0** · ploegomvang = 0 | `at-least`, out of reach — and the *before*-the-member ordering |
-| `randteken` | PRECIES 3 | **aandeel > 0** · ploegomvang = 0 | `exactly`, out of reach, at the boundary *d* = *n* + 1 |
+| `hoogsteteken` | `atMost 1` | ploegomvang = 0 · vangstwaarde > 0 · **aandeel > 0** | `atMost`, threshold exceeded |
+| `preciesteken` | `exactly 1` | ploegomvang = 0 · vangstwaarde > 0 · **aandeel > 0** | `exactly`, threshold exceeded |
+| `minsteteken` | `atLeast 3` | **aandeel > 0** · ploegomvang = 0 | `atLeast`, out of reach — and the *before*-the-member ordering |
+| `randteken` | `exactly 3` | **aandeel > 0** · ploegomvang = 0 | `exactly`, out of reach, at the boundary *d* = *n* + 1 |
 
 `minsteteken` is the degenerate case ch. 5.10 spells out: a threshold of
 **3 over 2 members** can never be reached, so the out-of-reach trigger
@@ -47,19 +47,19 @@ bullet count — so it is reachable, not synthetic. Verifier: clean.
 | S2 | 7 | 3 | **1** | **1** | **leeg** | **leeg** |
 
 `randteken` is `minsteteken`'s twin at the same degenerate boundary
-*d* = *n* + 1, under PRECIES instead of TEN MINSTE, and it is `leeg` for
+*d* = *n* + 1, under `exactly` instead of `atLeast`, and it is `leeg` for
 every input for the same reason: the out-of-reach trigger fires on the
 empty prefix. Its job is to pin that boundary **exactly**. A guard that
 is one step too loose — `H ≥ d − n − 1` instead of `H ≥ d − n` — passes
 every other case in this corpus and reads the faulting member here; so
 does an executor that keeps only the "threshold exceeded" half of the
-PRECIES trigger. Both are caught by this one rule, in clingo and in the
+`exactly` trigger. Both are caught by this one rule, in clingo and in the
 Drools exec-model branch respectively.
 
 *S1, the stop.* Members 1 and 2 both hold (0 = 0; 100 > 0), so after two
-members *h* = 2. TEN HOOGSTE 1 and PRECIES 1 are both settled **false**
+members *h* = 2. `atMost 1` and `exactly 1` are both settled **false**
 at that point and never read member 3 — which would divide 100 by 0.
-TEN MINSTE 3 over its two members is settled false before member 1, so
+`atLeast 3` over its two members is settled false before member 1, so
 its division is never read either. Three unread divisions, no fault.
 
 *S2, the control.* Member 1 fails (7 ≠ 0), member 2 holds (3 > 0), and
