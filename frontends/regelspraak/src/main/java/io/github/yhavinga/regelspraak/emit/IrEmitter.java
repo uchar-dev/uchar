@@ -247,7 +247,8 @@ public final class IrEmitter {
         w.endArray();
 
         // §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) the defaults extension: an OPTIONAL list, emitted ONLY when the
-        // 'Uitzondering op' / 'Uitzonderingen ongeordend' forms produced defaults groups. A flat document
+        // 'Uitzondering op' / 'Uitzonderingen ongeordend' forms produced defaults groups, or the opgave marker
+        // produced its group 'opgave boven berekening X' (grammar/DIVERGENCES.md §7). A flat document
         // produces none, so the key is absent there — the mirror byte-identity of every flat golden holds.
         if (!m.prioritizedDefaults.isEmpty()) {
             w.key("prioritizedDefaults").beginArray();
