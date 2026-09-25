@@ -22,14 +22,14 @@ die de tutorial nodig heeft. Het tarief (art. 2/3) is een vertakkende
 uitzonderingsboom over percentages: de onvoorwaardelijke basis (20%), één
 uitzondering dáárop (de kinderlast, 15%), en dáárop weer twee ongeordende
 uitzonderingen (het grootgezin, 10%, en de kleine beurs, 0%). Die boom
-rijdt op één `Default.excepties` exception group (row 5c, ch. 7.9 — de vorm die de
+rijdt op één `Default.exceptions` exception group (row 5c, ch. 7.9 — de vorm die de
 plugin vroeger luid weigerde). Bij `kindertal = 4` beslist alléén het
 grootgezin-sublid — de bindende spurious-conflict-lezing (PHASE4-DEFAULTS
 §7): platslaan zou hier een schijnconflict fabriceren. De aanslag (art. 4)
 gebruikt de tutorial-regelvorm `let … in let … in if …`: de strikte
 `Let`-knopen (WF-076), de `IfThenElse` binnen de laatste `Let`-body
 (WF-069) met een binder-only conditie (WF-077), en het geldproduct
-`inkomen × tarief` dat Catala op de cent rondt — `Afgerond{REKENKUNDIG,2}`,
+`inkomen × tarief` dat Catala op de cent rondt — `Rounding{halfAwayFromZero,2}`,
 door clingo gesplitst geëncodeerd zodat het schaal-6-product op
 tutorial-magnitude (€20.000 × 20%) nooit int31 omwikkelt. Decimals dragen
 de gepinde schaal S = 4 (vraag 4-A).

@@ -9,9 +9,9 @@ entiteit — de rekenkamer. De berging richt haar rekenkamer op, voorziet
 die van een grondslag en een aftrek, en leest het vastgestelde bedrag
 terug als haar heffing. Dit is de subscope-vorm van PHASE5C-TUTORIAL §3,
 gelowerd op objectcreatie plus genavigeerde lezing (geen nieuwe knoop):
-één `ResolvedObjectCreatie` van de rekenkamer met de bergingswaarden als
-`Toekenningen` op haar invoerattributen en een `verbindendeRol`-terugkoppeling,
-en een genavigeerde `AttribuutRef` voor de uitkomst. Eigen auteurschap,
+één `ObjectCreation` van de rekenkamer met de bergingswaarden als
+`MemberInit`-knopen op haar invoerattributen en een `connectingRole`-terugkoppeling,
+en een genavigeerde `AttributeReference` voor de uitkomst. Eigen auteurschap,
 rechtenvrij; de rekenkamerregel draait in de fixpoint van de berging op de
 gemunte instantie.
 

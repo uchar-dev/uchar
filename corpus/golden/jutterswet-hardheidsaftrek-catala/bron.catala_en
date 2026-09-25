@@ -16,7 +16,7 @@ lowert de overschrijving naar een **gegenereerde top-default** boven de eigen
 defaults van de rekenkamer op dat doel (PHASE5-CATALA besluit 6, het
 §4.1-hardheidspatroon): de guard (`hardheid`) en de waarde (`hardheidsaftrek`)
 van de default lezen de aanroeper, genavigeerd over de teruggekoppelde
-`verbindendeRol` (callee → caller) — geen standing-machinerie, Reading B als
+`connectingRole` (callee → caller) — geen standing-machinerie, Reading B als
 default-volgorde. Valt de guard weg, dan valt de top-default door en beslissen de eigen
 defaults van de rekenkamer. Eigen auteurschap, rechtenvrij; de rekenkamerregels
 draaien in de fixpoint van de bergingsaanslag op de gemunte instantie.
