@@ -953,7 +953,14 @@ EXPECTED_CHANNEL=(
 # nonNegative type, which the verifier refused while it read the sign off the lexeme. No source file of
 # this backend changed: the exec branch plays its two cases on the first run, PLAYED 2, with ref's and
 # clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=206
+# 206 -> 207 (2026-09-25, the ASP initialisation arm): jutterswet-voorwaardelijke-initialisatie, new,
+# from bron.rgs and hand-computed — an initialisation with a condition as its target's only writer
+# (RUNTIME-SEMANTICS ch. 5.4): written where the target is empty and the condition holds, leeg where the
+# condition fails, a case input left standing, and the three side by side per Vondst. The ch. 7.7
+# desugaring excludes the form, and the ASP backend refused it on its wildcard over rule kinds until it
+# got an arm of its own. No source file of this backend changed: the exec branch plays the four cases
+# on the first run, PLAYED 4, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=207
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1237,7 +1244,10 @@ DRL_CHANNEL=(
 # 177 -> 178 (2026-09-25, WF-039 reads the literal's value): jutterswet-nulspelling, new. This branch
 # plays its two cases on the first run with no change of its own, PLAYED 2. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=178
+# 178 -> 179 (2026-09-25, the ASP initialisation arm): jutterswet-voorwaardelijke-initialisatie, new.
+# This branch plays its four cases on the first run with no change of its own, PLAYED 4. Reason block
+# at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=179
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

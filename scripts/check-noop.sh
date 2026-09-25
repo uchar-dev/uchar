@@ -203,6 +203,13 @@
 #     chain position above the base (the dialect's shape) where the anchor nests
 #     it in the base; its other nine cases pin computed attributes and are not
 #     survivors.
+#   - jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json and
+#     jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json: the two
+#     silent branches of an initialisation that carries a condition (ch. 5.4) —
+#     on an empty target whose condition fails nothing is written, and a target
+#     the case input fills keeps its input while the condition holds; the
+#     absence and the standing are the assertions. Its case1 and case4 write
+#     and are not survivors.
 SURVIVORS='corpus/golden/anchor/jutterswet-vondstwaardering/case5-input-blijft.json
 corpus/golden/anchor/jutterswet-waardering-v0vorm/case3-input-blijft.json
 corpus/golden/jutterswet-vondstnummer/case-consistent.json
@@ -244,7 +251,9 @@ corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
 corpus/golden/jutterswet-dagentelling-rgs/case3-leeg.json
 corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json
 corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json
-corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json'
+corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json
+corpus/golden/jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json
+corpus/golden/jutterswet-voorwaardelijke-initialisatie/case3-invoer-blijft.json'
 
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
