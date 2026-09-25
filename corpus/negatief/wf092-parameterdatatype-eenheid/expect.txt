@@ -1,0 +1,1 @@
+unit 'EUR' carries conversion factor 2/2, which is not in lowest terms

@@ -1,0 +1,388 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kamerbedrag",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Kamerheffing",
+        "animate": true,
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslagen",
+            "datatype": {
+              "node": "ListType",
+              "element": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [],
+    "functionDefs": [
+      {
+        "node": "FunctionDef",
+        "name": "Kamerbedrag",
+        "parameters": [
+          {
+            "name": "grondslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "result": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        },
+        "body": {
+          "node": "Binary",
+          "op": "plus",
+          "left": {
+            "node": "BinderRef",
+            "name": "grondslag",
+            "source": {
+              "snippet": "grondslag"
+            }
+          },
+          "right": {
+            "node": "Literal",
+            "value": {
+              "number": "100"
+            },
+            "type": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "source": {
+              "snippet": "100"
+            }
+          },
+          "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "unspecified"
+          }
+        },
+        "source": {
+          "snippet": "Kamerbedrag"
+        }
+      },
+      {
+        "node": "FunctionDef",
+        "name": "Weegbedrag",
+        "parameters": [
+          {
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "canonical": "g"
+              }
+            }
+          }
+        ],
+        "result": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        },
+        "body": {
+          "node": "Literal",
+          "value": {
+            "number": "0"
+          },
+          "type": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "unspecified"
+          }
+        }
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "berekening bedrag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bedrag",
+              "subjectType": "Kamerbedrag",
+              "source": {
+                "snippet": "de bedrag"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Kamerbedrag",
+                "source": {
+                  "snippet": "de grondslag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "100"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berekening heffing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Kamerheffing",
+              "source": {
+                "snippet": "de heffing"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "MapList",
+                "type": {
+                  "node": "ListType",
+                  "element": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                "list": {
+                  "node": "AttributeReference",
+                  "attribute": "grondslagen",
+                  "subjectType": "Kamerheffing",
+                  "source": {
+                    "snippet": "de grondslagen"
+                  }
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "g",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      }
+                    }
+                  ],
+                  "body": {
+                    "node": "Invoke",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "function": "Kamerbedrag",
+                    "arguments": [
+                      {
+                        "node": "BinderRef",
+                        "name": "g",
+                        "source": {
+                          "snippet": "g"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "Kamerbedrag"
+                    }
+                  },
+                  "source": {
+                    "snippet": "g"
+                  }
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "b",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "acc"
+                    }
+                  },
+                  "right": {
+                    "node": "BinderRef",
+                    "name": "b",
+                    "source": {
+                      "snippet": "b"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": []
+  },
+  "diagnostics": []
+}

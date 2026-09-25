@@ -1,0 +1,206 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "grondslag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "nonNegative"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "kindertallen",
+        "datatype": {
+          "node": "ListType",
+          "element": {
+            "node": "Number",
+            "whole": true,
+            "decimals": 0,
+            "sign": "nonNegative"
+          }
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "premie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De premie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Fold",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "list": {
+                "node": "ParameterReference",
+                "parameter": "kindertallen",
+                "source": {
+                  "snippet": "de kindertallen"
+                }
+              },
+              "function": {
+                "node": "Lambda",
+                "parameters": [
+                  {
+                    "name": "acc",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "datatype": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative",
+                      "unit": {
+                        "node": "Unit",
+                        "abbreviation": "st",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    }
+                  }
+                ],
+                "body": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "BinderRef",
+                    "name": "acc",
+                    "source": {
+                      "snippet": "de opgetelde premie"
+                    }
+                  },
+                  "right": {
+                    "node": "Binary",
+                    "op": "percentageOf",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "x",
+                      "source": {
+                        "snippet": "het kindertal"
+                      }
+                    },
+                    "right": {
+                      "node": "ParameterReference",
+                      "parameter": "grondslag",
+                      "source": {
+                        "snippet": "de grondslag"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "het kindertal procent van de grondslag"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de opgetelde premie plus het kinddeel"
+                  }
+                },
+                "source": {
+                  "snippet": "de kinddelen opgeteld"
+                }
+              },
+              "init": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0.00"
+                }
+              },
+              "source": {
+                "snippet": "de kindertallen gevouwen tot de premie"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

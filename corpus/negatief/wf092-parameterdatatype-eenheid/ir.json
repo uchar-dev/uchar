@@ -1,0 +1,278 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1,
+              "timelineName": "penningjaar"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaal aangemelde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "aanmeldplichtig",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "vondstdrempel",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "penningbedrag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 2,
+              "den": 2
+            }
+          }
+        },
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "year",
+          "count": 1
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [
+      {
+        "node": "Timeline",
+        "name": "het penningjaar",
+        "variableStart": false,
+        "granularity": "year",
+        "count": 1
+      }
+    ],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "totaal aangemelde vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "totaal aangemelde vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het totaal aangemelde vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "aantal aangemelde vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn aantal aangemelde vondsten"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het totaal van zijn aantal aangemelde vondsten"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Kenmerktoekenning penninggerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "totaal aangemelde vondsten",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn totaal aangemelde vondsten"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "vondstdrempel",
+                "source": {
+                  "snippet": "de vondstdrempel"
+                }
+              },
+              "source": {
+                "snippet": "zijn totaal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Kenmerktoekenning aanmeldplichtig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanmeldplichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is aanmeldplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet penninggerechtigd is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
