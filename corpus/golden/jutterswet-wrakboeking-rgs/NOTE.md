@@ -66,9 +66,8 @@ it needs no survivor entry.
 ref and clingo replay the case with the pinned values. The Drools backend
 plays it in both branches, exec-model and DRL text, `PLAYED 1` each
 (measured 2026-09-25): without the binding both branches derive the relation
-from the type pair. The carrier's NOTE records that its binding is what let
-the backend play it, not re-measured since L2; this document is the
-binding-less form, measured.
+from the type pair. The carrier's NOTE cites this measurement: its binding is
+not what lets the backend play it.
 
 ## What the case does not observe
 
