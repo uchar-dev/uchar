@@ -8937,11 +8937,11 @@ let () =
    justification would need the input-emptiness guard conjoined), and so is a
    windowed one; ref replays both natively. Before the initialisation arm of
    translate_regel this backend refused them with the wildcard's `rule kind
-   not translated` — measured on the frames up to the chain ones: 13 of their
-   25 checks failed, each on that sentence. The arm writes only where the
-   target is empty and the condition holds; a filled input stands. Beside one
-   computing rule the computed value wins whichever fires first. Where that
-   rule's condition holds and its value is leeg, v0 erases what the
+   not translated` — measured on this section: 15 of its 29 checks failed,
+   each on that sentence, while every ref check passed. The arm writes only
+   where the target is empty and the condition holds; a filled input stands.
+   Beside one computing rule the computed value wins whichever fires first.
+   Where that rule's condition holds and its value is leeg, v0 erases what the
    initialisation writes and the initialisation writes it again: ref faults on
    its pass budget, and clingo must refuse there too rather than answer. *)
 let () =
