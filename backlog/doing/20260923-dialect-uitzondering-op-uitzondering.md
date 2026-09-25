@@ -142,3 +142,100 @@ Niet in deze kaart: de ankerherstellen (eigen kaarten, gaan vooraf: het
 WW-anker is geland, het nestkenmerk-anker volgt); de spec, de verifier,
 de uitvoerders; `Regelgroep` rond een uitzondering en de
 `// Bron:`-annotaties (eigen kaarten).
+
+## Correcties bij de claim (2026-09-25, hoofdsessie)
+
+De kaart is op 2026-09-23 op de L1-wire geschreven; de repo staat op de
+L5-wire (`uchar-ir-v1` compleet, main 2f47d80e).
+
+- Voorwaarden geland: `anker-ww-herleving-dragervoorwaarde` (tien cases,
+  `recht op uitkering` bezittelijk), `anker-nestkenmerk-dragervoorwaarde`
+  (VIER cases: case4-nz-zonder-nx met de instanties M/N/O; `nx` in beide
+  broers; aanwezig ⇔ nx ∧ ¬ny, conflict ⇔ nx ∧ ny ∧ nz), en
+  `dialect-niet-in-uitzondering` (de vier spellingen van `niet`,
+  `NietInUitzonderingTest`, DIVERGENCES §4 "Form 1"; de zin dat een
+  §9.5-conflict alleen op een attribuutdoel schrijfbaar is, is DAAR al
+  vervangen — acceptatie (d) hoeft dat niet meer).
+- Het voorstel DIALECT-DEFAULTS-NIET-EN-NESTING.md is geland op main (§5,
+  §10 besluiten 4–6). §5.2 laat "Whether `Afwijking van` may also name an
+  exception" nog aan deze kaart en §5.6 kent het erven onder
+  `Uitzonderingen ongeordend op` nog niet: beide besluiten van de tweede
+  besluitvraag komen als **voorstel** in dat bestand (alleen die passages).
+- Wire-namen: `Default.excepties {ongeordend, leden}` → `Default.exceptions
+  {unordered, members: [ExceptionGroup {defaults: [Default …]}]}`; `besluit`
+  → `decision`; `ALLE` → `Compound {quantifier: "all", threshold: 0, parts}`;
+  `drempel` → `threshold`; `bron` → `source {snippet}`;
+  `PrioritizedDefaults.ongeordend` → `unordered`. De conflictsleutel
+  `Jutter.vrijgesteld/0` blijft. `resolvedRegels` is frontend-intern.
+- Frontend: `RuleChecker.ordeningsDefaults` r. 684–763, `groepsDefaults`
+  r. 769 e.v.; `DefaultsExtensieTest.onbekende_basisregel_weigert_luid`
+  r. 40–52 pint "geen basisregel met die naam gevonden";
+  `frontends/regelspraak/grammar/DIVERGENCES.md` §4 (de te vervangen zin
+  "Exception-on-exception (nested `Default.excepties`) is not authored from
+  source in this card" r. 430–431; de gereserveerde woorden r. 435–439).
+  `Uitzonderingen` en `ongeordend` zijn al tokens; nieuw is alleen de
+  whole-phrase kop `AFWIJKING_VAN` en de `op <naam>`-staart van
+  `Uitzonderingen ongeordend`.
+- Gate-12-pins vandaag: `EXPECTED_PLAYED=188`, `EXPECTED_DRL_PLAYED=167`;
+  `DRL_CHANNEL` klasse (A) luidt "ch. 7 prioritizedDefaults — the DRL-text
+  branch has no defaults lowering". Gate 7: `EXPECTED_CHANNEL`-lijst in
+  `scripts/check-noop.sh`. 73 rgs-goldens.
+- De tweelingen komen in `corpus/golden/<naam>-rgs/` (de ankermap is
+  handgeschreven en beschermd; gate 10 leest `corpus/golden/**`).
+
+## U-besluiten (hoofdsessie, 2026-09-25)
+
+- U1 **Tweelingen** `corpus/golden/ww-herleving-inkomen-rgs`,
+  `jutterswet-uitsluiting-rgs`, `jutterswet-nestkenmerk-rgs`: `bron.rgs`, de
+  frontend-emissie als `ir.json` (gate 10 byte-identiek, gate 2 round-trip),
+  de cases van het anker byte-gelijk gekopieerd, NOTE met de structurele
+  diff (elke `source` gestript, sleutels gesorteerd) en per verschil de
+  triage (i)/(ii)/(iii) — (ii) of (iii) stopt de tweeling en gaat als
+  genummerd open punt naar de hoofdsessie. `case1-y-wint` van de
+  nestkenmerk-tweeling op de gate-7-overleverslijst met de reden van het
+  anker (**voorstel**).
+- U2 **Bestaande testpin.** De melding van `onbekende_basisregel_weigert_luid`
+  verandert (de drager wordt ook onder uitzonderingen en afwijkingen
+  gezocht); die ene assertie mag mee naar de nieuwe zin (toestemming van de
+  hoofdsessie, aan de maintainer gemeld). Verder geen bestaande tests
+  wijzigen: nieuwe klasse `UitzonderingOpUitzonderingTest` (en zo nodig
+  `AfwijkingVanTest`).
+- U3 **Conjunctie op de wire.** De rechtvaardiging van elke `Uitzondering
+  op X` — ook aan de wortel — is één platte `Compound {quantifier: "all",
+  threshold: 0}` met de conjuncten van X (zelf al geconjungeerd, dus de hele
+  keten tot de basis) eerst en dan de eigen; een eigen voorwaarde die zelf
+  een `all`-Compound is wordt platgeslagen, een andere kwantor blijft één
+  conjunct; een onvoorwaardelijke uitzondering draagt alleen de
+  dragerconjuncten; `source.snippet` van de Compound = de conjunctbronnen met
+  " en " ertussen (zoals de ankers). `Afwijking van <basis>: <naam>` draagt
+  alleen de eigen voorwaarde (de lege `all` als zij onvoorwaardelijk is) en
+  lowert als vandaag een eerste-niveau `Uitzondering op`.
+- U4 **Bestaande rgs-goldens met `Uitzondering op`.** Meet per golden de
+  her-emissie: verandert `ir.json` niet (onvoorwaardelijke basis), dan
+  niets; verandert zij door de conjunctie, dan beslist de betekenis: een
+  uitzondering die de basis verruimt (bergingsdrempel) wordt `Afwijking van`
+  met byte-identieke `ir.json`; een beperkende uitzondering houdt haar kop,
+  krijgt de geconjungeerde `ir.json` (her-emissie), haar cases moeten
+  ongewijzigd groen blijven en haar NOTE meldt het. Elke keuze per golden in
+  het Result.
+- U5 **Weigeringen** (elk één ERROR, bij naam, met de uitdrukbare vorm in de
+  melding): onbekende drager; cyclus (met pad); `Afwijking van` met een
+  uitzondering of afwijking als drager; `Uitzondering op` met een geërfde
+  uitzondering als drager (SUBTYPING §4.4); drager met zowel geordende
+  kinderen als een `Uitzonderingen ongeordend op`-blok; ander doel, ander
+  venster, meer dan één versie (de bestaande hekken, nu per boomkant).
+- U6 **Lowering** naar §5.2 van het voorstel in L5-namen: eerste niveau een
+  ketenpositie; dieper `Default.exceptions {unordered: false, members:
+  [ExceptionGroup [F2, F1]]}`; `Uitzonderingen ongeordend op E1` →
+  `exceptions {unordered: true, members: [[U1], [U2]]}`; onder een basis een
+  group-default direct boven de basis; de leden erven X's geconjungeerde
+  rechtvaardiging (U3).
+- U7 **Inertheid.** `Afwijking` (kop) is na deze kaart gereserveerd: sweep
+  over elke bron in corpus en toka (toka: alleen tellen) dat het woord
+  nergens als naamwoord voorkomt; gate 11 byte-identiek.
+- U8 **Gate-pins** (**voorstel**): `EXPECTED_PLAYED` en `DRL_CHANNEL` +3
+  als de tweelingen in exec spelen (meten), `EXPECTED_DRL_PLAYED`
+  ongewijzigd; de gate-7-overlever (U1). De registerzin voor CONSTRUCTS rij
+  8 (acceptatie (b2)) in het Result.
+- U9 **Gates** voor deze bouwer: 1–8, 10, 11, 12, 13; de unie draait alle
+  veertien.
