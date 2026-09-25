@@ -152,6 +152,11 @@ class VouwOperandZinTest {
                 meldingen(w.formatted("zijn vondstdag tot zijn dag", "uren")));
         assertEquals(List.of(), meldingen(w.formatted("zijn vondstdag tot zijn dag", "dagen")));
         assertEquals(List.of(), meldingen(w.formatted("zijn vondstmoment tot zijn vondstmoment", "uren")));
+        // the verifier names the builtin's own kind: the absolute duration speaks its own sentence
+        assertEquals(fout("de (absolute) tijdsduur van … tot …: sub-day absoluteDuration unit on day-precision operands "
+                        + "(millisecond precision required)"),
+                meldingen("Een Jutter is waardevol indien de absolute tijdsduur van zijn vondstdag tot zijn dag in hele "
+                        + "uren groter is dan 5."));
     }
 
     @Test void wat_de_verifier_toelaat_houdt_de_eigen_zin() {

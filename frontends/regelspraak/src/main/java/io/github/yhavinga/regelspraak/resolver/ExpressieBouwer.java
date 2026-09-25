@@ -607,7 +607,7 @@ final class ExpressieBouwer {
         meldAggregatie(kind, argumenten, f);
         Datatype type = f instanceof TijdsduurFuncContext t ? tijdsduurType(t) : functieType(kind, argumenten);
         if (f instanceof TijdsduurFuncContext) {
-            String eenheidFout = tijdsduurEenheidFout(type.eenheidOf(), argumenten);
+            String eenheidFout = tijdsduurEenheidFout(kind, type.eenheidOf(), argumenten);
             if (eenheidFout != null)
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                         "de (absolute) tijdsduur van … tot …: " + eenheidFout, f.getStart().getLine()));
@@ -1700,7 +1700,7 @@ final class ExpressieBouwer {
             case UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> tijdComponentFout(typen);
             // §4.16/§4.17 typeringen: the two operands of a (absolute) tijdsduur must BOTH be datum AND have the
             // SAME tijd-precisie.
-            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(typen);
+            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduurPrecisieFout(kind, typen);
             // WF-038's scope sentence, spelled out rather than left to the default arm: the filled
             // count is NOT a numeric fold. Its test is presence, so every operand type counts
             // (decision G8, RUNTIME-SEMANTICS ch. 3.4c) — a getalAggregatie check here would
@@ -1927,17 +1927,18 @@ final class ExpressieBouwer {
      *  Datum-en-tijd) is spec-illegal but otherwise silently emits code neither back-end can run (rsTijdsduur wants a
      *  Temporal). Onbekend is skipped (no claim). The verifier refuses both in WF-038, so the diagnostic is its sentence
      *  after the Dutch context; null where the operands are legal. */
-    private static String tijdsduurPrecisieFout(List<Datatype> typen) {
+    private static String tijdsduurPrecisieFout(Expr.FunctieKind kind, List<Datatype> typen) {
+        String soort = Spelling.BUILTIN_KIND.spelling(kind);   // the verifier names the builtin's own kind
         Datatype ref = null;
         for (Datatype d : typen) {
             if (d.isOnbekend()) continue;                       // no claim
             if (!d.isDatum())                                   // §4.16/§4.17: both operands must be a datumexpressie
                 return "de (absolute) tijdsduur van … tot …: " + String.join("; ", typen.stream()
                         .filter(x -> !x.isOnbekend() && !x.isDatum())
-                        .map(x -> "duration operand is " + Typering.soortWoord(x) + ", must be a date").toList());
+                        .map(x -> soort + " operand is " + Typering.soortWoord(x) + ", must be a date").toList());
             if (ref == null) ref = d;
             else if (!ref.getClass().equals(d.getClass()))      // both datum but a different tijd-precisie: WF-038
-                return "de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both must share one "
+                return "de (absolute) tijdsduur van … tot …: " + soort + " operands mix date precisions (both must share one "
                         + "precision)";
         }
         return null;
@@ -1946,15 +1947,16 @@ final class ExpressieBouwer {
     /** WF-038 on the counted unit of a duration, the unit of its node type: a recognised time unit or a declared day
      *  kind (the calendar table first, as {@link Tijdrekening#dagsoortVoorEenheid} reads it), and a sub-day unit only
      *  between millisecond-precision dates. The verifier's sentence where it refuses the unit, else null. */
-    private String tijdsduurEenheidFout(Eenheid e, List<Expr> argumenten) {
-        if (e == null) return "duration without a recognised time unit on its node type";
+    private String tijdsduurEenheidFout(Expr.FunctieKind kind, Eenheid e, List<Expr> argumenten) {
+        String soort = Spelling.BUILTIN_KIND.spelling(kind);   // the verifier names the builtin's own kind
+        if (e == null) return soort + " without a recognised time unit on its node type";
         String eenheid = Tijdrekening.chronoUnit(e);
         if (eenheid == null)
             return Tijdrekening.dagsoortVoorEenheid(model, e) != null ? null
-                    : "duration: the counted unit '" + e.afkorting()
+                    : soort + ": the counted unit '" + e.afkorting()
                             + "' is neither a recognised time unit nor a declared day kind";
         return Typering.subdagEenheid(eenheid) && argumenten.stream().anyMatch(a -> a.type() instanceof Datatype.DatumInDagen)
-                ? "sub-day duration unit on day-precision operands (millisecond precision required)" : null;
+                ? "sub-day " + soort + " unit on day-precision operands (millisecond precision required)" : null;
     }
 
     /** The §5.8.2 "of … als die er niet zijn" fallback expression of a sommatie, or null.
