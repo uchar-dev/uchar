@@ -295,6 +295,14 @@ and site = {
   si_parts : part list; (* innermost first *)
 }
 
+(* where a term's sign is read when the term itself may have wrapped
+   ([sign_conds]): a product the multiplicative arm built, from its two
+   operand terms; a product bound to a variable in a helper rule ([coalesce0],
+   [let_binder]), from atoms derived in that helper's own body *)
+type sign_src =
+  | Product of string * string
+  | Bound of { pred : string; subject : string; body : string; inner : string }
+
 type ctx = {
   doc : document;
   case : Case.t;
@@ -382,6 +390,10 @@ type ctx = {
      [emit_barriers] writes *)
   mutable pre_let : (string * (string * string)) list;
   mutable pre_asks : string list;
+  (* the terms whose sign [sign_conds] reads without them, and the sign
+     helpers it has emitted *)
+  mutable signs : (string * sign_src) list;
+  mutable sign_helpers : string list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -443,6 +455,50 @@ let refuse_attr_timeline ctx ~otype ~attr =
     ctx.case.world.instances
 
 let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n")) fmt
+
+(* the conjunctions under which term [t] is negative ([~neg:true]) or positive
+   ([~neg:false]), read without any product formed on the way. A product
+   wraps where an operand passes its fence, and a sign fence on the wrapped
+   term names a negative operand the document does not have, or hides one it
+   has. So a registered product takes its sign from its operands — negative
+   where their signs differ, positive where they agree — and a product bound
+   in a helper rule takes it from atoms that helper's own body derives,
+   emitted once, when a fence first asks. Any other term is read as it
+   stands. [] reads never, [[]] always (a constant operand). *)
+let rec sign_conds ctx ~neg (t : string) : string list list =
+  let cross a b = List.concat_map (fun x -> List.map (fun y -> x @ y) b) a in
+  let operand ~neg x =
+    match int_of_string_opt (String.trim x) with
+    | Some n -> if (if neg then n < 0 else n > 0) then [ [] ] else []
+    | None -> sign_conds ctx ~neg x
+  in
+  match List.assoc_opt t ctx.signs with
+  | Some (Product (l, r)) ->
+      if neg then
+        cross (operand ~neg:true l) (operand ~neg:false r)
+        @ cross (operand ~neg:false l) (operand ~neg:true r)
+      else
+        cross (operand ~neg:false l) (operand ~neg:false r)
+        @ cross (operand ~neg:true l) (operand ~neg:true r)
+  | Some (Bound { pred; subject; body; inner }) -> (
+      match sign_conds ctx ~neg inner with
+      | [] -> []
+      | dnf ->
+          let helper = Printf.sprintf "%s_%s" pred (if neg then "neg" else "pos") in
+          if not (List.mem helper ctx.sign_helpers) then begin
+            ctx.sign_helpers <- helper :: ctx.sign_helpers;
+            List.iter
+              (fun conds -> emit ctx "%s(%s) :- %s." helper subject (String.concat ", " (body :: conds)))
+              dnf
+          end;
+          [ [ Printf.sprintf "%s(%s)" helper subject ] ])
+  | None -> [ [ Printf.sprintf "(%s) %s 0" t (if neg then "<" else ">") ] ]
+
+(* a variable [v] a helper rule [pred] binds to [term]: where [term]'s sign is
+   read from elsewhere ([sign_conds]), so is [v]'s *)
+let register_bound ctx ~pred ~subject ~body ~term ~v =
+  if List.mem_assoc term ctx.signs then
+    ctx.signs <- (v, Bound { pred; subject; body; inner = term }) :: ctx.signs
 
 let fresh ctx prefix =
   ctx.fresh <- ctx.fresh + 1;
@@ -1814,6 +1870,7 @@ let coalesce0 ctx ~subject ~subject_ot (atoms, term, scale) =
     emit ctx "%s_def(%s) :- %s." pred subject body;
     emit ctx "%s(%s,0) :- %s, not %s_def(%s)." pred subject base pred subject;
     let v = fresh ctx "C" in
+    register_bound ctx ~pred ~subject ~body ~term ~v;
     ([ Printf.sprintf "%s(%s,%s)" pred subject v ], v, scale)
   end
 
@@ -2314,12 +2371,14 @@ let range_guard ctx ~subject ~body terms_with_bounds =
    and past the rescale fence the multiplied term has wrapped, so its sign
    would name a negative operand the document does not have. *)
 let money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign =
-  emit ctx
-    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
-    subject gbody tm;
-  emit ctx
-    "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
-    subject gbody tr_sign;
+  List.iter
+    (fun t ->
+      List.iter
+        (fun conds ->
+          emit ctx "viol(\"negative operand under money multiplication is not translated\",%s) :- %s."
+            subject (String.concat ", " (gbody :: conds)))
+        (sign_conds ctx ~neg:true t))
+    [ tm; tr_sign ];
   (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
      |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
      above) can never divide by zero during grounding *)
@@ -3057,8 +3116,10 @@ let let_binder ctx ~subject ~subject_ot ((va, vt, vs) : string list * string * i
     ctx.fresh <- ctx.fresh + 1;
     let p = Printf.sprintf "let%d" ctx.fresh in
     let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-    emit ctx "%s(%s,%s) :- %s." p subject vt (String.concat ", " (base :: va));
+    let body = String.concat ", " (base :: va) in
+    emit ctx "%s(%s,%s) :- %s." p subject vt body;
     let v = fresh ctx "LB" in
+    register_bound ctx ~pred:p ~subject ~body ~term:vt ~v;
     ([ Printf.sprintf "%s(%s,%s)" p subject v ], v, vs)
   end
 
@@ -5131,9 +5192,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ bl @ br)
         [ (tl, 46340); (tr, 46340) ];
-      ( bl @ br,
-        Printf.sprintf "(%s*%s)" tl tr,
-        sl * sr * (if op = Percentage_van then 100 else 1) )
+      let term = Printf.sprintf "(%s*%s)" tl tr in
+      ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
+      (bl @ br, term, sl * sr * (if op = Percentage_van then 100 else 1))
   | Binair { op = Gedeeld_door; links; rechts; _ } ->
       translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding:None
   | Binair { op = Gedeeld_door_abs; links; rechts; _ } ->
@@ -5204,10 +5265,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (match modus with
         | Richting_nul -> ()
         | _ ->
-            emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s, (%s) < 0."
-              subject
-              (String.concat ", " gbody)
-              t);
+            (* the base's sign read without the product it may be ([sign_conds]) *)
+            List.iter
+              (fun conds ->
+                emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s."
+                  subject (String.concat ", " (gbody @ conds)))
+              (sign_conds ctx ~neg:true t));
         (b, rounded, target))
   | Begrensd { basis; minimum; maximum; _ } ->
       (* the clamp (RUNTIME-SEMANTICS ch. 2.7, ref Arith.clamp): the minimum
@@ -5852,12 +5915,17 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
       (match modus with
       | Richting_nul -> ()
       | _ ->
-          emit ctx
-            "viol(\"negative operand under rounded division is not translated\",%s) :- %s, %s < 0."
-            subject full numt;
-          emit ctx
-            "viol(\"negative operand under rounded division is not translated\",%s) :- %s, %s < 0."
-            subject full dent);
+          (* the operands' own signs: numt and dent multiply them by positive
+             constants, and past its range fence numt has wrapped *)
+          List.iter
+            (fun t ->
+              List.iter
+                (fun conds ->
+                  emit ctx
+                    "viol(\"negative operand under rounded division is not translated\",%s) :- %s."
+                    subject (String.concat ", " (full :: conds)))
+                (sign_conds ctx ~neg:true t))
+            [ tl; tr ]);
       let guards =
         match modus with
         | Richting_nul -> Printf.sprintf "(%s) != 0" tr
@@ -8195,7 +8263,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       let bl, tl, sl = closed_term ctx ~guard_body ~witness (req "Binary.left" links) in
       let br, tr, sr = closed_term ctx ~guard_body ~witness (req "Binary.right" rechts) in
       range_guard ctx ~subject:witness ~body:(guard_body @ bl @ br) [ (tl, 46340); (tr, 46340) ];
-      (bl @ br, Printf.sprintf "(%s*%s)" tl tr, sl * sr * (if op = Percentage_van then 100 else 1))
+      let term = Printf.sprintf "(%s*%s)" tl tr in
+      ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
+      (bl @ br, term, sl * sr * (if op = Percentage_van then 100 else 1))
   | Afgerond { basis = Some basis; modus = Rekenkundig; decimalen = 2; _ }
     when money_mult_shape ctx basis ->
       (* the money × rate product Catala rounds to the cent (§5/S18(c)) inside a
@@ -10626,7 +10696,7 @@ let translate (doc : document) (case : Case.t) : string =
       rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
-      pre_asks = [] }
+      pre_asks = []; signs = []; sign_helpers = [] }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
