@@ -262,8 +262,10 @@ document, measured:
     WF-064 FAIL /rules/rules/1/versions/0/value/function/body: the 'Vervuld'
     arm body is sumtype 'MELDSTATUS', but the match result type is sumtype
     'meldstatus'
-    WF-069 FAIL …/function/body/arms/0/body/arms/0/body/then: the then branch
-    is sumtype 'MELDSTATUS', but the IfThenElse type is sumtype 'meldstatus'
+    WF-069 FAIL
+    /rules/rules/1/versions/0/value/function/body/arms/0/body/arms/0/body/then:
+    the then branch is sumtype 'MELDSTATUS', but the IfThenElse type is
+    sumtype 'meldstatus'
 
 `ref` and the ASP backend replay the five cases with the pinned values, the
 spellings changing nothing; the Drools backend refuses the document at load

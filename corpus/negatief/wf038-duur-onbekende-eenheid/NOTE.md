@@ -16,8 +16,8 @@ this form over day-precision operands (this document) and over datum-tijd
 operands (`jutterswet-getijdenpaar`): `EVALUATION FAULT: duration: the
 counted unit 'vadem' is neither …` and `TRANSLATION FAULT: duration: the
 counted unit 'vadem' is neither …`. Rood-eerst for the arm: until then the
-three readers spoke three sentences — the verifier `'vadem' is not a
-recognised time unit or declared day kind`, `ref` and the ASP backend
+three readers spoke two sentences — the verifier `'vadem' is not a
+recognised time unit or declared day kind`, `ref` and the ASP backend both
 `duration unit "vadem" is neither a recognised time unit nor a declared day
 kind` — and the verifier of that day misses this `expect.txt`.
 `expect.txt` pins the arm.
