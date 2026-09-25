@@ -8333,8 +8333,10 @@ defaults only: attribute vs do-not-attribute; absent where a default carries
 no decision), `justification` (v0 `voorwaarde`, a condition; absent only on
 the initialisation default and a group-default), `consequence` (v0
 `consequentie`, expression? — attribute defaults only), `initialisation`
-(v0 `initialisatie`, boolean — the ch. 7.3 default: justified iff the target
-is empty in the input facts; lowest only, **root-only**), `exceptions` (v0
+(v0 `initialisatie`, boolean? — the ch. 7.3 default: justified iff the target
+is empty in the input facts; lowest only, **root-only**; an absent
+`initialisation` is `false`: the default is not the initialisation default),
+`exceptions` (v0
 `excepties`, the optional nested exception groups — the **Default.exceptions and
 ExceptionGroup** paragraph below), `source` (v0 `bron`). Until L5 an absent
 `decision` or `justification` was a `null`. Semantics:
