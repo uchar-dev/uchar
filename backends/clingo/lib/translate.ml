@@ -1933,21 +1933,24 @@ let day_kind_spelt (doc : document) (u : eenheid) : string option =
    refusal sites that run before the translation context exists. *)
 let day_kind_of_unit_doc (doc : document) (u : eenheid) = day_kind_spelt doc u <> None
 
+(* The unit resolution behind [date_step_unit] and [duration_form] below:
+   those speak every refusal of WF-035 and WF-038 in the verifier's sentence
+   before a caller gets here, so a unit this resolution cannot use is a broken
+   invariant of the translator, never a document's defect, and says so. *)
+let unit_unrefused ~what =
+  fault
+    "%s reached the unit resolution with a unit the WF-035/WF-038 clause refuses first (a \
+     translator invariant, not a document defect)"
+    what
+
+(* the calendar unit over day-precision dates: never a sub-day unit *)
 let day_time_unit_of ~what (t : datatype option) =
   match t with
   | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
       match Ir_v0.Checks.time_unit_of_eenheid u with
-      | Some tu ->
-          if Ir_v0.Checks.time_unit_sub_day tu then
-            fault "sub-day %s needs datum-tijd operands (a day-precision date has no \
-                   time-of-day)" what
-          else tu
-      | None ->
-          fault
-            "%s unit %S is neither a recognised time unit nor a declared day kind"
-            what
-            (Option.value u.afkorting ~default:"?"))
-  | _ -> fault "%s without a time unit on its static type" what
+      | Some tu when not (Ir_v0.Checks.time_unit_sub_day tu) -> tu
+      | _ -> unit_unrefused ~what)
+  | _ -> unit_unrefused ~what
 
 (* WF-038's operand of a square root or an absolute value, read off its static
    type: the verifier's sentence, shared, ahead of this backend's own refusal
@@ -2029,12 +2032,8 @@ let dt_time_unit_of ~doc ~what (t : datatype option) =
                counting whole days of a kind between two instants needs a rule for the partial \
                days at both ends and ch. 3.8 fixes none"
               what
-          else
-            fault
-              "%s unit %S is neither a recognised time unit nor a declared day kind"
-              what
-              (Option.value u.afkorting ~default:"?"))
-  | _ -> fault "%s without a time unit on its static type" what
+          else unit_unrefused ~what)
+  | _ -> unit_unrefused ~what
 
 (* the ms size of a sub-day unit, or None for a day-precision unit
    (day/week/month/quarter/year) — mirrors ref/'s Arith.sub_day_ms *)
@@ -4979,7 +4978,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       else begin
         (* the day-precision family: the packed-month rule as a pure-ASP
            decomposition chain. A sub-day unit here has no time-of-day to
-           count on — day_time_unit_of faults it (WF-038). *)
+           count on — [duration_form] refused it (WF-038). *)
         let operand_day e =
           match static_type ctx e with
           | Some Datum_in_dagen -> ()
