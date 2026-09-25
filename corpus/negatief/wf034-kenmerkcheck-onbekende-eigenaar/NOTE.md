@@ -3,7 +3,7 @@ whose explicit `host` — the object type the characteristic is read on —
 names a type *no declaration carries*.
 
     WF-034 FAIL /rules/rules/0/versions/0/condition/host: characteristic
-    check's owner 'Bestaatniet' is not a declared object type: the check
+    check's host 'Bestaatniet' is not a declared object type: the check
     resolves against no declaration
 
 **What the field is.** A characteristic check normally reads a characteristic

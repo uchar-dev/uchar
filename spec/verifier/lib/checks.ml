@@ -5865,7 +5865,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
       (match eigenaar with
        | Some e when objecttype ctx e = None ->
            [ v "WF-034" (sub "host")
-               ("characteristic check's owner '" ^ e
+               ("characteristic check's host '" ^ e
               ^ "' is not a declared object type: the check resolves against no declaration") ]
        | _ -> [])
       @ (* THE HOST (WF-109, maintainer decision 2026-09-19; IR-SPEC ch. 4.6

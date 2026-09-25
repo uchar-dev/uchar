@@ -1,1 +1,1 @@
-characteristic check's owner 'Bestaatniet' is not a declared object type
+characteristic check's host 'Bestaatniet' is not a declared object type
