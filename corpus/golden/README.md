@@ -117,8 +117,8 @@ that shrank it had expected to move and could not: the dimensioned
 attribute's only other carrier, `jutterswet-seizoenvondst`, is itself
 case-less, so that row has no *executing* successor yet.
 
-Gate 5 currently lists **two** goldens as not replayed: the cabinet and
-`jutterswet-seizoenvondst`.
+Gate 5 currently lists **three** goldens as not replayed: the cabinet,
+`jutterswet-seizoenvondst` and `jutterswet-seizoenvouw`.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
 through a dimension cell (`DimensionCellRead`). Until L2 it was the
@@ -128,6 +128,14 @@ honesty note 3); that arm left the wire with the cell read's own `type`
 `ref`, clingo and the Drools backend each decline a cell read in their own
 words, and `uchar-case-v0` has no per-cell input variant. Its `NOTE.md`
 carries the three refusals verbatim.
+
+`jutterswet-seizoenvouw` is the dimension fold on the same kind of
+attribute: a sum, a maximum and a minimum whose `dimensionSelection` picks
+the labels they fold, emitted by the RegelSpraak frontend since the card
+frontend-emitterrestanten. It carries no case for the same reason, measured
+per executor in its `NOTE.md`: `ref` faults on the selection, clingo has no
+arm for the fold, and the Drools backend, which does carry the fold, refuses
+any case that supplies the dimensioned attribute.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit

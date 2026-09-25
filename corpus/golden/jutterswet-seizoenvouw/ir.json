@@ -1,0 +1,434 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "jaargewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "groeigewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "piekgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dalgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
+          "voorjaar",
+          "zomer",
+          "najaar"
+        ]
+      }
+    ],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "jaargewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jaargewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het jaargewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelection": {
+                "node": "DimensionSelection",
+                "dimension": "seizoen",
+                "labels": [
+                  "voorjaar",
+                  "zomer",
+                  "najaar"
+                ],
+                "source": {
+                  "snippet": "over alle seizoenen"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de som van zijn vondstgewicht over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "groeigewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "groeigewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het groeigewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelection": {
+                "node": "DimensionSelection",
+                "dimension": "seizoen",
+                "labels": [
+                  "voorjaar",
+                  "zomer"
+                ],
+                "source": {
+                  "snippet": "vanaf voorjaar t/m zomer"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de som van zijn vondstgewicht vanaf voorjaar t/m zomer"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "piekgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "piekgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het piekgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelection": {
+                "node": "DimensionSelection",
+                "dimension": "seizoen",
+                "labels": [
+                  "voorjaar",
+                  "zomer",
+                  "najaar"
+                ],
+                "source": {
+                  "snippet": "over de seizoenen in {voorjaar, zomer en najaar}"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de maximale waarde van zijn vondstgewicht over de seizoenen in {voorjaar, zomer en najaar}"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dalgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dalgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het dalgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "minimum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht over de seizoenen"
+                  }
+                }
+              ],
+              "dimensionSelection": {
+                "node": "DimensionSelection",
+                "dimension": "seizoen",
+                "labels": [
+                  "zomer",
+                  "najaar"
+                ],
+                "source": {
+                  "snippet": "vanaf zomer t/m najaar"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
