@@ -1,17 +1,16 @@
 # wf037-aantal-elementtype-literaal
 
-Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in the source arm of the two
-counts (the card aantal-bronarm-en-drools-lader): a `count` or
-`filledCount` that carries `elementType` takes one argument, and with the
-range beside it that argument is the source, an `AttributeReference` that
-names the counted role (under `count`) or the attribute read on each
-contributor (under `filledCount`). This `count` carries the element type
-`Vondst`, the range `vondstaanmelding`/`vondst`, and as its one argument a
-`Literal`, the unitless decimal 2.00: a value, and no source of instances.
+Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3) in its fold-source arm (the card
+aantal-bronarm-en-drools-lader): an aggregation that carries `elementType`
+takes one argument, its fold source, and that source is an
+`AttributeReference` — under `count`, beside the range, the written name of
+the counted role. This `count` carries the element type `Vondst`, the range
+`vondstaanmelding`/`vondst`, and as its one argument a `Literal`, the
+unitless decimal 2.00: a value, and no source of instances.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: a count aggregation
     carries elementType "Vondst" and a Literal operand: the source of an
-    instance fold is an AttributeReference over its range
+    instance fold is an AttributeReference
 
 The document. A `Jutter` whose `aantal aangemelde vondsten` (whole,
 non-negative, unitless) is the target; a `Vondst` with a kg `gewicht`; the
@@ -56,8 +55,9 @@ spec/verifier` as gate 3 builds it): the WF-047 line above and no WF-037
 line, exit 1; gate 3 reported the case `rejected, but not for WF-037`.
 With the arm (source md5 `b48d9e30c9a1443ea163526f78cb8e7e`, with
 `spec/verifier/lib/spelling.ml` md5 `4e5d068ce55d62129d6db20d7f644a14`,
-binary md5 `d4c902a9e3aac73f4e791489cce7853a`): the single rejection
-above, exit 1.
+binary md5 `d4c902a9e3aac73f4e791489cce7853a`): a single WF-037
+rejection, exit 1, whose sentence then ended "over its range" (see the
+widening below).
 
 Falsifiable, arm-exact. Swept over golden + negatief + rood + the parity
 zone (762 documents) with the verifier before the arm, the verifier with
@@ -97,5 +97,24 @@ or is refused under another rule than its directory declares). The other
 three change no verdict and no declared rule, so gate 3 cannot see them;
 they are recorded because without the exclusions and the stepping aside
 one malformation is reported under two rules or twice under one.
+
+**Widened on the same card to every aggregation kind.** The arm first
+spoke under `count` and `filledCount` alone, ending its sentence "over its
+range"; measured next, a value fold with an `elementType`, a range and a
+`Literal` or a `ParameterReference` was refused on WF-047's binding sentence
+alone (both Drools branches: a transpiler SKIP, and in the DRL-text branch a
+ClassCastException on `sum`, `total`, `minimum` and `maximum`), and a
+`total` without a range over a `Literal` was verifier-clean while no
+executor ran it. The arm now reads every kind, its sentence ends "is an
+AttributeReference" (a total without a range has no range), and three
+witnesses joined it: `wf037-som-elementtype-literaal`,
+`wf037-som-elementtype-parameter` and `wf037-totaal-elementtype-literaal`.
+Verifier with the widening: source md5 `1763a8017629c4b3e6a6c0c895d85ac1`,
+binary md5 `cc6adade8d60c20bece0bc08cef18658`. Swept against the verifier
+before the widening over golden + negatief + rood + the parity zone (766
+documents): exactly ten move — the seven earlier witnesses of this arm by
+the shortened sentence alone, and the three new ones — with one verdict
+change, `wf037-totaal-elementtype-literaal` (passed, now refused); the
+other 756 keep their reports byte for byte.
 
 `expect.txt` pins the arm.

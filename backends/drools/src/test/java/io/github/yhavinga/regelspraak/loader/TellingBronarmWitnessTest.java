@@ -15,8 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * IR-SPEC ch. 4.3 / WF-037 — a fold that names its population ({@code elementType}) and hands no source is refused
  * while loading, in the verifier's sentence, so neither branch lowers it. Three shapes: no argument, under every
- * kind; one {@code ListLiteral} under a count or a filled count; and under those two kinds one node of any other
- * kind but an {@code AttributeReference} (the card aantal-bronarm-en-drools-lader).
+ * kind; one {@code ListLiteral} under a count or a filled count; and under every kind one node of any other kind but
+ * an {@code AttributeReference}, the fold source (the card aantal-bronarm-en-drools-lader). Beside them WF-110 (c):
+ * a count over an instance-set union names no source of its own.
  *
  * <p>Measured before that card, with the population of golden {@code jutterswet-vondsttelling} (J1 reaches three
  * Vondsten, J2 none, J3 one; expected counts 3, 0 and 1): a count beside its range whose one argument was a
@@ -38,7 +39,7 @@ class TellingBronarmWitnessTest {
     private static final Path NEGATIEF = Path.of("..", "..", "corpus", "negatief");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final String PLEK = "/rules/rules/0/versions/0/value";
-    private static final String BRONARM = " operand: the source of an instance fold is an AttributeReference over its range";
+    private static final String BRONARM = " operand: the source of an instance fold is an AttributeReference";
     private static final String GEEN_BRON = " but no source operand: an instance fold ranges over a written source";
     private static final String UNIE = "a count over an instance-set union names no source of its own, and this node"
             + " carries ";
@@ -46,7 +47,7 @@ class TellingBronarmWitnessTest {
             + " subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
     private static final String GEHEEL = "{ \"node\": \"Number\", \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }";
 
-    // ---------------- 1. the source arm of the two counts: one node that is no AttributeReference ----------------
+    // ---------------- 1. the fold-source arm: one node that is no AttributeReference ----------------
 
     @Test void een_literal_als_telbron_wordt_geweigerd() throws Exception {
         weigert("wf037-aantal-elementtype-literaal", "a count aggregation carries elementType \"Vondst\" and a Literal"
@@ -94,6 +95,24 @@ class TellingBronarmWitnessTest {
         // before: the DRL-text branch played it as an ordinary count, the exec-model branch skipped the rule
         weigert("wf037-aantalgevulde-niet-setbron", "a filledCount aggregation carries elementType \"Vondst\" and a"
                 + " Literal" + BRONARM);
+    }
+
+    @Test void een_literal_als_bron_van_de_som_wordt_geweigerd() throws Exception {
+        // before: the DRL-text branch crashed on it (ClassCastException), the exec-model branch skipped the rule
+        weigert("wf037-som-elementtype-literaal", "a sum aggregation carries elementType \"Vondst\" and a Literal"
+                + BRONARM);
+    }
+
+    @Test void een_parameter_als_bron_van_de_som_wordt_geweigerd() throws Exception {
+        weigert("wf037-som-elementtype-parameter", "a sum aggregation carries elementType \"Vondst\" and a"
+                + " ParameterReference" + BRONARM);
+    }
+
+    @Test void een_literal_als_eigen_lezing_van_het_totaal_wordt_geweigerd() throws Exception {
+        // a total without a range: the argument is the subject's own read, and a literal is no read. Before: the
+        // verifier passed it, and no branch ran it (transpiler SKIP, DRL marker)
+        weigert("wf037-totaal-elementtype-literaal", "a total aggregation carries elementType \"Jutter\" and a Literal"
+                + BRONARM);
     }
 
     // ---------------- 2. the converse arm: no argument, or one ListLiteral ----------------

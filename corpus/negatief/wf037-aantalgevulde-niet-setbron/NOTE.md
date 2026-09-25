@@ -1,5 +1,5 @@
-Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in the source arm
-of the two counts: a `filledCount` over the `Vondst`en of the subject, its
+Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its fold-source
+arm: a `filledCount` over the `Vondst`en of the subject, its
 range `vondstaanmelding`/`vondst` written, whose single argument is a
 literal. The filled count reads a VALUE on each contributor and tests it for
 presence; its source is the set source, an attribute reference read per
@@ -7,10 +7,10 @@ contributor, and a literal is no such read.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: a filledCount aggregation
     carries elementType "Vondst" and a Literal operand: the source of an
-    instance fold is an AttributeReference over its range
+    instance fold is an AttributeReference
 
-**Moved to the source arm of the two counts (the card
-aantal-bronarm-en-drools-lader).** Until that card the filled count's own
+**Moved to the fold-source arm (the card aantal-bronarm-en-drools-lader).**
+Until that card the filled count's own
 set-source arm refused this node, without naming the argument:
 
     WF-037 FAIL /rules/rules/0/versions/0/value: the filled count's
@@ -18,9 +18,11 @@ set-source arm refused this node, without naming the argument:
     each contributor: this kind reads a VALUE per contributor and tests that
     value for presence (ch. 4.3)
 
-That arm is now the source arm of both counts, which names the node it
-refuses, and this document keeps witnessing it under the filled count;
-the six `wf037-aantal-elementtype-*` witnesses carry it under the count.
+That arm is now the fold-source arm of every aggregation kind, which names
+the node it refuses, and this document keeps witnessing it under the filled
+count; the six `wf037-aantal-elementtype-*` witnesses carry it under the
+count, and `wf037-som-elementtype-*` and `wf037-totaal-elementtype-literaal`
+under the value folds.
 Measured before that card on this document, with a case outside the corpus
 (the population of golden `jutterswet-vondsttelling`), `ref` and the ASP
 backend refused in their bottom sentences (`unsupported instance-fold

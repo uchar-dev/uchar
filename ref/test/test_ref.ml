@@ -3590,19 +3590,20 @@ let () =
   niet_deze_arm "WF-037-elementtype-literal-onder-count-niet-deze-arm"
     (vouw ~bron_rol:bereik Aantal [ litv "2" num0 ])
 
-(* WF-037, second line: the source arm of the two counts.
+(* WF-037, second line: the fold-source arm.
 
-   Beside the range, the one argument of a count or a filled count that
-   carries an elementType is an AttributeReference, its source (IR-SPEC
-   ch. 4.3); the wire refuses every other node there and names it, so no
-   well-formed document reaches this arm. Until the card
-   aantal-bronarm-en-drools-lader this evaluator refused them in its
-   residual sentence, `unsupported instance-fold source shape`. Each line pins
-   the verifier's sentence for one node: seven under the count, two under the
-   filled count, one of them the union, which under the filled count is a
-   non-source like any other. The last line pins the boundary: a union under
-   a count that carries its own source is WF-110 (c)'s, and does not take
-   this arm's sentence. *)
+   The one argument of an aggregation that carries an elementType is an
+   AttributeReference, its fold source (IR-SPEC ch. 4.3); the wire refuses
+   every other node there and names it, so no well-formed document reaches
+   this arm. Until the card aantal-bronarm-en-drools-lader this evaluator
+   refused them in its residual sentence, `unsupported instance-fold source
+   shape`. Each line pins the verifier's sentence for one kind and one node:
+   seven nodes under the count, two under the filled count (one of them the
+   union, which there is a non-source like any other), a literal under each
+   value fold, a parameter under the sum, and a literal as the argument of a
+   total without a range. The last line pins the boundary: a union under a
+   count that carries its own source is WF-110 (c)'s, and does not take this
+   arm's sentence. *)
 let () =
   let doc = { empty_doc with objecttypen = [ ot "Vondst" [ ("gewicht", Some num0) ] [] ] } in
   let env = env_of doc in
@@ -3643,9 +3644,30 @@ let () =
         (fun () -> ev (vouw Aantal [ arg ]))
         (Printf.sprintf
            "a count aggregation carries elementType \"Vondst\" and %s operand: the source of an \
-            instance fold is an AttributeReference over its range"
+            instance fold is an AttributeReference"
            knoop))
     vormen;
+  (* the value folds, whose fold source is an AttributeReference too: with a range, and the total
+     without one, whose argument is the subject's own read (the subject here is a Vondst) *)
+  List.iter
+    (fun (kind, naam) ->
+      expect_fault_msg
+        ("WF-037-bronarm-" ^ naam ^ "-a Literal")
+        (fun () -> ev (vouw kind [ twee ]))
+        (Printf.sprintf "a %s aggregation carries elementType \"Vondst\" and a Literal operand" naam))
+    [ (Ir_v0.Ast.Som, "sum"); (Totaal, "total"); (Minimum, "minimum"); (Maximum, "maximum");
+      (Eerste, "first"); (Laatste, "last") ];
+  expect_fault_msg "WF-037-bronarm-sum-a ParameterReference"
+    (fun () -> ev (vouw Som [ Parameter_ref { parameter = Some "drempel"; bron = None } ]))
+    "a sum aggregation carries elementType \"Vondst\" and a ParameterReference operand";
+  expect_fault_msg "WF-037-bronarm-total-zonder-bereik-a Literal"
+    (fun () ->
+      ev
+        (Functie
+           { kind = Totaal; argumenten = [ twee ]; element_objecttype = Some "Vondst"; leegwaarde = None;
+             filter = None; dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+             bron_rol = None; bron_pad = None }))
+    "a total aggregation carries elementType \"Vondst\" and a Literal operand";
   expect_fault_msg "WF-037-bronarm-filledCount-a Literal"
     (fun () -> ev (vouw Aantal_gevulde [ twee ]))
     "a filledCount aggregation carries elementType \"Vondst\" and a Literal operand";
@@ -3655,7 +3677,7 @@ let () =
   match ev (vouw Aantal [ unie ]) with
   | exception Value.Fault m ->
       check ("WF-037-bronarm-unie-onder-count-niet-deze-arm (got: " ^ m ^ ")")
-        (not (substring m "is an AttributeReference over its range"))
+        (not (substring m "the source of an instance fold is an AttributeReference"))
   | _ -> check "WF-037-bronarm-unie-onder-count-niet-deze-arm (no fault at all)" false
 
 (* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)

@@ -4357,14 +4357,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
             Some (el, `List_literal)
         | _ -> None
       in
-      (* a count that names its population beside one operand that is no
-         source of instances (WF-037, the source arm of the two counts below).
-         Computed once because the filled count's shape arms and WF-047's
-         range arm step aside on it. The list literal is the arm above's, and
-         a union under a count WF-110 (c)'s *)
+      (* a fold that names its population beside one operand that is no
+         source of instances (WF-037, the fold-source arm below). Computed once
+         because the filled count's shape arms and WF-047's range arm step
+         aside on it. A list literal is the arm above's under the counts and
+         WF-091's under the value folds, and a union under a count WF-110 (c)'s *)
       let non_source =
-        match (f.kind, f.element_objecttype, f.argumenten) with
-        | (Aantal | Aantal_gevulde), Some el, [ a ] -> (
+        match (f.element_objecttype, f.argumenten) with
+        | Some el, [ a ] when List.mem f.kind aggregation_kinds -> (
             match a with
             | Attribuut_ref _ | List_literal _ -> None
             | Instance_set_union _ when f.kind = Aantal -> None
@@ -4515,25 +4515,26 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     (Spelling.encode Spelling.aggregation_kind f.kind)
                     el) ]
          | None -> [])
-      (* WF-037, the source arm of the two counts (IR-SPEC ch. 4.3). A count
-         or a filled count that carries an elementType takes one argument, and
-         with the range beside it that argument is the source: an
-         AttributeReference that names the counted role (count) or the
-         attribute read per contributor (filled count). Every other node there
-         is ill-formed and named. Measured before this arm, with a range
-         written: under the count WF-047 refused the node alone, in a sentence
-         about the binding and not the argument, while ref and clingo refused
-         it in bottom sentences and both Drools branches played it, counting
-         the range and ignoring the argument; under the filled count the
-         set-source arm refused it without naming it, and the DRL-text branch
-         played it as a count. The arm generalises that set-source arm to both
-         counts, so the filled count's arm has no source question left. *)
+      (* WF-037, the fold-source arm (IR-SPEC ch. 4.3). An aggregation that
+         carries an elementType takes one argument, its fold source, and that
+         source is an AttributeReference: the counted role under count, the
+         attribute read per contributor under the filled count and the value
+         folds, the subject's own read under a total without a range. Every
+         other node there is ill-formed and named. Measured before this arm:
+         with a range written, WF-047 refused the node alone, in a sentence
+         about the binding and not the argument (under the filled count its
+         set-source arm, without naming the node), ref and clingo refused it
+         in bottom sentences, and the Drools branches played the counts,
+         counting the range, and crashed on or excluded the value folds; a
+         total without a range over a literal was verifier-clean and no
+         executor ran it. The arm takes over the filled count's set-source
+         arm, so that arm has no source question left. *)
       @ (match non_source with
          | Some (el, a) ->
              [ v "WF-037" at
                  (Printf.sprintf
                     "a %s aggregation carries elementType \"%s\" and %s operand: the source of an \
-                     instance fold is an AttributeReference over its range"
+                     instance fold is an AttributeReference"
                     (Spelling.encode Spelling.aggregation_kind f.kind)
                     el (Spelling.a_node a)) ]
          | None -> [])
@@ -4545,7 +4546,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          source's range is the loader's since L2 (the schema's condition,
          B12): a filled count with an elementType and one argument carries
          sourceRole or sourcePath, and a source beside it that is no
-         attribute reference is the source arm of the two counts above. A
+         attribute reference is the fold-source arm above. A
          filled count that names its population and hands no source is the
          arm above that one: the arity sentence reads its ground from the
          listed form, which an empty argument list is not. *)

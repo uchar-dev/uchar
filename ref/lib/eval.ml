@@ -1846,19 +1846,19 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            is no source of instances"
           (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
           el
-    (* WF-037, the source arm of the two counts, in the verifier's sentence:
-       beside the range the one argument of a count or a filled count is an
+    (* WF-037, the fold-source arm, in the verifier's sentence: the one
+       argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
-       union under a count is WF-110 (c)'s and keeps the residual arm *)
+       list literal under a value fold keeps the residual arm (WF-091 refuses
+       it on the wire), and a union under a count is WF-110 (c)'s, above *)
     | Some el, [ a ]
-      when (kind = Aantal || kind = Aantal_gevulde)
-           && (match a with
-              | Attribuut_ref _ | List_literal _ -> false
-              | Instance_set_union _ -> kind = Aantal_gevulde
-              | _ -> true) ->
+      when (match a with
+           | Attribuut_ref _ | List_literal _ -> false
+           | Instance_set_union _ -> kind <> Aantal
+           | _ -> true) ->
         Value.fault
           "a %s aggregation carries elementType \"%s\" and %s operand: the source of an instance \
-           fold is an AttributeReference over its range"
+           fold is an AttributeReference"
           (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
           el (Ir_v0.Spelling.a_node a)
     | Some _, _ -> Value.fault "unsupported instance-fold source shape"

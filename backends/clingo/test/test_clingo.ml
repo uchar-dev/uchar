@@ -6558,22 +6558,23 @@ let () =
          ~kind:"first" ~argumenten:"" ~bereik:false)
     ~case_text:bronloze_vouw_case ~needle:(geen_bron "first")
 
-(* WF-037, de bronarm van de twee tellingen: naast het bereik is het ene
-   argument van een telling of een gevulde telling met elementType een
-   AttributeReference, en elke andere knoop daar weigert de verifier bij naam
-   (IR-SPEC ch. 4.3). Deze vertaling weigert hem in dezelfde zin, vanuit een
-   benoemde arm in [expr_term] ([non_source_count]): een telling is een getal,
-   dus geen andere termfunctie ontmoet hem. Vóór de kaart
-   aantal-bronarm-en-drools-lader viel elke vorm op de bodemzin van
-   [expr_term]. Zes knopen onder de telling, twee onder de gevulde telling,
-   de unie daarbij: onder de gevulde telling is zij een niet-bron als elke
-   andere. De laatste regel pint de grens: een unie onder een telling die een
-   eigen bron draagt is WF-110 (c)'s en houdt die zin. *)
+(* WF-037, de vouwbronarm: het ene argument van een aggregatie met
+   elementType is een AttributeReference, en elke andere knoop daar weigert de
+   verifier bij naam (IR-SPEC ch. 4.3). Deze vertaling weigert hem in dezelfde
+   zin, vanuit een benoemde arm ([non_source_fold]) in elke termfunctie die de
+   vouw kan ontmoeten: [expr_term], [symbolic_term] en [dt_term]. Vóór de kaart
+   aantal-bronarm-en-drools-lader viel elke vorm op de bodemzin van die
+   termfunctie. Zes knopen onder de telling, twee onder de gevulde telling (de
+   unie daarbij: onder de gevulde telling is zij een niet-bron als elke
+   andere), en onder de waardevouwen een literal en een parameter, het totaal
+   zonder bereik en een tekst- en een datum-tijd-getypeerde first. De laatste
+   regel pint de grens: een unie onder een telling die een eigen bron draagt
+   is WF-110 (c)'s en houdt die zin. *)
 let () =
   let bronarm kind knoop =
     Printf.sprintf
       "a %s aggregation carries elementType \"Vondst\" and %s operand: the source of an \
-       instance fold is an AttributeReference over its range"
+       instance fold is an AttributeReference"
       kind knoop
   in
   let literaal = Printf.sprintf {|{ "node": "Literal", "value": { "number": "2" }, "type": %s }|} som_num0 in
@@ -6610,6 +6611,40 @@ let () =
   faults_with ~name:"WF-037 bronarm, gevulde telling met an InstanceSetUnion (expr_term)"
     ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"filledCount" ~argumenten:unie ~bereik:true)
     ~case_text:bronloze_vouw_case ~needle:(bronarm "filledCount" "an InstanceSetUnion");
+  (* the value folds, whose fold source is an AttributeReference too: a sum over a literal and over
+     a parameter, a total without a range over a literal (its argument is the subject's own read, so
+     its elementType names the subject), and a text- and a datetime-typed first over a literal, which
+     reach [symbolic_term] and [dt_term] and fell on their bottom sentences before *)
+  faults_with ~name:"WF-037 bronarm, som met a Literal (expr_term)"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"sum" ~argumenten:literaal ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "sum" "a Literal");
+  faults_with ~name:"WF-037 bronarm, som met a ParameterReference (expr_term)"
+    ~ir:
+      (bronloze_vouw_doc ~doeltype:som_num0 ~kind:"sum"
+         ~argumenten:{|{ "node": "ParameterReference", "parameter": "drempel" }|} ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "sum" "a ParameterReference");
+  faults_with ~name:"WF-037 bronarm, totaal zonder bereik met a Literal (expr_term)"
+    ~ir:
+      (vervang ~waar:{|"elementType": "Vondst",|} ~door:{|"elementType": "Jutter",|}
+         (bronloze_vouw_doc ~doeltype:som_num0 ~kind:"total" ~argumenten:literaal ~bereik:false))
+    ~case_text:bronloze_vouw_case
+    ~needle:
+      "a total aggregation carries elementType \"Jutter\" and a Literal operand: the source of an \
+       instance fold is an AttributeReference";
+  faults_with ~name:"WF-037 bronarm, tekstgetypeerde first met a Literal (symbolic_term)"
+    ~ir:
+      (bronloze_vouw_doc ~doeltype:{|{ "node": "Text" }|} ~kind:"first"
+         ~argumenten:{|{ "node": "Literal", "value": { "text": "Zuiderhoofd" }, "type": { "node": "Text" } }|}
+         ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "first" "a Literal");
+  faults_with ~name:"WF-037 bronarm, datum-tijd-getypeerde first met a Literal (dt_term)"
+    ~ir:
+      (bronloze_vouw_doc ~doeltype:{|{ "node": "Date", "precision": "millisecond" }|} ~kind:"first"
+         ~argumenten:
+           {|{ "node": "Literal", "value": { "dateTime": "2026-01-01T10:00:00" },
+               "type": { "node": "Date", "precision": "millisecond" } }|}
+         ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "first" "a Literal");
   faults_with ~name:"WF-037 bronarm, armgrens: de unie onder een telling met bron houdt WF-110"
     ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:unie ~bereik:true)
     ~case_text:bronloze_vouw_case

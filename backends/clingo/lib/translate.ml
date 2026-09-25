@@ -2526,14 +2526,25 @@ let sourceless_fold kind el ~list_literal =
        over a written source"
       k el
 
-(* WF-037's source arm of the two counts, in the verifier's sentence and ref's:
-   beside the range the one argument of a count or a filled count is an
-   AttributeReference, and any other node there is refused by name. A count
-   is numeric, so [expr_term] is the one term function that meets it. *)
-let non_source_count kind el (a : expr) =
+(* WF-037's fold-source arm, in the verifier's sentence and ref's: the one
+   argument of an aggregation that carries an elementType is an
+   AttributeReference, and any other node there is refused by name. Every term
+   function that can meet the fold names it, as for [sourceless_fold]:
+   [expr_term] for the numeric and day-date folds, [symbolic_term] and
+   [dt_term] for a text, enumeration, boolean or datetime first, last, minimum
+   or maximum. [non_source] is the shape: a list literal under a value fold
+   keeps the bottom sentence (WF-091 refuses it on the wire), and a union
+   under a count is WF-110 (c)'s arm. *)
+let non_source kind (a : expr) =
+  match a with
+  | Attribuut_ref _ | List_literal _ -> false
+  | Instance_set_union _ -> kind <> Aantal
+  | _ -> true
+
+let non_source_fold kind el (a : expr) =
   fault
     "a %s aggregation carries elementType \"%s\" and %s operand: the source of an instance fold \
-     is an AttributeReference over its range"
+     is an AttributeReference"
     (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
     el (Ir_v0.Spelling.a_node a)
 
@@ -2566,6 +2577,8 @@ let symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
         a ot
   | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
+  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+      non_source_fold kind el a
   | _ ->
       fault
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
@@ -3574,12 +3587,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ List_literal _ ];
         element_objecttype = Some el; _ } ->
       sourceless_fold kind el ~list_literal:true
-  | Functie { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ a ]; element_objecttype = Some el; _ }
-    when (match a with
-         | Attribuut_ref _ | List_literal _ -> false
-         | Instance_set_union _ -> kind = Aantal_gevulde
-         | _ -> true) ->
-      non_source_count kind el a
+  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+      non_source_fold kind el a
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element
          type was refused above, WF-093 (b)): the single argument of a count that
@@ -5627,6 +5636,8 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
         dd, dm )
   | Functie { kind; argumenten = []; element_objecttype = Some el; _ } ->
       sourceless_fold kind el ~list_literal:false
+  | Functie { kind; argumenten = [ a ]; element_objecttype = Some el; _ } when non_source kind a ->
+      non_source_fold kind el a
   | _ ->
       (* The reason names BOTH sides, because a reader of this line needs to
          know what it may write as well as what it may not. Carried: the

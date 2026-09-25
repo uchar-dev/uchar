@@ -1490,27 +1490,30 @@ public final class IrLoader {
     }
 
     /** WF-037 (IR-SPEC ch. 4.3), the verifier's sentences for a fold that names its population and hands no source:
-     *  no argument, under every kind; one {@code ListLiteral} under a count or a filled count; and under those two
-     *  kinds one node of any other kind but an {@code AttributeReference}, the source — a union under a count
-     *  excepted, which is WF-110 (c)'s. The kind and the node are named as the wire spells them, the node with its
-     *  article on the verifier's rule (an before a vowel). Null when the fold carries no {@code elementType} or has
-     *  its source. Without it both branches played a count whose one argument was a literal, a parameter or a
-     *  marker, counting the instances its range reaches, and the DRL-text branch played the filled count the same
-     *  way and a count without an argument beside its range (measured before the card
-     *  aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope note. */
+     *  no argument, under every kind; one {@code ListLiteral} under a count or a filled count; and under every kind one
+     *  node of any other kind but an {@code AttributeReference}, the fold source — a {@code ListLiteral} under a value
+     *  fold excepted, which WF-091 refuses on its type and this loader as a node it does not carry, and a union under a
+     *  count, which is WF-110 (c)'s. The kind and the node are named as the wire spells them, the node with its
+     *  article on the verifier's rule (an before a vowel). Null when the fold carries no {@code elementType} or has its
+     *  source. Without it both branches played a count whose one argument was a literal, a parameter or a marker,
+     *  counting the instances its range reaches, the DRL-text branch played the filled count the same way and a count
+     *  without an argument beside its range, and crashed on a sum, a total, a minimum or a maximum over a literal
+     *  (measured before the card aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope
+     *  note. */
     static String bronWeigering(String soort, String elementType, JsonNode argumenten) {
         if (elementType == null || argumenten == null || !argumenten.isArray()) return null;
         String kop = "a " + soort + " aggregation carries elementType \"" + elementType + "\"";
         if (argumenten.isEmpty())
             return kop + " but no source operand: an instance fold ranges over a written source";
-        if (argumenten.size() != 1 || !(soort.equals("count") || soort.equals("filledCount"))) return null;
+        if (argumenten.size() != 1) return null;
+        boolean telling = soort.equals("count") || soort.equals("filledCount");
         String knoop = text(argumenten.get(0), "node");
         if (knoop == null || knoop.isEmpty() || knoop.equals("AttributeReference")) return null;
         if (knoop.equals("ListLiteral"))
-            return kop + " and a ListLiteral operand: a listed value is no source of instances";
+            return telling ? kop + " and a ListLiteral operand: a listed value is no source of instances" : null;
         if (knoop.equals("InstanceSetUnion") && soort.equals("count")) return null;
         return kop + " and " + ("AEIOU".indexOf(knoop.charAt(0)) >= 0 ? "an " : "a ") + knoop
-                + " operand: the source of an instance fold is an AttributeReference over its range";
+                + " operand: the source of an instance fold is an AttributeReference";
     }
 
     /** WF-110 (c) (IR-SPEC ch. 4.3), the verifier's sentence: a count over an {@code InstanceSetUnion} names no
