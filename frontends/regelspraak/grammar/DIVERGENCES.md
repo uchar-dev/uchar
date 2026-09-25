@@ -1169,3 +1169,186 @@ variable that shares a type's name keeps the generic sentence. A subselection
 over a bare type ("het aantal Vondsten die gewogen zijn") parses another way
 and is refused by the subselection fence of §5.6 with its own sentence.
 Witness: `TypemeervoudTellingTest`.
+
+---
+
+## §7 The opgave marker — `(mag opgegeven worden)` on an attribute
+
+Origin: `spec/proposals/KENMERKINVOER-EN-INVOER-BOVEN-BEREKENING.md` §4.3 and
+§5 (decided by the main session on 2026-09-25) and the card
+`dialect-opgave-boven-berekening`, which built it. Case input on a computed
+target is Reading A: a deciding writer displaces the input value
+(`spec/RUNTIME-SEMANTICS.md` ch. 7.8), for the case as a whole. "Given, not
+derived" — Reading B for one attribute, where a value the case supplies beats
+the computation — is program structure in the uchar IR, the hardship pattern of
+`spec/proposals/PHASE4-DEFAULTS.md` §4.1: the opgave as an input attribute of
+its own and a defaults group that puts it above the computation. Official
+RegelSpraak v2.3.0 has no declaration for either. This extension gives the
+dialect one, as sugar: the marker changes neither the wire nor ch. 7.8, and
+everything it lowers to is structure the wire already carries.
+
+### Surface syntax (additive; one optional element in an existing production)
+
+```
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen);
+    de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+```
+
+New token: `MAG_OPGEGEVEN_WORDEN`, `'(mag' WSP 'opgegeven' WSP 'worden)'`, a
+whole token with its parentheses like the declaration markers `BEZIELD`,
+`BEZITTELIJK` and `BIJVOEGLIJK`. It is the last element of
+`attribuutSpecificatie`, after the optional timeline and before the optional
+`;`, so every clause of the production keeps its place. The grammar also admits
+it at the end of both alternatives of `kenmerkSpecificatie`, so that the
+resolver refuses it there with a message of its own instead of a bare syntax
+error. The token reserves no name word: `mag`, `opgegeven` and `worden` keep
+lexing as `LOWER_ID` everywhere else, and a comment, an enumeration literal or
+a text literal that contains the sequence is never lexed as the token (witness:
+`OpgaveMarkeringTest`, an attribute named "mag worden stand" and the text
+literal `"(mag opgegeven worden)"`).
+
+### Inertness — measured, not assumed
+
+Counted on 2026-09-25, before the token existed: the opening `(mag` and the
+whole sequence occur in none of the 81 `bron.rgs` sources of the corpus, none
+of the 47 sources of the repository's temporary parity zone, none of the six
+markdown documents of the v2.3.0 specification set, and none of 660 `.rgs`
+files in the werkbank's tree (build output directories left out). In the
+tracked files of this repository the sequence stands in prose alone: cards and
+proposals, no grammar, no test source, no corpus file.
+
+The method of §6: all 788 of those documents — the 81 corpus sources, the 47
+of the parity zone and the 660 — went through the frontend built at the commit
+before the token and at the commit that added it and the lowering, the emitted
+IR plus the diagnostics compared. Zero differences in all 788, 199 of which
+emit an IR and 581 of which carry an ERROR (among them the scenario and
+fragment files, which are no `regelSpraakDocument`). Unlike §6 no
+syntax-error text changed either: the new token enters an "expecting {…}" set
+only at the end of a member declaration, and no measured document has a syntax
+error there.
+
+What bounds an unmeasured document is the grammar: the token is admitted only
+at the end of a member declaration, so anywhere else the sequence is a syntax
+error on its own line, never a different reading.
+
+### Lowering (resolver)
+
+For a marked attribute X of object type T the resolver lowers five pieces, in
+two passes of `RuleChecker`:
+
+| Piece | Lowered to |
+|---|---|
+| 1 | attribute `opgegeven X` on T, X's datatype, right after X; no writer — the case supplies it |
+| 2 | attribute `berekende X` on T, right after `opgegeven X`; every computing writer of X — a gelijkstelling or berekening, a row of a decision table, a defaults group of an `Uitzondering op` or `Afwijking van` tree, the sibling groups of an `Uitzonderingen ongeordend` block — keeps its name, shape, condition, window and statute annotation and targets `berekende X`; an unordered set moves as a set, every member still unordered |
+| 3 | one `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`, as the anchors spell it; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and, where the author wrote an initialisation of X, that initialisation as the lowest default (`initialisation: true`, its value as consequence, its statute annotation as source); the initialisation rule leaves the rule list |
+| 4 | the possessive characteristic `afwijkende opgave X` at the end of T's characteristics, attributed by the rule `afwijking opgave X` under one `all` of: `opgegeven X` filled, `berekende X` filled, `opgegeven X` notEqual `berekende X` |
+| 5 | the consistency `controle opgave X`, whose assertion is the characteristic check of `afwijkende opgave X`, negated |
+
+The declaration pass runs before any rule resolves: it refuses what the marker
+cannot stand on (below) and declares the three members, so a rule can read
+them — an author routes a deviating case by reading `afwijkende opgave X`, and
+can read the materialised `berekende X`. The writer pass runs after the
+defaults lowering of §4, so a tree or an unordered block moves whole, and
+appends the rule, the group and the consistency behind the authored forms of
+their lists. A read of X elsewhere stays a read of X: it reads the resolved
+value.
+
+The initialisation stays on X. Its justification is "X is empty in the input
+facts" (ch. 7.3); on `berekende X`, which the case never supplies, it would
+always hold, and an initialisation would then beat an input value of X and
+count as a computation that an opgave deviates from. Where the computation
+decides nothing the order is the flat one: an initialisation beside a
+computation already decides only where the computation does not (the ch. 7.7
+desugaring), and the marker adds the opgave above both. A computation that
+has to leave room for the initialisation must be able to decide nothing:
+`maal` counts an empty operand as 0 (ch. 1.2), so the golden's weight rule
+carries "indien zijn gewicht gevuld is".
+
+The source texts. The two generated defaults carry their block's name, so an
+explanation that reports the deciding default says "opgegeven waarde" or
+"berekende waarde"; `berekende X` keeps the computed value also where the
+opgave decides. The rule of piece 4 and every read in it carry the texts the
+frontend writes for the same rule written by hand ("Een Vondst heeft
+afwijkende opgave waarde", "zijn opgegeven waarde is gevuld", …). The
+consistency's source is the marked declaration up to the marker, with its line:
+the one place the author wrote it. A moved writer keeps the source text of its
+own target ("De waarde van een Vondst").
+
+The contradiction. An opgave that differs from a filled computation attributes
+`afwijkende opgave X` and deposits one §9.5 fact, `controle opgave X` × the
+subject (ch. 5.6); an opgave equal to the computation, or an opgave without a
+computable value, deposits nothing.
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+Each is one ERROR at the line of the marked declaration, naming the first
+reason that holds, and the marker then generates nothing (witness:
+`OpgaveMarkeringTest`, every sentence literal):
+
+- the marker on a characteristic — the positive direction holds without it,
+  since input on a characteristic stands against every decision (ch. 7.8), and
+  the negative direction needs an opgave with three values, which the case
+  format does not have for a characteristic ("kenmerk 'K' van T:
+  '(mag opgegeven worden)' staat alleen op een attribuut — …");
+- an attribute that is no Numeriek without a unit, the unit written in the
+  datatype, after a domain, or carried by the domain ("… staat alleen op een
+  Numeriek attribuut zonder eenheid, en 'X' is Tekst — …"): every attribute
+  defaults target of the corpus is a number without a unit, so that is the
+  one family the three executors are measured on;
+- a time-dependent attribute (WF-086) and a dimensioned one (a defaults group
+  on a dimensioned attribute does not play in every executor);
+- an allocation, or an object creation's initialisation, that writes X: the
+  marker moves neither, and beside the group each is a second writer (WF-050);
+- a writer of X on another type of T's inheritance line: the ch. 7.10
+  composition of the generated group with that type's writers is not built;
+- a generated member name that T's inheritance line already declares, and a
+  writer of a generated member — `opgegeven X` is the case's, `berekende X`
+  the moved writers', `afwijkende opgave X` the generated rule's — each with
+  both places in the message ("(bronregel N)");
+- a generated form name another form already carries, the one another marker
+  generates included: the three form names are unique in the whole model
+  (WF-020), so two marked attributes of one name on two types collide — the
+  message names both;
+- more than one initialisation of X, or one with a window other than always or
+  with several versions: the group carries one initialisation default and no
+  window per default.
+
+And a WARNING: the marker on an attribute that no rule computes or sets (an
+initialisation alone included) — X is input already, the marker generates
+nothing, and the three declared members are withdrawn. Where a rule reads one
+of them nonetheless, the name would read nothing, and the WARNING is an ERROR
+naming the name read.
+
+### Emission
+
+Nothing about emission is new: the generated attributes, characteristic, rule,
+group and consistency go out through the writers every other form uses. A
+document that does not write the marker emits exactly what it emitted before,
+which is the measurement above stated as a property.
+
+### Scope / limitations of this card
+
+- A number without a unit only. A date, a text, an enumeration or a number with
+  a unit waits for a golden per family that plays in the three executors.
+- No marker on a characteristic: the three-valued opgave of the proposal's §5.8
+  is a card of its own.
+- No retargeting of allocations and object creations, and no composition with
+  writers elsewhere in the inheritance line.
+- The generated names are fixed by the attribute's name; they carry no type
+  name, so the form names of two marked attributes of one name collide.
+- A computation of X that reads X, directly or through another attribute, is a
+  dependency cycle the verifier refuses under WF-045 with or without the marker;
+  with the marker the cycle runs through the generated group and WF-046 and
+  WF-051 speak as well. Measured 2026-09-25. The frontend warns about a
+  transitive cycle and says nothing about a direct self-read, marker or not.
+- The semantic variant — a per-target marking on the wire that moves the input
+  default of ch. 7.8 above the ordinary defaults — is the recorded alternative
+  (the proposal's §5.9), not built.
+- The explanation that reports the deciding default belongs to the consumers
+  that explain defaults groups at all; the wire carries what they need.
+
+Golden: `jutterswet-opgave-boven-berekening` (two marked attributes, one with
+an initialisation, and a rule reading the generated characteristic; ref,
+clingo and the Drools exec branch replay its twelve cases, the DRL-text branch
+refuses it on its defaults sentence).

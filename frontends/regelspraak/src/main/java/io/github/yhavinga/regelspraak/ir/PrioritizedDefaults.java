@@ -13,8 +13,10 @@ import java.util.List;
  * {@code Afwijking van} and {@code Uitzonderingen ongeordend} ({@code grammar/DIVERGENCES.md} §4; a flat rule family
  * is never folded into one), one group per tree of blocks under a base rule, nested exceptions as
  * {@link Default#excepties} — with a {@code false} decision where the block's sentence negates the characteristic
- * ({@code is niet X}, {@code heeft geen X}); the Catala frontend and the hand-authored anchors carry the same
- * node.
+ * ({@code is niet X}, {@code heeft geen X}). It also builds one per attribute that carries the opgave marker
+ * {@code (mag opgegeven worden)} ({@code grammar/DIVERGENCES.md} §7): the group {@code opgave boven berekening X} on
+ * X, the opgave above the computation and an authored initialisation of X as the lowest default. The Catala frontend
+ * and the hand-authored anchors carry the same node.
  *
  * @param naam       the defaults-group name, or null
  * @param onderwerp  the subject objecttype NAME (resolved by the consumer against its model)

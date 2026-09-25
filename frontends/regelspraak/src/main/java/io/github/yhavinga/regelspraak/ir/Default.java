@@ -18,7 +18,10 @@ import java.util.List;
  * @param consequentie  the attribute default's value, or null on a characteristic/group default
  * @param initialisatie the initialisation default marker (lowest only)
  * @param excepties     the nested exception groups (ch. 7.9), or null
- * @param bron          the statute/source annotation, or null; on a group-default the dialect's head that made it
+ * @param bron          the statute/source annotation, or null; on a group-default the dialect's head that made it;
+ *                      on the opgave and the computation default the opgave marker generates, the name of the
+ *                      attribute the default reads ({@code opgegeven X}, {@code berekende X}), so an explanation
+ *                      can name the deciding block
  */
 public record Default(Boolean besluit, Conditie voorwaarde, Expr consequentie,
                       boolean initialisatie, Excepties excepties, String bron) {
