@@ -862,15 +862,20 @@ final class RuleChecker {
 
     /** Checks the children of one carrier ({@code drager} null: the base rule), top-down: which kinds may stand
      *  together, then each child's own body and its edge, then its subtree. Whether the subtree is sound; every
-     *  refusal speaks once, and below a refused node nothing is checked any more. */
+     *  refusal speaks once, and below a refused node nothing is checked any more. The members of one
+     *  'Uitzonderingen ongeordend op' block share its header, so a block speaks once too: after one member is
+     *  refused, the block's other members are not judged. */
     private boolean keurKinderen(Knoop drager, String dragerNaam, List<Knoop> kinderen, ResolvedRegel basis,
                                  DefaultsDoel doel, java.util.Set<String> knoopNamen) {
         boolean goed = true;
         List<Knoop> geordend = kinderen.stream().filter(k -> k.soort != Blok.LID).toList();
         List<ParserRuleContext> blokken = kinderen.stream().filter(k -> k.soort == Blok.LID).map(k -> k.blok)
                 .distinct().toList();
+        java.util.Set<ParserRuleContext> geweigerdeBlokken =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         if (!blokken.isEmpty() && (!geordend.isEmpty() || blokken.size() > 1)) {
             ParserRuleContext blok = geordend.isEmpty() ? blokken.get(1) : blokken.get(0);
+            geweigerdeBlokken.add(blok);
             fout(blok.getStart().getLine(), blokKop(blok) + ": de drager '" + dragerNaam + "' heeft ook "
                     + (geordend.isEmpty() ? "een ander 'Uitzonderingen ongeordend op'-blok"
                             : "geordende uitzonderingen (" + opsomming(geordend.stream().map(k -> k.naam).toList()) + ")")
@@ -881,7 +886,12 @@ final class RuleChecker {
             goed = false;
         }
         for (Knoop k : kinderen) {
-            if (!keurKnoop(k, drager, dragerNaam, basis, doel, knoopNamen)) { goed = false; continue; }
+            if (k.soort == Blok.LID && geweigerdeBlokken.contains(k.blok)) { goed = false; continue; }
+            if (!keurKnoop(k, drager, dragerNaam, basis, doel, knoopNamen)) {
+                if (k.soort == Blok.LID) geweigerdeBlokken.add(k.blok);
+                goed = false;
+                continue;
+            }
             if (!keurKinderen(k, k.naam, k.kinderen, basis, doel, knoopNamen)) goed = false;
         }
         return goed;

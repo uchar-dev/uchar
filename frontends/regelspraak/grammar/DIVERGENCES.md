@@ -378,7 +378,10 @@ is written with this header; its `ir.json` is byte-identical to the one its
   (the group carries one), and one version per rule.
 
 A refused node keeps its whole tree un-lifted, as a refused family always stayed,
-and nothing below a refused node is judged, so one mistake draws one ERROR.
+and nothing below a refused node is judged, so one mistake draws one ERROR. The
+members of an `Uitzonderingen ongeordend op` block share its header: once one
+member is refused, the block's other members are not judged, so a block draws
+one ERROR however many of its members would be refused.
 
 **Which documents change.** Two goldens. `jutterswet-schorsing` keeps its
 `Uitzondering op` (art. 4bis restricts art. 3) and was re-emitted: its

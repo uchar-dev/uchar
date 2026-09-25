@@ -536,6 +536,31 @@ class UitzonderingOpUitzonderingTest {
         assertFalse(d.message().contains("nog geen eigen basisregel"), d.message());
     }
 
+    @Test void een_ongeordend_blok_met_twee_geweigerde_leden_geeft_een_fout() {
+        // One ERROR per refused block: once a member is refused, so is its block, and the other members are not
+        // judged any more — two members on another target used to give two ERRORs on the same header line.
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS
+                + ongeordendOp("uitsluiting",
+                        regel("bevoegd bij herroeping", "Een Jutter is bergingsbevoegd", "hij herroepen is"),
+                        regel("bevoegd bij schorsing", "Een Jutter is bergingsbevoegd", "hij geschorst is"))));
+        assertTrue(d.message().startsWith("Uitzonderingen ongeordend op 'uitsluiting': groepslid 'bevoegd bij "
+                + "herroeping' schrijft een ander doel"), d.message());
+        Diagnostic e = enigeFout(Resolver.resolve(STRANDRECHT + """
+
+            Uitzonderingen ongeordend op uitkering van een betwist strandrecht:
+            Regel wrak lid een
+                geldig altijd
+                    De uitkering van een Wrakrecht moet gesteld worden op 55,00
+                    indien zijn bergingsdiepte groter is dan 20.
+
+            Regel wrak lid twee
+                geldig altijd
+                    De uitkering van een Wrakrecht moet gesteld worden op 66,00
+                    indien zijn bergingsdiepte groter is dan 30.
+            """));
+        assertTrue(e.message().contains("groepslid 'wrak lid een' schrijft voor het subtype Wrakrecht"), e.message());
+    }
+
     @Test void een_genest_blok_op_een_ander_doel_weigert() {
         Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS
                 + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is")
