@@ -66,8 +66,9 @@ and the case file did not change. It is the relation the type pair derives as
 well: `strandmelding` is the one fact type that relates `Melding` and
 `Strandrecht` (RUNTIME-SEMANTICS ch. 5.5). Re-measured 2026-09-25 on the
 re-emitted document: the verifier passes it, `ref` and clingo pass the case
-(5 expectations each), and the WF-050 mutation above still refuses it with the
-same report.
+(5 expectations each), the WF-050 mutation above still refuses it with the
+same report, and the Drools backend answers as before — the exec-model branch
+`PLAYED 1`, the DRL-text branch its defaults refusal.
 
 ## noop refutation (gate 7)
 
