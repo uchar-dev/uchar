@@ -2308,14 +2308,18 @@ let range_guard ctx ~subject ~body terms_with_bounds =
    with A = M·Rh (halfAwayFromZero, non-negative operands). [money_mult_fences] emits
    the four viol/2 fences keyed by [subject], grounded by the caller's [gbody]
    string; [money_mult_body] returns the non-negativity guards and the A/C
-   assignment atoms over the caller's fresh variables [a] and [c]. *)
-let money_mult_fences ctx ~subject ~gbody ~tm ~tr =
+   assignment atoms over the caller's fresh variables [a] and [c]. The rate's
+   sign is read on its own term [tr_sign], not on the term brought to scale
+   10^4 ([money_mult_rate]): multiplying by 10^(4-d) leaves a sign as it is,
+   and past the rescale fence the multiplied term has wrapped, so its sign
+   would name a negative operand the document does not have. *)
+let money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign =
   emit ctx
     "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
     subject gbody tm;
   emit ctx
     "viol(\"negative operand under money multiplication is not translated\",%s) :- %s, (%s) < 0."
-    subject gbody tr;
+    subject gbody tr_sign;
   (* A = M·Rh fence: |M| <= max_int31/(|Rh|+1) keeps |M·Rh| inside 2^31; the
      |Rh|+1 divisor is >= 1 for either sign, so a negative rate (fenced UNSAT
      above) can never divide by zero during grounding *)
@@ -2330,19 +2334,23 @@ let money_mult_fences ctx ~subject ~gbody ~tm ~tr =
     subject gbody tm
     ((max_int31 - 20000) / 99)
 
-let money_mult_body ~a ~c ~tm ~tr =
+let money_mult_body ~a ~c ~tm ~tr ~tr_sign =
   [ Printf.sprintf "(%s) >= 0" tm;
-    Printf.sprintf "(%s) >= 0" tr;
+    Printf.sprintf "(%s) >= 0" tr_sign;
     Printf.sprintf "%s = (%s)*((%s)/100)" a tm tr;
     Printf.sprintf "%s = %s/100 + (100*(%s\\100) + (%s)*((%s)\\100) + 5000)/10000" c a a tm tr ]
 
-(* the rate term of the split encoding, at scale 10^4. A rate typed at fewer
-   than four decimals is the same rational at scale 10^4 — 0,875 at 10^3 is
-   8750 at 10^4 — so its term is multiplied up exactly, and the multiplied
-   term is fenced: past max_int31/k it would wrap, and a wrapped rate is a
-   plausible wrong answer rather than a loud one. A term that arrives ABOVE
-   scale 10^4 (a literal whose lexeme runs past the fourth decimal) is not
-   brought down; the backstop refuses it. [body] grounds the fence. *)
+(* the rate term of the split encoding, at scale 10^4, paired with the rate's
+   own term for the sign tests ([money_mult_fences]). A rate whose TERM
+   carries fewer than four decimals — written or declared that way: the
+   literal 0,875, an attribute at three — is the same rational at scale 10^4
+   (875 at 10^3 is 8750 at 10^4), so its term is multiplied up exactly, and
+   the multiplied term is fenced: past max_int31/k it would wrap, and a
+   wrapped rate is a plausible wrong answer rather than a loud one. The
+   literal 0,8750 carries four whatever its annotation says, so k = 1 there.
+   A term that arrives ABOVE scale 10^4 is not brought down; the backstop
+   refuses it, and the route ([money_mult_roles]) sends no such term here.
+   [body] grounds the fence. *)
 let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
   if sm <> 100 || sr < 1 || sr > 10000 || 10000 mod sr <> 0 then
     fault
@@ -2350,10 +2358,10 @@ let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
        (%d,%d)"
       sm sr;
   let k = 10000 / sr in
-  if k = 1 then tr
+  if k = 1 then (tr, tr)
   else begin
     range_guard ctx ~subject ~body [ (tr, max_int31 / k) ];
-    Printf.sprintf "(%s*%d)" tr k
+    (Printf.sprintf "(%s*%d)" tr k, tr)
   end
 
 let decimals_of_scale s =
@@ -8316,10 +8324,11 @@ and filter_condition ctx (c : conditie) : string list =
    encoding carries? — a 2-decimal money times a rate of one to four
    decimals, the money on either side ([money_mult_roles]): the [Mult_mon_rat]
    shape the Catala plugin wraps in Rounding{halfAwayFromZero,2} (§5) at four,
-   and a RegelSpraak rate literal, which the frontend types at its smallest
-   scale, at fewer. The naive product wraps int31 at tutorial magnitude, so it
-   takes the split encoding, which brings the rate to scale 10^4 first
-   ([money_mult_rate]). *)
+   and a rate written or declared at one to three decimals at fewer. The
+   decimals are the terms' own: a RegelSpraak literal counts by its lexeme,
+   whatever the frontend's annotation says. The naive product wraps int31 at
+   tutorial magnitude, so it takes the split encoding, which brings the rate
+   to scale 10^4 first ([money_mult_rate]). *)
 and money_mult_shape ctx (basis : expr) : bool = money_mult_roles ctx basis <> None
 
 (* the split money multiplication (S-section (c)): rounding a 2-decimal money
@@ -8373,16 +8382,16 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
   let ma, tm, sm = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot m) in
   let ra, tr, sr = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot r) in
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
-  let tr = money_mult_rate ctx ~subject ~body:((base :: ctx.rule_guard) @ ma @ ra) ~sm ~tr ~sr in
+  let tr, tr_sign = money_mult_rate ctx ~subject ~body:((base :: ctx.rule_guard) @ ma @ ra) ~sm ~tr ~sr in
   let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
   (* the fences and halfAwayFromZero encoding are shared with the closed
      body (one encoding); here the value rides a subject-keyed helper predicate,
      the operand atoms baked into its body *)
-  money_mult_fences ctx ~subject ~gbody ~tm ~tr;
+  money_mult_fences ctx ~subject ~gbody ~tm ~tr ~tr_sign;
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "mm%d" ctx.fresh in
   emit ctx "%s(%s,C) :- %s, %s." p subject gbody
-    (String.concat ", " (money_mult_body ~a:"A" ~c:"C" ~tm ~tr));
+    (String.concat ", " (money_mult_body ~a:"A" ~c:"C" ~tm ~tr ~tr_sign));
   let v = fresh ctx "MM" in
   ctx.binders <- saved_b;
   ctx.rule_guard <- saved_g;
@@ -8414,11 +8423,11 @@ and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * i
   unit_free_ok ctx (Some r);
   let ma, tm, sm = closed_term ctx ~guard_body ~witness m in
   let ra, tr, sr = closed_term ctx ~guard_body ~witness r in
-  let tr = money_mult_rate ctx ~subject:witness ~body:(guard_body @ ma @ ra) ~sm ~tr ~sr in
+  let tr, tr_sign = money_mult_rate ctx ~subject:witness ~body:(guard_body @ ma @ ra) ~sm ~tr ~sr in
   let gbody = String.concat ", " (guard_body @ ma @ ra) in
-  money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr;
+  money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr ~tr_sign;
   let a = fresh ctx "A" and c = fresh ctx "C" in
-  (ma @ ra @ money_mult_body ~a ~c ~tm ~tr, c, 100)
+  (ma @ ra @ money_mult_body ~a ~c ~tm ~tr ~tr_sign, c, 100)
 
 (* a closed-body division (§6.5/S18), the rule-level [translate_division]
    carried into the body context. A COMPILE-TIME positive constant divisor folds
