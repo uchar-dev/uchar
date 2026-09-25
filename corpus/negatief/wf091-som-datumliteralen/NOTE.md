@@ -13,8 +13,9 @@ per operand.
     over a Number, and Date values are calendar positions
 
 **The document.** `wf091-som-datumparameters` with the two parameter
-references replaced by the literals 2025-01-01 and 2025-12-01 and the
-parameter declarations removed; nothing else differs.
+references replaced by the literals 2025-01-01 and 2025-12-01, the parameter
+declarations removed, and the source snippets of the operands and the fold
+following the literals; nothing else differs.
 
 Measured on this document (2026-09-25): `ref` faults on the addition (`plus:
 expected a number, got 2025-01-01`), the ASP translation refuses the listed

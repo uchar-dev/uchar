@@ -11,8 +11,9 @@ arm does not look through the list to its element type.
 
 **The document.** `wf091-setbron-som-datum` with the member and the target
 retyped to a `ListType` whose element is a `Number` with 2 decimals, and
-renamed (`vondstdatum` to `weegreeks`, `vondstdagensom` to `weegreekssom`);
-nothing else differs. It is the arm's `ListType` witness: no document in the
+renamed (`vondstdatum` to `weegreeks`, `vondstdagensom` to `weegreekssom`,
+with the member's plural, the rule name and the source snippets following
+the new names); nothing else differs. It is the arm's `ListType` witness: no document in the
 four zones folds a list-typed operand under `sum`, `total` or the pro-rata
 part.
 
