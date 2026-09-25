@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *                             if (rsTijdTotaal(rsTijdKnip($subject.getWachtvergoedingPerMaand(), …
  * </pre>
  * Both documents were verifier-CLEAN then. A whole-file compile failure names the generated text, not the
- * construct; the marker names the fold, the timeline and the member type. Since the card ref-klipvouw-nul
- * WF-091 rejects both (a total over a Date operand), so they are negatief witnesses without a case file; this
+ * construct; the marker names the fold, the timeline and the member type. WF-091 rejects both since the card
+ * ref-klipvouw-nul (a total over a Date operand), so they are negatief witnesses without a case file; this
  * backend does not run the verifier, and the inputs of their former red cases are held below.
  *
  * <p>Until the card ref-klipvouw-nul the two branches refused at DIFFERENT phases: the exec branch's case
