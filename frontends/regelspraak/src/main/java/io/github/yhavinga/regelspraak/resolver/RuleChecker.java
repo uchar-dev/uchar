@@ -4240,21 +4240,15 @@ final class RuleChecker {
         if (c instanceof Conditie.Kenmerk k)      return kenmerkTemporeel(k);
         return false;
     }
-    /** Whether an operand READS a TIJDSAFHANKELIJK value ANYWHERE — a §13.3.6 tijdlijn attribuut (own or navigated),
-     *  a §3.8/§13.3.8 tijdlijn parameter, or such a read nested in arithmetic ("zijn saldo plus 1"), an afronding or a
-     *  begrenzing. Mirrors ExpressieBouwer.temporeelAttribuutOperand (the §7.1/§8.4 temporal-operand gate) so the §8.2
-     *  rejection only fires when the onderwerp is GENUINELY static — a wrapped/parameter temporal onderwerp is a VALID
-     *  §8.2 (the transpiler markers what it cannot yet lower), never a spec error. */
+    /** Whether an operand READS a TIJDSAFHANKELIJK value itself — a §13.3.6 tijdlijn attribuut (own or navigated) or a
+     *  §3.8/§13.3.8 tijdlijn parameter. That is WF-043's reading of a time-dependent operand. §8.2 also admits such a
+     *  read inside arithmetic ("zijn saldo plus 1"), an afronding, a begrenzing or a dimension cell, but the verifier
+     *  refuses the qualifier there, so the frontend refuses it too, in the verifier's words, instead of writing a
+     *  document the wire does not carry. */
     private static boolean exprTemporeel(Expr e) {
         if (e instanceof Expr.AttribuutRef a)
             return a.objecttype() != null && a.objecttype().granulariteitVan(a.attribuut()) != null;
         if (e instanceof Expr.ParameterRef p)  return p.parameter().granulariteit() != null;
-        if (e instanceof Expr.Binair b)         return exprTemporeel(b.links()) || exprTemporeel(b.rechts());
-        if (e instanceof Expr.Afgerond af)      return exprTemporeel(af.basis());
-        if (e instanceof Expr.Begrensd bg)      return exprTemporeel(bg.basis())
-                || (bg.minimum() != null && exprTemporeel(bg.minimum()))
-                || (bg.maximum() != null && exprTemporeel(bg.maximum()));
-        if (e instanceof Expr.DimensieCel dc)   return exprTemporeel(dc.attribuut());
         return false;
     }
     private boolean kenmerkTemporeel(Conditie.Kenmerk k) {

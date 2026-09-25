@@ -52,6 +52,7 @@ class TyperingZinTest {
                     %s
 
             Objecttype de Vondst (mv: Vondsten)
+                de vondstsaldo Numeriek (getal met 2 decimalen) voor elk jaar;
                 is gewogen kenmerk (bijvoeglijk);
 
             Feittype vondstmelding
@@ -84,6 +85,21 @@ class TyperingZinTest {
         assertEquals(fout("kenmerkwaardetoekenning 'gewogen': characteristic initialisation's value must be a "
                         + "boolean-typed expression"),
                 meldingen("Een Jutter heeft een vondst met gewogen gelijk aan 5."));
+    }
+
+    /** WF-043 counts an operand as time-dependent only where it reads a temporal attribute or parameter itself, not
+     *  through arithmetic or a rounding, which §8.2 admits. Measured on the frontend before this: no diagnostic, the
+     *  document written, and {@code WF-043 FAIL /rules/rules/0/versions/0/condition: wholePeriod qualifier on a
+     *  non-time-dependent operand}. */
+    @Test void volledige_periode_over_een_samengestelde_operand() {
+        String zin = "ERROR 0 de check op volledige periode (gedurende de/het gehele jaar/maand): wholePeriod qualifier "
+                + "on a non-time-dependent operand";
+        assertEquals(List.of(zin), meldingen("Een Vondst is gewogen indien zijn vondstsaldo plus 1 gedurende het gehele "
+                + "jaar groter is dan 5."));
+        assertEquals(List.of(zin), meldingen("Een Vondst is gewogen indien zijn vondstsaldo naar beneden afgerond op 0 "
+                + "decimalen gedurende het gehele jaar groter is dan 5."));
+        assertEquals(List.of(), meldingen("Een Vondst is gewogen indien zijn vondstsaldo gedurende het gehele jaar "
+                + "groter is dan 5."));
     }
 
     @Test void datumprecisie() {
