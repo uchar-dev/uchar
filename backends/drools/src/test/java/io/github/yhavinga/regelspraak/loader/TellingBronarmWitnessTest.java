@@ -64,9 +64,15 @@ class TellingBronarmWitnessTest {
                 + " ParameterReference" + BRONARM);
     }
 
+    /** The VariableReference is ill-formed wherever it stands (WF-034): the loader refuses it at the argument, in the
+     *  shared loader's sentence, before the fold's source arm is reached — as ref and the ASP backend do. */
     @Test void een_variabele_als_telbron_wordt_geweigerd() throws Exception {
-        weigert("wf037-aantal-elementtype-variabele", "a count aggregation carries elementType \"Vondst\" and a"
-                + " VariableReference" + BRONARM);
+        String arg = PLEK + "/arguments/0";
+        IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class,
+                () -> IrLoader.loadAll(negatief("wf037-aantal-elementtype-variabele")));
+        assertEquals(arg, e.plek(), e.getMessage());
+        assertEquals("malformed uchar-ir-v1 document at '" + arg + "': "
+                + IrLoader.variabeleVerwijzingWeigering("x"), e.getMessage());
     }
 
     @Test void een_builtin_als_telbron_wordt_geweigerd() throws Exception {

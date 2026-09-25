@@ -382,6 +382,17 @@ class RegelEnExpressielaagWeigeringWitnessTest {
         }
     }
 
+    /** WF-034: a VariableReference is the frontend's marker of a variable it could not bind, and the wire serializes no
+     *  binding site for it — a rule-local variable is a Let, read by a BinderRef — so the loader refuses it at the node,
+     *  in the sentence of the verifier and the shared OCaml loader (corpus/negatief/wf034-variabele-zonder-binding). */
+    @Test void een_variabeleverwijzing_wordt_geweigerd() throws Exception {
+        ObjectNode ir = golden(PREMIEVENSTER);
+        zet(ir, WAARDE, "{\"node\":\"VariableReference\",\"name\":\"vrijstelling\","
+                + "\"source\":{\"snippet\":\"de vrijstelling\"}}");
+        assertTrue(weigert(ir, WAARDE).getMessage().endsWith(": variable reference 'vrijstelling' resolves against no"
+                + " binding: a rule-local variable is a Let, read by a BinderRef"));
+    }
+
     @Test void de_contextknopen_dragen_hun_naam_en_hun_datatype() throws Exception {
         for (String naam : List.of("null", "5")) {
             ObjectNode ir = golden(PREMIEVENSTER);

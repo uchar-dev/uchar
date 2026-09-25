@@ -1323,8 +1323,13 @@ public final class IrLoader {
             case "ParameterReference" -> {
                 yield new Expr.ParameterRef(param(text(n, "parameter")), bron(n));
             }
+            // WF-034: the marker of a variable the frontend could not bind resolves against no binding on the wire —
+            // a rule-local variable is a Let, read by a BinderRef — so the document is refused here, at the node and
+            // in the sentence of the shared OCaml loader; its source record is read first, as that loader reads the
+            // structure before it refuses the node
             case "VariableReference" -> {
-                yield new Expr.VariabeleRef(text(n, "name"), null, bron(n));
+                bron(n);
+                throw new Documentfout(padVan(n), variabeleVerwijzingWeigering(text(n, "name")));
             }
             // IR-SPEC ch. 4.1: the bound day of a day-kind definition and a session value, each a node of its own; the
             // record keeps the one constant it always was, named "de dag" for the first
@@ -1653,6 +1658,13 @@ public final class IrLoader {
     static String contextwaardeWeigering(String naam) {
         return "context value '" + naam + "' is not one of the two admissible names evaluationDate, evaluationYear:"
                 + " the context-value name is a closed set, spelled byte for byte";
+    }
+
+    /** WF-034, the shared loader's sentence for a VariableReference: the frontend's marker of a variable it could not
+     *  bind, which resolves against no binding on the wire. */
+    static String variabeleVerwijzingWeigering(String naam) {
+        return (naam == null ? "a variable reference without a name" : "variable reference '" + naam + "'")
+                + " resolves against no binding: a rule-local variable is a Let, read by a BinderRef";
     }
 
     /** The shared loader's sentence for a path without a hop: a read without navigation leaves the field out. */

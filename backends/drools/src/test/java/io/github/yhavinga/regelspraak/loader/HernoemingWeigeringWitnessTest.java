@@ -398,9 +398,13 @@ class HernoemingWeigeringWitnessTest {
         assertEquals("vondst ", ((Expr.TekstReeks.Letterlijk) t.delen().get(0)).tekst());
         assertInstanceOf(Expr.Literal.class, ((Expr.TekstReeks.Ingevoegd) t.delen().get(1)).expr());
 
+        // the name is read, and names the node the loader refuses (WF-034)
         doc = golden(PREMIEVENSTER);
         zet(doc, W, "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
-        assertEquals("x", ((Expr.VariabeleRef) IrLoader.load(doc).resolvedRegels.get(0).waarde()).naam());
+        ObjectNode varDoc = doc;
+        IrLoader.Documentfout vr = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.load(varDoc));
+        assertEquals(W, vr.plek(), vr.getMessage());
+        assertTrue(vr.getMessage().endsWith(": " + IrLoader.variabeleVerwijzingWeigering("x")), vr.getMessage());
     }
 
     /** The condition nodes of the renaming, each with every field written. */
