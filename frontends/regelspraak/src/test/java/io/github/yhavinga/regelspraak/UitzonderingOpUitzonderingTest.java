@@ -263,6 +263,21 @@ class UitzonderingOpUitzonderingTest {
                 () -> "precies twee 'all'-knopen (herroeping en verval), geen geneste:\n" + ir);
     }
 
+    @Test void de_samengevoegde_bron_houdt_geen_punt_midden_in_de_zin() {
+        // A compound conjunct's text runs to the period that closes its bullet list; joined with " en " that period
+        // would stand in the middle of the sentence. The last conjunct ends the sentence and keeps its text.
+        PrioritizedDefaults g = enigeGroep(Resolver.resolve(MODEL + BASIS
+                + op("uitsluiting", "herroeping", NIET_UIT, "hij aan ten minste één van de volgende voorwaarden "
+                        + "voldoet:\n        - hij is herroepen\n        - hij is betwist")
+                + op("herroeping", "verval", UIT, "hij vervallen is")));
+        Default herroeping = g.defaults().get(0);
+        assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
+                + "herroepen - hij is betwist.", herroeping.voorwaarde().bron().snippet());
+        assertEquals("hij geweigerd is en hij aan ten minste één van de volgende voorwaarden voldoet: - hij is "
+                + "herroepen - hij is betwist en hij vervallen is",
+                geordend(herroeping).get(0).voorwaarde().bron().snippet());
+    }
+
     // -------------------------------------------------------------------- Afwijking van
 
     private static final String QUOTUM = regel("bevoegd bij quotum", "Een Jutter is bergingsbevoegd",

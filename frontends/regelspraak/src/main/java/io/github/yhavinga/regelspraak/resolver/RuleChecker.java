@@ -1001,12 +1001,19 @@ final class RuleChecker {
     }
 
     /** One flat 'all' over the carrier's conjuncts and the node's own condition, its source the conjuncts' sources
-     *  joined by " en " — the shape the hand-written anchors give a nested justification. */
+     *  joined by " en " — the shape the hand-written anchors give a nested justification. A compound conjunct's
+     *  source runs to the period that closes its bullet list; before " en " that period would stand in the middle
+     *  of the sentence, so it is left out there, and the last conjunct, which ends the sentence, keeps its text. */
     private static Conditie conjunctie(List<Conditie> dragerConjuncten, Conditie eigen) {
         List<Conditie> delen = new ArrayList<>(dragerConjuncten);
         plat(eigen, delen);
-        String tekst = delen.stream().map(d -> d.bron() == null ? "" : d.bron().snippet())
-                .collect(java.util.stream.Collectors.joining(" en "));
+        StringBuilder zin = new StringBuilder();
+        for (int i = 0; i < delen.size(); i++) {
+            String deel = delen.get(i).bron() == null ? "" : delen.get(i).bron().snippet();
+            if (i > 0) zin.append(" en ");
+            zin.append(i < delen.size() - 1 && deel.endsWith(".") ? deel.substring(0, deel.length() - 1) : deel);
+        }
+        String tekst = zin.toString();
         Bron plek = eigen == null ? null : eigen.bron();
         return new Conditie.Samengesteld(Conditie.Kwantor.ALLE, 0, List.copyOf(delen),
                 plek == null ? Bron.synthetisch(tekst) : new Bron(plek.file(), plek.line(), plek.column(), tekst));
