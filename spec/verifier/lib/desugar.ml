@@ -262,14 +262,6 @@ let compose_member ~(own : prioritized_defaults) ~(inherited : prioritized_defau
   let base = match own_base with Some _ as b -> b | None -> inh_base in
   { own with defaults = own_exc @ inh_exc @ Option.to_list base @ inh_tail @ own_tail }
 
-let target_key (l : prioritized_defaults) =
-  (if l.pd_kenmerk <> None then "K:" else "A:")
-  ^
-  match (l.pd_kenmerk, l.pd_attribuut) with
-  | Some k, _ -> norm k
-  | _, Some a -> norm a
-  | _ -> "?"
-
 exception Unlowered of string
 
 (* --- an ORDINARY rule as the base of its level (SUBTYPING §4.1 rules 1
@@ -287,20 +279,10 @@ exception Unlowered of string
    byte where it was: a rule is absorbed only on a target whose CHAIN
    declares a defaults group somewhere. A bare rule with no group above or
    below it is the ordinary ch. 7.8 standing norm and never enters a stack
-   — which is every such rule in the corpus. *)
-
-(* the target keys on which [t]'s own chain declares a defaults GROUP *)
-let chain_group_keys doc t =
-  List.concat_map
-    (fun (s, _) ->
-      if Checks.subtype_of doc ~sub:t ~super:s then
-        List.filter_map
-          (fun (l : prioritized_defaults) ->
-            if norm l.pd_onderwerp = norm s then Some (target_key l) else None)
-          doc.prioritized_defaults
-      else [])
-    doc.objecttypen
-  |> List.sort_uniq compare
+   — which is every such rule in the corpus. The gate is
+   [Checks.chain_group_keys], which WF-079 reads as well: outside it a bare
+   rule on a type and one on its ancestor both fire on the type's instances,
+   and the verifier refuses that pair. *)
 
 (* The ordinary attribute writers [level] declares on [key], with their
    document index: at most one computing rule and at most one plain
@@ -431,7 +413,7 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
     own_groups
     @ List.filter_map
         (fun k ->
-          if List.exists (fun (l, _) -> target_key l = k) own_groups then None
+          if List.exists (fun (l, _) -> Checks.target_key l = k) own_groups then None
           else rule_member doc type_name k)
         absorb
   in
@@ -447,7 +429,7 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
   let own_by_key =
     List.fold_left
       (fun acc (l, i) ->
-        let k = target_key l in
+        let k = Checks.target_key l in
         if List.mem_assoc k acc then
           List.map (fun (k', ms) -> if k' = k then (k', ms @ [ (l, i) ]) else (k', ms)) acc
         else acc @ [ (k, [ (l, i) ]) ])
@@ -514,7 +496,7 @@ let effective_defaults (doc : document) :
     (string * string * prioritized_defaults list * int list) list =
   List.concat_map
     (fun (name, _) ->
-      let absorb = chain_group_keys doc name in
+      let absorb = Checks.chain_group_keys doc name in
       List.filter_map
         (fun (k, ms) ->
           if ms = [] then None
@@ -548,13 +530,17 @@ let absorbed_uncached (doc : document) ~otype ~attr : string list =
      `StaandeScalaireNormWitnessTest` pins, and it caught the omission. *)
   if
     List.exists
-      (fun (l : prioritized_defaults) -> norm l.pd_onderwerp = norm otype && target_key l = key)
+      (fun (l : prioritized_defaults) ->
+        norm l.pd_onderwerp = norm otype && Checks.target_key l = key)
       doc.prioritized_defaults
   then []
   else
     List.filter_map
       (fun (t, _) ->
-        if Checks.subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then
+        if
+          Checks.subtype_of doc ~sub:t ~super:otype
+          && List.mem key (Checks.chain_group_keys doc t)
+        then
           Some t
         else None)
       doc.objecttypen

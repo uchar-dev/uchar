@@ -6,6 +6,17 @@ wrakrecht` sets the `uitkering` of a `Wrakrecht` to its `grondslag` times 2;
 `Wrakrecht` is a `Strandrecht`. The supertype's rule comes first in the
 document.
 
+    WF-079 FAIL /rules/rules/1/versions/0: two unconditional computing rules
+    write target (Wrakrecht, uitkering) through its type chain — one declared
+    on Strandrecht, one on Wrakrecht — and no defaults group folds them into
+    one stack, so both fire on a Wrakrecht instance; priority is explicit (a
+    defaults group, whose subtype base replaces the inherited base, ch. 7.10)
+    or explicitly absent, never implicit agenda order (ch. 7.7)
+
+The report cites the version on the lower type of the pair, `Wrakrecht`, the
+first concrete type both rules fire on. With the two rules swapped in the
+document the same sentence cites `/rules/rules/0/versions/0`.
+
 **Why both fire on a `Wrakrecht`.** The fold of ch. 7.10 — an ordinary rule
 read as the base of its level, the subtype's base replacing the inherited
 one — is gated: a rule is absorbed only on a target whose chain declares a
@@ -28,10 +39,10 @@ gives 10.00 in all four.
 **The expressible form.** A defaults group on the target somewhere in the
 chain. The chain then passes the gate of ch. 7.10: an ordinary rule becomes
 the base of the level that declares it, the subtype's base replaces the
-inherited one, and a `Wrakrecht` has one writer. `corpus/golden/jutterswet-wrakbasis` (a group on
-the supertype beside a rule on the subtype) and
-`corpus/golden/jutterswet-wrakerfbasis` (a rule on the supertype beside a
-group on the subtype) carry that shape, and
+inherited one, and a `Wrakrecht` has one writer.
+`corpus/golden/jutterswet-wrakbasis` (a group on the supertype beside a rule
+on the subtype) and `corpus/golden/jutterswet-wrakerfbasis` (a rule on the
+supertype beside a group on the subtype) carry that shape, and
 `corpus/golden/anchor/jutterswet-strandrechtketen` carries a group on each
 level.
 
@@ -51,6 +62,16 @@ level.
         geldig altijd
             De uitkering van een Wrakrecht moet gesteld worden op zijn grondslag maal 2.
 
-Verifier without a chain arm in WF-079: `verifier: PASS` — the rule keyed on
-the declared type, and `Strandrecht.uitkering` and `Wrakrecht.uitkering` are
-two keys.
+**The arm.** WF-079's flat arm keys on the declared type, where
+`Strandrecht.uitkering` and `Wrakrecht.uitkering` are two keys; before the
+chain arm the verifier passed this document (`verifier: PASS`). The chain arm
+pairs a writer on a type with one on a strict ancestor and reports the pair
+when the lower type's chain declares no defaults group on the target — the
+gate the fold of ch. 7.10 reads (`chain_group_keys` in
+`spec/verifier/lib/checks.ml`). `expect.txt` pins the chain arm.
+
+Falsifiable, arm-exact: making the chain arm report nothing (the last line of
+`wf079` in `spec/verifier/lib/checks.ml` changed to `pairs writers @ (if false
+then chain_pairs computing else [])`) turns this case clean and nothing else —
+708 documents compared over golden, rood and negatief, one verdict moved
+(measured 2026-09-25).

@@ -606,6 +606,34 @@ let declaring_type doc ~from ~kind ~member =
           if hit then t.ot_naam else None)
         (chain_from { doc } ot)
 
+(* A defaults group's target as the ch. 7.10 composition keys it: the target
+   KIND and name, without the subject, so an attribute and a characteristic
+   sharing a name (WF-002) stay two targets. *)
+let target_key (l : prioritized_defaults) =
+  (if l.pd_kenmerk <> None then "K:" else "A:")
+  ^
+  match (l.pd_kenmerk, l.pd_attribuut) with
+  | Some k, _ -> norm k
+  | _, Some a -> norm a
+  | _ -> "?"
+
+(* The gate of RUNTIME-SEMANTICS ch. 7.10: the target keys on which [t]'s own
+   chain — [t] and its ancestors — declares a defaults GROUP. An ordinary rule
+   is folded into a stack only on such a key. The fold ([Desugar]) and
+   WF-079's chain arm read this one predicate, so the verifier and the three
+   executors cannot disagree on which rules the fold absorbs. *)
+let chain_group_keys doc t =
+  List.concat_map
+    (fun (s, _) ->
+      if subtype_of doc ~sub:t ~super:s then
+        List.filter_map
+          (fun (l : prioritized_defaults) ->
+            if norm l.pd_onderwerp = norm s then Some (target_key l) else None)
+          doc.prioritized_defaults
+      else [])
+    doc.objecttypen
+  |> List.sort_uniq compare
+
 let attr_of ot name = find_ci ot.attributen name
 let has_attr ot name = List.exists (fun (k, _) -> norm k = norm name) ot.attributen
 let has_kenmerk ot name = mem_ci (some_names ot.kenmerken) name
@@ -1584,8 +1612,8 @@ let wf025 ctx =
    so — this is a constraint on the verifier, not an oversight (IR-SPEC
    ch. 6.1, RUNTIME-SEMANTICS ch. 7). They are read on the per-type
    EFFECTIVE stack, after inheritance resolution, never on a chain-closed
-   target key. The hazard runs the counter-intuitive way: today the fences
-   do not fire on a supertype/subtype pair at all, because 'Strandrecht.x'
+   target key. The hazard runs the counter-intuitive way: the declared-type
+   keys do not see a supertype/subtype pair at all, because 'Strandrecht.x'
    and 'Wrakrecht.x' are two keys. Lifting the target key to the
    chain-closed set — the obvious repair once member resolution walks the
    chain — would make them fire on exactly the shape inheritance
@@ -1594,7 +1622,9 @@ let wf025 ctx =
    writer: the subtype's own base replaces the inherited one. Any
    chain-awareness added here must ask "do these two writers survive into
    one instance's effective stack", never "do these two targets close over
-   the same member". *)
+   the same member". WF-079's chain arm asks exactly that of two bare
+   computing rules: outside the gate of RUNTIME-SEMANTICS ch. 7.10 both
+   survive onto a subtype instance, inside it the fold makes them one. *)
 let wf026 ctx =
   let named =
     List.map
@@ -7621,11 +7651,27 @@ let wf052 ctx =
    their own priority and stay outside: only the bare (unconditional)
    collision is statically over-determined. Mirrors WF-026's version-stripped
    pairing. *)
-(* WF-079 keys on the declared type too — see the single-writer note at
-   wf026. A bare rule on the supertype and a bare rule on the subtype are
-   not two writers: the subtype's rule IS its base and replaces the
-   inherited one, so each type's effective stack still holds a single bare
-   writer and the ch. 7.8 standing norm applies per type, unchanged. *)
+(* Two arms. The FLAT arm keys on the declared type — see the single-writer
+   note at wf026 — and pairs two writers declared on one type. The CHAIN arm
+   pairs a writer declared on a type with one declared on a strict ancestor,
+   a pair the declared-type keys cannot see ('Strandrecht.uitkering' and
+   'Wrakrecht.uitkering' are two keys). Whether that pair is two writers is
+   decided by the gate of RUNTIME-SEMANTICS ch. 7.10. Where the lower type's
+   chain declares a defaults group on the target, the fold makes each
+   ordinary rule the base of its level and the subtype's base replaces the
+   inherited one: one writer, and what the fold cannot take the executors
+   refuse by name ([Desugar.Unlowered]), a rule beside its own level's group
+   being WF-050's. Where the chain declares none, neither rule enters a
+   stack, the ancestor's rule quantifies over the subtype's instances as
+   well, and both fire on them — measured 2026-09-25 on such a pair: ref and
+   the Drools exec-model branch find no fixpoint, clingo derives two values
+   and the DRL-text branch answers by document order. The arm reads the gate
+   from [chain_group_keys], the predicate the fold reads, so the verifier and
+   the executors cannot disagree on which pairs the fold absorbs. A pair is
+   reported once, at the version on the lower type: that type is the first
+   concrete type both fire on, and the key set only grows down the chain, so
+   a type below it sees the same pair while it stays outside the gate and
+   has it folded once inside. *)
 let wf079 ctx =
   let has_defaults otn a =
     List.exists
@@ -7635,19 +7681,25 @@ let wf079 ctx =
         | None -> false)
       ctx.doc.prioritized_defaults
   in
-  let writers =
+  let distinct_form n1 n2 =
+    match (n1, n2) with Some x, Some y -> norm x <> norm y | _ -> true
+  in
+  let computing =
     List.filter_map
       (fun (r : resolved_regel) ->
         match (r.rr_soort, r.doel, r.rr_voorwaarde) with
         | ( Some (Gelijkstelling | Berekening),
             Some (Attribuut_ref { attribuut = Some a; objecttype = Some otn; _ }),
-            None )
-          when not (has_defaults otn a) ->
-            Some
-              ( Option.map strip_version r.rr_naam, norm otn, norm a, r.rr_geldigheid,
-                r.rr_pointer )
+            None ) ->
+            Some (Option.map strip_version r.rr_naam, otn, a, r.rr_geldigheid, r.rr_pointer)
         | _ -> None)
       ctx.doc.resolved_regels
+  in
+  let writers =
+    List.filter_map
+      (fun (n, otn, a, g, at) ->
+        if has_defaults otn a then None else Some (n, norm otn, norm a, g, at))
+      computing
   in
   let rec pairs = function
     | [] -> []
@@ -7655,10 +7707,7 @@ let wf079 ctx =
         List.filter_map
           (fun (n2, ot2, a2, g2, _) ->
             let same_target = ot1 = ot2 && a1 = a2 in
-            let distinct_form =
-              match (n1, n2) with Some x, Some y -> norm x <> norm y | _ -> true
-            in
-            if same_target && distinct_form && validity_overlaps g1 g2 then
+            if same_target && distinct_form n1 n2 && validity_overlaps g1 g2 then
               Some
                 (v "WF-079" at1
                    (Printf.sprintf
@@ -7670,7 +7719,37 @@ let wf079 ctx =
           rest
         @ pairs rest
   in
-  pairs writers
+  let rec chain_pairs = function
+    | [] -> []
+    | (n1, ot1, a1, g1, at1) :: rest ->
+        List.filter_map
+          (fun (n2, ot2, a2, g2, at2) ->
+            let lower =
+              if norm ot1 = norm ot2 || norm a1 <> norm a2 then None
+              else if is_sub ctx ~sub:ot1 ~super:ot2 then Some (ot1, a1, at1, ot2)
+              else if is_sub ctx ~sub:ot2 ~super:ot1 then Some (ot2, a2, at2, ot1)
+              else None
+            in
+            match lower with
+            | Some (low, a, at, high)
+              when distinct_form n1 n2
+                   && validity_overlaps g1 g2
+                   && not (List.mem ("A:" ^ norm a) (chain_group_keys ctx.doc low)) ->
+                Some
+                  (v "WF-079" at
+                     (Printf.sprintf
+                        "two unconditional computing rules write target (%s, %s) through its \
+                         type chain — one declared on %s, one on %s — and no defaults group \
+                         folds them into one stack, so both fire on a %s instance; priority is \
+                         explicit (a defaults group, whose subtype base replaces the inherited \
+                         base, ch. 7.10) or explicitly absent, never implicit agenda order \
+                         (ch. 7.7)"
+                        low a high low low))
+            | _ -> None)
+          rest
+        @ chain_pairs rest
+  in
+  pairs writers @ chain_pairs computing
 
 (* WF-054: parent-scoped uniqueness (the scope hop). Since L2 the scope
    binding IS the scoping (B8): a uniqueness carrying one is scoped, one
