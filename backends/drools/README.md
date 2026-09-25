@@ -68,3 +68,17 @@ loader+transpiler carry **must** match the pinned expectations gates 5 (ref) and
 per-form auto-refusals print their reason, and a reason-carrying value-divergence list
 in the script (the check-noop survivor pattern) names each golden whose fired outcome
 differs from ref/clingo and fails when stale.
+
+## Recorded: the DRL-text branch answers where the others refuse
+
+One corner, measured 2026-09-25 and deliberately not built. A computing rule and a conditional
+initialisation write one target (outside the ch. 7.7 desugaring, RUNTIME-SEMANTICS ch. 5.4), the
+computing rule's condition holds and its value evaluates leeg. In v0 the computing rule erases what the
+initialisation writes and the initialisation writes it again: `ref` faults on its pass budget
+(`no fixpoint within 100 passes — divergence is a fault (ch. 5.7)`), the ASP backend derives its
+`viol/2` witness for the same body, and the exec-model branch reaches the shared fire cap
+(`geen fixpunt (kringverwijzing?)`). The DRL-text branch answers the initialisation's value instead
+(`verwacht leeg, werkelijk 25.00`): its computing rule is property-reactive to what its condition and
+value read (`@watch`), not to its own target, so after the initialisation writes nothing re-fires the
+erase and the session stops before the cap. No corpus case can hold the corner — `ref` faults, so it is
+no golden, and the red zone pins `ref` and clingo only.
