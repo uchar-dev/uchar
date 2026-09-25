@@ -583,11 +583,11 @@ so nothing in the corpus moves. Witness: `RegelgroepUitzonderingTest`.
 
 ### Emission (v0-mirror invariant)
 
-`prioritizedDefaults` is emitted ONLY when the extension produced defaults
-groups. A document without the extension emits no such key, so the v0-mirror
-byte-identity of every flat golden holds. Within the list, `attribuut` is emitted
-only on attribute defaults and `ongeordend` only when true, matching the schema
-and the hand-written prioritized-defaults anchors.
+`prioritizedDefaults` is emitted ONLY when the extension, or the opgave marker
+of §7, produced defaults groups. A document without either emits no such key,
+so the v0-mirror byte-identity of every flat golden holds. Within the list,
+`attribuut` is emitted only on attribute defaults and `ongeordend` only when
+true, matching the schema and the hand-written prioritized-defaults anchors.
 
 ### Scope / limitations of the first card
 
@@ -1221,9 +1221,9 @@ proposals, no grammar, no test source, no corpus file.
 The method of §6: all 788 of those documents — the 81 corpus sources, the 47
 of the parity zone and the 660 — went through the frontend built at the commit
 before the token and at the commit that added it and the lowering, the emitted
-IR plus the diagnostics compared. Zero differences in all 788, 199 of which
-emit an IR and 581 of which carry an ERROR (among them the scenario and
-fragment files, which are no `regelSpraakDocument`). Unlike §6 no
+IR plus the diagnostics compared. Zero differences in all 788: 199 emit an IR,
+581 carry an ERROR (among them the scenario and fragment files, which are no
+`regelSpraakDocument`), and the emitter refuses 8. Unlike §6 no
 syntax-error text changed either: the new token enters an "expecting {…}" set
 only at the end of a member declaration, and no measured document has a syntax
 error there.
