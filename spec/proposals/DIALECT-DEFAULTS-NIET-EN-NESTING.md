@@ -745,8 +745,13 @@ carries its carrier's conjoined justification followed by its own
 condition, flattened into one `ALLE`. An `Afwijking van <basis>: <naam>`
 block lowers as a first-level `Uitzondering op` does — a chain position
 above the base — with its own condition only (`jutterswet-bergingsdrempel`,
-whose `ir.json` stays byte-identical). Whether `Afwijking van` may also
-name an exception is left to the build card.
+whose `ir.json` stays byte-identical). *Decided 2026-09-23 (the maintainer's
+second decision question of that day):* `Afwijking van` names a base rule
+only, and one that names an exception is refused. A block that inherits
+nothing could, in the middle of the tree, decide `waar` where its carrier's
+condition does not hold and no right ever arose — the error the WW anchor
+showed (§2.3). A statute that needs it comes back with that text as its
+witness.
 
 **Why the first level stays a chain.** [P, own spec] RUNTIME-SEMANTICS
 ch. 7.10 defines the base as the lowest ordinary default that decides
@@ -883,7 +888,12 @@ Nested exceptions written on the supertype are inherited with it unchanged
 Proposed: `Uitzonderingen ongeordend op <naam>:` followed by `Regel`
 members, lowered as in §5.2 — under an exception into its `excepties`
 with `ongeordend: true`, under a base into a group-default directly above
-the base. [M11] The group-default form carries both decisions and the
+the base. *Decided 2026-09-23 (the maintainer's second decision question
+of that day):* the members inherit the (conjoined) justification of the
+carrier, exactly as a single `Uitzondering op` does (§5.4 (D)): one
+exception or three at once, they remain exceptions on that carrier. The
+anchor `jutterswet-nestkenmerk` writes `nx` in both siblings since its
+repair (card `anker-nestkenmerk-dragervoorwaarde`, §8.3). [M11] The group-default form carries both decisions and the
 conflict key `…/0` in ref, clingo and the exec branch. [P, own code] The
 Catala frontend lowers a chain exception carrying unordered exceptions to
 the same nested form (`frontends/catala/lib/translate.ml:28-31`); it

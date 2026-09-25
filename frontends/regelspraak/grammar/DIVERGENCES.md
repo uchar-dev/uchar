@@ -32,7 +32,7 @@ extension (§4).
 
 ---
 
-## §4 The prioritized-defaults extension — `Uitzondering op` / `Uitzonderingen ongeordend`
+## §4 The prioritized-defaults extension — `Uitzondering op` / `Afwijking van` / `Uitzonderingen ongeordend`
 
 Origin: `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` §4 (ratified
 2026-08-29, Q1a). The uchar IR carries a `PrioritizedDefaults` group — a
@@ -51,10 +51,11 @@ defaults groups.
 
 ### Surface syntax (additive; new top-level alternatives)
 
-Two forms sit beside `regel` / `regelGroep` / `beslistabel` in
-`regelSpraakDocument`:
+Two productions sit beside `regel` / `regelGroep` / `beslistabel` in
+`regelSpraakDocument`; the first carries two headers:
 
-**Ordered exception** — stacks an exception above a named base rule:
+**Ordered exception** — stacks an exception above a named base rule (since
+form 2, below, the name may also denote another block):
 
 ```
 Regel <basisregelnaam>
@@ -73,6 +74,10 @@ base name runs up to the `:`; the exception's own name is an ordinary
 `regelNaam` (up to `geldig`), so the body's `regelVersie+` is reached exactly as
 a §13.4.2 rule's is.
 
+**Deviation** (form 2) — `Afwijking van <basisregelnaam>: <naam>` and the same
+body, the second header of the same production. New token: `AFWIJKING_VAN`
+(`'Afwijking van'`, a whole-phrase token on the pattern of `UITZONDERING_OP`).
+
 **Unordered group** — the only §9.5-conflict surface:
 
 ```
@@ -90,19 +95,23 @@ New tokens: `UITZONDERINGEN` (`'Uitzonderingen'`), `ONGEORDEND`
 `regel` constructs that follow it and ends at the first non-rule construct, so
 it is inert on any non-extension document. `UITZONDERINGEN` is never a prefix of
 `UITZONDERING_OP` (`'Uitzonderingen'` has no space after `Uitzondering`), so the
-two whole-phrase/keyword tokens never collide under maximal munch.
+two whole-phrase/keyword tokens never collide under maximal munch. Since form 2
+the header takes an optional carrier, `Uitzonderingen ongeordend op <naam>:`,
+which needs no token of its own: `op` is the preposition token `OP`, and the
+carrier name runs up to the `:` as a base name does.
 
 ### Lowering (resolver)
 
-Both forms LIFT already-resolved rules out of `resolvedRegels` into
+Every form LIFTs already-resolved rules out of `resolvedRegels` into
 `prioritizedDefaults`: WF-050 forbids both a rule and a defaults group on one
 target, so the lifted rule's semantics live in the defaults group alone. The
 model keeps a `Regel` stub for each lifted rule, but since M1 of the v1 wire
 (delta B3) the emitter writes no `regels` list, so on the wire a lifted rule
 exists only as its default.
 
-- **Ordered:** the base rule and its `Uitzondering op` blocks become ONE
-  `PrioritizedDefaults` group. Defaults descend in priority — the exception
+- **Ordered:** the base rule and its `Uitzondering op` and `Afwijking van`
+  blocks become ONE `PrioritizedDefaults` group — with everything hanging under
+  them, form 2 below. Defaults descend in priority — the exception
   default(s) above, the base default below. With multiple exceptions on one base,
   the **later-written** block stacks **higher** (PRIORITIZED-DEFAULTS-EVOLUTIE
   §4.2). A characteristic rule yields a
@@ -110,8 +119,9 @@ exists only as its default.
   characteristic (form 1, below); an attribute base yields a
   `consequentie`-carrying default. The base rule's geldigheid is carried onto the
   defaults group.
-- **Unordered:** each `Uitzonderingen ongeordend` block becomes SIBLING
-  declared-unordered defaults groups (one per member) over one shared target — the
+- **Unordered:** each `Uitzonderingen ongeordend` block without a carrier becomes
+  SIBLING declared-unordered defaults groups (one per member) over one shared
+  target — the
   `toelagegronden`-anchor shape. Every sibling carries `ongeordend: true`
   (WF-050: two-or-more defaults groups on one target require the marking on every
   one).
@@ -168,8 +178,8 @@ is a name word and `geen` lexes as an ordinary word, so both stand inside the
 whether a negation is admitted is decided in the resolver.
 
 **Where it is admitted** (decision 2): in every rule that becomes a default — the
-body of an `Uitzondering op`, a member of `Uitzonderingen ongeordend`, and the
-base of an `Uitzondering op` chain. A negated base is the lowest default and
+body of an `Uitzondering op` or (since form 2) an `Afwijking van`, a member of
+`Uitzonderingen ongeordend`, and the base of an `Uitzondering op` chain. A negated base is the lowest default and
 decides `onwaar`. In a flat model that changes no outcome, since under the
 closed world an unattributed characteristic is false anyway; what the base buys
 there is that the author can write a statute that opens with the negation
@@ -256,6 +266,134 @@ goldens that existed before this card re-emit byte-identically
 (gate 10). The golden `jutterswet-schorsing` (Jutterswet art. 3 and 4bis) is the
 first whose source carries a negated exception.
 
+### Form 2 — the exception tree, `Afwijking van` and `Uitzonderingen ongeordend op`
+
+Origin: maintainer decisions 4–6 of 2026-09-23
+(`spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md` §5 and §10), with the two
+decisions of that day's second decision question: an `Afwijking van` names a
+base rule only, and the members of an `Uitzonderingen ongeordend op` block
+inherit their carrier's justification. Measured on the frontend before the card
+that built it (`dialect-uitzondering-op-uitzondering`): an `Uitzondering op`
+naming an exception drew "geen basisregel met die naam gevonden", because the
+lowering took each family out of `resolvedRegels` before it looked up the next
+carrier; `Afwijking van` was a syntax error ("extraneous input 'Afwijking'"),
+and so was `Uitzonderingen ongeordend op` ("mismatched input 'op' expecting
+':'").
+
+**The tree.** Every `Uitzondering op` block, every `Afwijking van` block and
+every member of an `Uitzonderingen ongeordend op` block names one carrier. The
+resolver looks the name up among these blocks first and among the plain rules
+second. A carrier that is no block is the base rule of its tree, and each tree
+becomes one defaults group, named after that base. Every block is resolved
+before anything is lifted, so where a block is written does not decide whether
+its carrier is found. Among the children of one carrier the later-written block
+ranks higher, at every level, as the first level always did. The depth has no
+bound: WF-075 and the three executors recurse to any depth.
+
+**Lowering** (the lowering of the proposal's §5.2, in the wire's names):
+
+| Source | Wire |
+|---|---|
+| `Uitzondering op B: E1` and `Uitzondering op B: E2`, B a base rule | chain positions above the base: `[E2, E1, B]` |
+| `Uitzondering op E1: F1` and `Uitzondering op E1: F2`, E1 a block | `E1.exceptions = {unordered: false, members: [ExceptionGroup [F2, F1]]}` |
+| `Uitzonderingen ongeordend op E1:` with members U1, U2 | `E1.exceptions = {unordered: true, members: [ExceptionGroup [U1], ExceptionGroup [U2]]}` |
+| `Uitzonderingen ongeordend op B:` with members U1, U2, B a base rule | a group-default directly above the base: `[{exceptions: {unordered: true, members: [[U1], [U2]]}}, B]` |
+| `Afwijking van B: A`, B a base rule | a chain position above the base, as a first-level `Uitzondering op` |
+
+The first level stays a chain and does not nest into the base: a subtype's own
+base replaces the inherited base whole (RUNTIME-SEMANTICS ch. 7.10), and
+exceptions nested in it would go with it. With single-member exception groups
+the chain and the nested shape order the defaults identically and decide
+identically on every input (ch. 7.9). A group-default carries no justification of
+its own (WF-075). Neither an `ExceptionGroup` nor a group-default is written as a
+block, so neither carries an annotation; a nested block's `// Bron:` annotation
+stands on its own default (next subsection).
+
+**`Uitzondering op X` is restrictive.** The justification of the default the
+block becomes is one flat `Compound` with quantifier `all` and threshold 0: the
+conjuncts of X's justification first — that justification is itself conjoined, so
+the whole chain down to the base comes along — and then the block's own
+condition. An own condition that is itself an `all` is flattened, at any depth; a
+condition under another quantifier stays one conjunct; an exception without a
+condition carries the carrier's conjuncts alone. Where the carrier contributes no
+conjunct — an unconditional base, whose justification is the empty `all` — the
+exception keeps the condition it was written with, since conjoining with the
+empty `all` changes nothing (`jutterswet-wrakrecht`, two unconditional bases,
+re-emits byte-identically). The compound's source text is the conjuncts' texts
+joined by " en ". The reasons: RUNTIME-SEMANTICS ch. 7.9 decides a default's
+exception groups before and regardless of the default's own justification, so an
+exception that does not carry its carrier's condition decides where the carrier
+does not hold; ch. 7.1 asks the frontend for self-contained justifications, built
+by conjoining the enclosing layer's condition; and the legal meaning of an
+exception is restrictive. The members of an `Uitzonderingen ongeordend op X`
+block inherit X's justification in the same way. The carrier's conjuncts are the
+same nodes in every justification that repeats them, and the two sweeps over the
+finished defaults — the report of unresolved markers and the WF-112 fence — judge
+each node once: a marker in a base's condition is one WARNING, not one per
+exception above it.
+
+**`Afwijking van B` widens.** A block that widens its base — a hardship clause
+that applies the base "als ware twaalf vervangen door zes" — is not an exception
+but a deviation: its default carries its own condition only, and the empty `all`
+when it has none. Its carrier is a base rule only: in the middle of a tree a
+block that inherits nothing could decide where its carrier's condition does not
+hold. An `Uitzondering op` or an `Uitzonderingen ongeordend op` block may name a
+deviation as its carrier, and then inherits the deviation's own condition.
+`jutterswet-bergingsdrempel` (noodweer with eight wrecks above a base of twenty)
+is written with this header; its `ir.json` is byte-identical to the one its
+`Uitzondering op` gave before form 2.
+
+**Refusals**, each one ERROR at the block, naming what can be written instead
+(witness: `UitzonderingOpUitzonderingTest`):
+
+- a carrier that names nothing: "Uitzondering op 'X': geen basisregel met die
+  naam gevonden, en ook geen uitzondering of afwijking — noem als drager …", and
+  for a deviation "Afwijking van 'X': geen basisregel met die naam gevonden — de
+  drager van een afwijking is een gewone platte regel …";
+- a cycle of carriers, with its path: "de dragers vormen een kring ('A' -> 'B'
+  -> 'A')"; a block that names itself is the shortest cycle;
+- an `Afwijking van` naming an exception, a deviation or a member: the message
+  names `Uitzondering op X: <naam>` (restrictive) and `Afwijking van <basis>:
+  <naam>` (with the full condition);
+- a block written for a subtype under a node of its supertype's tree
+  (RUNTIME-SEMANTICS ch. 7.10; `spec/proposals/SUBTYPING.md` §4.3–4.4: a subtype
+  inherits an exception together with what is nested under it, and addresses none
+  of it). The message names a subtype-own exception on a base rule of the subtype
+  carrying the full condition of the node plus its own: the fixed block order lets
+  it decide exactly where both apply. A block for a subtype under the supertype's
+  base rule keeps the target refusal below;
+- a carrier with ordered children and an `Uitzonderingen ongeordend op` block, or
+  with two such blocks: nothing fixes the priority between them. The message names
+  the two expressible forms, all ordered or all members of one block. Recorded, not
+  built: the group-default at its writing position in the carrier's chain;
+- a member of an `Uitzonderingen ongeordend:` block WITHOUT a carrier, named as a
+  carrier: such a member is a defaults group of its own beside the other members,
+  not a node of a tree. The message names `Uitzonderingen ongeordend op
+  <basisregel>:`, whose members can carry. Before form 2 the same document drew
+  "groepslid '…' leverde geen kenmerktoekenning/gelijkstelling op";
+- per edge, the fences of the first level: the target (WF-050), the validity window
+  (the group carries one), and one version per rule.
+
+A refused node keeps its whole tree un-lifted, as a refused family always stayed,
+and nothing below a refused node is judged, so one mistake draws one ERROR.
+
+**Which documents change.** Two goldens. `jutterswet-schorsing` keeps its
+`Uitzondering op` (art. 4bis restricts art. 3) and was re-emitted: its
+exception's justification now carries the base's `>= 12` first; its four cases
+are unchanged and pass in ref, clingo and the Drools exec branch.
+`jutterswet-bergingsdrempel` changed its header to `Afwijking van`, with a
+byte-identical `ir.json`. Every other `bron.rgs` golden re-emits byte-identically
+(gate 10), and so does every re-emitted source of the parity zone (gate 11). The
+phrase `Afwijking van` occurs in no source of the repository besides that golden
+(counted 2026-09-25 over the 75 corpus sources and the 47 of the parity zone) and
+nowhere in the v2.3.0 specification set.
+
+Goldens: `jutterswet-uitsluiting-rgs` (art. 4 Jutterswet, an exception on an
+exception) and `jutterswet-nestkenmerk-rgs` (an unordered block under a base
+rule, with the conflict key `Jutter.vrijgesteld/0`), the RegelSpraak twins of the
+anchors of the same name; each NOTE carries its structural diff against the
+anchor.
+
 ### `// Bron:` annotations of lifted rules
 
 A lifted rule leaves `resolvedRegels`, and with it the `bronAnnotaties` list
@@ -297,11 +435,12 @@ placement since, with no new wire field (card `frontend-bron-annotatie-in-defaul
 - the `Regel` stubs carry no annotation either: since M1 of the v1 wire (delta
   B3) the emitter writes no `regels` list, so a lifted rule's annotation reaches
   the wire through its default alone;
-- nesting: when exception-on-exception lands, a nested block's annotation
-  lands on its own default inside the `ExceptionGroup`. Every lifted rule
-  becomes a default in one place (`RuleChecker.defaultVan`), so the nested
-  lowering inherits the placement; what `ExceptionGroup.bron` itself carries is
-  that card's decision;
+- nesting (form 2): a nested block's annotation lands on its own default inside
+  the `ExceptionGroup`. Every lifted rule becomes a default in one place
+  (`RuleChecker.defaultVan`), so the nested lowering inherits the placement. The
+  `ExceptionGroup` itself and a group-default carry no annotation: neither is
+  written as a block, so no annotation stands above either (witness
+  `UitzonderingOpUitzonderingTest`);
 - an annotation written above the `Uitzonderingen ongeordend:` header belongs
   to no rule — an annotation belongs to the rule directly below it, and the
   header is none — so it reaches no default and no group. It used to vanish
@@ -326,8 +465,9 @@ Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
-- an `Uitzondering op` naming a base rule that does not exist;
-- an exception (or group member) writing a DIFFERENT target than the base
+- an `Uitzondering op`, `Afwijking van` or `Uitzonderingen ongeordend op` naming a
+  carrier that does not exist, and the other refusals of form 2 (above);
+- an exception (or group member) writing a DIFFERENT target than its carrier
   (or than a prior member) — a defaults group is over ONE `(onderwerp, kenmerk XOR
   attribuut)`;
 - a base rule that is not a plain kenmerktoekenning/gelijkstelling (an
@@ -375,9 +515,9 @@ block's own head, citing §9.10 and this section, with two arms:
 
 - **positional** — the block stands directly after a group's last member,
   where the group would read on if the block were a rule. The arm keys on
-  "neither a definition nor a group" rather than on the two heads by name,
-  so a head a later card adds (`Afwijking van`) is refused there by
-  construction instead of reopening the silent end;
+  "neither a definition nor a group" rather than on the heads by name,
+  so `Afwijking van`, which came later, is refused there by construction
+  instead of reopening the silent end;
 - **membership** — the block's base rule is a group member, wherever the
   block stands. A definition that ends the group does not help: the lift
   would still take the member out of the rule forms, and the group would
@@ -392,8 +532,10 @@ block's own head, citing §9.10 and this section, with two arms:
   lift would happen: a base that resolves to no plain rule — a table's own
   name, an object creation — gets the lowering's "no base rule" refusal,
   which names the construct (fix round 2, 2026-09-23); for a table it names
-  the rows and says why none of them alone can be a base (fix round 3). A later head that
-  names a base of its own has to join this arm by name.
+  the rows and says why none of them alone can be a base (fix round 3).
+  `Afwijking van` shares the production of `Uitzondering op` and so the arm;
+  `Uitzonderingen ongeordend op` joined it by name (form 2). A later head that
+  names a carrier of its own has to join it the same way.
 
 A block for which both hold gets one diagnostic naming both reasons, and a
 refused block stays un-lifted together with its whole base family, as the
@@ -425,17 +567,23 @@ and the hand-written prioritized-defaults anchors.
 
 - The first card exercised the ordered shape on a characteristic only. Since
   then `jutterswet-wrakrecht` exercises it on an attribute target, on a
-  supertype and its subtype, and `jutterswet-schorsing` with a negated
-  exception (form 1, above).
-- Exception-on-exception (nested `Default.excepties`) is not authored from source
-  in this card; the wire form supports it and the hand anchors witness it.
+  supertype and its subtype, `jutterswet-schorsing` with a negated
+  exception (form 1, above), and `jutterswet-uitsluiting-rgs` and
+  `jutterswet-nestkenmerk-rgs` form 2.
+- Exception-on-exception is authored from source since form 2 (above): nested
+  exceptions lower to `Default.exceptions`, and `Afwijking van` and
+  `Uitzonderingen ongeordend op` joined the surface.
 - Multi-version base/exception rules are refused (single-version only).
 - The new keyword tokens narrow the ordinary-name space: `Uitzonderingen`
   (capitalised) and `ongeordend` are reserved and can no longer appear as
   name words (e.g. a plural `(mv: Uitzonderingen)` or a kenmerk named
   `ongeordend` now refuses loudly at the lexer) — the same loud posture the
   existing `Regelgroep`/`recursief` extension tokens take. The corpus and
-  every committed source are free of these words.
+  every committed source are free of these words. Since form 2 the capitalised
+  phrase `Afwijking van` is one whole-phrase token as well: no name can contain
+  it any more, while a name word `Afwijking` without `van` behind it still lexes
+  as a name. It occurs in no committed source besides the header of
+  `jutterswet-bergingsdrempel`.
 - An exception whose validity window differs from its base refuses loudly:
   the defaults group carries one window and a per-default window is
   unrepresentable — split per window or align the windows.
