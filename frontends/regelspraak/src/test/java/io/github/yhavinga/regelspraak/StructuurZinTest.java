@@ -53,4 +53,51 @@ class StructuurZinTest {
                     """));
     }
 
+    // ---- WF-050: the single writer of a defaults target
+
+    private static final String PREMIE = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de premie Numeriek (geheel getal);
+            is noodweer verklaard kenmerk (bijvoeglijk);
+            is kustwacht kenmerk (bijvoeglijk);
+
+        Regel basispremie
+            geldig altijd
+                De premie van een Jutter moet gesteld worden op 10.
+
+        Uitzondering op basispremie: noodpremie
+            geldig altijd
+                De premie van een Jutter moet gesteld worden op 20
+                indien hij noodweer verklaard is.
+
+        """;
+
+    @Test void een_gewone_schrijver_naast_een_defaults_groep() {
+        assertEquals(List.of("Uitzondering op 'basispremie' (defaults-groep 'basispremie', doel ook geschreven door regel "
+                        + "'andere premie'): a rule also writes defaults target 'Jutter.premie' — an unordered plain "
+                        + "writer would silently defeat the group's decisions"),
+                fouten(PREMIE + """
+                    Regel andere premie
+                        geldig altijd
+                            De premie van een Jutter moet gesteld worden op 30
+                            indien hij kustwacht is.
+                    """));
+    }
+
+    @Test void twee_geordende_defaults_groepen_op_een_doel() {
+        assertEquals(List.of("Uitzondering op 'tweede basis' (defaults-groepen 'basispremie' en 'tweede basis'): multiple "
+                        + "defaults groups on target 'Jutter.premie' without the declared-unordered marking — priority "
+                        + "is explicit (defaults) or explicitly absent ('unordered'), never implicit (ch. 7.2)"),
+                fouten(PREMIE + """
+                    Regel tweede basis
+                        geldig altijd
+                            De premie van een Jutter moet gesteld worden op 5.
+
+                    Uitzondering op tweede basis: kustpremie
+                        geldig altijd
+                            De premie van een Jutter moet gesteld worden op 30
+                            indien hij kustwacht is.
+                    """));
+    }
+
 }

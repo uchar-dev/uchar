@@ -233,7 +233,8 @@ class NietInUitzonderingTest {
                     indien hij vergunning geweigerd is.
             """);
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte alleen de WF-050-fout: " + m.diagnostics);
-        assertTrue(m.diagnostics.get(0).message().contains("WF-050"), m.diagnostics.get(0).message());
+        assertTrue(m.diagnostics.get(0).message().contains("a rule also writes defaults target '"),
+                m.diagnostics.get(0).message());
     }
 
     // -------------------------------------------------------------------- refused: undeclared after the strip

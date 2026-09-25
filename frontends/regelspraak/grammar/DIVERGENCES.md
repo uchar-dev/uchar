@@ -510,13 +510,14 @@ Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
   rows of a decision table when one row is the base — or a second group on the
   target unless every group there is declared unordered (two ordered
   families, a family beside an unordered block). Each reached disk silently
-  for the verifier to refuse; the ERROR names both writers. Keyed on the
-  declared object type, as WF-050 is, so a supertype's and a subtype's stacks
-  stay two targets. Two unordered blocks on one target stay admitted. A rule
-  written in an extension block whose family or block the lowering refused is
-  not counted as a second writer (2026-09-23, card
-  `dialect-niet-in-uitzondering`): its block's own ERROR stands, and "neem de
-  regel op in de groep" would name a block the rule already stands in.
+  for the verifier to refuse; the ERROR is the verifier's WF-050 sentence for
+  the clause, after a Dutch context that names the groups and the other
+  writers. Keyed on the declared object type, as WF-050 is, so a supertype's
+  and a subtype's stacks stay two targets. Two unordered blocks on one target
+  stay admitted. A rule written in an extension block whose family or block
+  the lowering refused is not counted as a second writer (2026-09-23, card
+  `dialect-niet-in-uitzondering`): its block's own ERROR stands, and a
+  second-writer ERROR would name a rule of the very block it stands in.
 
 ### Interaction with `Regelgroep` (§9.10) — refused
 

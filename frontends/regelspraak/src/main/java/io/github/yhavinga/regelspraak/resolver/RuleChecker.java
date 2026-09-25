@@ -395,22 +395,21 @@ final class RuleChecker {
                 if (d != null && e.getKey().equals(doelSleutel(d.onderwerp().naam, d.kenmerk(), d.naam())))
                     anderen.add("'" + r.naam() + "'" + tabelVanRij(r.naam()));
             }
+            // both clauses in the verifier's WF-050 sentences, the groups and the other writers named before them
             if (!anderen.isEmpty()) {
                 Herkomst h = pdHerkomst.getOrDefault(groepen.get(0), new Herkomst(0, "defaults-groep"));
-                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + ": het doel " + doelTekst
-                        + " heeft naast de defaults-groep " + groepsnamen + " nog "
-                        + (anderen.size() == 1 ? "een schrijver: regel " : "schrijvers: regels ")
-                        + String.join(", ", anderen) + " — een doel met een defaults-groep verdraagt geen andere "
-                        + "schrijver, want een gewone regel ernaast zou de besluiten van de groep stil tenietdoen "
-                        + "(WF-050). Neem de regel op in de groep, of geef hem een ander doel", h.line()));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + " ("
+                        + (groepen.size() == 1 ? "defaults-groep " : "defaults-groepen ") + groepsnamen
+                        + ", doel ook geschreven door " + (anderen.size() == 1 ? "regel " : "de regels ")
+                        + String.join(", ", anderen) + "): a rule also writes defaults target '" + doelTekst
+                        + "' — an unordered plain writer would silently defeat the group's decisions", h.line()));
             }
             if (groepen.size() > 1 && !groepen.stream().allMatch(PrioritizedDefaults::ongeordend)) {
                 Herkomst h = pdHerkomst.getOrDefault(groepen.get(groepen.size() - 1), new Herkomst(0, "defaults-groep"));
-                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + ": het doel " + doelTekst
-                        + " heeft meer dan één defaults-groep (" + groepsnamen + ") en niet elke groep is "
-                        + "ongeordend — meerdere groepen op één doel mogen alleen als elk ongeordend is, want "
-                        + "voorrang is expliciet of expliciet afwezig (WF-050). Zet de uitzonderingen onder één "
-                        + "basisregel, of schrijf de leden samen in een ongeordend blok", h.line()));
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, h.kop() + " (defaults-groepen " + groepsnamen
+                        + "): multiple defaults groups on target '" + doelTekst + "' without the declared-unordered "
+                        + "marking — priority is explicit (defaults) or explicitly absent ('unordered'), never implicit "
+                        + "(ch. 7.2)", h.line()));
             }
         }
     }

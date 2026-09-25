@@ -49,7 +49,9 @@ class EnigeSchrijverTest {
         RegelSpraakModel m = Resolver.resolve(src);
         List<Diagnostic> fouten = m.errors();
         assertEquals(1, fouten.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
-        assertTrue(fouten.get(0).message().contains("WF-050"), fouten.get(0).message());
+        // one of WF-050's two clauses, in the verifier's sentence
+        assertTrue(fouten.get(0).message().contains("a rule also writes defaults target '")
+                || fouten.get(0).message().contains("multiple defaults groups on target '"), fouten.get(0).message());
         return fouten.get(0);
     }
 
@@ -94,7 +96,7 @@ class EnigeSchrijverTest {
                     indien hij kustwacht is.
             """);
         assertTrue(d.message().contains("'basispremie'") && d.message().contains("'tweede basis'")
-                && d.message().contains("ongeordend"), d.message());
+                && d.message().contains("without the declared-unordered marking"), d.message());
     }
 
     @Test void een_familie_naast_een_ongeordend_blok_weigert() {
