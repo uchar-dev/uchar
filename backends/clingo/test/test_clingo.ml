@@ -13541,6 +13541,16 @@ let weging =
       "type": { "node": "Number", "whole": false, "decimals": 3, "sign": "unspecified" },
       "source": { "snippet": "het kindertal maal 0,125" } }|}
 
+(* the element plus 0,5: a rate of one decimal that is a SUM *)
+let weging_som =
+  {|{ "node": "Binary", "op": "plus",
+      "left": { "node": "BinderRef", "name": "x", "source": { "snippet": "het kindertal" } },
+      "right": { "node": "Literal", "value": { "number": "0.5" },
+        "type": { "node": "Number", "whole": false, "decimals": 1, "sign": "unspecified" },
+        "source": { "snippet": "0,5" } },
+      "type": { "node": "Number", "whole": false, "decimals": 1, "sign": "unspecified" },
+      "source": { "snippet": "het kindertal plus 0,5" } }|}
+
 let tarief_fold_case =
   {|{ "format": "uchar-case-v0", "asOfDate": null,
   "input": {
@@ -13740,6 +13750,23 @@ let () =
   clingo_fence_fires ~name:"a negative rounded sum past its operand fence is a negative operand"
     ~ir:som ~case_text:(tarief_case ~maandloon:"-20000000.00" ~grens:"-40000000.00" ())
     ~needle:"negative operand under rounding is not translated" ();
+  (* the same in a closed body: the rate x + 0,5 is a sum, and with x at
+     300000000 its harmonised term 3000000005 wraps to a negative number *)
+  clingo_fence_fires ~name:"money x rate in a closed body: a rate sum past its fence is no negative operand"
+    ~ir:(tarief_fold_frame ~left:grondslag_ref ~right:weging_som)
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": {
+    "instances": [ { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {
+      "grondslag": { "number": "2400.00" },
+      "kindertallen": { "list": [ { "number": "300000000" } ] } } },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "heffing", "value": { "number": "720000001200.00" } },
+    { "kind": "consistent" } ] }
+|}
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under money multiplication is not translated" ] ();
   (* the two routes, on the program text. The WW twin's literal: annotated at
      three decimals, its term carries four, so it enters the split with k = 1 —
      unmultiplied, and without a rescale fence *)
