@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Aanspoelsel",
+        "attributes": {
+          "soort": {
+            "text": "drijfhout"
+          },
+          "stuks": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "rubriek",
+      "value": {
+        "text": "overig"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "A1",
+      "characteristic": "weegplichtig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

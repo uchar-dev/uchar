@@ -1,0 +1,358 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Aanspoelsel",
+        "animate": false,
+        "plural": "Aanspoelsels",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rubriek",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stuks",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "geborgen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "weegplichtig",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "weegplicht bij dubbele borging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "weegplichtig",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "Een Aanspoelsel is weegplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "gekeurd",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is gekeurd"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "geborgen",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is geborgen"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greaterOrEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "stuks",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn stuks"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn stuks is groter of gelijk aan 10"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan ten minste twee van de volgende voorwaarden voldoet: - hij is gekeurd - hij is geborgen - zijn stuks is groter of gelijk aan 10."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rubriek van een aanspoelsel 1",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rubriek",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "de rubriek van een Aanspoelsel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "organisch"
+              },
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"organisch\""
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "zeewier"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"zeewier\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort gelijk is aan \"zeewier\""
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "equal",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "wrakhout"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"wrakhout\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort gelijk is aan \"wrakhout\""
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan tenminste \u00e9\u00e9n van de volgende voorwaarden wordt voldaan: \u2022 zijn soort gelijk is aan \"zeewier\" \u2022 zijn soort gelijk is aan \"wrakhout\"."
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rubriek van een aanspoelsel 2",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rubriek",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "de rubriek van een Aanspoelsel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "text": "overig"
+              },
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "\"overig\""
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "zeewier"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"zeewier\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort ongelijk is aan \"zeewier\""
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "soort",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn soort"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "text": "wrakhout"
+                    },
+                    "type": {
+                      "node": "Text"
+                    },
+                    "source": {
+                      "snippet": "\"wrakhout\""
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn soort ongelijk is aan \"wrakhout\""
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: \u2022 zijn soort ongelijk is aan \"zeewier\" \u2022 zijn soort ongelijk is aan \"wrakhout\"."
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

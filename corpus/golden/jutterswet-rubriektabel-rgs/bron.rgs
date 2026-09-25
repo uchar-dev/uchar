@@ -1,0 +1,22 @@
+Objecttype het Aanspoelsel (mv: Aanspoelsels)
+    de soort Tekst;
+    de rubriek Tekst;
+    de stuks Numeriek (geheel getal);
+    is gekeurd kenmerk (bijvoeglijk);
+    is geborgen kenmerk (bijvoeglijk);
+    is weegplichtig kenmerk (bijvoeglijk);
+
+Beslistabel rubriek van een aanspoelsel
+    geldig altijd
+| | de rubriek van een Aanspoelsel moet gesteld worden op | indien zijn soort gelijk is aan | indien zijn soort ongelijk is aan |
+|---|---|---|---|
+| 1 | "organisch" | "zeewier" of "wrakhout" | n.v.t. |
+| 2 | "overig" | n.v.t. | "zeewier" en "wrakhout" |
+
+Regel weegplicht bij dubbele borging
+    geldig altijd
+        Een Aanspoelsel is weegplichtig
+        indien hij aan ten minste twee van de volgende voorwaarden voldoet:
+        - hij is gekeurd
+        - hij is geborgen
+        - zijn stuks is groter of gelijk aan 10.

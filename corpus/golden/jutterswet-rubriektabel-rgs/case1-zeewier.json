@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Aanspoelsel",
+        "attributes": {
+          "soort": {
+            "text": "zeewier"
+          },
+          "stuks": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd",
+          "geborgen"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "rubriek",
+      "value": {
+        "text": "organisch"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "A1",
+      "characteristic": "weegplichtig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
