@@ -434,7 +434,8 @@ class LaderWeigeringWitnessTest {
         ArrayNode parameters = IrPad.modelLijst(ir, "parameters");
         parameters.add(IrPad.declaratie(ir, "parameters", "vondstdrempel").deepCopy().put("name", "Vondstdrempel"));
         IrLoader.Documentfout e = weigert(ir, "/model/parameters/" + (parameters.size() - 1) + "/name");
-        assertTrue(e.getMessage().contains("WF-001"), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": the name 'Vondstdrempel' collides with the earlier 'vondstdrempel'"
+                + " (names are compared case-insensitively)"), e.getMessage());
 
         // WF-002 on attributes, which the loader compared exactly before: neither case nor a run of spaces makes
         // a second name
@@ -444,7 +445,8 @@ class LaderWeigeringWitnessTest {
         attributen.add(IrPad.attribute(ot, "wachtvergoeding per maand").deepCopy()
                 .put("name", "Wachtvergoeding  per maand"));
         e = weigert(ir, objectTypePad(ir, "Jutter") + "/attributes/" + (attributen.size() - 1) + "/name");
-        assertTrue(e.getMessage().contains("WF-002"), e.getMessage());
+        assertTrue(e.getMessage().endsWith(": the name 'Wachtvergoeding  per maand' collides with the earlier"
+                + " 'wachtvergoeding per maand' (names are compared case-insensitively)"), e.getMessage());
     }
 
     // ---------------- the domain ----------------

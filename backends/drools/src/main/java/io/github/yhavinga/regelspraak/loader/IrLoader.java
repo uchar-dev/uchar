@@ -671,7 +671,7 @@ public final class IrLoader {
      *  pick one of them. */
     private static <V> void eenmaal(Map<String, V> tabel, String pad, String naam, V waarde) {
         String eerder = botsing(tabel.keySet(), naam);
-        if (eerder != null) throw new Documentfout(pad, dubbel(naam, eerder, "WF-001"));
+        if (eerder != null) throw new Documentfout(pad, dubbel(naam, eerder));
         tabel.put(naam, waarde);
     }
 
@@ -682,11 +682,11 @@ public final class IrLoader {
         return null;
     }
 
-    private static String dubbel(String naam, String eerder, String regel) {
+    private static String dubbel(String naam, String eerder) {
         return naam.equals(eerder)
-                ? "the name '" + naam + "' is declared twice (" + regel + ")"
-                : "the name '" + naam + "' collides with the earlier '" + eerder + "' (" + regel
-                        + " compares names case-insensitively)";
+                ? "the name '" + naam + "' is declared twice"
+                : "the name '" + naam + "' collides with the earlier '" + eerder
+                        + "' (names are compared case-insensitively)";
     }
 
     /** A JSON value as a message quotes it, cut short: the value is evidence, not the document. */
@@ -706,7 +706,7 @@ public final class IrLoader {
         if (onderwerp == null) throw new Refusal("PrioritizedDefaults", "defaults without a subject");
         if ((kenmerk == null) == (attribuut == null))
             throw new Refusal("PrioritizedDefaults",
-                    "defaults must carry exactly one of characteristic/attribute (WF-050)");
+                    "defaults must carry exactly one of characteristic/attribute");
         List<Default> defaults = new ArrayList<>();
         elementen(n, "defaults", r -> defaults.add(dflt(r)));
         return new PrioritizedDefaults(text(n, "name"), onderwerp, kenmerk, attribuut, bool(n, "unordered"),
@@ -758,14 +758,14 @@ public final class IrLoader {
             String gedeclareerd = botsing(m.objecttypen.keySet(), naam);
             Objecttype ouder = gedeclareerd == null ? null : m.objecttypen.get(gedeclareerd);
             if (ouder == null)
-                throw new Documentfout(supertypePad.get(ot), "supertype '" + naam + "' is not declared (WF-103)");
+                throw new Documentfout(supertypePad.get(ot), "supertype '" + naam + "' is not declared");
             ot.supertype = ouder;
         });
         for (Objecttype ot : m.objecttypen.values()) {
             java.util.Set<Objecttype> gezien = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
             for (Objecttype t = ot; t != null; t = t.supertype)
                 if (!gezien.add(t))
-                    throw new Documentfout(supertypePad.get(ot), "supertype cycle at '" + ot.naam + "' (WF-104)");
+                    throw new Documentfout(supertypePad.get(ot), "supertype cycle at '" + ot.naam + "'");
         }
     }
 
@@ -865,7 +865,7 @@ public final class IrLoader {
             velden(a, ap, "Attribute", List.of("node", "name", "datatype"), List.of("plural", "dimensions", "timeline"));
             String lid = naam(a, ap, "name");
             String eerder = botsing(ot.attributen.keySet(), lid);
-            if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder, "WF-002"));
+            if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder));
             // null is admitted here and refused by the verifier under WF-059, which names it
             JsonNode dt = a.get("datatype");
             if (!dt.isNull() && !dt.isObject())
@@ -890,7 +890,7 @@ public final class IrLoader {
             String lid = naam(c, cp, "name");
             // WF-002: read leniently, a second declaration's kind replaced the first one's and its timeline did not
             String eerder = botsing(ot.kenmerken, lid);
-            if (eerder != null) throw new Documentfout(cp + "/name", dubbel(lid, eerder, "WF-002"));
+            if (eerder != null) throw new Documentfout(cp + "/name", dubbel(lid, eerder));
             ot.kenmerken.add(lid);
             ot.kenmerkSoorten.put(lid, enumWaarde(Spelling.CHARACTERISTIC_KIND, "Characteristic.kind",
                     tekst(c, cp, "kind"), cp + "/kind"));
@@ -1145,7 +1145,7 @@ public final class IrLoader {
             throw new Documentfout(pad + "/sign", PROCENT_MET_TEKEN);
         if (!procent && presentatie != null) throw new Documentfout(pad + "/presentation", TAG_ZONDER_PROCENT);
         if (presentatie != null && !declaratie)
-            throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE + " (WF-007)");
+            throw new Documentfout(pad + "/presentation", TAG_OP_ANNOTATIE);
         return procent ? new Datatype.Percentage(geheel, decimalen, eenheid)
                 : new Datatype.Numeriek(geheel, decimalen, teken, eenheid);
     }
@@ -1922,11 +1922,11 @@ public final class IrLoader {
                 Feittype ft = feittypeOpNaam(feittype);
                 if (ft == null)
                     throw new Documentfout(p + "/factType", "role check names fact type '" + feittype + "', which is"
-                            + " not declared: the check resolves against no declaration (WF-034)");
+                            + " not declared: the check resolves against no declaration");
                 RegelSpraakModel.Rol gebonden = rolOpNaam(ft, rol);
                 if (gebonden == null)
                     throw new Documentfout(p + "/role", "'" + rol + "' is not a declared role of fact type '" + feittype
-                            + "' (a role check names the role by its declared name) (WF-034)");
+                            + "' (a role check names the role by its declared name)");
                 String tegenpartij = optTekst(n, p, "counterpartType");
                 Objecttype ander = tegenpartij == null ? null : ot(tegenpartij);
                 if (tegenpartij != null) {
