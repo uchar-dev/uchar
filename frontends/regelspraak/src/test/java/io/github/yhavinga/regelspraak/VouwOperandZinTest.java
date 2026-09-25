@@ -45,6 +45,10 @@ class VouwOperandZinTest {
             Regel r
                 geldig altijd
                     %s
+
+            Parameter de havenprijs : Numeriek (getal met 2 decimalen);
+
+            Parameter de havendag : Datum in dagen;
             """.formatted(zin));
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
@@ -99,6 +103,25 @@ class VouwOperandZinTest {
         assertTrue(meldingen("Een Jutter is waardevol indien de tijdsduur van zijn vondstdag tot zijn telling in hele "
                         + "dagen groter is dan 5.")
                 .contains("ERROR 26 de (absolute) tijdsduur van … tot …: duration operand is number, must be a date"));
+    }
+
+    /** WF-037: a value fold without an element type and without a dimension selection is the listed form, and that
+     *  form has two or more operands. Measured on the frontend before this: no diagnostic, the document written, and
+     *  {@code WF-037 FAIL /rules/rules/0/versions/0/value: value fold with fewer than two operands} for a sum, a total,
+     *  a maximum and a last over one parameter and for a sum over one literal. */
+    @Test void een_waardevouw_zonder_bereik_met_een_operand() {
+        String u = "De uitkomst van een Jutter moet berekend worden als ";
+        assertEquals(fout("som van: value fold with fewer than two operands"), meldingen(u + "de som van de havenprijs."));
+        assertEquals(fout("totaal van: value fold with fewer than two operands"),
+                meldingen(u + "het totaal van de havenprijs."));
+        assertEquals(fout("maximale waarde van: value fold with fewer than two operands"),
+                meldingen(u + "de maximale waarde van de havenprijs."));
+        assertEquals(fout("laatste van: value fold with fewer than two operands"),
+                meldingen("De dag van een Jutter moet berekend worden als de laatste van de havendag."));
+        assertEquals(fout("som van: value fold with fewer than two operands"), meldingen(u + "de som van 5."));
+        // a fold with an element type ranges over instances and is no listed form
+        assertEquals(List.of(), meldingen(u + "de som van de vondstwaarde van alle vondsten van de Jutter."));
+        assertEquals(List.of(), meldingen(u + "het totaal van zijn telling."));
     }
 
     @Test void een_gebrek_in_een_voorwaarde_eenmaal_gemeld() {

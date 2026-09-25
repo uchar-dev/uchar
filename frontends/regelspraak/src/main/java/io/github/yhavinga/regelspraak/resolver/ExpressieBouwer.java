@@ -728,6 +728,21 @@ final class ExpressieBouwer {
             operatorGran = tvf.MAAND() != null ? RegelSpraakModel.Granulariteit.MAAND
                     : (tvf.JAAR() != null ? RegelSpraakModel.Granulariteit.JAAR : null);
         }
+        // WF-037 (IR-SPEC ch. 4.3): a value fold without an element type and without a dimension selection is the
+        // listed form, which has two or more operands. One operand without a range (a parameter, a literal) is no fold
+        // the wire has, so the frontend refuses it in the verifier's words instead of writing what the verifier refuses.
+        String waardevouw = switch (kind) {
+            case SOM -> "som van";
+            case TOTAAL -> "totaal van";
+            case MINIMUM -> "minimale waarde van";
+            case MAXIMUM -> "maximale waarde van";
+            case EERSTE -> "eerste van";
+            case LAATSTE -> "laatste van";
+            default -> null;
+        };
+        if (waardevouw != null && elem == null && argumenten.size() < 2)
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    waardevouw + ": value fold with fewer than two operands", f.getStart().getLine()));
         Expr functie = new Expr.Functie(kind, argumenten, elem, leegwaarde, filter, null, type, bron, operatorGran);
         // §13.4.17.13: the wortel's afronding is MANDATORY and rounds the ROOT (it is a sibling of the
         // radicand, not inside it). It was parsed but dropped; wrap the function so the rounding survives.
