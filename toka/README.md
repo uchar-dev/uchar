@@ -81,13 +81,15 @@ verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
 - **The casus dump is not a well-formed program, and is not meant to be.** As
   one document it draws 18 reports. Its scenarios each write the same targets
   in their own way, legitimate per scenario and not as one program (6 ×
-  WF-026, 1 × WF-079), and it uses four attributes it does not declare, which
-  the slices, cut in the scoping of the toolchain's own scenario tests, do
-  declare (8 × WF-034: seven references to them and the one derived position
-  their absence leaves untyped); WF-022, WF-045 and WF-099 draw one report
-  each, the last at the very rule `toka-24` carries. Its role is the parity
-  object of the byte-identical re-emission, so gate 11 keeps it out of the
-  well-formedness leg.
+  WF-026, 1 × WF-079), and one dependency cycle closes only across scenarios
+  (1 × WF-045; the slice that carries the creation is clean). It also uses
+  four attributes and one characteristic that it does not declare and the
+  slices, cut in the scoping of the toolchain's own scenario tests, do (8 ×
+  WF-034: seven references to those attributes and the one derived position
+  their absence leaves untyped; 1 × WF-022, a rule writing that
+  characteristic). The last report, WF-099, sits at the very rule `toka-24`
+  carries. Its role is the parity object of the byte-identical re-emission,
+  so gate 11 keeps it out of the well-formedness leg.
 
 ## Deliberate divergences from the toolchain emission
 
