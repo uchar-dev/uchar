@@ -56,9 +56,9 @@ verifier and the bean-model executor read the field at all. Since WF-100
 (2026-09-10) both OCaml executors read it (`RUNTIME-SEMANTICS.md` ch. 5.8b).
 Re-measured 2026-09-25: on all four cases of the host golden `ref` faults at
 evaluation and the ASP backend at translation, both with `characteristic check
-"gemeld" is hosted on "Bestaatniet" while the subject is "Vondst": the owner
-names the object the check is about (WF-100), and this reader has no other
-object to read`; on `jutterswet-wachtploeg` only the absent `host` still
+"gemeld" is hosted on "Bestaatniet" while the subject is "Vondst": the host
+names the object the check is about, and this reader has no other object to
+read`; on `jutterswet-wachtploeg` only the absent `host` still
 replays (`PASS (4 expectations)` in both), and `"Wachtpost"` and
 `"Bestaatniet"` fault in both with that sentence, naming `actief`, the host
 and the subject `Jutter`.

@@ -3731,8 +3731,8 @@ lives on, which is the object read. The rules:
    that answered before it, when both OCaml executors returned the subject's
    own value under the other type's name while the third carried no rule at
    all. The two faults are distinct and both are named. An owner no bound
-   object can be is refused where the check is read: "the owner names the
-   object the check is about … and this reader has no other object to read".
+   object can be is refused where the check is read: "the host names the
+   object the check is about, and this reader has no other object to read".
    An owner that reaches BOTH objects of a fact-creation guard is refused where
    the guard's host is decided, naming the two it reached — the arm that was
    missing until 2026-09-19, when the helper answered "not the doel" and let
