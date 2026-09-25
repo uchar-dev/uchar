@@ -4,21 +4,21 @@ A **negated** gevuld test under the ch. 3.9 whole-period qualifier: "de
 lengte van de Schuit is gedurende het gehele jaar niet gevuld". All
 three executors refuse it by name. It is the gevuld twin of
 `leegnegatie-heel-tijdvak`. With `leegtest-heel-tijdvak` and
-`gevuldtest-heel-tijdvak`, the four red cases close the square soort ×
-negatie: leeg and gevuld, each negated and unnegated.
+`gevuldtest-heel-tijdvak`, the four red cases close the square `kind` ×
+`negated`: leeg and gevuld, each negated and unnegated.
 
 ## The shape
 
-`leegnegatie-heel-tijdvak` with two fields changed: `Predicaat.soort` is
-`GEVULD`, and the `bron` text says "niet gevuld" where it said "niet
+`leegnegatie-heel-tijdvak` with two fields changed: `Predicate.kind` is
+`filled`, and the source snippet says "niet gevuld" where it said "niet
 leeg". The same document follows from `gevuldtest-heel-tijdvak` by
-setting `negatie` to `true` and adding the "niet"; both derivations
+setting `negated` to `true` and adding the "niet"; both derivations
 give the same bytes. The case file is the one all four twins share,
 byte for byte.
 
 ## What ch. 3.9 answers, by hand
 
-`negatie` is the inner, per-value negation: a negated gevuld test holds
+`negated` is the inner, per-value negation: a negated gevuld test holds
 on a day exactly when the lengte is leeg on that day. Which threshold it
 then takes is the OPEN point its twin `leegnegatie-heel-tijdvak`
 describes: ch. 3.9 gives the leeg test touched days and every other test
@@ -38,7 +38,7 @@ refusal, not for a value.
 ## Why each executor fails
 
 - `ref` reaches the named arm its three twins reach: a leeg or gevuld
-  predicate under a whole-period qualifier, whatever `negatie` holds. It
+  predicate under a whole-period qualifier, whatever `negated` holds. It
   refuses at evaluation: "whole-period leeg/gevuld test is ch. 3.9
   scope, not executed here".
 - The ASP backend refuses the same node in the same words when it
@@ -65,10 +65,10 @@ loader refuses the form (measured on a jar built from 8b685402: `EXCLUDE
 loader: … Predicaat.negatie …`).
 
 This document holds the one corner of the square that its three twins
-do not reach. Measured on a mutant that exempts exactly (GEVULD,
+do not reach. Measured on a mutant that exempts exactly (`filled`,
 negated): in `ref` and in the ASP backend the named arm matches every
 leeg or gevuld predicate under the qualifier except that one, and in the
-Drools loader the negated refusal applies to LEEG only. The three twins
+Drools loader the negated refusal applies to `empty` only. The three twins
 still pass in all three executors, and this one fails in each:
 
 - `ref` drops the qualifier, reads the operand as a scalar and faults on

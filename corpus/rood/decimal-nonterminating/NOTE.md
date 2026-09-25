@@ -6,7 +6,7 @@ Here `quotient` (4 dec) is fed `1,0000 / 3,0000` = 1/3, which does **not**
 terminate at four decimals. Both executors must fault loudly and
 consistently — the differential holds where it runs:
 
-- **ref** stays exact-rational: `GEDEELD_DOOR` yields 1/3 and the
+- **ref** stays exact-rational: `dividedBy` yields 1/3 and the
   bounded-write gate (ch. 2.4) refuses the write —
   *"...does not fit the declared 4 decimals — an explicit rounding is
   mandatory (ch. 2.4)"*.
@@ -14,7 +14,7 @@ consistently — the differential holds where it runs:
   derives the `viol/2` witness *"non-exact division (an explicit rounding
   is mandated before precision is lost)"*.
 
-The case deliberately uses **no `Let`** — a bare `Binair GEDEELD_DOOR`
+The case deliberately uses **no `Let`** — a bare `Binary` `dividedBy`
 suffices — so it exercises only nodes ref and clingo already carry. The
 `expectedFault` fragments are pinned from the runners' current source
 text (this card's opdracht 2 lands the corpus only); the executor cards

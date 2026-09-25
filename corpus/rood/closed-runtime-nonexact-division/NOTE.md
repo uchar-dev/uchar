@@ -16,5 +16,5 @@ executors — the differential diverges in *expressiveness*, never in *value* �
   write of that 2-decimal `delertotaal` target refuses — *"does not fit the
   declared 2 decimals"*.
 
-The case uses a bare `Binair GEDEELD_DOOR` by a bound list element (the runtime
+The case uses a bare `Binary` `dividedBy` by a bound list element (the runtime
 divisor), exercising only nodes both executors carry.

@@ -2,7 +2,7 @@
 
 The one exclusion `RUNTIME-SEMANTICS.md` ch. 3.4c states normatively, as a
 red case. The document is `jutterswet-gevuldetelling`'s twin with one
-change: `gewicht` is declared TIME-DEPENDENT (granularity DAG). Everything
+change: `gewicht` is declared TIME-DEPENDENT (granularity `day`). Everything
 else — the fold, the element type, the source role, the count's own type —
 is unchanged and well-formed, so the verifier passes it and the refusal
 must come from the executors.
@@ -28,7 +28,7 @@ fall-through — a sentence invariant over every kind that reached it,
 naming the position and the two kinds that ARE carried rather than the
 fold rejected. This case pinned that sentence at first, and the measure
 that condemned it is reproducible in one edit: the same document with
-kind MINIMUM matched the pin word for word, so the witness witnessed
+kind `minimum` matched the pin word for word, so the witness witnessed
 five forms and identified none. `ref` now has a named arm for this kind,
 both executors word it the same way, and the shared sentence is listed
 among the bottom sentences a red pin may not cite. The four ranking

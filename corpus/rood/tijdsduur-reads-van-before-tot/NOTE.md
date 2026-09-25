@@ -8,7 +8,7 @@ ch. 5.11: argument 0 (`van`) is evaluated before argument 1 (`tot`).
 Same reason as `begrensd-reads-bounds-in-order`, by a different route.
 A green witness would need the later operand to deposit a §9.5 channel
 fact, and the only expression-level producer both executors carry is a
-division by an empty divisor. But a `tijdsduur` operand must be a
+division by an empty divisor. But a `duration` operand must be a
 **date**, so the division would have to reach it through
 `datum + duur` — and the ASP backend refuses a **unit-carrying
 multiplicative operand**, which a duration necessarily is. The green
@@ -23,7 +23,7 @@ vaartduur := Let vertrekdatum = zijn vertrek
 
 with `vertrek` **absent** and the case carrying `asOfDate: null`.
 
-* `van` = the `Rekendatum` context value — with no evaluation date in
+* `van` = the `evaluationDate` context value — with no evaluation date in
   the session this **faults** (ch. 8.2: the context value is the only
   expression-level access to the evaluation date, and there is none).
 * `tot` = a read of `vertrekdatum`, whose need is leeg — the ch. 10.6
@@ -33,8 +33,8 @@ with `vertrek` **absent** and the case carrying `asOfDate: null`.
 
 | executor | pinned fragment | does it pin the order? |
 |----------|-----------------|------------------------|
-| ref | `the Rekendatum context value needs an evaluation date` | **yes** — `van` is evaluated before `tot`, so the context value is reached before the barrier |
-| clingo | `the Rekendatum context value needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; it refuses the dateless context value whichever operand it visits first |
+| ref | `the evaluationDate context value needs an evaluation date` | **yes** — `van` is evaluated before `tot`, so the context value is reached before the barrier |
+| clingo | `the evaluationDate context value needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; it refuses the dateless context value whichever operand it visits first |
 
 Measured: with ref's two `let`s swapped the case reports `EXPECTED FAULT
 DID NOT OCCUR: evaluation succeeded`, because the barrier fires first and
@@ -59,7 +59,7 @@ Until 2026-09-09 this paragraph read the other way — "the reaching rule
 does not lower, a transpiler SKIP on an unregistered `rekendatum`
 global, so fire is never reached" — and that was true of the backend of
 the day for a reason that has nothing to do with the order: the
-`Rekendatum` above sits **inside a `Let` body**, and while the Drools
+context value above sits **inside a `Let` body**, and while the Drools
 loader parsed a `Let` into an opaque `Onopgelost` carrier, the generic
 `Expr.bevat` scan read that carrier as a leaf, never saw the constant,
 and left the §4.2 `rekendatum` global unregistered — so the rule was

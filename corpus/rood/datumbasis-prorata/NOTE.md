@@ -3,7 +3,7 @@
 The ch. 3.7 pro-rata part (`tijdsevenredig deel`) over a DATE-valued
 base, as a red case. The document is `golden/anchor/jutterswet-borgdeel`
 reduced to its `borgdeel` rule, with the base `borgtarief` (granularity
-JAAR) retyped to `Datum in dagen`; the target stays numeric. The
+`year`) retyped to `Datum in dagen`; the target stays numeric. The
 verifier passes it.
 
 A pro-rata part is the base scaled by true days over bucket days, and a

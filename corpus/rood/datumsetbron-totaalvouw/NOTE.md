@@ -2,7 +2,7 @@
 
 `datumsetbron-somvouw`'s twin under the other additive kind. Same
 document, same case, same two executors' refusals; the wire kind is
-`TOTAAL` instead of `SOM`, and the pinned ASP sentence names it.
+`total` instead of `sum`, and the pinned ASP sentence names it.
 
 It is a case of its own rather than a second case file because the two
 kinds part on exactly one clause — the empty set, where §5.8.2 gives the
@@ -35,7 +35,7 @@ while at zero the totaal gives back a NUMBER in a date slot, which is
 not. Both are measured (2026-09-20); the singleton row is pinned
 executably in the ASP backend's own suite (`ref` answering beside the
 translation declining, on one document and one case), and the empty
-TOTAAL row is NOT, for a reason worth stating: the value `ref` computes
+`total` row is NOT, for a reason worth stating: the value `ref` computes
 there cannot be WRITTEN DOWN as an expectation at all. The case reader
 rejects `{"number": "0"}` against a `Datum in dagen` declaration —
 `value variant "number" does not match the declared datatype` — so there

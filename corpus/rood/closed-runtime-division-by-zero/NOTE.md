@@ -12,5 +12,5 @@ only the numeric-zero fault does, and it must fire loudly in **both** executors 
   keyed by the fold's list-id — the divisor-side zero fence in body context.
 - **ref** faults hard in `Arith.div_gen` — *"division by numeric zero"*.
 
-The case uses a bare `Binair GEDEELD_DOOR` by a bound list element (the runtime
+The case uses a bare `Binary` `dividedBy` by a bound list element (the runtime
 divisor), exercising only nodes both executors carry.

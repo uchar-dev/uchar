@@ -4,15 +4,15 @@ The unnegated **gevuld** test under the ch. 3.9 whole-period qualifier:
 "de lengte van de Schuit is gedurende het gehele jaar gevuld". All three
 executors refuse it by name. It is the gevuld twin of
 `leegtest-heel-tijdvak`. With `leegnegatie-heel-tijdvak` and
-`gevuldnegatie-heel-tijdvak`, the four red cases close the square soort ×
-negatie: leeg and gevuld, each negated and unnegated.
+`gevuldnegatie-heel-tijdvak`, the four red cases close the square `kind` ×
+`negated`: leeg and gevuld, each negated and unnegated.
 
 ## The shape
 
-`leegtest-heel-tijdvak` with two fields changed: `Predicaat.soort` is
-`GEVULD`, and the `bron` text says "gevuld" where it said "leeg". The
+`leegtest-heel-tijdvak` with two fields changed: `Predicate.kind` is
+`filled`, and the source snippet says "gevuld" where it said "leeg". The
 case file is the same byte for byte. The lengte is month-granular, the
-qualifier is `GeheelPeriode` (jaar, `niet: false`), and the case
+qualifier is `WholePeriod` (`year`, `negated: false`), and the case
 supplies S1's lengte as a timeline, so the scalar-input refusal cannot
 fire first and hide the one under test.
 
@@ -38,7 +38,7 @@ value.
 
 - `ref` reaches the same named arm as its twins. That arm matches a
   leeg or gevuld predicate under a whole-period qualifier, whatever
-  `negatie` holds, and refuses at evaluation: "whole-period leeg/gevuld
+  `negated` holds, and refuses at evaluation: "whole-period leeg/gevuld
   test is ch. 3.9 scope, not executed here".
 - The ASP backend refuses the same node in the same words when it
   translates the condition.

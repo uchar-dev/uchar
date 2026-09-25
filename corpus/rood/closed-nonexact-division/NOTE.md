@@ -16,5 +16,5 @@ both executors must fault loudly, and the differential holds where it runs —
   of that 0-decimal `quotientsom` target refuses — *"does not fit the declared 0
   decimals"*.
 
-The case uses no `Let` and a bare `Binair GEDEELD_DOOR` by a compile-time
+The case uses no `Let` and a bare `Binary` `dividedBy` by a compile-time
 constant, so it exercises only nodes both executors carry.

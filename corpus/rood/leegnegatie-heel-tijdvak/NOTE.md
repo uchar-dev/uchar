@@ -4,20 +4,20 @@ A **negated** leeg test under the ch. 3.9 whole-period qualifier: "de
 lengte van de Schuit is gedurende het gehele jaar niet leeg". All three
 executors refuse it by name. Its gevuld twin is
 `gevuldnegatie-heel-tijdvak`; with the unnegated `leegtest-heel-tijdvak`
-and `gevuldtest-heel-tijdvak`, the four close the square soort × negatie.
+and `gevuldtest-heel-tijdvak`, the four close the square `kind` × `negated`.
 
 ## The shape
 
-`jutterswet-waardemelding`'s first rule on its own (meldpremie := 40 if
-the lengte is niet leeg, `Predicaat LEEG` with `negatie: true`). The
-lengte is made month-granular and the qualifier `GeheelPeriode` (jaar,
-not negated) is added. The case supplies the lengte as a timeline, so
-the scalar-input refusal cannot fire first and hide the one under test.
+`jutterswet-waardemelding`'s first rule on its own (meldpremie := 40 if the
+lengte is niet leeg, a `Predicate` of kind `empty` with `negated: true`). The
+lengte is made month-granular and the qualifier `WholePeriod` (`year`, not
+negated) is added. The case supplies the lengte as a timeline, so the
+scalar-input refusal cannot fire first and hide the one under test.
 
 ## Why a RED case
 
-`negatie` is the inner, per-value negation of the test. The qualifier's
-own negation is `GeheelPeriode.niet`, which is `false` here. Under the
+`negated` is the inner, per-value negation of the test. The qualifier's
+own negation is `WholePeriod.negated`, which is `false` here. Under the
 qualifier the meaning of the inner negation is an OPEN point of the norm.
 Ch. 3.9 gives the leeg test the touched-days threshold and every other
 test days(B), and it does not say which of the two a negated leeg test

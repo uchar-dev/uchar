@@ -1,9 +1,9 @@
 # datumtijdlijn-totaalvouw
 
-The §7.1 own-subject `TOTAAL` over a TIMELINE whose segment values are
+The §7.1 own-subject `total` over a TIMELINE whose segment values are
 dates, as a red case. The document is `golden/jutterswet-tempototaal`
 reduced to its third rule — `het totaal van zijn bewaarvergoeding per
-maand` — with the totalled attribute (granularity MAAND) and the target
+maand` — with the totalled attribute (granularity `month`) and the target
 retyped to `Datum in dagen`, and the unused `Vondst` type and its fact
 type dropped. The verifier passes it, so the refusal has to come from
 the executors.
@@ -17,7 +17,7 @@ that is this case's arbiter reading.
 What the case guards against is a DEFINITE WRONG NUMBER. Measured
 2026-09-23 on this document: the ASP backend answered **19737** — the day
 number of 2024-01-15 — because the case supplies one asOfDate-bucket
-scalar for a MAAND timeline, the whole-units factor is 1, and the day
+scalar for a `month` timeline, the whole-units factor is 1, and the day
 number came out unchanged, looking like an answer. The translation now
 declines the form by name, asking the DECLARATION on the subject type,
 before it grounds anything.

@@ -38,4 +38,4 @@ Drools exec branch CRASHES on the case without a value
 java.time.LocalDate`) — the DRL-text branch declines it by name. The
 arbiter's own 0 is out of this card's scope (`ref` is not touched); it
 is carded as `20260923-ref-klipvouw-nul`, together with a
-well-formedness rule that the operand of TOTAAL/SOM/pro rata is numeric.
+well-formedness rule that the operand of `total`/`sum`/pro rata is numeric.

@@ -23,7 +23,7 @@ Neither executor guesses. Both refuse with the same sentence:
 
 The document itself is unambiguous, and that is the point of the rule it
 carries. `ligdiepte van een schuit` navigates the very same name
-`ligger`, and it navigates it *cleanly*, because its `navigatieBindingen`
+`ligger`, and it navigates it *cleanly*, because its `path`
 names the fact type symbolically (`pontonligging`). Since L2 that binding is
 the only navigation the wire carries (B11), so a written name is never
 re-guessed.

@@ -1,8 +1,8 @@
 # datumsetbron-somvouw
 
 The additive fold over a DATE-valued set source, as a red case. The
-document is `golden/jutterswet-vondstvenster` with one change — `EERSTE`
-becomes `SOM` — and everything else is untouched: the same element type,
+document is `golden/jutterswet-vondstvenster` with one change — `first`
+becomes `sum` — and everything else is untouched: the same element type,
 the same source role, the same `Datum in dagen` on both the member and
 the target. The verifier passes it, so the refusal has to come from the
 executors.
@@ -25,8 +25,8 @@ anything.
 Its ordering siblings are NOT refused and must not be: `#min`/`#max`
 return one contributed value, so a day number goes in and the same day
 number comes out. `golden/jutterswet-vondstbereik` pins that half with
-absolute dates, and `golden/jutterswet-vondstvenster` pins `EERSTE` and
-`LAATSTE`, which are the same ordering fold under another name.
+absolute dates, and `golden/jutterswet-vondstvenster` pins `first` and
+`last`, which are the same ordering fold under another name.
 
 **The two members carry the SAME date on purpose.** The pinned `ref`
 fragment runs to the value (`got 2024-01-15`), and `add` reads its two

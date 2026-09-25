@@ -1,7 +1,7 @@
 # aantalgevulde-ongewaakte-deling
 
 The cost maintainer decision G1 of 2026-09-19 accepted, made observable.
-There is no average fold: `SOM ÷ AANTAL_GEVULDE` is hand-spelled, and
+There is no average fold: `sum ÷ filledCount` is hand-spelled, and
 over a source with no filled values the divisor is a real numeric zero.
 This document is `corpus/golden/jutterswet-gevuldegemiddelde` with ONE
 difference — the third rule's condition is gone — replayed on the jutter
@@ -18,7 +18,7 @@ row the guarded twin pins at leeg.
 This is the point of the decision rather than a defect of it: the wire
 declines to invent an answer, and the rule author is given a guard that
 is WRITABLE — a filled count is an ordinary expression, so it may stand
-in a rule's condition, where `AANTAL` could not serve because it reads 1
+in a rule's condition, where `count` could not serve because it reads 1
 for a member with no value. The golden twin pins that the guard works;
 this case pins that without it the failure is LOUD. Stil verkeerd wordt
 luid fout, and that trade is the whole of G1.
