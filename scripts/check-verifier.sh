@@ -169,7 +169,7 @@ done < "$list"
 # zones aside gave PASS at 0. The floor also precedes the no-negatief check, so the zero case is
 # reported with BOTH numbers rather than by the weaker non-empty message.
 if [ "$n_neg" -lt "$EXPECTED_MIN_NEGATIEF" ]; then
-    echo "FAIL: $n_neg negatief case(s) rejected, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: $n_neg negatief case(s) found, but EXPECTED_MIN_NEGATIEF pins at least $EXPECTED_MIN_NEGATIEF — the negatief corpus shrank (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 elif [ "$n_golden" -eq 0 ] && [ "$n_neg" -eq 0 ]; then
     # Only reachable while no floor is pinned yet (floor 0) — the genuinely empty corpus.
@@ -180,7 +180,7 @@ elif [ "$n_neg" -eq 0 ]; then
     status=1
 fi
 if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
-    echo "FAIL: $n_expect arm fragment(s) (expect.txt) checked, but EXPECTED_MIN_EXPECT pins at least $EXPECTED_MIN_EXPECT — arm pins vanished (a deliberate removal lowers the floor in the same commit)" >&2
+    echo "FAIL: $n_expect arm fragment(s) (expect.txt) found, but EXPECTED_MIN_EXPECT pins at least $EXPECTED_MIN_EXPECT — arm pins vanished (a deliberate removal lowers the floor in the same commit)" >&2
     status=1
 fi
 
