@@ -1184,6 +1184,11 @@
             ],
             "validity": {
               "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "reis met contingent treinmiles",
+              "role": "vastgestelde contingent treinmiles"
             }
           }
         ]

@@ -3046,6 +3046,11 @@
             ],
             "validity": {
               "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "reis met contingent treinmiles",
+              "role": "vastgestelde contingent treinmiles"
             }
           }
         ]
@@ -3230,6 +3235,12 @@
     "ruleGroups": []
   },
   "diagnostics": [
+    {
+      "node": "Diagnostic",
+      "severity": "warning",
+      "message": "clamp minimum and base have incompatible units",
+      "line": 162
+    },
     {
       "node": "Diagnostic",
       "severity": "warning",

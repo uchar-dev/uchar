@@ -241,6 +241,24 @@ stays honest about where it no longer proves toolchain agreement.
   holdouts unchanged): no divergence. The original toolchain still writes the
   v0 names, so for every renamed node the comparison proves "frontend == the
   recorded state".
+- **2026-09-25 — a creation writes the role its sentence names, and a one-sided
+  clamp unit draws a WARNING.** Executed by the card
+  `20260925-frontend-emitterrestanten.md` in `backlog/`. Two moves in
+  `casus/ir.json`, eleven added lines and nothing else. The casus's one object
+  creation names its created object by a role, and the frontend now writes that
+  role as the creation's `connectingRole` (five lines): the binding the type
+  pair derives on this document as well (one connecting fact type, not
+  self-typed), so nothing the creation links changes. The one slice that
+  carries the creation, `cases/scenario-toka-28-vastgestelde-contingent`, got
+  the same five lines, written with gate 2's serialiser, and stays
+  verifier-clean. The casus's one clamp is the one-sided unit pair `toka-24` is
+  held out for (see Well-formedness); the frontend now reports it in the
+  verifier's WF-099 sentence as a WARNING, because as an ERROR it would write no
+  document for the casus at all, so `diagnostics` grew from 4 entries to 5 (six
+  lines). No slice carries that diagnostic, as with the 2026-09-19 entry, and
+  the dump's 18 verifier reports keep their rules and pointers. The original
+  toolchain writes neither, so for these two nodes the comparison proves
+  "frontend == the recorded state".
 - The precedent runs the other way: `toka-45` (decision 16Y, 2026-08-29) is held
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
