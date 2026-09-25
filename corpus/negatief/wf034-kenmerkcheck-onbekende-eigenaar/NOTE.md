@@ -26,14 +26,30 @@ it does not know. An undeclared owner therefore becomes *no owner*, and the
 two transpiler branches stop emitting the "hosted elsewhere" marker they emit
 for an owner that differs from the subject. Measured on
 `corpus/golden/jutterswet-wachtploeg`, one field at a time, on the v0 wire,
-where the field was `eigenaar` and its committed value `null` (since L5
-`host`, absent):
+where the field was `eigenaar` and its committed value `null` (exec-model
+branch):
 
     eigenaar: null           (as committed)   PLAYED 1
     eigenaar: "Wachtpost"    declared, != subject
                                               EXCLUDE transpiler SKIP:
                                               voorwaarde buiten Phase-B scope
     eigenaar: "Bestaatniet"  undeclared       PLAYED 1
+
+Re-measured 2026-09-25 on the L5 wire, where the field is `host` and absent as
+committed, in both branches of the replay:
+
+    host absent            (as committed)    exec PLAYED 1, DRL PLAYED 1
+    host: "Wachtpost"      declared, != subject
+                                             exec EXCLUDE transpiler SKIP:
+                                                  voorwaarde buiten Phase-B scope
+                                             DRL  EXCLUDE drl-transpiler MARKER:
+                                                  TODO voorwaarde: ten minste 2
+                                                  van de volgende gelden
+    host: "Bestaatniet"    undeclared        exec PLAYED 1, DRL PLAYED 1
+
+This document plays as well: the four cases of its host golden replay as
+`PLAYED 4` in both branches, as they do on the golden itself, while `ref` and
+the ASP backend refuse it (below).
 
 A rule the backend *declines* to carry under a real owner is carried and
 answered under a nonsense one. The engine cannot tell "no owner" from "an
