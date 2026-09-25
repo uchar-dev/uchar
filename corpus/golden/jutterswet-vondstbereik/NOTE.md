@@ -8,15 +8,16 @@ numeric `jutterswet-muntpiek` rides, over members whose values are
 calendar positions instead of amounts.
 
 **What this golden exists to falsify**, and why it is a golden where its
-additive siblings are red cases. The ordering folds RETURN one
+additive siblings are ill-formed. The ordering folds RETURN one
 contributed value: a date goes in and the same date comes out, so the
 reading is well defined over a date source exactly as ch. 1.2e states it
 for any comparable family. The additive folds ADD their contributors, and
-a sum of two calendar positions is not a position — `corpus/rood/
-datumsetbron-somvouw` and its `total` twin pin that refusal in both
-OCaml executors. One document shape, two verdicts, and the line between
-them is whether the fold combines its members or selects among them. This
-golden is the carrying half of that line.
+a sum of two calendar positions is not a position — `corpus/negatief/
+wf091-setbron-som-datum` and its `total` twin pin that WF-091 refuses
+them (until the card ref-klipvouw-nul they were red cases pinning the
+refusal of both OCaml executors). One document shape, two verdicts, and
+the line between them is whether the fold combines its members or selects
+among them. This golden is the carrying half of that line.
 
 **It is deliberately the kind-twin of `jutterswet-vondstvenster`**: the
 same types, the same relation, the same two cases with the same members
