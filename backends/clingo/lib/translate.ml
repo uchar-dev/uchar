@@ -1875,7 +1875,7 @@ let day_time_unit_of ~what (t : datatype option) =
           else tu
       | None ->
           fault
-            "%s unit %S is neither a recognised time unit nor a declared day kind (WF-035/WF-038)"
+            "%s unit %S is neither a recognised time unit nor a declared day kind"
             what
             (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
@@ -1901,8 +1901,7 @@ let dt_time_unit_of ~doc ~what (t : datatype option) =
               what
           else
             fault
-              "%s unit %S is neither a recognised time unit nor a declared day kind \
-               (WF-035/WF-038)"
+              "%s unit %S is neither a recognised time unit nor a declared day kind"
               what
               (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
