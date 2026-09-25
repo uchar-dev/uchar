@@ -583,7 +583,7 @@ let add_units (tu : Ir_v0.Checks.time_unit) n z =
   | Tu_kwartaal -> add_months (3 * n) z
   | Tu_jaar -> add_months (12 * n) z
   | Tu_uur | Tu_minuut | Tu_seconde | Tu_milliseconde ->
-      fault "sub-day date arithmetic needs a datum-tijd operand (day-precision value)"
+      fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
 
 (* --- the datum-tijd millisecond layer (ch. 3.8): a datetime is its ms
    count since 1970-01-01T00:00:00 in the same zoneless civil time —
@@ -792,14 +792,14 @@ let date_plus_duration ?(minus = false) ?unit_ d dur =
       let n = if minus then -n else n in
       match unit_ with
       | Some tu -> Date (add_units tu n z)
-      | None -> fault "date arithmetic without a time unit on its static type")
+      | None -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit)
   | Date_time t, _ -> (
       let q, _u = num_exn (if minus then "min" else "plus") dur in
       let n = whole_count_of q in
       let n = if minus then -n else n in
       match unit_ with
       | Some tu -> Date_time (add_units_ms tu n t)
-      | None -> fault "datum-tijd arithmetic without a time unit on its static type")
+      | None -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit)
   | v, _ -> fault "date arithmetic: expected a date, got %s" (to_string v)
 
 (* tijdsduur van A tot B (ch. 3.8): whole declared units, signed; the

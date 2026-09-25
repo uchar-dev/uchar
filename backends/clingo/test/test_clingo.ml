@@ -1470,10 +1470,10 @@ let dtduur_lie_case =
 let () =
   faults_with ~name:"a sum-typed duration under date arithmetic (declared sum type)"
     ~ir:dagduur_lie_doc ~case_text:dagduur_lie_case
-    ~needle:"date arithmetic without a time unit on its static type";
+    ~needle:Ir_v0.Checks.date_duration_without_time_unit;
   faults_with ~name:"a sum-typed duration under datum-tijd arithmetic (declared sum type)"
     ~ir:dtduur_lie_doc ~case_text:dtduur_lie_case
-    ~needle:"datum-tijd arithmetic without a time unit on its static type"
+    ~needle:Ir_v0.Checks.date_duration_without_time_unit
 
 (* --- the temporal totaal's SUBJECT anchor (the fold-arm narrowing) ---------
 

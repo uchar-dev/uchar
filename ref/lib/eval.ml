@@ -906,11 +906,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       let minus = op = Min in
       let dur_e =
         if date_typed le && date_typed re then
-          Value.fault "date \xc2\xb1 date is ill-formed (WF-035)"
+          Value.fault "date \xc2\xb1 date is ill-formed"
         else if date_typed le then re
         else
-          Value.fault "duration %s date is ill-formed (WF-035: the date stands on the \
-                       left; v0 does not commute)"
+          Value.fault "duration %s date is ill-formed (the date stands on the left; v0 does \
+                       not commute)"
             (if minus then "\xe2\x88\x92" else "+")
       in
       let unit_ =
@@ -920,8 +920,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
             | Some tu ->
                 if Ir_v0.Checks.time_unit_sub_day tu && static_type env le = Some Datum_in_dagen
                 then
-                  Value.fault
-                    "sub-day date arithmetic needs a datum-tijd operand (WF-035)"
+                  Value.fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
                 else `Calendar tu
             | None -> (
                 (* not a calendar unit: the spelling may name a declared day
@@ -935,7 +934,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                       (if static_type env le = Some Datum_tijd then "datum-tijd arithmetic"
                        else "date arithmetic")
                       (Option.value u.afkorting ~default:"?")))
-        | _ -> Value.fault "date \xc2\xb1 duration without a time unit (WF-035)"
+        | _ -> Value.fault "%s" Ir_v0.Checks.date_duration_without_time_unit
       in
       let d = eval_expr env world self ~err le in
       let dur = eval_expr env world self ~err re in

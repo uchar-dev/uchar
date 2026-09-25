@@ -1880,6 +1880,19 @@ let day_time_unit_of ~what (t : datatype option) =
             (Option.value u.afkorting ~default:"?"))
   | _ -> fault "%s without a time unit on its static type" what
 
+(* The unit of a date ± duration step (WF-035), for the two forms whose
+   sentence the verifier and ref speak as well ([Ir_v0.Checks]): no time unit
+   on the duration operand, and a sub-day unit on a day-precision date. Every
+   other refusal of the unit stays the helpers'. *)
+let date_step_unit ~datetime (t : datatype option) =
+  match t with
+  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_eenheid u with
+      | Some tu when (not datetime) && Ir_v0.Checks.time_unit_sub_day tu ->
+          fault "%s" Ir_v0.Checks.sub_day_unit_on_day_date
+      | _ -> ())
+  | _ -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit
+
 (* the counted unit for a datum-tijd (millisecond-precision) operand: the
    full time-unit table, sub-day units included (RUNTIME-SEMANTICS ch. 3.8,
    the millisecond layer). A day-kind (dagsoort-as-unit) spelling stays a
@@ -4978,10 +4991,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let minus = op = Min in
       let date_e, dur_e =
         if date_typed le && date_typed re then
-          fault "date \xc2\xb1 date is ill-formed (WF-035)"
+          fault "date \xc2\xb1 date is ill-formed"
         else if date_typed le then (le, re)
         else
-          fault "duration %s date is ill-formed (WF-035: the date stands on the left; \
+          fault "duration %s date is ill-formed (the date stands on the left; \
                  v0 does not commute)"
             (if minus then "\xe2\x88\x92" else "+")
       in
@@ -4992,6 +5005,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let atoms, day, _ = dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:false date_e dur_e in
           (atoms, day, 1))
       | None ->
+      date_step_unit ~datetime:false (static_type ctx dur_e);
       let tu =
         day_time_unit_of ~what:"date arithmetic" (static_type ctx dur_e)
       in
@@ -5558,10 +5572,10 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
       let minus = op = Min in
       let dtl = is_datetime_operand ctx (Some le) and dtr = is_datetime_operand ctx (Some re) in
       let date_e, dur_e =
-        if dtl && dtr then fault "datum-tijd \xc2\xb1 datum-tijd is ill-formed (WF-035)"
+        if dtl && dtr then fault "datum-tijd \xc2\xb1 datum-tijd is ill-formed"
         else if dtl then (le, re)
         else
-          fault "duration %s datum-tijd is ill-formed (WF-035: the date stands on the left; \
+          fault "duration %s datum-tijd is ill-formed (the date stands on the left; \
                  v0 does not commute)"
             (if minus then "\xe2\x88\x92" else "+")
       in
@@ -5574,6 +5588,7 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
           | atoms, day, Some ms -> (atoms, day, ms)
           | _, _, None -> assert false)
       | None ->
+      date_step_unit ~datetime:true (static_type ctx dur_e);
       let tu = dt_time_unit_of ~doc:ctx.doc ~what:"datum-tijd arithmetic" (static_type ctx dur_e) in
       let da, dd, dm = dt_term ctx ~subject ~subject_ot date_e in
       let bn, tn, sn =

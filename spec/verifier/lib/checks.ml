@@ -393,6 +393,16 @@ let literal_variant_refusal (variant : literal_variant) (typ : datatype) =
    with the loader like the sentence above. *)
 let context_value_names = Spelling.context_value_names
 
+(* WF-035 on date ± duration (RUNTIME-SEMANTICS ch. 3.8): the two forms
+   whose sentence ref and the ASP backend speak as well when a document
+   reaches them without the verifier, so that the three readers say one
+   thing. *)
+let date_duration_without_time_unit =
+  "date \xc2\xb1 duration: the duration operand carries no time unit"
+
+let sub_day_unit_on_day_date =
+  "sub-day time unit on a day-precision date (millisecond precision required)"
+
 let context_value_refusal name =
   if List.mem name context_value_names then None
   else
@@ -4308,16 +4318,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                     ^ ", must be a number carrying a time unit") ]
            | Some d -> (
                match unit_of d with
-               | None ->
-                   [ v "WF-035" (sub side)
-                       "date \xc2\xb1 duration: the duration operand carries no time unit" ]
+               | None -> [ v "WF-035" (sub side) date_duration_without_time_unit ]
                | Some u -> (
                    match time_unit_of_eenheid u with
                    | Some tu ->
                        if time_unit_sub_day tu && date_t = Datum_in_dagen then
-                         [ v "WF-035" at
-                             "sub-day time unit on a day-precision date (millisecond \
-                              precision required)" ]
+                         [ v "WF-035" at sub_day_unit_on_day_date ]
                        else []
                    | None ->
                        if day_kind_unit ctx u then []
