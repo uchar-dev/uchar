@@ -85,14 +85,12 @@ class AantalSetbronTest {
         """;
 
     /** The literal message the narrowed check raises. Pinned whole: the list of admissible kinds IS
-     *  the boundary, so a kind silently rejoining it would otherwise pass unnoticed. Since L2 it cites the
-     *  count's own rule, WF-093 (b); until L2 it cited WF-096. */
+     *  the boundary, so a kind silently rejoining it would otherwise pass unnoticed. It is the verifier's
+     *  sentence for the count's own rule, WF-093 (b); until L2 the Dutch message cited WF-096, then WF-093 (b). */
     static final String MELDING =
-            "setlezing buiten een vouwbron: 'gewichten van alle gewichten van de Jutter' noemt de waarde "
-            + "van elk lid van de verzameling — alleen toegestaan als bron van één waardevouw (som, "
-            + "totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); een instantietelling "
-            + "vouwt de leden zelf en leest geen waarde per lid, dus als bron van 'aantal' ook niet "
-            + "(WF-093 (b), IR-SPEC ch. 4.3)";
+            "setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': the source of this count "
+            + "aggregation reads 'gewicht', a member of the element type 'Vondst': a count folds INSTANCES, so its "
+            + "source is a count source naming the relation's role, never a value read per contributor";
 
     private static List<Diagnostic> setlezingen(String regels) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regels);

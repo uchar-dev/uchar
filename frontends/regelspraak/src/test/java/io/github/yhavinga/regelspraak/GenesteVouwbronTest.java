@@ -466,14 +466,14 @@ class GenesteVouwbronTest {
     }
 
     /** The same nested chain with no fold around it is the set fence's position, decided by another card: it
-     *  must keep ITS diagnosis and must not pick up this one. Since L2 that diagnosis cites WF-053. */
+     *  must keep ITS diagnosis and must not pick up this one. That diagnosis is the verifier's WF-053 sentence. */
     @Test
     void een_setlezing_buiten_een_vouw_houdt_haar_eigen_diagnose() {
         assertEquals(List.of(), vouwbronDiagnoses(MODEL_B + SETLEZING_ZONDER_VOUW));
         RegelSpraakModel m = Resolver.resolve(MODEL_B + SETLEZING_ZONDER_VOUW);
         assertEquals(1, m.diagnostics.size(), () -> "verwacht enkel de setlezing-diagnose, kreeg " + m.diagnostics);
         assertTrue(m.diagnostics.get(0).message().startsWith("setlezing buiten een vouwbron")
-                        && m.diagnostics.get(0).message().contains("(WF-053, IR-SPEC ch. 4.1a)"),
+                        && m.diagnostics.get(0).message().contains(" reaches the to-many role "),
                 () -> "verwacht de setlezing-melding, kreeg " + m.diagnostics.get(0));
     }
 

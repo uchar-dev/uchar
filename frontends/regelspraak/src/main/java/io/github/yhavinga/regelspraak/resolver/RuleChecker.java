@@ -2056,10 +2056,12 @@ final class RuleChecker {
      *  there; every construct's CONDITION is covered one line after it is built, see the call in
      *  {@link #regelVersies(String, java.util.List, java.util.List, int)}. */
     private void keurSetlezingen() {
-        for (ResolvedRegel r : model.resolvedRegels) keurSetlezing(r.waarde(), false);
-        for (var c : model.consistenties) keurSetlezing(c.assertie());
+        // each read from the subject the emitter writes it from: the target's type, the consistency's, the creation's
+        for (ResolvedRegel r : model.resolvedRegels)
+            keurSetlezing(r.waarde(), r.doel() instanceof Expr.AttribuutRef d ? d.objecttype() : null, false);
+        for (var c : model.consistenties) keurSetlezing(c.assertie(), c.subject());
         for (var oc : model.objectCreaties)
-            for (var t : oc.toekenningen()) keurSetlezing(t.waarde(), false);
+            for (var t : oc.toekenningen()) keurSetlezing(t.waarde(), oc.subject(), false);
     }
 
     /** Walk {@code e} for set readings outside the fence's exempt position. {@code vouwbron} marks the ONE exempt
@@ -2074,56 +2076,55 @@ final class RuleChecker {
      *  <p>The switch is EXHAUSTIVE over the sealed union — no {@code default} arm — for the reason
      *  {@link Expr#bevat} states: the next node the union grows must be a compile error here rather
      *  than a silent leaf that under-reports. */
-    private void keurSetlezing(Expr e, boolean vouwbron) {
-        keurSetlezing(e, vouwbron, false);
+    private void keurSetlezing(Expr e, Objecttype subject, boolean vouwbron) {
+        keurSetlezing(e, subject, vouwbron, null);
     }
 
-    /** {@code telbron} marks the single argument of an {@code AANTAL} over an element type: a set reading there
-     *  is refused under the count's own rule, WF-093 (b); at every other non-exempt position it is a read over a
-     *  to-many step, WF-053's. The message names the rule the emitted document would fail, so a reader who runs
-     *  the verifier finds the same id there. */
-    private void keurSetlezing(Expr e, boolean vouwbron, boolean telbron) {
+    /** {@code telbron}, when not null, is the element type of the {@code AANTAL} whose single argument {@code e}
+     *  is: a set reading there is refused under the count's own rule, WF-093 (b); at every other non-exempt
+     *  position it is a read over a to-many step, WF-053's. {@code subject} is the type the read is written from,
+     *  as the emitter writes it: a fold's filter and a selection's filter read each contributor. */
+    private void keurSetlezing(Expr e, Objecttype subject, boolean vouwbron, Objecttype telbron) {
         if (e == null) return;
         switch (e) {
             case Expr.AttribuutRef a -> {
                 if (a.set() && !vouwbron)
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                            "setlezing buiten een vouwbron: '" + a.bron() + "' noemt de waarde van elk lid van de "
-                            + "verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, "
-                            + "maximum, eerste, laatste, aantal gevulde waarden); "
-                            + (telbron
-                                    ? "een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als "
-                                      + "bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)"
-                                    : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing "
-                                      + "vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)"),
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, setlezingFout(a, subject, telbron),
                             a.bron().line()));
             }
             case Expr.Functie f -> {
                 boolean isVouwbron = f.elementObjecttype() != null && f.argumenten().size() == 1
                         && VOUWSOORTEN.contains(f.kind());
-                boolean isTelbron = f.elementObjecttype() != null && f.argumenten().size() == 1
-                        && f.kind() == Expr.FunctieKind.AANTAL;
-                for (Expr a : f.argumenten()) keurSetlezing(a, isVouwbron, isTelbron);
-                keurSetlezing(f.leegwaarde(), false);   // §5.8.2 fallback: an ordinary read, never a source
-                keurSetlezing(f.filter());
+                Objecttype telElement = f.elementObjecttype() != null && f.argumenten().size() == 1
+                        && f.kind() == Expr.FunctieKind.AANTAL ? f.elementObjecttype() : null;
+                for (Expr a : f.argumenten()) keurSetlezing(a, subject, isVouwbron, telElement);
+                keurSetlezing(f.leegwaarde(), subject, false);   // §5.8.2 fallback: an ordinary read, never a source
+                // a dimension fold has no element: its filter reads the subject's own labels
+                keurSetlezing(f.filter(), f.dimensieSelectie() == null && f.elementObjecttype() != null
+                        ? f.elementObjecttype() : subject);
             }
-            case Expr.Binair b -> { keurSetlezing(b.links(), false); keurSetlezing(b.rechts(), false); }
-            case Expr.Afgerond a -> keurSetlezing(a.basis(), false);
+            case Expr.Binair b -> {
+                keurSetlezing(b.links(), subject, false); keurSetlezing(b.rechts(), subject, false);
+            }
+            case Expr.Afgerond a -> keurSetlezing(a.basis(), subject, false);
             case Expr.Begrensd b -> {
-                keurSetlezing(b.basis(), false); keurSetlezing(b.minimum(), false); keurSetlezing(b.maximum(), false);
+                keurSetlezing(b.basis(), subject, false); keurSetlezing(b.minimum(), subject, false);
+                keurSetlezing(b.maximum(), subject, false);
             }
             case Expr.TekstReeks t -> {
                 for (Expr.TekstReeks.Deel d : t.delen())
-                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurSetlezing(i.expr(), false);
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) keurSetlezing(i.expr(), subject, false);
             }
-            case Expr.DimensieCel c -> keurSetlezing(c.attribuut(), false);
-            case Expr.Let l -> { keurSetlezing(l.value(), false); keurSetlezing(l.body(), false); }
+            case Expr.DimensieCel c -> keurSetlezing(c.attribuut(), subject, false);
+            case Expr.Let l -> { keurSetlezing(l.value(), subject, false); keurSetlezing(l.body(), subject, false); }
             case Expr.IfThenElse k -> {
-                keurSetlezing(k.dan(), false); keurSetlezing(k.anders(), false); keurSetlezing(k.conditie());
+                keurSetlezing(k.dan(), subject, false); keurSetlezing(k.anders(), subject, false);
+                keurSetlezing(k.conditie(), subject);
             }
             // the §5.7 union's own fields are symbolic (a type, a role binding), so the only place a
             // setlezing could hide is a selection's filter — reached like every other conditie
-            case Expr.InstanceSetUnion u -> u.takken().forEach(t -> keurSetlezing(t.filter()));
+            case Expr.InstanceSetUnion u -> u.takken().forEach(t ->
+                    keurSetlezing(t.filter(), t.elementType() != null ? t.elementType() : subject));
             case Expr.Literal ignored -> { }
             case Expr.ParameterRef ignored -> { }
             case Expr.VariabeleRef ignored -> { }
@@ -2140,13 +2141,58 @@ final class RuleChecker {
      *  lowering does not EXCUSE a set reading, it REMOVES it (the quantified operand comes out as an
      *  element-own {@code set: false} read), so a surviving set reading under that node is a genuine
      *  violation and is named like any other. */
-    private void keurSetlezing(Conditie c) {
+    private void keurSetlezing(Conditie c, Objecttype subject) {
         if (c == null) return;
-        if (c instanceof Conditie.Vergelijking v) { keurSetlezing(v.links(), false); keurSetlezing(v.rechts(), false); }
-        else if (c instanceof Conditie.Predicaat p) keurSetlezing(p.operand(), false);
-        else if (c instanceof Conditie.Periode p) { keurSetlezing(p.vanaf(), false); keurSetlezing(p.tot(), false); }
-        else if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) keurSetlezing(d);
-        else if (c instanceof Conditie.Kwantorvouw k) { keurSetlezing(k.filter()); keurSetlezing(k.toets()); }
+        if (c instanceof Conditie.Vergelijking v) {
+            keurSetlezing(v.links(), subject, false); keurSetlezing(v.rechts(), subject, false);
+        }
+        else if (c instanceof Conditie.Predicaat p) keurSetlezing(p.operand(), subject, false);
+        else if (c instanceof Conditie.Periode p) {
+            keurSetlezing(p.vanaf(), subject, false); keurSetlezing(p.tot(), subject, false);
+        }
+        else if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) keurSetlezing(d, subject);
+        else if (c instanceof Conditie.Kwantorvouw k) {
+            // the filter and the test read each contributor, with the element as their subject
+            Objecttype element = k.elementObjecttype() != null ? k.elementObjecttype() : subject;
+            keurSetlezing(k.filter(), element); keurSetlezing(k.toets(), element);
+        }
+    }
+
+    /** The refusal of a set reading outside a fold source, in the verifier's sentence for the read the emitter
+     *  writes: under a count, a source that reads a member of the element type (WF-093); anywhere else, a path
+     *  with a to-many hop in a slot that takes one value (WF-053), one sentence per such hop. Where the emitter
+     *  writes no such read — no path is derivable, no hop is to-many, or the count's source names no member of its
+     *  element type — no reader refuses the document in these words, and the refusal keeps this frontend's. */
+    private String setlezingFout(Expr.AttribuutRef a, Objecttype subject, Objecttype telbron) {
+        String kop = "setlezing buiten een vouwbron '" + a.bron() + "': ";
+        if (telbron != null && telbron.heeftLid(a.attribuut()))
+            return kop + "the source of this count aggregation reads '" + a.attribuut() + "', a member of the "
+                    + "element type '" + telbron.naam + "': a count folds INSTANCES, so its source is a count source "
+                    + "naming the relation's role, never a value read per contributor";
+        if (telbron == null) {
+            List<RegelSpraakModel.RolBindingRef> pad =
+                    io.github.yhavinga.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
+            List<String> zinnen = new ArrayList<>();
+            for (int i = 0; i < pad.size(); i++)
+                if (teVeel(pad.get(i)))
+                    zinnen.add("hop " + i + " reaches the to-many role '" + pad.get(i).rol() + "' in a scalar slot "
+                            + "— a to-many step needs an aggregation, never a silent first pick");
+            if (!zinnen.isEmpty()) return kop + String.join("; ", zinnen);
+        }
+        return "setlezing buiten een vouwbron: '" + a.bron() + "' noemt de waarde van elk lid van de "
+                + "verzameling — alleen toegestaan als bron van één waardevouw (som, totaal, minimum, "
+                + "maximum, eerste, laatste, aantal gevulde waarden); "
+                + (telbron != null
+                        ? "een instantietelling vouwt de leden zelf en leest geen waarde per lid, dus als "
+                          + "bron van 'aantal' ook niet (WF-093 (b), IR-SPEC ch. 4.3)"
+                        : "hier wordt één waarde verwacht, en een meervoudige stap in een lezing "
+                          + "vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)");
+    }
+
+    /** Whether the role a hop reaches is to-many, as its fact type declares it. */
+    private boolean teVeel(RegelSpraakModel.RolBindingRef stap) {
+        Feittype ft = model.feittypen.get(stap.feittype());
+        return ft != null && ft.rollen.stream().anyMatch(r -> r.naam().equals(stap.rol()) && r.meervoudig());
     }
 
     /** Process one §13.4.2 regel's versions into the model. Reused for each §12 beslistabel row, which
@@ -2191,7 +2237,7 @@ final class RuleChecker {
             // resultaatdeel kind's voorwaarde passes through, so one call covers the constructs that do
             // not become a ResolvedRegel (verdeling, objectcreatie, feitcreatie, dagsoort, startpunt)
             // as well as the ones that do. The naloop then walks the VALUES alone, so nothing is said twice.
-            keurSetlezing(voorwaarde);
+            keurSetlezing(voorwaarde, bouwer.subject());
             resultaat(naam, versieNaam, rsr.resultaatDeel(), rsr.voorwaardeDeel(), voorwaarde, geldigheid);
             voorwaarden(rsr);   // exhaustive condition type-check (§5), unchanged
         }

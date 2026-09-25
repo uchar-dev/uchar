@@ -309,4 +309,68 @@ class StructuurZinTest {
                 fouten(BERGING + NOODWEER));
     }
 
+    // ---- a model with counts and set readings, for the two sections below
+
+    private static final String TELMODEL = """
+        Parameter de drempel : Numeriek (getal met 2 decimalen)
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het aantal gewogen posten Numeriek (niet-negatief geheel getal);
+            het aantal gewogen vondsten Numeriek (niet-negatief geheel getal);
+            de gewogen vangst Numeriek (getal met 2 decimalen);
+            de gewogen bijvangst Numeriek (getal met 2 decimalen);
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen);
+
+        Objecttype het Kavel (mv: Kavels)
+            de grootte Numeriek (getal met 2 decimalen);
+
+        Feittype vondstaanmelding
+            de aanmelder Jutter
+            de vondst (mv: vondsten) Vondst
+        Eén aanmelder heeft meerdere vondsten
+
+        Feittype kaveltoewijzing
+            de kavelhouder Jutter
+            het kavel (mv: kavels) Kavel
+        Eén kavelhouder heeft meerdere kavels
+
+        """;
+
+    // ---- WF-053 and WF-093: a set reading outside a fold source
+
+    @Test void een_setlezing_als_waarde() {
+        assertEquals(List.of("setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': hop 0 reaches "
+                        + "the to-many role 'vondst' in a scalar slot — a to-many step needs an aggregation, never a "
+                        + "silent first pick"),
+                fouten(TELMODEL + """
+                    Regel aantal gewogen posten
+                        geldig altijd
+                            De gewogen vangst van een Jutter moet berekend worden als het gewicht van alle vondsten van de Jutter plus 1.
+                    """));
+    }
+
+    @Test void een_setlezing_als_bron_van_een_telling() {
+        assertEquals(List.of("setlezing buiten een vouwbron 'gewichten van alle gewichten van de Jutter': the source of "
+                        + "this count aggregation reads 'gewicht', a member of the element type 'Vondst': a count folds "
+                        + "INSTANCES, so its source is a count source naming the relation's role, never a value read per "
+                        + "contributor"),
+                fouten("""
+                    Objecttype de Jutter (mv: Jutters) (bezield)
+                        het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+
+                    Objecttype de Vondst (mv: Vondsten)
+                        het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen);
+
+                    Feittype weging
+                        de weger Jutter
+                        het gewicht (mv: gewichten) Vondst
+                    Eén weger heeft meerdere gewichten
+
+                    Regel aantal aangemelde vondsten
+                        geldig altijd
+                            Het aantal aangemelde vondsten van een Jutter moet berekend worden als het aantal gewichten van alle gewichten van de Jutter.
+                    """));
+    }
 }

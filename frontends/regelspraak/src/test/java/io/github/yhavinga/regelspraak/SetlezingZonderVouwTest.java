@@ -69,14 +69,12 @@ class SetlezingZonderVouwTest {
         Eén rapporteur heeft één rapport
         """;
 
-    /** The literal message the check raises on the two card witnesses (both read the same fragment). Since L2 it
-     *  cites the rule the emitted wire would fail at this position, WF-053's to-many clause; until L2 it cited
-     *  WF-096. */
+    /** The literal message the check raises on the two card witnesses (both read the same fragment): the
+     *  verifier's sentence for the rule the emitted wire would fail at this position, WF-053's to-many clause,
+     *  naming the hop the emitter writes. Until L2 the Dutch message cited WF-096, then WF-053. */
     static final String MELDING =
-            "setlezing buiten een vouwbron: 'het gewicht van alle vondsten van de Jutter' noemt de waarde "
-            + "van elk lid van de verzameling — alleen toegestaan als bron van één waardevouw (som, "
-            + "totaal, minimum, maximum, eerste, laatste, aantal gevulde waarden); hier wordt één waarde "
-            + "verwacht, en een meervoudige stap in een lezing vraagt een aggregatie (WF-053, IR-SPEC ch. 4.1a)";
+            "setlezing buiten een vouwbron 'het gewicht van alle vondsten van de Jutter': hop 0 reaches the to-many "
+            + "role 'vondst' in a scalar slot — a to-many step needs an aggregation, never a silent first pick";
 
     private static List<Diagnostic> setlezingDiagnoses(String regels) {
         RegelSpraakModel m = Resolver.resolve(MODEL + regels);

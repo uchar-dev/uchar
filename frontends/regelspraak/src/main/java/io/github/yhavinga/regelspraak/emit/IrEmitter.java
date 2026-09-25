@@ -1649,12 +1649,19 @@ public final class IrEmitter {
      *  anchors the walk, or no hop set is uniquely derivable; {@link #eigenLezing} then decides whether
      *  the bindingless read is the subject's own or has no spelling. */
     private List<RegelSpraakModel.RolBindingRef> navigatieBindingen(Expr.AttribuutRef a) {
-        if (m == null || huidigSubject == null || a.objecttype() == null) return List.of();
+        return navigatieBindingen(m, huidigSubject, a);
+    }
+
+    /** As {@link #navigatieBindingen(Expr.AttribuutRef)}, from {@code subject}: the resolver names the hops of a read
+     *  it refuses by the path this emitter would write for it. */
+    public static List<RegelSpraakModel.RolBindingRef> navigatieBindingen(RegelSpraakModel m, Objecttype subject,
+                                                                         Expr.AttribuutRef a) {
+        if (m == null || subject == null || a.objecttype() == null) return List.of();
         if (a.navigatiePad() != null && !a.navigatiePad().isEmpty()) {        // §13.4.1 declared chain
-            List<Objecttype> bereikt = m.volgKeten(huidigSubject, a.navigatiePad());
+            List<Objecttype> bereikt = m.volgKeten(subject, a.navigatiePad());
             if (bereikt == null) return List.of();
             List<RegelSpraakModel.RolBindingRef> uit = new java.util.ArrayList<>();
-            Objecttype cur = huidigSubject;
+            Objecttype cur = subject;
             for (int i = 0; i < a.navigatiePad().size(); i++) {
                 RegelSpraakModel.RolBindingRef b =
                         m.verbindendeRolViaNaamBinding(cur, bereikt.get(i), a.navigatiePad().get(i));
@@ -1666,11 +1673,11 @@ public final class IrEmitter {
         }
         if (a.navigatieRol() != null) {                                      // single-hop by-name
             RegelSpraakModel.RolBindingRef b =
-                    m.verbindendeRolViaNaamBinding(huidigSubject, a.objecttype(), a.navigatieRol());
+                    m.verbindendeRolViaNaamBinding(subject, a.objecttype(), a.navigatieRol());
             return b == null ? List.of() : List.of(b);
         }
-        if (a.objecttype() != huidigSubject) {                               // by-pair (off-subject type)
-            RegelSpraakModel.RolBindingRef b = m.verbindendeRolBinding(huidigSubject, a.objecttype());
+        if (a.objecttype() != subject) {                                     // by-pair (off-subject type)
+            RegelSpraakModel.RolBindingRef b = m.verbindendeRolBinding(subject, a.objecttype());
             return b == null ? List.of() : List.of(b);
         }
         return List.of();                                                    // own attribute — not navigated
