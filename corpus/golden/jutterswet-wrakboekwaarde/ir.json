@@ -1,0 +1,218 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandrecht",
+        "animate": false,
+        "plural": "Strandrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakrecht",
+        "supertype": "Strandrecht",
+        "animate": false,
+        "plural": "Wrakrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsvergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "boekwaarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "wrakboeking",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "boeker",
+            "objectType": "Wrakrecht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "geboekt strandrecht",
+            "objectType": "Strandrecht",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bereken de bergingsvergoeding van een wrakrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bergingsvergoeding",
+              "subjectType": "Wrakrecht",
+              "source": {
+                "snippet": "De bergingsvergoeding van een Wrakrecht"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "grondslag",
+              "subjectType": "Wrakrecht",
+              "source": {
+                "snippet": "zijn grondslag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "lees de boekwaarde van een wrakrecht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "boekwaarde",
+              "subjectType": "Wrakrecht",
+              "source": {
+                "snippet": "De boekwaarde van een Wrakrecht"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "grondslag",
+              "subjectType": "Strandrecht",
+              "source": {
+                "snippet": "de grondslag van zijn geboekt strandrecht"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "wrakboeking",
+                  "role": "geboekt strandrecht"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "boek een strandrecht bij elk wrakrecht",
+        "versions": [
+          {
+            "createdType": "Strandrecht",
+            "subject": "Wrakrecht",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "grondslag",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "bergingsvergoeding",
+                    "subjectType": "Wrakrecht",
+                    "source": {
+                      "snippet": "zijn bergingsvergoeding"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn bergingsvergoeding plus 1"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

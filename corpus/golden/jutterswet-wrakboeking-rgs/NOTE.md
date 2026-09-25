@@ -74,10 +74,9 @@ binding-less form, measured.
 
 `uchar-case-v0` cannot address an instance that is not in the input, so the
 case says nothing about the minted `Strandrecht` — the same limit as the
-carrier. Measured 2026-09-25 on a scratch copy of this source, outside the
-corpus: with the creation's value changed to `zijn bergingsvergoeding plus 1`
-and one more attribute and rule on the `Wrakrecht`,
-`De boekwaarde van een Wrakrecht moet gesteld worden op de grondslag van zijn
-geboekt strandrecht.`, ref, clingo and both Drools branches answer 11.00 and
-3.50 through the derived back-link, and an expectation twisted to 12.00 fails
-in all four.
+carrier. With `rules.objectCreations` emptied the case stays green in ref and
+clingo (measured 2026-09-25): this golden pins the emission of the creation,
+not its execution. `jutterswet-wrakboekwaarde` pins the execution: this
+source with the creation's value changed to `zijn bergingsvergoeding plus 1`
+and one more attribute and rule on the `Wrakrecht`, which read the minted
+`Strandrecht` back through the derived back-link.

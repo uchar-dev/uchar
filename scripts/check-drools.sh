@@ -868,7 +868,13 @@ EXPECTED_CHANNEL=(
 # refuses both on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
 # The twin of anchor/ww-herleving-inkomen was not admitted: clingo refuses its frontend emission on a
 # range fence (the card's Result has the measurement).
-EXPECTED_PLAYED=194
+# 194 -> 195 (2026-09-25, card rgs-getuigen-bronloze-constructen): jutterswet-wrakboekwaarde, new and
+# hand-computed — the source of jutterswet-wrakboeking-rgs with one attribute and one rule more that read
+# the minted Strandrecht back from its subject through the back-link, so its case fails when the creation
+# does not run, where the twin's case stays green. No source file of this backend changed: both branches
+# play its one case on the first run, PLAYED 1 each, with ref's and clingo's values, deriving the
+# back-link from the type pair as they do for the twin. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=195
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1116,7 +1122,10 @@ DRL_CHANNEL=(
 # 167 -> 171 (2026-09-25, card rgs-getuigen-bronloze-constructen): the four new goldens of the block at
 # EXPECTED_PLAYED above. This branch plays each on the first run with no change of its own, PLAYED 1, 5,
 # 3 and 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=171
+# 171 -> 172 (2026-09-25, card rgs-getuigen-bronloze-constructen): jutterswet-wrakboekwaarde, new. This
+# branch plays its one case on the first run with no change of its own, PLAYED 1. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=172
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

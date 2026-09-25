@@ -1,0 +1,68 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "10.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "grondslag": {
+            "number": "2.50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "bergingsvergoeding",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "bergingsvergoeding",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "boekwaarde",
+      "value": {
+        "number": "11.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "boekwaarde",
+      "value": {
+        "number": "3.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
