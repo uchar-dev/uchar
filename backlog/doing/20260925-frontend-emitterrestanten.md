@@ -44,3 +44,12 @@ May touch: `frontends/regelspraak/**`, `corpus/golden/**` (nieuwe goldens
 en her-emissies met byte-gelijke cases), `scripts/check-drools.sh` en
 `scripts/check-noop.sh` (**voorstel**), kaartverplaatsing. Niet in deze
 kaart: de spec en de verifier.
+
+## U-besluiten (hoofdsessie, 2026-09-25, bij de claim)
+
+- U1 Typen: lees IR-SPEC ch. 4.2 (de `BuiltinCall`-tabel: het resultaattype van `dayCount` en `concatenation`) en RUNTIME-SEMANTICS ch. 2.10; meet eerst op een proefdocument wat de frontend nu schrijft (`type: null`) en wat de verifier zegt (WF-034); de emitter schrijft daarna precies het type dat de spec afleidt; de verifier is de arbiter (schoon). Rood-eerst JUnit per vorm.
+- U2 `DimensionSelection`: `IrEmitter.java` r. ~805 weigert een dimensieselectie op een vouw (`facetWeigering`); emitteer haar als `Aggregation.dimensionSelection` (`DimensionSelection {dimension, labels}`, schema r. ~2017); golden met `bron.rgs` en handgerekende cases (ref ≡ clingo); Drools weigert gedimensioneerde invoer per vorm (bekende auto-refusal) → `EXPECTED_CHANNEL`-regel met reden (**voorstel**), meten.
+- U3 `connectingRole`: de allocatie schrijft hem al (r. ~1391–1410, `verbindendeRolBinding`); de objectcreatie schrijft hem waar de zin de rol noemt (lees hoe de resolver de rol van een objectcreatie kent; is die binding afleidbaar uit het typenpaar, schrijf hem dan ook — de wire laat het veld toe en een lezer die hem heeft hoeft niets af te leiden). Her-emitteer `jutterswet-wrakboeking-rgs` en `jutterswet-wrakboekwaarde` (cases byte-gelijk; hun NOTE-diff tegen de drager krimpt — NOTE bijwerken); een golden voor de zelfgetypeerde creatie uit de bron: een tweeling van `jutterswet-opvolgerquorum` (of het kleinste anker `jutterswet-wachtersketen`/`synth2-budgetgrens-onder`; ankers zijn beschermd, de tweeling komt in `corpus/golden/`), cases byte-gelijk, ref ≡ clingo; Drools meten (de exec-tak speelt een creatie met binding).
+- U4 Meldingstaal: `IrEmitter.java` r. ~1150 (lege brontekst): Engels, letterlijk de zin van de OCaml-lader (zoek haar in `spec/verifier/lib/` op "snippet"); de WF-113 (b)-melding r. ~1132 idem als die afwijkt.
+- U5 Parallel bouwt de kaart dialect-opgave-boven-berekening aan de grammatica en de resolver (de lowering van de opgave-markering); jij raakt `IrEmitter.java` en alleen de resolverplek van de objectcreatierol. De hoofdsessie rebaset serieel.
+- U6 Gates 1–8, 10, 11, 12, 13; pins als voorstel.
