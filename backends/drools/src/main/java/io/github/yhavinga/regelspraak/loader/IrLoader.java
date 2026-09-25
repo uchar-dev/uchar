@@ -2476,11 +2476,6 @@ public final class IrLoader {
         return v == null || v.isNull() ? 0 : v.asInt();
     }
 
-    private static Integer integerOf(JsonNode n, String field) {
-        JsonNode v = n.get(field);
-        return v == null || v.isNull() ? null : v.asInt();
-    }
-
     private static List<String> stringList(JsonNode n) {
         List<String> uit = new ArrayList<>();
         if (n != null && n.isArray()) n.forEach(e -> uit.add(e.asText()));

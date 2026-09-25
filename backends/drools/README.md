@@ -46,8 +46,10 @@ mvn -o -f backends/drools/pom.xml package
 ```
 
 `-o` builds offline against the local Maven repository cache. The `package` phase also runs the
-loader round-trip witness (`RoundTripWitnessTest`). `scripts/check-drools.sh` rebuilds the
-jar automatically (offline) if it is absent, then runs jar-only.
+backend's JUnit suite, the loader round-trip witness (`RoundTripWitnessTest`) among it.
+`scripts/check-drools.sh` runs that same offline `package` on every run, whether or not a jar
+is there — the suite must pass with a non-zero test count and no skips, and the replay never
+runs a jar older than the source — and then replays jar-only.
 
 ## Run one golden
 
