@@ -7089,6 +7089,59 @@ let () =
     [ ("WV-3.8-duur-onbekende-eenheid-faalt", Ir_v0.Ast.Tijdsduur);
       ("WV-3.8-absolute-duur-onbekende-eenheid-faalt", Ir_v0.Ast.Absolute_tijdsduur) ]
 
+(* WV-3.8-duurvorm (WF-038): the duration clause's other forms — two dates
+   of one precision, a node type, a counted unit on it, a sub-day unit only
+   over millisecond-precision operands — fault in the verifier's order and in
+   its sentences from [Ir_v0.Checks], read off the static types before any
+   value; each names the builtin's own kind. The ASP backend's suite holds the
+   same rows. *)
+let () =
+  let unit_ a : Ir_v0.Ast.eenheid =
+    { afkorting = Some a; stelsel = None; canoniek = None; factor_naar_canoniek = None; noemer = None }
+  in
+  let geteld ?u () : Ir_v0.Ast.datatype =
+    Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Option.map unit_ u }
+  in
+  let duur ?(kind = Ir_v0.Ast.Tijdsduur) typ a b : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten = [ a; b ]; element_objecttype = None; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ; bron = None; granulariteit = None; bron_rol = None; bron_pad = None }
+  in
+  let van = aref "van" "Jutter" and tot = aref "tot" "Jutter" and moment = aref "moment" "Jutter" in
+  let run waarde =
+    let doc =
+      { empty_doc with
+        objecttypen =
+          [ ot "Jutter"
+              [ ("van", Some Datum_in_dagen); ("tot", Some Datum_in_dagen); ("moment", Some Datum_tijd);
+                ("spanne", Some (geteld ~u:"jr" ())) ]
+              [] ];
+        resolved_regels = [ rr "spanne" Berekening (Some (aref "spanne" "Jutter")) (Some waarde) None ] }
+    in
+    Eval.evaluate (env_of doc)
+      (World.add_instance World.empty
+         (inst "J1" "Jutter"
+            [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01");
+              ("moment", Value.Date_time 0) ]))
+  in
+  let open Ir_v0.Checks in
+  List.iter
+    (fun (name, waarde, sentence) ->
+      match run waarde with
+      | exception Value.Fault m -> check (name ^ " (got: " ^ m ^ ")") (m = sentence)
+      | _ -> check (name ^ " (no fault at all)") false)
+    [ ( "WV-3.8-duurvorm-tekstoperand", duur (Some (geteld ~u:"jr" ())) (litv "gisteren" Tekst) tot,
+        duration_operand_refusal Tijdsduur Tekst );
+      ( "WV-3.8-duurvorm-absolute-tekstoperand",
+        duur ~kind:Absolute_tijdsduur (Some (geteld ~u:"jr" ())) van (litv "morgen" Tekst),
+        duration_operand_refusal Absolute_tijdsduur Tekst );
+      ( "WV-3.8-duurvorm-gemengde-precisie", duur (Some (geteld ~u:"jr" ())) van moment,
+        duration_mixed_precision Tijdsduur );
+      ("WV-3.8-duurvorm-zonder-knooptype", duur None van tot, duration_without_node_type Tijdsduur);
+      ("WV-3.8-duurvorm-zonder-tijdseenheid", duur (Some (geteld ())) van tot, duration_without_time_unit Tijdsduur);
+      ( "WV-3.8-duurvorm-uur-op-dagdatums", duur (Some (geteld ~u:"uur" ())) van tot,
+        duration_sub_day_on_day_dates Tijdsduur ) ]
+
 (* WV-3.8-datumvorm (WF-035): the form of date ± x is decided on the date
    type of either precision — two dates, a duration on the left, or a date on
    the left and the step, whose unit the duration's static type carries — and

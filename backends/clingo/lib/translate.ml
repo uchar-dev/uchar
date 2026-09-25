@@ -1960,16 +1960,36 @@ let numeric_builtin_operand ctx kind (argumenten : expr list) =
       | None -> ())
   | _ -> ()
 
-(* WF-038's counted unit of a duration that is neither a time unit nor a
-   declared day kind, in the sentence the verifier and ref speak
-   ([Ir_v0.Checks]); a day kind stays the helpers' *)
-let duration_unit_known ~doc ~kind (t : datatype option) =
-  match t with
-  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
-    when Ir_v0.Checks.time_unit_of_eenheid u = None && not (day_kind_of_unit_doc doc u) ->
-      fault "%s"
-        (Ir_v0.Checks.duration_unknown_unit kind (Option.value u.afkorting ~default:"?"))
-  | _ -> ()
+(* WF-038's duration clause in the verifier's order and sentences
+   ([Ir_v0.Checks]), read off the static types before the precision picks a
+   branch: two dates of one precision, a node type, a counted unit on it that
+   is a time unit — sub-day only over millisecond-precision operands — or a
+   declared day kind; a day kind stays the helpers' *)
+let duration_form ~doc ~kind (typ : datatype option) (ta : datatype option)
+    (tb : datatype option) =
+  List.iter
+    (function
+      | Some d when not (Ir_v0.Checks.is_date d) ->
+          fault "%s" (Ir_v0.Checks.duration_operand_refusal kind d)
+      | _ -> ())
+    [ ta; tb ];
+  (match (ta, tb) with
+  | Some da, Some db when da <> db -> fault "%s" (Ir_v0.Checks.duration_mixed_precision kind)
+  | _ -> ());
+  match typ with
+  | None -> fault "%s" (Ir_v0.Checks.duration_without_node_type kind)
+  | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ }) -> (
+      match Ir_v0.Checks.time_unit_of_eenheid u with
+      | Some tu ->
+          if
+            Ir_v0.Checks.time_unit_sub_day tu
+            && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+          then fault "%s" (Ir_v0.Checks.duration_sub_day_on_day_dates kind)
+      | None ->
+          if not (day_kind_of_unit_doc doc u) then
+            fault "%s"
+              (Ir_v0.Checks.duration_unknown_unit kind (Option.value u.afkorting ~default:"?")))
+  | Some _ -> fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
 
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
    the verifier and ref speak as well ([Ir_v0.Checks]): a duration operand
@@ -4891,6 +4911,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         | [ a; b ] -> (a, b)
         | _ -> fault "duration expects two arguments"
       in
+      duration_form ~doc:ctx.doc ~kind typ (static_type ctx a) (static_type ctx b);
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let wrap t = if kind = Absolute_tijdsduur then Printf.sprintf "|%s|" t else t in
       if is_datetime_operand ctx (Some a) || is_datetime_operand ctx (Some b) then begin
@@ -4902,9 +4923,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            the day-precision whole-unit count, WITHOUT forming the whole ms
            difference (so a month/year span stays unbounded), exactly ref/'s
            whole_units_between_ms. *)
+        (* [duration_form] refused two dates of different precisions, so
+           only an operand without a static type reaches this guard *)
         if not (is_datetime_operand ctx (Some a) && is_datetime_operand ctx (Some b)) then
-          fault "duration mixes date precisions";
-        duration_unit_known ~doc:ctx.doc ~kind typ;
+          fault "a datum-tijd duration operand beside one without a static type";
         let tu = dt_time_unit_of ~doc:ctx.doc ~what:"duration" typ in
         let da_atoms, da, msa = dt_term ctx ~subject ~subject_ot a in
         let db_atoms, db, msb = dt_term ctx ~subject ~subject_ot b in
@@ -4970,7 +4992,6 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             dk_tijdsduur ctx ~subject ~subject_ot ~kind:k
               ~absolute:(kind = Absolute_tijdsduur) a b
         | None ->
-        duration_unit_known ~doc:ctx.doc ~kind typ;
         let tu = day_time_unit_of ~what:"duration" typ in
         let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
         let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in

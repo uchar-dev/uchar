@@ -971,18 +971,31 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
       if filter <> None then Value.fault "a filter on a duration has no v0 form";
       match argumenten with
       | [ a; b ] ->
+          (* the rest of the WF-038 clause in the verifier's order and
+             sentences, read off the static types before any value: two dates
+             of one precision, then the counted unit on the node type *)
+          let ta = static_type env a and tb = static_type env b in
+          List.iter
+            (function
+              | Some d when not (Ir_v0.Checks.is_date d) ->
+                  Value.fault "%s" (Ir_v0.Checks.duration_operand_refusal kind d)
+              | _ -> ())
+            [ ta; tb ];
+          (match (ta, tb) with
+          | Some da, Some db when da <> db ->
+              Value.fault "%s" (Ir_v0.Checks.duration_mixed_precision kind)
+          | _ -> ());
           let unit_ =
             match typ with
+            | None -> Value.fault "%s" (Ir_v0.Checks.duration_without_node_type kind)
             | Some (Numeriek { eenheid = Some u; _ } | Percentage { eenheid = Some u; _ })
               -> (
                 match Ir_v0.Checks.time_unit_of_eenheid u with
                 | Some tu ->
                     if
                       Ir_v0.Checks.time_unit_sub_day tu
-                      && (static_type env a = Some Datum_in_dagen || static_type env b = Some Datum_in_dagen)
-                    then
-                      Value.fault
-                        "sub-day duration needs datum-tijd operands"
+                      && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
+                    then Value.fault "%s" (Ir_v0.Checks.duration_sub_day_on_day_dates kind)
                     else `Calendar tu
                 | None -> (
                     (* not a calendar unit: the spelling may name a declared
@@ -994,8 +1007,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                         Value.fault "%s"
                           (Ir_v0.Checks.duration_unknown_unit kind
                              (Option.value u.afkorting ~default:"?"))))
-            | _ ->
-                Value.fault "duration without a recognised time unit on its node type"
+            | Some _ -> Value.fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
           in
           (* ch. 5.11, wire order: "van" (argument 0) before "tot"
              (argument 1). Written as two positional arguments this build

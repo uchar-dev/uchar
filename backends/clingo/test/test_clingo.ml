@@ -13848,6 +13848,65 @@ let () =
     [ ("WF-038: a duration counted in a unit that is no time unit", Ir_v0.Ast.Tijdsduur);
       ("WF-038: an absoluteDuration counted in a unit that is no time unit", Ir_v0.Ast.Absolute_tijdsduur) ]
 
+(* WF-038's duration clause, its other forms: two dates of one precision, a
+   node type, a counted unit on it, a sub-day unit only over
+   millisecond-precision operands — refused in the verifier's order and
+   sentences ([Ir_v0.Checks]) before the precision picks a branch, each naming
+   the builtin's own kind; ref's suite holds the same rows as
+   WV-3.8-duurvorm. *)
+let () =
+  let geteld ?u () =
+    match u with
+    | None -> pf_n0
+    | Some a ->
+        Printf.sprintf
+          {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "%s" } }|}
+          a
+  in
+  let duur ?(kind = "duration") ?typ a b =
+    Printf.sprintf {|{ "node": "BuiltinCall", "kind": "%s", "arguments": [ %s, %s ],%s "source": { "snippet": "de tijdsduur" } }|}
+      kind a b
+      (Printf.sprintf {| "type": %s,|} (Option.value typ ~default:"null"))
+  in
+  let van = pf_a "van" and tot = pf_a "tot" and moment = pf_a "moment" in
+  let tekst w = pf_l ~typ:{|{ "node": "Text" }|} w in
+  let case_text =
+    pf_case
+      ~instances:
+        [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "van": { "date": "2024-01-01" }, "tot": { "date": "2025-01-01" }, "moment": { "dateTime": "2025-01-01T08:00:00" } }, "roles": {}, "characteristics": [] }|} ]
+      [ pf_cons ]
+  in
+  let open Ir_v0.Checks in
+  List.iter
+    (fun (name, waarde, sentence) ->
+      let ir =
+        pf_doc
+          ~objecttypen:
+            [ pf_ot [ ("van", pf_datum); ("tot", pf_datum); ("moment", datumtijd_t); ("heffing", geteld ~u:"jr" ()) ] ]
+          ~regels:[ pf_regel waarde ] ()
+      in
+      let irf = write_temp ".ir.json" ir in
+      let casef = write_temp ".case.json" case_text in
+      let doc = Ir_v0.Loader.load_file irf in
+      let case = Uchar_ref.Case.load_file doc casef in
+      Sys.remove irf;
+      Sys.remove casef;
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
+      | exception Uchar_ref.Value.Fault msg -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
+    [ ( "WF-038: a text duration operand", duur ~typ:(geteld ~u:"jr" ()) (tekst "gisteren") tot,
+        duration_operand_refusal Tijdsduur Tekst );
+      ( "WF-038: a text absoluteDuration operand",
+        duur ~kind:"absoluteDuration" ~typ:(geteld ~u:"jr" ()) van (tekst "morgen"),
+        duration_operand_refusal Absolute_tijdsduur Tekst );
+      ( "WF-038: duration operands of mixed precision", duur ~typ:(geteld ~u:"jr" ()) van moment,
+        duration_mixed_precision Tijdsduur );
+      ("WF-038: a duration without a node type", duur van tot, duration_without_node_type Tijdsduur);
+      ( "WF-038: a duration without a time unit", duur ~typ:(geteld ()) van tot,
+        duration_without_time_unit Tijdsduur );
+      ( "WF-038: a sub-day duration over day-precision dates", duur ~typ:(geteld ~u:"uur" ()) van tot,
+        duration_sub_day_on_day_dates Tijdsduur ) ]
+
 (* WF-035 on date ± x, per form and precision: the form is decided on the
    date type of either precision — two dates, a duration on the left, or a
    date on the left and the step — and only then does the precision of the

@@ -2247,6 +2247,31 @@ let date_duration_operand_refusal (d : datatype) =
   "date \xc2\xb1 duration: the duration operand is " ^ datatype_kind d
   ^ ", must be a number carrying a time unit"
 
+(* WF-038 on the duration builtins (IR-SPEC ch. 4.3), the clause's other
+   forms beside [duration_unknown_unit]: both operands dates of one
+   precision, the counted unit on the node type, a sub-day unit only over
+   millisecond-precision operands. The same three readers speak them, each
+   naming the builtin's own kind. *)
+let duration_operand_refusal kind (d : datatype) =
+  Spelling.encode Spelling.builtin_kind kind ^ " operand is " ^ datatype_kind d
+  ^ ", must be a date"
+
+let duration_mixed_precision kind =
+  Spelling.encode Spelling.builtin_kind kind
+  ^ " operands mix date precisions (both must share one precision)"
+
+let duration_without_node_type kind =
+  Spelling.encode Spelling.builtin_kind kind
+  ^ " without a node type (the counted unit is the node type's unit)"
+
+let duration_without_time_unit kind =
+  Spelling.encode Spelling.builtin_kind kind
+  ^ " without a recognised time unit on its node type"
+
+let duration_sub_day_on_day_dates kind =
+  "sub-day " ^ Spelling.encode Spelling.builtin_kind kind
+  ^ " unit on day-precision operands (millisecond precision required)"
+
 (* like [datatype_kind] but carrying the decimal count and unit a numeric type
    turns on: a WF-076 mismatch on precision or unit renders as "number differs
    from number" under the bare kind, hiding exactly the discrepancy the check
@@ -4756,40 +4781,30 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              let operand side t =
                match t with
                | Some d when not (is_date d) ->
-                   [ v "WF-038" (sub side)
-                       ("duration operand is " ^ datatype_kind d ^ ", must be a date") ]
+                   [ v "WF-038" (sub side) (duration_operand_refusal f.kind d) ]
                | _ -> []
              in
              operand "arguments/0" ta
              @ operand "arguments/1" tb
              @ (match ta, tb with
                 | Some da, Some db when is_date da && is_date db && da <> db ->
-                    [ v "WF-038" at
-                        "duration operands mix date precisions (both must share one \
-                         precision)" ]
+                    [ v "WF-038" at (duration_mixed_precision f.kind) ]
                 | _ -> [])
              @ (match f.typ with
                 | None ->
                     (* the counted unit lives on the node type: an absent
                        type cannot carry it — without this arm the wire is
                        verifier-clean and faults only at evaluation *)
-                    [ v "WF-038" at
-                        "duration without a node type (the counted unit is the node \
-                         type's unit)" ]
+                    [ v "WF-038" at (duration_without_node_type f.kind) ]
                 | Some t -> (
                     match unit_of t with
-                    | None ->
-                        [ v "WF-038" at
-                            "duration without a recognised time unit on its node type" ]
+                    | None -> [ v "WF-038" at (duration_without_time_unit f.kind) ]
                     | Some u -> (
                         match time_unit_of_eenheid u with
                         | Some tu ->
                             if time_unit_sub_day tu
                                && (ta = Some Datum_in_dagen || tb = Some Datum_in_dagen)
-                            then
-                              [ v "WF-038" at
-                                  "sub-day duration unit on day-precision operands \
-                                   (millisecond precision required)" ]
+                            then [ v "WF-038" at (duration_sub_day_on_day_dates f.kind) ]
                             else []
                         | None ->
                             if day_kind_unit ctx u then []
