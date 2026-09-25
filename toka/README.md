@@ -49,9 +49,10 @@ holdout ever goes stale.
 ## Well-formedness
 
 Since 2026-09-25 (the card `20260925-toka-welgevormd.md` in `backlog/`) the
-zone claims more than parity: every replay slice is a well-formed program,
-verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
-4). The casus dump is the exception, on purpose.
+zone claims more than parity: every replay slice but one named holdout is a
+well-formed program, verifier-clean under gate 3's verifier, and gate 11
+checks it (its obligation 4). The casus dump stays outside that claim, on
+purpose.
 
 - **The slice rule: a slice carries beside its scenario whatever anchors its
   model.** The casus declares a timeline with a variable start, and such a
@@ -60,14 +61,17 @@ verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
   the determination names (WF-032). The frontend writes that member itself,
   as the last attribute of its object type, when it resolves the
   determination. Slicing had cut both from 27 of the 29 slices, which each
-  failed on WF-016 alone; with the determination only they fail on WF-032
-  instead (measured). Those 27 now carry the casus's one determination and
-  its member declaration, copied mechanically from `casus/ir.json`; the two
-  start-point slices carried both already and did not move, and all 29 now
-  carry one identical model. The anchor's write rule stays with its own
-  scenario: a slice needs its model anchored, not the anchor computed. The
-  replays in ref, clingo and Drools print byte for byte what they printed
-  before.
+  failed on WF-016 (26 on it alone, `toka-24` on WF-099 as well); with the
+  determination only, WF-032 takes WF-016's place (measured). Those 27 now
+  carry the casus's one determination and its member declaration, copied
+  mechanically from `casus/ir.json`; the two start-point slices carried both
+  already and did not move, and all 29 now carry one identical model. The
+  anchor's write rule stays with its own scenario: a slice needs its model
+  anchored, not the anchor computed. That holds only while no member carries
+  a timeline facet on the timeline with a variable start (measured: none in
+  the casus and none in a slice); once one does, the write rule belongs in
+  every slice that reads such a member. The replays in ref, clingo and Drools
+  print byte for byte what they printed before.
 - **The standing: 28 of the 29 slices are verifier-clean.** `toka-24` is held
   out by gate 11, pinned to the one report it draws (WF-099 at
   `/rules/rules/0/versions/0/value/base/minimum`): the casus writes a clamp's
