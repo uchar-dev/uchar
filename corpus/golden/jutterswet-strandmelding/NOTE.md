@@ -56,6 +56,19 @@ Its DRL-text branch refuses the document on its defaults sentence (`ch. 7
 prioritizedDefaults — the DRL-text branch has no defaults lowering`), class
 (A) of `DRL_CHANNEL` in `scripts/check-drools.sh`.
 
+## Re-emitted with the named role (card frontend-emitterrestanten)
+
+The creation's sentence names the created object by the role `gemeld
+strandrecht`, and since the card frontend-emitterrestanten the frontend writes
+that role as the creation's back-link: `connectingRole {strandmelding,
+gemeld strandrecht}`. The re-emission added those five lines and nothing else,
+and the case file did not change. It is the relation the type pair derives as
+well: `strandmelding` is the one fact type that relates `Melding` and
+`Strandrecht` (RUNTIME-SEMANTICS ch. 5.5). Re-measured 2026-09-25 on the
+re-emitted document: the verifier passes it, `ref` and clingo pass the case
+(5 expectations each), and the WF-050 mutation above still refuses it with the
+same report.
+
 ## noop refutation (gate 7)
 
 `gemelde uitkering` and `uitkering` are absent from the input world, so the
