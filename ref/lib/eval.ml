@@ -929,9 +929,11 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                 match day_kind_of_unit env u with
                 | Some k -> `Day_kind k
                 | None ->
-                    Value.fault
-                      "duration unit %S is neither a recognised time unit nor a declared day \
-                       kind (WF-035)"
+                    (* clingo's sentence per form: it names datum-tijd
+                       arithmetic apart from date arithmetic *)
+                    Value.fault "%s unit %S is neither a recognised time unit nor a declared day kind"
+                      (if static_type env le = Some Datum_tijd then "datum-tijd arithmetic"
+                       else "date arithmetic")
                       (Option.value u.afkorting ~default:"?")))
         | _ -> Value.fault "date \xc2\xb1 duration without a time unit (WF-035)"
       in
