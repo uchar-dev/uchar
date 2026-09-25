@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A",
+        "objectType": "Aanspoelsel",
+        "attributes": {
+          "soort": {
+            "text": "barnsteen"
+          },
+          "opgegeven stukprijs": {
+            "number": "3.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "A",
+      "attribute": "berekende stukprijs"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "A",
+      "characteristic": "afwijkende opgave stukprijs"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

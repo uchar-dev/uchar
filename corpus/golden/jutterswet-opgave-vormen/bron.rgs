@@ -1,0 +1,57 @@
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen);
+    de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+    de premie Numeriek (getal met 2 decimalen);
+    is museaal kenmerk (bijvoeglijk);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is kustwacht kenmerk (bijvoeglijk);
+    is havenmeester kenmerk (bijvoeglijk);
+    het wachtgeld Numeriek (geheel getal) (mag opgegeven worden);
+
+Objecttype het Aanspoelsel (mv: Aanspoelsels)
+    de soort Tekst;
+    de stukprijs Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+
+// Bron: art. 3e lid 1
+Regel waardering
+    geldig altijd
+        De waarde van een Vondst moet berekend worden als de taxatie van de Vondst verminderd met 5,00.
+
+// Bron: art. 3e lid 2
+Uitzondering op waardering: lage taxatie
+    geldig altijd
+        De waarde van een Vondst moet gesteld worden op 1,00
+        indien de taxatie van de Vondst kleiner is dan 10,00.
+
+// Bron: art. 3e lid 3
+Uitzondering op lage taxatie: museale vondst
+    geldig altijd
+        De waarde van een Vondst moet gesteld worden op 100,00
+        indien hij museaal is.
+
+// Bron: art. 3e lid 4
+Regel premie
+    geldig altijd
+        De premie van een Vondst moet berekend worden als de waarde van de Vondst maal 2.
+
+Uitzonderingen ongeordend:
+// Bron: art. 3e lid 5
+Regel wachtgeld voor kustwachters
+    geldig altijd
+        Het wachtgeld van een Jutter moet gesteld worden op 30
+        indien hij kustwacht is.
+
+// Bron: art. 3e lid 5
+Regel wachtgeld voor havenmeesters
+    geldig altijd
+        Het wachtgeld van een Jutter moet gesteld worden op 45
+        indien hij havenmeester is.
+
+// Bron: art. 3e lid 6
+Beslistabel stukprijs van een aanspoelsel
+    geldig altijd
+| | de stukprijs van een Aanspoelsel moet gesteld worden op | indien zijn soort gelijk is aan |
+|---|---|---|
+| 1 | 2,50 | "zeewier" |
+| 2 | 7,00 | "wrakhout" |

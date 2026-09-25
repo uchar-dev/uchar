@@ -1393,10 +1393,14 @@ which is the measurement above stated as a property.
 - The explanation that reports the deciding default belongs to the consumers
   that explain defaults groups at all; the wire carries what they need.
 
-Golden: `jutterswet-opgave-boven-berekening` (two marked attributes, one with
+Goldens: `jutterswet-opgave-boven-berekening` (two marked attributes, one with
 an initialisation, and a rule reading the generated characteristic; ref,
 clingo and the Drools exec branch replay its twelve cases, the DRL-text branch
-refuses it on its defaults sentence).
+refuses it on its defaults sentence) and `jutterswet-opgave-vormen` (the three
+authored forms that are no plain rule under the marker: a tree with a nested
+exception, an unordered block whose conflict is recorded under the moved
+target, and the rows of a decision table; fifteen cases, replayed and refused
+the same way).
 
 ---
 

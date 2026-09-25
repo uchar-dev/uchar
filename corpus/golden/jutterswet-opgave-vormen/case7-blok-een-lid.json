@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "kustwacht"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "berekende wachtgeld",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "wachtgeld",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J",
+      "characteristic": "afwijkende opgave wachtgeld"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

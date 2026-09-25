@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "40.00"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "museaal"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende waarde",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "waarde",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

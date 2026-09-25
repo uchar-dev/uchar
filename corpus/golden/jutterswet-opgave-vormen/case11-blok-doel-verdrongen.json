@@ -1,0 +1,43 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {
+          "wachtgeld": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "havenmeester"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "wachtgeld",
+      "value": {
+        "number": "45"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "berekende wachtgeld",
+      "value": {
+        "number": "45"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

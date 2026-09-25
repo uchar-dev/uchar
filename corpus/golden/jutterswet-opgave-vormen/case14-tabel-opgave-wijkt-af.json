@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A",
+        "objectType": "Aanspoelsel",
+        "attributes": {
+          "soort": {
+            "text": "wrakhout"
+          },
+          "opgegeven stukprijs": {
+            "number": "8.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "A",
+      "attribute": "berekende stukprijs",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "A",
+      "characteristic": "afwijkende opgave stukprijs"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave stukprijs",
+      "label": "A"
+    }
+  ]
+}

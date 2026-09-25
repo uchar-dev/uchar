@@ -1,0 +1,1225 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "museaal",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave waarde",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtgeld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven wachtgeld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende wachtgeld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kustwacht",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "havenmeester",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave wachtgeld",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Aanspoelsel",
+        "animate": false,
+        "plural": "Aanspoelsels",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stukprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven stukprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende stukprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave stukprijs",
+            "kind": "possessive"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "premie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De premie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de waarde van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de waarde van de Vondst maal 2"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3e lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stukprijs van een aanspoelsel 1",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende stukprijs",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "de stukprijs van een Aanspoelsel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "2.50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 1,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "2,50"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "soort",
+                "subjectType": "Aanspoelsel",
+                "source": {
+                  "snippet": "zijn soort"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "text": "zeewier"
+                },
+                "type": {
+                  "node": "Text"
+                },
+                "source": {
+                  "snippet": "\"zeewier\""
+                }
+              },
+              "source": {
+                "snippet": "zijn soort gelijk is aan \"zeewier\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3e lid 6"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stukprijs van een aanspoelsel 2",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende stukprijs",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "de stukprijs van een Aanspoelsel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "7.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7,00"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "soort",
+                "subjectType": "Aanspoelsel",
+                "source": {
+                  "snippet": "zijn soort"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "text": "wrakhout"
+                },
+                "type": {
+                  "node": "Text"
+                },
+                "source": {
+                  "snippet": "\"wrakhout\""
+                }
+              },
+              "source": {
+                "snippet": "zijn soort gelijk is aan \"wrakhout\""
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3e lid 6"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave waarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave waarde"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven waarde"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven waarde is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende waarde"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende waarde is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven waarde"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende waarde"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven waarde is ongelijk aan zijn berekende waarde"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave wachtgeld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave wachtgeld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter heeft afwijkende opgave wachtgeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven wachtgeld",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn opgegeven wachtgeld"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven wachtgeld is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende wachtgeld",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn berekende wachtgeld"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende wachtgeld is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven wachtgeld",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn opgegeven wachtgeld"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende wachtgeld",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn berekende wachtgeld"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven wachtgeld is ongelijk aan zijn berekende wachtgeld"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven wachtgeld is gevuld - zijn berekende wachtgeld is gevuld - zijn opgegeven wachtgeld is ongelijk aan zijn berekende wachtgeld."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave stukprijs",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave stukprijs",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "Een Aanspoelsel heeft afwijkende opgave stukprijs"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven stukprijs",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn opgegeven stukprijs"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven stukprijs is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende stukprijs",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn berekende stukprijs"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende stukprijs is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven stukprijs",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn opgegeven stukprijs"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende stukprijs",
+                    "subjectType": "Aanspoelsel",
+                    "source": {
+                      "snippet": "zijn berekende stukprijs"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven stukprijs is ongelijk aan zijn berekende stukprijs"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven stukprijs is gevuld - zijn berekende stukprijs is gevuld - zijn opgegeven stukprijs is ongelijk aan zijn berekende stukprijs."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave waarde",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave waarde",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave waarde"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden)",
+              "line": 3
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave wachtgeld",
+        "versions": [
+          {
+            "subject": "Jutter",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave wachtgeld",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave wachtgeld"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "het wachtgeld Numeriek (geheel getal) (mag opgegeven worden)",
+              "line": 10
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave stukprijs",
+        "versions": [
+          {
+            "subject": "Aanspoelsel",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave stukprijs",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave stukprijs"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de stukprijs Numeriek (getal met 2 decimalen) (mag opgegeven worden)",
+              "line": 14
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "waardering",
+        "subject": "Vondst",
+        "attribute": "berekende waarde",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de taxatie van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10,00"
+                }
+              },
+              "source": {
+                "snippet": "de taxatie van de Vondst kleiner is dan 10,00"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            },
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "less",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "taxatie",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "de taxatie van de Vondst"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "10.00"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "10,00"
+                              }
+                            },
+                            "source": {
+                              "snippet": "de taxatie van de Vondst kleiner is dan 10,00"
+                            }
+                          },
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "museaal",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij museaal is"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "de taxatie van de Vondst kleiner is dan 10,00 en hij museaal is"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "100.00"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "100,00"
+                        }
+                      },
+                      "source": {
+                        "snippet": "art. 3e lid 3"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzondering op lage taxatie"
+                  }
+                }
+              ]
+            },
+            "source": {
+              "snippet": "art. 3e lid 2"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de taxatie van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5,00"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de taxatie van de Vondst verminderd met 5,00"
+              }
+            },
+            "source": {
+              "snippet": "art. 3e lid 1"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "art. 3e lid 1"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "wachtgeld voor kustwachters",
+        "subject": "Jutter",
+        "attribute": "berekende wachtgeld",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "kustwacht",
+              "negated": false,
+              "source": {
+                "snippet": "hij kustwacht is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "30"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "30"
+              }
+            },
+            "source": {
+              "snippet": "art. 3e lid 5"
+            }
+          }
+        ],
+        "unordered": true,
+        "source": {
+          "snippet": "art. 3e lid 5"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "wachtgeld voor havenmeesters",
+        "subject": "Jutter",
+        "attribute": "berekende wachtgeld",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "havenmeester",
+              "negated": false,
+              "source": {
+                "snippet": "hij havenmeester is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "45"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "45"
+              }
+            },
+            "source": {
+              "snippet": "art. 3e lid 5"
+            }
+          }
+        ],
+        "unordered": true,
+        "source": {
+          "snippet": "art. 3e lid 5"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening waarde",
+        "subject": "Vondst",
+        "attribute": "waarde",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven waarde"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven waarde"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende waarde"
+              }
+            },
+            "source": {
+              "snippet": "berekende waarde"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening wachtgeld",
+        "subject": "Jutter",
+        "attribute": "wachtgeld",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven wachtgeld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn opgegeven wachtgeld"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven wachtgeld"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende wachtgeld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn berekende wachtgeld"
+              }
+            },
+            "source": {
+              "snippet": "berekende wachtgeld"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening stukprijs",
+        "subject": "Aanspoelsel",
+        "attribute": "stukprijs",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven stukprijs",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "zijn opgegeven stukprijs"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven stukprijs"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende stukprijs",
+              "subjectType": "Aanspoelsel",
+              "source": {
+                "snippet": "zijn berekende stukprijs"
+              }
+            },
+            "source": {
+              "snippet": "berekende stukprijs"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

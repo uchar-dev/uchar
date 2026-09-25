@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A",
+        "objectType": "Aanspoelsel",
+        "attributes": {
+          "soort": {
+            "text": "zeewier"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "A",
+      "attribute": "berekende stukprijs",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "A",
+      "attribute": "stukprijs",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
