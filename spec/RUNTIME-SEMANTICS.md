@@ -376,7 +376,7 @@ maximum of the operands' declared decimals):
 |---|---|
 | plus, min, verminderd met | maxDec; whole iff both operands whole; left operand's unit |
 | maal | **sum** of the operands' decimals (§4.4: 2 dec × 2 dec = 4 dec) |
-| gedeeld door | maxDec — a documented **under-report**: an exact quotient has no finite inherent precision (see ch. 2.4) |
+| gedeeld door | maxDec, not whole, as for tot de macht — a documented **under-report**: an exact quotient has no finite inherent precision (see ch. 2.4) |
 | tot de macht | maxDec, not whole |
 | percentage van | precision claim dropped (0, not whole); right operand's unit |
 | wortel | placeholder claim (0 dec, non-negative, unitless); the effective precision comes from the mandatory rounding |
