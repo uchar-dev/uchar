@@ -75,5 +75,3 @@ same report, and the Drools backend answers as before — the exec-model branch
 `gemelde uitkering` and `uitkering` are absent from the input world, so the
 `--noop` run fails on the three `attributeValue` expectations (`M1.gemelde
 uitkering = leeg, expected 50`, and the same for W1 and W2). Not a survivor.
-
-The `ir.json` is the frontend's emission on the union of the same landing: since the card frontend-emitterrestanten the emitter writes the `connectingRole` the creation sentence names (`strandmelding`/`gemeld strandrecht`), which the first emission of this golden did not carry; the cases and every expectation are unchanged, and ref, clingo and the Drools exec branch play it as before.
