@@ -66,9 +66,9 @@ chain clause's sentence begins with the same words; on this document it
 cannot fire, because the group's subject and the allocation's source type are
 one type.
 
-Falsifiable: with the remainder condition of the flat clause made false (in
-`wf050`, the second disjunct of the allocation test changed to `false && match
-(vd.bron_type, vd.restant_attribuut) with …`) the verifier passes this
-document (`verifier: PASS`), and before this witness that mutant changed no
-document of golden, rood, negatief or the parity zone at all (measured
-2026-09-25).
+Falsifiable, arm-exact: with the remainder condition of the flat clause made
+false (in `wf050`, the second disjunct of the allocation test changed to
+`false && match (vd.bron_type, vd.restant_attribuut) with …`) the verifier
+passes this document (`verifier: PASS`) and no other verdict moves — 731
+documents compared over golden, rood and negatief. Before this witness the
+same mutant moved no verdict at all (measured 2026-09-25).

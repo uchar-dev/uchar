@@ -636,17 +636,19 @@ let chain_group_keys doc t =
 
 (* --- the chain arms of the single-writer fences ---------------------------
 
-   WF-026, WF-050's allocation lift and WF-079 key their flat arms on the
-   DECLARED type (the single-writer note at wf026), where
+   WF-026, WF-050's allocation and creation clauses and WF-079 key their flat
+   arms on the DECLARED type (the single-writer note at wf026), where
    'Berger.bergingsaandeel' and 'Hoofdberger.bergingsaandeel' are two keys.
    Their chain arms pair two writers of one attribute declared on two types
    of one chain, the one a strict ancestor of the other. The writer on the
    ancestor writes the lower type's instances too, so the lower type is the
    first concrete type both write, and each arm reports there. The pairing is
-   defined once, here. What differs per rule is which writers it pairs and
-   whether a gate applies: WF-079's pair is folded into one stack inside the
-   gate of RUNTIME-SEMANTICS ch. 7.10, and an allocation is never folded, so
-   WF-026 and WF-050 have no gate. *)
+   defined once, here. What differs per rule is which writers it pairs,
+   whether a gate applies and in which direction: WF-079's pair is folded
+   into one stack inside the gate of RUNTIME-SEMANTICS ch. 7.10; an
+   allocation and an object creation are never folded, so WF-026 and WF-050
+   have no gate; and a creation, which mints an instance of exactly its
+   created type, meets a group only on a type below the group's subject. *)
 
 (* Two writers [x] and [y], their declared types read by [ty]: [Some (lower,
    upper)] when the one type is a strict ancestor of the other, the writer on
@@ -1687,8 +1689,9 @@ let wf025 ctx =
    computing rules: outside the gate of RUNTIME-SEMANTICS ch. 7.10 both
    survive onto a subtype instance, inside it the fold makes them one.
    WF-026's chain arm and WF-050's allocation lift ask it of an allocation,
-   which no stack absorbs: both writers always survive onto the lower type's
-   instances, so those arms have no gate. *)
+   and WF-050's creation clause of an object creation; no stack absorbs
+   either, so both writers always survive onto the instances they share and
+   those arms have no gate. *)
 let wf026 ctx =
   let named =
     List.map
@@ -7699,6 +7702,18 @@ let wf050 ctx =
                         | _ -> false)
                       ctx.doc.prioritized_defaults)
                in
+               (* The flat creation clause and its chain arm read this one
+                  predicate, so they cannot disagree on which initialisations
+                  write the group's target. *)
+               let initialises (oc : resolved_object_creatie) =
+                 List.exists
+                   (fun (t : toekenning) ->
+                     (match t.toe_attribuut with
+                     | Some a -> norm a = norm tn
+                     | None -> false)
+                     && t.toe_kenmerk = (l.pd_kenmerk <> None))
+                   oc.toekenningen
+               in
                (if group_size > 1 && not l.pd_ongeordend then
                   [ v "WF-050" at
                       ("multiple defaults groups on target '" ^ l.pd_onderwerp ^ "." ^ tn
@@ -7735,13 +7750,7 @@ let wf050 ctx =
                         (match oc.nieuw_type with
                         | Some nt -> norm nt = norm l.pd_onderwerp
                         | None -> false)
-                        && List.exists
-                             (fun (t : toekenning) ->
-                               (match t.toe_attribuut with
-                               | Some a -> norm a = norm tn
-                               | None -> false)
-                               && t.toe_kenmerk = (l.pd_kenmerk <> None))
-                             oc.toekenningen)
+                        && initialises oc)
                       ctx.doc.object_creaties
                   then
                     [ v "WF-050" at
@@ -7751,6 +7760,34 @@ let wf050 ctx =
                           decisions (and void the initialisation default's input-emptiness \
                           justification)") ]
                   else [])
+               (* The creation clause's chain arm. A creation mints an instance
+                  of exactly its created type — it is not polymorphic — so it
+                  meets the group only where that type lies strictly below the
+                  group's subject: the instance inherits the group's stack
+                  (RUNTIME-SEMANTICS ch. 7.10), which never absorbs a
+                  creation-time write. A creation of an ancestor of the subject
+                  mints no instance the group runs on and stays clean — the one
+                  direction the allocation arms do not share, because an
+                  allocation writes every instance of its type. *)
+               @ dedup_reports
+                   (List.filter_map
+                      (fun (oc : resolved_object_creatie) ->
+                        match oc.nieuw_type with
+                        | Some nt when initialises oc -> (
+                            match chain_lower ctx ~ty:Fun.id nt l.pd_onderwerp with
+                            | Some (low, _) when norm low = norm nt ->
+                                Some
+                                  (v "WF-050" at
+                                     (Printf.sprintf
+                                        "an object creation also initialises defaults target \
+                                         '%s.%s' through its type chain — the group declared \
+                                         on %s, the created type %s — and an object creation \
+                                         is never folded into a stack, so an instance of %s \
+                                         it creates has both writers"
+                                        l.pd_onderwerp tn l.pd_onderwerp nt nt))
+                            | _ -> None)
+                        | _ -> None)
+                      ctx.doc.object_creaties)
                @
                match l.pd_attribuut with
                | None -> []

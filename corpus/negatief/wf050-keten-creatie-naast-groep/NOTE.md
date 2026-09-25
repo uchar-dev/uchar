@@ -8,6 +8,14 @@ melding's `omvang` (`createdType` `Wrakrecht`). `Wrakrecht` is a
 `Strandrecht`. `lees de gemelde uitkering` reads the created instance's
 `uitkering` back into the melding, so a case can observe it.
 
+    WF-050 FAIL /rules/prioritizedDefaults/0: an object creation also
+    initialises defaults target 'Strandrecht.uitkering' through its type chain
+    — the group declared on Strandrecht, the created type Wrakrecht — and an
+    object creation is never folded into a stack, so an instance of Wrakrecht
+    it creates has both writers
+
+The report sits at the defaults group, as the flat clause's does.
+
 **Why the created `Wrakrecht` has both writers.** A creation mints an
 instance of exactly its `createdType`; it is not polymorphic. That instance is
 a `Wrakrecht`, and a `Wrakrecht` inherits the whole defaults stack of
@@ -78,3 +86,14 @@ measured 2026-09-25).
 **The arm.** WF-050's flat creation clause keys on the group's declared
 subject, where `Strandrecht.uitkering` and `Wrakrecht.uitkering` are two keys;
 before the chain arm the verifier passed this document (`verifier: PASS`).
+The chain arm reports a creation that initialises the group's target — by the
+predicate the flat clause reads — and whose created type lies strictly below
+the group's subject (`chain_lower` in `spec/verifier/lib/checks.ml`, the
+predicate the other chain arms of the single-writer rules read). It has no
+gate: a creation-time write never enters a stack. `expect.txt` pins the chain
+arm.
+
+Falsifiable, arm-exact: making the chain arm report nothing (in `wf050`, its
+guard `when norm low = norm nt` changed to `when false && norm low = norm
+nt`) turns this case clean and nothing else — 731 documents compared over
+golden, rood and negatief, one verdict moved (measured 2026-09-25).
