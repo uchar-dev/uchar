@@ -65,7 +65,8 @@
    scope, the only overrider is the case dossier, and RUNTIME-SEMANTICS
    ch. 7.8 places the virtual input default BELOW the ordinary defaults
    ("computation displaces input" — Reading A): a case-supplied value there
-   gives Reading A, never Reading B.
+   gives Reading A, never Reading B — a recorded flank, not a refusal
+   (PHASE5-CATALA decision 6, with the measurement).
 
    The empty-operand rule. Catala reads every variable hard (error_empty:
    an empty value is a fatal NoValueProvided), while the IR's arithmetic

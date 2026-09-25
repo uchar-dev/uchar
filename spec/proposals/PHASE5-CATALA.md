@@ -267,3 +267,18 @@ definition an IR design flaw for 5d's triage.
    **characteristic** (boolean) callee target (a decided attribution, not a
    value — `refuse_context.catala_en`), a **below-root branching** override
    tree, and a **root-unordered** own default all stay refused loudly.
+
+   **A recorded flank that is not refused (the maintainer's default,
+   2026-09-25).** A `context` variable of a scope that no scope calls has
+   no caller to override it: the only overrider is the case dossier, and a
+   case value there is the ch. 7.8 input default below the scope's own
+   defaults — Reading A — where Catala, running the scope under a caller
+   that overrides the variable, gives Reading B. The plugin lowers such a
+   variable like any other and does not refuse it. Measured 2026-09-25 on
+   a probe outside the repository: a scope `Kamer` with `context drempel`
+   (own default 4) and `uitkomst = drempel + 36`, the case supplying
+   `drempel = 7`. The emitted document is verifier-clean; `ref`, clingo
+   and the Drools exec-model branch give `uitkomst = 40` (the DRL-text
+   branch excludes the document on its defaults sentence); catala 1.2.1
+   (`clerk run --scope Test`, a scope `Test` that sets `k.drempel` to 7)
+   gives 43. No corpus case reaches the form.
