@@ -26,7 +26,7 @@ included, and the subtype's rule over every `Wrakrecht`: a `Wrakrecht`
 instance has two writers on `uitkering` with no explicit priority, the form
 WF-079 refuses on one declared type.
 
-**The executors part.** Measured 2026-09-25 with a `Wrakrecht` and a
+**The executors disagree.** Measured 2026-09-25 with a `Wrakrecht` and a
 `Strandrecht`, both with `grondslag` 10.00, in both orders of the two rules:
 the reference interpreter faults (`EVALUATION FAULT: no fixpoint within 100
 passes — divergence is a fault (ch. 5.7)`); the ASP backend derives two values

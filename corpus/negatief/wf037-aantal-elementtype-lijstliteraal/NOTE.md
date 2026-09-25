@@ -58,36 +58,10 @@ line, exit 1; gate 3 reports the case `rejected, but not for WF-037`.
 With the arm (source md5 `389773713ef066c7ccbf5ba414db0758`, binary md5
 `6f7eebf248dbdefcc0ed66c291ecf56f`): the single rejection above, exit 1.
 
-Falsifiable, arm-exact. Swept over golden + rood + negatief + parity (742
-documents) with the verifier before the arm, the verifier with it, and
-four mutants of it, each built with `--root` as gate 3 builds it:
-
-- with the arm against before it: exactly five documents move, the five
-  witnesses of this arm (`wf037-aantal-elementtype-zonder-operand`,
-  `wf037-aantal-elementtype-lijstliteraal`,
-  `wf037-gevuldetelling-elementtype-zonder-operand`,
-  `wf037-gevuldetelling-elementtype-lijstliteraal`,
-  `wf037-som-elementtype-zonder-operand`); the other 737 keep their
-  reports byte for byte;
-- the shape recognition off (its two cases guarded `when false`; source
-  md5 `cfac5e9579041af9d23c0ca1c6016c91`): the reports equal those of the
-  verifier before the arm on all 742 documents;
-- the arm silent while the rules that step aside for it keep doing so
-  (source md5 `10f3ecc1fd743357bfc06198daf888e6`): all five witnesses pass
-  the verifier, three of which the verifier before the arm refused (the
-  list-literal count on WF-047, the two filled counts on their own arms) —
-  the stepping aside is sound only together with the arm;
-- WF-047 not stepping aside (source md5
-  `894a0be580eb7ca4ba8ac0300397ed5b`): only
-  `wf037-aantal-elementtype-lijstliteraal` moves, and it gains the WF-047
-  line beside this arm's;
-- the filled count's arity and set-source arms not stepping aside (source
-  md5 `d7f95850435963dbb616347a6c92a021`): only the two
-  `wf037-gevuldetelling-*` witnesses move, each gaining the line of the arm
-  that refused it before.
-
-The last two mutants change no verdict, so gate 3 cannot see them; they
-are recorded because without the stepping aside one malformation is
-reported under two rules.
+Falsifiable, arm-exact: the sweep over golden, rood, negatief and the parity
+zone with the verifier before the arm, the verifier with it and four
+mutants of it covers the five witnesses of the arm together, this one
+included, and is recorded once, in
+`corpus/negatief/wf037-aantal-elementtype-zonder-operand/NOTE.md`.
 
 `expect.txt` pins the arm.
