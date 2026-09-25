@@ -28,9 +28,11 @@ executor replays it.
 The executors keep their own refusals as a second line, with their
 sentences unchanged: `ref` faults on the multiplication, the ASP translation
 declines a date-valued timeline under a total by name ("… Declined in
-translation"), the Drools exec branch refuses the date-valued segment in its
-case loader and the DRL-text branch markers the form through
-`Vouwwaarde.tijdlijnWeigering`.
+translation"), and both Drools branches refuse the document through
+`Vouwwaarde.tijdlijnWeigering` — the DRL-text branch as a marker, the exec
+branch as a transpiler skip since the card ref-klipvouw-nul (until then its
+case loader refused the date-valued segment, and a case without a value
+played leeg).
 
 Red first, measured on this document: the verifier of main 2f47d80e (md5
 `e0bafac419b97e989317b13194932efe`) reported `verifier: PASS`; with the arm

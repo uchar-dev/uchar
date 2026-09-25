@@ -28,11 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * WF-091 rejects both (a total over a Date operand), so they are negatief witnesses without a case file; this
  * backend does not run the verifier, and the inputs of their former red cases are held below.
  *
- * <p>The two branches refuse at DIFFERENT phases and in different words, and the rows pin that rather than
- * paper over it: the exec branch's case loader declines a non-numeric segment before its lowering is ever
- * asked (a Segment holds a BigDecimal), so the shared {@code BeideTakken.geweigerd} — one fragment for both —
- * does not fit here. The DRL marker is asked of the DECLARATION, so it holds on a case that supplies no
- * value at all, where the exec branch plays leeg exactly as ref does.
+ * <p>Until the card ref-klipvouw-nul the two branches refused at DIFFERENT phases: the exec branch's case
+ * loader declined a non-numeric segment before its lowering was asked, and on a case without a value it
+ * played leeg (and, on the clip, crashed — {@link TijdlijnKlipvouwWitnessTest}). Since that card the exec
+ * branch asks the DRL marker's own question of the DECLARATION, so both branches refuse the document in one
+ * sentence, whatever the case supplies; the rows pin each branch apart as before.
  *
  * <p>The last row is the narrowness guard: the numeric originals of both documents still play in both
  * branches.
@@ -71,26 +71,31 @@ class TijdlijnDatumvouwWitnessTest {
         weigert(TOTAAL, JSON.readTree(TOTAAL_ZAAK),
                 "vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand' van Jutter: de segmentwaarden zijn"
                         + " van type Datum in dagen en niet getalachtig",
-                "non-numeric timeline value on 'bewaarvergoeding per maand'");
+                "vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand' van Jutter: de segmentwaarden zijn"
+                        + " van type Datum in dagen en niet getalachtig");
     }
 
     @Test void de_gedurende_klip_over_datums_weigert_bij_naam() throws Exception {
         weigert(KLIP, JSON.readTree(KLIP_ZAAK),
                 "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter: de segmentwaarden zijn"
                         + " van type Datum in dagen en niet getalachtig",
-                "non-numeric timeline value on 'wachtvergoeding per maand'");
+                "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter: de segmentwaarden zijn"
+                        + " van type Datum in dagen en niet getalachtig");
     }
 
     @Test void de_drl_marker_hangt_aan_de_declaratie_en_niet_aan_de_casus() throws Exception {
-        // J1 without a value: ref answers leeg and so does the exec branch, but the document still asks the
-        // DRL branch to scale a date, so it declines — the same document-level stance as the ASP backend.
+        // J1 without a value: ref answers leeg, but the document still asks both branches to scale a date, so both
+        // decline — the same document-level stance as the ASP backend (the exec branch played leeg until the card
+        // ref-klipvouw-nul).
         ObjectNode leeg = (ObjectNode) JSON.readTree(TOTAAL_ZAAK);
         ((ObjectNode) leeg.get("input").get("instances").get(0)).set("attributes", JSON.createObjectNode());
         leeg.remove("expectedFault");
         leeg.set("expected", JSON.readTree(
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
         Path ir = NEGATIEF.resolve(TOTAAL).resolve("ir.json");
-        assertTrue(CaseRunner.speelCase(ir, leeg, false) == null, "exec-model plays the empty case leeg");
+        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, leeg, false));
+        assertTrue(x.getMessage().contains("vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand'"),
+                "exec-model names the form: " + x.getMessage());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, leeg, true));
         assertTrue(e.getMessage().contains("vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand'"),
                 "drl-tekst names the form: " + e.getMessage());

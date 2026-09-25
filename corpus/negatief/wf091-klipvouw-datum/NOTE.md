@@ -35,10 +35,13 @@ The executors keep their own refusals as a second line, with their
 sentences unchanged: `ref` faults on the multiplication, the ASP translation
 declines the clipped date-valued timeline by name ("… Declined in
 translation"), and the DRL-text branch of the Drools backend markers the
-form through `Vouwwaarde.tijdlijnWeigering`. The Drools exec branch refuses
-a date-valued segment in its case loader; on the case without a value it
-crashed at fire (`ClassCastException: Cannot cast java.math.BigDecimal to
-java.time.LocalDate`, measured 2026-09-25).
+form through `Vouwwaarde.tijdlijnWeigering`. The Drools exec branch asks the
+same question of the declaration since the card ref-klipvouw-nul and refuses
+the document in the same sentence. Before that its case loader refused a
+date-valued segment, and on the case without a value it crashed at fire
+(`ClassCastException: Cannot cast java.math.BigDecimal to
+java.time.LocalDate`, measured 2026-09-25); `TijdlijnKlipvouwWitnessTest`
+in the Drools backend pins both branches on both clip cases.
 
 Red first, measured on this document: the verifier of main 2f47d80e (md5
 `e0bafac419b97e989317b13194932efe`) reported `verifier: PASS`; with the arm

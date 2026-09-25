@@ -247,6 +247,7 @@ public final class ExecModelTranspiler {
     private <T> T meet(String soort, String naam, java.util.function.Supplier<T> emitter) {
         int voor = overgeslagen.size();
         navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
+        tijdlijnReden = null;
         T res = emitter.get();
         Dekking d = overgeslagen.size() == voor ? Dekking.lowered(soort, naam)
                 : Dekking.skip(soort, naam, String.join("; ", overgeslagen.subList(voor, overgeslagen.size())));
@@ -501,6 +502,7 @@ public final class ExecModelTranspiler {
         // the result in the when, read in the consequence — distinct from a scalar fact-local value.
         WaardeFn tijdTotaal = !temporalDoel && isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie ftt
                 && ftt.kind() == Expr.FunctieKind.TOTAAL ? tijdreeksTotaal(ftt, doel.objecttype()) : null;
+        if (tijdlijnReden != null) return skip("regel (" + tijdlijnReden + "): " + r.naam());
         WaardeFn dimAgg = !temporalDoel && isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie fda
                 && fda.dimensieSelectie() != null ? dimensieAggregatie(fda, doel.objecttype()) : null;
         if (temporalDoel) {
@@ -890,6 +892,12 @@ public final class ExecModelTranspiler {
      *  lowering produced it. It SHARPENS an otherwise generic skip note and never invents one: it is set only where
      *  a hop this construct walks really has no field, which is by itself enough to make the construct not-carried. */
     private String navReden;
+
+    /** Why {@link #tijdreeksTotaal} declined a §7.1 total whose timeline is not a number — the
+     *  {@code Vouwwaarde.tijdlijnWeigering} sentence the DRL-text branch markers. Set there and RESET at every construct
+     *  entry ({@link #meet}), so the rule that asked is the only one that can read it; without it the null return fell
+     *  through to the instance accumulate, which would name the timeline a set source. */
+    private String tijdlijnReden;
 
     /** Why {@code ot}'s bean carries no reference field for the to-ONE role {@code rol} toward {@code doel} — the
      *  precise §13.3.9 reason, so a per-form refusal names the bean-model limit instead of the generic scope note
@@ -1814,6 +1822,13 @@ public final class ExecModelTranspiler {
         if (heeftBereik(f)) return null;   // "het totaal van <attr> van een SET" is an instance aggregation, not an own timeline
         RegelSpraakModel.Granulariteit g = Namen.opNaam(a.objecttype().granulariteitLeden(), a.attribuut());
         if (g == null) return null;   // not temporal -> fall through to the instance accumulate
+        // rsTijdTotaal yields a BigDecimal. Over a non-numeric declaration that BigDecimal reached the target's field
+        // at fire: on a gedurende clip over a Date timeline, a case WITHOUT a value (the clip's 0) crashed with a
+        // ClassCastException BigDecimal -> LocalDate (measured 2026-09-25), where the DRL-text branch refused the
+        // document. Asked here, of the DECLARATION, with that branch's own question and sentence, so both branches
+        // refuse the same document before any case is read.
+        String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.tijdlijnWeigering(f, a.objecttype(), a);
+        if (vw != null) { tijdlijnReden = vw; return null; }
         if (Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) return null;   // §13.3.6.7 multi-period -> skip
         java.util.function.Function<Object, Object> reader = navReader(a, subject);   // own or to-one navigated, root-guarded
         if (reader == null) return null;
