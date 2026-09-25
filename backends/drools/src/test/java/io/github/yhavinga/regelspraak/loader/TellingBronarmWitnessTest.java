@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,6 +96,40 @@ class TellingBronarmWitnessTest {
                 .put("subjectType", "Jutter");
         telling.putArray("arguments").add(binnen);
         weigert(ir, "a count aggregation carries elementType \"Vondst\" and an Aggregation" + BRONARM);
+    }
+
+    /** A node this backend does not carry stands at the source all the same, and what is refused there is the shape,
+     *  not the node. Before the fix both branches excluded the rule as a form not carried (a Refusal) for each of these
+     *  eleven kinds, where the verifier, ref and the ASP backend gave this sentence (measured on the union of the six
+     *  cards of 2026-09-25). Only the discriminator is read, and a temporal read's keys, so each node here is that. */
+    @Test void een_niet_gedragen_knoop_als_telbron_wordt_geweigerd_als_vorm_en_niet_als_knoop() throws Exception {
+        for (String knoop : List.of("Lambda", "ListLength", "Match", "Construct", "StructLiteral", "FieldAccess",
+                "Invoke", "Fold", "MapList", "FilterList", "TemporalRead")) {
+            ObjectNode ir = negatief("wf037-aantal-elementtype-literaal");
+            ObjectNode arg = ((ObjectNode) waarde(ir)).putArray("arguments").addObject().put("node", knoop);
+            if (knoop.equals("TemporalRead")) {
+                arg.set("base", JSON.readTree("{ \"node\": \"ParameterReference\", \"parameter\": \"p\" }"));
+                arg.set("date", JSON.readTree("{ \"node\": \"ContextValue\", \"name\": \"evaluationDate\","
+                        + " \"type\": { \"node\": \"Date\", \"precision\": \"day\" } }"));
+                arg.set("type", JSON.readTree(GEHEEL));
+            }
+            weigert(ir, "a count aggregation carries elementType \"Vondst\" and "
+                    + ("AEIOU".indexOf(knoop.charAt(0)) >= 0 ? "an " : "a ") + knoop + BRONARM);
+        }
+    }
+
+    @Test void een_niet_gedragen_knoop_als_bron_van_de_som_wordt_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf037-som-elementtype-literaal");
+        ((ObjectNode) waarde(ir)).putArray("arguments").addObject().put("node", "ListLength");
+        weigert(ir, "a sum aggregation carries elementType \"Vondst\" and a ListLength" + BRONARM);
+    }
+
+    @Test void een_niet_gedragen_knoop_onder_de_telbron_wordt_geweigerd() throws Exception {
+        // the argument is a Binary the loader reads, and the Lambda in it is what it cannot: the sentence names the
+        // argument, as the verifier's does. Before the fix: the Refusal of the Lambda, in both branches
+        ObjectNode ir = negatief("wf037-aantal-elementtype-binair");
+        ((ObjectNode) waarde(ir).get("arguments").get(0)).putObject("left").put("node", "Lambda");
+        weigert(ir, "a count aggregation carries elementType \"Vondst\" and a Binary" + BRONARM);
     }
 
     @Test void een_literal_als_bron_van_de_gevulde_telling_wordt_geweigerd() throws Exception {

@@ -1423,8 +1423,20 @@ public final class IrLoader {
             String weigering = bronWeigering(soort, n.get("elementType").asText(), rauw);
             if (weigering != null) throw new Documentfout(p, weigering);
         }
+        // WF-037, the fold-source arm: the one argument of a fold that names its population is judged by its shape. A
+        // node this backend does not carry — that argument, or a node under it — refuses as a node while it is read,
+        // where the verifier, ref and the ASP backend refuse the shape. That refusal therefore waits until the range
+        // and the source have been asked below, and is raised only when neither is refused; a Documentfout while
+        // reading (an unbound VariableReference, WF-034; an Unresolved marker without a source, WF-113) is not held
+        // back, as ref and the ASP backend refuse those first, while loading
         List<Expr> args = new ArrayList<>();
-        elementen(n, "arguments", a -> args.add(expr(a)));
+        Refusal ongedragen = null;
+        try {
+            elementen(n, "arguments", a -> args.add(expr(a)));
+        } catch (Refusal r) {
+            if (!n.has("elementType") || rauw == null || !rauw.isArray() || rauw.size() != 1) throw r;
+            ongedragen = r;
+        }
         String elementType = optTekst(n, p, "elementType");
         Expr.Functie f = new Expr.Functie(fk, args, ot(elementType), expr(knoopVeld(n, "emptyFallback")),
                 conditie(knoopVeld(n, "filter")), dimensieSelectie(knoopVeld(n, "dimensionSelection")), typeVeld(n),
@@ -1437,7 +1449,7 @@ public final class IrLoader {
         // is, so a source this loader cannot judge (a null name, a navigated or non-reference argument) is no way
         // past it (measured: with a null name the count was counted along the path)
         if (fk == Expr.FunctieKind.AANTAL && n.has("sourcePath")) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
-        boolean eenBron = elementType != null && args.size() == 1;
+        boolean eenBron = elementType != null && (ongedragen != null || args.size() == 1);
         if (eenBron && fk != Expr.FunctieKind.TOTAAL && !n.has("sourceRole") && !n.has("sourcePath"))
             throw new Documentfout(p, BEREIK_ONTBREEKT);
         // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list of
@@ -1466,6 +1478,7 @@ public final class IrLoader {
         if (bronloos != null) throw new Documentfout(p, bronloos);
         String unie = unieBronWeigering(fk, elementType, n);
         if (unie != null) throw new Documentfout(p, unie);
+        if (ongedragen != null) throw ongedragen;
         if (eenBron && (n.has("sourceRole") || n.has("sourcePath"))) keurVouwbron(n, p, fk, f);
         plekken.put(f, p);
         return f;
