@@ -8,8 +8,8 @@ The other arm of the same rule (`wf108-kwantorvouw-drempel-ontbreekt`) refuses t
 missing threshold; together they make the field present EXACTLY where it is read.
 Admitting an ignored number here would put this node back where `Compound`
 still is — the threshold written under every quantifier and read only under
-the three counting ones, so that under `all` and `none` it is a number no
-reader consults (measured 2026-09-25: 0 on 52 of the goldens' 53 such nodes,
+the three counting ones, so that under `all`, `none` and `the` it is a number
+no reader consults (measured 2026-09-25: 0 on 52 of the goldens' 53 such nodes,
 and `jutterswet-tegenwacht` writes 1 under `all`) — which is the "a field
 nobody reads is a field that can say anything" defect of WF-083 (c), and this
 node is new enough not to have to inherit it. It matters beyond
