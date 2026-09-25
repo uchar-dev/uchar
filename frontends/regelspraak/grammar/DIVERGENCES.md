@@ -1442,3 +1442,19 @@ of decision tables and exception blocks, the dialect's fences, forms this
 frontend does not lower) have no reader either, because no document carries
 them.
 
+---
+
+## §6.1.4 A one-sided clamp unit — written with a warning
+
+A clamp whose base and bound carry a unit on one side only, a unit-bearing bound
+over a unitless value or a unitless attribute bound over a unit-bearing value,
+is refused by the verifier (WF-099: `clamp minimum and base have incompatible
+units`, and the same for the maximum). The frontend writes such a document with
+a WARNING in that sentence instead of an ERROR, because the casus of the parity
+zone carries one such clamp and an ERROR would stop its emission; gate 11 lists
+the replay slice that carries it as its one verifier holdout. A unitless number
+literal as the bound adopts the base's unit and draws nothing, two inconvertible
+units are an ERROR in the same WF-099 sentence, and a base or bound that is no
+number is an ERROR in the verifier's WF-035 sentence (`clamp base is <kind>,
+must be numeric`). When the parity zone leaves the repository, the warning can
+become an ERROR like the other refusals the verifier shares.
