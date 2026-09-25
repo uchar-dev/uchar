@@ -337,6 +337,16 @@ sweeps over the finished defaults — the report of unresolved markers and the
 WF-112 fence — judge each node once: a marker in a base's condition is one
 WARNING, not one per exception above it.
 
+An exception a subtype inherits keeps the conjunction it was written with, the
+condition of the supertype's base included, also on a subtype whose own base
+replaces that base (RUNTIME-SEMANTICS ch. 7.10): `Uitzondering op X` restricts to
+where X holds, and X is the supertype's. Measured 2026-09-25 in ref, clingo and the
+Drools exec branch on a supertype base `10,00 indien erkend` with the exception
+`99,00 indien betwist` and a subtype base `20,00 indien diep`: a subtype instance
+that is betwist and diep but not erkend gets 20,00, where the exception without
+the conjunction would decide 99,00. No golden has conditional bases on two levels
+(`jutterswet-wrakrecht` has unconditional ones), so none pins this.
+
 **`Afwijking van B` widens.** A block that widens its base — a hardship clause
 that applies the base "als ware twaalf vervangen door zes" — is not an exception
 but a deviation: its default carries its own condition only, and the empty `all`
