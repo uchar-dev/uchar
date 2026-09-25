@@ -5546,6 +5546,24 @@ defaults group on `Wrakvondst` (5,00 above 50, 9,00 above 100): a
 60,00 **5,00**, one of 120,00 **9,00**, one of 12,00 with input 40,00
 keeps **40,00**; a `Vondst` of 12,00 gets **24,00** from the rule itself.
 
+**A composed stack evaluates above everything it reads.** A rule the fold
+takes into a stack reads there as the default it becomes: its condition and
+value reads are WF-051's negative edges toward its target (`IR-SPEC.md`
+ch. 5.2), like any default's. The stack is stratified by every form it was
+composed from — its declared groups and its folded rules — so it decides at
+the fixpoint of what its inherited defaults and its folded rules read.
+Measured before, on verifier-clean chains where a later rule computed the
+read (`taxatie` = 100 − `lengte`, `lengte` = `gewicht` + 1): an inherited
+exception on `taxatie` > 90 decided 9,00 in a pass that read `taxatie` as
+100, and a folded base on the same read decided 7,00; with nothing in the
+stack deciding at the fixpoint, the reference interpreter kept those values
+where the ASP backend and the Drools exec-model branch answer leeg. The
+stack had run below its own inherited group, because a folded rule
+contributed its index in the rule list and that index was read as a group's,
+and its folded rule's reads had been positive. Both shapes are pinned in the
+ASP backend's suite, which replays them through the reference interpreter
+as well.
+
 A rule folded into a stack **must not also fire as a rule**: it is the base,
 and the group writes it. The absorption is per CONCRETE type and all three
 executors read it from one shared predicate, so no two of them can absorb on

@@ -3783,7 +3783,6 @@ let evaluate env world =
   let kmax = Array.fold_left max 0 strata in
   let rule_stratum (r : resolved_regel) = stratum_of r.rr_pointer in
   let verdeling_stratum (v : resolved_verdeling) = stratum_of v.vd_pointer in
-  let defaults_stratum i = stratum_of (group_at i) in
   let fc_stratum (f : resolved_feit_creatie) = stratum_of f.fc_pointer in
   let oc_stratum (o : resolved_object_creatie) = stratum_of o.oc_pointer in
   let cons_stratum (c : resolved_consistentie) = stratum_of c.cons_pointer in
@@ -3796,12 +3795,14 @@ let evaluate env world =
      inherited declarations into it (RUNTIME-SEMANTICS ch. 7.10), so what
      runs here is already the effective stack and its subject range is
      exactly that type. In a document without a supertype edge this is the
-     declared grouping, unchanged. A stratum is the max over the
-     declarations the stack was composed from. *)
+     declared grouping, unchanged. A stratum is the max over the forms the
+     stack was composed from — its declared groups and its folded rules, each
+     found by its wire pointer; a folded rule's reads are negative edges in
+     the shared graph, so its stratum lies above what it reads. *)
   let defaults_groups =
     List.map
-      (fun (owner, _key, members, idxs) ->
-        let stratum = List.fold_left (fun acc i -> max acc (defaults_stratum i)) 0 idxs in
+      (fun (owner, _key, members, pointers) ->
+        let stratum = List.fold_left (fun acc p -> max acc (stratum_of p)) 0 pointers in
         (stratum, owner, members))
       (effective_defaults env)
   in

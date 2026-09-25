@@ -729,6 +729,31 @@ let chain_group_keys doc t =
     doc.objecttypen
   |> List.sort_uniq compare
 
+(* The concrete types on which the ch. 7.10 fold takes an ordinary rule
+   writing ([otype], [attr]) into an effective defaults stack as its base: the
+   types at or below [otype] whose chain declares a defaults group on the
+   target. The fold ([Desugar.absorbed_on]) and the dependency graph below
+   read this one definition.
+   The rule's OWN level declaring a group on the target is not inheritance
+   but WF-050's single-writer lift, refused at the document. The synthesis
+   skips such a level, so the suppression must skip it too — otherwise the
+   rule would be silenced without ever becoming a base, and the writer would
+   vanish. Measured: this is the shape the standing-norm witness
+   `StaandeScalaireNormWitnessTest` pins, and it caught the omission. *)
+let absorbing_types doc ~otype ~attr : string list =
+  let key = "A:" ^ norm attr in
+  if
+    List.exists
+      (fun (l : prioritized_defaults) -> norm l.pd_onderwerp = norm otype && target_key l = key)
+      doc.prioritized_defaults
+  then []
+  else
+    List.filter_map
+      (fun (t, _) ->
+        if subtype_of doc ~sub:t ~super:otype && List.mem key (chain_group_keys doc t) then Some t
+        else None)
+      doc.objecttypen
+
 (* --- the chain arms of the single-writer fences ---------------------------
 
    WF-026, WF-050's allocation and creation clauses and WF-079 key their flat
@@ -7407,7 +7432,16 @@ let dep_forms ctx : dep_form list =
             let subject = Some ot in
             let reads = dep_opt ctx ~subject (cond ~subject r.rr_voorwaarde) r.waarde in
             let reads =
-              if r.rr_soort = Some Kenmerktoekenning then strict_unless_char reads else reads
+              if r.rr_soort = Some Kenmerktoekenning then strict_unless_char reads
+              else if absorbing_types ctx.doc ~otype:ot ~attr:a <> [] then
+                (* a rule the ch. 7.10 fold takes into a stack reads there as
+                   the default it becomes: its condition and value reads are
+                   WF-051's negative edges, so the stack evaluates above what
+                   its folded rules read. Positive, they left the stack free to
+                   decide on a transient that a later pass no longer supports
+                   and nothing in the stack overwrote *)
+                List.map (fun (node, _) -> (node, Dep_neg)) reads
+              else reads
             in
             Some { df_at = at; df_name = name; df_recursive_creation = false; df_writes = writes; df_reads = reads }
         | _ -> None)

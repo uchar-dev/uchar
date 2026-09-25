@@ -328,8 +328,9 @@ let level_rules doc level key =
 (* [level]'s own contribution to [key] when it declares no defaults group:
    its rules, read as the ch. 7.7 shape — the computing rule as the base,
    the initialisation below it. None when the level writes the target with
-   no ordinary rule either. The origins are [level] throughout. *)
-let rule_member doc level key : (prioritized_defaults * int * string list) option =
+   no ordinary rule either. The origins are [level] throughout; the
+   contributors are the rules' wire pointers. *)
+let rule_member doc level key : (prioritized_defaults * string list * string list) option =
   let rules = level_rules doc level key in
   let comps = List.filter (fun (soort, _, _) -> soort <> Initialisatie) rules in
   let inits = List.filter (fun (soort, _, _) -> soort = Initialisatie) rules in
@@ -400,7 +401,7 @@ let rule_member doc level key : (prioritized_defaults * int * string list) optio
       List.map (fun (_, r, _) -> d ~init:false r) comps
       @ List.map (fun (_, r, _) -> d ~init:true r) inits
     in
-    let idx = List.fold_left (fun acc (_, _, i) -> max acc i) 0 rules in
+    let pointers = List.map (fun (_, (r : resolved_regel), _) -> r.rr_pointer) rules in
     Some
       ( {
           pd_naam = Some ("regel als basis: " ^ a ^ " van " ^ level);
@@ -412,23 +413,29 @@ let rule_member doc level key : (prioritized_defaults * int * string list) optio
           pd_bron = Some "SUBTYPING §4.1 rules 1/4: an ordinary rule is the base of its level";
           pd_geldigheid = None;
         },
-        idx,
+        pointers,
         List.map (fun _ -> level) defaults )
 
-(* Every declared group with the index it sits at in the document, so a
-   consumer can still stratify a composed stack by its contributors, and the
-   subject type each of its defaults was declared on.
+(* Every member with the wire pointers of the forms it was composed from —
+   a declared group's `/prioritizedDefaults/<i>`, a folded rule's version —
+   so a consumer can stratify a composed stack by ALL its contributors, and
+   with the subject type each of its defaults was declared on. Until the
+   pointers, a folded rule contributed its index in the rule list, which a
+   consumer read as a group index: a composed stack could run below its own
+   inherited group's stratum.
    [absorb] is the key set on which an ordinary rule counts as a base — a
    property of the stack's OWNER, threaded down so the answer does not
    change with the recursion depth. *)
 let rec effective_stacks_of doc ~visited ~absorb type_name :
-    (string * (prioritized_defaults * int * string list) list) list =
+    (string * (prioritized_defaults * string list * string list) list) list =
   let own_groups =
     List.concat
       (List.mapi
          (fun i (l : prioritized_defaults) ->
            if norm l.pd_onderwerp = norm type_name then
-             [ (l, i, List.map (fun _ -> l.pd_onderwerp) l.defaults) ]
+             [ ( l,
+                 [ Printf.sprintf "/prioritizedDefaults/%d" i ],
+                 List.map (fun _ -> l.pd_onderwerp) l.defaults ) ]
            else [])
          doc.prioritized_defaults)
   in
@@ -472,7 +479,7 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
       | None, Some ms -> (k, ms)
       | Some [ (o, oi, oo) ], Some [ (p, pi, po) ] ->
           let m, origins = compose_member ~own:(o, oo) ~inherited:(p, po) in
-          (k, [ (m, max oi pi, origins) ])
+          (k, [ (m, oi @ pi, origins) ])
       | Some [ _ ], Some ps ->
           (* ONE own group over an INHERITED DECLARED-UNORDERED SET. This is
              defined — SUBTYPING §4.1 rule 3: the inherited group stays
@@ -517,14 +524,14 @@ let rec effective_stacks_of doc ~visited ~absorb type_name :
     keys
 
 (* The effective stacks of every declared object type: (owner type, target
-   key, members, contributing declaration indices). The owner is the CONCRETE
+   key, members, the wire pointers of the contributing forms). The owner is the CONCRETE
    type the stack belongs to, and its instances are exactly the instances the
    stack runs on. Each member comes with the subject type every one of its
    root defaults was declared on, aligned with its [defaults]: the position
    an executor evaluates that default on (a default's exception groups share
    it). *)
 let effective_defaults (doc : document) :
-    (string * string * (prioritized_defaults * string list) list * int list) list =
+    (string * string * (prioritized_defaults * string list) list * string list) list =
   List.concat_map
     (fun (name, _) ->
       let absorb = Checks.chain_group_keys doc name in
@@ -533,7 +540,7 @@ let effective_defaults (doc : document) :
           if ms = [] then None
           else
             Some
-              (name, k, List.map (fun (m, _, o) -> (m, o)) ms, List.map (fun (_, i, _) -> i) ms))
+              (name, k, List.map (fun (m, _, o) -> (m, o)) ms, List.concat_map (fun (_, p, _) -> p) ms))
         (effective_stacks_of doc ~visited:[] ~absorb name))
     doc.objecttypen
 
@@ -554,29 +561,7 @@ let effective_defaults (doc : document) :
 let absorbed_memo : (document * (string * string, string list) Hashtbl.t) option ref = ref None
 
 let absorbed_uncached (doc : document) ~otype ~attr : string list =
-  let key = "A:" ^ norm attr in
-  (* the rule's OWN level declaring a group on the target is not inheritance
-     but WF-050's single-writer lift, refused at the document. The synthesis
-     skips such a level, so the suppression must skip it too — otherwise the
-     rule would be silenced without ever becoming a base, and the writer
-     would vanish. Measured: this is the shape the standing-norm witness
-     `StaandeScalaireNormWitnessTest` pins, and it caught the omission. *)
-  if
-    List.exists
-      (fun (l : prioritized_defaults) ->
-        norm l.pd_onderwerp = norm otype && Checks.target_key l = key)
-      doc.prioritized_defaults
-  then []
-  else
-    List.filter_map
-      (fun (t, _) ->
-        if
-          Checks.subtype_of doc ~sub:t ~super:otype
-          && List.mem key (Checks.chain_group_keys doc t)
-        then
-          Some t
-        else None)
-      doc.objecttypen
+  Checks.absorbing_types doc ~otype ~attr
 
 let absorbed_on (doc : document) ~otype ~attr : string list =
   let tbl =

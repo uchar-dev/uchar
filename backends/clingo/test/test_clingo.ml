@@ -9207,6 +9207,59 @@ let () =
          [ pf_leeg ~label:"V1" ~attr:"bergloon" (); pf_is ~label:"W1" ~attr:"bergloon" "25.00";
            pf_is ~label:"D1" ~attr:"bergloon" "25.00"; pf_leeg ~label:"D2" ~attr:"bergloon" ();
            pf_cons ]);
+  (* a composed stack is stratified by every form it was composed from
+     (RUNTIME-SEMANTICS ch. 7.10): its declared groups, and its folded rules,
+     whose reads are WF-051's negative edges. taxatie = 100 - lengte and
+     lengte = gewicht + 1, the second written after the first, so a pass
+     that reads taxatie early finds 100. Measured before: an inherited
+     exception on that read decided 9,00 on W2 (the stack ran below its own
+     inherited group, a folded rule counting as a group index), and a folded
+     base on it decided 7,00 on W2 (its reads were positive edges); in both
+     the transient stayed, where leeg is right *)
+  let vondstgroep uitzondering =
+    Printf.sprintf
+      {|{ "node": "PrioritizedDefaults", "name": "bergloon van een vondst", "subject": "Vondst",
+          "attribute": "bergloon", "defaults": [
+            { "node": "Default", "justification": %s, "consequence": %s, "source": { "snippet": "u" } },
+            { "node": "Default", "justification": %s, "consequence": %s, "source": { "snippet": "b" } } ],
+          "source": { "snippet": "g" }, "validity": { "node": "Validity" } }|}
+      uitzondering (pf_l "9.00") (pf_comp "all" []) (pf_l "5.00")
+  in
+  let keten_later =
+    [ pf_regel ~ot:"Vondst" ~doel:"taxatie" (pf_bin "minus" (pf_l "100.00") (va "lengte"));
+      pf_regel ~ot:"Vondst" ~doel:"lengte" (pf_bin "plus" (va "gewicht") (pf_l "1.00")) ]
+  in
+  let wrak w = inst w "Wrakvondst" in
+  both_answer ~name:"a composed stack above what its inherited exception reads"
+    ~ir:
+      (pf_doc ~objecttypen:[ vondst; wrakvondst ]
+         ~defaults:[ vondstgroep (groter "taxatie" "90.00") ]
+         ~regels:
+           (keten_later
+           @ [ pf_regel ~ot:"Wrakvondst" ~doel:"bergloon"
+                 ~voorwaarde:(pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "gewicht") (pf_l "20.00"))
+                 (pf_l "7.00") ])
+         ())
+    ~case_text:
+      (pf_case
+         ~instances:[ wrak "W1" [ num "gewicht" "30.00" ]; wrak "W2" [ num "gewicht" "10.00" ] ]
+         [ pf_is ~label:"W1" ~attr:"bergloon" "7.00"; pf_leeg ~label:"W2" ~attr:"bergloon" ();
+           pf_cons ]);
+  both_answer ~name:"a composed stack above what its folded base reads"
+    ~ir:
+      (pf_doc ~objecttypen:[ vondst; wrakvondst ]
+         ~defaults:[ vondstgroep (groter "gewicht" "200.00") ]
+         ~regels:
+           (pf_regel ~ot:"Wrakvondst" ~doel:"bergloon"
+              ~voorwaarde:(pf_cmp "greater" (pf_a ~ot:"Wrakvondst" "taxatie") (pf_l "90.00"))
+              (pf_l "7.00")
+           :: keten_later)
+         ())
+    ~case_text:
+      (pf_case
+         ~instances:[ wrak "W1" [ num "gewicht" "5.00" ]; wrak "W2" [ num "gewicht" "30.00" ] ]
+         [ pf_is ~label:"W1" ~attr:"bergloon" "7.00"; pf_leeg ~label:"W2" ~attr:"bergloon" ();
+           pf_cons ]);
   (* the initialisation's guard reads the input (RUNTIME-SEMANTICS ch. 5.4,
      ch. 7.3), so its own earlier write does not switch it off: its value is
      the one its reads have at the fixpoint. The value reads taxatie, which a

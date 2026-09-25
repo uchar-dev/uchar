@@ -8390,7 +8390,11 @@ every consequence read (the gevuld gate makes it decision-bearing) — is a
 **negative edge** toward the group's write, recursed through the nested
 `exceptions` sub-defaults (ch. 6.1; `RUNTIME-SEMANTICS.md` ch. 7.9); the
 initialisation default's implicit input-emptiness justification reads
-nothing. WF-051 names this defaults-specific rule; the WF-045/046
+nothing. An ordinary rule that the fold of `RUNTIME-SEMANTICS.md` ch. 7.10
+takes into a defaults stack is a default there, so its condition and value
+reads are negative edges as well — a folded initialisation's condition
+included; an executor stratifies a composed stack by every form it was
+composed from. WF-051 names this defaults-specific rule; the WF-045/046
 principles apply to the extended graph unchanged.
 
 ### 5.3 Acyclicity and stratified negation

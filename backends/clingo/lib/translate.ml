@@ -10008,17 +10008,16 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
    quantifying the subject extensionally as well would run the supertype's
    stack and the subtype's on one instance. *)
 let translate_defaults_group ctx gidx ~owner
-    (members : (int * (prioritized_defaults * string list)) list) =
+    (members : (prioritized_defaults * string list) list) =
   (* the ch. 8.2 validity gate, per member: an excluded member is
      Undecided — no decision, no conflict, no §9.5 deposit (ref's
      member_decision returns Undecided before a single default is
      evaluated), so it simply leaves the group's member set. The group
      reconciles the members that remain. *)
-  let _, (l0, _) = List.hd members in
+  let l0, _ = List.hd members in
   let members =
     List.filter
-      (fun ((_, (l, _)) : int * (prioritized_defaults * string list)) ->
-        applies ctx l.pd_geldigheid)
+      (fun ((l, _) : prioritized_defaults * string list) -> applies ctx l.pd_geldigheid)
       members
   in
   if members = [] then (
@@ -10036,7 +10035,7 @@ let translate_defaults_group ctx gidx ~owner
             Printf.sprintf "is_a(S,%s)" (str owner) ]
     | None -> ())
   else begin
-  let _, (l0, _) = List.hd members in
+  let l0, _ = List.hd members in
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =
@@ -10068,7 +10067,7 @@ let translate_defaults_group ctx gidx ~owner
   (* each top-level member is a chain reconciled at the root path [] *)
   let member_info =
     List.map
-      (fun ((_, (l, origins)) : int * (prioritized_defaults * string list)) ->
+      (fun ((l, origins) : prioritized_defaults * string list) ->
         let out, cfl =
           translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
             ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.defaults
@@ -11014,8 +11013,8 @@ let translate (doc : document) (case : Case.t) : string =
      with Ir_v0.Desugar.Unlowered m -> fault "%s" m
    in
    List.iteri
-     (fun gidx (owner, _key, members, idxs) ->
-       translate_defaults_group ctx gidx ~owner (List.combine idxs members))
+     (fun gidx (owner, _key, members, _contributors) ->
+       translate_defaults_group ctx gidx ~owner members)
      groups);
   List.iteri (translate_consistentie ctx) doc.consistenties;
   List.iter (translate_uniciteit ctx) doc.uniciteiten;
