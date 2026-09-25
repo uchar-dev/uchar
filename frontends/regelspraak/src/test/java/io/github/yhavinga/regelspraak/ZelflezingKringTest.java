@@ -25,6 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * condition over another attribute ("a -> b -> a"), a characteristic attribution reading its own characteristic
  * ("oud -> oud"), two characteristics reading each other, plain or negated ("oud -> versleten -> oud"), and a
  * characteristic and an attribute reading each other ("oud -> x -> oud").
+ *
+ * <p>A cycle that only the opgave marker's lowering closes (grammar/DIVERGENCES.md §7) runs through a member the
+ * marker generates: the computation of X reads {@code berekende X}, which it writes once it has moved, or it reads
+ * {@code afwijkende opgave X}, which the generated rule attributes from {@code berekende X}. Measured before the graph
+ * covered the lowered forms, the frontend said nothing on all three witnesses below and the verifier refused each
+ * under WF-045: "waardering -> waardering", "waardering -> afwijking opgave waarde -> waardering" (with WF-046 twice)
+ * and "waardering -> premieregel -> waardering".
  */
 class ZelflezingKringTest {
 
@@ -182,5 +189,47 @@ class ZelflezingKringTest {
         Diagnostic d = enigeWaarschuwing(m);
         assertEquals("kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde" + STAART, d.message());
         assertEquals(1, m.prioritizedDefaults.size(), "de melding is een WARNING: de markering wordt gewoon gelowerd");
+    }
+
+    private static final String VONDST_GEMARKEERD = """
+        Objecttype de Vondst (mv: Vondsten)
+            de taxatie Numeriek (getal met 2 decimalen);
+            de waarde Numeriek (getal met 2 decimalen) (mag opgegeven worden);
+            de premie Numeriek (getal met 2 decimalen);
+        """;
+
+    @Test void een_berekening_die_haar_eigen_berekende_waarde_leest_wordt_gemeld() {
+        RegelSpraakModel m = Resolver.resolve(VONDST_GEMARKEERD + regel("waardering",
+                "De waarde van een Vondst moet berekend worden als de berekende waarde van de Vondst plus 1."));
+        Diagnostic d = enigeWaarschuwing(m);
+        assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.berekende waarde" + STAART,
+                d.message());
+        assertEquals(0, d.line());
+        assertEquals(1, m.prioritizedDefaults.size(), "de melding is een WARNING: de markering wordt gewoon gelowerd");
+    }
+
+    @Test void een_voorwaarde_op_het_gegenereerde_kenmerk_sluit_een_kring() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(VONDST_GEMARKEERD + regel("waardering",
+                "De waarde van een Vondst moet berekend worden als de taxatie van de Vondst "
+                + "indien hij geen afwijkende opgave waarde heeft.")));
+        assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.afwijkende opgave waarde "
+                + "-> Vondst.berekende waarde" + STAART, d.message());
+    }
+
+    @Test void een_kring_via_een_ander_attribuut_door_de_berekende_waarde_wordt_gemeld() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(VONDST_GEMARKEERD
+                + regel("waardering", "De waarde van een Vondst moet berekend worden als de premie van de Vondst plus 1.")
+                + regel("premieregel",
+                        "De premie van een Vondst moet berekend worden als de berekende waarde van de Vondst.")));
+        assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.premie "
+                + "-> Vondst.berekende waarde" + STAART, d.message());
+    }
+
+    @Test void een_lezing_van_de_opgave_of_van_het_doel_zonder_kring_meldt_niets() {
+        RegelSpraakModel m = Resolver.resolve(VONDST_GEMARKEERD
+                + regel("waardering", "De waarde van een Vondst moet berekend worden als de opgegeven waarde van de "
+                        + "Vondst plus de taxatie van de Vondst.")
+                + regel("premieregel", "De premie van een Vondst moet berekend worden als de waarde van de Vondst maal 2."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }
 }

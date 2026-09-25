@@ -1363,9 +1363,23 @@ which is the measurement above stated as a property.
   rule's condition reads is an edge as much as what its value reads, and a
   characteristic is a node as much as an attribute, so a cycle through a
   condition over another attribute and a characteristic attribution reading its
-  own characteristic are warned as well. A navigated read, a read inside a fold,
-  a role check and a channel test are no edges of it; a cycle only they close
-  is refused by the verifier and not warned by the frontend.
+  own characteristic are warned as well. A cycle that only the lowering closes
+  runs through a generated member: a computation of X that reads `berekende X`,
+  which it writes once it has moved, or `afwijkende opgave X`, which the
+  generated rule attributes from `berekende X`, directly or through another
+  attribute. The verifier refuses it under WF-045, and a cycle through
+  `afwijkende opgave X` under WF-046 as well, since the generated attribution
+  reads a value, a strict edge; the frontend said nothing, because its graph
+  ran over the authored forms only (measured 2026-09-25). Where a marker was
+  lowered, the graph runs once more over the lowered forms — the moved writers,
+  the generated rule and every defaults group — and such a cycle gets the same
+  WARNING in the names the author read, `kringverwijzing tussen berekeningen:
+  Vondst.berekende waarde -> Vondst.premie -> Vondst.berekende waarde — …`; a
+  cycle the authored forms already showed is not warned twice, since there
+  `berekende X` counts as X (witness: `ZelflezingKringTest`). A document without
+  a lowered marker never reaches that second pass. A navigated read, a read
+  inside a fold, a role check and a channel test are no edges of it; a cycle
+  only they close is refused by the verifier and not warned by the frontend.
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.

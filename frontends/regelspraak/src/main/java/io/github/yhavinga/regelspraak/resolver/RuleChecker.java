@@ -108,6 +108,8 @@ final class RuleChecker {
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
         // §7 after the lift, so a tree or an unordered set of the dialect's blocks moves to 'berekende X' whole
         opgaveLowering(doc);
+        // §7 a read of a generated member closes a cycle only once the writers have moved to 'berekende X'
+        keurKringverwijzingenNaOpgave();
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
     }
 
@@ -1300,6 +1302,9 @@ final class RuleChecker {
     /** The markers that passed {@link #opgaveDeclaraties}, in declaration order. */
     private final List<Opgave> opgaven = new ArrayList<>();
 
+    /** The markers {@link #opgaveLowering} lowered, in declaration order: refused and withdrawn ones stay out. */
+    private final List<Opgave> gelowerd = new ArrayList<>();
+
     /** The declaration half, before any rule resolves. A marker on a characteristic is refused. A marked attribute
      *  must be a Numeriek without a unit, not time-dependent and not dimensioned, and none of the member names it
      *  generates may exist yet in the inheritance line of its type; then its two attributes are declared right after
@@ -1535,6 +1540,7 @@ final class RuleChecker {
                     Bron.van(a, declaratie), o.line(), Geldigheid.ALTIJD));
             for (String n : List.of(o.groep(), o.regel(), o.controle()))
                 gegenereerd.put(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(n), o);
+            gelowerd.add(o);
         }
     }
 
@@ -1797,22 +1803,82 @@ final class RuleChecker {
      *  the verifier refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools
      *  no-loop that makes a single writer terminate is no ground to pass it in silence. Outside this graph, and so
      *  unwarned where the verifier refuses them: a navigated read, a read in the filter or test of a fold, a role
-     *  check, a channel test, and the forms that are no rule (an allocation, a creation, a consistency). */
+     *  check, a channel test, and the forms that are no rule (an allocation, a creation, a consistency). This pass
+     *  runs over the authored forms, before the defaults lowering, so a warning names what the author wrote; where
+     *  the opgave marker lowered an attribute, {@link #keurKringverwijzingenNaOpgave} runs the graph once more over
+     *  the lowered forms. */
     private void keurKringverwijzingen() {
         Map<Leesknoop, Set<Leesknoop>> leest = new LinkedHashMap<>();
         Map<Leesknoop, String> tekst = new java.util.HashMap<>();
-        for (ResolvedRegel r : model.resolvedRegels) {
-            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.navigatieRol() != null || d.objecttype() == null) continue;
-            Leesknoop doel = leesknoop(d.objecttype(), d.attribuut(),
-                    r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING, tekst);
-            Set<Leesknoop> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
-            verzamelEigenReads(r.waarde(), d.objecttype(), reads, tekst);
-            verzamelEigenReads(r.voorwaarde(), d.objecttype(), reads, tekst);
+        for (ResolvedRegel r : model.resolvedRegels) regelRanden(r, leest, tekst);
+        meldKringen(leest, tekst, Map.of());
+    }
+
+    /** The nodes of every cycle warned so far, a generated 'berekende X' counted as the X it computes: a cycle that
+     *  brings no node beyond them is not warned again. */
+    private final Set<Leesknoop> kringknopen = new java.util.HashSet<>();
+
+    /** The same graph over the forms the opgave marker lowered to (grammar/DIVERGENCES.md §7), when it lowered one:
+     *  the moved writers on 'berekende X', the generated rule on 'afwijkende opgave X', and every defaults group, the
+     *  generated group on X among them. A cycle through a generated member exists only here — a computation of X that
+     *  reads 'berekende X', which it writes once it has moved, or that reads 'afwijkende opgave X', which the generated
+     *  rule attributes from 'berekende X' — and the verifier refuses it under WF-045 like any other. Such a cycle is
+     *  warned in the names the author read. A cycle the pass over the authored forms already warned (X reading X, which
+     *  becomes 'berekende X' reading X through the group) is not warned twice: here 'berekende X' counts as X. A
+     *  document without a lowered marker never reaches this pass. */
+    private void keurKringverwijzingenNaOpgave() {
+        if (gelowerd.isEmpty()) return;
+        Map<Leesknoop, Set<Leesknoop>> leest = new LinkedHashMap<>();
+        Map<Leesknoop, String> tekst = new java.util.HashMap<>();
+        for (ResolvedRegel r : model.resolvedRegels) regelRanden(r, leest, tekst);
+        for (PrioritizedDefaults pd : model.prioritizedDefaults) {
+            Objecttype t = model.objecttypeOpNaam(pd.onderwerp());
+            if (t == null) continue;
+            Set<Leesknoop> reads = leest.computeIfAbsent(leesknoop(t, pd.doel(), pd.isKenmerk(), tekst),
+                    k -> new java.util.LinkedHashSet<>());
+            defaultRanden(pd.defaults(), t, reads, tekst);
         }
-        Set<Leesknoop> gemeld = new java.util.HashSet<>();
+        Map<Leesknoop, Leesknoop> naarAuteur = new java.util.HashMap<>();
+        for (Opgave o : gelowerd) {
+            String type = o.type().naam;
+            naarAuteur.put(
+                    new Leesknoop(type, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(o.berekende()), false),
+                    new Leesknoop(type, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(o.attribuut()), false));
+        }
+        meldKringen(leest, tekst, naarAuteur);
+    }
+
+    /** The edges of one rule: from its target, an own attribute or characteristic of the subject, to what its value
+     *  and its condition read. A navigated target stays out. */
+    private static void regelRanden(ResolvedRegel r, Map<Leesknoop, Set<Leesknoop>> leest,
+                                    Map<Leesknoop, String> tekst) {
+        if (!(r.doel() instanceof Expr.AttribuutRef d) || d.navigatieRol() != null || d.objecttype() == null) return;
+        Leesknoop doel = leesknoop(d.objecttype(), d.attribuut(),
+                r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING, tekst);
+        Set<Leesknoop> reads = leest.computeIfAbsent(doel, k -> new java.util.LinkedHashSet<>());
+        verzamelEigenReads(r.waarde(), d.objecttype(), reads, tekst);
+        verzamelEigenReads(r.voorwaarde(), d.objecttype(), reads, tekst);
+    }
+
+    /** What a defaults group reads: every default's justification and consequence, through its nested exception
+     *  groups, as the verifier folds them into the group's reads (ch. 7.4, ch. 7.9). An initialisation default's
+     *  justification is the empty input and reads nothing. */
+    private static void defaultRanden(List<Default> defaults, Objecttype subject, Set<Leesknoop> uit,
+                                      Map<Leesknoop, String> tekst) {
+        if (defaults == null) return;
+        for (Default d : defaults) {
+            verzamelEigenReads(d.voorwaarde(), subject, uit, tekst);
+            verzamelEigenReads(d.consequentie(), subject, uit, tekst);
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden()) defaultRanden(g.defaults(), subject, uit, tekst);
+        }
+    }
+
+    private void meldKringen(Map<Leesknoop, Set<Leesknoop>> leest, Map<Leesknoop, String> tekst,
+                             Map<Leesknoop, Leesknoop> naarAuteur) {
         for (Leesknoop start : leest.keySet()) {
             List<Leesknoop> pad = zoekKring(start, start, leest, new java.util.HashSet<>(), new ArrayList<>());
-            if (pad != null && gemeld.addAll(pad))
+            if (pad != null && kringknopen.addAll(pad.stream().map(k -> naarAuteur.getOrDefault(k, k)).toList()))
                 model.diagnostics.add(new Diagnostic(Severity.WARNING,
                         "kringverwijzing tussen berekeningen: " + String.join(" -> ", pad.stream().map(tekst::get).toList())
                         + " -> " + tekst.get(start)
