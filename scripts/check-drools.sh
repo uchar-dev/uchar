@@ -874,7 +874,12 @@ EXPECTED_CHANNEL=(
 # does not run, where the twin's case stays green. No source file of this backend changed: both branches
 # play its one case on the first run, PLAYED 1 each, with ref's and clingo's values, deriving the
 # back-link from the type pair as they do for the twin. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=195
+# 195 -> 196 (2026-09-25, card ref-klipvouw-nul, fix round): jutterswet-aandelensom, new and
+# hand-computed — a set sum over a percentage attribute, the one fold in the corpus whose operand is a
+# `%` number and so the witness of that clause of WF-091's numeric-operand arm (IR-SPEC ch. 4.1). No
+# source file of this backend changed: both branches play its two cases on the first run, PLAYED 2
+# each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=196
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1125,7 +1130,9 @@ DRL_CHANNEL=(
 # 171 -> 172 (2026-09-25, card rgs-getuigen-bronloze-constructen): jutterswet-wrakboekwaarde, new. This
 # branch plays its one case on the first run with no change of its own, PLAYED 1. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=172
+# 172 -> 173 (2026-09-25, card ref-klipvouw-nul, fix round): jutterswet-aandelensom, new. This branch
+# plays both cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=173
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

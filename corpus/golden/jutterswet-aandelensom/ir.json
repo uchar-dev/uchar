@@ -1,0 +1,166 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "verdeeld aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Berger",
+        "animate": true,
+        "plural": "Bergers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewichtsaandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            },
+            "plural": "gewichtsaandelen"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "bergingsdeelname",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "verdeeld aandeel van een berging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verdeeld aandeel",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "Het verdeeld aandeel van een Berging"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewichtsaandeel",
+                  "subjectType": "Berger",
+                  "source": {
+                    "snippet": "het gewichtsaandeel van alle bergers van de Berging"
+                  }
+                }
+              ],
+              "elementType": "Berger",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "bergingsdeelname",
+                "role": "berger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de som van het gewichtsaandeel van alle bergers van de Berging"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

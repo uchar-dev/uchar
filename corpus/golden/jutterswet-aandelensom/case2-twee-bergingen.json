@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": {},
+        "roles": { "bergers": ["G1", "G2", "G3"] },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berging",
+        "attributes": {},
+        "roles": { "bergers": ["G4"] },
+        "characteristics": []
+      },
+      {
+        "label": "G1",
+        "objectType": "Berger",
+        "attributes": { "gewichtsaandeel": { "number": "50" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Berger",
+        "attributes": { "gewichtsaandeel": { "number": "30" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G3",
+        "objectType": "Berger",
+        "attributes": { "gewichtsaandeel": { "number": "20" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "G4",
+        "objectType": "Berger",
+        "attributes": { "gewichtsaandeel": { "number": "60" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "B1", "attribute": "verdeeld aandeel", "value": { "number": "100" } },
+    { "kind": "attributeValue", "label": "B2", "attribute": "verdeeld aandeel", "value": { "number": "60" } },
+    { "kind": "consistent" }
+  ]
+}
