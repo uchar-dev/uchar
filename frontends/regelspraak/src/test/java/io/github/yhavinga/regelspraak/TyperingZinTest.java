@@ -53,6 +53,9 @@ class TyperingZinTest {
 
             Objecttype de Vondst (mv: Vondsten)
                 de vondstsaldo Numeriek (getal met 2 decimalen) voor elk jaar;
+                de voorraad Numeriek (niet-negatief geheel getal);
+                de stukprijs Numeriek (positief geheel getal);
+                de korting Numeriek (negatief geheel getal);
                 is gewogen kenmerk (bijvoeglijk);
 
             Feittype vondstmelding
@@ -100,6 +103,23 @@ class TyperingZinTest {
                 + "decimalen gedurende het gehele jaar groter is dan 5."));
         assertEquals(List.of(), meldingen("Een Vondst is gewogen indien zijn vondstsaldo gedurende het gehele jaar "
                 + "groter is dan 5."));
+    }
+
+    /** WF-039's target clause: a number literal written into a sign-restricted target, read off the written lexeme
+     *  as the verifier reads it (a leading minus is negative, only zeros is zero). Measured on the frontend before
+     *  this: a Dutch refusal ({@code waarde -5 voldoet niet aan de teken-beperking …}), and for {@code -0} no
+     *  refusal at all where the verifier refuses the document. */
+    @Test void tekenbeperking_van_het_doel() {
+        String v = "De %s van een Vondst moet gesteld worden op %s.";
+        assertEquals(fout("teken-beperking: negative literal '-5' is written into a target under a non-negative sign "
+                + "restriction"), meldingen(v.formatted("voorraad", "-5")));
+        assertEquals(fout("teken-beperking: negative literal '-0' is written into a target under a non-negative sign "
+                + "restriction"), meldingen(v.formatted("voorraad", "-0")));
+        assertEquals(fout("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
+                meldingen(v.formatted("stukprijs", "0")));
+        assertEquals(fout("teken-beperking: literal '5' is written into a target under a negative sign restriction"),
+                meldingen(v.formatted("korting", "5")));
+        assertEquals(List.of(), meldingen(v.formatted("korting", "-5")));
     }
 
     @Test void datumprecisie() {

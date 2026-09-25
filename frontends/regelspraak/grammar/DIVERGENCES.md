@@ -1417,26 +1417,24 @@ literal at plus, min and assignment (`€ plus 5`, `€ := 5`), where the verifi
 adopts the literal's unit and RegelSpraak adopts it in a comparison only; plus
 or min where neither operand is a date and one is no number; a percentage in a
 product, a quotient, a minimum, a maximum, a sum or a sum's fallback (tables 11,
-14 and 21 to 23 list no percentage row), and a number beside a percentage at
+14 and 21 to 23 list no percentage row) and as the operand of a square root or
+an absolute value (tables 16 and 20), and a number beside a percentage at
 equality or assignment where a unitless literal adopts the '%'; a date in a
-minimum or maximum and a number in a first or last (tables 22 to 25); any
-operand of a square root or an absolute value, whose arity alone the verifier
-checks; one-sided or inconvertible units among the operands of a minimum or
-maximum, and a total over a unit without a time denominator (table 30), for
-which the verifier has no unit arm; more decimals than the target admits, at an
-assignment and at an allocation share (§6.1.2), and the family and unit checks
-of an allocation, since the verifier crosses no decimals and no allocation
-types; a number literal outside the target's sign restriction, since the
-verifier holds a literal to its own type only and the frontend writes the
-literal's own type; a unit the unit model cannot spell (a reciprocal, a rate
-factor, a rate divisor); a counting quantifier whose telwoord is not a whole
-number, which the wire would carry as 0, and an exact-digit count that is not
-one; a date or date-time token that is no calendar date, since the frontend
-forms a wire lexeme from a valid date only and the verifier's lexeme sentences
-(WF-084, WF-095) describe a written lexeme; a characteristic initialisation in an object
-creation whose value is boolean-typed but not the literal waar or onwaar
-(§13.4.6.4); the whole-period qualifier on a navigated characteristic or on a
-condition that is no comparison, predicate or characteristic check. Refusals of
-the source text itself (syntax, the desugaring of decision tables and exception
-blocks, the dialect's fences, forms this frontend does not lower) have no
-reader either, because no document carries them.
+minimum or maximum and a number in a first or last (tables 22 to 25); one-sided
+or inconvertible units among the operands of a minimum or maximum, and a total
+over a unit without a time denominator (table 30), for which the verifier has no
+unit arm; more decimals than the target admits, at an assignment and at an
+allocation share (§6.1.2), and the family and unit checks of an allocation,
+since the verifier crosses no decimals and no allocation types; a unit the unit
+model cannot spell (a reciprocal, a rate factor, a rate divisor); a counting
+quantifier whose telwoord is not a whole number, which the wire would carry as
+0, and an exact-digit count that is not one; a date or date-time token that is
+no calendar date, since the frontend forms a wire lexeme from a valid date only
+and the verifier's lexeme sentences (WF-084, WF-095) describe a written lexeme;
+a characteristic initialisation in an object creation whose value is
+boolean-typed but not the literal waar or onwaar (§13.4.6.4); the whole-period
+qualifier on a navigated characteristic or on a condition that is no comparison,
+predicate or characteristic check. Refusals of the source text itself (syntax,
+the desugaring of decision tables and exception blocks, the dialect's fences,
+forms this frontend does not lower) have no reader either, because no document
+carries them.

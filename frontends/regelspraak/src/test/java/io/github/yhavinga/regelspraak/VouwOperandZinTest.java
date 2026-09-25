@@ -146,7 +146,16 @@ class VouwOperandZinTest {
         assertEquals(fout("leegwaarde-alternatief van een sommatie moet numeriek zijn, kreeg Percentage (§5.8.2)"),
                 meldingen(u + "de som van de vondstwaarde van alle vondsten van de Jutter of zijn aandeel als die er "
                         + "niet zijn."));
-        assertEquals(fout("de wortel van vereist numerieke operanden, kreeg Tekst"),
+        // a percentage is a number to the verifier, which admits it under a square root and an absolute value
+        assertEquals(fout("de wortel van vereist numerieke operanden, kreeg Percentage"),
+                meldingen(u + "de wortel van zijn aandeel naar beneden afgerond op 2 decimalen."));
+    }
+
+    @Test void wortel_en_absolute_waarde() {
+        String u = "De uitkomst van een Jutter moet berekend worden als ";
+        assertEquals(fout("de wortel van: squareRoot operand is text, must be a number"),
                 meldingen(u + "de wortel van zijn naam naar beneden afgerond op 2 decimalen."));
+        assertEquals(fout("de absolute waarde van: absoluteValue operand is date-day, must be a number"),
+                meldingen("De dag van een Jutter moet berekend worden als de absolute waarde van (zijn vondstdag)."));
     }
 }

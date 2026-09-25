@@ -3381,28 +3381,38 @@ final class RuleChecker {
      *  which demands an explicit afronding), so enforcement is RESOLVER-STATIC over the statically-decidable
      *  surface — a LITERAL assigned/initialised into a sign-restricted Numeriek doel — exactly the
      *  enum-domein posture (Tabel 61 rij 7). A computed value's sign is undecidable here and stays
-     *  unchecked (documented in grammar/DIVERGENCES.md). Percentage carries no Teken in the model. */
+     *  unchecked (documented in grammar/DIVERGENCES.md). Percentage carries no Teken in the model.
+     *
+     *  <p>The verifier refuses the same literals (WF-039's target clause) and reads the sign off the lexeme the
+     *  emitter writes: a leading minus is negative and a lexeme of zeros is zero, so {@code -0} is negative there.
+     *  This check reads it the same way and speaks its sentence. The verifier stands aside where the literal's own
+     *  type already refuses it; a number literal here is typed without a sign of its own, so this is the one
+     *  message. */
     private void keurTeken(Datatype doelType, Expr waarde, int line) {
         if (!(doelType instanceof Datatype.Numeriek n) || n.teken() == Datatype.Teken.ONBEPAALD) return;
         if (!(waarde instanceof Expr.Literal lit) || lit.type() == null || !lit.type().isNumeriek()) return;
-        java.math.BigDecimal v = Literalen.getal(lit);
-        if (v == null) return;
-        boolean ok = switch (n.teken()) {
-            case NEGATIEF      -> v.signum() < 0;
-            case NIET_NEGATIEF -> v.signum() >= 0;
-            case POSITIEF      -> v.signum() > 0;
-            case ONBEPAALD     -> true;   // unreachable (guarded above)
+        String w = lit.waarde().replace(',', '.');   // the lexeme IrEmitter writes
+        String kaal = w.strip();
+        boolean negatief = kaal.startsWith("-");
+        String cijfers = negatief || kaal.startsWith("+") ? kaal.substring(1) : kaal;
+        boolean nul = !cijfers.isEmpty() && cijfers.chars().allMatch(c -> c == '0' || c == ',' || c == '.');
+        String zin = switch (n.teken()) {
+            case NIET_NEGATIEF -> negatief ? "negative literal '" + w + "'" : null;
+            case POSITIEF      -> negatief || nul ? "literal '" + w + "'" : null;
+            case NEGATIEF      -> negatief ? null : "literal '" + w + "'";
+            case ONBEPAALD     -> null;   // unreachable (guarded above)
         };
-        if (!ok) model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "waarde " + lit.waarde().trim() + " voldoet niet aan de teken-beperking '"
-                        + tekenNaam(n.teken()) + "' van het doel-datatype (§3.3.1)", line));
+        if (zin != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, "teken-beperking: " + zin
+                + " is written into a target under a " + tekenWoord(n.teken()) + " sign restriction", line));
     }
 
-    /** The §13.3.3.7 source spelling of a Teken. */
-    private static String tekenNaam(Datatype.Teken t) {
+    /** The verifier's word for a sign restriction in WF-039's sentences. */
+    private static String tekenWoord(Datatype.Teken t) {
         return switch (t) {
-            case NEGATIEF -> "negatief"; case NIET_NEGATIEF -> "niet-negatief";
-            case POSITIEF -> "positief"; case ONBEPAALD -> "";
+            case NEGATIEF -> "negative";
+            case NIET_NEGATIEF -> "non-negative";
+            case POSITIEF -> "positive";
+            case ONBEPAALD -> throw new IllegalStateException("RuleChecker: een onbepaald teken heeft geen woord");
         };
     }
 

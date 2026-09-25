@@ -310,7 +310,8 @@ class VariabeledeelLoweringTest {
     @Test void de_tekenbeperking_ziet_door_de_letketen_heen() {
         // §3.3.1 is resolver-static over a LITERAL value; `Daarbij geldt: de keuze is -49` denotes exactly that
         // literal (ch. 10.6: the chain's body is a single read of the binder), so it must fail the same way the
-        // bare -49 does. This is the case with NO other guard: the emitted wire is verifier-clean.
+        // bare -49 does. The verifier refuses the written literal too (WF-039's target clause), in the sentence the
+        // frontend now speaks.
         String viaVariabele = """
             Objecttype de Jutter
                 de keuzewaarde Numeriek (niet-negatief geheel getal);
@@ -329,7 +330,8 @@ class VariabeledeelLoweringTest {
             """;
         assertEquals(meldingen(kaal), meldingen(viaVariabele),
                 () -> "het variabelendeel mag de teken-beperking niet wegnemen: " + meldingen(viaVariabele));
-        assertTrue(meldt(meldingen(viaVariabele), "ERROR: waarde -49 voldoet niet aan de teken-beperking 'niet-negatief'"),
+        assertTrue(meldt(meldingen(viaVariabele), "ERROR: teken-beperking: negative literal '-49' is written into a target "
+                        + "under a non-negative sign restriction"),
                 () -> "§3.3.1 ongemeld: " + meldingen(viaVariabele));
     }
 

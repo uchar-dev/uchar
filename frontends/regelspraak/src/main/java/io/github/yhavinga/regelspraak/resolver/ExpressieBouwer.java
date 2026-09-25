@@ -1664,9 +1664,12 @@ final class ExpressieBouwer {
             // WORTEL always types Numeriek regardless of its radicand, so "de wortel van <tekst>" produced a Numeriek
             // result with NO diagnostic; ABSOLUTE_WAARDE propagates the operand type, so "absolute waarde van (<datum>)"
             // leaked a datum unless a downstream assignment happened to reject it. Both now reject a concrete
-            // non-numeriek operand at the operator (Onbekend skipped, no claim).
-            case WORTEL -> Typering.getalAggregatie("de wortel van", typen);
-            case ABSOLUTE_WAARDE -> Typering.getalAggregatie("de absolute waarde van", typen);
+            // non-numeriek operand at the operator (Onbekend skipped, no claim), in the verifier's words where it
+            // refuses the operand too (WF-038).
+            case WORTEL -> verifierzin("de wortel van", Typering.getalAggregatie("de wortel van", typen),
+                    numeriekeBuiltinZin(kind, typen));
+            case ABSOLUTE_WAARDE -> verifierzin("de absolute waarde van",
+                    Typering.getalAggregatie("de absolute waarde van", typen), numeriekeBuiltinZin(kind, typen));
             // §4.19 Tabel 29 (eerste paasdag van): "één numerieke expressie zonder eenheid ... altijd een geheel getal
             // met 4 cijfers". EERSTE_PAASDAG always types Datum, so an illegal operand produced a Datum result with no
             // diagnostic.
@@ -1906,6 +1909,14 @@ final class ExpressieBouwer {
      *  admits them. */
     private static String verifierzin(String voorvoegsel, String fout, String zin) {
         return fout == null ? null : zin != null ? voorvoegsel + ": " + zin : fout;
+    }
+
+    /** WF-038's sentence for the one operand of a square root or an absolute value where the verifier refuses it; a
+     *  percentage is a number to the verifier, so that refusal keeps RegelSpraak's own words. */
+    private static String numeriekeBuiltinZin(Expr.FunctieKind kind, List<Datatype> typen) {
+        if (typen.size() != 1 || typen.get(0).isOnbekend() || typen.get(0).isGetalachtig()) return null;
+        return Spelling.BUILTIN_KIND.spelling(kind) + " operand is " + Typering.soortWoord(typen.get(0))
+                + ", must be a number";
     }
 
     /** WF-091's sentence for an arithmetic fold ({@code vouw}: sum or total on the wire) over an operand that is no
