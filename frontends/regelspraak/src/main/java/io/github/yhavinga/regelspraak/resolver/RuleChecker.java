@@ -1502,7 +1502,7 @@ final class RuleChecker {
             if (!init.isEmpty()) {
                 ResolvedRegel r = init.get(0);
                 defaults.add(new Default(null, null, r.waarde(), true, null, annotatieTekst(r.bronAnnotaties())));
-                model.resolvedRegels.remove(r);
+                model.resolvedRegels.removeIf(x -> x == r);
             }
             model.prioritizedDefaults.add(new PrioritizedDefaults(o.groep(), t.naam, null, o.attribuut(), false,
                     defaults, null, Geldigheid.ALTIJD));
