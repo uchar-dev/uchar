@@ -361,11 +361,13 @@ invoer.
   ch. 7.1: "not a retraction"; het monotone schrijfregime van ch. 5.3).
 - Uitkomst: `recht op uitkering` **aanwezig** — geen wetslezing maar de
   invoerregel van de IR: een `onwaar`-besluit verdringt geen kenmerkinvoer.
-- Deze verwachting is voorlopig: RUNTIME-SEMANTICS ch. 7.8 zegt niets over
-  een kenmerkdoel in de richting onwaar, en de kaart
-  kenmerkinvoer-en-invoer-boven-berekening beslist dat nog — haar optie 7-i
-  legt dit gedrag vast, haar optie 7-ii laat de verwachting omslaan naar
-  afwezig.
+- RUNTIME-SEMANTICS ch. 7.8 legt dit vast voor een kenmerkdoel: "On a
+  characteristic target no decision removes what the virtual input default
+  holds" — geen beslissing verdringt de virtuele invoer-default, en ch. 7.8
+  noemt deze case als uitgewerkt voorbeeld. De kaart
+  kenmerkinvoer-en-invoer-boven-berekening koos haar optie 7-i (dit gedrag
+  vastleggen) en niet haar optie 7-ii (de verwachting naar afwezig laten
+  omslaan).
 - De rekenregels rekenen als in case3 (`inkomensgrens` 2100,00, `verstreken
   periode` 92, `nieuwe maxdatum` 2026-01-15); die waarden pint case3. Deze
   case pint alleen het kenmerk en de consistentie. Een uitvoerder die niets

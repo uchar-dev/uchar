@@ -163,10 +163,12 @@
 #     false decision displaces the lower defaults and writes nothing, it never
 #     retracts (ch. 7.1, "not a retraction"; ch. 5.3). The presence IS the
 #     assertion — it refutes an executor that lets a false decision remove an
-#     input characteristic, which a do-nothing run cannot show. Pinned as long
-#     as the card kenmerkinvoer-en-invoer-boven-berekening does not choose its
-#     option 7-ii, which would flip the expectation to absent. The nine sibling
-#     cases all pin computed attributes and are not survivors.
+#     input characteristic, which a do-nothing run cannot show. RUNTIME-SEMANTICS
+#     ch. 7.8 states it for a characteristic target — no decision removes what
+#     the virtual input default holds — and names this case as its worked
+#     example (the card kenmerkinvoer-en-invoer-boven-berekening chose its
+#     option 7-i, not 7-ii). The nine sibling cases all pin computed attributes
+#     and are not survivors.
 #   - jutterswet-nestkenmerk-rgs/case1-y-wint.json: the RegelSpraak twin of the
 #     anchor's case1-y-wint, byte-identical case, same reason — the sub-decision
 #     do-not-attribute (false, from ny) displaces the true below it, so
