@@ -438,7 +438,7 @@ public final class RegelSpraakModel {
     }
 
     /** A symbolic role binding: the fact type plus the DECLARED (singular) role name —
-     *  the pair the IR emitter's {@code RolBinding} extension fields carry (a plural
+     *  the pair the IR emitter's {@code RoleBinding} extension fields carry (a plural
      *  never binds; the wire names the declared role). */
     public record RolBindingRef(String feittype, String rol) {}
 

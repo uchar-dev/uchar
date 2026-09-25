@@ -712,7 +712,7 @@ final class ExpressieBouwer {
      * every executor — the red-zone shape, not an ill-formed one.
      *
      * <p>(a) A NESTED set step ("… van alle X van alle Y van de Z"). The uchar wire describes a fold source
-     * with ONE relation: one {@code elementObjecttype} plus one {@code bronRol} (IR-SPEC ch. 4.3). A
+     * with ONE relation: one {@code elementType} plus one {@code sourceRole} (IR-SPEC ch. 4.3). A
      * two-step written range is not expressible on it, and the emitter's derivation ranges from the RULE
      * SUBJECT to the innermost element type — so the outer step disappears without a trace and the fold
      * runs over the wrong set. Where no relation joins subject and element that was caught downstream
