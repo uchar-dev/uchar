@@ -7987,6 +7987,13 @@ full:
 > answered R3 order-dependently, the ASP backend found five stable models)
 > are the class this repository never admits.
 
+*Editorial note (the L5 landing):* this decision and the next one in this
+section are quoted in the wire spelling of their day; on the current wire
+the LEEG/GEVULD test is a `Predicate` of kind `empty` or `filled` whose
+polarity field is `negated` (the wire `negatie` above), and the quantifiers
+ALLE, GEEN, TEN_MINSTE, TEN_HOOGSTE and PRECIES of the next decision are
+`all`, `none`, `atLeast`, `atMost` and `exactly`.
+
 Every node the operand reads is read negatively, the hop relations of a
 navigated operand included: an absent link makes the operand leeg, so the
 test reads the absence of the link as well. The rule holds in every position
