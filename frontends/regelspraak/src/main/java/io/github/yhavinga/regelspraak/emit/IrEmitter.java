@@ -67,9 +67,7 @@ import java.util.Map;
  * ({@link #ongeschrevenVerdelingen}). The key order of every node is the order this emitter wrote it in before the
  * L5 renaming, with the keys renamed in place and a field left out where the model is empty, so a re-emission is
  * byte-identical to a migrated document. That is the {@code properties} order of the schema
- * ({@code spec/schema/uchar-ir-v1.schema.json}) except where the emitter always wrote otherwise —
- * {@code PrioritizedDefaults} writes {@code defaults} before {@code unordered} (golden {@code jutterswet-wachtgeld},
- * pinned by gate 10) — as {@code spec/schema/README.md} records.
+ * ({@code spec/schema/uchar-ir-v1.schema.json}), as {@code spec/schema/README.md} records.
  *
  * <p>Completeness is compiler-enforced where it can be: the {@link Datatype}, {@link Expr}
  * and {@link Conditie} sealed hierarchies are walked with EXHAUSTIVE switches (no default
