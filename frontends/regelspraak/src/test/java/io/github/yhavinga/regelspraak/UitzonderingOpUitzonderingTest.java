@@ -485,6 +485,57 @@ class UitzonderingOpUitzonderingTest {
         assertFalse(d.message().contains("ander doel"), "niet de algemene doelmelding");
     }
 
+    /** A supertype's tree (base and one exception) and a subtype without a rule of its own on the target. */
+    private static final String STRANDRECHT = """
+        Objecttype het Strandrecht (mv: Strandrechten)
+            de grondslag Numeriek (niet-negatief getal met 2 decimalen);
+            de uitkering Numeriek (niet-negatief getal met 2 decimalen);
+            is betwist kenmerk (bijvoeglijk);
+
+        Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+            de bergingsdiepte Numeriek (niet-negatief geheel getal);
+
+        Regel uitkering van een strandrecht
+            geldig altijd
+                De uitkering van een Strandrecht moet gesteld worden op zijn grondslag.
+
+        Uitzondering op uitkering van een strandrecht: uitkering van een betwist strandrecht
+            geldig altijd
+                De uitkering van een Strandrecht moet gesteld worden op 99,00
+                indien het Strandrecht betwist is.
+        """;
+
+    private static final String DIEP_WRAKRECHT = """
+
+        Uitzondering op uitkering van een betwist strandrecht: uitkering van een diep wrakrecht
+            geldig altijd
+                De uitkering van een Wrakrecht moet gesteld worden op 55,00
+                indien zijn bergingsdiepte groter is dan 20.
+        """;
+
+    @Test void een_geerfde_drager_zonder_eigen_basis_noemt_de_basisregel_die_erbij_hoort() {
+        // An own base replaces the inherited one (ch. 7.10): a subtype without one has to write it, repeating the
+        // inherited base, before its own exception has anything to hang on.
+        Diagnostic d = enigeFout(Resolver.resolve(STRANDRECHT + DIEP_WRAKRECHT));
+        assertTrue(d.message().endsWith("gaan vóór de geërfde, dus zij beslist precies waar beide gelden. Wrakrecht "
+                + "heeft nog geen eigen basisregel voor 'uitkering': schrijf die met de uitkomst en de voorwaarde van "
+                + "'uitkering van een strandrecht', want een eigen basisregel vervangt de geërfde (dialect §4)"),
+                d.message());
+    }
+
+    @Test void een_geerfde_drager_met_eigen_basis_noemt_geen_nieuwe_basisregel() {
+        Diagnostic d = enigeFout(Resolver.resolve(STRANDRECHT + """
+
+            Regel uitkering van een wrakrecht
+                geldig altijd
+                    De uitkering van een Wrakrecht moet gesteld worden op zijn grondslag maal 2.
+            """ + DIEP_WRAKRECHT));
+        assertTrue(d.message().contains("Schrijf een eigen uitzondering van Wrakrecht op een basisregel van Wrakrecht"),
+                d.message());
+        assertTrue(d.message().endsWith("dus zij beslist precies waar beide gelden (dialect §4)"), d.message());
+        assertFalse(d.message().contains("nog geen eigen basisregel"), d.message());
+    }
+
     @Test void een_genest_blok_op_een_ander_doel_weigert() {
         Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS
                 + op("uitsluiting", "herroeping", NIET_UIT, "hij herroepen is")

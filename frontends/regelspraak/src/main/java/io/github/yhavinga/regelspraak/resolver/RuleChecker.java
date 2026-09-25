@@ -819,6 +819,7 @@ final class RuleChecker {
         }
 
         // 3. per tree, in the order its first block was written: the base, then every node top-down
+        java.util.Set<String> knoopNamen = knoopNamen(doc);
         Map<String, List<Knoop>> perWortel = new LinkedHashMap<>();
         for (Knoop k : knopen) if (!k.fout) perWortel.computeIfAbsent(k.wortel, w -> new ArrayList<>()).add(k);
         java.util.Set<ResolvedRegel> gelift = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -839,7 +840,7 @@ final class RuleChecker {
                         + "initialisatie) — daarover wordt geen defaults-groep gebouwd (§4)");
                 continue;
             }
-            if (!keurKinderen(null, wortel, wortelKinderen, basisRegel, doel)) continue;
+            if (!keurKinderen(null, wortel, wortelKinderen, basisRegel, doel, knoopNamen)) continue;
 
             List<Conditie> basisConjuncten = conjuncten(basisRegel.voorwaarde());
             List<Default> keten = new ArrayList<>();
@@ -863,7 +864,7 @@ final class RuleChecker {
      *  together, then each child's own body and its edge, then its subtree. Whether the subtree is sound; every
      *  refusal speaks once, and below a refused node nothing is checked any more. */
     private boolean keurKinderen(Knoop drager, String dragerNaam, List<Knoop> kinderen, ResolvedRegel basis,
-                                 DefaultsDoel doel) {
+                                 DefaultsDoel doel, java.util.Set<String> knoopNamen) {
         boolean goed = true;
         List<Knoop> geordend = kinderen.stream().filter(k -> k.soort != Blok.LID).toList();
         List<ParserRuleContext> blokken = kinderen.stream().filter(k -> k.soort == Blok.LID).map(k -> k.blok)
@@ -880,16 +881,19 @@ final class RuleChecker {
             goed = false;
         }
         for (Knoop k : kinderen) {
-            if (!keurKnoop(k, drager, dragerNaam, basis, doel)) { goed = false; continue; }
-            if (!keurKinderen(k, k.naam, k.kinderen, basis, doel)) goed = false;
+            if (!keurKnoop(k, drager, dragerNaam, basis, doel, knoopNamen)) { goed = false; continue; }
+            if (!keurKinderen(k, k.naam, k.kinderen, basis, doel, knoopNamen)) goed = false;
         }
         return goed;
     }
 
     /** One node's own body and its edge to its carrier: the body resolves to one plain version; an 'Afwijking van'
      *  hangs directly under the base; a subtype does not write under an inherited node; the window is the group's;
-     *  the target is the group's (WF-050). The checks and their texts at the first level are the first card's. */
-    private boolean keurKnoop(Knoop k, Knoop drager, String dragerNaam, ResolvedRegel basis, DefaultsDoel doel) {
+     *  the target is the group's (WF-050). The checks and their texts at the first level are the first card's.
+     *  {@code knoopNamen} are the rules written as nodes ({@link #knoopNamen}): a rule outside them on the
+     *  subtype's target is a base the subtype's own exception can hang on. */
+    private boolean keurKnoop(Knoop k, Knoop drager, String dragerNaam, ResolvedRegel basis, DefaultsDoel doel,
+                              java.util.Set<String> knoopNamen) {
         List<ResolvedRegel> r = resolvedVan(k.naam);
         if (r.isEmpty()) {
             fout(k.line, k.kop + ": " + metLidwoord(k) + " leverde geen kenmerktoekenning/gelijkstelling op (§4)");
@@ -915,12 +919,24 @@ final class RuleChecker {
         if (drager != null && eigen.kenmerk() == doel.kenmerk() && eigen.naam().equalsIgnoreCase(doel.naam())
                 && eigen.onderwerp() != doel.onderwerp() && eigen.onderwerp().isEen(doel.onderwerp())) {
             String sub = eigen.onderwerp().naam, sup = doel.onderwerp().naam;
+            // Without a base of its own the subtype has nothing to hang the exception on, and writing one changes
+            // more than the exception: an own base replaces the inherited one (ch. 7.10), so it has to repeat it.
+            // A direct subtype inherits this tree's base; deeper down an intermediate type may have replaced it.
+            boolean eigenBasis = model.resolvedRegels.stream().anyMatch(b ->
+                    b.soort() != ResolvedRegel.Soort.INITIALISATIE && !knoopNamen.contains(zonderVersie(b.naam()))
+                            && eigen.gelijk(doelVan(b)));
+            String geerfd = eigen.onderwerp().supertype == doel.onderwerp() ? "'" + k.wortel + "'"
+                    : "de basisregel die " + sub + " nu erft";
             fout(k.line, k.kop + ": '" + drager.naam + "' is " + soortTekst(drager) + " van " + sup + ", en "
                     + aanduiding(k) + " schrijft voor het subtype " + sub + " — een subtype erft de uitzonderingen van "
                     + "zijn supertype met wat eronder genest is, en adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). "
                     + "Schrijf een eigen uitzondering van " + sub + " op een basisregel van " + sub + ", met de volledige "
                     + "voorwaarde van '" + drager.naam + "' en de eigen voorwaarde: de eigen uitzonderingen van " + sub
-                    + " gaan vóór de geërfde, dus zij beslist precies waar beide gelden (dialect §4)");
+                    + " gaan vóór de geërfde, dus zij beslist precies waar beide gelden"
+                    + (eigenBasis ? "" : ". " + sub + " heeft nog geen eigen basisregel voor '" + doel.naam() + "': "
+                            + "schrijf die met de uitkomst en de voorwaarde van " + geerfd + ", want een eigen "
+                            + "basisregel vervangt de geërfde")
+                    + " (dialect §4)");
             return false;
         }
         // Default carries no per-default geldigheid: mixed windows are unrepresentable on the defaults group, so a

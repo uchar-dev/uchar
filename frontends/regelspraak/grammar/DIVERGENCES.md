@@ -360,7 +360,10 @@ is written with this header; its `ir.json` is byte-identical to the one its
   inherits an exception together with what is nested under it, and addresses none
   of it). The message names a subtype-own exception on a base rule of the subtype
   carrying the full condition of the node plus its own: the fixed block order lets
-  it decide exactly where both apply. A block for a subtype under the supertype's
+  it decide exactly where both apply. Where the subtype has no rule of its own on
+  the target, the message adds that it has to write one with the outcome and the
+  condition of the base it inherits (named for a direct subtype), because an own
+  base replaces the inherited one. A block for a subtype under the supertype's
   base rule keeps the target refusal below;
 - a carrier with ordered children and an `Uitzonderingen ongeordend op` block, or
   with two such blocks: nothing fixes the priority between them. The message names
