@@ -62,6 +62,44 @@ class DimensievouwTest {
         assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
     }
 
+    /** The grammar admits "en" inside a label, so a set of two labels written without a comma is parsed as ONE
+     *  member "voorjaar en najaar"; measured before this: no declared label matched, the selection stayed
+     *  unresolved with a WARNING and the emitter refused the fold. */
+    @Test void een_verzameling_van_twee_labels_zonder_komma_leest_twee_labels() {
+        String c = emitCompact("de maximale waarde van zijn vondstgewicht over de seizoenen in {voorjaar en najaar}.");
+        assertTrue(c.contains("\"kind\":\"maximum\"," + EIGEN_LEZING
+                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"najaar\"],"), () -> "de verzameling van twee labels:\n" + c);
+    }
+
+    /** A declared label that contains "en" is read whole, and a member that joins such a label to another reads
+     *  as the one way of splitting it into declared labels. */
+    @Test void een_label_met_en_blijft_heel() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Dimensie het getij, bestaande uit de getijden (na het attribuut met voorzetsel in):
+                1. eb en vloed
+                2. doodtij
+                3. springtij
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de getijvangst Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met getij;
+                de getijsom Numeriek (niet-negatief getal met 2 decimalen);
+                de kentering Numeriek (niet-negatief getal met 2 decimalen);
+
+            Regel getijsom van een jutter
+                geldig altijd
+                    De getijsom van een Jutter moet berekend worden als de som van zijn getijvangst over de getijden in {eb en vloed en doodtij}.
+
+            Regel kentering van een jutter
+                geldig altijd
+                    De kentering van een Jutter moet berekend worden als de som van zijn getijvangst over de getijden in {eb en vloed, doodtij en springtij}.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"labels\":[\"ebenvloed\",\"doodtij\"],"), () -> "het label met en, heel gelezen:\n" + c);
+        assertTrue(c.contains("\"labels\":[\"ebenvloed\",\"doodtij\",\"springtij\"],"), () -> "drie leden:\n" + c);
+    }
+
     @Test void het_maximum_over_een_interval_draagt_de_selectie() {
         String c = emitCompact("de maximale waarde van zijn vondstgewicht vanaf zomer t/m najaar.");
         assertTrue(c.contains("\"kind\":\"maximum\"," + EIGEN_LEZING

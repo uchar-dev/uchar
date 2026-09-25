@@ -971,11 +971,39 @@ final class ExpressieBouwer {
     private List<String> bereik(RegelSpraakModel.Dimensie d, List<DimensieWaardeContext> waarden) {
         List<String> uit = new ArrayList<>();
         for (DimensieWaardeContext w : waarden) {
-            int idx = labelIndex(d, src(w));
-            if (idx < 0) return null;
-            uit.add(d.waarden().get(idx));
+            List<String> labels = labelsVanLid(d, src(w));
+            if (labels == null) return null;
+            uit.addAll(labels);
         }
         return uit;
+    }
+
+    /** §13.4.17.54: the declared labels one written member of an "in {…}" set denotes. The grammar admits "en"
+     *  inside a label, so "{voorjaar en najaar}" reaches here as the ONE member "voorjaar en najaar". A member
+     *  that is a declared label is read whole; any other member is read as labels joined by "en" when exactly one
+     *  way of grouping its words gives declared labels only. Null when no reading, or more than one, does. */
+    private static List<String> labelsVanLid(RegelSpraakModel.Dimensie d, String geschreven) {
+        int idx = labelIndex(d, geschreven);
+        if (idx >= 0) return List.of(d.waarden().get(idx));
+        String[] delen = geschreven == null ? new String[0] : geschreven.trim().split("\\s+en\\s+");
+        if (delen.length < 2) return null;
+        List<List<String>> lezingen = new ArrayList<>();
+        indelingen(d, delen, 0, new ArrayList<>(), lezingen);
+        return lezingen.size() == 1 ? lezingen.get(0) : null;
+    }
+
+    /** Every grouping of {@code delen[van..]} into consecutive runs that are declared labels, appended to
+     *  {@code uit}. */
+    private static void indelingen(RegelSpraakModel.Dimensie d, String[] delen, int van, List<String> tot,
+                                   List<List<String>> uit) {
+        if (van == delen.length) { uit.add(List.copyOf(tot)); return; }
+        for (int eind = van + 1; eind <= delen.length; eind++) {
+            int idx = labelIndex(d, String.join(" en ", java.util.Arrays.copyOfRange(delen, van, eind)));
+            if (idx < 0) continue;
+            tot.add(d.waarden().get(idx));
+            indelingen(d, delen, eind, tot, uit);
+            tot.remove(tot.size() - 1);
+        }
     }
 
     private static int labelIndex(RegelSpraakModel.Dimensie d, String label) {

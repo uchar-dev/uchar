@@ -46,11 +46,14 @@ against the declared dimension. WF-040's index row names the cell read of
 first positive witness of the rule's selection arm.
 
 A set of two labels written with `en` and without a comma
-(`{voorjaar en najaar}`) does not reach this shape: the grammar admits `en`
-inside a label, so it parses as the one label `voorjaar en najaar`, which the
-dimension does not declare, and the resolver leaves the selection unresolved
-with a WARNING; the emitter then refuses the fold. The source therefore writes
-the set form with three labels.
+(`{voorjaar en najaar}`) parses as the one member `voorjaar en najaar`,
+because the grammar admits `en` inside a label. Until a later fix in the same
+card the resolver then found no declared label, left the selection unresolved
+with a WARNING, and the emitter refused the fold; that is why this source
+writes the set form with three labels. The resolver now reads such a member as
+labels joined by `en` when exactly one grouping of its words gives declared
+labels only, a declared label being read whole first (`DimensievouwTest`), so
+`{voorjaar en najaar}` selects `voorjaar` and `najaar`.
 
 ## Why no replay case — measured, per executor
 
