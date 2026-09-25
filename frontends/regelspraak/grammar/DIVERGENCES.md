@@ -1213,20 +1213,21 @@ literal `"(mag opgegeven worden)"`).
 Counted on 2026-09-25, before the token existed: the opening `(mag` and the
 whole sequence occur in none of the 81 `bron.rgs` sources of the corpus, none
 of the 47 sources of the repository's temporary parity zone, none of the six
-markdown documents of the v2.3.0 specification set, and none of 660 `.rgs`
-files in the werkbank's tree (build output directories left out). In the
-tracked files of this repository the sequence stands in prose alone: cards and
-proposals, no grammar, no test source, no corpus file.
+markdown documents of the v2.3.0 specification set, none of 660 `.rgs` files
+in the operational rule collections and toolchain examples outside this
+repository, and none of 164 in a checkout of the reference toolchain (build
+output left out in both). In the tracked files of this repository the sequence
+stands in prose alone: cards and proposals, no grammar, no test source, no
+corpus file.
 
-The method of §6: all 788 of those documents — the 81 corpus sources, the 47
-of the parity zone and the 660 — went through the frontend built at the commit
-before the token and at the commit that added it and the lowering, the emitted
-IR plus the diagnostics compared. Zero differences in all 788: 199 emit an IR,
-581 carry an ERROR (among them the scenario and fragment files, which are no
-`regelSpraakDocument`), and the emitter refuses 8. Unlike §6 no
-syntax-error text changed either: the new token enters an "expecting {…}" set
-only at the end of a member declaration, and no measured document has a syntax
-error there.
+The method of §6: all 952 of those documents went through the frontend built
+at the commit before the token and at the commits that added it and the
+lowering, the emitted IR plus the diagnostics compared. Zero differences in
+all 952: 233 emit an IR, 708 carry an ERROR (among them the scenario and
+fragment files, which are no `regelSpraakDocument`), and the emitter refuses
+11. Unlike §6 no syntax-error text changed either: the new token enters an
+"expecting {…}" set only at the end of a member declaration, and no measured
+document has a syntax error there.
 
 What bounds an unmeasured document is the grammar: the token is admitted only
 at the end of a member declaration, so anywhere else the sequence is a syntax
