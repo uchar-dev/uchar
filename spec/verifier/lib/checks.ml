@@ -2647,7 +2647,9 @@ let set_lezing ctx ~ranged (args : expr list) : bool option =
    extractors, where v0 states no result-unit rule; and duration /
    absoluteDuration, where the annotation IS the source (the operator's
    own parameter, WF-038). Not derived means not crossed — and named, never
-   silently skipped. Two node kinds are left out for the opposite reason:
+   silently skipped. A `dividedBy` and a `power` are here for their
+   WHOLENESS alone (ch. 2.3), which leaves that unit set as it was. Two
+   node kinds are left out for the opposite reason:
    an IfThenElse and a Let already cross their whole type against their
    branches and their body under WF-069 and WF-076. *)
 let composite_expectation ctx ~binders (e : expr) :
@@ -2693,16 +2695,34 @@ let composite_expectation ctx ~binders (e : expr) :
           match maal_unit (unit_of l) (unit_of r) with
           | None -> None
           | Some u ->
-              (* the UNIT only. The precision facets are measured
-                 non-derived: ch. 2.3's "sum of the operands' decimals" and
-                 the frontend's "never whole" are under-claims two other
-                 producers in this very corpus do not share (the Catala
-                 plugin writes its pinned ch. 2.9 scale), 9 decimals and 9
-                 wholeness witnesses over golden+rood+negatief. *)
+              (* the UNIT and the WHOLENESS. ch. 2.3: a product is never whole,
+                 not even of two whole operands. The decimals stay unclaimed:
+                 ch. 2.3's "sum of the operands' decimals" is a claim the Catala
+                 plugin does not share (it writes its pinned ch. 2.9 scale), and
+                 this derivation writes a placeholder 0 there. The wholeness was
+                 unclaimed for the same reason until 2026-09-25; by then no
+                 product in golden, rood, negatief or the parity zone was
+                 annotated whole any more (measured: 0 of 57). *)
               Some
                 ( "the times composite", "the type derived from its operands",
                   derived_number ~geheel:false ~decimalen:0 u,
-                  [ "decimals"; "wholeness" ] ))
+                  [ "decimals" ] ))
+      | _ -> None)
+  | Binair { op = (Gedeeld_door | Tot_de_macht) as op; links; rechts; _ } -> (
+      (* the WHOLENESS only (ch. 2.3: a quotient and a power are never whole).
+         Their unit is ch. 2.10's fourth class, which v0 derives nothing for,
+         so the unit exception set stays gate 13's; their decimals, maxDec, are
+         the under-report ch. 2.4 names; and the soort goes with the unit,
+         since a derivation that names no unit cannot tell a percentage from a
+         number. Measured 2026-09-25: no quotient or power in golden, rood,
+         negatief or the parity zone is annotated whole (0 of 74). *)
+      match (operand_t links, operand_t rechts) with
+      | Some l, Some r when is_number_like l && is_number_like r ->
+          Some
+            ( "the " ^ Spelling.encode Spelling.binary_op op ^ " composite",
+              (if op = Gedeeld_door then "the type a quotient derives" else "the type a power derives"),
+              derived_number ~geheel:false ~decimalen:0 None,
+              [ "soort"; "unit"; "decimals" ] )
       | _ -> None)
   | Afgerond { basis = Some b; decimalen; _ } -> (
       (* ch. 2.4 clause 2: a rounding changes the FACING precision to its own

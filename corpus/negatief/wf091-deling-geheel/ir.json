@@ -1,0 +1,375 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kopie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "kg",
+                "system": "Gewicht",
+                "canonical": "kg",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "fijn",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ruim",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "jr",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "duur",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "jr",
+                "system": "Tijd",
+                "canonical": "jr",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitdeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitfijn",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitaantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uittarief",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "jr",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "t",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1000,
+              "den": 1
+            }
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "jr",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "uitaantal van de Jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uitaantal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De uitaantal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "het aantal van de Jutter"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "aantal",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "het aantal van de Jutter"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het aantal van de Jutter gedeeld door het aantal van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

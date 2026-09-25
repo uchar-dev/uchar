@@ -1,0 +1,1 @@
+wholeness mismatch: the times composite is typed whole, but the type derived from its operands is fractional
