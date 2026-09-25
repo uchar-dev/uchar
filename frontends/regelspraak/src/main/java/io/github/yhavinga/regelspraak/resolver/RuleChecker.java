@@ -211,9 +211,15 @@ final class RuleChecker {
         }
     }
 
-    /** §4 lower the extension blocks into {@link PrioritizedDefaults} nodes. Fails fast (a clear ERROR, and the block
-     *  stays un-lifted) on a block within a Regelgroep's scope, an unknown carrier, a cycle, a target mismatch, an
-     *  unsupported base kind, or a multi-version rule. */
+    /** §4 lower the extension blocks into {@link PrioritizedDefaults} nodes. Fails fast — one ERROR at the block,
+     *  and the block with its whole tree stays un-lifted — on each refusal of grammar/DIVERGENCES.md §4: a block
+     *  within a Regelgroep's scope or over a group member; an unknown carrier, a cycle of carriers, and a member of
+     *  a carrier-less 'Uitzonderingen ongeordend:' block named as a carrier; an 'Afwijking van' under a node that is
+     *  no base rule; a subtype's block under a node of its supertype's tree; a carrier with ordered and unordered
+     *  children, or with two unordered blocks; and, per edge and per member of a carrier-less block, a body that
+     *  yields no kenmerktoekenning or gelijkstelling, a rule with more than one version, another validity window,
+     *  and another target. After the lift it refuses a negated plain rule and a second writer on a group's target,
+     *  and warns once per characteristic target that no group ever attributes. */
     private void defaults(RegelSpraakDocumentContext doc) {
         java.util.Set<ParserRuleContext> geweigerd = regelgroepReikwijdte(doc);
         boomDefaults(doc, geweigerd);
