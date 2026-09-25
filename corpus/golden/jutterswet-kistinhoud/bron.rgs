@@ -1,0 +1,12 @@
+Objecttype de Wrakkist (mv: Wrakkisten)
+    de ribbe Numeriek (niet-negatief getal met 2 decimalen);
+    de zijvlakte Numeriek (niet-negatief getal met 2 decimalen);
+    de inhoud Numeriek (niet-negatief getal met 2 decimalen);
+
+Regel zijvlakte van een wrakkist
+    geldig altijd
+        De zijvlakte van een Wrakkist moet berekend worden als zijn ribbe tot de macht 2 naar beneden afgerond op 2 decimalen.
+
+Regel inhoud van een wrakkist
+    geldig altijd
+        De inhoud van een Wrakkist moet berekend worden als zijn ribbe tot de macht 3 naar beneden afgerond op 2 decimalen.

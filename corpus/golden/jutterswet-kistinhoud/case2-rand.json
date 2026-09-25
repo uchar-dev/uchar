@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K3",
+        "objectType": "Wrakkist",
+        "attributes": {
+          "ribbe": {
+            "number": "0.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K4",
+        "objectType": "Wrakkist",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "zijvlakte",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "inhoud",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K4",
+      "attribute": "zijvlakte"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K4",
+      "attribute": "inhoud"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

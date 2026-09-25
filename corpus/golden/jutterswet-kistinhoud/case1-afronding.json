@@ -1,0 +1,68 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Wrakkist",
+        "attributes": {
+          "ribbe": {
+            "number": "1.25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Wrakkist",
+        "attributes": {
+          "ribbe": {
+            "number": "2.50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "zijvlakte",
+      "value": {
+        "number": "1.56"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "inhoud",
+      "value": {
+        "number": "1.95"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "zijvlakte",
+      "value": {
+        "number": "6.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "inhoud",
+      "value": {
+        "number": "15.62"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
