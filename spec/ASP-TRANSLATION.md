@@ -2770,8 +2770,8 @@ as a `Fold`/`MapList` operand** is no longer a shape-without-a-case: it is
 **WF-069-rejected** before translation (the operand MUST be an inline
 `Lambda`; a named function reaches a fold through a lambda body that
 `Invoke`s it — `wf069-named-function-operand`), so the clingo fault
-(`a named FunctionDef as a fold operand is refused (WF-069: the operand
-must be an inline lambda)`) survives only as an unreachable backstop on
+(`a named FunctionDef as a fold operand is refused (the operand must be
+an inline lambda)`) survives only as an unreachable backstop on
 WF-clean input.
 
 *Structs (S16) — carriage and shapes without a corpus case:*
@@ -2818,7 +2818,7 @@ before translation is reached.
 
 *Nested exception groups (S17) — the backstops:* an **initialisation
 default inside an exception group** faults (`an initialisation default
-inside an exception group is ill-formed (WF-075)`) — the initialisation and
+inside an exception group is ill-formed`) — the initialisation and
 ch. 7.8 input defaults stay root-only, and WF-075 rejects the shape first,
 so the fault survives only as an unreachable backstop on WF-clean input; a
 **default consequence scale** disagreeing with the target scale faults at

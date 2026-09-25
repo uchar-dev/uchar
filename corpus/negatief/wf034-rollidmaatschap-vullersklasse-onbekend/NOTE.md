@@ -18,7 +18,9 @@ class test has no class to test against.
 What the executors do (measured in the L2 fix round, 2026-09-24, with the
 golden's three cases): `ref` and the ASP backend both refuse by name on every
 case — `role check: the counterpart type "Strandwachter" is no declared
-object type (WF-034)`.
+object type (WF-034)`. Re-measured 2026-09-25, when the readers' sentences lost
+their rule-number tail: the same refusal on every case in both, now without the
+`(WF-034)`.
 
 The document is `corpus/golden/jutterswet-postbezetting` with the counterpart
 class of its first strandjutter check (rule 2) changed from `Strandjutter` (⊑
