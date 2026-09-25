@@ -53,7 +53,7 @@ Falsifiable in three directions, each turning this case clean:
 - empty the field — the guard gates the anker and no host is designated.
 
 `ref` refuses the same document at evaluation, by its own named arm ("the host
-names exactly one (WF-109), and this reader will not pick for it"), so the
+names exactly one, and this reader will not pick for it"), so the
 executor does not depend on the verifier having run.
 
 Since L5 the field is `host` (delta B10); the report cites `…/host`, and

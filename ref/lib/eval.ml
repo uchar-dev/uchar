@@ -399,8 +399,8 @@ let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
       let ambiguous () =
         Value.fault
           "characteristic check %S is hosted on %S, which reaches BOTH objects the fact creation \
-           binds (anchor %S, target %S): the host names exactly one (WF-109), and this reader will \
-           not pick for it"
+           binds (anchor %S, target %S): the host names exactly one, and this reader will not pick \
+           for it"
           (Option.value kenmerk ~default:"?") e a d
       in
       match (hits, near) with
