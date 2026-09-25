@@ -8221,7 +8221,9 @@ and closed_term ctx ~guard_body ~witness (e : expr) : string list * string * int
       range_guard ctx ~subject:witness
         ~body:(guard_body @ bl @ br)
         [ (tl', 1073741823 / (m / sl)); (tr', 1073741823 / (m / sr)) ];
-      (bl @ br, Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr', m)
+      let term = Printf.sprintf "(%s%s%s)" tl' (if op = Plus then "+" else "-") tr' in
+      ctx.signs <- (term, Sum { l = tl; r = tr; minus = op = Min; subject = witness }) :: ctx.signs;
+      (bl @ br, term, m)
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
       ([], construct_ground_term ctx typ constructor_ argument, 0)
   | Construct { typ; constructor_; argument = Some arg; _ } -> (
