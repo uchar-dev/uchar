@@ -53,7 +53,8 @@ import java.util.Map;
  * the reference nodes carry no type annotation (the declaration is the one source), a read that
  * navigates carries its role bindings and a read without them is the subject's own, a fold over
  * linked instances, an allocation, a navigated characteristic check and a fact creation carry
- * their bindings, and a role check is one {@code RoleMembership} node. Where the resolver found
+ * their bindings, an object creation carries the role its sentence names, and a role check is one
+ * {@code RoleMembership} node. Where the resolver found
  * no unique binding for a position that needs one, the model is refused — a document without the
  * binding would be read as something else. A named form
  * ({@code Rule}, {@code Allocation}, {@code ObjectCreation}, {@code FactCreation}, {@code Consistency},
