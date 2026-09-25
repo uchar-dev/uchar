@@ -28,11 +28,16 @@ re-emits `ir.json` from `bron.rgs` byte for byte.
   `AttributeReference` to `grondslag` on `Strandrecht` with the path
   `RoleBinding {wrakboeking, geboekt strandrecht}`.
 
-As in the twin, the frontend writes no `connectingRole` on the creation
-(`IrEmitter.objectCreation`), and the back-link is derived from the type
-pair (RUNTIME-SEMANTICS ch. 5.5): `wrakboeking` is the only fact type that
-relates the two types, the minted `Strandrecht` can fill only
-`geboekt strandrecht`, and the subject fills `boeker`.
+As in the twin, the creation's sentence names the created object by the role
+`geboekt strandrecht`, and since the card frontend-emitterrestanten the
+frontend writes that role as the creation's back-link:
+`connectingRole {wrakboeking, geboekt strandrecht}` (`IrEmitter.objectCreation`,
+IR-SPEC ch. 3.3). Until then it wrote none, and the back-link was derived from
+the type pair (RUNTIME-SEMANTICS ch. 5.5) with the same answer: `wrakboeking`
+is the only fact type that relates the two types, the minted `Strandrecht` can
+fill only `geboekt strandrecht`, and the subject fills `boeker`. The
+re-emission added the five lines of the binding and nothing else; the case
+file did not change.
 
 ## Hand computation
 
@@ -67,6 +72,7 @@ fails. The same removal leaves the twin's case green. An expectation of
 ## Executors
 
 ref and clingo replay the case with the pinned values. The Drools backend
-plays it in both branches, exec-model and DRL text, `PLAYED 1` each
-(measured 2026-09-25); like the twin's, both branches derive the back-link
-from the type pair.
+plays it in both branches, exec-model and DRL text, `PLAYED 1` each, with the
+binding and, measured the same day on the emission without it, without the
+binding, where both branches derived the back-link from the type pair
+(2026-09-25).

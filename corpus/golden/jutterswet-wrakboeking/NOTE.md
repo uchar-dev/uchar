@@ -61,10 +61,13 @@ derivation (`connecting_pair` in `ref/lib/eval.ml`) first tries the
 orientation in which the subject fills the first role, so it finds one pair.
 The binding stays because it names the relation the creation writes, rather
 than leaving it to that orientation rule. The Drools backend does not need
-it either: measured 2026-09-25, the twin `jutterswet-wrakboeking-rgs`, which
-with its `source` records stripped differs from this document only in the
-absent binding, plays in both branches, exec-model and DRL text, because
-both derive the back-link from the type pair.
+it either: measured 2026-09-25 on the twin `jutterswet-wrakboeking-rgs` while
+the frontend still wrote no binding on a creation — with its `source` records
+stripped the twin then differed from this document only in the absent
+binding — it played in both branches, exec-model and DRL text, because both
+derive the back-link from the type pair. Since the card
+frontend-emitterrestanten the twin carries the binding as well, and without
+their `source` records the two documents are equal.
 
 Sibling documents: `anchor/jutterswet-strandrechtketen` and
 `jutterswet-wrakrecht` pin the two-spelling member write between RULES (both

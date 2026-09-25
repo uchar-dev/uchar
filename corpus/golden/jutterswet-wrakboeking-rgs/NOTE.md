@@ -24,28 +24,29 @@ byte for byte, with the same absolute expectations.
 
 ## Structural diff against `jutterswet-wrakboeking/ir.json`
 
-Read with every `source` stripped and the keys sorted, the two documents
-differ at one path:
+Read with every `source` stripped and the keys sorted, the two documents are
+equal. Until the card frontend-emitterrestanten they differed at one path:
 
-| path | hand-written | emitted | triage |
+| path | hand-written | emitted until that card | triage |
 |---|---|---|---|
 | `/rules/objectCreations/0/versions/0/connectingRole` | `RoleBinding {wrakboeking, geboekt strandrecht}` | absent | (i) emission difference |
 
-The frontend writes no back-link binding on an object creation
-(`IrEmitter.objectCreation`). IR-SPEC ch. 3.3 admits the absent binding, and
-RUNTIME-SEMANTICS ch. 5.5 then links over the uniquely-derivable connecting
-relation. On this document the derivation has one answer. `wrakboeking` is
-the only fact type that relates `Wrakrecht` and `Strandrecht`, and the minted
-instance can fill only `geboekt strandrecht`: `boeker` takes a `Wrakrecht`,
-and a creation mints exactly its `createdType` (IR-SPEC ch. 2.2, creation is
-not polymorphic). The minted instance therefore fills `geboekt strandrecht`,
-the created-side role the hand-written `connectingRole` names, and the
-subject fills `boeker`. The two documents differ in form, not in meaning.
+The frontend wrote no back-link binding on any object creation. It now writes
+the role the sentence names: `een geboekt strandrecht` names the role
+`geboekt strandrecht`, filled by `Strandrecht`, in `wrakboeking`, the one fact
+type that also relates the subject `Wrakrecht` — the binding the hand-written
+document carries (`IrEmitter.objectCreation`, IR-SPEC ch. 3.3). The absent
+binding meant the same thing on this document: RUNTIME-SEMANTICS ch. 5.5 then
+links over the uniquely-derivable connecting relation, and here that is
+`wrakboeking` with the minted instance in `geboekt strandrecht` (`boeker`
+takes a `Wrakrecht`, and a creation mints exactly its `createdType`, IR-SPEC
+ch. 2.2). The re-emission added the five lines of the binding and nothing
+else; the case file did not change.
 
-At the byte level one more difference remains, in a `source` record: the
-rule's target snippet reads `De bergingsvergoeding van een Wrakrecht` (the
-sentence as written) where the hand-written document has `de …`. Both
-documents carry `source` records on the same nodes.
+At the byte level one difference remains, in a `source` record: the rule's
+target snippet reads `De bergingsvergoeding van een Wrakrecht` (the sentence
+as written) where the hand-written document has `de …`. Both documents carry
+`source` records on the same nodes.
 
 ## Hand computation
 
@@ -64,10 +65,11 @@ it needs no survivor entry.
 ## Executors
 
 ref and clingo replay the case with the pinned values. The Drools backend
-plays it in both branches, exec-model and DRL text, `PLAYED 1` each
-(measured 2026-09-25): without the binding both branches derive the relation
-from the type pair. The carrier's NOTE cites this measurement: its binding is
-not what lets the backend play it.
+plays it in both branches, exec-model and DRL text, `PLAYED 1` each, with the
+binding and, measured the same day on the emission that still went without
+it, without the binding: there both branches derived the relation from the
+type pair (2026-09-25). The carrier's NOTE cites that second measurement: its
+binding is not what lets the backend play it.
 
 ## What the case does not observe
 
@@ -78,4 +80,4 @@ clingo (measured 2026-09-25): this golden pins the emission of the creation,
 not its execution. `jutterswet-wrakboekwaarde` pins the execution: this
 source with the creation's value changed to `zijn bergingsvergoeding plus 1`
 and one more attribute and rule on the `Wrakrecht`, which read the minted
-`Strandrecht` back through the derived back-link.
+`Strandrecht` back through the back-link.

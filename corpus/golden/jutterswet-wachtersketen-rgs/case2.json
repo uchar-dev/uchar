@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W2",
+        "objectType": "Wachter",
+        "attributes": { "rang": { "number": "4" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Wachter",
+        "attributes": { "rang": { "number": "7" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "W2", "attribute": "opvolgerrang", "value": { "number": "5" } },
+    { "kind": "attributeValue", "label": "W3", "attribute": "opvolgerrang", "value": { "number": "0" } },
+    { "kind": "inconsistent", "rule": "rangdetector", "label": "W3" }
+  ]
+}
