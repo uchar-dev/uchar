@@ -188,7 +188,8 @@ UITZONDERING_OP : 'Uitzondering' WSP 'op' ; // ordered exception block header (P
 // 'Afwijking van' opens a deviation: a block above a named BASE rule that carries its own condition only, where
 // 'Uitzondering op' conjoins its carrier's (grammar/DIVERGENCES.md §4, form 2). Whole-phrase, as UITZONDERING_OP:
 // it wins by maximal munch only when the complete phrase is present, so a lone 'Afwijking' stays a name word. Inert
-// on official v2.3.0 documents and on every source in the repository (the phrase occurs in none of them).
+// on official v2.3.0 documents and on every source in the repository that does not use the header: the phrase
+// occurs only as the header of the golden jutterswet-bergingsdrempel, which is written with it.
 AFWIJKING_VAN : 'Afwijking' WSP 'van' ; // deviation block header (grammar/DIVERGENCES.md §4)
 
 // --- GegevensSpraak phrases ---

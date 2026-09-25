@@ -406,7 +406,7 @@ are unchanged and pass in ref, clingo and the Drools exec branch.
 byte-identical `ir.json`. Every other `bron.rgs` golden re-emits byte-identically
 (gate 10), and so does every re-emitted source of the parity zone (gate 11). The
 phrase `Afwijking van` occurs in no source of the repository besides that golden
-(counted 2026-09-25 over the 75 corpus sources and the 47 of the parity zone) and
+(counted 2026-09-25 over the 80 corpus sources and the 47 of the parity zone) and
 nowhere in the v2.3.0 specification set.
 
 Goldens: `jutterswet-uitsluiting-rgs` (art. 4 Jutterswet, an exception on an
