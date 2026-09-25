@@ -781,6 +781,19 @@ fragments; no gate-5/6/12 outcome moved; all fourteen gates green on the
 landing. With L5 the wire `uchar-ir-v1` is complete and phase 2 of the wire
 migration is closed; the one toolchain pin bump (phase 3) is now due, in the
 new toolchain under uchar; the `toka/` zone stays until the public flip.
+**Before the pin bump (2026-09-25, `54afea05`):** the six cards that touch spec
+or goldens landed as one union ahead of phase 3, so the bump carries them —
+WF-079 read through the type chain per concrete type
+(`verifier-supertype-dubbele-schrijver`), the converse WF-037 arm
+(`aantal-bronargument-welgevormd`), the numeric-operand arm of WF-091 with
+five red witnesses moved to `corpus/negatief` (`ref-klipvouw-nul`), the
+ch. 7.8 sentence on characteristic input beside the form-3 proposal
+(`kenmerkinvoer-en-invoer-boven-berekening`), a RegelSpraak source for each
+of the five constructs no golden carried (`rgs-getuigen-bronloze-constructen`)
+and the exception-on-exception dialect with `Afwijking van` and
+`Uitzonderingen ongeordend op` (`dialect-uitzondering-op-uitzondering`); all
+fourteen gates green on the landing. The bump itself waits for the
+maintainer's signal.
 
 ## 10. Rough effort
 
