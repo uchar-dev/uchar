@@ -1415,20 +1415,13 @@ public final class IrLoader {
         String p = padVan(n);
         String soort = tekst(n, p, "kind");
         Expr.FunctieKind fk = enumWaarde(Spelling.AGGREGATION_KIND, "Aggregation.kind", soort, p + "/kind");
-        // WF-037: a ListLiteral is a node this backend does not read at all, so reading the argument first would
-        // refuse the node and not the shape; the shape is judged on the raw node before the argument is read
         JsonNode rauw = n.get("arguments");
-        if (rauw != null && rauw.isArray() && rauw.size() == 1 && "ListLiteral".equals(text(rauw.get(0), "node"))
-                && n.hasNonNull("elementType") && n.get("elementType").isTextual()) {
-            String weigering = bronWeigering(soort, n.get("elementType").asText(), rauw);
-            if (weigering != null) throw new Documentfout(p, weigering);
-        }
         // WF-037, the fold-source arm: the one argument of a fold that names its population is judged by its shape. A
-        // node this backend does not carry — that argument, or a node under it — refuses as a node while it is read,
-        // where the verifier, ref and the ASP backend refuse the shape. That refusal therefore waits until the range
-        // and the source have been asked below, and is raised only when neither is refused; a Documentfout while
-        // reading (an unbound VariableReference, WF-034; an Unresolved marker without a source, WF-113) is not held
-        // back, as ref and the ASP backend refuse those first, while loading
+        // node this backend does not carry — that argument, a ListLiteral among them, or a node under it — refuses as
+        // a node while it is read, where the verifier, ref and the ASP backend refuse the shape. That refusal
+        // therefore waits until the range and the source have been asked below, and is raised only when neither is
+        // refused; a Documentfout while reading (an unbound VariableReference, WF-034; an Unresolved marker without a
+        // source, WF-113) is not held back, as ref and the ASP backend refuse those first, while loading
         List<Expr> args = new ArrayList<>();
         Refusal ongedragen = null;
         try {
@@ -1461,19 +1454,21 @@ public final class IrLoader {
         // ref's reason. The MODEL-relative arms (a step that does not join, a landing beside the element type, a
         // hop the beans carry no field for) belong to the walk and are per-form refusals in the transpilers, which
         // know the fold SUBJECT this node does not.
+        // The position (WF-102 (c)) is asked before the number of steps, as ref asks it.
         if (n.has("sourcePath")) {
             List<RolBindingRef> pad = rolBindingLijst(n, p, "sourcePath");
+            if (!isLedenVouwbron(n)) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
             if (pad.size() < 2)
                 throw new Refusal("Aggregation.sourcePath", "a sourcePath carries at least TWO steps, found "
                         + pad.size() + " — the one-step range is spelled sourceRole");
-            if (!isLedenVouwbron(n)) throw new Documentfout(p + "/sourcePath", BRONPAD_C);
             bronPaden.put(f, List.copyOf(pad));
         }
         // the one-step range — see Loaded#rolBindingen. It stays OUT of the record (that one is vendored).
         RolBindingRef br = rolBinding(n, p, "sourceRole");
         if (br != null) rolBindingen.put(f, br);
-        // WF-037: a fold that names its population and hands no source. Asked after the range, so a path beside it
-        // is refused first under WF-102 (c), as ref and the ASP backend refuse it first
+        // WF-037: a fold that names its population and hands no source, in every shape, a ListLiteral included. Asked
+        // after the range, so a path beside it is refused first under WF-102 (c) and a missing range first as such, as
+        // ref and the ASP backend refuse them first
         String bronloos = bronWeigering(soort, elementType, rauw);
         if (bronloos != null) throw new Documentfout(p, bronloos);
         String unie = unieBronWeigering(fk, elementType, n);

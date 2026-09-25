@@ -47,6 +47,8 @@ class TellingBronarmWitnessTest {
     private static final String UNIE_STAART = ": the union's selections carry the population, the relation and the"
             + " subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
     private static final String GEHEEL = "{ \"node\": \"Number\", \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }";
+    private static final String BRONPAD_C = "a sourcePath is admissible only as the range of a single-argument VALUE"
+            + " fold's set source — a count's range is one step, spelled sourceRole";
 
     // ---------------- 1. the fold-source arm: one node that is no AttributeReference ----------------
 
@@ -215,7 +217,43 @@ class TellingBronarmWitnessTest {
         weigert(ir, UNIE + "filter" + UNIE_STAART);
     }
 
-    // ---------------- 4. the boundary ----------------
+    // ---------------- 4. the order: the range is asked before the source, as ref and the ASP backend ask it --------
+
+    /** A count beside a path carries two defects, the path (WF-102 (c)) and the list literal (WF-037), and every
+     *  executor names the path first. Before the fix this loader named the list literal first: it judged that node
+     *  before the range, while ref and the ASP backend judged it after. */
+    @Test void een_lijstliteraal_naast_een_bronpad_wordt_eerst_als_bronpad_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf037-aantal-elementtype-lijstliteraal");
+        metPad((ObjectNode) waarde(ir), 2);
+        weigertOp(ir, PLEK + "/sourcePath", BRONPAD_C);
+    }
+
+    @Test void een_lijstliteraal_als_bron_van_de_gevulde_telling_naast_een_bronpad_wordt_eerst_als_bronpad_geweigerd()
+            throws Exception {
+        ObjectNode ir = negatief("wf037-gevuldetelling-elementtype-lijstliteraal");
+        metPad((ObjectNode) waarde(ir), 2);
+        weigertOp(ir, PLEK + "/sourcePath", BRONPAD_C);
+    }
+
+    /** A value fold's path of one step beside a source that is no attribute reference: ref and the ASP backend ask
+     *  the position (WF-102 (c)) before the number of steps, and this loader now does too. Before the fix it named the
+     *  steps first, as a form it does not carry. */
+    @Test void een_literal_naast_een_bronpad_van_een_stap_wordt_als_bronpad_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf037-som-elementtype-literaal");
+        metPad((ObjectNode) waarde(ir), 1);
+        weigertOp(ir, PLEK + "/sourcePath", BRONPAD_C);
+    }
+
+    /** No range at all beside a list literal: the shared loader refuses the missing range while loading, before any
+     *  source question, and so does this loader now. Before the fix it named the list literal. */
+    @Test void een_lijstliteraal_zonder_bereik_wordt_om_het_bereik_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf037-aantal-elementtype-lijstliteraal");
+        ((ObjectNode) waarde(ir)).remove("sourceRole");
+        weigertOp(ir, PLEK, "a single-argument fold with an elementType carries its range (sourceRole or sourcePath)"
+                + " under every kind but total: the range is written, never derived");
+    }
+
+    // ---------------- 5. the boundary ----------------
 
     @Test void een_telling_over_haar_bron_laadt() throws Exception {
         // the golden's count source, an AttributeReference beside its range: the arm leaves it alone
@@ -240,8 +278,20 @@ class TellingBronarmWitnessTest {
 
     /** The load refusal, for both branches: the loader is theirs in common, so nothing is lowered. */
     private static void weigert(ObjectNode ir, String zin) {
+        weigertOp(ir, PLEK, zin);
+    }
+
+    private static void weigertOp(ObjectNode ir, String plek, String zin) {
         IrLoader.Documentfout e = assertThrows(IrLoader.Documentfout.class, () -> IrLoader.loadAll(ir));
-        assertEquals(PLEK, e.plek(), e.getMessage());
-        assertEquals("malformed uchar-ir-v1 document at '" + PLEK + "': " + zin, e.getMessage());
+        assertEquals(plek, e.plek(), e.getMessage());
+        assertEquals("malformed uchar-ir-v1 document at '" + plek + "': " + zin, e.getMessage());
+    }
+
+    /** The fold's range written as a path of {@code stappen} steps in place of its sourceRole. */
+    private static void metPad(ObjectNode vouw, int stappen) {
+        vouw.remove("sourceRole");
+        var pad = vouw.putArray("sourcePath");
+        for (int i = 0; i < stappen; i++)
+            pad.addObject().put("node", "RoleBinding").put("factType", "vondstaanmelding").put("role", "vondst");
     }
 }
