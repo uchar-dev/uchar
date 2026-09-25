@@ -919,8 +919,9 @@ public final class DrlTranspiler {
         }
         // ch. 3.10 a window criterium: violated where the window does not match. The window is total — an unset
         // rekendatum or a leeg bound puts the day outside it — so the plain negation of its constraint is exact.
-        // Under GEEN or a counting quantifier it never gets here: that composite has no arm above, and the caller
-        // names WF-112 for it.
+        // Under GEEN or a counting quantifier it never gets here: the arm above lowers that composite whole, as a rule
+        // condition, where a window among its criteria, at any depth, is the WF-112 marker; so that arm returns null
+        // and the caller names WF-112 for it.
         if (assertie instanceof Conditie.Periode per) {
             Frag venster = conditie(acc, per, subject);
             return venster.marker() ? null : "!( " + venster.text() + " )";
