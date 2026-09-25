@@ -114,3 +114,12 @@ semantische variant (voorstel §5.9); de uitleg in regelspraak-java en de
 werkbank (kaart regelspraak-java-defaults-in-scenario-en-werkbank, gat 3);
 het Catala-frontend (voorstel §5.10); de `atLeast`-arm in de
 consistentielowering van de Drools-exectak (voorstel §5.6, alternatief d).
+
+## U-besluiten (hoofdsessie, 2026-09-25, bij de claim)
+
+- U1 Bouw naar `spec/proposals/KENMERKINVOER-EN-INVOER-BOVEN-BEREKENING.md` §5.1–5.7 en deze kaart (de namen `opgegeven X`, `berekende X`, `afwijkende opgave X`, groep `opgave boven berekening X`, regel `afwijking opgave X`, consistentie `controle opgave X`; de initialisatie blijft op X; alleen Numeriek zonder eenheid). Elke afwijking meld je met reden in het Result.
+- U2 Parallel bouwt de kaart frontend-emitterrestanten aan `IrEmitter.java` (builtin-typen, `DimensionSelection`, `connectingRole`, de meldingstaal). Jij raakt de grammatica (het token), de resolver (de lowering) en gebruikt de bestaande emissiepaden; nieuwe emitterlogica alleen als de lowering die nodig heeft, en dan gemeld. De hoofdsessie rebaset serieel.
+- U3 Golden `corpus/golden/jutterswet-opgave-boven-berekening/` met `bron.rgs`, de emissie als `ir.json` (gate 10 byte-identiek, gate 2 round-trip), de cases van voorstel §5.4 handgerekend (ref ≡ clingo ≡ Drools-exec), NOTE; gate-12-pins `EXPECTED_PLAYED` +1 en klasse (A) van `DRL_CHANNEL` (**voorstel**); gate-7-overlevers met reden (**voorstel**).
+- U4 Inertheid gemeten: alle rgs-goldens byte-identiek (gate 10), toka byte-identiek (gate 11), en de sweep van DIVERGENCES §6 over de repo-bronnen (toka alleen tellen).
+- U5 DIVERGENCES.md: eigen sectie; de registerzin voor CONSTRUCTS (het dialect krijgt een oppervlak voor het hardheidspatroon, geen wire-delta) in het Result; geen D-/U-nummers in DIVERGENCES, NOTE's, javadoc en scripts.
+- U6 Gates 1–8, 10, 11, 12, 13.
