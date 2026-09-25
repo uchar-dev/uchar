@@ -3329,8 +3329,9 @@ final class RuleChecker {
      *  expression is not a quoted enumeratiewaarde) or a non-enum context makes no claim. */
     private void keurEnumLabel(Datatype context, String label, int line) {
         if (!(context instanceof Datatype.Enumeratie en) || label == null || en.waarden().contains(label)) return;
+        // the verifier refuses the same literal with WF-039's sentence (the literal carries the context domain)
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
-                "'" + label + "' is geen waarde van " + en.naam() + " " + en.waarden() + " (§13.3.4.2)", line));
+                "enumeration label '" + label + "' is not in the declared domain", line));
     }
 
     /** The enum label when the WHOLE expressie is a single quoted enumeratiewaarde, else null. An

@@ -359,7 +359,8 @@ class VariabeledeelLoweringTest {
             """;
         assertEquals(meldingen(kaal), meldingen(viaVariabele),
                 () -> "het variabelendeel mag de domeincontrole niet wegnemen: " + meldingen(viaVariabele));
-        assertTrue(meldt(meldingen(viaVariabele), "ERROR: 'paars' is geen waarde van Enumeratie Kleur"),
+        // the label refusal speaks the verifier's WF-039 sentence since the card frontend-emitterrestanten
+        assertTrue(meldt(meldingen(viaVariabele), "ERROR: enumeration label 'paars' is not in the declared domain"),
                 () -> "§13.3.4.2 ongemeld: " + meldingen(viaVariabele));
     }
 

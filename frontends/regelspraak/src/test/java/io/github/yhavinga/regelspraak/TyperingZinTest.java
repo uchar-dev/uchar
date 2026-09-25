@@ -157,6 +157,13 @@ class TyperingZinTest {
                 meldingen("Een Jutter is waardevol indien zijn telling een rustdag is."));
     }
 
+    @Test void een_label_buiten_het_domein() {
+        assertEquals(fout("enumeration label 'zwart' is not in the declared domain"),
+                meldingen("De klasse van een Jutter moet gesteld worden op 'zwart'."));
+        assertEquals(fout("enumeration label 'zwart' is not in the declared domain"),
+                meldingen("Een Jutter is waardevol indien zijn staat gelijk is aan 'zwart'."));
+    }
+
     @Test void tot_de_macht_met_een_eenheid() {
         assertEquals(fout("tot de macht: power operands must be unitless"),
                 meldingen("De uitkomst van een Jutter moet berekend worden als zijn waarde tot de macht 2 naar beneden afgerond op 2 decimalen."));
