@@ -30,9 +30,11 @@ its rounding carry the same `source` snippet: the whole production, rounding
 included.
 
 The exponents are literals. The ASP backend translates a compile-time
-non-negative integer exponent only, and at the base's scale of 100 it fences
-a cube at a base of 12,90, the largest whose scaled cube stays inside 2^31;
-the case values stay far below that.
+non-negative integer exponent only, and it fences twice: the power's operand
+at the largest base whose scaled cube stays inside 2^31 (12,90 at the base's
+scale of 100), and the rounding above it at a scaled operand of 2^29, which
+binds first: measured 2026-09-25, a ribbe of 8,12 replays and 8,13 faults
+with `arithmetic range exceeded`. The case values stay far below that.
 
 ## Hand computation
 
