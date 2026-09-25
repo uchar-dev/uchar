@@ -645,6 +645,38 @@ let populations_overlap doc a b =
          is_sub ctx ~sub:name ~super:a && is_sub ctx ~sub:name ~super:b)
        doc.objecttypen
 
+(* WF-109's sentences (IR-SPEC ch. 4.6 (q1)), in the one place the verifier and
+   the reader that decides a fact creation's guard (ref's [guard_on_doel], which
+   the ASP backend calls) take them from, so a host that names no single object
+   is refused in the same words wherever it is met. [bound] is the (role, type)
+   list of the objects the position binds, [hits] those that SATISFY the host
+   (`T ⊑ O`), [near] those that OVERLAP it ([populations_overlap]). [None] is the
+   one reading the wire settles: exactly one binding satisfies, and no other can
+   be the host's object. *)
+let wf109_host_sentence ~host ~(bound : (string * string) list) ~hits ~near =
+  let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
+  let here = String.concat " and " (List.map named bound) in
+  let hosted = "the characteristic check is hosted on '" ^ host ^ "', which " in
+  match (bound, hits, near) with
+  | [], _, _ -> None
+  | _, [ _ ], [ _ ] -> None
+  | _, [ h ], others ->
+      Some
+        (hosted ^ named h ^ " is \xe2\x80\x94 but so can "
+        ^ String.concat " and " (List.map named (List.filter (fun b -> b <> h) others))
+        ^ " be, because the model declares a type below both: the host names one object on paper \
+           and two at run time")
+  | _, [], [] -> Some (hosted ^ "no object bound here can be: this position binds " ^ here)
+  | _, [], others ->
+      Some
+        (hosted ^ "no object bound here IS: only SOME objects of "
+        ^ String.concat " and " (List.map named others)
+        ^ " are one, so the host would hold for some of them and fault for the rest")
+  | _, hs, _ ->
+      Some
+        (hosted ^ String.concat " and " (List.map named hs)
+        ^ " both are: the host names one object and this names two")
+
 (* The type on [from]'s chain that DECLARES [member] — [from] itself when it
    declares it. The ch. 7.2 conflict key names this type and not the
    instance's concrete type: a target is declared once, and keying on the
@@ -6321,36 +6353,11 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_doel at (c : conditie
                  | None -> [ ("target", d) ])
              | _ -> ( match subject with Some s -> [ ("subject", s) ] | None -> [])
            in
-           let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
-           let here = String.concat " and " (List.map named bound) in
            let hits = List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound in
            let near = List.filter (fun (_, t) -> populations_overlap ctx.doc t e) bound in
-           let fail m = [ v "WF-109" (sub "host") m ] in
-           let hosted = "the characteristic check is hosted on '" ^ e ^ "', which " in
-           (match bound, hits, near with
-            | [], _, _ -> []
-            (* the one reading the wire settles: one binding is it, and no other
-               binding's objects can be *)
-            | _, [ _ ], [ _ ] -> []
-            | _, [ h ], others ->
-                fail
-                  (hosted ^ named h
-                 ^ " is — but so can "
-                  ^ String.concat " and "
-                      (List.map named (List.filter (fun b -> b <> h) others))
-                 ^ " be, because the model declares a type below both: the host names one object \
-                    on paper and two at run time")
-            | _, [], [] -> fail (hosted ^ "no object bound here can be: this position binds " ^ here)
-            | _, [], others ->
-                fail
-                  (hosted ^ "no object bound here IS: only SOME objects of "
-                  ^ String.concat " and " (List.map named others)
-                 ^ " are one, so the host would hold for some of them and fault for the rest")
-            | _, hs, _ ->
-                fail
-                  (hosted
-                  ^ String.concat " and " (List.map named hs)
-                 ^ " both are: the host names one object and this names two"))
+           (match wf109_host_sentence ~host:e ~bound ~hits ~near with
+            | None -> []
+            | Some m -> [ v "WF-109" (sub "host") m ])
        | _ -> [])
       @ (match kenmerk with
        | None ->

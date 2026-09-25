@@ -52,9 +52,12 @@ Falsifiable in three directions, each turning this case clean:
 - give the anker a type that cannot be a `Sein` — the overlap goes with it;
 - empty the field — the guard gates the anker and no host is designated.
 
-`ref` refuses the same document at evaluation, by its own named arm ("the host
-names exactly one, and this reader will not pick for it"), so the
-executor does not depend on the verifier having run.
+`ref` refuses the same document at evaluation, in the sentence quoted above:
+since 2026-09-25 the verifier and `ref` (and with it the ASP backend, which asks
+`ref`'s helper) take WF-109's sentences from one place in the verifier's checks
+library, so the executor does not depend on the verifier having run and says
+what the verifier says. Measured on `ref`'s own suite, whose in-memory document
+has this shape: the fault is that sentence, byte for byte.
 
 Since L5 the field is `host` (delta B10); the report cites `…/host`, and
 `expect.txt` pins the arm.

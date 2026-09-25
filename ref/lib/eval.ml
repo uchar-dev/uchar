@@ -392,22 +392,16 @@ let guard_on_doel (doc : document) (fc : resolved_feit_creatie) =
   match (fc.anker, fc.fc_doel, fc.fc_voorwaarde) with
   | ( Some a,
       Some d,
-      Some (Kenmerk_check { navigatie_binding = None; periode = None; eigenaar = Some e; kenmerk; _ }) ) -> (
+      Some (Kenmerk_check { navigatie_binding = None; periode = None; eigenaar = Some e; _ }) ) -> (
       let bound = [ ("anchor", a); ("target", d) ] in
       let hits = List.filter (fun (_, t) -> Ir_v0.Checks.subtype_of doc ~sub:t ~super:e) bound in
       let near = List.filter (fun (_, t) -> Ir_v0.Checks.populations_overlap doc t e) bound in
-      let ambiguous () =
-        Value.fault
-          "characteristic check %S is hosted on %S, which reaches BOTH objects the fact creation \
-           binds (anchor %S, target %S): the host names exactly one, and this reader will not pick \
-           for it"
-          (Option.value kenmerk ~default:"?") e a d
-      in
-      match (hits, near) with
-      | [ (r, _) ], [ _ ] -> r = "target"
-      | [ _ ], _ -> ambiguous ()
-      | _ :: _ :: _, _ -> ambiguous ()
-      | [], _ -> false)
+      (* the verifier's own WF-109 sentence, from the one place both read it;
+         [None] is the settled reading, whose one satisfying binding decides *)
+      match Ir_v0.Checks.wf109_host_sentence ~host:e ~bound ~hits ~near with
+      | None -> List.exists (fun (r, _) -> r = "target") hits
+      | Some _ when hits = [] -> false
+      | Some m -> Value.fault "%s" m)
   | _ -> false
 
 (* ch. 3.9, the §8.2 whole-period qualifier over a CHARACTERISTIC, and the

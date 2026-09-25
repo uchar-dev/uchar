@@ -4604,8 +4604,8 @@ let () =
   match Eval.evaluate (env_of overlap_doc) w with
   | exception Value.Fault m ->
       check ("WV-5.8b-B-ambigue-gastheer-weigert (got: " ^ m ^ ")")
-        (Case.contains ~needle:"reaches BOTH objects the fact creation binds" m
-        && Case.contains ~needle:"anchor \"Kustvak\", target \"Sein\"" m)
+        (Case.contains ~needle:"is hosted on 'Sein', which the target 'Sein' is" m
+        && Case.contains ~needle:"but so can the anchor 'Kustvak' be" m)
   | _ -> check "WV-5.8b-B-ambigue-gastheer-weigert (no fault at all)" false
 
 (* --- ch. 3.9: the whole-period qualifier over a characteristic ----------

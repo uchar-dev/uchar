@@ -3212,7 +3212,7 @@ let () =
       (gastheer_doc ~extra_type:baken_type ~kustvak_eigen:(erft "Baken")
          ~sein_eigen:(erft "Baken") ~eigenaar:{|"Baken"|} ())
     ~case_text:(gastheer_case ~aantal:{|"1"|} ())
-    ~needle:"reaches BOTH objects the fact creation binds"
+    ~needle:"which the anchor 'Kustvak' and the target 'Sein' both are: the host names one object and this names two"
 
 (* The supertype edge is keyed by the list entry's name: since M1 that key is
    the object type's one name, which the loader also copies into [ot_naam].
