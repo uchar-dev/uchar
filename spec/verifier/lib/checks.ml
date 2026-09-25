@@ -8329,7 +8329,9 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
        literal written into a declaration satisfies the sign restriction the
        declaration carries. The literal's own annotation is crossed in the
        expression walk; this reads the target's, and stands aside where the
-       literal's own restriction already refuses the value. *)
+       literal's own restriction already refuses the value, and where that
+       restriction contradicts the target's — the sign clause below reports
+       it — so one defect gives one report. *)
   (match (value, dt) with
    | Some (Literal { variant = Lv_number w; typ; _ }), Numeriek { teken = Some t; _ } -> (
        let own =
@@ -8338,7 +8340,8 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
          | _ -> None
        in
        match (own, literal_sign_refusal ~target:true t w) with
-       | None, Some sentence -> [ v "WF-039" (value_at ^ "/value") sentence ]
+       | None, Some sentence when not (sign_conflict dt wt) ->
+           [ v "WF-039" (value_at ^ "/value") sentence ]
        | _ -> [])
    | _ -> [])
   @ (if
