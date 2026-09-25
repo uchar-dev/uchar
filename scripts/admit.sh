@@ -58,14 +58,21 @@ VERIFIER=_build/default/spec/verifier/bin/verifier.exe
 REF=_build/default/ref/bin/runner.exe
 CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 
-# 1. self-containedness on the candidate (the gate-1 patterns).
+# 1. self-containedness on the candidate (the gate-1 patterns). grep exits 0 on a hit, 1 on none
+#    and 2 when it could not read a file; only 1 lets the candidate through, so a file the check
+#    could not read refuses instead of passing as "no hit".
+selfcheck() {  # <pattern> <reason for a hit>
+    grep -rnIiE "$1" "$CAND"
+    rc=$?
+    case $rc in
+        0) fail "$2" ;;
+        1) ;;
+        *) fail "the self-containedness check could not read the whole candidate (grep exit $rc)" ;;
+    esac
+}
 PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
-if grep -rnIiE "$PRIVATE" "$CAND"; then
-    fail "machine-local path or private-repo reference in the candidate"
-fi
-if grep -rnIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' "$CAND"; then
-    fail "TOKA material in the candidate (rights policy, corpus/README.md)"
-fi
+selfcheck "$PRIVATE" "machine-local path or private-repo reference in the candidate"
+selfcheck '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' "TOKA material in the candidate (rights policy, corpus/README.md)"
 
 # 2. the verifier accepts the document.
 "$VERIFIER" "$CAND/ir.json" || fail "the verifier rejects $CAND/ir.json"
