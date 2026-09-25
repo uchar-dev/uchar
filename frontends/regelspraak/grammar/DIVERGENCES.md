@@ -1377,9 +1377,16 @@ which is the measurement above stated as a property.
   Vondst.berekende waarde -> Vondst.premie -> Vondst.berekende waarde — …`; a
   cycle the authored forms already showed is not warned twice, since there
   `berekende X` counts as X (witness: `ZelflezingKringTest`). A document without
-  a lowered marker never reaches that second pass. A navigated read, a read
-  inside a fold, a role check and a channel test are no edges of it; a cycle
-  only they close is refused by the verifier and not warned by the frontend.
+  a lowered marker never reaches that second pass. A navigated read, a read in
+  the filter or test of a fold, a role check and a channel test are no edges of
+  it; a read in a fold's argument is one, as in the verifier. And a node
+  belongs to the type the rule is written on, where the verifier lets a write
+  reach every comparable type of the inheritance line, so a cycle over a
+  supertype and a subtype is no cycle of the frontend's graph: measured
+  2026-09-25 on `x` of a Klok computed from its `y` and `y` of a Ding, its
+  supertype, computed from its `x`, the verifier gives `WF-045 … zet x -> zet y
+  -> zet x` and the frontend says nothing. A cycle only these close is refused
+  by the verifier and not warned by the frontend.
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.

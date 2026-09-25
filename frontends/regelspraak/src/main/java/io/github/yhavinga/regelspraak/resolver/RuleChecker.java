@@ -1803,10 +1803,11 @@ final class RuleChecker {
      *  the verifier refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools
      *  no-loop that makes a single writer terminate is no ground to pass it in silence. Outside this graph, and so
      *  unwarned where the verifier refuses them: a navigated read, a read in the filter or test of a fold, a role
-     *  check, a channel test, and the forms that are no rule (an allocation, a creation, a consistency). This pass
-     *  runs over the authored forms, before the defaults lowering, so a warning names what the author wrote; where
-     *  the opgave marker lowered an attribute, {@link #keurKringverwijzingenNaOpgave} runs the graph once more over
-     *  the lowered forms. */
+     *  check, a channel test, the forms that are no rule (an allocation, a creation, a consistency), and a cycle over
+     *  a supertype and a subtype — a node belongs to the type the rule is written on, where the verifier lets a
+     *  write reach every comparable type of the inheritance line (WF-045). This pass runs over the authored forms,
+     *  before the defaults lowering, so a warning names what the author wrote; where the opgave marker lowered an
+     *  attribute, {@link #keurKringverwijzingenNaOpgave} runs the graph once more over the lowered forms. */
     private void keurKringverwijzingen() {
         Map<Leesknoop, Set<Leesknoop>> leest = new LinkedHashMap<>();
         Map<Leesknoop, String> tekst = new java.util.HashMap<>();
