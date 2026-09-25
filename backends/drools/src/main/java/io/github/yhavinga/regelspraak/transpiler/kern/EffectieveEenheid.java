@@ -277,7 +277,7 @@ public final class EffectieveEenheid {
      * <p><b>Scope: exactly the two kinds that fold.</b> SOM and TOTAAL, because those are exactly the kinds both
      * consumers admit into the per-element timeline fold, and the scope is taken from them rather than from the
      * corpus. {@code ExecModelTranspiler}'s instance-fold guard skips a temporal operand for every other kind;
-     * {@code ref}'s {@code eval.ml} faults on it in as many words ("only som and totaal carry the per-element
+     * {@code ref}'s {@code eval.ml} faults on it in as many words ("only sum and total carry the per-element
      * timeline fold"). A MINIMUM or an EERSTE over a timeline has no defined moment to rank, so neither consumer
      * folds it, no denominator is consumed, and none may be dropped.
      *
