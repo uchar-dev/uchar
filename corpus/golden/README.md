@@ -33,8 +33,8 @@ Coverage notes:
   art. 3a–3b only: the penningjaar scoping of the telling and the
   stormvloeddag double count are not rendered (they need the timeline
   and day-kind machinery a later case adds), and the gewicht-som rule
-  exists to exercise SOM, units, and the empty-source fallback — art. 3a
-  records the gewicht but mandates no sum.
+  exists to exercise the `sum` aggregation, units, and the empty-source
+  fallback — art. 3a records the gewicht but mandates no sum.
 - `jutterswet-berging` parks the undistributed rest on the Berging
   itself, where art. 9 sends it to the eilandfonds: the v0 remainder
   target is an attribute of the allocation *source*, and no eilandfonds
@@ -121,10 +121,11 @@ Gate 5 currently lists **two** goldens as not replayed: the cabinet and
 `jutterswet-seizoenvondst`.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
-through a dimension cell, which is the positive witness WF-091's
-`DimensieCel` arm had nowhere (`IR-SPEC.md` ch. 4.1, honesty note 3). It
-carries no case for the same measured reason the cabinet does — `ref`,
-clingo and the Drools backend each decline a cell read in their own
+through a dimension cell (`DimensionCellRead`). Until L2 it was the
+positive witness WF-091's cell-read arm had nowhere (`IR-SPEC.md` ch. 4.1,
+honesty note 3); that arm left the wire with the cell read's own `type`
+(B13). It carries no case for the same measured reason the cabinet does —
+`ref`, clingo and the Drools backend each decline a cell read in their own
 words, and `uchar-case-v0` has no per-cell input variant. Its `NOTE.md`
 carries the three refusals verbatim.
 
