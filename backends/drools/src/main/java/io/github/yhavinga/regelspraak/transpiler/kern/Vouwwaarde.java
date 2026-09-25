@@ -87,8 +87,9 @@ public final class Vouwwaarde {
      * {@code BigDecimal}; over a non-numeric declaration the DRL-text branch emitted text that did not
      * compile ("Unable to Analyse Expression if (rsTijdTotaal(…"), measured 2026-09-23 on a verifier-CLEAN
      * document, which reaches a report as a whole-file compile refusal naming no form. {@code ref} faults
-     * on the multiplication itself, so no executor carries the form. The exec branch never reaches its
-     * own lowering with such a value: its case loader refuses a non-numeric segment before fire.
+     * on the multiplication itself, so no executor carries the form. Both branches ask it of the
+     * declaration: the DRL-text branch markers the form, the exec branch skips the rule through
+     * {@code tijdreeksTotaal}. WF-091 rejects such a document.
      *
      * @param ot  the declaring anchor the caller reads the granularity from
      * @param arg the totalled timeline read
