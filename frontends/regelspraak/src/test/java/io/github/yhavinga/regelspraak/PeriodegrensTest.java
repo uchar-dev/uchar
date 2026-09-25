@@ -21,9 +21,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p><b>Own means: written on the subject.</b> This frontend writes an own read — an inherited attribute
  * included — with the SUBJECT as its object type ("zijn peildatum" in a Klipjutter rule is an
  * {@code AttribuutRef} on Klipjutter). A read naming any other type, a supertype of the subject included, goes
- * out as a navigation (by-pair bindings) or as an off-subject read without one, and the verifier refuses both.
- * So the fence compares object types by identity, as the Drools gate {@code Tijdrekening.periodeGrensLowerbaar}
- * does, and for this frontend's output that gives exactly the verifier's verdict.
+ * out as a navigation (by-pair bindings when a fact type relates the two types), which the verifier refuses as
+ * navigated (WF-111). Where no fact type relates them the emitter refuses the model, so no document carries the
+ * read (measured 2026-09-25), and the refusal keeps its Dutch words: the sub- and supertype rows below, whose model
+ * relates Jutter and Klipjutter by no fact type. So the fence compares object types by identity, as the Drools gate
+ * {@code Tijdrekening.periodeGrensLowerbaar} does, and for this frontend's output that gives exactly the verifier's
+ * verdict.
  */
 class PeriodegrensTest {
 
