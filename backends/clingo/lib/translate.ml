@@ -2526,6 +2526,17 @@ let sourceless_fold kind el ~list_literal =
        over a written source"
       k el
 
+(* WF-037's source arm of the two counts, in the verifier's sentence and ref's:
+   beside the range the one argument of a count or a filled count is an
+   AttributeReference, and any other node there is refused by name. A count
+   is numeric, so [expr_term] is the one term function that meets it. *)
+let non_source_count kind el (a : expr) =
+  fault
+    "a %s aggregation carries elementType \"%s\" and %s operand: the source of an instance fold \
+     is an AttributeReference over its range"
+    (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
+    el (Ir_v0.Spelling.a_node a)
+
 (* a text/enum/boolean operand → (body atoms binding a ground term, the
    term): an own-subject attribute read binds its val atom's value, a literal
    is a bare ground term with no atom. Both are positive, so a leeg attribute
@@ -3552,6 +3563,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ List_literal _ ];
         element_objecttype = Some el; _ } ->
       sourceless_fold kind el ~list_literal:true
+  | Functie { kind = (Aantal | Aantal_gevulde) as kind; argumenten = [ a ]; element_objecttype = Some el; _ }
+    when (match a with
+         | Attribuut_ref _ | List_literal _ -> false
+         | Instance_set_union _ -> kind = Aantal_gevulde
+         | _ -> true) ->
+      non_source_count kind el a
   | Functie { kind = Aantal; argumenten = [ Attribuut_ref { navigatie_bindingen = None; _ } ]; element_objecttype = Some el; bron_rol = Some _ as bron_rol; filter; _ } ->
       (* D8 (ii), the count source (a source naming a member of the element
          type was refused above, WF-093 (b)): the single argument of a count that

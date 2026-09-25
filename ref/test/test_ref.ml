@@ -3510,8 +3510,9 @@ let () =
    every aggregation kind and without a range (the shape that was
    verifier-clean), and one ListLiteral under the two counts, with the range
    the loader demands of a single-argument fold. The last two lines pin the
-   boundary: a ListLiteral under a value fold and a Literal under a count keep
-   the refusals they had, and do not take this arm's sentence. *)
+   boundary: a ListLiteral under a value fold keeps the refusal it had, and a
+   Literal under a count takes the source arm's sentence (the next block), not
+   this arm's. *)
 let () =
   let doc = { empty_doc with objecttypen = [ ot "Vondst" [ ("gewicht", Some num0) ] [] ] } in
   let env = env_of doc in
@@ -3557,6 +3558,74 @@ let () =
     (vouw ~bron_rol:bereik Som [ lijst ]);
   niet_deze_arm "WF-037-elementtype-literal-onder-count-niet-deze-arm"
     (vouw ~bron_rol:bereik Aantal [ litv "2" num0 ])
+
+(* WF-037, second line: the source arm of the two counts.
+
+   Beside the range, the one argument of a count or a filled count that
+   carries an elementType is an AttributeReference, its source (IR-SPEC
+   ch. 4.3); the wire refuses every other node there and names it, so no
+   well-formed document reaches this arm. Until the card
+   aantal-bronarm-en-drools-lader this evaluator refused them in its
+   residual sentence, `unsupported instance-fold source shape`. Each line pins
+   the verifier's sentence for one node: seven under the count, two under the
+   filled count, one of them the union, which under the filled count is a
+   non-source like any other. The last line pins the boundary: a union under
+   a count that carries its own source is WF-110 (c)'s, and does not take
+   this arm's sentence. *)
+let () =
+  let doc = { empty_doc with objecttypen = [ ot "Vondst" [ ("gewicht", Some num0) ] [] ] } in
+  let env = env_of doc in
+  let w = World.add_instance World.empty (inst "V1" "Vondst" [ ("gewicht", n "2") ]) in
+  let ev e = Eval.eval_expr env w (World.get w "V1") ~err:no_err e in
+  let bereik : Ir_v0.Ast.rol_binding = { rb_feittype = "vondstaanmelding"; rb_rol = "vondst" } in
+  let vouw ?(element = Some "Vondst") kind argumenten : Ir_v0.Ast.expr =
+    Functie
+      { kind; argumenten; element_objecttype = element; leegwaarde = None; filter = None;
+        dimensie_selectie = None; typ = Some num0; bron = None; granulariteit = None;
+        bron_rol = Some bereik; bron_pad = None }
+  in
+  let twee = litv "2" num0 in
+  let unie : Ir_v0.Ast.expr =
+    let tak : Ir_v0.Ast.instance_set_branch =
+      { isb_element_type = Some "Vondst"; isb_source_role = bereik; isb_filter = None;
+        isb_bron = None }
+    in
+    Instance_set_union { branches = [ tak; tak ]; bron = None }
+  in
+  let vormen : (string * Ir_v0.Ast.expr) list =
+    [ ("a Literal", twee);
+      ("a Binary", Binair { op = Plus; links = Some twee; rechts = Some twee; typ = Some num0; bron = None });
+      ("a ParameterReference", Parameter_ref { parameter = Some "drempel"; bron = None });
+      ("a VariableReference", Variabele_ref { naam = Some "x"; bron = None });
+      ("a BuiltinCall",
+        Functie
+          { kind = Absolute_waarde; argumenten = [ twee ]; element_objecttype = None;
+            leegwaarde = None; filter = None; dimensie_selectie = None; typ = Some num0;
+            bron = None; granulariteit = None; bron_rol = None; bron_pad = None });
+      ("an Unresolved", Expr_onopgelost { typ = Some num0; bron = Some "iets onbekends" });
+      ("an Aggregation", vouw Aantal [ aref "vondsten" "Vondst" ]) ]
+  in
+  List.iter
+    (fun (knoop, arg) ->
+      expect_fault_msg
+        ("WF-037-bronarm-count-" ^ knoop)
+        (fun () -> ev (vouw Aantal [ arg ]))
+        (Printf.sprintf
+           "a count aggregation carries elementType \"Vondst\" and %s operand: the source of an \
+            instance fold is an AttributeReference over its range"
+           knoop))
+    vormen;
+  expect_fault_msg "WF-037-bronarm-filledCount-a Literal"
+    (fun () -> ev (vouw Aantal_gevulde [ twee ]))
+    "a filledCount aggregation carries elementType \"Vondst\" and a Literal operand";
+  expect_fault_msg "WF-037-bronarm-filledCount-an InstanceSetUnion"
+    (fun () -> ev (vouw Aantal_gevulde [ unie ]))
+    "a filledCount aggregation carries elementType \"Vondst\" and an InstanceSetUnion operand";
+  match ev (vouw Aantal [ unie ]) with
+  | exception Value.Fault m ->
+      check ("WF-037-bronarm-unie-onder-count-niet-deze-arm (got: " ^ m ^ ")")
+        (not (substring m "is an AttributeReference over its range"))
+  | _ -> check "WF-037-bronarm-unie-onder-count-niet-deze-arm (no fault at all)" false
 
 (* --- ch. 3.10: the period condition's evaluation-date gate -------------- *)
 

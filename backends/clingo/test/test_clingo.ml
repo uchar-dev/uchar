@@ -6558,6 +6558,63 @@ let () =
          ~kind:"first" ~argumenten:"" ~bereik:false)
     ~case_text:bronloze_vouw_case ~needle:(geen_bron "first")
 
+(* WF-037, de bronarm van de twee tellingen: naast het bereik is het ene
+   argument van een telling of een gevulde telling met elementType een
+   AttributeReference, en elke andere knoop daar weigert de verifier bij naam
+   (IR-SPEC ch. 4.3). Deze vertaling weigert hem in dezelfde zin, vanuit een
+   benoemde arm in [expr_term] ([non_source_count]): een telling is een getal,
+   dus geen andere termfunctie ontmoet hem. Vóór de kaart
+   aantal-bronarm-en-drools-lader viel elke vorm op de bodemzin van
+   [expr_term]. Zes knopen onder de telling, twee onder de gevulde telling,
+   de unie daarbij: onder de gevulde telling is zij een niet-bron als elke
+   andere. De laatste regel pint de grens: een unie onder een telling die een
+   eigen bron draagt is WF-110 (c)'s en houdt die zin. *)
+let () =
+  let bronarm kind knoop =
+    Printf.sprintf
+      "a %s aggregation carries elementType \"Vondst\" and %s operand: the source of an \
+       instance fold is an AttributeReference over its range"
+      kind knoop
+  in
+  let literaal = Printf.sprintf {|{ "node": "Literal", "value": { "number": "2" }, "type": %s }|} som_num0 in
+  let unie =
+    {|{ "node": "InstanceSetUnion", "branches": [
+        { "node": "InstanceSetBranch", "elementType": "Vondst", "filter": null,
+          "sourceRole": { "node": "RoleBinding", "factType": "vondstaanmelding", "role": "vondst" } },
+        { "node": "InstanceSetBranch", "elementType": "Vondst", "filter": null,
+          "sourceRole": { "node": "RoleBinding", "factType": "vondstaanmelding", "role": "vondst" } } ] }|}
+  in
+  let vormen =
+    [ ("a Literal", literaal);
+      ("a Binary",
+        Printf.sprintf {|{ "node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s }|}
+          literaal literaal som_num0);
+      ("a ParameterReference", {|{ "node": "ParameterReference", "parameter": "drempel" }|});
+      ("a VariableReference", {|{ "node": "VariableReference", "name": "x" }|});
+      ("a BuiltinCall",
+        Printf.sprintf {|{ "node": "BuiltinCall", "kind": "absoluteValue", "arguments": [ %s ], "type": %s }|}
+          literaal som_num0);
+      ("an Unresolved",
+        Printf.sprintf {|{ "node": "Unresolved", "type": %s, "source": { "snippet": "iets onbekends" } }|}
+          som_num0) ]
+  in
+  List.iter
+    (fun (knoop, arg) ->
+      faults_with ~name:("WF-037 bronarm, telling met " ^ knoop ^ " (expr_term)")
+        ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:arg ~bereik:true)
+        ~case_text:bronloze_vouw_case ~needle:(bronarm "count" knoop))
+    vormen;
+  faults_with ~name:"WF-037 bronarm, gevulde telling met a Literal (expr_term)"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"filledCount" ~argumenten:literaal ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "filledCount" "a Literal");
+  faults_with ~name:"WF-037 bronarm, gevulde telling met an InstanceSetUnion (expr_term)"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"filledCount" ~argumenten:unie ~bereik:true)
+    ~case_text:bronloze_vouw_case ~needle:(bronarm "filledCount" "an InstanceSetUnion");
+  faults_with ~name:"WF-037 bronarm, armgrens: de unie onder een telling met bron houdt WF-110"
+    ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:unie ~bereik:true)
+    ~case_text:bronloze_vouw_case
+    ~needle:"a count over an instance-set union names a source of its own"
+
 (* --- ch. 3.8: the day-kind duration forms -------------------------------
    The corpus witness (golden jutterswet-bergingsklok) carries ONE day-kind
    shape: a top-level `atLeast` composite over date-part comparisons, both
