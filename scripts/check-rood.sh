@@ -106,12 +106,12 @@ fi
 # construct is not a bottom sentence and stays freely pinnable, whether it names it outright ("a
 # ListLiteral list source is not translated", "allocation validity windows are not translated"),
 # interpolates it ("the fold source %S is not a list-typed own attribute"), or states the one
-# property that defines it ("non-numeric arithmetic operand", "negative exponent", "som fallback
+# property that defines it ("non-numeric arithmetic operand", "negative exponent", "sum fallback
 # other than 0"). Listed instead is every refusal that delimits only against the set of forms the
 # implementation happens to carry TODAY — the "X here is A, B or C", "takes only", "supports only",
 # "Carried: …", "other than <the carried list>" formulations — because that set moves with the
 # code, so the sentence tells a reader nothing stable about the witness. Well-formedness
-# diagnostics are outside the question entirely ("tijdsduur expects two arguments"): they name a
+# diagnostics are outside the question entirely ("duration expects two arguments"): they name a
 # violated expectation, not an unreached capacity, and their arm catches one thing.
 #
 # Two entries carry the INTERPOLATION-FREE part of their sentence (ref's literal_value and
