@@ -13359,8 +13359,9 @@ let () =
    wider magnitudes, pinned so that a split that learns signs has to say so
    here; so does zero beside a negative operand (a zero product). *)
 
-let tarief_frame ~tarief_t ~left ~right ~product_decimals =
-  replace ~tok:"@TARIEF@" ~by:tarief_t
+let tarief_frame ?(op = "times") ~tarief_t ~left ~right ~product_decimals () =
+  replace ~tok:"@OP@" ~by:op
+  @@ replace ~tok:"@TARIEF@" ~by:tarief_t
     (replace ~tok:"@LEFT@" ~by:left
        (replace ~tok:"@RIGHT@" ~by:right
           (replace ~tok:"@PD@" ~by:product_decimals
@@ -13385,7 +13386,7 @@ let tarief_frame ~tarief_t ~left ~right ~product_decimals =
           "target": { "node": "AttributeReference", "attribute": "inkomensgrens", "subjectType": "Werknemer",
             "source": { "snippet": "De inkomensgrens van een Werknemer" } },
           "value": { "node": "Rounding",
-            "base": { "node": "Binary", "op": "times",
+            "base": { "node": "Binary", "op": "@OP@",
               "left": @LEFT@,
               "right": @RIGHT@,
               "type": { "node": "Number", "whole": false, "decimals": @PD@, "sign": "unspecified" },
@@ -13406,11 +13407,11 @@ let maandloon_ref =
 
 (* the money left of the rate, as the RegelSpraak twin writes it *)
 let tarief_doc ~tarief_t ~rate ~product_decimals =
-  tarief_frame ~tarief_t ~left:maandloon_ref ~right:rate ~product_decimals
+  tarief_frame ~tarief_t ~left:maandloon_ref ~right:rate ~product_decimals ()
 
 (* the rate left of the money: `0,8750 maal het maandloon` *)
 let tarief_doc_links ~tarief_t ~rate ~product_decimals =
-  tarief_frame ~tarief_t ~left:rate ~right:maandloon_ref ~product_decimals
+  tarief_frame ~tarief_t ~left:rate ~right:maandloon_ref ~product_decimals ()
 
 (* a rate literal as the RegelSpraak frontend writes it: the lexeme as the
    source spells it, the type at the literal's smallest scale *)
@@ -13424,6 +13425,13 @@ let tarief_literal ~lexeme ~decimals =
 let tarief_ref =
   {|{ "node": "AttributeReference", "attribute": "tarief", "subjectType": "Werknemer",
       "source": { "snippet": "zijn tarief" } }|}
+
+(* maandloon maal tarief (a whole number): a 2-decimal money built by a product *)
+let loon_maal_tarief =
+  {|{ "node": "Binary", "op": "times", "left": |} ^ maandloon_ref ^ {|, "right": |} ^ tarief_ref
+  ^ {|,
+      "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
+      "source": { "snippet": "zijn maandloon maal zijn tarief" } }|}
 
 (* tarief plus a literal, the plus node annotated at [annotated] decimals —
    whatever its operands derive *)
@@ -13675,6 +13683,49 @@ let () =
     ~case_text:(tarief_case ~maandloon:"1.00" ~tarief:"214748.4" ~grens:"214748.40" ())
     ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
     ~without:[ "negative operand under money multiplication is not translated" ] ();
+  (* THE SIGN READ FROM THE OPERANDS. A sign fence that tests a product tests a
+     term that wraps where an operand passes its fence, and the wrapped sign
+     names a cause the document does not have — or hides one it has. 2400,00 x
+     0,12500 takes the ordinary path (the lexeme carries five decimals), and
+     240000 x 12500 wraps to a negative number *)
+  let lexeem5 =
+    tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.12500" ~decimals:3) ~product_decimals:"5"
+  in
+  clingo_fence_fires ~name:"a rounded product past its operand fence is no negative operand"
+    ~ir:lexeem5 ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"300.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under rounding is not translated" ] ();
+  (* a product that IS negative says so, also where it wraps to a positive
+     number: -240000 x 12500 *)
+  clingo_fence_fires ~name:"a negative rounded product past its operand fence is a negative operand"
+    ~ir:lexeem5 ~case_text:(tarief_case ~maandloon:"-2400.00" ~grens:"-300.00" ())
+    ~needle:"negative operand under rounding is not translated" ();
+  (* the same read through a product bound in its own rule: (maandloon x
+     tarief) x 0,12500, the inner product an operand of the outer one *)
+  clingo_fence_fires ~name:"a rounded product over a product past its fence is no negative operand"
+    ~ir:
+      (tarief_frame ~tarief_t:(tarief_number ~decimals:0) ~left:loon_maal_tarief
+         ~right:(tarief_literal ~lexeme:"0.12500" ~decimals:3) ~product_decimals:"7" ())
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"10000" ~grens:"3000000.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under rounding is not translated" ] ();
+  (* the split with a product for its money: (maandloon x tarief) x 0,8750 *)
+  clingo_fence_fires ~name:"money x rate: a money product past its fence is no negative operand"
+    ~ir:
+      (tarief_frame ~tarief_t:(tarief_number ~decimals:0) ~left:loon_maal_tarief
+         ~right:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5" ())
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"10000" ~grens:"21000000.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under money multiplication is not translated" ] ();
+  (* the rounded division pre-scales its dividend: tarief / 3 to two decimals
+     multiplies tarief by 100 first, and 21474837 x 100 wraps *)
+  clingo_fence_fires ~name:"a rounded division past its dividend fence is no negative operand"
+    ~ir:
+      (tarief_frame ~op:"dividedBy" ~tarief_t:(tarief_number ~decimals:0) ~left:tarief_ref
+         ~right:(tarief_literal ~lexeme:"3" ~decimals:0) ~product_decimals:"0" ())
+    ~case_text:(tarief_case ~maandloon:"0.00" ~tarief:"21474837" ~grens:"7158279.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under rounded division is not translated" ] ();
   (* the two routes, on the program text. The WW twin's literal: annotated at
      three decimals, its term carries four, so it enters the split with k = 1 —
      unmultiplied, and without a rescale fence *)
