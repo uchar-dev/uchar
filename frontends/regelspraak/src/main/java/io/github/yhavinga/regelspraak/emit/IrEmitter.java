@@ -1075,8 +1075,10 @@ public final class IrEmitter {
                 w.key("node").value("QuantifierFold");
                 w.key("quantifier").value(Spelling.QUANTIFIER.spelling(k.kwantor()));
                 // WF-108 (e): the threshold is written EXACTLY under a counting quantifier and omitted
-                // under all / none — unlike Compound, which always writes it and writes a 0 nobody
-                // reads. Emitting it here too would put a number on the wire the quantifier contradicts.
+                // under all / none — unlike Compound, whose threshold is written under every quantifier
+                // and read only under the three counting ones, so that under all / none / the it is a
+                // number no reader consults (0 in the goldens, except the 1 a gedurende clip's compound
+                // carries). Emitting it here too would put a number on the wire the quantifier contradicts.
                 if (k.kwantor() == Conditie.Kwantor.TEN_MINSTE || k.kwantor() == Conditie.Kwantor.TEN_HOOGSTE
                         || k.kwantor() == Conditie.Kwantor.PRECIES)
                     w.key("threshold").value(k.drempel());
