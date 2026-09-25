@@ -263,7 +263,7 @@
                     "node": "StructLiteral",
                     "type": {
                       "node": "StructType",
-                      "domain": "kernwaarde",
+                      "domain": "KERNWAARDE",
                       "fields": [
                         {
                           "name": "eenheden",
@@ -423,7 +423,7 @@
                 "node": "FieldAccess",
                 "type": {
                   "node": "StructType",
-                  "domain": "kernwaarde",
+                  "domain": "KERNWAARDE",
                   "fields": [
                     {
                       "name": "eenheden",
