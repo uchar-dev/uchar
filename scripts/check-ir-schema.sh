@@ -1,7 +1,7 @@
 #!/bin/sh
 # Gate 2: IR JSON schema (spec/schema/uchar-ir-v1.schema.json).
 #
-# Five checks:
+# Six checks:
 #   1. the schema is itself a valid draft 2020-12 schema (metaschema);
 #  1b. the schema's patterns are held against a fixed lexeme table, in both
 #      polarities, with no corpus document involved — without it, deleting a
@@ -13,9 +13,13 @@
 #   2. every corpus/golden/**/ir.json validates against it;
 #   3. every such file round-trips: parsed with raw number lexemes preserved and
 #      re-emitted canonically, the output is byte-identical to the input (this is
-#      the guarantee that the schema-blessed form and the emitter's form coincide).
+#      the guarantee that the schema-blessed form and the emitter's form coincide);
+#   4. every object of every golden, rood AND negatief document is in the key
+#      order of the subschema it instantiates, the 'properties' order the
+#      schema's description makes canonical; an object no subschema admits
+#      is counted apart.
 #
-# With explicit file arguments it runs 1-3 against those files instead of the
+# With explicit file arguments it runs 1-4 against those files instead of the
 # corpus glob (handy for checking a dump outside the repo). An empty corpus
 # passes and says so.
 set -u
@@ -1936,6 +1940,111 @@ if failed:
     sys.stderr.write("check-ir-schema: FAIL (%d of %d file(s) bad)\n" % (failed, n))
     sys.exit(1)
 
+# check 4: the canonical key order. The schema's own description makes its 'properties' order the
+# order every emitter and migration writes, and until 2026-09-25 nothing held a hand-written document
+# to it; measured that day, 0 of the 36497 objects in golden, rood and negatief deviated, so the check
+# cost nothing. Each object is compared with the subschema it instantiates, found by walking the
+# schema along the document: $ref, then oneOf/anyOf narrowed by the 'node' constant, the required
+# keys and additionalProperties:false. A map whose keys are data (additionalProperties as a schema)
+# has no order. In corpus mode the walk covers corpus/negatief too, which this gate does not validate;
+# an object no subschema admits (a negatief document that breaks the schema on purpose) has no order
+# to follow and is counted apart, never passed off as checked.
+import glob
+
+
+def _deref(s):
+    while isinstance(s, dict) and "$ref" in s:
+        cur = schema
+        for seg in s["$ref"][2:].split("/"):
+            cur = cur[seg]
+        s = cur
+    return s
+
+
+def _candidates(inst, s):
+    s = _deref(s)
+    alts = s.get("oneOf") or s.get("anyOf")
+    out = [s] if alts is None else [c for alt in alts for c in _candidates(inst, alt)]
+    if isinstance(inst, dict):
+        keep = []
+        for c in out:
+            props = c.get("properties")
+            if props is None:
+                if alts is None and isinstance(c.get("additionalProperties"), dict):
+                    keep.append(c)  # a data-keyed map
+                continue
+            node = props.get("node")
+            if isinstance(node, dict) and "const" in node and inst.get("node") != node["const"]:
+                continue
+            if any(r not in inst for r in c.get("required", [])):
+                continue
+            if c.get("additionalProperties") is False and any(k not in props for k in inst):
+                continue
+            keep.append(c)
+        return keep
+    if isinstance(inst, list):
+        return [c for c in out if "items" in c]
+    return []
+
+
+def _ptr(path, key):
+    return "%s/%s" % (path, str(key).replace("~", "~0").replace("/", "~1"))
+
+
+ko_objects = 0
+ko_unmatched = 0
+ko_devs = []
+
+
+def _key_order(inst, s, path, doc):
+    global ko_objects, ko_unmatched
+    if isinstance(inst, dict):
+        cs = _candidates(inst, s)
+        if not cs:
+            ko_unmatched += 1
+            return
+        if "properties" not in cs[0]:
+            for k, v in inst.items():
+                _key_order(v, cs[0]["additionalProperties"], _ptr(path, k), doc)
+            return
+        ko_objects += 1
+        follows = [c for c in cs if [k for k in c["properties"] if k in inst]
+                   == [k for k in inst if k in c["properties"]]]
+        if not follows:
+            ko_devs.append((doc, path or "<root>", list(inst),
+                            [k for k in cs[0]["properties"] if k in inst]))
+        c = (follows or cs)[0]
+        for k, v in inst.items():
+            if k in c["properties"]:
+                _key_order(v, c["properties"][k], _ptr(path, k), doc)
+            elif isinstance(c.get("additionalProperties"), dict):
+                _key_order(v, c["additionalProperties"], _ptr(path, k), doc)
+    elif isinstance(inst, list):
+        cs = _candidates(inst, s)
+        if cs:
+            for i, x in enumerate(inst):
+                _key_order(x, cs[0]["items"], _ptr(path, i), doc)
+
+
+ko_files = list(files)
+if mode == "corpus":
+    ko_files += sorted(glob.glob("corpus/negatief/**/ir.json", recursive=True))
+for path in ko_files:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            ko_doc = json.load(fh)
+    except (OSError, ValueError) as exc:
+        sys.stderr.write("FAIL: cannot read/parse %s for the key-order check: %s\n" % (path, exc))
+        sys.exit(1)
+    _key_order(ko_doc, schema, "", path)
+for doc, path, got, want in ko_devs:
+    sys.stderr.write("FAIL: %s at %s: the keys %s are not in the schema's order %s\n"
+                     % (doc, path, ", ".join(got), ", ".join(want)))
+if ko_devs:
+    sys.stderr.write("check-ir-schema: FAIL (%d object(s) out of the schema's key order)\n"
+                     % len(ko_devs))
+    sys.exit(1)
+
 # The floor is evaluated BEFORE the unpopulated-corpus exit below, or that exit
 # would answer the very case the floor exists for: with the zones moved aside n
 # is 0, and a floor that sits after an "n == 0 -> exit 0" branch never runs.
@@ -1953,6 +2062,8 @@ if mode == "corpus" and n == 0:
     sys.exit(0)
 
 print("check-ir-schema: PASS (schema valid; %d pattern self-test row(s); %d shape self-test "
-      "row(s); %d file(s) validate and round-trip, floor %d)" % (n_selftest, n_shape, n, floor))
+      "row(s); %d file(s) validate and round-trip, floor %d; %d object(s) in %d document(s) in the "
+      "schema's key order, %d in no subschema)"
+      % (n_selftest, n_shape, n, floor, ko_objects, len(ko_files), ko_unmatched))
 sys.exit(0)
 PY
