@@ -523,11 +523,12 @@ public final class DefinitionResolver {
         for (String a : afkortingen) {
             String[] eerder = geschreven.get(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a));
             if (eerder == null) continue;
+            // the second declaration beside the first on the wire is what the verifier refuses, in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "eenheidstelsel '" + stelsel + "': de afkorting '" + a + "' is al gedeclareerd"
-                            + (a.equals(eerder[0]) ? "" : " als '" + eerder[0] + "'") + " voor de eenheid '" + eerder[1]
-                            + "'; één eenheid per afkorting (WF-009), dus deze tweede declaratie wordt geweigerd in "
-                            + "plaats van de eerste stil te vervangen", u.getStart().getLine()));
+                    "eenheidstelsel '" + stelsel + "', " + (a.equals(eerder[0]) ? "" : "als '" + eerder[0] + "' ")
+                            + "al gedeclareerd voor de eenheid '" + eerder[1] + "': the unit '" + a
+                            + "' is declared twice in the unit system '" + stelsel + "': one Unit per abbreviation "
+                            + "(WF-009)", u.getStart().getLine()));
             return true;
         }
         for (String a : afkortingen)
@@ -890,8 +891,8 @@ public final class DefinitionResolver {
         // answer the grammar already gives for the unit names that are keywords.
         if (Tijdrekening.isKalenderSpelling(enkel.trim().toLowerCase())) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
-                    "dagsoort '" + enkel + "' heet naar een kalendereenheid uit de tijdseenheidtabel en kan "
-                    + "geen dagsoort zijn", d.getStart().getLine()));
+                    "dagsoort '" + enkel + "': day-kind '" + enkel + "' shadows a built-in calendar unit",
+                    d.getStart().getLine()));
             return;
         }
         int regel = d.getStart().getLine();

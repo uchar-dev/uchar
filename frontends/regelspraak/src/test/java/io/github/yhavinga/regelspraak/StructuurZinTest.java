@@ -389,6 +389,35 @@ class StructuurZinTest {
                     """));
     }
 
+    // ---- WF-009 and WF-017: declarations
+
+    @Test void een_afkorting_die_twee_keer_gedeclareerd_is() {
+        assertEquals(List.of("eenheidstelsel 'Gewicht', al gedeclareerd voor de eenheid 't': the unit 't' is declared "
+                        + "twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                fouten("""
+                    Eenheidsysteem Gewicht
+                        het kilogram kg
+                        de ton t = 1000 kg
+                        de tonne t = 100 kg
+                    Objecttype de Vondst
+                        het gewicht Numeriek (geheel getal) met eenheid t;
+                    """));
+        assertEquals(List.of("eenheidstelsel 'Gewicht', als 'kg' al gedeclareerd voor de eenheid 'kg': the unit 'KG' is "
+                        + "declared twice in the unit system 'Gewicht': one Unit per abbreviation (WF-009)"),
+                fouten("""
+                    Eenheidsysteem Gewicht
+                        het kilogram kg
+                        de kilo KG = 1 kg
+                    Objecttype de Vondst
+                        het gewicht Numeriek (geheel getal) met eenheid kg;
+                    """));
+    }
+
+    @Test void een_dagsoort_met_de_naam_van_een_kalendereenheid() {
+        assertEquals(List.of("dagsoort 'wk': day-kind 'wk' shadows a built-in calendar unit"),
+                fouten("Dagsoort de wk (mv: wks);\n"));
+    }
+
     // ---- WF-020: two decision-table rows with one rule name
 
     @Test void twee_tabelrijen_met_een_regelnaam() {
