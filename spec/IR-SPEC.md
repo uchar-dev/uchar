@@ -708,8 +708,8 @@ A closed sum. v1 variants:
 
 `sign` ∈ {`unspecified`, `negative`, `nonNegative`, `positive`} (v0
 `Teken`), always written: since L3 (2026-09-24) a number declared without a
-sign writes `unspecified`, where the v0 dump wrote `null` (the same reading,
-one spelling).
+sign writes the unspecified sign (`ONBEPAALD` until L5), where the v0 dump
+wrote `null` (the same reading, one spelling).
 v0 values: `ONBEPAALD` → `unspecified`, `NEGATIEF` → `negative`,
 `NIET_NEGATIEF` → `nonNegative`, `POSITIEF` → `positive` — the wire spelling
 until L5.
