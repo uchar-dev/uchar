@@ -1432,9 +1432,13 @@ quantifier whose telwoord is not a whole number, which the wire would carry as
 no calendar date, since the frontend forms a wire lexeme from a valid date only
 and the verifier's lexeme sentences (WF-084, WF-095) describe a written lexeme;
 a characteristic initialisation in an object creation whose value is
-boolean-typed but not the literal waar or onwaar (§13.4.6.4); the whole-period
-qualifier on a navigated characteristic or on a condition that is no comparison,
-predicate or characteristic check. Refusals of the source text itself (syntax,
-the desugaring of decision tables and exception blocks, the dialect's fences,
-forms this frontend does not lower) have no reader either, because no document
-carries them.
+boolean-typed but not the literal waar or onwaar (§13.4.6.4); an object creation
+of the subject's own type whose sentence names no role for the new object, where
+the derivation from the type pair links nothing (RUNTIME-SEMANTICS ch. 5.5) and
+the verifier admits the unlinked document; the whole-period qualifier on a
+navigated characteristic or on a condition that is no comparison, predicate or
+characteristic check. Refusals of the source text itself (syntax, the desugaring
+of decision tables and exception blocks, the dialect's fences, forms this
+frontend does not lower) have no reader either, because no document carries
+them.
+
