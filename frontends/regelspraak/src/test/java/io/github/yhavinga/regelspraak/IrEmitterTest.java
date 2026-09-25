@@ -993,7 +993,7 @@ class IrEmitterTest {
     }
 
     @Test void een_rolcheck_die_de_andere_zijde_vernauwt_draagt_het_type_van_die_zijde() {
-        // U12 of the L2 card: a check whose other end names a STRICT subtype of that role's declared filler
+        // IR-SPEC ch. 4.5, RoleMembership: a check whose other end names a STRICT subtype of that role's declared filler
         // ("heeft een Strandjutter", where wachtjutter is declared on Jutter) narrows the link it asks for, and
         // the wire says so in counterpartType; naming the declared filler itself narrows nothing and the field
         // stays absent. The frontend resolves a written role to its declared filler, so the narrowing is set on
