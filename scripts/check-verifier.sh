@@ -121,6 +121,7 @@ while IFS= read -r f; do
         continue
     fi
     expect=$(printf 'WF-%03d' "$id")
+    rejected=0
     if out=$("$BIN" "$f" 2>&1); then
         printf 'FAIL: negatief case %s passed the verifier (must violate %s):\n%s\n' \
             "$f" "$expect" "$out" >&2
@@ -129,6 +130,8 @@ while IFS= read -r f; do
         printf 'FAIL: negatief case %s rejected, but not for %s:\n%s\n' \
             "$f" "$expect" "$out" >&2
         status=1
+    else
+        rejected=1
     fi
     arm="$(dirname "$f")/expect.txt"
     if [ -f "$arm" ]; then
@@ -146,10 +149,13 @@ while IFS= read -r f; do
         elif printf '%s\n' "$frag" | grep -qE 'WF-[0-9]{3}'; then
             printf 'FAIL: %s carries a rule number: the rule is the directory name, the fragment is the message of its arm\n' "$arm" >&2
             status=1
-        elif ! printf '%s\n' "$out" | sed -n "s/^$expect FAIL [^ ]*: //p" | grep -qF -- "$frag"; then
+        elif [ "$rejected" -eq 1 ] && ! printf '%s\n' "$out" | sed -n "s/^$expect FAIL [^ ]*: //p" | grep -qF -- "$frag"; then
             # Only the messages of the declared rule's lines count: sought in the whole report,
             # a fragment such as "FAIL", the rule number, or a line of another rule's message
-            # would pass without pinning an arm of this rule (measured at the L2 lens).
+            # would pass without pinning an arm of this rule (measured at the L2 lens). Sought
+            # only after a rejection for the declared rule: a case that passed, or failed for
+            # other rules only, is already reported above, and this line would claim a
+            # rejection that did not happen.
             printf 'FAIL: negatief case %s rejected for %s, but not on the arm %s names (sought in the messages of the %s lines):\n  expected fragment: %s\n%s\n' \
                 "$f" "$expect" "$arm" "$expect" "$frag" "$out" >&2
             status=1
