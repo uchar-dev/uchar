@@ -789,7 +789,9 @@ decimals only, and on the ordinary product path the range fence fires at a
 maandloon of 2400,00. With only the literal typed at four decimals the
 same emission passes 10/10 in clingo.
 The twin is not admitted; it waits for the card `clingo-tarief-decimalen`
-(§8.5).
+(§8.5). *[M] 2026-09-25 (card `clingo-tarief-decimalen`, the same day):*
+the twin is admitted as `ww-herleving-inkomen-rgs`, and its frontend
+emission plays 10/10 in ref, clingo and the Drools exec branch.
 
 ### 5.3 Sibling order and depth
 
@@ -1288,11 +1290,11 @@ Expected result of the diff:
 
 | Item | Class | Status |
 |---|---|---|
-| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all ten cases on the landed conditions; [M] 2026-09-25, the frontend's own emission: ref 10/10, exec branch PLAYED 10, clingo refuses all ten (the literal row below) |
+| einde is a chain position above toekenning; the anchor nests it in toekenning's `excepties` | (i) — §5.2: inheritance-safe lowering, identical on every input | [M12] the twin's shape passes all ten cases on the landed conditions; [M] 2026-09-25, the frontend's own emission: ref 10/10, exec branch PLAYED 10, clingo refuses all ten (the literal row below). [M] 2026-09-25 (card `clingo-tarief-decimalen`, the same day): the twin is admitted as `ww-herleving-inkomen-rgs`, and its frontend emission plays 10/10 in ref, clingo and the Drools exec branch |
 | herleving and blokkade nested as in the anchor | — | identical after G1 |
 | group name `toekenning art 15` versus `recht op uitkering bij herleving` | (i) — the frontend names a group after its base rule | [M] 2026-09-25: in the diff — `name` is no `source` record, so stripping the source records leaves it standing; this row first said "not compared (bron stripped)" |
 | `source` texts | (i) | not compared (every `source` stripped) |
-| literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | the blockade of the twin — the typing itself is the frontend's documented reading of §6.1.2 and a well-formed wire, but clingo does not carry it | [M] 2026-09-25: clingo `UNSATISFIABLE` on all ten cases (the note in §5.2); with only this literal at 4 decimals, 10/10. This row first classified the difference as (i), "the result is rounded to 2 decimals" |
+| literal `0,8750` with 3 decimals (product 5) versus the anchor's `"0.8750"` with 4 (product 6) | the blockade of the twin — the typing itself is the frontend's documented reading of §6.1.2 and a well-formed wire, but clingo does not carry it | [M] 2026-09-25: clingo `UNSATISFIABLE` on all ten cases (the note in §5.2); with only this literal at 4 decimals, 10/10. This row first classified the difference as (i), "the result is rounded to 2 decimals". [M] 2026-09-25 (card `clingo-tarief-decimalen`, the same day): the twin is admitted as `ww-herleving-inkomen-rgs`, and its frontend emission plays 10/10 in ref, clingo and the Drools exec branch |
 | unit `dag` with `canoniek: "dag"`, factor 1, `teken: "ONBEPAALD"` versus `null`/`null`/`null` | (i) — both spellings satisfy WF-092 | [M] measured on the probe |
 | `recht op uitkering` bezittelijk | none: the anchor is bezittelijk since G1 | — |
 
@@ -1400,7 +1402,10 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
   lowering in this branch", and `EXPECTED_DRL_PLAYED` does not move.
   Carrying them would need a defaults lowering in that branch — a card of
   its own for all 24 + 2 goldens (G3 and G4; G2 joins them when it is
-  admitted, §8.5), not for this plan.
+  admitted, §8.5), not for this plan. *[M] 2026-09-25 (card
+  `clingo-tarief-decimalen`, the same day):* G2 is admitted as
+  `ww-herleving-inkomen-rgs`, plays 10/10 in ref, clingo and the exec branch,
+  and has joined class (A).
 - "Green in ref ≡ clingo ≡ Drools" therefore means: ref and clingo pass,
   the exec branch plays (gate 12's `EXPECTED_PLAYED` rises by the number
   of twins that land), the DRL-text branch lists them by name.
@@ -1418,7 +1423,9 @@ Cases: the ten of G1, same inputs, same expectations. Gates: 2, 3, 4,
    follows with the card `clingo-tarief-decimalen` once clingo carries its
    emission (§5.2), with `EXPECTED_PLAYED` + 1, class (A) + 1 name and the
    anchor's survivor `case7-invoer-staat-tegen-blokkade` for the twin's
-   case7.
+   case7. *[M] 2026-09-25 (card `clingo-tarief-decimalen`, the same day):*
+   G2 is admitted as `ww-herleving-inkomen-rgs`, 10/10 in ref, clingo and the
+   Drools exec branch, with those three pins as proposals on its branch.
 4. The main session lands the row-8 register text of the card's Result.
 
 ## 9. The card's byproducts

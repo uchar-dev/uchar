@@ -1712,10 +1712,13 @@ scale.
       body (golden `jutterswet-kinderprocent`, `acc + (x% van grondslag)`,
       `[10,25]/200 → 70.00`).
     - **The money × rate product** rounded to the cent
-      (`Rounding{halfAwayFromZero,2}` over a 2-decimal money × 4-decimal rate,
-      `money_mult_shape`) is the split encoding of S18(c) — the shared
-      `money_mult_fences`/`money_mult_body`, with the four fences (two
-      negative-operand, two range) keyed by the list-id and the `A`/`C`
+      (`Rounding{halfAwayFromZero,2}` over a 2-decimal money times a
+      4-decimal rate or a unit-free rate of one to three decimals, the money
+      on either side, `money_mult_shape`) is the split encoding of S18(c) —
+      the shared `money_mult_rate`/`money_mult_fences`/`money_mult_body`, with
+      the four fences (two negative-operand, two range) and, for a rate below
+      four decimals, the range fence on the rate brought to scale 10⁴, all
+      keyed by the list-id, and the `A`/`C`
       assignments emitted *inline* as body atoms over fresh variables rather
       than a subject-keyed helper predicate, so the fold recurrence binds the
       per-element index directly.
@@ -2237,6 +2240,33 @@ product. `Let`s around the product are peeled with their binders in
 scope (an unread one is skipped whole, (a′)). Negative operands are not encoded (ref rounds
 either sign; the tutorial's money and rate are ≥ 0) — a `viol/2` fence,
 S19.
+
+**A rate of fewer decimals, and the money on the right.** The product is
+routed to the split on the decimals its terms carry, derived the way the
+translation derives a term's scale — a literal from its lexeme, a
+reference from its declaration, a binder from its binding, a join by the
+rule its arm applies — and never on a composite's own annotation
+(RUNTIME-SEMANTICS ch. 2.10). The money may stand on either side of the
+product; with two 2-decimal operands the left one is the money. A
+unit-free rate of one to three decimals takes the split as well: at scale
+10⁴ it is the same rational (0,875 at 10³ is 8750 at 10⁴), so its term is
+multiplied by 10^(4−d) first, under a `viol/2` range fence on the
+multiplied term, `|R| ≤ max_int31/10^(4−d)` — a wrapped rate would be a
+plausible wrong answer, not a loud one. The RegelSpraak frontend needs
+this: it types a numeric literal at its smallest scale, so `maandloon maal
+0,8750` carries a rate of three decimals, and a maandloon of 2400,00
+(240000) is past the S6 operand bound. Two kinds of rate below four
+decimals keep the S6 product, because the split would carry less there: a
+unit-carrying rate, which the split refuses and S6 admits as the
+factor-free product, and a whole-number rate (`Mult_mon_int`), whose cent
+rounding is the identity, so S6 carries a negative operand the split
+refuses. Below four decimals the split's sign fence costs one flank: two
+negative operands, or zero times a negative rate, are refused where the S6
+rounding carried their non-negative product at small magnitude. Witness:
+`ww-herleving-inkomen-rgs`, the RegelSpraak twin of
+`anchor/ww-herleving-inkomen`, ten cases (ref ≡ clingo); the rescale
+fence, both orders, the derived route and both flanks are pinned in the
+backend suite.
 
 Witnesses: `anchor/jutterswet-tariefstelling` — **case1-elsetak** the
 else branch (`aanslag` 3700.00 from belasting 4200.00 − aftrek 500.00,
@@ -2822,14 +2852,19 @@ carries it everywhere (ch. 4.10); on the ASP side only `value_branches`
 reaches an `IfThenElse` at the rule value (a closed-body `IfThenElse` reducer
 does lower — `body_branches`). **Negative operands
 under the money multiplication** (ref rounds either sign; runtime `viol/2`, the
-non-richting-nul rounding sibling) and the two split range fences (`M·Rh`
-and `M·Rl`, runtime `viol/2` — the tutorial's magnitudes clear them); a
-**money multiplication other than a 2-decimal money times a 4-decimal
-rate** — `Mult_mon_int` and other scale pairs are not split, they ride
-the S6 multiplicative fence (the 46340 operand bound, which faults at
-large magnitude) — while the split's own scale backstop (`the split money
-multiplication expects a 2-decimal money and a 4-decimal rate …`) is
-unreachable once `money_mult_shape` has gated the decimals. The strict
+non-richting-nul rounding sibling — below four decimals this includes two
+negative operands, or zero times a negative rate, whose non-negative
+product the S6 rounding carried at small magnitude) and the three split
+range fences (`M·Rh`, `M·Rl`, and a rate of one to three decimals brought
+to scale 10⁴; runtime `viol/2` — the tutorial's magnitudes clear them); a
+**money multiplication other than a 2-decimal money times a 4-decimal rate
+or a unit-free rate of one to three decimals** — `Mult_mon_int`, a
+unit-carrying rate below four decimals and other scale pairs are not split,
+they ride the S6 multiplicative fence (the 46340 operand bound, which
+faults at large magnitude) — while the split's own scale backstop (`the
+split money multiplication expects a 2-decimal money and a rate of at most
+4 decimals …`) is unreachable: `money_mult_shape` routes on the scales the
+translation derives for the terms, the same scales the backstop tests. The strict
 `Let` itself has no fault of its own: a leeg value is underivability, not
 a fault (the S18 coincidence). It does, however, **materialise its binder
 at a finite integer scale** (the value's out-scale, RUNTIME-SEMANTICS
