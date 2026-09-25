@@ -3101,7 +3101,8 @@ and the subject's own temporal total with or without its gedurende clip
 (`RUNTIME-SEMANTICS.md` ch. 3.5, 3.6) — and the base of the pro-rata part
 MUST therefore be declared a `Number` (a `%` number included); any other
 declaration — a `Date`, `Text`, `Boolean`, `Enumeration`, `SumType`,
-`ListType` or `StructType` — is ill-formed under WF-091. The `sum` and
+`ListType` or `StructType` — is ill-formed under WF-091 (WF-038's numeric
+clause, checked here). The `sum` and
 `total` rows above pass operand 0's type through, so over a `Date` operand a
 `Date` annotation agreed with its derivation and the document was
 verifier-clean, while `ref` faulted on the arithmetic (`maal`, `plus`,
@@ -7424,7 +7425,8 @@ ch. 3.12), and it belongs to whoever measures it.
   nothing.
 - **WF-038** Aggregation operand typing (mirror, with one ratified v1
   widening): numeric folds' operands MUST be numeric with compatible
-  units; **every operand of an ORDERING fold — `first`, `last`,
+  units (the numeric half is checked as WF-091's numeric-operand arm,
+  ch. 4.1); **every operand of an ORDERING fold — `first`, `last`,
   `minimum`, `maximum` — MUST come from one comparable family: numbers,
   or dates of one precision**; a `total` operand that is
   non-temporal MUST carry a rate unit per time unit; `easterSunday` MUST
