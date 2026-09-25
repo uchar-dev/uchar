@@ -18,7 +18,7 @@
         "characteristics": []
       },
       {
-        "label": "D1",
+        "label": "DW1",
         "objectType": "Diepwrak",
         "attributes": { "grondslag": { "number": "10.00" } },
         "roles": {},
@@ -30,7 +30,7 @@
   "expected": [
     { "kind": "attributeValue", "label": "S1", "attribute": "uitkering", "value": { "number": "10.00" } },
     { "kind": "attributeValue", "label": "W1", "attribute": "uitkering", "value": { "number": "20.00" } },
-    { "kind": "attributeValue", "label": "D1", "attribute": "uitkering", "value": { "number": "30.00" } },
+    { "kind": "attributeValue", "label": "DW1", "attribute": "uitkering", "value": { "number": "30.00" } },
     { "kind": "consistent" }
   ]
 }

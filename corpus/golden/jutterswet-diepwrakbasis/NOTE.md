@@ -56,12 +56,12 @@ parity zone changes its report.
 |------|----------|---------|-----------|---------------|
 | case1-basis-per-niveau | S1 Strandrecht | no | **10,00** | the `Strandrecht` rule, outside the gate |
 | case1-basis-per-niveau | W1 Wrakrecht | no | **20,00** | the group's own base replaces the inherited rule |
-| case1-basis-per-niveau | D1 Diepwrak | no | **30,00** | the lower type's rule replaces the inherited base |
+| case1-basis-per-niveau | DW1 Diepwrak | no | **30,00** | the lower type's rule replaces the inherited base |
 | case2-groep-beslist | S1 Strandrecht | yes | **10,00** | no group in this chain: `betwist` changes nothing |
 | case2-groep-beslist | W1 Wrakrecht | yes | **99,00** | the group's exception decides |
-| case2-groep-beslist | D1 Diepwrak | yes | **99,00** | the inherited exception stays above the `Diepwrak` base |
+| case2-groep-beslist | DW1 Diepwrak | yes | **99,00** | the inherited exception stays above the `Diepwrak` base |
 
-Both cases end `consistent`. D1 is the row the golden exists for: 30,00
+Both cases end `consistent`. DW1 is the row the golden exists for: 30,00
 without `betwist` and 99,00 with it is the effective stack the fold builds
 for a `Diepwrak` — the inherited exception, then its own base.
 
