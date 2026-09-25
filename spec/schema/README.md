@@ -106,7 +106,7 @@ every producer already writes it. L5 renames in place: a renamed node keeps its
 L4 order, and the `properties` order of its definition is that order.
 Measured 2026-09-24 on the L4 shape, 20 of the 11509 node objects and version
 records in `corpus/golden` and `corpus/rood` deviate from their definition's
-`properties` order (kinds `Default`, `PrioritizedDefaults`, `Kwantorvouw`,
+`properties` order (kinds `Default`, `PrioritizedDefaults`, `QuantifierFold` (then `Kwantorvouw`),
 `Let`; none of the L3 or L4 nodes and no version record; on the L3 shape the
 three function nodes among the 23 deviating objects were the only ones of a
 node L4 rewrites); measured again on the L5 shape, the same 20 objects deviate,
