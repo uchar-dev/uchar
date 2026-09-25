@@ -20,10 +20,9 @@ must be: WF-044 is behavioural, not a well-formedness rule.
 Both executors that read every red form fault where they read the
 creation, and each names the position:
 
-- reference interpreter — `Unresolved condition reached in evaluation
-  (WF-044)`;
+- reference interpreter — `Unresolved condition reached in evaluation`;
 - ASP backend — `Unresolved condition reached in translation: this rule
-  fails observably (WF-044)`.
+  fails observably`.
 
 The Drools backend does not carry the form: both of its transpiler
 branches refuse the creation by construct, because a guard that lowers to

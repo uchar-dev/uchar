@@ -4,9 +4,11 @@ The unsolved-state guard (WF-044): an `Unresolved` node is an honest
 inexpressibility marker, and it must never vanish silently. This
 document is verifier-clean — the marker itself is legal wire content —
 but the rule that carries it is *reached* by the case: the reference
-interpreter faults the evaluation, and the ASP backend faults the
-translation, both citing WF-044. A harness in which this case stops
-failing has started guessing where the spec says "cannot express".
+interpreter faults the evaluation (`Unresolved reached in evaluation: this
+rule fails observably`), and the ASP backend faults the translation
+(`Unresolved reached in translation: this rule fails observably`). A
+harness in which this case stops failing has started guessing where the
+spec says "cannot express".
 
 **WF-113 (since M1, 2026-09-23).** The document carries one `warning` in
 `diagnostics` whose message contains the marker's source snippet verbatim, in
