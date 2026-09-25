@@ -15,9 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * exactly as it refuses a longer one. Measured on the frontend before this change: "De x van een Ding moet berekend
  * worden als de x van de Ding plus 1" went to the wire without a word and the verifier answered "WF-045 FAIL …
  * dependency cycle through no recursive creation: ophoog x -> ophoog x", while a cycle over two attributes drew the
- * WARNING "kringverwijzing tussen berekeningen: …". The direct self-read now draws that same WARNING. One form stays
- * without it: the clamp idiom that {@code RecursieTest} pins diagnostics-free ("x = x, met een maximum van y"), whose
- * base is the bare read of the target; a clamp over anything else, or a bound that reads the target, is warned.
+ * WARNING "kringverwijzing tussen berekeningen: …". The direct self-read now draws that same WARNING, the clamp idiom
+ * "x = x, met een maximum van y" included: the verifier refuses it under WF-045 as well.
  */
 class ZelflezingKringTest {
 
@@ -76,10 +75,10 @@ class ZelflezingKringTest {
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
-    @Test void het_begrenzingsidioom_blijft_zonder_melding() {
-        RegelSpraakModel m = Resolver.resolve(DING + regel("begrens x",
-                "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding."));
-        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+    @Test void het_begrenzingsidioom_krijgt_de_melding() {
+        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("begrens x",
+                "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.")));
+        assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
     @Test void de_kring_over_twee_attributen_houdt_haar_melding() {

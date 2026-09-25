@@ -42,7 +42,8 @@ class RecursieTest {
                     De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.
             """);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte errors: " + m.errors());
-        assertTrue(m.diagnostics.stream().noneMatch(d -> d.message().contains("kringverwijzing")),
-                () -> "een zelf-lezing is geen kring (no-loop-terminerend one-shot): " + m.diagnostics);
+        // the verifier refuses this self-read under WF-045 like every dependency cycle, so the frontend warns here too
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("kringverwijzing")),
+                () -> "een zelf-lezing is een kring van één knoop en krijgt de kringmelding: " + m.diagnostics);
     }
 }
