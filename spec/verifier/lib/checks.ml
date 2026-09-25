@@ -8351,8 +8351,8 @@ let wf079 ctx =
     @ pairs initialisation_writers ~sentence:(fun ot a ->
           Printf.sprintf
             "two initialisations write target (%s, %s) with no prioritized defaults — where both \
-             apply, nothing ranks them: the first to fire would decide, an order the fixpoint does \
-             not define, and a condition on either gives it no priority (ch. 5.4)"
+             apply nothing ranks them, and a condition on either gives it no priority: the fixpoint \
+             does not define which value the target takes (ch. 5.4)"
             ot a)
     @ chain initialisations ~sentence:(fun low a high ->
           Printf.sprintf

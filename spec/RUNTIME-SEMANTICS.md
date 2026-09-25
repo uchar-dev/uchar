@@ -3187,7 +3187,9 @@ either document order; `gewicht` 8,00 gives bergloon **leeg** and vindloon
 
 Two initialisations on one target are ill-formed (`IR-SPEC.md` WF-079, its
 initialisation arm), conditional or not: where both apply nothing ranks
-them, and the guard would let the first to fire decide.
+them, and the fixpoint does not define which value the target takes — the
+v0 guard let the first to fire decide, and the guard above lets the two
+write in turn without end.
 
 ### 5.5 Creation in the loop
 

@@ -6,9 +6,9 @@ defaults — `Vondst.bergloon`. `standaardbergloon` writes `25,00` where the
 above 3. Where both conditions hold, nothing ranks the two.
 
     WF-079 FAIL /rules/rules/0/versions/0: two initialisations write target
-    (Vondst, bergloon) with no prioritized defaults — where both apply,
-    nothing ranks them: the first to fire would decide, an order the fixpoint
-    does not define, and a condition on either gives it no priority (ch. 5.4)
+    (Vondst, bergloon) with no prioritized defaults — where both apply
+    nothing ranks them, and a condition on either gives it no priority: the
+    fixpoint does not define which value the target takes (ch. 5.4)
 
 **Why conditions do not exempt the pair.** Two conditional computing rules
 may be a guarded case split, and WF-079 leaves them alone. Two
