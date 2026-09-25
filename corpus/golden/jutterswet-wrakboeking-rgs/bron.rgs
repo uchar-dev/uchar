@@ -1,0 +1,18 @@
+Objecttype het Strandrecht (mv: Strandrechten)
+    de grondslag Numeriek (niet-negatief getal met 2 decimalen);
+
+Objecttype het Wrakrecht is een Strandrecht (mv: Wrakrechten)
+    de bergingsvergoeding Numeriek (niet-negatief getal met 2 decimalen);
+
+Feittype wrakboeking
+    de boeker Wrakrecht
+    het geboekt strandrecht Strandrecht
+Eén boeker boekt één geboekt strandrecht
+
+Regel bereken de bergingsvergoeding van een wrakrecht
+    geldig altijd
+        De bergingsvergoeding van een Wrakrecht moet gesteld worden op zijn grondslag.
+
+Regel boek een strandrecht bij elk wrakrecht
+    geldig altijd
+        Een Wrakrecht heeft een geboekt strandrecht met grondslag gelijk aan zijn bergingsvergoeding.
