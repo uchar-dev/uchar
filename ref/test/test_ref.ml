@@ -7081,6 +7081,62 @@ let () =
               [ ("van", Value.date_of_iso "2024-01-01"); ("tot", Value.date_of_iso "2025-01-01") ])))
     (Ir_v0.Checks.duration_unknown_unit "vadem")
 
+(* WV-3.8-datumvorm (WF-035): the form of date ± x is decided on the date
+   type of either precision — two dates, a duration on the left, or a date on
+   the left and the step, whose unit the duration's static type carries — and
+   each form faults in its one sentence from [Ir_v0.Checks], in day,
+   millisecond and mixed precision. The ASP backend's suite holds the same
+   rows, so the two executors and the verifier speak one sentence per form. *)
+let () =
+  let unit_ a : Ir_v0.Ast.eenheid =
+    { afkorting = Some a; stelsel = None; canoniek = None; factor_naar_canoniek = None; noemer = None }
+  in
+  let duur ?u n =
+    litv n (Numeriek { geheel = true; decimalen = 0; teken = None; eenheid = Option.map unit_ u })
+  in
+  let bin ?(minus = false) typ l r : Ir_v0.Ast.expr =
+    Binair { op = (if minus then Min else Plus); links = Some l; rechts = Some r; typ = Some typ; bron = None }
+  in
+  let dag = aref "dag" "Getij" and moment = aref "moment" "Getij" in
+  let d = Ir_v0.Ast.Datum_in_dagen and m = Ir_v0.Ast.Datum_tijd in
+  let run doel waarde =
+    let doc =
+      { empty_doc with
+        objecttypen =
+          [ ot "Getij" [ ("dag", Some Datum_in_dagen); ("moment", Some Datum_tijd); ("doel", Some doel) ] [] ];
+        resolved_regels = [ rr "doel" Berekening (Some (aref "doel" "Getij")) (Some waarde) None ] }
+    in
+    Eval.evaluate (env_of doc)
+      (World.add_instance World.empty
+         (inst "G1" "Getij" [ ("dag", Value.date_of_iso "2026-03-15"); ("moment", Value.Date_time 0) ]))
+  in
+  let open Ir_v0.Checks in
+  List.iter
+    (fun (name, doel, waarde, sentence) ->
+      match run doel waarde with
+      | exception Value.Fault msg -> check (name ^ " (got: " ^ msg ^ ")") (msg = sentence)
+      | _ -> check (name ^ " (no fault at all)") false)
+    [ ("WV-3.8-datumvorm-dag-plus-dag", d, bin d dag dag, date_plus_date_refusal);
+      ("WV-3.8-datumvorm-ms-min-ms", m, bin ~minus:true m moment moment, date_plus_date_refusal);
+      ("WV-3.8-datumvorm-dag-plus-ms-in-dag", d, bin d dag moment, date_plus_date_refusal);
+      ("WV-3.8-datumvorm-ms-min-dag-in-ms", m, bin ~minus:true m moment dag, date_plus_date_refusal);
+      ( "WV-3.8-datumvorm-duur-min-dag", d, bin ~minus:true d (duur ~u:"wk" "2") dag,
+        duration_before_date_refusal ~minus:true );
+      ( "WV-3.8-datumvorm-duur-plus-ms", m, bin m (duur ~u:"uur" "26") moment,
+        duration_before_date_refusal ~minus:false );
+      ( "WV-3.8-datumvorm-duur-plus-dag-in-ms", m, bin m (duur ~u:"dg" "2") dag,
+        duration_before_date_refusal ~minus:false );
+      ("WV-3.8-datumvorm-dag-plus-vadem", d, bin d dag (duur ~u:"vadem" "2"), date_duration_unknown_unit "vadem");
+      ( "WV-3.8-datumvorm-ms-plus-vadem", m, bin m moment (duur ~u:"vadem" "26"),
+        date_duration_unknown_unit "vadem" );
+      ( "WV-3.8-datumvorm-dag-plus-vadem-in-ms", m, bin m dag (duur ~u:"vadem" "26"),
+        date_duration_unknown_unit "vadem" );
+      ("WV-3.8-datumvorm-dag-plus-kaal", d, bin d dag (duur "2"), date_duration_without_time_unit);
+      ("WV-3.8-datumvorm-ms-plus-kaal", m, bin m moment (duur "26"), date_duration_without_time_unit);
+      ("WV-3.8-datumvorm-dag-plus-kaal-in-ms", m, bin m dag (duur "2"), date_duration_without_time_unit);
+      ("WV-3.8-datumvorm-dag-plus-uur", d, bin d dag (duur ~u:"uur" "2"), sub_day_unit_on_day_date);
+      ("WV-3.8-datumvorm-dag-plus-uur-in-ms", m, bin m dag (duur ~u:"uur" "26"), sub_day_unit_on_day_date) ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

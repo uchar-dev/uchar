@@ -2597,6 +2597,17 @@ let is_datetime_operand ctx = function
   | Some e -> ( match static_type ctx e with Some Datum_tijd -> true | _ -> false)
   | None -> false
 
+(* The form of date ± x (WF-035), decided on the date type of EITHER
+   precision, as the verifier and ref decide it: two dates, a duration on the
+   left, or a date on the left and the step. Only after that does the
+   precision of the date operand pick the day slot or the pair term, so a
+   mixed-precision document hears the sentence the other two readers speak. *)
+let date_step_operands ctx ~minus le re =
+  let is_date e = is_date_operand ctx (Some e) in
+  if is_date le && is_date re then fault "%s" Ir_v0.Checks.date_plus_date_refusal
+  else if is_date le then (le, re)
+  else fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
+
 let attr_symbolic_datatype ctx ~otype ~attr =
   match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
   | Some (Some ((Tekst | Booleaan | Enumeratie _) as dt)) -> Some dt
@@ -5086,30 +5097,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          fractional count truncates toward zero through the scale
          division (gringo truncates toward zero on both signs). *)
       let le = req "Binary.left" links and re = req "Binary.right" rechts in
-      let date_typed e =
-        match static_type ctx e with
-        | Some Datum_in_dagen -> true
-        | Some Datum_tijd ->
-            fault "datum-tijd date arithmetic reaches a scalar day slot (the pair term rides \
-                   dt_term, not expr_term's integer encoding)"
-        | _ -> false
-      in
       let minus = op = Min in
-      let date_e, dur_e =
-        if date_typed le && date_typed re then
-          fault "%s" Ir_v0.Checks.date_plus_date_refusal
-        else if date_typed le then (le, re)
-        else
-          fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
+      let date_e, dur_e = date_step_operands ctx ~minus le re in
+      let datetime = is_datetime_operand ctx (Some date_e) in
+      let scalar_slot () =
+        fault "datum-tijd date arithmetic reaches a scalar day slot (the pair term rides \
+               dt_term, not expr_term's integer encoding)"
       in
       (* the spelling may name a declared day kind rather than a calendar
          unit — then the step is ch. 3.8's day-by-day walk (§6.11) *)
       (match day_kind_unit_of ctx (static_type ctx dur_e) with
       | Some k -> (
+          if datetime then scalar_slot ();
           let atoms, day, _ = dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:false date_e dur_e in
           (atoms, day, 1))
       | None ->
-      date_step_unit ~datetime:false (static_type ctx dur_e);
+      date_step_unit ~datetime (static_type ctx dur_e);
+      if datetime then scalar_slot ();
       let tu =
         day_time_unit_of ~what:"date arithmetic" (static_type ctx dur_e)
       in
@@ -5682,23 +5686,24 @@ and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string 
          toward zero through its scale division. *)
       let le = req "Binary.left" links and re = req "Binary.right" rechts in
       let minus = op = Min in
-      let dtl = is_datetime_operand ctx (Some le) and dtr = is_datetime_operand ctx (Some re) in
-      let date_e, dur_e =
-        if dtl && dtr then fault "%s" Ir_v0.Checks.date_plus_date_refusal
-        else if dtl then (le, re)
-        else
-          fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
+      let date_e, dur_e = date_step_operands ctx ~minus le re in
+      let datetime = is_datetime_operand ctx (Some date_e) in
+      let pair_slot () =
+        fault "day-precision date arithmetic reaches a datum-tijd pair slot (the integer day \
+               term rides expr_term, not dt_term's pair encoding)"
       in
       (* a DAY-KIND spelling is the §6.11 step, carried on datum-tijd since
          2026-09-19: the kind is judged on the civil day part and the clock
          time rides through unchanged (RUNTIME-SEMANTICS ch. 3.8) *)
       (match day_kind_unit_of ctx (static_type ctx dur_e) with
       | Some k -> (
+          if not datetime then pair_slot ();
           match dk_date_plus ctx ~subject ~subject_ot ~kind:k ~minus ~datetime:true date_e dur_e with
           | atoms, day, Some ms -> (atoms, day, ms)
           | _, _, None -> assert false)
       | None ->
-      date_step_unit ~datetime:true (static_type ctx dur_e);
+      date_step_unit ~datetime (static_type ctx dur_e);
+      if not datetime then pair_slot ();
       let tu = dt_time_unit_of ~doc:ctx.doc ~what:"datum-tijd arithmetic" (static_type ctx dur_e) in
       let da, dd, dm = dt_term ctx ~subject ~subject_ot date_e in
       let bn, tn, sn =

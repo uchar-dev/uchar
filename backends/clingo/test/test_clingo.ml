@@ -13837,6 +13837,73 @@ let () =
          [ pf_is "1" ])
     ~needle:(Ir_v0.Checks.duration_unknown_unit "vadem")
 
+(* WF-035 on date ± x, per form and precision: the form is decided on the
+   date type of either precision — two dates, a duration on the left, or a
+   date on the left and the step — and only then does the precision of the
+   date operand pick the day slot (expr_term) or the pair term (dt_term). So a
+   mixed-precision document hears the sentence the verifier and ref speak,
+   read from [Ir_v0.Checks], compared whole; ref's suite holds the same rows
+   as WV-3.8-datumvorm. *)
+let () =
+  let duur ?u n =
+    pf_l
+      ~typ:
+        (match u with
+         | None -> pf_n0
+         | Some a ->
+             Printf.sprintf
+               {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "%s" } }|}
+               a)
+      n
+  in
+  let dag = pf_a "dag" and moment = pf_a "moment" in
+  let d = pf_datum and m = datumtijd_t in
+  let case_text =
+    pf_case
+      ~instances:
+        [ {|{ "label": "J1", "objectType": "Jutter", "attributes": { "dag": { "date": "2026-03-15" }, "moment": { "dateTime": "2026-03-15T08:00:00" } }, "roles": {}, "characteristics": [] }|} ]
+      [ pf_cons ]
+  in
+  let open Ir_v0.Checks in
+  List.iter
+    (fun (name, doel, op, l, r, sentence) ->
+      let ir =
+        pf_doc
+          ~objecttypen:[ pf_ot [ ("dag", d); ("moment", m); ("doel", doel) ] ]
+          ~regels:[ pf_regel ~doel:"doel" (pf_bin ~typ:doel op l r) ]
+          ()
+      in
+      let irf = write_temp ".ir.json" ir in
+      let casef = write_temp ".case.json" case_text in
+      let doc = Ir_v0.Loader.load_file irf in
+      let case = Uchar_ref.Case.load_file doc casef in
+      Sys.remove irf;
+      Sys.remove casef;
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
+      | exception Uchar_ref.Value.Fault msg -> check (name ^ " (" ^ msg ^ ")") (msg = sentence))
+    [ ("WF-035 day: date + date", d, "plus", dag, dag, date_plus_date_refusal);
+      ("WF-035 ms: date - date", m, "minus", moment, moment, date_plus_date_refusal);
+      ("WF-035 mixed, day slot: day date + ms date", d, "plus", dag, moment, date_plus_date_refusal);
+      ("WF-035 mixed, pair slot: ms date - day date", m, "minus", moment, dag, date_plus_date_refusal);
+      ( "WF-035 day: duration - date", d, "minus", duur ~u:"wk" "2", dag,
+        duration_before_date_refusal ~minus:true );
+      ( "WF-035 ms: duration + date", m, "plus", duur ~u:"uur" "26", moment,
+        duration_before_date_refusal ~minus:false );
+      ( "WF-035 mixed, pair slot: duration + day date", m, "plus", duur ~u:"dg" "2", dag,
+        duration_before_date_refusal ~minus:false );
+      ("WF-035 day: unknown unit", d, "plus", dag, duur ~u:"vadem" "2", date_duration_unknown_unit "vadem");
+      ("WF-035 ms: unknown unit", m, "plus", moment, duur ~u:"vadem" "26", date_duration_unknown_unit "vadem");
+      ( "WF-035 mixed, pair slot: day date + unknown unit", m, "plus", dag, duur ~u:"vadem" "26",
+        date_duration_unknown_unit "vadem" );
+      ("WF-035 day: no time unit", d, "plus", dag, duur "2", date_duration_without_time_unit);
+      ("WF-035 ms: no time unit", m, "plus", moment, duur "26", date_duration_without_time_unit);
+      ( "WF-035 mixed, pair slot: day date + no time unit", m, "plus", dag, duur "2",
+        date_duration_without_time_unit );
+      ("WF-035 day: sub-day unit", d, "plus", dag, duur ~u:"uur" "2", sub_day_unit_on_day_date);
+      ( "WF-035 mixed, pair slot: day date + sub-day unit", m, "plus", dag, duur ~u:"uur" "26",
+        sub_day_unit_on_day_date ) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
