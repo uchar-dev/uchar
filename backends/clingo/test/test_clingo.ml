@@ -12837,6 +12837,195 @@ let () =
         Waarde ("name", `String "Rekendatum"), "WF-098",
         Option.get (Ir_v0.Checks.context_value_refusal "Rekendatum") ) ]
 
+(* THE OCAML TRANSLATION TABLE AGAINST THE NAME TABLE (delta B6: every
+   enumeration value in its IR-SPEC spelling). [Ir_v0.Spelling] is the one
+   table of the OCaml side: the loader decodes the wire with it, so ref, this
+   backend and the verifier read one spelling, and the Catala and F-logic
+   emitters encode with it. The section `waarden` of the repository's name
+   table (spec/proposals/v1-naamtabel.json) lists each family with its places
+   in the schema and its [v0, L5] pairs; the migration script and the Java
+   table are held to it, and this block holds the OCaml table to it. It is
+   the only thing that does for the values no document carries: negative,
+   concatenation, hourOf, minuteOf, secondOf, millisecondOf, dateWith,
+   dateTimeWith, elevenTest and exactDigits occur in no document of the
+   repository and in no other OCaml suite (measured at the L5 landing), so a
+   misspelling of one of them loads nothing and fails nothing elsewhere.
+
+   Per family: the wire values of [values] are the L5 side of `rijen`, and
+   those of [refused] the L5 side of `geweigerd`; at every place the family
+   names, the schema's enum outside a conditional subschema is [values] in
+   the order the schema writes them, plus the refused values exactly where
+   the family does not refuse them (`geweigerd_op`), with a null only at a
+   place of `null_blijft`; a free family has a string and no enum there, and
+   the names of a context value are [Spelling.context_value_names] in that
+   order. A place is the property's node const, or its $defs name where the
+   object has none, and the property name, as the name table's own test
+   reads the schema. Both files are found by walking up from the working
+   directory, and a missing one FAILS: a test that skips when its subject is
+   absent is a silent green. *)
+let () =
+  let naamtabel_pad = "spec/proposals/v1-naamtabel.json"
+  and schema_pad = "spec/schema/uchar-ir-v1.schema.json" in
+  let rec wortel dir =
+    if Sys.file_exists (Filename.concat dir naamtabel_pad) then Some dir
+    else
+      let op = Filename.dirname dir in
+      if op = dir then None else wortel op
+  in
+  match wortel (Sys.getcwd ()) with
+  | None ->
+      check
+        ("naamtabel: " ^ naamtabel_pad ^ " niet gevonden vanaf " ^ Sys.getcwd ()
+       ^ " — deze toets leest de sectie waarden en slaat niet over")
+        false
+  | Some root ->
+      let lees pad = Yojson.Safe.from_file (Filename.concat root pad) in
+      let tabel = lees naamtabel_pad and schema = lees schema_pad in
+      let veld k = function `Assoc kvs -> List.assoc_opt k kvs | _ -> None in
+      let strings = function
+        | Some (`List xs) -> List.filter_map (function `String s -> Some s | _ -> None) xs
+        | _ -> []
+      in
+      (* the L5 side of a list of [v0, L5] pairs; anything else is a defect of
+         the name table, reported by name rather than skipped *)
+      let l5_kant familie wat = function
+        | Some (`List paren) ->
+            List.filter_map
+              (function
+                | `List [ _; `String l5 ] -> Some l5
+                | p ->
+                    check
+                      (Printf.sprintf "naamtabel: %s: %s bevat %s, geen paar [v0, L5]" familie wat
+                         (Yojson.Safe.to_string p))
+                      false;
+                    None)
+              paren
+        | None -> []
+        | Some j ->
+            check (Printf.sprintf "naamtabel: %s: %s is %s, geen lijst" familie wat (Yojson.Safe.to_string j)) false;
+            []
+      in
+      let wire (f : _ Ir_v0.Spelling.family) = (List.map fst f.values, List.map fst f.refused) in
+      let ocaml =
+        let module S = Ir_v0.Spelling in
+        [ ("Number.sign", wire S.sign);
+          ("Characteristic.kind", wire S.characteristic_kind);
+          ("granularity", wire S.granularity);
+          ("RuleVersion.presentation", wire S.presentation);
+          ("AllocationVersion.method", wire S.method_);
+          ("Comparison.op", wire S.comparison_op);
+          ("Binary.op", wire S.binary_op);
+          ("Rounding.mode", wire S.rounding_mode);
+          ("Aggregation.kind", wire S.aggregation_kind);
+          ("BuiltinCall.kind", wire S.builtin_kind);
+          ("Predicate.kind", wire S.predicate_kind);
+          ("quantifier", wire S.quantifier);
+          ("ContextValue.name", (S.context_value_names, []));
+          ("WholePeriod.granularity", wire S.whole_period_granularity);
+          ("Diagnostic.severity", wire S.severity);
+          ("Date.precision", wire S.precision) ]
+      in
+      (* the schema's enums, per place: (place, enum, under a condition) *)
+      let enums = ref [] and velden = ref [] in
+      let rec loop (o : Yojson.Safe.t) tag cond =
+        match o with
+        | `List xs -> List.iter (fun x -> loop x tag cond) xs
+        | `Assoc kvs ->
+            let props = match List.assoc_opt "properties" kvs with Some (`Assoc p) -> Some p | _ -> None in
+            let tag =
+              match Option.bind props (List.assoc_opt "node") with
+              | Some (`Assoc nd) -> ( match List.assoc_opt "const" nd with Some (`String c) -> c | _ -> tag)
+              | _ -> tag
+            in
+            Option.iter
+              (List.iter (fun (k, v) ->
+                   match v with
+                   | `Assoc pv when k <> "node" ->
+                       let plaats = tag ^ "." ^ k in
+                       if not cond then velden := (plaats, pv) :: !velden;
+                       (match List.assoc_opt "enum" pv with
+                        | Some (`List e) -> enums := (plaats, e, cond) :: !enums
+                        | _ -> ())
+                   | _ -> ()))
+              props;
+            List.iter
+              (fun (k, v) ->
+                match (k, v) with
+                | "properties", `Assoc ps -> List.iter (fun (_, pv) -> loop pv tag cond) ps
+                | _ -> loop v tag (cond || List.mem k [ "if"; "then"; "else"; "not" ]))
+              kvs
+        | _ -> ()
+      in
+      (match veld "$defs" schema with
+       | Some (`Assoc defs) -> List.iter (fun (naam, d) -> loop d naam false) defs
+       | _ -> check "naamtabel: het schema draagt geen $defs" false);
+      let families = match veld "waarden" tabel with Some (`List fs) -> fs | _ -> [] in
+      let namen = List.filter_map (fun f -> match veld "familie" f with Some (`String n) -> Some n | _ -> None) families in
+      check
+        (Printf.sprintf "naamtabel: de sectie waarden draagt precies de families van de OCaml-tabel, in haar volgorde (naamtabel: %s)"
+           (String.concat ", " namen))
+        (namen = List.map fst ocaml);
+      let toon xs = "[" ^ String.concat "; " xs ^ "]" in
+      let sorteer = List.sort compare in
+      List.iter
+        (fun f ->
+          match veld "familie" f with
+          | Some (`String familie) when List.mem_assoc familie ocaml ->
+              let waarden, geweigerd = List.assoc familie ocaml in
+              let rijen = l5_kant familie "rijen" (veld "rijen" f)
+              and weigering = l5_kant familie "geweigerd" (veld "geweigerd" f) in
+              check
+                (Printf.sprintf "naamtabel: %s: de wirewaarden van values zijn de L5-kant van rijen (OCaml %s, naamtabel %s)"
+                   familie (toon waarden) (toon rijen))
+                (sorteer waarden = sorteer rijen);
+              check
+                (Printf.sprintf "naamtabel: %s: refused is de L5-kant van geweigerd (OCaml %s, naamtabel %s)"
+                   familie (toon geweigerd) (toon weigering))
+                (sorteer geweigerd = sorteer weigering);
+              let vrij = veld "vrij" f = Some (`Bool true) in
+              if vrij then
+                check
+                  (Printf.sprintf "naamtabel: %s: de namen zijn Spelling.context_value_names, in die volgorde (OCaml %s, naamtabel %s)"
+                     familie (toon waarden) (toon rijen))
+                  (waarden = rijen);
+              let geweigerd_op = strings (veld "geweigerd_op" f)
+              and null_blijft = strings (veld "null_blijft" f) in
+              List.iter
+                (fun plaats ->
+                  let decl = List.filter_map (fun (p, e, c) -> if p = plaats && not c then Some e else None) !enums in
+                  if vrij then
+                    check
+                      (Printf.sprintf "naamtabel: %s: %s is in het schema een vrije string zonder enum" familie plaats)
+                      (decl = []
+                      && List.exists (fun (p, _) -> p = plaats) !velden
+                      && List.for_all
+                           (fun (p, pv) -> p <> plaats || List.assoc_opt "type" pv = Some (`String "string"))
+                           !velden)
+                  else
+                    match decl with
+                    | [ enum ] ->
+                        let schrijft = List.filter_map (function `String s -> Some s | _ -> None) enum in
+                        let null_ok = (not (List.mem `Null enum)) || List.mem plaats null_blijft in
+                        let gewoon = List.filter (fun w -> not (List.mem w geweigerd)) schrijft
+                        and bij_naam = List.filter (fun w -> List.mem w geweigerd) schrijft in
+                        let toegelaten = if List.mem plaats geweigerd_op then [] else geweigerd in
+                        check
+                          (Printf.sprintf
+                             "naamtabel: %s: de enum op %s is values in schemavolgorde, plus de geweigerde waar ze niet geweigerd worden (schema %s, OCaml %s, geweigerd %s)"
+                             familie plaats (toon schrijft) (toon waarden) (toon geweigerd))
+                          (null_ok && gewoon = waarden && sorteer bij_naam = sorteer toegelaten
+                          && List.length schrijft + (if List.mem `Null enum then 1 else 0) = List.length enum)
+                    | ds ->
+                        check
+                          (Printf.sprintf "naamtabel: %s: het schema draagt op %s %d enum(s) buiten een voorwaarde, verwacht één"
+                             familie plaats (List.length ds))
+                          false)
+                (strings (veld "plaatsen" f))
+          | Some (`String familie) ->
+              check ("naamtabel: de familie " ^ familie ^ " staat niet in de OCaml-tabel van deze toets") false
+          | _ -> check "naamtabel: een familie zonder naam" false)
+        families
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
