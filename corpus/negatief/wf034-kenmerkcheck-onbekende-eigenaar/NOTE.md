@@ -45,21 +45,34 @@ characteristic-check positions the goldens hold, one at a time: 96 of 96
 stayed verifier-clean under the verifier of the day before this card, and none
 does now.
 
-**Executor observability.** Both OCaml executors are **blind by
-construction** — neither reads the field. All four cases of this document's
-host golden (`anchor/jutterswet-waardestelling`) replay to their pinned
-expectations under `ref` and under the ASP backend, before and after; and on
-`jutterswet-wachtploeg` all three spellings above are `PASS (4 expectations)`
-in both. That is the same shape as the fifth wave's bean fields: the
-differential square has nothing to catch, and only the verifier and the
-bean-model executor read the field at all.
+**Executor observability.** When this witness landed (2026-09-06) both OCaml
+executors were **blind by construction** — neither read the field. All four
+cases of this document's host golden (`anchor/jutterswet-waardestelling`)
+replayed to their pinned expectations under `ref` and under the ASP backend,
+before and after; and on `jutterswet-wachtploeg` all three spellings above
+were `PASS (4 expectations)` in both. That was the same shape as the fifth
+wave's bean fields: the differential square had nothing to catch, and only the
+verifier and the bean-model executor read the field at all. Since WF-100
+(2026-09-10) both OCaml executors read it (`RUNTIME-SEMANTICS.md` ch. 5.8b).
+Re-measured 2026-09-25: on all four cases of the host golden `ref` faults at
+evaluation and the ASP backend at translation, both with `characteristic check
+"gemeld" is hosted on "Bestaatniet" while the subject is "Vondst": the owner
+names the object the check is about (WF-100), and this reader has no other
+object to read`; on `jutterswet-wachtploeg` only the absent `host` still
+replays (`PASS (4 expectations)` in both), and `"Wachtpost"` and
+`"Bestaatniet"` fault in both with that sentence, naming `actief`, the host
+and the subject `Jutter`.
 
 **What the arm does NOT close**, stated so the silence is not mistaken for
-coverage: whether the named type *declares* the characteristic. The verifier's
-declared-characteristic cross is keyed on the SUBJECT, and making an explicit
-`host` override the subject for it decides which owner is authoritative —
-a semantics question rather than a resolution one, and one this card has no
-mandate to settle. It is recorded in the ch. 4.6 open list.
+coverage: whether the named type *declares* the characteristic. When this
+witness landed the verifier's declared-characteristic cross was keyed on the
+SUBJECT, and making an explicit `host` override the subject for it decided
+which owner is authoritative — a semantics question rather than a resolution
+one, which that card had no mandate to settle and recorded in the ch. 4.6 open
+list. The maintainer settled it on 2026-09-10 in the field's favour: WF-100
+(`spec/IR-SPEC.md` ch. 4.6 (q1)) keys the cross on `host`, witnessed by
+`wf100-eigenaar-verklaart-kenmerk-niet`. This arm still asks only whether the
+name resolves.
 
 *Measured breadth:* zero documents lose anything. Of the 190 characteristic
 checks the four zones held before this card, **2** carry an explicit
