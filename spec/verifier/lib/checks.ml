@@ -3306,8 +3306,11 @@ let wf033 ctx =
         List.filter_map (fun (n, _, _) -> Option.map (fun n -> norm (strip_version n)) n) entries)
       (form_arrays ctx)
   in
-  let oc_by_name n =
-    List.find_opt
+  (* every version of the object creation a member names: since L4 each
+     version is a record of its own, and a guard is a property of a
+     version, so each one is read *)
+  let ocs_by_name n =
+    List.filter
       (fun r ->
         match r.oc_naam with
         | Some m -> norm (strip_version m) = norm (strip_version n)
@@ -3325,7 +3328,7 @@ let wf033 ctx =
         leden
       @
       if g.recursief then
-        let ocs = List.filter_map oc_by_name leden in
+        let ocs = List.map ocs_by_name leden |> List.filter (( <> ) []) in
         let fc_member lid =
           List.exists
             (fun (f : resolved_feit_creatie) ->
@@ -3343,13 +3346,15 @@ let wf033 ctx =
          else [])
         @ List.concat_map
             (fun oc ->
+              (* a version of a form with several carries its number in its
+                 name ('<form> #2'), so the sentence names the version *)
               if oc.oc_voorwaarde = None then
                 [ v "WF-033" at
                     ("unguarded object creation '"
                      ^ Option.value oc.oc_naam ~default:"?"
                      ^ "' in a recursive group") ]
               else [])
-            ocs
+            (List.concat ocs)
       else [])
     (List.mapi (fun i g -> (i, g)) ctx.doc.regel_groepen)
 
