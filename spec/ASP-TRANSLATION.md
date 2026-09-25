@@ -2875,7 +2875,14 @@ multiplicative fence (the 46340 operand bound, which
 faults at large magnitude) — while the split's own scale backstop (`the
 split money multiplication expects a 2-decimal money and a rate of at most
 4 decimals …`) is unreachable: `money_mult_shape` routes on the scales the
-translation derives for the terms, the same scales the backstop tests. The strict
+translation derives for the terms, the same scales the backstop tests. The
+negative-operand fences of the rounding, the rounded division and the split
+read the sign where no multiplication can have wrapped it: a product's sign
+from its operands (negative where their signs differ), through a coalesce or
+`Let` binding from atoms of that binding's own rule, and a division's
+dividend and divisor before their pre-scaling. A product or a dividend past
+its range fence therefore meets that fence alone, and a negative product
+that wraps to a positive term is still named. The strict
 `Let` itself has no fault of its own: a leeg value is underivability, not
 a fault (the S18 coincidence). It does, however, **materialise its binder
 at a finite integer scale** (the value's out-scale, RUNTIME-SEMANTICS
