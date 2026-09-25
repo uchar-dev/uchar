@@ -180,9 +180,11 @@ final class RuleChecker {
             model.regelGroepen.add(new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(naam, recursief, leden, bron(g.kaleNaam()), line));
             if (!recursief) continue;
 
-            // §9.10 fase-2: which members are objectcreatie rules (by bare name, the same key the IR uses).
+            // §9.10 fase-2: which members are objectcreatie rules. The model holds one entry per version, named
+            // "<naam> #<i>" when the rule has several, so members and creations meet on the name without the version
+            // suffix, the key the verifier uses (WF-033), and each version is a member of its own.
             List<ResolvedObjectCreatie> creaties = model.objectCreaties.stream()
-                    .filter(oc -> leden.stream().anyMatch(l -> l.equals(oc.naam()))).toList();
+                    .filter(oc -> leden.stream().anyMatch(l -> zonderVersie(l).equals(zonderVersie(oc.naam())))).toList();
             if (creaties.isEmpty()) {
                 model.diagnostics.add(new Diagnostic(Severity.ERROR,
                         "recursieve regelgroep '" + naam + "' zonder objectcreatieregel — de 'is recursief'-markering "

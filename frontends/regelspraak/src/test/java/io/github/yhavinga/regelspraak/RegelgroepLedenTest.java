@@ -70,4 +70,35 @@ class RegelgroepLedenTest {
                         + "recursive group"),
                 m.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList());
     }
+
+    /** A creation with two versions is one model entry per version, named {@code <naam> #<i>}, and each version is a
+     *  member of its group. Measured on the frontend before this: every such recursive group was refused as having no
+     *  object creation, also with both versions guarded, a document the verifier accepts. */
+    @Test void een_objectcreatie_met_twee_versies_is_met_elke_versie_lid() {
+        String groep = """
+            Objecttype de Wachter (mv: Wachters) (bezield)
+                de rang Numeriek (geheel getal);
+
+            Feittype opvolging
+                de voorganger Wachter
+                de opvolger (mv: opvolgers) Wachter
+            Eén voorganger heeft meerdere opvolgers
+
+            Regelgroep estafette is recursief
+            Regel werf de opvolger
+                geldig vanaf 2025 t/m 2025
+                    Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1%s.
+                geldig vanaf 2026
+                    Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 2%s.
+            """;
+        String bewaakt = "\n        indien de rang van de Wachter kleiner is dan 5";
+        java.util.function.BiFunction<String, String, List<String>> meldingen = (v1, v2) ->
+                Resolver.resolve(groep.formatted(v1, v2)).diagnostics.stream()
+                        .map(d -> d.severity() + " " + d.message()).toList();
+        String onbewaakt = "ERROR recursieve regelgroep 'estafette': unguarded object creation 'werf de opvolger #%d' in a "
+                + "recursive group";
+        assertEquals(List.of(), meldingen.apply(bewaakt, bewaakt));
+        assertEquals(List.of(onbewaakt.formatted(2)), meldingen.apply(bewaakt, ""));
+        assertEquals(List.of(onbewaakt.formatted(1), onbewaakt.formatted(2)), meldingen.apply("", ""));
+    }
 }
