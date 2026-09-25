@@ -107,7 +107,7 @@ is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ]
 # the slice's WHOLE verifier report. Stale in either direction: a holdout that turns clean, that is
 # rejected at another rule or pointer as well, or whose key resolves to no slice fails the gate.
 #   toka-24 — a property of the casus, not an emitter defect: the clamp's minimum is a literal written
-#             WITH a unit (EUR) over a base whose operands are declared without one — the one-sided pair
+#             WITH a unit over a base whose operands are declared without one — the one-sided pair
 #             WF-099 refuses and IR-SPEC ch. 4.1 leaves open as one decision for WF-023, WF-035,
 #             WF-036 and WF-099 together. The frontend writes the unit the source writes and leaves a
 #             unitless bound unitless for the verifier to adopt; every executor replays the slice.

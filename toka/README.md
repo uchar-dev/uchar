@@ -71,13 +71,13 @@ verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
 - **The standing: 28 of the 29 slices are verifier-clean.** `toka-24` is held
   out by gate 11, pinned to the one report it draws (WF-099 at
   `/rules/rules/0/versions/0/value/base/minimum`): the casus writes a clamp's
-  minimum as a literal with a unit (EUR) over a base whose operands are
-  declared without one, the one-sided unit pair that IR-SPEC ch. 4.1 leaves
-  open as one decision for WF-023, WF-035, WF-036 and WF-099 together. That is
-  a property of the casus and not of the emitter, which writes the unit the
-  source writes; every executor replays the slice. The holdout fails when it
-  goes stale in either direction: when the slice turns clean, or when it draws
-  any other report.
+  minimum as a literal with a unit over a base whose operands are declared
+  without one, the one-sided unit pair that IR-SPEC ch. 4.1 leaves open as one
+  decision for WF-023, WF-035, WF-036 and WF-099 together. That is a property
+  of the casus and not of the emitter, which writes the unit the source
+  writes; every executor replays the slice. The holdout fails when it goes
+  stale in either direction: when the slice turns clean, or when it draws any
+  other report.
 - **The casus dump is not a well-formed program, and is not meant to be.** As
   one document it draws 15 reports, one per pointer and sentence: since the
   card `verifier-allocatie-keten` (the same day) WF-026 no longer repeats one
