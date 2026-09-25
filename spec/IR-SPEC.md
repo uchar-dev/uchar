@@ -7332,7 +7332,7 @@ ch. 3.12), and it belongs to whoever measures it.
   construction). **The filled count** (`filledCount`, ch. 4.3; landed
   2026-09-20) takes exactly ONE
   argument, MUST carry an `elementType`, and that one argument MUST be the
-  SET source — three arms, of which the last two are the only clauses of
+  SET source — three arms, of which the last two are clauses of
   this rule that demand a form instead of forbidding one, and they are
   written that way because the alternatives are occupied rather than
   absent: the subject's own read has one value, and a count source hands
