@@ -74,6 +74,21 @@
       "characteristic": "oud"
     },
     {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "keurig"
+    },
+    {
       "kind": "consistent"
     }
   ]

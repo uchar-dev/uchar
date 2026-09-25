@@ -90,6 +90,26 @@
       "characteristic": "oud"
     },
     {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V5",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V6",
+      "characteristic": "keurig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V7",
+      "characteristic": "keurig"
+    },
+    {
       "kind": "inconsistent",
       "rule": "keuring naar ten minste twee criteria",
       "label": "V4"

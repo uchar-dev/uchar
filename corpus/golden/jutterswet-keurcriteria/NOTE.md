@@ -11,11 +11,14 @@ consistency is violated where it does not (the card
 aantal-bronarm-en-drools-lader).
 
 The model. A `Vondst` with `gewicht` (two decimals), `lengte` and `jaartal`
-(whole numbers), and the characteristic `oud`. The one rule, "Een Vondst is
-oud indien zijn jaartal kleiner is dan 1900", is here so that every case
-carries a derived expectation and fails under the no-op guard (gate 7); the
-consistencies alone would leave a case that expects `consistent` passing on
-the raw input.
+(whole numbers), and the characteristics `oud` and `keurig`. The rule "Een
+Vondst is oud indien zijn jaartal kleiner is dan 1900" is here so that every
+case carries a derived expectation and fails under the no-op guard (gate 7);
+the consistencies alone would leave a case that expects `consistent` passing
+on the raw input. The rule "Een Vondst is keurig indien hij aan precies één
+van de volgende voorwaarden voldoet" carries K5's composite as its condition,
+word for word, so that the assertion and the condition read one composite
+side by side: `keurig` is present on exactly the finds where K5 holds.
 
     K1  ten minste twee van: gewicht > 0, lengte > 10, jaartal < 1900
     K2  ten hoogste één van: gewicht > 50, lengte > 50, jaartal < 1500
@@ -29,14 +32,14 @@ makes its criterion onwaar, ch. 1.2d); under K5 the nested composite is one
 criterion, and it holds where one of its own two does (the column in
 brackets counts those):
 
-    find  gewicht lengte jaartal   K1  K2  K3  K4  K5      oud
-    V1       2.50     12    1850    3   0   1   0   1 (1)   yes
-    V2       0.00     25    1899    2   0   1   0   1 (0)   yes
-    V3      60.00     12    1850    3   1   1   0   1 (2)   yes
-    V4       0.00      5    1950    0   0   0   0   0 (0)   no
-    V5       leeg     12    leeg    1   0   0   0   0 (0)   no
-    V6      60.00     60    1850    3   2   2   0   2 (2)   yes
-    V7      -1.00     12    1850    2   0   0   1   1 (1)   yes
+    find  gewicht lengte jaartal   K1  K2  K3  K4  K5      oud  keurig
+    V1       2.50     12    1850    3   0   1   0   1 (1)   yes  yes
+    V2       0.00     25    1899    2   0   1   0   1 (0)   yes  yes
+    V3      60.00     12    1850    3   1   1   0   1 (2)   yes  yes
+    V4       0.00      5    1950    0   0   0   0   0 (0)   no   no
+    V5       leeg     12    leeg    1   0   0   0   0 (0)   no   no
+    V6      60.00     60    1850    3   2   2   0   2 (2)   yes  no
+    V7      -1.00     12    1850    2   0   0   1   1 (1)   yes  yes
 
 `case1-binnen-de-drempels.json` holds V1, V2 and V3 and expects the channel
 empty: every consistency holds for all three, K1 exactly at its threshold on
@@ -68,6 +71,15 @@ Since then it folds a nested composite as one criterion, at any depth, as the
 DRL-text branch lowers it. Making `ten minste` strict in that fold fails case
 1 in the exec-model branch, on K5 at V1 (measured). Case 2 gained the three K5
 pins; case 1 did not change.
+
+The rule `keurigheid van een vondst` came with the same round, for the same
+gap in the exec-model branch's rule conditions: it excluded the rule
+(transpiler SKIP, `voorwaarde buiten Phase-B scope`), as its counting fold
+read leaf criteria only, while the DRL-text branch, `ref` and the ASP
+backend derived `keurig` as above. That fold now reads a nested composite as
+the assertion does. The same strict `ten minste` fails `keurig` on V1 in
+case 1 and on V7 in case 2 (measured). Each case gained the `keurig` pins of
+its finds.
 
 The document is emitted from `bron.rgs` by the RegelSpraak frontend. Until
 the card it was written by hand: the frontend parsed the subject-led form

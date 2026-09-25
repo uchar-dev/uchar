@@ -3375,10 +3375,13 @@ public final class ExecModelTranspiler {
                 return aggregatieVoorwaarde(av, pattern, subject, subjectVar, s.kwantor() == Conditie.Kwantor.GEEN);
             // §13.4.14.4 counting quantifiers: GEEN = none hold, TEN_MINSTE/TEN_HOOGSTE/PRECIES = count vs N. The
             // children fold with ||/!/count, so a hoisted exists/not (or any non-leaf) cannot ride along — every
-            // onderdeel must reduce to a fact-only Predicate1, else the WHOLE compound skips (never a partial gate).
+            // onderdeel must reduce to a fact-only Predicate1, else the WHOLE compound skips (never a partial gate). A
+            // composite among them is one criterion that holds as its own fold does, at any depth (subjectConditie),
+            // as the DRL-text branch lowers it and as a consistency's assertion reads it here.
             List<Predicate1<Object>> kinderen = new ArrayList<>();
             for (Conditie sub : s.onderdelen()) {
-                Predicate1<Object> lp = leafPredicate(sub, subject);
+                Predicate1<Object> lp = sub instanceof Conditie.Samengesteld genest
+                        ? subjectConditie(genest, subject) : leafPredicate(sub, subject);
                 if (lp == null) return null;
                 kinderen.add(lp);
             }
@@ -7791,10 +7794,11 @@ public final class ExecModelTranspiler {
     }
     private static String defaultsReden(Default r) { return r.bron() == null ? "<default>" : r.bron(); }
 
-    /** A subject-local justification predicate ({@code subject -> boolean}): a compound recurses per its kwantor,
+    /** A subject-local condition predicate ({@code subject -> boolean}): a compound recurses per its kwantor,
      *  every leaf goes through the shared {@link #leafPredicate} (kenmerk / own-or-navigated comparison / predicaat).
      *  null when ANY part is not reducible (a global-reading bullet, a deeper form leafPredicate declines) — the
-     *  caller then fences the whole defaults group. Generalises {@link #leafCompound} to arbitrary nesting. */
+     *  caller then declines the whole form: a defaults group's justification, a consistency's assertion, a composite
+     *  among a rule condition's counted criteria. Generalises {@link #leafCompound} to arbitrary nesting. */
     private Predicate1<Object> subjectConditie(Conditie c, Objecttype subject) {
         if (c == null) return null;
         if (c instanceof Conditie.Samengesteld sam) {
