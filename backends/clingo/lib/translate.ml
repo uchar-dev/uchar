@@ -2264,7 +2264,7 @@ let range_guard ctx ~subject ~body terms_with_bounds =
 
 (* the split money × rate cent encoding (§5/S18(c)), shared verbatim by the
    rule-level Rounding{money×rate} and the closed-body money multiplication (one
-   encoding). Rounding a 2-decimal money M by a 4-decimal rate R to the cent: the
+   encoding). Rounding a 2-decimal money M by a rate R at scale 10^4 to the cent: the
    naive product M·R at scale 10^6 wraps clingo's machine integers at tutorial
    magnitude, so the rate splits into two scale-2 halves — Rh = R/100, Rl = R\100
    — giving round(M·R/10^4) half-up as C = A/100 + (100·(A\100) + M·Rl + 5000)/10^4
@@ -2298,6 +2298,26 @@ let money_mult_body ~a ~c ~tm ~tr =
     Printf.sprintf "(%s) >= 0" tr;
     Printf.sprintf "%s = (%s)*((%s)/100)" a tm tr;
     Printf.sprintf "%s = %s/100 + (100*(%s\\100) + (%s)*((%s)\\100) + 5000)/10000" c a a tm tr ]
+
+(* the rate term of the split encoding, at scale 10^4. A rate typed at fewer
+   than four decimals is the same rational at scale 10^4 — 0,875 at 10^3 is
+   8750 at 10^4 — so its term is multiplied up exactly, and the multiplied
+   term is fenced: past max_int31/k it would wrap, and a wrapped rate is a
+   plausible wrong answer rather than a loud one. A term that arrives ABOVE
+   scale 10^4 (a literal whose lexeme runs past the fourth decimal) is not
+   brought down; the backstop refuses it. [body] grounds the fence. *)
+let money_mult_rate ctx ~subject ~body ~sm ~tr ~sr =
+  if sm <> 100 || sr < 1 || sr > 10000 || 10000 mod sr <> 0 then
+    fault
+      "the split money multiplication expects a 2-decimal money and a rate of at most 4 decimals \
+       (%d,%d)"
+      sm sr;
+  let k = 10000 / sr in
+  if k = 1 then tr
+  else begin
+    range_guard ctx ~subject ~body [ (tr, max_int31 / k) ];
+    Printf.sprintf "(%s*%d)" tr k
+  end
 
 (* --- sum types (RUNTIME-SEMANTICS ch. 9; ASP-TRANSLATION S14) ------------ *)
 
@@ -8124,9 +8144,12 @@ and filter_condition ctx (c : conditie) : string list =
          corpus case for more)"
 
 (* is [basis] a money × rate product (possibly under ch. 10.6 Lets)? — a
-   2-decimal money multiplied by a 4-decimal rate, the [Mult_mon_rat] shape
-   the plugin wraps in Rounding{halfAwayFromZero,2} (§5). The naive scale-6 product
-   wraps int31 at tutorial magnitude, so it takes the split encoding. *)
+   2-decimal money multiplied by a rate of one to four decimals: the
+   [Mult_mon_rat] shape the Catala plugin wraps in Rounding{halfAwayFromZero,2}
+   (§5) at four, and a RegelSpraak rate literal, which the frontend types at its
+   smallest scale, at fewer. The naive product wraps int31 at tutorial
+   magnitude, so it takes the split encoding, which brings the rate to scale
+   10^4 first ([money_mult_rate]). *)
 and money_mult_shape ctx (basis : expr) : bool =
   (* the peeled Lets' binders are in scope of the product, so a binder
      operand takes the type its Let's value has (B13: a binder read carries
@@ -8143,17 +8166,30 @@ and money_mult_shape ctx (basis : expr) : bool =
   in
   let rec go scope = function
     | Let { binder; value; body; _ } -> go ((norm binder, typ scope value) :: scope) body
-    | Binair { op = Maal; links = Some m; rechts = Some r; _ } ->
-        dec scope m = Some 2 && dec scope r = Some 4
+    | Binair { op = Maal; links = Some m; rechts = Some r; _ } -> (
+        dec scope m = Some 2
+        &&
+        match dec scope r with
+        | Some 4 -> true
+        (* below four decimals the product is rerouted only where the split
+           carries more than the ordinary product path. A unit-carrying operand
+           stays: the split refuses it ([unit_free_ok]), the ordinary path admits
+           the factor-free product ([mul_units_ok]). A whole-number rate stays:
+           its cent rounding is the identity, so the ordinary path carries every
+           sign, while the split refuses a negative operand (Catala's
+           Mult_mon_int, ASP-TRANSLATION S19) *)
+        | Some d -> d >= 1 && d < 4 && eff_unit ctx m = None && eff_unit ctx r = None
+        | None -> false)
     | _ -> false
   in
   go [] basis
 
 (* the split money multiplication (S-section (c)): rounding a 2-decimal money
-   M times a 4-decimal rate R to the cent. The naive product M·R at scale 10^6
-   wraps clingo's machine integers at tutorial magnitude (2000000·2100 > 2^31),
-   so the rate is split into two scale-2 halves — Rh = R/100, Rl = R\100 —
-   giving M·R/10^4 = M·Rh/10^2 + M·Rl/10^4. The rounded cent is
+   M times a rate R, brought to scale 10^4 by [money_mult_rate], to the cent.
+   The naive product M·R at scale 10^6 wraps clingo's machine integers at
+   tutorial magnitude (2000000·2100 > 2^31), so the rate is split into two
+   scale-2 halves — Rh = R/100, Rl = R\100 — giving
+   M·R/10^4 = M·Rh/10^2 + M·Rl/10^4. The rounded cent is
    C = qA + (100·rA + M·Rl + 5000)/10^4 with A = M·Rh, qA = A/100, rA = A\100:
    demonstrably round(M·R/10^4) half-up for non-negative operands (ref's
    round_z Rekenkundig), each partial product fenced by a viol/2 witness so no
@@ -8191,10 +8227,8 @@ and translate_money_mult ctx ~subject ~subject_ot ~basis : string list * string 
      value atoms, never in these direct operands) *)
   let ma, tm, sm = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot m) in
   let ra, tr, sr = coalesce0 ctx ~subject ~subject_ot (expr_term ctx ~subject ~subject_ot r) in
-  if sm <> 100 || sr <> 10000 then
-    fault "the split money multiplication expects a 2-decimal money and a 4-decimal rate (%d,%d)" sm
-      sr;
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+  let tr = money_mult_rate ctx ~subject ~body:((base :: ctx.rule_guard) @ ma @ ra) ~sm ~tr ~sr in
   let gbody = String.concat ", " ((base :: ctx.rule_guard) @ ma @ ra) in
   (* the fences and halfAwayFromZero encoding are shared with the closed
      body (one encoding); here the value rides a subject-keyed helper predicate,
@@ -8231,9 +8265,7 @@ and closed_money_mult ctx ~guard_body ~witness ~basis : string list * string * i
   unit_free_ok ctx (Some r);
   let ma, tm, sm = closed_term ctx ~guard_body ~witness m in
   let ra, tr, sr = closed_term ctx ~guard_body ~witness r in
-  if sm <> 100 || sr <> 10000 then
-    fault "the split money multiplication expects a 2-decimal money and a 4-decimal rate (%d,%d)" sm
-      sr;
+  let tr = money_mult_rate ctx ~subject:witness ~body:(guard_body @ ma @ ra) ~sm ~tr ~sr in
   let gbody = String.concat ", " (guard_body @ ma @ ra) in
   money_mult_fences ctx ~subject:witness ~gbody ~tm ~tr;
   let a = fresh ctx "A" and c = fresh ctx "C" in

@@ -13195,20 +13195,25 @@ let () =
 (* THE SPLIT MONEY × RATE WITH A RATE OF FEWER THAN FOUR DECIMALS (the card
    clingo-tarief-decimalen). The split encoding of ASP-TRANSLATION S18(c) reads
    its rate at scale 10^4, and until this card [money_mult_shape] admitted a
-   rate TYPED at exactly four decimals. A rate typed at fewer is the same
-   rational at scale 10^4 — 0,875 at three decimals is 8750 at four — so the
-   encoding now brings it there exactly. Left on the ordinary product path such
-   a product meets the 46340 operand fence, which a monthly wage of 2400,00
-   (240000 at scale 2) already exceeds: the RegelSpraak frontend types a numeric
-   literal at its smallest scale, `0,8750` at three decimals, so its emission
-   of anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases while ref
-   and the Drools exec branch played them.
+   rate TYPED at exactly four decimals. A rate typed at one to three decimals is
+   the same rational at scale 10^4 — 0,875 at three decimals is 8750 at four —
+   so the encoding now brings it there exactly. Left on the ordinary product
+   path such a product meets the 46340 operand fence, which a monthly wage of
+   2400,00 (240000 at scale 2) already exceeds: the RegelSpraak frontend types a
+   numeric literal at its smallest scale, `0,8750` at three decimals, so its
+   emission of anchor/ww-herleving-inkomen was UNSAT in clingo on all ten cases
+   while ref and the Drools exec branch played them.
 
-   Every frame below that answers was red on the code before this card: UNSAT
-   on the operand fence at rule level, the catch-all refusal in a closed body.
-   The fence frame pins what the rescale must not do silently: an integer rate
-   times 10^4 can leave clingo's integer range, and a wrapped rate of 0,2704
-   would be a plausible wrong answer. *)
+   The frames that answer through the split were red on the code before this
+   card: UNSAT on the operand fence at rule level, the catch-all refusal in a
+   closed body. Three frames hold its edges. A whole-number rate is not
+   rerouted — its cent rounding is the identity and the ordinary path carries
+   a negative money there, which the split refuses — so that frame answers on
+   both sides of the card. The rescale must not wrap silently: a wrapped rate
+   is a plausible wrong answer. And the split refuses a negative operand where
+   the ordinary rounding path carried a negative times a negative (a positive
+   product): the price of the wider magnitudes, pinned so that a split that
+   learns signs has to say so here. *)
 
 let tarief_doc ~tarief_t ~rate ~product_decimals =
   replace ~tok:"@TARIEF@" ~by:tarief_t
@@ -13220,7 +13225,7 @@ let tarief_doc ~tarief_t ~rate ~product_decimals =
       { "node": "ObjectType", "name": "Werknemer", "animate": true, "plural": "Werknemers",
         "attributes": [
           { "node": "Attribute", "name": "maandloon",
-            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative" } },
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" } },
           { "node": "Attribute", "name": "tarief", "datatype": @TARIEF@ },
           { "node": "Attribute", "name": "inkomensgrens",
             "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" } } ],
@@ -13265,7 +13270,7 @@ let tarief_ref =
       "source": { "snippet": "zijn tarief" } }|}
 
 let tarief_number ~decimals =
-  Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "nonNegative" }|}
+  Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified" }|}
     (decimals = 0) decimals
 
 let tarief_case ~maandloon ?tarief ~grens () =
@@ -13381,10 +13386,14 @@ let clingo_fence_fires ~name ~ir ~case_text ~needle =
           let ws = Solve.diagnose program in
           check (label ^ " (" ^ String.concat "; " ws ^ ")") (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
       | out, Unix.WEXITED (10 | 30) ->
+          (* the rows can hold a value clingo cannot represent — that is why
+             the fence exists — so reading them may fault; that fault is part
+             of the failure, never a crash of the suite *)
           let answered =
             match Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) with
             | [] -> "clingo answered the rows"
             | ms -> "clingo answered: " ^ String.concat "; " ms
+            | exception Uchar_ref.Value.Fault m -> "clingo answered a model; reading the rows: " ^ m
           in
           check (label ^ " (" ^ answered ^ ")") false
       | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
@@ -13392,15 +13401,16 @@ let clingo_fence_fires ~name ~ir ~case_text ~needle =
       | _, _ -> check (label ^ " (clingo killed)") false)
 
 let () =
-  let geen_tarief = tarief_number ~decimals:2 in
+  (* the literal frames declare a tarief attribute they do not read *)
+  let ongelezen = tarief_number ~decimals:2 in
   (* the RegelSpraak emission: lexeme 0.8750, typed at three decimals, the
      product at five *)
   both_answer ~name:"money x rate: the literal 0.8750 typed at three decimals"
-    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.8750" ~decimals:3) ~product_decimals:"5")
     ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
   (* a lexeme at three decimals: the term itself arrives at scale 10^3 *)
   both_answer ~name:"money x rate: the literal 0.875 at three decimals"
-    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.875" ~decimals:3) ~product_decimals:"5")
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.875" ~decimals:3) ~product_decimals:"5")
     ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ());
   (* a rate attribute declared at three decimals, on both sides of the half:
      2400,04 × 0,125 = 300,005 rounds away from zero, 2400,03 × 0,125 =
@@ -13410,23 +13420,29 @@ let () =
     ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.04" ~tarief:"0.125" ~grens:"300.01" ());
   both_answer ~name:"money x rate: a three-decimal rate attribute, below the half"
     ~ir:attr3 ~case_text:(tarief_case ~maandloon:"2400.03" ~tarief:"0.125" ~grens:"300.00" ());
-  (* a whole-number rate is a rate of zero decimals: 3 is 30000 at scale 10^4 *)
-  let attr0 = tarief_doc ~tarief_t:(tarief_number ~decimals:0) ~rate:tarief_ref ~product_decimals:"2" in
-  both_answer ~name:"money x rate: a whole-number rate attribute"
-    ~ir:attr0 ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"3" ~grens:"7200.00" ());
-  (* 429497 × 10^4 leaves clingo's integer range and would wrap to 2704, a
-     rate of 0,2704 and an answer of 648,96; ref computes the true product *)
-  clingo_fence_fires ~name:"money x rate: a whole-number rate past the rescale range"
-    ~ir:attr0
-    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"429497" ~grens:"1030792800.00" ())
+  (* a whole-number rate stays on the ordinary path, which carries the sign *)
+  both_answer ~name:"money x rate: a whole-number rate keeps a negative money"
+    ~ir:(tarief_doc ~tarief_t:(tarief_number ~decimals:0) ~rate:tarief_ref ~product_decimals:"2")
+    ~case_text:(tarief_case ~maandloon:"-100.00" ~tarief:"3" ~grens:"-300.00" ());
+  (* 429496,8 at scale 10^1 is 4294968; times 10^3 it leaves clingo's integer
+     range and would wrap to 704, a rate of 0,0704 and an answer of 168,96 *)
+  let attr1 = tarief_doc ~tarief_t:(tarief_number ~decimals:1) ~rate:tarief_ref ~product_decimals:"3" in
+  clingo_fence_fires ~name:"money x rate: a one-decimal rate past the rescale range"
+    ~ir:attr1
+    ~case_text:(tarief_case ~maandloon:"2400.00" ~tarief:"429496.8" ~grens:"1030792320.00" ())
     ~needle:"arithmetic range exceeded (clingo grounds in machine integers)";
+  (* -100,00 × -0,5 = 50,00: the split refuses each negative operand *)
+  clingo_fence_fires ~name:"money x rate: two negative operands below four decimals"
+    ~ir:attr1
+    ~case_text:(tarief_case ~maandloon:"-100.00" ~tarief:"-0.5" ~grens:"50.00" ())
+    ~needle:"negative operand under money multiplication is not translated";
   (* the closed body: 2400,00 × 0,125 + 2400,00 × 0,250 = 900,00 *)
   both_answer ~name:"money x rate in a closed body: a three-decimal rate that reads the element"
     ~ir:tarief_fold_doc ~case_text:tarief_fold_case;
   (* a lexeme longer than four decimals arrives at scale 10^5; the rescale
      only multiplies, so this stays the split encoding's loud backstop *)
   faults_with ~name:"money x rate: a rate lexeme past four decimals"
-    ~ir:(tarief_doc ~tarief_t:geen_tarief ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
+    ~ir:(tarief_doc ~tarief_t:ongelezen ~rate:(tarief_literal ~lexeme:"0.87500" ~decimals:3) ~product_decimals:"5")
     ~case_text:(tarief_case ~maandloon:"2400.00" ~grens:"2100.00" ())
     ~needle:"the split money multiplication expects a 2-decimal money and a rate of at most 4 decimals (100,100000)"
 
