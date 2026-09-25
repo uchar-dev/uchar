@@ -11,7 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * between berekeningen is a WARNING (never the "in principe afgekeurd" hard ERROR — the spec
  * itself says cyclic-vs-recursive is not reliably automatable, and v2.3.0 gives no regelgroep
  * syntax to legitimize recursion with), and a same-instance self-derivation (the begrenzing/
- * clamp idiom) is tolerated diagnostics-free as a documented divergence.
+ * clamp idiom) is such a cycle too, of one node: the verifier refuses it under WF-045, and it gets
+ * the same WARNING.
  */
 class RecursieTest {
 
@@ -35,7 +36,7 @@ class RecursieTest {
                 () -> "de kringverwijzing-WARNING ontbreekt: " + m.diagnostics);
     }
 
-    @Test void zelfde_instantie_zelfafleiding_clamp_idioom_resolvet_zonder_diagnose() {
+    @Test void zelfde_instantie_zelfafleiding_clamp_idioom_is_een_kring_met_warning() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel begrens x
                 geldig altijd
