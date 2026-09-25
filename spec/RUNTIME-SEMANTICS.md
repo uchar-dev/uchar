@@ -5164,7 +5164,17 @@ justification is "the target is **gevuld** in the input facts" and
 whose consequence is that input value — the exact dual of the
 initialisation default (ch. 7.3). Like the initialisation default's, its
 justification reads the input world and contributes no dependency
-edges. This is a re-description of ch. 7.1's "the target keeps what
+edges. On a characteristic target no decision removes what the virtual
+input default holds: a do-not-attribute decision displaces the lower
+defaults and derives nothing, which is not a retraction (ch. 7.1), so a
+characteristic the case input sets stays set — the input is a source of
+the characteristic beside the attribution (§3.5) — whereas on an
+attribute target a deciding default replaces the input value
+(ch. 7.6.2); worked, absolute, through all three executors (gates 5, 6
+and 12): the anchor `ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade`,
+whose blocking default decides do-not-attribute over an input
+`recht op uitkering`, leaves that characteristic **present**. This is a
+re-description of ch. 7.1's "the target keeps what
 the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
 "the highest default that decides wins" alone — and it generalises beyond
 declared defaults:
