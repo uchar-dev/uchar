@@ -135,6 +135,11 @@ let num_money : I.datatype = Numeriek { geheel = false; decimalen = 2; teken = S
    clingo's does-not-fit fence). *)
 let rat_scale = 4
 let num_rat : I.datatype = Numeriek { geheel = false; decimalen = rat_scale; teken = Some Onbepaald; eenheid = None }
+
+let not_whole : I.datatype -> I.datatype = function
+  | Numeriek n -> Numeriek { n with geheel = false }
+  | Percentage p -> Percentage { p with geheel = false }
+  | d -> d
 let always_true : I.conditie = Samengesteld { kwantor = Alle; drempel = 0; onderdelen = []; bron = Some "altijd" }
 
 let optional_dt (element : I.datatype) : I.datatype =
@@ -606,7 +611,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | ELocation (ToplevelVar { name; _ }) ->
             List.assoc_opt (TopdefName.base (M.remove name)) functions
         | _ -> None)
-    | EAppOp { op; args = a :: _; _ } -> (
+    | EAppOp { op; args = a :: rest; _ } -> (
         match M.remove op with
         | Op.Length -> Some num_int
         (* the decimal casts yield an exact rational (num_rat): the operand is a
@@ -614,6 +619,21 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
            which the money × rate split (money_mult_shape) reads to route a
            computed-rate product through the split encoding *)
         | Op.ToRat_int | Op.ToRat_mon -> Some num_rat
+        (* RUNTIME-SEMANTICS ch. 2.3: a product is typed not whole, whatever
+           its operands, as the RegelSpraak frontend types it *)
+        | Op.Mult_int_int | Op.Mult_dur_int | Op.Mult_rat_rat | Op.Mult_mon_int
+        | Op.Mult_mon_rat ->
+            Option.map not_whole (infer_dt ~env a)
+        (* ch. 2.3: a sum or a difference is whole iff both operands are, so a
+           product on either side makes it not whole (WF-091 crosses this) *)
+        | Op.Add_int_int | Op.Add_mon_mon | Op.Add_dur_dur | Op.Add_rat_rat
+        | Op.Sub_int_int | Op.Sub_mon_mon | Op.Sub_dur_dur | Op.Sub_rat_rat -> (
+            match (infer_dt ~env a, rest) with
+            | Some (Numeriek l), b :: _ -> (
+                match infer_dt ~env b with
+                | Some (Numeriek { geheel = false; _ }) -> Some (Numeriek { l with geheel = false })
+                | _ -> Some (Numeriek l))
+            | t, _ -> t)
         | _ -> infer_dt ~env a)
     | _ -> None
   in
