@@ -5386,7 +5386,10 @@ where 2026-09-19 and 2026-09-11 left it. Named open flank, not a closed one.
   (`wf110-unie-een-tak`); **(c)** the count carrying it names no source of
   its own — no `elementType`, `sourceRole`, `sourcePath` or `filter` on that
   node (`wf110-unie-naast-vouwbron`; since L2 an `elementType` on a
-  single-argument count comes with a range, B12, and the clause names both);
+  single-argument count comes with a range, B12, and the clause names both;
+  since 2026-09-25 `ref`, the ASP backend and the Drools loader refuse the
+  count in the rule's sentence, where before `ref` counted the union beside a
+  range alone and both Drools branches played every such count);
   **(d)** every selection names the SAME
   `elementType`, and it is declared (`wf110-unie-ongelijke-elementtypes`;
   an undeclared one is WF-034 at the new position); **(e)** every selection

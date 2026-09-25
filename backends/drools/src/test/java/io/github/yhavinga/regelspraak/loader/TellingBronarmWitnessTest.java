@@ -40,6 +40,11 @@ class TellingBronarmWitnessTest {
     private static final String PLEK = "/rules/rules/0/versions/0/value";
     private static final String BRONARM = " operand: the source of an instance fold is an AttributeReference over its range";
     private static final String GEEN_BRON = " but no source operand: an instance fold ranges over a written source";
+    private static final String UNIE = "a count over an instance-set union names no source of its own, and this node"
+            + " carries ";
+    private static final String UNIE_STAART = ": the union's selections carry the population, the relation and the"
+            + " subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
+    private static final String GEHEEL = "{ \"node\": \"Number\", \"whole\": true, \"decimals\": 0, \"sign\": \"unspecified\" }";
 
     // ---------------- 1. the source arm of the two counts: one node that is no AttributeReference ----------------
 
@@ -126,7 +131,31 @@ class TellingBronarmWitnessTest {
                 + " \"Vondst\" and a ListLiteral operand: a listed value is no source of instances");
     }
 
-    // ---------------- 3. the boundary ----------------
+    // ---------------- 3. WF-110 (c): the count over a union names no source of its own ----------------
+
+    @Test void een_elementtype_met_bereik_naast_de_unie_wordt_geweigerd() throws Exception {
+        // before: PLAYED in both branches, the union counted and the node's own source never read
+        weigert("wf110-unie-naast-vouwbron", UNIE + "elementType + sourceRole" + UNIE_STAART);
+    }
+
+    @Test void een_bereik_alleen_naast_de_unie_wordt_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf110-unie-naast-vouwbron");
+        ((ObjectNode) waarde(ir)).remove("elementType");
+        weigert(ir, UNIE + "sourceRole" + UNIE_STAART);
+    }
+
+    @Test void een_filter_alleen_naast_de_unie_wordt_geweigerd() throws Exception {
+        ObjectNode ir = negatief("wf110-unie-naast-vouwbron");
+        ObjectNode telling = (ObjectNode) waarde(ir);
+        telling.remove("elementType");
+        telling.remove("sourceRole");
+        telling.set("filter", JSON.readTree("{ \"node\": \"Comparison\", \"op\": \"greater\","
+                + " \"left\": { \"node\": \"Literal\", \"value\": { \"number\": \"1\" }, \"type\": " + GEHEEL + " },"
+                + " \"right\": { \"node\": \"Literal\", \"value\": { \"number\": \"0\" }, \"type\": " + GEHEEL + " } }"));
+        weigert(ir, UNIE + "filter" + UNIE_STAART);
+    }
+
+    // ---------------- 4. the boundary ----------------
 
     @Test void een_telling_over_haar_bron_laadt() throws Exception {
         // the golden's count source, an AttributeReference beside its range: the arm leaves it alone

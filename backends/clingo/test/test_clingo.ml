@@ -6613,7 +6613,7 @@ let () =
   faults_with ~name:"WF-037 bronarm, armgrens: de unie onder een telling met bron houdt WF-110"
     ~ir:(bronloze_vouw_doc ~doeltype:som_num0 ~kind:"count" ~argumenten:unie ~bereik:true)
     ~case_text:bronloze_vouw_case
-    ~needle:"a count over an instance-set union names a source of its own"
+    ~needle:"a count over an instance-set union names no source of its own, and this node carries elementType + sourceRole"
 
 (* --- ch. 3.8: the day-kind duration forms -------------------------------
    The corpus witness (golden jutterswet-bergingsklok) carries ONE day-kind
@@ -7708,7 +7708,32 @@ let () =
            {|"elementType": "Vondst",
              "sourceRole": { "node": "RoleBinding", "factType": "vondstaanmelding", "role": "aangemelde vondst" },
              "source": { "snippet": "het aantal ..." }|})
-    ~case_text:unie_case ~needle:"a count over an instance-set union names a source of its own";
+    ~case_text:unie_case
+    ~needle:
+      "a count over an instance-set union names no source of its own, and this node carries \
+       elementType + sourceRole: the union's selections carry the population, the relation and the \
+       subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
+  (* clause (c) with the range alone and with the filter alone, in the verifier's sentence: until the
+     card aantal-bronarm-en-drools-lader this backend refused both in a sentence of its own, and ref
+     answered the first as if the range were not written *)
+  faults_with ~name:"WF-110 een eigen bereik naast de unie"
+    ~ir:
+      (vervang ir ~waar:{|"source": { "snippet": "het aantal ..." }|}
+         ~door:
+           {|"sourceRole": { "node": "RoleBinding", "factType": "vondstaanmelding", "role": "aangemelde vondst" },
+             "source": { "snippet": "het aantal ..." }|})
+    ~case_text:unie_case
+    ~needle:"a count over an instance-set union names no source of its own, and this node carries sourceRole:";
+  faults_with ~name:"WF-110 een eigen filter naast de unie"
+    ~ir:
+      (vervang ir ~waar:{|"source": { "snippet": "het aantal ..." }|}
+         ~door:
+           {|"filter": { "node": "Comparison", "op": "greater",
+               "left": { "node": "Literal", "value": { "number": "1" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } },
+               "right": { "node": "Literal", "value": { "number": "0" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" } } },
+             "source": { "snippet": "het aantal ..." }|})
+    ~case_text:unie_case
+    ~needle:"a count over an instance-set union names no source of its own, and this node carries filter:";
   (* clause (a): the union standing where a VALUE is written — here as the
      whole rule value. It reaches [expr_term] as an ordinary term, where the
      union's own arm names it; the arm exists so this position never reports

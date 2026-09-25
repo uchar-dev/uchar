@@ -3429,7 +3429,38 @@ let () =
                { isb_element_type = Some "Kavel";
                  isb_source_role = rb "vondstberging" "geborgen vondst";
                  isb_filter = None; isb_bron = None } ]))
-    "ranges over TWO populations"
+    "ranges over TWO populations";
+  (* WF-110 (c), second line: a count over a union names no source of its own.
+     The wire refuses an elementType, a range or a filter on that node beside
+     the union (IR-SPEC ch. 4.3). Until the card aantal-bronarm-en-drools-lader
+     this evaluator counted the union with a range alone as if the range were
+     not written, refused the count with an elementType in its residual
+     sentence and the filter in a sentence of its own. Each line pins the
+     verifier's sentence with the fields it names, in the verifier's order. *)
+  let met_bron ?el ?rol ?filter () : Ir_v0.Ast.expr =
+    Functie
+      { kind = Aantal;
+        argumenten =
+          [ unie [ tak "vondstaanmelding" "aangemelde vondst"; tak "vondstberging" "geborgen vondst" ] ];
+        element_objecttype = el; leegwaarde = None; filter; dimensie_selectie = None;
+        typ = Some num0; bron = None; granulariteit = None; bron_rol = rol; bron_pad = None }
+  in
+  let zin velden =
+    Printf.sprintf
+      "a count over an instance-set union names no source of its own, and this node carries %s: \
+       the union's selections carry the population, the relation and the subselection, one set \
+       per selection, so a source here is a second claim on one node (ch. 4.3)"
+      velden
+  in
+  let bereik = rb "vondstaanmelding" "aangemelde vondst" in
+  expect_fault_msg "WF-110c-elementtype-en-bronrol"
+    (fun () -> ev w1 "J1" (met_bron ~el:"Vondst" ~rol:bereik ()))
+    (zin "elementType + sourceRole");
+  expect_fault_msg "WF-110c-alleen-bronrol" (fun () -> ev w1 "J1" (met_bron ~rol:bereik ()))
+    (zin "sourceRole");
+  expect_fault_msg "WF-110c-alleen-filter"
+    (fun () -> ev w1 "J1" (met_bron ~filter:(kenmerk "gemerkt") ()))
+    (zin "filter")
 
 (* WV-3.4a-opgesomd: a count handed VALUES instead of instances, and why this
    evaluator now refuses it by name.

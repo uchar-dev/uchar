@@ -1749,6 +1749,24 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
                        ranges over instances)";
         `Values (map_in_order (eval_expr env world self ~err) args)
+    (* WF-110 (c), the verifier's sentence: a count over a union names no
+       source of its own. Out of reach through a well-formed document; until
+       the card aantal-bronarm-en-drools-lader this evaluator counted the union
+       beside a range alone as if the range were not written *)
+    | _, [ Instance_set_union _ ]
+      when kind = Aantal
+           && (element_objecttype <> None || bron_rol <> None || bron_pad <> None || filter <> None) ->
+        let named =
+          (if element_objecttype <> None then [ "elementType" ] else [])
+          @ (if bron_rol <> None then [ "sourceRole" ] else [])
+          @ (if bron_pad <> None then [ "sourcePath" ] else [])
+          @ if filter <> None then [ "filter" ] else []
+        in
+        Value.fault
+          "a count over an instance-set union names no source of its own, and this node carries %s: \
+           the union's selections carry the population, the relation and the subselection, one set \
+           per selection, so a source here is a second claim on one node (ch. 4.3)"
+          (String.concat " + " named)
     | None, [ Instance_set_union { branches; _ } ] ->
         (* the §5.7 concatenation (WF-110, RUNTIME-SEMANTICS ch. 3.4d): each
            branch contributes its own reach ∩ population, narrowed by its own
@@ -1757,9 +1775,6 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
            select counts ONCE. Dedup is by instance LABEL, keeping first-reach
            order, exactly as the flat union of a multi-step range does
            (ch. 3.4b); without it the answer would be the sum of the parts. *)
-        if filter <> None then
-          Value.fault "a filter beside an instance-set union has no form: every selection \
-                       carries its own (WF-110)";
         (* the SECOND LINE for WF-110 (d): one population for the whole union.
            The wire refuses the shape and so does the frontend, so this arm is
            out of reach through a well-formed document — but without it this

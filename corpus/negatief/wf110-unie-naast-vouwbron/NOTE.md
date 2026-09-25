@@ -10,6 +10,15 @@ one node, and nothing decides which of the two a consumer should read.
     relation and the subselection, one set per selection, so a source here is a
     second claim on one node (ch. 4.3)
 
+Measured before the card aantal-bronarm-en-drools-lader, with a case
+outside the corpus: `ref` refused the node in its residual sentence
+(`unsupported instance-fold source shape`), the ASP backend in a sentence
+of its own, and both Drools branches played it, counting the union and
+never reading the node's own source; with the range alone beside the union
+`ref` counted it as if the range were not written. Since the card `ref`, the
+ASP backend and the Drools loader refuse every such count in the sentence
+above, naming its fields in the verifier's order.
+
 **Rewritten at L2 (2026-09-24), stamp: herschreven (i).** Until L2 the count
 carried the `elementObjecttype` alone. Since L2 a single-argument fold with
 an `elementObjecttype` carries a range under every kind but `TOTAAL` (B12),

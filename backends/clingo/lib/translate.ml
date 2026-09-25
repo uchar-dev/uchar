@@ -3505,11 +3505,22 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
      rather than left to the bottom sentence below (which describes the
      position and identifies no construct). Both are ill-formed input: the
      first is clause (c), the second clause (a). *)
-  | Functie { kind = Aantal; argumenten = [ Instance_set_union _ ]; _ } ->
+  | Functie
+      { kind = Aantal; argumenten = [ Instance_set_union _ ]; element_objecttype; bron_rol;
+        bron_pad = None; filter; _ } ->
+      (* in the verifier's sentence and ref's, the fields it names in the verifier's order; a path
+         beside the union is refused first as a count's path (WF-102 (c), the arm below), as ref
+         and the Drools loader refuse it first *)
+      let named =
+        (if element_objecttype <> None then [ "elementType" ] else [])
+        @ (if bron_rol <> None then [ "sourceRole" ] else [])
+        @ if filter <> None then [ "filter" ] else []
+      in
       fault
-        "a count over an instance-set union names a source of its own: the selections carry the \
-         population, the relation and the subselection, one set each, so elementType, \
-         sourceRole, sourcePath and filter are absent on this node (WF-110)"
+        "a count over an instance-set union names no source of its own, and this node carries %s: \
+         the union's selections carry the population, the relation and the subselection, one set \
+         per selection, so a source here is a second claim on one node (ch. 4.3)"
+        (String.concat " + " named)
   | Instance_set_union _ ->
       fault
         "an instance-set union stands where a value term is wanted: it denotes the INSTANCES of a \

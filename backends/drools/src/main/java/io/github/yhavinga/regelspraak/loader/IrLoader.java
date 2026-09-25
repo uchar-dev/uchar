@@ -1459,6 +1459,8 @@ public final class IrLoader {
         // is refused first under WF-102 (c), as ref and the ASP backend refuse it first
         String bronloos = bronWeigering(soort, elementType, rauw);
         if (bronloos != null) throw new Documentfout(p, bronloos);
+        String unie = unieBronWeigering(fk, elementType, n);
+        if (unie != null) throw new Documentfout(p, unie);
         if (eenBron && (n.has("sourceRole") || n.has("sourcePath"))) keurVouwbron(n, p, fk, f);
         plekken.put(f, p);
         return f;
@@ -1509,6 +1511,26 @@ public final class IrLoader {
         if (knoop.equals("InstanceSetUnion") && soort.equals("count")) return null;
         return kop + " and " + ("AEIOU".indexOf(knoop.charAt(0)) >= 0 ? "an " : "a ") + knoop
                 + " operand: the source of an instance fold is an AttributeReference over its range";
+    }
+
+    /** WF-110 (c) (IR-SPEC ch. 4.3), the verifier's sentence: a count over an {@code InstanceSetUnion} names no
+     *  source of its own, so an {@code elementType}, a range or a {@code filter} on that node is a second claim beside
+     *  the union's selections; the fields are named in the verifier's order. Null for any other node. A path there is
+     *  refused before this, as a count's path (WF-102 (c)). Without it both branches played such a count, counting the
+     *  union and never reading the node's own source (measured before the card aantal-bronarm-en-drools-lader). */
+    static String unieBronWeigering(Expr.FunctieKind fk, String elementType, JsonNode n) {
+        JsonNode argumenten = n.get("arguments");
+        if (fk != Expr.FunctieKind.AANTAL || argumenten == null || !argumenten.isArray() || argumenten.size() != 1
+                || !"InstanceSetUnion".equals(text(argumenten.get(0), "node"))) return null;
+        List<String> velden = new ArrayList<>();
+        if (elementType != null) velden.add("elementType");
+        if (n.has("sourceRole")) velden.add("sourceRole");
+        if (n.has("sourcePath")) velden.add("sourcePath");
+        if (n.has("filter")) velden.add("filter");
+        if (velden.isEmpty()) return null;
+        return "a count over an instance-set union names no source of its own, and this node carries "
+                + String.join(" + ", velden) + ": the union's selections carry the population, the relation and the"
+                + " subselection, one set per selection, so a source here is a second claim on one node (ch. 4.3)";
     }
 
     /** The shared loader's sentence for two range spellings on one fold. */
