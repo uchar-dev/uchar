@@ -2555,11 +2555,16 @@ final class RuleChecker {
                 model.diagnostics.add(new Diagnostic(Severity.WARNING,
                         "dagsoortdefinitie '" + dag + "' mist een voorwaarde (regel '" + naam + "')", rd.getStart().getLine()));
             else {
-                // The predicate compilers key on the dagsoort NAME and use the FIRST definitie; a second definitie of
-                // the same dagsoort (e.g. per §13.4.2.5 version window) is not version-dispatched -> warn, don't drop silently.
-                if (model.resolvedDagsoorten.stream().anyMatch(rd2 -> rd2.naam().equalsIgnoreCase(dag)))
-                    model.diagnostics.add(new Diagnostic(Severity.WARNING,
-                            "dagsoort '" + dag + "' heeft meerdere definities; alleen de eerste wordt gebruikt (versievensters worden nog niet toegepast)", rd.getStart().getLine()));
+                // No executor consults a day-kind window, and the predicate compilers key on the dagsoort NAME, so a
+                // second definitie (e.g. per §13.4.2.5 version window) is not version-dispatched: the verifier refuses
+                // both (WF-031), and so does the frontend, in its words
+                String kop = "dagsoortdefinitie '" + dag + "' (regel '" + naam + "'): ";
+                if (geldigheid.vanaf() != null || geldigheid.tot() != null)
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, kop + "day-kind definition with a bounded "
+                            + "validity window; must be always (from and to both absent)", rd.getStart().getLine()));
+                model.resolvedDagsoorten.stream().filter(eerder -> eerder.naam().equalsIgnoreCase(dag)).findFirst()
+                        .ifPresent(eerder -> model.diagnostics.add(new Diagnostic(Severity.ERROR, kop
+                                + "more than one definition for day kind '" + eerder.naam() + "'", rd.getStart().getLine())));
                 model.resolvedDagsoorten.add(new io.github.yhavinga.regelspraak.ir.ResolvedDagsoort(dag, voorwaarde, geldigheid));
             }
         } else if (rd.startpuntBepaling() != null) {

@@ -191,8 +191,11 @@ class StructuurZinTest {
     }
 
     @Test void overlappende_versies_van_een_dagsoortdefinitie_houden_de_eigen_zin() {
-        // WF-021 compares the versions of the seven rule forms; a day-kind definition is none of them
-        assertEquals(List.of("geldigheidsperioden van regelversies overlappen (regel 'Dagsoortdefinitie springtijdag')"),
+        // WF-021 compares the versions of the seven rule forms; a day-kind definition is none of them. The second
+        // definition of one day kind is WF-031's, below.
+        assertEquals(List.of("geldigheidsperioden van regelversies overlappen (regel 'Dagsoortdefinitie springtijdag')",
+                        "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): more than one "
+                                + "definition for day kind 'springtijdag'"),
                 fouten("""
                     Dagsoort de springtijdag (mv: springtijdagen);
 
@@ -204,6 +207,68 @@ class StructuurZinTest {
                             Een dag is een springtijdag
                             indien de dag uit de dag gelijk is aan 15.
                     """));
+    }
+
+    // ---- WF-031: a day kind is defined once, and always
+
+    private static final String BEGRENSD = "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): "
+            + "day-kind definition with a bounded validity window; must be always (from and to both absent)";
+
+    @Test void een_dagsoortdefinitie_met_twee_begrensde_versies() {
+        assertEquals(List.of(BEGRENSD, BEGRENSD, "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie "
+                        + "springtijdag'): more than one definition for day kind 'springtijdag'"),
+                fouten("""
+                    Dagsoort de springtijdag (mv: springtijdagen);
+
+                    Regel Dagsoortdefinitie springtijdag
+                        geldig vanaf 2024 t/m 2024
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 1.
+                        geldig vanaf 2025
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 15.
+                    """));
+    }
+
+    @Test void een_dagsoortdefinitie_met_een_begrensd_venster() {
+        assertEquals(List.of(BEGRENSD), fouten("""
+                Dagsoort de springtijdag (mv: springtijdagen);
+
+                Regel Dagsoortdefinitie springtijdag
+                    geldig vanaf 2024
+                        Een dag is een springtijdag
+                        indien de dag uit de dag gelijk is aan 1.
+                """));
+    }
+
+    @Test void twee_regels_die_een_dagsoort_definieren() {
+        assertEquals(List.of("dagsoortdefinitie 'springtijdag' (regel 'tweede springtijdag'): more than one definition "
+                        + "for day kind 'springtijdag'"),
+                fouten("""
+                    Dagsoort de springtijdag (mv: springtijdagen);
+
+                    Regel Dagsoortdefinitie springtijdag
+                        geldig altijd
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 1.
+
+                    Regel tweede springtijdag
+                        geldig altijd
+                            Een dag is een springtijdag
+                            indien de dag uit de dag gelijk is aan 15.
+                    """));
+    }
+
+    @Test void een_dagsoortdefinitie_die_altijd_geldt_blijft_schoon() {
+        RegelSpraakModel m = Resolver.resolve("""
+                Dagsoort de springtijdag (mv: springtijdagen);
+
+                Regel Dagsoortdefinitie springtijdag
+                    geldig altijd
+                        Een dag is een springtijdag
+                        indien de dag uit de dag gelijk is aan 1.
+                """);
+        assertEquals(List.of(), m.diagnostics);
     }
 
     // ---- WF-032 (and WF-023): the start point determination
