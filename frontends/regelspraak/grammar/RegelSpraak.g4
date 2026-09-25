@@ -361,9 +361,11 @@ koptekst : KOPTEKST ; // §13.3.1.5 — the whole '--- heading' line is one toke
 // it; casus source shows both the marked and unmarked adjectival form).
 // A kenmerk may carry a tijdlijn ("… kenmerk (bezittelijk) voor elke dag", §13.3.6.1
 // attaches a timeline to an attribute OR kenmerk).
+// The opgave marker (uchar DIALECT EXTENSION, grammar/DIVERGENCES.md §7) is admitted here only so that the resolver
+// can refuse it on a kenmerk with a message of its own instead of a bare syntax error.
 kenmerkSpecificatie
-    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? KENMERK BIJVOEGLIJK? tijdlijn? SEMICOLON?   # bijvoeglijkKenmerk
-    | bepaaldLidwoord? lowerNaam KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? SEMICOLON?       # naamwoordKenmerk
+    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? KENMERK BIJVOEGLIJK? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?   # bijvoeglijkKenmerk
+    | bepaaldLidwoord? lowerNaam KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?       # naamwoordKenmerk
     ;
 
 // §13.3.2.5 Attribuut. The 'met eenheid' clause lives inside the numeric datatypes
@@ -371,10 +373,14 @@ kenmerkSpecificatie
 // A domein-typed attribuut may still pin a unit ("… Bedrag met eenheid euro",
 // §3.4): the eenheid clause is admitted after either a concrete datatype or a
 // domein reference, not only inside numeriekDatatype.
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §7): the opgave marker "(mag opgegeven worden)" is the last element,
+// after the optional timeline and before the optional ';', so every clause of the production keeps its place. The
+// resolver lowers it to an opgave above the attribute's computation.
 attribuutSpecificatie
     : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
+      MAG_OPGEGEVEN_WORDEN?
       SEMICOLON?
     ;
 

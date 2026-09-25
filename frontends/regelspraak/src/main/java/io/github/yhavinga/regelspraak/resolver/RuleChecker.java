@@ -88,6 +88,8 @@ final class RuleChecker {
 
     void check(RegelSpraakDocumentContext doc) {
         domeinReferenties(doc);
+        // before any rule resolves: a rule may read the members the opgave marker generates (dialect §7)
+        opgaveDeclaraties(doc);
         // §9.10 Regelgroep (DOCUMENTED EXTENSION): a grouped rule resolves EXACTLY as an ungrouped one, so the
         // whole rule pipeline runs over the flattened list (top-level + group members, in document order).
         for (RegelContext r : DefinitionResolver.alleRegels(doc)) regelVersies(r);
@@ -104,6 +106,8 @@ final class RuleChecker {
         keurDeelselecties(doc);
         keurRegeldoelen();    // WF-022, before the lift: the lowering reads these targets as they are
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
+        // §7 after the lift, so a tree or an unordered set of the dialect's blocks moves to 'berekende X' whole
+        opgaveLowering(doc);
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
     }
 
@@ -1259,6 +1263,515 @@ final class RuleChecker {
         model.diagnostics.add(new Diagnostic(Severity.ERROR,
                 "Uitzondering op: de " + rol + " '" + naam + "' heeft meer dan één regelversie — meerdere versies op "
                 + "één defaults-groep worden in deze kaart nog niet ondersteund (§4)", line));
+    }
+
+    // ==============================================================================================
+    // The opgave marker '(mag opgegeven worden)' on an attribute declaration — the uchar DIALECT EXTENSION of
+    // grammar/DIVERGENCES.md §7: the hardship pattern of spec/proposals/PHASE4-DEFAULTS.md §4.1 as a declaration.
+    // For a marked attribute X of object type T the resolver lowers onto structure the wire already carries: the
+    // input attribute 'opgegeven X'; the attribute 'berekende X', which every computing writer of X targets from
+    // then on; one defaults group 'opgave boven berekening X' on X, the opgave above the computation and an authored
+    // initialisation of X as the lowest default; the possessive characteristic 'afwijkende opgave X', attributed by
+    // the rule 'afwijking opgave X' where opgave and computation are both filled and differ; and the consistency
+    // 'controle opgave X', which asserts that characteristic absent, so a contradiction deposits one §9.5 fact.
+    // The generated members are declared BEFORE the rules resolve, so a rule can read them (an author routes a
+    // deviating case through the characteristic); the writers move AFTER the defaults lowering, so a tree or an
+    // unordered set of the dialect's own blocks moves whole. Case input on X itself keeps Reading A
+    // (RUNTIME-SEMANTICS ch. 7.8): the marker adds an input attribute, it does not change what input on X means.
+    // ==============================================================================================
+
+    /** A marked attribute whose declaration passed the declaration checks, with its generated members declared. The
+     *  six generated names are fixed by the attribute's declared name; the form names are unique in the whole model
+     *  (WF-020), the member names in the inheritance line of the type. */
+    private record Opgave(Objecttype type, String attribuut, int line, AttribuutSpecificatieContext declaratie) {
+        String opgegeven() { return "opgegeven " + attribuut; }
+        String berekende() { return "berekende " + attribuut; }
+        String afwijkend() { return "afwijkende opgave " + attribuut; }
+        String groep() { return "opgave boven berekening " + attribuut; }
+        String regel() { return "afwijking opgave " + attribuut; }
+        String controle() { return "controle opgave " + attribuut; }
+        String kop() { return "attribuut '" + attribuut + "' van " + type.naam; }
+    }
+
+    private static final String MARKERING = "'(mag opgegeven worden)'";
+
+    /** The markers that passed {@link #opgaveDeclaraties}, in declaration order. */
+    private final List<Opgave> opgaven = new ArrayList<>();
+
+    /** The declaration half, before any rule resolves. A marker on a characteristic is refused. A marked attribute
+     *  must be a Numeriek without a unit, not time-dependent and not dimensioned, and none of the member names it
+     *  generates may exist yet in the inheritance line of its type; then its two attributes are declared right after
+     *  it and its characteristic at the end of the type's characteristics. One ERROR per marker, at the declaration's
+     *  line, naming the first reason that holds. */
+    private void opgaveDeclaraties(RegelSpraakDocumentContext doc) {
+        // the declaration line of every member, per declaring type, for the collision message
+        Map<Objecttype, Map<String, Integer>> lidRegels = new java.util.IdentityHashMap<>();
+        List<Objecttype> typen = new ArrayList<>();
+        List<ObjectTypeMemberContext> gemarkeerd = new ArrayList<>();
+        for (DefinitieContext d : doc.definitie()) {
+            ObjectTypeNaamContext typeNaam;
+            List<ObjectTypeMemberContext> leden;
+            if (d.objectTypeDefinition() != null) {
+                typeNaam = d.objectTypeDefinition().objectTypeNaam();
+                leden = d.objectTypeDefinition().objectTypeMember();
+            } else if (d.objectTypeExtensie() != null) {
+                typeNaam = d.objectTypeExtensie().objectTypeNaam();
+                leden = d.objectTypeExtensie().objectTypeMember();
+            } else continue;
+            Objecttype t = model.objecttypen.get(src(typeNaam));
+            if (t == null) continue;
+            for (ObjectTypeMemberContext lid : leden) {
+                String naam = lid.attribuutSpecificatie() != null ? src(lid.attribuutSpecificatie().lowerNaam())
+                        : lid.kenmerkSpecificatie() != null ? kenmerkDeclaratieNaam(lid.kenmerkSpecificatie()) : null;
+                if (naam == null) continue;
+                lidRegels.computeIfAbsent(t, k -> new java.util.HashMap<>())
+                        .putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam), lid.getStart().getLine());
+                if (gemarkeerdLid(lid)) { typen.add(t); gemarkeerd.add(lid); }
+            }
+        }
+        for (int i = 0; i < gemarkeerd.size(); i++) {
+            Objecttype t = typen.get(i);
+            ObjectTypeMemberContext lid = gemarkeerd.get(i);
+            if (lid.kenmerkSpecificatie() != null) {
+                fout(lid.getStart().getLine(), "kenmerk '" + kenmerkDeclaratieNaam(lid.kenmerkSpecificatie()) + "' van "
+                        + t.naam + ": " + MARKERING + " staat alleen op een attribuut — casusinvoer op een kenmerk staat "
+                        + "al tegen elk besluit van een defaults-groep (RUNTIME-SEMANTICS ch. 7.8), en een opgave 'niet "
+                        + "aanwezig' boven een berekende toekenning vraagt een opgave met drie waarden, die de casus voor "
+                        + "een kenmerk niet kent (dialect §7)");
+                continue;
+            }
+            AttribuutSpecificatieContext a = lid.attribuutSpecificatie();
+            Opgave o = new Opgave(t, src(a.lowerNaam()), a.getStart().getLine(), a);
+            String reden = opgaveDeclaratieFout(o, lidRegels);
+            if (reden != null) { fout(o.line(), reden); continue; }
+            Datatype dt = t.attributen.get(o.attribuut());
+            java.util.LinkedHashMap<String, Datatype> oud = new java.util.LinkedHashMap<>(t.attributen);
+            t.attributen.clear();
+            for (var e : oud.entrySet()) {
+                t.attributen.put(e.getKey(), e.getValue());
+                if (e.getKey().equals(o.attribuut())) {
+                    t.attributen.put(o.opgegeven(), dt);
+                    t.attributen.put(o.berekende(), dt);
+                }
+            }
+            t.kenmerken.add(o.afwijkend());
+            t.kenmerkSoorten.put(o.afwijkend(), Objecttype.KenmerkSoort.BEZITTELIJK);
+            opgaven.add(o);
+        }
+    }
+
+    private static boolean gemarkeerdLid(ObjectTypeMemberContext lid) {
+        if (lid.attribuutSpecificatie() != null) return lid.attribuutSpecificatie().MAG_OPGEGEVEN_WORDEN() != null;
+        KenmerkSpecificatieContext k = lid.kenmerkSpecificatie();
+        if (k instanceof BijvoeglijkKenmerkContext b) return b.MAG_OPGEGEVEN_WORDEN() != null;
+        if (k instanceof NaamwoordKenmerkContext n) return n.MAG_OPGEGEVEN_WORDEN() != null;
+        return false;
+    }
+
+    private static String kenmerkDeclaratieNaam(KenmerkSpecificatieContext k) {
+        if (k instanceof BijvoeglijkKenmerkContext b) return src(b.lowerNaam());
+        if (k instanceof NaamwoordKenmerkContext n) return src(n.lowerNaam());
+        return src(k);
+    }
+
+    /** The first declaration reason that refuses the marker, or null. */
+    private String opgaveDeclaratieFout(Opgave o, Map<Objecttype, Map<String, Integer>> lidRegels) {
+        Objecttype t = o.type();
+        String x = o.attribuut();
+        AttribuutSpecificatieContext a = o.declaratie();
+        Datatype dt = t.attributen.get(x);
+        // The corpus carries attribute defaults targets of datatype Number without a unit only, so that is the one
+        // family the three executors are measured on; another family waits for a witness of its own.
+        boolean lidEenheid = a.MET_EENHEID() != null;
+        if (!(dt instanceof Datatype.Numeriek n) || n.heeftEenheid() || lidEenheid) {
+            NumeriekDatatypeContext nd = a.datatype() == null ? null : a.datatype().numeriekDatatype();
+            String genoemd = dt instanceof Datatype.Numeriek n && n.heeftEenheid()
+                    ? "Numeriek met eenheid " + (nd != null && nd.eenheidExpressie() != null
+                            ? src(nd.eenheidExpressie()) : n.eenheid().weergave())
+                    : dt instanceof Datatype.Numeriek && lidEenheid ? "Numeriek met eenheid " + src(a.eenheidExpressie())
+                    : dt == null ? "onbekend" : dt.naam();
+            return o.kop() + ": " + MARKERING + " staat alleen op een Numeriek attribuut zonder eenheid, en '" + x
+                    + "' is " + genoemd + " — een defaults-groep op een attribuut van een ander datatype of met een "
+                    + "eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)";
+        }
+        if (t.attribuutGranulariteit.containsKey(x))
+            return o.kop() + ": " + MARKERING + " staat niet op een tijdsafhankelijk attribuut — een defaults-groep "
+                    + "beslist één keer en heeft geen tijdlijn om op te schrijven (WF-086) (dialect §7)";
+        List<String> dimensies = t.attribuutDimensies.get(x);
+        if (dimensies != null && !dimensies.isEmpty())
+            return o.kop() + ": " + MARKERING + " staat niet op een gedimensioneerd attribuut, en '" + x + "' is "
+                    + "gedimensioneerd met " + String.join(" en ", dimensies) + " — een defaults-groep op een "
+                    + "gedimensioneerd attribuut speelt nog niet in alle drie de uitvoerders (dialect §7)";
+        // a subtype inherits the generated members, a supertype's members are inherited by T: either way one
+        // instance would carry two declarations of one name (WF-105)
+        for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
+            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(g);
+            for (Objecttype u : model.objecttypen.values()) {
+                if (u != t && !u.isEen(t) && !t.isEen(u)) continue;
+                boolean attribuut = u.attributen.keySet().stream()
+                        .anyMatch(k -> io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
+                boolean kenmerk = u.kenmerken.stream()
+                        .anyMatch(k -> io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
+                if (!attribuut && !kenmerk) continue;
+                int regel = lidRegels.getOrDefault(u, Map.of()).getOrDefault(sleutel, 0);
+                return o.kop() + " (bronregel " + o.line() + "): " + MARKERING + " genereert "
+                        + (g.equals(o.afwijkend()) ? "het kenmerk '" : "het attribuut '") + g + "', en " + u.naam
+                        + " declareert die naam al als " + (attribuut ? "attribuut" : "kenmerk") + " (bronregel " + regel
+                        + ") — een naam die de markering genereert, bestaat nog niet in de erflijn van " + t.naam
+                        + " (dialect §7)";
+            }
+        }
+        return null;
+    }
+
+    /** The rule half, after the defaults lowering: move the computing writers of X to 'berekende X', lift an
+     *  initialisation of X into the generated group, and add the group, the attribution rule and the consistency.
+     *  Refused, one ERROR at the declaration's line: an allocation or an object creation that writes X (the marker
+     *  moves neither, and beside the group each is a second writer, WF-050); a writer of X on another type of the
+     *  inheritance line (the ch. 7.10 composition with the generated group is not built); a writer of a generated
+     *  member; a generated form name another form already carries (WF-020); more than one initialisation of X, or one
+     *  with a window or with versions (the group has one window and one initialisation default). Without a computing
+     *  writer X is input already and nothing is generated: a WARNING, and the generated members are withdrawn — an
+     *  ERROR instead when a rule reads one of them, since the name would then read nothing. */
+    private void opgaveLowering(RegelSpraakDocumentContext doc) {
+        if (opgaven.isEmpty()) return;
+        Map<String, String[]> vormen = vormPlekken(doc);
+        Map<String, Opgave> gegenereerd = new java.util.HashMap<>();
+        for (Opgave o : opgaven) {
+            Objecttype t = o.type();
+            List<Integer> rekenend = new ArrayList<>();
+            List<Integer> groepen = new ArrayList<>();
+            List<ResolvedRegel> init = new ArrayList<>();
+            for (int i = 0; i < model.resolvedRegels.size(); i++) {
+                ResolvedRegel r = model.resolvedRegels.get(i);
+                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING || eigenDoel(r.doel(), o.attribuut()) != t)
+                    continue;
+                if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) init.add(r);
+                else rekenend.add(i);
+            }
+            for (int i = 0; i < model.prioritizedDefaults.size(); i++) {
+                PrioritizedDefaults pd = model.prioritizedDefaults.get(i);
+                if (!pd.isKenmerk() && zelfdeNaam(pd.attribuut(), o.attribuut())
+                        && model.objecttypeOpNaam(pd.onderwerp()) == t) groepen.add(i);
+            }
+            String reden = opgaveSchrijverFout(o);
+            if (reden == null && rekenend.isEmpty() && groepen.isEmpty()) {
+                // nothing to put the opgave above: X is input already
+                o.type().attributen.remove(o.opgegeven());
+                o.type().attributen.remove(o.berekende());
+                o.type().kenmerken.remove(o.afwijkend());
+                o.type().kenmerkSoorten.remove(o.afwijkend());
+                String gelezen = gelezenGegenereerd(o);
+                if (gelezen != null)
+                    fout(o.line(), o.kop() + ": " + MARKERING + " genereert niets, omdat geen regel '" + o.attribuut()
+                            + "' berekent of vaststelt, maar het model leest '" + gelezen + "' — die naam bestaat alleen "
+                            + "waar de markering een berekening van '" + o.attribuut() + "' verlegt (dialect §7)");
+                else
+                    model.diagnostics.add(new Diagnostic(Severity.WARNING, o.kop() + ": " + MARKERING + " staat op een "
+                            + "attribuut dat geen regel berekent of vaststelt — '" + o.attribuut() + "' is al invoer, en "
+                            + "de markering genereert niets (dialect §7)", o.line()));
+                continue;
+            }
+            if (reden == null) reden = vormnaamFout(o, vormen, gegenereerd);
+            if (reden == null) reden = initialisatieFout(o, init);
+            if (reden != null) { fout(o.line(), reden); continue; }
+
+            // 2. the computing writers keep their names and shapes and write 'berekende X'
+            for (int i : rekenend) {
+                ResolvedRegel r = model.resolvedRegels.get(i);
+                ResolvedRegel verlegd = new ResolvedRegel(r.naam(), r.soort(),
+                        naarBerekend((Expr.AttribuutRef) r.doel(), o.berekende()), r.waarde(), r.voorwaarde(),
+                        r.geldigheid(), r.bronAnnotaties());
+                if (geweigerdeDoelen.contains(r)) geweigerdeDoelen.add(verlegd);
+                model.resolvedRegels.set(i, verlegd);
+            }
+            for (int i : groepen) {
+                PrioritizedDefaults pd = model.prioritizedDefaults.get(i);
+                PrioritizedDefaults verlegd = new PrioritizedDefaults(pd.naam(), pd.onderwerp(), null, o.berekende(),
+                        pd.ongeordend(), pd.defaults(), pd.bron(), pd.geldigheid());
+                Herkomst h = pdHerkomst.remove(pd);
+                if (h != null) pdHerkomst.put(verlegd, h);
+                model.prioritizedDefaults.set(i, verlegd);
+            }
+            // 3. the group on X: the opgave, the computation, and the initialisation, which stays on X — its
+            //    justification is "X is empty in the input", which on 'berekende X' (never input) would always hold
+            Datatype dt = t.attributen.get(o.attribuut());
+            List<Default> defaults = new ArrayList<>();
+            defaults.add(new Default(null, ALTIJD, lezing(o, o.opgegeven(), dt), false, null, o.opgegeven()));
+            defaults.add(new Default(null, ALTIJD, lezing(o, o.berekende(), dt), false, null, o.berekende()));
+            if (!init.isEmpty()) {
+                ResolvedRegel r = init.get(0);
+                defaults.add(new Default(null, null, r.waarde(), true, null, annotatieTekst(r.bronAnnotaties())));
+                model.resolvedRegels.remove(r);
+            }
+            model.prioritizedDefaults.add(new PrioritizedDefaults(o.groep(), t.naam, null, o.attribuut(), false,
+                    defaults, null, Geldigheid.ALTIJD));
+            // 4. the deviation characteristic, spelled as the frontend emits the hand-written rule
+            String p0 = "zijn " + o.opgegeven() + " is gevuld";
+            String p1 = "zijn " + o.berekende() + " is gevuld";
+            String p2 = "zijn " + o.opgegeven() + " is ongelijk aan zijn " + o.berekende();
+            AttribuutSpecificatieContext a = o.declaratie();
+            Conditie afwijking = new Conditie.Samengesteld(Conditie.Kwantor.ALLE, 0, List.of(
+                    new Conditie.Predicaat(Conditie.Predicaatsoort.GEVULD, lezing(o, o.opgegeven(), dt), Bron.van(a, p0)),
+                    new Conditie.Predicaat(Conditie.Predicaatsoort.GEVULD, lezing(o, o.berekende(), dt), Bron.van(a, p1)),
+                    new Conditie.Vergelijking(Conditie.Operator.ONGELIJK, lezing(o, o.opgegeven(), dt),
+                            lezing(o, o.berekende(), dt), Bron.van(a, p2))),
+                    Bron.van(a, "hij aan alle volgende voorwaarden voldoet: - " + p0 + " - " + p1 + " - " + p2 + "."));
+            String onderwerp = "Een " + t.naam;
+            model.resolvedRegels.add(new ResolvedRegel(o.regel(), ResolvedRegel.Soort.KENMERKTOEKENNING,
+                    new Expr.AttribuutRef(o.afwijkend(), t, onderwerp, null, new Datatype.Booleaan(),
+                            Bron.van(a, onderwerp + " heeft " + o.afwijkend())),
+                    new Expr.Literal("waar", new Datatype.Booleaan(), Bron.synthetisch("waar")), afwijking,
+                    Geldigheid.ALTIJD, List.of()));
+            // 5. the consistency: its source is the marked declaration, the one place it was written
+            String declaratie = a.getStart().getInputStream().getText(org.antlr.v4.runtime.misc.Interval.of(
+                    a.getStart().getStartIndex(), a.MAG_OPGEGEVEN_WORDEN().getSymbol().getStopIndex()))
+                    .replaceAll("\\s+", " ").trim();
+            model.consistenties.add(new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(o.controle(), t,
+                    new Conditie.Kenmerk(o.afwijkend(), null, true, Bron.van(a, "hij heeft geen " + o.afwijkend())),
+                    Bron.van(a, declaratie), o.line(), Geldigheid.ALTIJD));
+            for (String n : List.of(o.groep(), o.regel(), o.controle()))
+                gegenereerd.put(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(n), o);
+        }
+    }
+
+    /** The object type whose own attribute {@code naam} the target {@code doel} writes, or null: a navigated target
+     *  never reaches here (the target fixes the subject). */
+    private static Objecttype eigenDoel(Expr doel, String naam) {
+        if (!(doel instanceof Expr.AttribuutRef d) || d.objecttype() == null || !zelfdeNaam(d.attribuut(), naam))
+            return null;
+        return d.objecttype();
+    }
+
+    private static boolean zelfdeNaam(String a, String b) {
+        return a != null && b != null && io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a)
+                .equals(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(b));
+    }
+
+    /** The target {@code d} with the attribute renamed; its subject, its source text and everything else stay. */
+    private static Expr.AttribuutRef naarBerekend(Expr.AttribuutRef d, String naam) {
+        return new Expr.AttribuutRef(naam, d.objecttype(), d.onderwerpBron(), d.navigatieRol(), d.type(), d.bron(),
+                d.set(), d.navigatiePad(), d.bereikPad(), d.kwantor(), d.drempel());
+    }
+
+    /** A read of the subject's own generated attribute, spelled as the frontend spells the hand-written read. */
+    private static Expr.AttribuutRef lezing(Opgave o, String naam, Datatype dt) {
+        return new Expr.AttribuutRef(naam, o.type(), "zijn", null, dt, Bron.van(o.declaratie(), "zijn " + naam));
+    }
+
+    /** The writer refusals: an allocation or an object creation that writes X, a writer of X on another type of the
+     *  inheritance line, and a writer of a generated member. Null when none holds. */
+    private String opgaveSchrijverFout(Opgave o) {
+        Objecttype t = o.type();
+        String x = o.attribuut();
+        for (ResolvedVerdeling v : model.verdelingen)
+            if (zelfdeNaam(v.doelAttribuut(), x) && inLijn(t, v.doelType()))
+                return o.kop() + ": " + MARKERING + ", maar de verdeling '" + zonderVersie(v.naam()) + "' schrijft '"
+                        + x + "' — de markering verlegt een verdeling niet naar '" + o.berekende() + "', en naast de "
+                        + "defaults-groep op '" + x + "' is zij een tweede schrijver (WF-050) (dialect §7)";
+        for (ResolvedObjectCreatie oc : model.objectCreaties)
+            if (inLijn(t, oc.nieuwType())
+                    && oc.toekenningen().stream().anyMatch(k -> !k.kenmerk() && zelfdeNaam(k.attribuut(), x)))
+                return o.kop() + ": " + MARKERING + ", maar de objectcreatie '" + zonderVersie(oc.naam()) + "' kent '"
+                        + x + "' toe bij het aanmaken — de markering verlegt die toekenning niet naar '" + o.berekende()
+                        + "', en naast de defaults-groep op '" + x + "' is zij een tweede schrijver (WF-050) (dialect §7)";
+        List<String[]> erflijn = new ArrayList<>();   // {writer, type}
+        for (ResolvedRegel r : model.resolvedRegels) {
+            Objecttype u = eigenDoel(r.doel(), x);
+            if (u != null && u != t && inLijn(t, u) && r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
+                erflijn.add(new String[] {"regel '" + zonderVersie(r.naam()) + "'", u.naam});
+        }
+        for (PrioritizedDefaults pd : model.prioritizedDefaults) {
+            Objecttype u = model.objecttypeOpNaam(pd.onderwerp());
+            if (!pd.isKenmerk() && zelfdeNaam(pd.attribuut(), x) && u != null && u != t && inLijn(t, u))
+                erflijn.add(new String[] {"de defaults-groep '" + pd.naam() + "'", u.naam});
+        }
+        if (!erflijn.isEmpty()) {
+            String[] w = erflijn.get(0);
+            Objecttype u = model.objecttypeOpNaam(w[1]);
+            return o.kop() + ": " + MARKERING + ", maar " + w[0] + " schrijft '" + x + "' voor " + u.naam + ", een "
+                    + (u.isEen(t) ? "subtype" : "supertype") + " van " + t.naam + " — de gegenereerde defaults-groep op "
+                    + t.naam + " zou met de schrijvers van " + u.naam + " samengaan tot één stapel per type "
+                    + "(RUNTIME-SEMANTICS ch. 7.10), en die samenstelling bouwt de markering niet (dialect §7)";
+        }
+        // a generated member has one writer or none: the case supplies 'opgegeven X', the moved writers compute
+        // 'berekende X', the generated rule attributes 'afwijkende opgave X'
+        for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
+            String schrijver = null;
+            int regel = 0;
+            for (ResolvedRegel r : model.resolvedRegels) {
+                Objecttype u = eigenDoel(r.doel(), g);
+                if (u == null || !inLijn(t, u)) continue;
+                schrijver = "regel '" + zonderVersie(r.naam()) + "'";
+                int tabel = tabelregel(r.naam());
+                regel = tabel >= 0 ? tabel : r.doel().bron() == null ? 0 : r.doel().bron().line();
+                break;
+            }
+            if (schrijver == null)
+                for (PrioritizedDefaults pd : model.prioritizedDefaults) {
+                    Objecttype u = model.objecttypeOpNaam(pd.onderwerp());
+                    if (!zelfdeNaam(pd.doel(), g) || u == null || !inLijn(t, u)) continue;
+                    schrijver = "de defaults-groep '" + pd.naam() + "'";
+                    regel = pdHerkomst.getOrDefault(pd, new Herkomst(0, "")).line();
+                    break;
+                }
+            if (schrijver == null)
+                for (ResolvedVerdeling v : model.verdelingen)
+                    if (zelfdeNaam(v.doelAttribuut(), g) && inLijn(t, v.doelType())) {
+                        schrijver = "de verdeling '" + zonderVersie(v.naam()) + "'";
+                        break;
+                    }
+            if (schrijver == null)
+                for (ResolvedObjectCreatie oc : model.objectCreaties)
+                    if (inLijn(t, oc.nieuwType())
+                            && oc.toekenningen().stream().anyMatch(k -> zelfdeNaam(k.attribuut(), g))) {
+                        schrijver = "de objectcreatie '" + zonderVersie(oc.naam()) + "'";
+                        break;
+                    }
+            if (schrijver != null)
+                return o.kop() + " (bronregel " + o.line() + "): " + schrijver + " schrijft '" + g + "'"
+                        + (regel > 0 ? " (bronregel " + regel + ")" : "") + ", een lid dat " + MARKERING + " genereert — '"
+                        + o.opgegeven() + "' levert de casus, '" + o.berekende() + "' krijgt de schrijvers van '" + x
+                        + "', en '" + o.afwijkend() + "' kent de regel '" + o.regel() + "' toe; een andere schrijver "
+                        + "verdraagt zo'n lid niet (dialect §7)";
+        }
+        return null;
+    }
+
+    /** Whether {@code u} is {@code t} or a strict ancestor or descendant of it. */
+    private static boolean inLijn(Objecttype t, Objecttype u) {
+        return u != null && (u == t || u.isEen(t) || t.isEen(u));
+    }
+
+    /** The source names of the forms WF-020 keeps in one namespace, under its name identity: every 'Regel' head (a
+     *  rule, a consistency, an allocation, a creation, a uniqueness; the members of a group or of an unordered block
+     *  included), every 'Uitzondering op' and 'Afwijking van' head, and every rule a decision table desugars to —
+     *  each with how a message names it and the line it was written on. */
+    private Map<String, String[]> vormPlekken(RegelSpraakDocumentContext doc) {
+        Map<String, String[]> uit = new java.util.HashMap<>();
+        for (RegelContext r : DefinitionResolver.alleRegels(doc)) {
+            String naam = src(r.regelNaam());
+            uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam),
+                    new String[] {"regel '" + naam + "'", String.valueOf(r.getStart().getLine())});
+        }
+        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) {
+            String naam = src(u.regelNaam());
+            uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam),
+                    new String[] {"regel '" + naam + "'", String.valueOf(u.getStart().getLine())});
+        }
+        for (var e : rijRegels.entrySet())
+            for (String rij : e.getValue())
+                uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(rij),
+                        new String[] {"regel '" + rij + "' van beslistabel '" + src(e.getKey().beslistabelNaam()) + "'",
+                                String.valueOf(e.getKey().getStart().getLine())});
+        return uit;
+    }
+
+    /** A generated form name another form already carries (WF-020): an authored one, or the one another marker
+     *  generated. Null when all three are free. */
+    private String vormnaamFout(Opgave o, Map<String, String[]> vormen, Map<String, Opgave> gegenereerd) {
+        String[][] namen = {{"de defaults-groep", o.groep()}, {"de regel", o.regel()}, {"de consistentie", o.controle()}};
+        for (String[] vorm : namen) {
+            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(vorm[1]);
+            String kop = o.kop() + " (bronregel " + o.line() + "): " + MARKERING + " genereert " + vorm[0] + " '"
+                    + vorm[1] + "', en ";
+            String staart = " — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §7)";
+            String[] plek = vormen.get(sleutel);
+            if (plek != null) return kop + plek[0] + " heet al zo (bronregel " + plek[1] + ")" + staart;
+            Opgave ander = gegenereerd.get(sleutel);
+            if (ander != null)
+                return kop + "de markering op " + ander.kop() + " genereert die naam al (bronregel " + ander.line() + ")"
+                        + staart;
+        }
+        return null;
+    }
+
+    /** The generated group carries one initialisation default and no window of its own per default. */
+    private String initialisatieFout(Opgave o, List<ResolvedRegel> init) {
+        List<String> namen = init.stream().map(r -> zonderVersie(r.naam())).distinct().toList();
+        if (namen.size() > 1)
+            return o.kop() + ": " + MARKERING + ", en '" + o.attribuut() + "' heeft meer dan één initialisatie ("
+                    + opsomming(namen) + ") — de gegenereerde defaults-groep draagt één initialisatiedefault, de "
+                    + "laagste (WF-050) (dialect §7)";
+        if (namen.size() == 1 && (init.size() > 1 || !init.get(0).geldigheid().altijd()))
+            return o.kop() + ": " + MARKERING + ", en de initialisatie '" + namen.get(0) + "' van '" + o.attribuut()
+                    + "' heeft " + (init.size() > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd")
+                    + " — de gegenereerde defaults-groep geldt altijd, en een default draagt geen eigen venster "
+                    + "(dialect §7)";
+        return null;
+    }
+
+    /** The first generated member name the model reads, or null: a reference to one of the two attributes on a type
+     *  of the inheritance line, a check of the characteristic, or an allocation naming one of the attributes. The
+     *  walk reaches every condition and value the emitter writes, conditions nested in expressions included. */
+    private String gelezenGegenereerd(Opgave o) {
+        for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
+            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(g);
+            java.util.function.Predicate<Expr> ref = e -> e instanceof Expr.AttribuutRef r
+                    && zelfdeNaam(r.attribuut(), g) && (r.objecttype() == null || inLijn(o.type(), r.objecttype()));
+            java.util.function.Predicate<Conditie> check = c -> c instanceof Conditie.Kenmerk k
+                    && io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k.kenmerk()).equals(sleutel);
+            boolean gelezen = false;
+            for (ResolvedRegel r : model.resolvedRegels)
+                gelezen |= leest(r.waarde(), ref, check) || leest(r.voorwaarde(), ref, check);
+            for (var c : model.consistenties) gelezen |= leest(c.assertie(), ref, check);
+            for (var v : model.verdelingen)
+                gelezen |= leest(v.voorwaarde(), ref, check) || zelfdeNaam(v.bronAttribuut(), g)
+                        || zelfdeNaam(v.ratoAttribuut(), g) || zelfdeNaam(v.maximumAttribuut(), g)
+                        || zelfdeNaam(v.groepeerAttribuut(), g);
+            for (var oc : model.objectCreaties) {
+                gelezen |= leest(oc.voorwaarde(), ref, check);
+                for (var k : oc.toekenningen()) gelezen |= leest(k.waarde(), ref, check);
+            }
+            for (var fc : model.feitCreaties) gelezen |= leest(fc.voorwaarde(), ref, check);
+            for (var d : model.resolvedDagsoorten) gelezen |= leest(d.voorwaarde(), ref, check);
+            for (var pd : model.prioritizedDefaults) gelezen |= leestDefaults(pd.defaults(), ref, check);
+            if (gelezen) return g;
+        }
+        return null;
+    }
+
+    private static boolean leestDefaults(List<Default> defaults, java.util.function.Predicate<Expr> ref,
+                                         java.util.function.Predicate<Conditie> check) {
+        if (defaults == null) return false;
+        for (Default d : defaults) {
+            if (leest(d.voorwaarde(), ref, check) || leest(d.consequentie(), ref, check)) return true;
+            if (d.excepties() != null)
+                for (var groep : d.excepties().leden()) if (leestDefaults(groep.defaults(), ref, check)) return true;
+        }
+        return false;
+    }
+
+    /** Whether a node of {@code c} satisfies {@code check}, or an expression in it holds a node satisfying
+     *  {@code ref}: the parts of a composite and of a quantifier fold, and every operand, conditions nested in
+     *  expressions included. */
+    private static boolean leest(Conditie c, java.util.function.Predicate<Expr> ref,
+                                 java.util.function.Predicate<Conditie> check) {
+        if (c == null) return false;
+        if (check.test(c)) return true;
+        return switch (c) {
+            case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(d -> leest(d, ref, check));
+            case Conditie.Kwantorvouw k -> leest(k.filter(), ref, check) || leest(k.toets(), ref, check);
+            default -> Conditie.bevatOperand(c, e -> leestHier(e, ref, check));
+        };
+    }
+
+    private static boolean leest(Expr e, java.util.function.Predicate<Expr> ref,
+                                 java.util.function.Predicate<Conditie> check) {
+        return Expr.bevat(e, x -> leestHier(x, ref, check));
+    }
+
+    /** One expression node: {@link Expr#bevat} visits every node, so only the conditions an expression holds need
+     *  entering here. */
+    private static boolean leestHier(Expr x, java.util.function.Predicate<Expr> ref,
+                                     java.util.function.Predicate<Conditie> check) {
+        if (ref.test(x)) return true;
+        return switch (x) {
+            case Expr.Functie f -> leest(f.filter(), ref, check);
+            case Expr.IfThenElse k -> leest(k.conditie(), ref, check);
+            case Expr.InstanceSetUnion u -> u.takken().stream().anyMatch(t -> leest(t.filter(), ref, check));
+            default -> false;
+        };
     }
 
     /** A read-write dependency CYCLE between assignments (x = y+1; y = x+1) never reaches a fixpoint

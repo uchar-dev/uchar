@@ -53,6 +53,12 @@ NA_HET_ATTRIBUUT_MET_VOORZETSEL      : '(na' WSP 'het' WSP 'attribuut' WSP 'met'
 BEZIELD     : '(bezield)'     ; // §13.3.1.1
 BEZITTELIJK : '(bezittelijk)' ; // §13.3.2.2
 BIJVOEGLIJK : '(bijvoeglijk)' ; // §13.3.2.3
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §7): the opgave marker, the last element of an attribute
+// declaration. A whole token with its parentheses, as the three markers above: it reserves no name word, so 'mag',
+// 'opgegeven' and 'worden' keep lexing as before everywhere else and only the parenthesised sequence changes
+// meaning. Inside a comment, an enumeration literal or a text literal it is never lexed at all. Inertness on the
+// sources the repository and the werkbank reach is MEASURED, see DIVERGENCES.md §7.
+MAG_OPGEGEVEN_WORDEN : '(mag' WSP 'opgegeven' WSP 'worden)' ;
 MV_START    : '(mv:'          ; // §13.2.29 naamwoord plural opener
 
 // --- datum/datumtijd constructors (precede the bare 'datum'/'de' words) ---
