@@ -186,7 +186,7 @@ Onbekend-typed operands reach v0's runtime fold, which is itself the
 type-generic ordering above. v1 admits **any single comparable family**
 under that same ordering, and the fence is now written where the wire
 can be checked: WF-038's ordering-fold clause requires every operand of
-`eerste`/`laatste`/`minimum`/`maximum` — read off the operand list, so
+`first`/`last` (eerste/laatste) and `minimum`/`maximum` — read off the operand list, so
 in either wire form, the instance fold's one set-valued argument and the
 articulated fold's listed ones alike — to come from one comparable
 family: numbers, or dates of ONE precision. An equality-only operand
@@ -721,7 +721,7 @@ domain-only cross under WF-089/WF-090 — once per operand, the domain
 being the one facet a pass-through fold hands on unchanged — and since
 the derivation law landed the same position also carries **soort, unit,
 decimals and wholeness**, crossed once against the derivation by
-WF-091's `eerste`/`laatste` and `minimum`/`maximum` arms rather than
+WF-091's `first`/`last` (eerste/laatste) and `minimum`/`maximum` arms rather than
 once per operand.
 
 *History:* this clause is the consumer half of the WF-091 work. Before it,
@@ -2842,9 +2842,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | no wire field; the RegelSpraak frontend refuses the source at emission by name (ch. 3.2); the calendar start point is omitted without loss; OPEN — a v1 wire card carries it or keeps the refusal |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
-| Timeline arithmetic beyond plus/min (verminderd-met, maal, division, percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
+| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
-| min/max/eerste/laatste over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
+| `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
 | §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-periodevenster-tellende-kwantor`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
 | §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `periodevenster-tijdlijnkenmerk`), because no temporal characteristic is written (ch. 3.11) |
@@ -2861,7 +2861,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — `all` and `none` in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where `all` and `none` read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `the`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
 | **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `dagsoort-onvervulbare-wandeling`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
 | **`datum-tijd ± N <dagsoort>`** | **specified and executed, ch. 3.8** (maintainer decision 2026-09-19): the day kind is judged on the civil day part and the original clock time rides through unchanged; golden `jutterswet-getijklok` closes the square. The DELTA is the rule itself — the source admits datum-tijd operands and settles nothing about the time of day |
-| **`tijdsduur` in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
+| **`duration` (tijdsduur) in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
 | The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind voorwaarde, where the nested reference is the §9.8 composition — that arm is executed, **on the bound day only** |
 | The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `dagsoortverwijzing-andere-dag`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
 | Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
@@ -4128,8 +4128,10 @@ Node names below are the **wire's**, as the schema spells them. The one
 family that is not a node per name is the aggregation and builtin family:
 two wire nodes, `Aggregation` and `BuiltinCall` (one `Functie` until L4),
 each discriminated by its `kind`, so its rows are named by kind
-(`som`, tijdsduur, `concatenatie`, …) in the source language's spelling
-rather than by a node name it does not have.
+rather than by a node name it does not have: the wire's value, with the
+source language's word in parentheses (`sum` (som), `duration`
+(tijdsduur), `concatenation` (concatenatie), …). The rows of `Predicate`
+name its kinds the same way.
 
 | node | evaluated operands | verdict | normative order |
 |------|--------------------|---------|-----------------|
@@ -4137,11 +4139,11 @@ rather than by a node name it does not have.
 | `Comparison` | `left`, `right` | **visible** | `left`, then `right` |
 | `TimeWindow` (the period condition) | `from`, `to` | **visible** | `from`, then `to`; an absent bound evaluates nothing, and BOTH bounds are read before the evaluation date decides. *Carried by both OCaml executors since 2026-09-20 (ch. 3.10); the order is stated and not yet witnessed by a case, because the two bound shapes WF-111 admits — a literal and an own attribute — have no fault position to order* |
 | `Clamp` | `base`, `minimum`, `maximum` | **visible** | `base`, then `minimum`, then `maximum`; an absent bound evaluates nothing |
-| tijdsduur / absolute tijdsduur | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
-| `datum met` / `datum-tijd met` | the `arguments` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
-| aggregation (`som`, `totaal`, `aantal`, `minimum`, `maximum`, `eerste`, `laatste`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to the som) |
-| aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `som`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
-| `concatenatie`, `TextComposition` | the inserted parts | **visible** | part order |
+| `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
+| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list (WF-037 leaves its arity open) | **visible** | argument order. *ref declines the form; the order is stated, not yet exercised* |
+| aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste)) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
+| aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
+| `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
 | `Invoke` | `arguments`, then the body | **visible** | argument order, then the body (a leeg argument propagates without entering it) |
@@ -4152,13 +4154,13 @@ rather than by a node name it does not have.
 | `Let` | `value`, `body` | forced | ch. 10.6: the `body` drives; the `value` is evaluated at the **first read**, so it takes that read's position in the enclosing order |
 | `Match` | `scrutinee`, one arm body | forced | the scrutinee selects the arm |
 | `IfThenElse` | `condition`, one branch | forced | the condition selects the branch; the other branch evaluates nothing |
-| `Rounding`, `wortel`, `absolute waarde`, `jaar uit`, `maand uit`, `dag uit`, `eerste paasdag`, `ListLength`, `FieldAccess`, `Construct`, `DimensionCellRead` | one | invisible | — |
-| `uur uit`, `minuut uit`, `seconde uit`, `milliseconde uit` | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
-| `tijdsevenredig deel` | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
-| `aantal dagen in` | none in `arguments`; the `filter` carries the condition | invisible | — |
+| `Rounding`, `squareRoot` (wortel), `absoluteValue` (absolute waarde), `yearOf` (jaar uit), `monthOf` (maand uit), `dayOf` (dag uit), `easterSunday` (eerste paasdag), `ListLength`, `FieldAccess`, `Construct`, `DimensionCellRead` | one | invisible | — |
+| `hourOf` (uur uit), `minuteOf` (minuut uit), `secondOf` (seconde uit), `millisecondOf` (milliseconde uit) | one | invisible | — *(ref declines them; a single operand carries no order either way)* |
+| `timeProportionalPart` (tijdsevenredig deel) | the base, and the `filter` | invisible | WF-056 restricts the base to a **bare** temporal attribute reference, so only the filter is data-dependent — one fault-capable position, no order |
+| `dayCount` (aantal dagen in) | none in `arguments`; the `filter` carries the condition | invisible | — |
 | `TemporalRead` | `date` only — `base` **names** the timeline and is never evaluated (ch. 3.3) | invisible | — |
-| `Predicate` — leeg / gevuld | `operand` | invisible | — |
-| `Predicate` — elfproef / numeriek met exact / dagsoort | `operand` | invisible | — *(ref declines them)* |
+| `Predicate` — `empty` / `filled` (leeg / gevuld) | `operand` | invisible | — |
+| `Predicate` — `elevenTest` / `exactDigits` / `dayKind` (elfproef / numeriek met exact / dagsoort) | `operand` | invisible | — *(ref declines them)* |
 | `CharacteristicCheck`, `RoleMembership` (until L2 `Rollidmaatschap` and `VerreRollidmaatschap`), `Regelversie` | none | invisible | — |
 | `Literal`, `AttributeReference`, `ParameterReference`, `VariableReference`, `ContextValue`, `BoundDay`, `BinderRef`, `Unresolved` (the expression and the condition variant) | none | invisible | — (a `BinderRef` forces its ch. 10.6 need **at its own position** in the parent's order) |
 | `Lambda` | — | not an operand position | never a value (WF-069): it is only the `function` slot of a `Fold`/`MapList`, applied once per element under that node's row |
@@ -4316,21 +4318,21 @@ what reaches the rows a barrier cannot, because a closed fold body
 |----------------|---------|
 | `Binary` `left` before `right`, by channel count | `synth3-operandvolgorde` (gates 5–6, and Drools: the full square) |
 | `Clamp` `minimum` before `maximum` | `begrensd-reads-bounds-in-order` (gate 8; ref by which fault, clingo by which bound is refused first) |
-| tijdsduur `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
+| `duration` (tijdsduur) `van` before `tot` | `tijdsduur-reads-van-before-tot` (gate 8; the ref leg — clingo carries the form and fails, but does not order it) |
 | composite members, wire order + short circuit | ch. 5.10's own witness table |
 | `Comparison` `left` before `right` | `ref/` `WV-5.11-vergelijking-…` (pair) |
 | aggregation contributors, in wire order | `ref/` `WV-5.11-som-bijdrager…` (pair) |
-| the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk an `aantal` takes and the `Values` walk a set-read `som` takes) |
+| the **instance** fold: the filter per member, members in fold order | `ref/` `WV-5.11-instantiefold-…` and `WV-5.11-instantiesom-…` (two pairs — the `Instances` walk a `count` (aantal) takes and the `Values` walk a set-read `sum` (som) takes) |
 | aggregation contributors **before** the `emptyFallback` | `ref/` `WV-5.11-som-…-leegwaarde` (pair) |
 | the `emptyFallback` evaluates unconditionally | `som-fallback-always-evaluated` (gate 8) + `ref/` `WV-5.11-som-leegwaarde-onvoorwaardelijk` |
-| `concatenatie` and `TextComposition` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
+| `concatenation` (concatenatie) and `TextComposition` part order | `ref/` `WV-5.11-concat-…`, `WV-5.11-tekstreeks-…` (pairs) |
 | `ListLiteral` element order | `ref/` `WV-5.11-listliteral-…` (pair) |
 | `StructLiteral` field order | `ref/` `WV-5.11-structliteral-…` (pair) |
 | `Invoke` argument order | `ref/` `WV-5.11-invoke-…` (pair) |
 | `Fold` `list` before `init` | `ref/` `WV-5.11-fold-…` (pair) |
 | `MapList` element order | `ref/` `WV-5.11-maplist-…` (pair) |
 | `FilterList` element order | `ref/` `WV-5.11-filterlist-…` (pair) |
-| `datum met` / `datum-tijd met` | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
+| `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | **none** — the reference interpreter declines the form, so there is nothing to run. The order is stated for the consumer that carries it first, and lands with it |
 | `TimeWindow` `from` before `to` | **none yet** — the form is carried since 2026-09-20 (ch. 3.10, golden `jutterswet-premievenster`), but the two bound shapes WF-111 admits are a literal and an own scalar attribute, and neither can fault. A witness lands with the general date expression, which is the first bound that can and an OPEN wire decision (ch. 3.12) |
 
 ---
