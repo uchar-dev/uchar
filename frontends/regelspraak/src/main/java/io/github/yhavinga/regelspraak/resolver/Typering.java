@@ -155,8 +155,15 @@ public final class Typering {
                 yield Resultaat.ok(new Datatype.Booleaan());
             }
             case GELIJK, ONGELIJK -> {
-                if (!zelfdeFamilie(l, r))
+                if (!zelfdeFamilie(l, r)) {
+                    // two kinds are WF-036's family sentence; a number beside a percentage is one kind to the verifier,
+                    // which reads the percentage's '%' as a unit and refuses the pair on units where no literal adopts it
+                    if (!(l.isGetalachtig() && r.isGetalachtig()))
+                        yield Resultaat.fout("gelijk: equality across families: " + soortWoord(l) + " vs " + soortWoord(r));
+                    if (verifierWeigertEenheden(l, r, lLit, rLit))
+                        yield Resultaat.fout("gelijk: equality operands have incompatible units");
                     yield Resultaat.fout("gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg " + l.naam() + " en " + r.naam());
+                }
                 if (anderePrecisie(l, r)) yield Resultaat.fout("gelijk: equality across date precisions");
                 if (anderDomein(l, r)) yield Resultaat.fout("gelijk: equality across different enumeration domains");
                 if (l.isGetalachtig()) {
@@ -277,8 +284,15 @@ public final class Typering {
     /** As {@link #toekenning(Datatype, Datatype)}, knowing whether the value is a unitless numeric literal. */
     public static String toekenning(Datatype doel, Datatype waarde, boolean waardeLit) {
         if (doel.isOnbekend() || waarde.isOnbekend()) return null;
-        if (!zelfdeFamilie(doel, waarde))
+        if (!zelfdeFamilie(doel, waarde)) {
+            // as in the equality arm of vergelijk: two kinds are WF-023's family sentence, a number beside a
+            // percentage its units sentence where no literal adopts the '%'
+            if (!(doel.isGetalachtig() && waarde.isGetalachtig()))
+                return "toekenning: a " + soortWoord(waarde) + " value is assigned to a " + soortWoord(doel) + " target";
+            if (verifierWeigertEenheden(doel, waarde, false, waardeLit))
+                return "toekenning: assignment across incompatible units";
             return "kan een waarde van type " + waarde.naam() + " niet toekennen aan een " + doel.naam();
+        }
         if (anderePrecisie(doel, waarde))
             return "toekenning: a " + soortWoord(waarde) + " value is assigned to a " + soortWoord(doel) + " target";
         if (anderDomein(doel, waarde))
@@ -429,6 +443,16 @@ public final class Typering {
             return pre + (verifierZin != null ? verifierZin
                     : "eenheden '" + el.weergave() + "' en '" + er.weergave() + "' zijn niet in elkaar om te rekenen");
         return null;
+    }
+
+    /** Whether the verifier refuses a pair of number-like types on units: its {@code units_compatible_adopting}
+     *  (IR-SPEC ch. 4.6) — a unitless numeric literal on either side adopts the other side's unit, and otherwise
+     *  both sides are unitless or carry convertible units. */
+    private static boolean verifierWeigertEenheden(Datatype l, Datatype r, boolean lLit, boolean rLit) {
+        if (lLit || rLit) return false;
+        Eenheid el = l.eenheidOf(), er = r.eenheidOf();
+        if (el == null && er == null) return false;
+        return el == null || er == null || !el.convertibleNaar(er);
     }
 
     /** The kind word the verifier writes for a datatype in a message ({@code datatype_kind} in

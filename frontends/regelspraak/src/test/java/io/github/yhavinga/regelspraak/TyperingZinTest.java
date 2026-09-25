@@ -71,6 +71,29 @@ class TyperingZinTest {
                         + "must share one precision)"));
     }
 
+    @Test void familie_bij_toekennen_en_gelijkheid() {
+        assertEquals(fout("gelijkstelling: toekenning: a text value is assigned to a number target"),
+                meldingen("De uitkomst van een Jutter moet gesteld worden op zijn naam."));
+        assertEquals(fout("gelijkstelling: toekenning: a date-day value is assigned to a number target"),
+                meldingen("De uitkomst van een Jutter moet gesteld worden op zijn vondstdag."));
+        assertEquals(fout("voorwaarde: gelijk: equality across families: text vs number"),
+                meldingen("Een Jutter is waardevol indien zijn naam gelijk is aan zijn telling."));
+        // a percentage is a number with the unit '%' to the verifier: across a unitless number it refuses the units
+        assertEquals(fout("gelijkstelling: toekenning: assignment across incompatible units"),
+                meldingen("Het aandeel van een Jutter moet gesteld worden op zijn telling."));
+        assertEquals(fout("voorwaarde: gelijk: equality operands have incompatible units"),
+                meldingen("Een Jutter is waardevol indien zijn aandeel gelijk is aan zijn telling."));
+    }
+
+    @Test void numeriek_naast_percentage_met_een_literal_houdt_de_eigen_zin() {
+        // the verifier admits both (the unitless literal adopts '%'), so it has no sentence for them
+        assertEquals(fout("gelijkstelling: kan een waarde van type Numeriek niet toekennen aan een Percentage"),
+                meldingen("Het aandeel van een Jutter moet gesteld worden op 5."));
+        assertEquals(fout("voorwaarde: gelijk/ongelijk vereist operanden van hetzelfde datatype, kreeg Percentage en "
+                        + "Numeriek"),
+                meldingen("Een Jutter is waardevol indien zijn aandeel gelijk is aan 5."));
+    }
+
     @Test void keuzetypedomein() {
         assertEquals(fout("voorwaarde: gelijk: equality across different enumeration domains"),
                 meldingen("Een Jutter is waardevol indien zijn staat gelijk is aan zijn weer."));
