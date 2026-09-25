@@ -278,13 +278,14 @@ public final class Typering {
                     operand.isTekst()
                         || (operand instanceof Datatype.Numeriek n && n.geheel() && !n.heeftEenheid())
                     ? Resultaat.ok(new Datatype.Booleaan())
-                    : Resultaat.fout("voldoet aan de elfproef is alleen toegestaan op Tekst of Numeriek (geheel getal), kreeg " + operand.naam());
+                    : Resultaat.fout("elfproef: elevenTest operand is " + soortWoord(operand)
+                            + ", must be text or a whole unitless number");   // the verifier's WF-036
             case NUMERIEK_MET_EXACT -> operand.isTekst()                 // §5.16 Tekst only
                     ? Resultaat.ok(new Datatype.Booleaan())
-                    : Resultaat.fout("numeriek met exact is alleen toegestaan op Tekst, kreeg " + operand.naam());
+                    : Resultaat.fout("numeriek met exact: exactDigits operand is " + soortWoord(operand) + ", must be text");
             case DAGSOORT -> operand.isDatum()                           // §5.15 Datum only
                     ? Resultaat.ok(new Datatype.Booleaan())
-                    : Resultaat.fout("'is een <dagsoort>' is alleen toegestaan op een datum, kreeg " + operand.naam());
+                    : Resultaat.fout("dagsoort: day-kind predicate operand is " + soortWoord(operand) + ", must be a date");
         };
     }
 

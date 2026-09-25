@@ -23,6 +23,8 @@ class TyperingZinTest {
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
 
+            Dagsoort de rustdag (mv: rustdagen);
+
             Domein Keurklasse is van het type Enumeratie
                 'gaaf'
                 'beschadigd'
@@ -52,7 +54,7 @@ class TyperingZinTest {
         return m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList();
     }
 
-    static List<String> fout(String zin) { return List.of("ERROR 28 " + zin); }
+    static List<String> fout(String zin) { return List.of("ERROR 30 " + zin); }
 
     @Test void datumprecisie() {
         assertEquals(fout("voorwaarde: gelijk: equality across date precisions"),
@@ -67,7 +69,7 @@ class TyperingZinTest {
         // the duration's own result also meets the unitless target, so only the precision line is pinned here
         assertTrue(meldingen("De uitkomst van een Jutter moet gesteld worden op de tijdsduur van zijn vondstdag tot "
                         + "zijn vondstmoment in hele dagen.")
-                .contains("ERROR 28 de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both "
+                .contains("ERROR 30 de (absolute) tijdsduur van … tot …: duration operands mix date precisions (both "
                         + "must share one precision)"));
     }
 
@@ -127,7 +129,7 @@ class TyperingZinTest {
                 meldingen(d + "zijn vondstdag plus zijn waarde."));
         String u = "De uitkomst van een Jutter moet berekend worden als ";
         assertTrue(meldingen(u + "zijn telling min zijn vondstdag.").contains(
-                "ERROR 28 min: duration − date is ill-formed (subtraction admits the date on the left only)"));
+                "ERROR 30 min: duration − date is ill-formed (subtraction admits the date on the left only)"));
     }
 
     @Test void niet_numerieke_operanden_bij_ordenen() {
@@ -144,6 +146,15 @@ class TyperingZinTest {
                 meldingen(r + "zijn naam plus zijn telling."));
         assertEquals(fout("maal vereist numerieke operanden, kreeg Numeriek en Percentage"),
                 meldingen(r + "zijn telling maal zijn aandeel naar beneden afgerond op 2 decimalen."));
+    }
+
+    @Test void predicaten() {
+        assertEquals(fout("voorwaarde: elfproef: elevenTest operand is date-day, must be text or a whole unitless number"),
+                meldingen("Een Jutter is waardevol indien zijn vondstdag aan de elfproef voldoet."));
+        assertEquals(fout("voorwaarde: numeriek met exact: exactDigits operand is number, must be text"),
+                meldingen("Een Jutter is waardevol indien zijn telling numeriek is met exact 4 cijfers."));
+        assertEquals(fout("voorwaarde: dagsoort: day-kind predicate operand is number, must be a date"),
+                meldingen("Een Jutter is waardevol indien zijn telling een rustdag is."));
     }
 
     @Test void tot_de_macht_met_een_eenheid() {
