@@ -10,8 +10,8 @@ document.
     write target (Wrakrecht, uitkering) through its type chain — one declared
     on Strandrecht, one on Wrakrecht — and no defaults group folds them into
     one stack, so both fire on a Wrakrecht instance; priority is explicit (a
-    defaults group, whose subtype base replaces the inherited base, ch. 7.10)
-    or explicitly absent, never implicit agenda order (ch. 7.7)
+    defaults group, whose subtype base replaces the inherited base, ch. 7.10),
+    never implicit agenda order (ch. 7.7)
 
 The report cites the version on the lower type of the pair, `Wrakrecht`, the
 first concrete type both rules fire on. With the two rules swapped in the
@@ -44,7 +44,16 @@ inherited one, and a `Wrakrecht` has one writer.
 on the subtype) and `corpus/golden/jutterswet-wrakerfbasis` (a rule on the
 supertype beside a group on the subtype) carry that shape, and
 `corpus/golden/anchor/jutterswet-strandrechtketen` carries a group on each
-level.
+level. The declared-unordered marking is no remedy here, so the report does
+not offer it: on either level a declared-unordered set meets the other
+level's rule in a composition ch. 7.10 refuses. Measured 2026-09-25 on
+`corpus/golden/jutterswet-wrakconflict`, whose two unordered groups sit on
+`Strandrecht.uitkering`: with this document's rule on `Wrakrecht` added, `ref`
+and the ASP backend refuse "one own group over an inherited declared-unordered
+set"; with the two groups moved to `Wrakrecht` and the rule put on
+`Strandrecht`, both refuse "a fold between a declared-unordered set of its own
+and an inherited stack has no defined reading". The verifier passes both
+documents.
 
 **The document.** Emitted by the RegelSpraak frontend from this source:
 

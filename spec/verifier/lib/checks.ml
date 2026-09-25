@@ -7854,8 +7854,7 @@ let wf079 ctx =
                          type chain — one declared on %s, one on %s — and no defaults group \
                          folds them into one stack, so both fire on a %s instance; priority is \
                          explicit (a defaults group, whose subtype base replaces the inherited \
-                         base, ch. 7.10) or explicitly absent, never implicit agenda order \
-                         (ch. 7.7)"
+                         base, ch. 7.10), never implicit agenda order (ch. 7.7)"
                         low a high low low))
             | _ -> None)
           rest
