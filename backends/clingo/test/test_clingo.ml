@@ -13359,8 +13359,9 @@ let () =
    wider magnitudes, pinned so that a split that learns signs has to say so
    here; so does zero beside a negative operand (a zero product). *)
 
-let tarief_frame ?(op = "times") ~tarief_t ~left ~right ~product_decimals () =
-  replace ~tok:"@OP@" ~by:op
+let tarief_frame ?(op = "times") ?(afronding = "2") ~tarief_t ~left ~right ~product_decimals () =
+  replace ~tok:"@AFR@" ~by:afronding
+  @@ replace ~tok:"@OP@" ~by:op
   @@ replace ~tok:"@TARIEF@" ~by:tarief_t
     (replace ~tok:"@LEFT@" ~by:left
        (replace ~tok:"@RIGHT@" ~by:right
@@ -13391,9 +13392,9 @@ let tarief_frame ?(op = "times") ~tarief_t ~left ~right ~product_decimals () =
               "right": @RIGHT@,
               "type": { "node": "Number", "whole": false, "decimals": @PD@, "sign": "unspecified" },
               "source": { "snippet": "het product" } },
-            "mode": "halfAwayFromZero", "decimals": 2,
-            "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" },
-            "source": { "snippet": "het product rekenkundig afgerond op 2 decimalen" } },
+            "mode": "halfAwayFromZero", "decimals": @AFR@,
+            "type": { "node": "Number", "whole": false, "decimals": @AFR@, "sign": "unspecified" },
+            "source": { "snippet": "het product rekenkundig afgerond" } },
           "initialisation": false, "presentation": "calculation" } ] } ],
     "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
@@ -13726,6 +13727,19 @@ let () =
     ~case_text:(tarief_case ~maandloon:"0.00" ~tarief:"21474837" ~grens:"7158279.00" ())
     ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
     ~without:[ "negative operand under rounded division is not translated" ] ();
+  (* a SUM wraps only where its own range fence fires; its sign is read from
+     its value where no range fence of the subject has fired, and from operands
+     whose signs agree whatever the magnitudes. 20000000,00 + 20000000,00
+     rounded to whole units: the sum wraps to a negative number *)
+  let som = tarief_frame ~op:"plus" ~afronding:"0" ~tarief_t:ongelezen ~left:maandloon_ref ~right:maandloon_ref
+      ~product_decimals:"2" () in
+  clingo_fence_fires ~name:"a rounded sum past its operand fence is no negative operand"
+    ~ir:som ~case_text:(tarief_case ~maandloon:"20000000.00" ~grens:"40000000.00" ())
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)"
+    ~without:[ "negative operand under rounding is not translated" ] ();
+  clingo_fence_fires ~name:"a negative rounded sum past its operand fence is a negative operand"
+    ~ir:som ~case_text:(tarief_case ~maandloon:"-20000000.00" ~grens:"-40000000.00" ())
+    ~needle:"negative operand under rounding is not translated" ();
   (* the two routes, on the program text. The WW twin's literal: annotated at
      three decimals, its term carries four, so it enters the split with k = 1 —
      unmultiplied, and without a rescale fence *)
