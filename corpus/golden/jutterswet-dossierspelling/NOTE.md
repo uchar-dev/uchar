@@ -73,6 +73,19 @@ B19), and since L5 that list is `rules` (delta B6).
 Only drift at a use site against an unchanged declaration pins the ci
 clause — which is what this document, and only this document, carries.
 
+**Re-measured 2026-09-25, the write half.** Making that one comparison
+case-sensitive (`norm a = norm b` -> `a = b` in the struct clause of
+`wf023_assignment`) turns this golden, and no other golden or rood document,
+red:
+
+    WF-090 FAIL /rules/rules/1/versions/0: a value of the struct domain
+    'DOSSIER' is assigned to a target of the struct domain 'dossier'
+
+The read half (`wf090_struct_identity`) has no position left where a struct
+stands in a verifier-clean document — the element-passing folds take numbers
+and dates only (WF-038), the composite positions are numeric — and making it
+case-sensitive leaves every golden and rood document clean.
+
 Deliberately carries no `bron.rgs` and no `bron.catala_en`: the drift is
 a wire-level spelling that neither frontend emits — both derive a
 reference's and a literal's type from the declaration — so a source file
