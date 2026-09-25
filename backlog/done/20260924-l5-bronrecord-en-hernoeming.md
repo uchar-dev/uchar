@@ -1361,3 +1361,429 @@ names)" erachter, en "TIJDSDUUR's own unit" → "the `duration` builtin's own un
 `bron.rgs`, `bron.catala_en` en `bron.flogic` in gates 9, 10 en 14 zijn namen van
 bronbestanden in het corpus, geen wiresleutels, en blijven. Daarna de memory.
 
+## Correcties op de kaarttekst (gemeten tijdens de bouw)
+
+- **"deze snijsessie" (3×)** in de stempellijst: bedoeld is de snijmeting van
+  2026-09-24 op main `1edd17e4`; het verslag zelf staat buiten de repo.
+- **U14, aanvulling (M7-O fase 1, open punt 2):** het bronrecord heeft één
+  schemadefinitie en `line` is daarin op elke knoop een toegelaten optioneel
+  veld (IR-SPEC ch. 4: de positie is optioneel); de emitters schrijven `line`
+  alleen waar v0 het had (consistentieversie, regelgroep); geen lezer weigert
+  een `line` op een andere knoop — de lader leest hem waar de AST een
+  `line`-veld heeft en laat hem elders vallen. Geen tweede schemadefinitie,
+  geen nieuwe weigerzin.
+- **"125 `Literal` zonder `bron`"** (D46, tabel M7): het zijn literalen met
+  `bron: null`; geen enkele literaal mist de sleutel zelf (M7-O gemeten).
+- **Tellingen van M7 (gemeten door m5.py, M7-O):** 6098 strings mechanisch +
+  9 in de twee handgetuigen = 6107 in 641 documenten; 773 + 1 nullen = 774
+  in 103; `line` 17 opgegaan (consistentie 16, regelgroep 1) en 49 vervallen;
+  676 documenten gemigreerd, 58 ongemoeid, 2 met de hand; de toka-dump 168
+  snippets en 1 `line`; gate 2 vormrijen 311 → 327.
+- **Acceptatie (0), "Wat M7 meet", punt 1:** `check-rood.sh` draait zijn
+  Drools-poot over alle 48 rood-cases, niet over de 11 met een
+  Drools-fragment; de nulmeting meet alle 48 (11 FAULT, 8 NOFAULT, 29
+  EXCLUDE op de basis).
+- **De toka-zone is op de basis niet verifier-schoon:** 28 van de 30
+  documenten geven exit 1; geen gate draait de verifier over `toka/` (gate 11
+  toetst her-emissie en replay). De nulmeting eist dat die uitvoer na M7
+  ongewijzigd terugkomt; de verifier-status van de zone zelf is een open punt
+  voor het Result (paden en tellingen, geen inhoud).
+- **Nulmeting-voor (main `1690aa05`):** 3308 bestanden in
+  de meetmap buiten de repository (ref/clingo/noop 619 elk, replay-API 242 per
+  tak met 188/167 PLAYED, rood 48 per instrument, toka 29 × 3, verifier 736);
+  tien verifierregels noemen `bron` (vier WF-113-getuigen, zes
+  WF-095-getuigen) en mogen na M7 bewegen; gestripte ruis: het tijdelijke
+  clingo-bestandspad, drie SLF4J-regels, stackframe-nummers in zeven
+  Drools-rood-bestanden.
+- **Werkverdeling stap 1, M7-J:** de toka-dump wordt in M7 niet door M7-J
+  geschreven maar gemeten (U3): de frontend her-emitteerde de 45 fragmenten
+  byte-gelijk aan de mechanische migratie (104888 bytes, 168 snippets, 1
+  `line`).
+- **Open punten uit M7-J voor het Result:** (a) de Drools-lader weigert de
+  marker zonder `source` bij het lezen, de OCaml-lader na de structurele
+  lading — zin en pointer gelijk, alleen een document met twee defecten kan een
+  andere eerste melding geven; (b) de Java-emitter weigert een lege brontekst
+  in het Nederlands (producentproza, zoals al zijn weigeringen), de catala- en
+  flogic-emitter met de Engelse laderzin; (c) commentaar buiten M7-J's scope
+  noemt `bron` nog als wireplek (`ir/Conditie.java:205`, `ir/Expr.java:358-359`,
+  `resolver/RuleChecker.java:848,861`, `grammar/DIVERGENCES.md:294,310-311`) →
+  C1 in M8.
+- **Nulmeting-script:** `som()` faalde stil op een verse worktree zonder
+  `_build` (pipefail); gerepareerd vóór de na-meting.
+- **"De L5-vorm van de wire", omvang M8:** de kaart noemt 72 propertyrijen
+  plus `datum`; gemeten landt M8 er 68 plus `datum` (`bron` en `line` gingen
+  in M7, `regel` blijft, `labels` blijft op de wire omdat het gat bij
+  `DimensieSelectie` een identiteit werd). Tellingen van m5.py M8 over de 736
+  documenten: 8171 knopen, 19747 sleutels, 6624 lijstsleutels, 9057
+  enumwaarden, 4575 nullen, 3 contextwaardenamen verbatim; 0 weigeringen; gate 2
+  van 77/327 naar 79/504 rijen.
+- **Open punt (A1, 2):** twee L2-rijen van `check-ir-schema.sh` dragen nog
+  oude besluitnummers ("U2, D8 (iv)", "U2"), ouder dan de regel van les (f);
+  voor de fixronde of het Result.
+- **Stempellijst, "38 van de 228 expect.txt noemen een v0-naam":** gemeten
+  op de L5-verifier breken er 46 (ook de kleine-letterspellingen
+  `eerste-paasdag`, `tijdsduur`, `tijdsevenredig-deel`); A2 zette
+  `EXPECTED_MIN_EXPECT` op 229 (de nieuwe getuige), N zet hem met mandaat
+  naar de gemeten stand (verwacht 260) in de commit met de 31 nieuwe
+  `expect.txt` (werkverdeling: die regel was aan A2 toegewezen).
+- **"212 pointerliteralen, 26 met een v0-segment":** pointers worden ook via
+  veldnamen gebouwd; in de verifieruitvoer bewogen 407 pointers in 337
+  getuigen, 27 soorten v0-segmenten (A2).
+- **Besluit A2 (hoofdsessie akkoord):** de meldpositie van een
+  WF-020-kruisbotsing houdt een expliciete lijstvolgorde, zodat
+  `wf020-crossform-collision` op dezelfde pointer meldt als in L4 (de
+  alfabetische volgorde van de L5-lijstnamen zou haar verplaatsen).
+- **Naamtabel (na A2):** het citaat van de rij `validity` klopt niet meer
+  (tabelcel `ALTIJD` → "always"); nieuw citaat `| `validity` | Validity | MUST
+  be always (neither bound written)`; door de hoofdsessie op de unie te zetten
+  (les (j)); de toets meldt tot dan 1 bevinding.
+- **Nulmeting van de verifier bij M8 (A2):** alle 417 bestaande getuigen
+  houden dezelfde regels in dezelfde volgorde; meldingen veranderden alleen in
+  namen; toka: dezelfde exitcodes en regels als bij M7.
+- **Werkverdeling C1 / acceptatie (f):** de JUnit-basis van de frontend was
+  573 (na M7-J), niet 570; er waren 17 `.name()`-aanroepen op 16 regels;
+  "IrEmitterTest en de dertien andere" = twaalf falende klassen plus `Verslag`
+  en `VouwsoortenGrensTest`. De toka-dump na M8: 101990 bytes, 203 knopen, 411
+  sleutels, 157 enumwaarden en 99 nullen hernoemd/verwijderd; her-emissie
+  byte-gelijk, geen divergentie.
+- **Open punten uit C1 voor het Result:** (a) de frontend schrijft
+  `type: null` op `dayCount` en `concatenation` (pre-L5; WF-034 weigert zo'n
+  document); (b) `DimensionSelection` kan de frontend niet schrijven (de
+  emitter weigert die vouw al vóór L5), dus geen frontendgetuige voor die
+  knoop; (c) `IrEmitterTest.java:994` draagt nog een besluitnummer uit de
+  L2-kaart; (d) de frontend schrijft nooit `initialisation` of `exceptions`
+  op een `Default`.
+- **Acceptatie (f), suites:** catala 216 → 235 en flogic 135 → 150 door de
+  proefdocumenten van checklist 17 (vloeren 201/81 blijven); de v0-sleuteltelling
+  in `emit.ml` was 74/67 (kaart 76/64, telmethode).
+- **Checklist 5 tegenover U16 (B2, open punt 7):** voor `Default.exceptions`
+  (na `source`) en `PrioritizedDefaults.unordered` (na `defaults`) wijkt de
+  geschreven L4-volgorde af van de `properties`-volgorde van het schema; U16 is
+  gevolgd (de volgorde van het corpus), 8 van 3110 catala-objecten; voor het
+  Result als open punt (schema-volgorde of emittervolgorde gelijktrekken).
+- **Gedragswijziging flogic (B2):** de flogic-emitter liet een kwalificator in
+  een vergelijking binnen een samengestelde conditie stil vallen en weigert die
+  nu; geen F-logic-bron bereikt die arm (eigen frontendzin).
+- **Open punten uit B2 voor het Result:** golden-bronproza met v0-wirenamen
+  (`rekenkamerheffing-catala` r. 12–14, `overzeelezing-catala` r. 16–17,
+  `tariefrecht-catala` r. 25 en 32, `hardheidsaftrek-catala` r. 19 — N of de
+  fixronde); `frontends/flogic/lib/parse.ml:427` noemt `naam: null` (sinds L4
+  `name: null`); catala schrijft `wholePeriod`, `ParameterReference` en
+  `VariableReference` die geen plugindocument langs de verifier draagt
+  (latere keuze, geen betekenis in L5).
+- **Acceptatie (e) en U34, bodemzinnen:** vijf regels van `check-rood.sh`
+  bewogen, niet één: `basis` → `base` (temporal-read-zin, ref en clingo),
+  `ALLE` → `all` (gedurende-zin, ref en clingo), `VariabeleRef` →
+  `VariableReference` (`dt_term`, clingo). De elf rood-fragmenten zijn
+  opnieuw gepind (`Unresolved` 4, `evaluationDate` 2, `Clamp` 1, `sum` 1,
+  `total` 3). Suites: ref 976 → 977, clingo 1325 → 1669 (L5-laadtabel, 167
+  rijen in beide leesstanden); `test_clingo.ml` laadt 1154 documenten, niet
+  973; Part I van ASP-TRANSLATION droeg 74 v0-tokens in backticks (23 geen
+  wirenaam) plus 42 wirenamen erbuiten: 90 vervangingen op 83 regels.
+- **Open punten uit B1 voor de lens en het Result:** (a) de verifier (A2)
+  zette ook de kleine-letterspellingen `tijdsduur`, `eerste-paasdag`,
+  `eerste/laatste` in zijn meldingen om naar de L5-waarde; ref en clingo
+  houden ze als dialectwoorden (U32), ook in de `dt_term`-bodemzin —
+  gelijktrekken is een keuze voor de adviesronde; (b) de redenkolommen van
+  `check-rood.sh` noemen nog v0-namen (`kind MINIMUM`, `Onopgelost`,
+  `TIJDSDUUR`): documentatie, geen bodemzin, voor de fixronde met mandaat;
+  (c) `vintage_read_params` vergelijkt de contextwaardenaam
+  hoofdletterongevoelig zoals vóór L5 — zonder gevolg van de wire, want de
+  uitvoerderlader weigert elke andere spelling.
+- **Werkverdeling C2:** 61 Drools-testbestanden dragen ingebedde documenten
+  (kaart: 60); 69 veranderden plus 1 nieuwe getuige
+  (`HernoemingWeigeringWitnessTest`, 12 tests); `CaseRunner` las wél een
+  wirenaam (`Rekenjaar`) en leest nu via de vertaaltabel — de transpilers
+  zelf niet (D52). JUnit 748 → 756 (M7) → 768; gate 12 zonder beweging
+  (188/167), Drools-fasen van de nulmeting 0 van 271/242/48 verschillend.
+- **Besluit hoofdsessie op C2/M7-J open punt (fase van de laadweigering):**
+  de Drools-lader weigert bij het lezen, de OCaml-uitvoerder na de structurele
+  lading; zin en pointer zijn gelijk, alleen een document met twee defecten
+  kan een andere eerste melding geven — blijft zo (geen betekenis, geen
+  corpusdocument); open punt in het Result.
+- **Open punten uit C2 voor het Result:** de Drools-README zegt nog dat gate
+  12 de jar alleen bouwt "if it is absent" (verouderd, pre-L5);
+  `IrLoader.integerOf` ongebruikt (pre-L5); een contextwaarde landt in het
+  Drools-geheugen onder haar v0-recordnaam omdat de transpilers die lezen
+  (D52).
+- **Stempellijst en stap 5 (N, gemeten):** 46 `expect.txt` opnieuw gepind
+  (12 op de stempellijst, 34 daarbuiten; geen getuige wisselt van arm) en 31
+  nieuw: 229 → 260, vloer 260; een pointer met een v0-segment stond in 223
+  negatief-NOTE's (252 pointers), niet 224; de v0-namen in backticks buiten
+  fenced blokken en bestandsnamen: negatief 568 → 121, golden 411 → 125, rood
+  88 → 22 (kaart: 666/501/93 met een ruimere telmethode); NOTE's herschreven:
+  negatief 282, golden 73, rood 21; ook v0-namen van eerdere landingen
+  (`domeinen`, `dagsoorten`, `bezield`, `teken`) stonden nog als huidige wire
+  in NOTE's en zijn rechtgezet.
+- **Open punten uit N voor de fixronde/het Result:** (a) RUNTIME-SEMANTICS
+  3.10 schrijft de clip-formule nog als `[vanaf, tot)` naast `from`/`to`
+  (tekstfix); (b) `jutterswet-vaarwaterspelling` is sinds L2 geen
+  ci-getuige van WF-088/WF-089 meer (`VAARWATER` staat alleen in de snippet):
+  al open sinds L4; (c) drie NOTE's met een pre-L5 verouderde bewering hebben
+  alleen een kader (`jutterswet-vangstklem`,
+  `wf098-contextwaarde-naam-kapitalisatie`, `jutterswet-wachtgeld`); (d)
+  `corpus/rood/dagsoortverwijzing-andere-dag/NOTE.md` noemt "D9" van een
+  andere kaart (pre-L5).
+- **Open punt uit de fixronde (NOTE-fixer):** de redentekst bij het anker
+  `jutterswet-kustwacht` in `scripts/check-drools.sh` (r. 990, "identical in
+  both branches") klopt niet met de meting: de exec-modeltak wijkt alleen af
+  op `rustwacht`, de DRL-teksttak ook op `gevarenwacht`; de pin toetst alleen
+  het label FAIL en blijft groen — documentatie in een beschermd script,
+  pre-L5, voor het Result.
+- **Open punten uit de REST-fixer voor het Result (pre-L5, niet door de
+  kaart veranderd):** ref's zin voor datumrekenkunde (`eval.ml` r. 933–934)
+  draagt "(WF-035)" en zegt "duration unit" waar clingo voor dezelfde vorm
+  "date arithmetic unit" zonder staart zegt; ref's WF-109-zin (`eval.ml`
+  r. 401–403) draagt "(WF-109)"; twee Drools-testbestanden
+  (`StilleGuardflankWitnessTest`, `HerhaaldTypepaarWitnessTest`) citeren de
+  oude woorden van de WF-100-zin als gedateerde meting/parafrase.
+- **U32 en checklistpunt 3, verfijning (A21, herkeuring R3):** een melding die
+  een enumwaarde van de wire noemt, gebruikt in elke lezer de L5-spelling
+  (`sum`, `total`, `duration`, `first`/`last`, …), zoals de verifier; de
+  voorbeelden "som and totaal" in U32 en checklistpunt 3 gelden dus niet meer
+  als blijvend dialect; zuivere dialectwoorden in proza (`gedurende`,
+  `verminderd met` als rekenlabel in `ref/lib/arith.ml`, `leeg`/`gevuld` als
+  toestand) blijven.
+- **Lens en herkeuring:** de lens op unie 1 (`b34edf39`) gaf EERST FIXEN
+  met B1 (geen gegate toets van de OCaml-vertaaltabel) en B2 (de clipformule
+  in RUNTIME-SEMANTICS 3.10) en 22 adviezen; alle 24 in dezelfde kaart
+  afgehandeld op vijf branches (SPEC, OCAML, JAVA, NOTE's, REST) behalve A22
+  (open punt); de herkeuring op unie 2 (`0577eb2c`) gaf MERGEN met drie
+  adviezen (R1 staarten in drie veranderde zinnen, R2 twee NOTE-woorden, R3
+  deze verfijning), R1 en R2 in de adviesronde gefixt.
+- **Open punten uit de adviesronde voor het Result:** (a) de WF-112-zin van
+  ref en clingo (veranderd door de kaart) noemt WF-112 in de lopende tekst,
+  niet als staart; (b) "leeg/gevuld" in drie clingo-zinnen noemt
+  predicaatsoorten die op de wire `empty`/`filled` heten (dialectwoord als
+  naam van de toets, U32); (c) de restarm van clingo's `dk_cond` is naar de
+  eigen definitie van `check-rood.sh` een bodemzin maar staat niet in de
+  lijst van 36 (geen rood-pin citeert hem; ref weigert dezelfde vorm met een
+  gelijste rij, wat RUNTIME-SEMANTICS r. 2041 "computed in `ref`"
+  tegenspreekt); (d) de wf088-NOTE zegt "three times over" waar de verifier
+  sinds L2 twee regels meldt (pre-L5).
+
+## Result
+
+**Geland (L5 van de v1-klap, 2026-09-25; basis main `1690aa05` — L1 tot en
+met L4 eronder; de landingscommit is deze kaartverplaatsing zelf, unie
+`f0cb8fd4`).** Negen bouwers (M7-O in twee fasen, M7-J, A2 fase 1 en — na de
+contextgrens van de eerste A2 — een verse A2 voor fase 2, A1, C1, C2, B1,
+B2 en N), veertig uitvoeringsbesluiten van de hoofdsessie (U1–U40) bovenop
+D41–D52, de kruisende besluiten, D38–D40 en het standaardantwoord op N2; M7
+als eigen commitreeks met een nulmeting vóór M8 (de kop "M7 — de
+nulmeting"); één lensronde op de unie (`b34edf39`: EERST FIXEN — B1–B2 en A1–A22, alle in dezelfde kaart gefixt op vijf branches), de herkeuring door een verse lens op unie 2 (`0577eb2c`: MERGEN met drie adviezen, in de adviesronde afgehandeld op de landingsunie `f0cb8fd4`). Alle veertien
+gates groen op de unie, die op de main-tip stond. Daarmee is de wire
+`uchar-ir-v1` compleet: op de wire staat geen v0-knoopnaam, geen v0-sleutel
+en geen v0-enumwaarde meer, op `Regelversie` met `regel` en `inconsistent`
+na (D39, 0 dragers); fase 2 van V1-WIREMIGRATIE is afgesloten.
+
+**De wire.** Het bronrecord `source: {snippet, line?}` op de plaats van
+`bron` op elke knoop die er een droeg (B26; één schemadefinitie
+`$defs/sourceReference`, `snippet` niet leeg, `line` ≥ 1 en alleen
+geschreven waar v0 het had — de consistentieversie en de regelgroep —, `file`
+en `column` tot de kaart die als eerste posities schrijft), verplicht op
+`Unresolved`, afwezig waar `bron` null was. De hernoeming van 32 knopen en
+hun sleutels (B6: `Text`, `Boolean`, `Enumeration`, `FactType`, `Role`,
+`RoleBinding`, `Dimension`, `Timeline`, `Validity`, `MemberInit`,
+`DayKindDefinition`, `StartPointDetermination`, `RuleGroup`, `Binary`,
+`Rounding`, `Clamp`, `TextComposition`, `LiteralChunk`,
+`EmbeddedExpression`, `AttributeReference`, `DimensionCellRead`,
+`ParameterReference`, `VariableReference`, `Unresolved`,
+`DimensionSelection`, `Comparison`, `Predicate`, `CharacteristicCheck`,
+`TimeWindow`, `Compound`, `QuantifierFold`, `WholePeriod`; `TemporalRead`
+met `base`/`date`; de defaultslaag met de namen van IR-SPEC 6.1), `eigenaar`
+→ `host?` (B10), `objecttype` → `subjectType`, de negen lijstsleutels onder
+`rules`, elke enumwaarde in de ene spellingsregel van N2 (Engels,
+lowerCamel; 15 families, 83 waarden; de bij naam geweigerde `error`, `info`
+en `the` in dezelfde spelling), `WholePeriod.granularity` uit het boolean
+`jaar`, en null → afwezig op de 18 posities die IR-SPEC optioneel noemt
+(4575 waarden); de L4-sleutelvolgorde ter plaatse hernoemd (U16). In-memory
+bleven de v0-constructoren en de Java-records (D52): één vertaaltabel per
+taal (`spec/verifier/lib/spelling.ml` voor lader, verifier, ref, clingo en
+de catala- en flogic-emitter; `ir/Spelling.java` voor `IrEmitter` en de
+Drools-lader), beide getoetst tegen de sectie `waarden` van de naamtabel
+(toetspunt 9); de naam van een contextwaarde komt verbatim in het geheugen,
+zodat de v0-spelling `Rekendatum` onderscheidbaar blijft.
+
+**M7 en de nulmeting.** `m5.py --stage m7`: 6107 strings naar
+`source.snippet` in 641 documenten, 774 nullen weg in 103, `line` 17
+opgegaan en 49 vervallen, twee getuigen met de hand
+(`wf113-marker-bron-leeg`: een snippet van alleen witruimte;
+`wf113-marker-bron-null`: de marker zonder `source`); de toka-dump
+mechanisch en door de frontend byte-gelijk her-geëmitteerd. Op de M7-unie
+(`14f1bfdb`) alle veertien gates groen zonder beweging en de
+bytevergelijking van 3308 uitvoerbestanden (ref, clingo, `ref --noop`, de
+replay-API in beide Drools-takken, rood, toka, verifier) byte-gelijk op de
+tien verifierzinnen na die `bron` noemden: de aanname "geen uitvoerder
+leest `bron`" houdt.
+
+**Migratie (M8).** `m5.py` (standaardrun M7 + M8; `migrate_bytes`, `--all`,
+`--check`, idempotent, luid met JSON-pointer; de tabellen in het script,
+door de naamtabeltoets gelijk gehouden aan de sectie `waarden`): alle 736
+documenten (anchor 40, golden 202, rood 47, negatief 417, toka 30), 0
+weigeringen; 8171 knopen en 19747 sleutels hernoemd, 6624 lijstsleutels,
+9057 enumwaarden via de tabel, 4575 nullen afwezig, 3 contextwaardenamen
+verbatim; een volle run over de L4-basis geeft precies de twee
+M7-weigeringen; een onafhankelijke transformatie uit het schemapaar geeft
+dezelfde bytes voor 736 van 736. De toka-dump na M8 (203 knopen, 411
+sleutels, 157 enumwaarden, 99 nullen) byte-gelijk her-geëmitteerd, geen
+divergentie (`toka/README.md`, regel L5); de 29 slices via `m5.py`. De
+naamtabel: 141 rijen herschreven, 73 nieuw, de zes gat-rijen van D51
+beslist, `onzeker` en `botsingen` leeg, `geland_telling` M7 5 en M8 220;
+levend als Nederlandse naam alleen `Regelversie` en `regel`.
+
+**Regels.** Geen regel erbij, geen regel vervallen. WF-113 (b) zoekt
+`source.snippet`; de lege snippet is in elke lezer een laadweigering
+zonder WF-nummer («a source snippet is never empty: a node without source
+text carries no source»); de marker zonder `source` weigeren de
+uitvoerders bij het laden en de verifier meldt hem in zijn leesstand met
+dezelfde zin; WF-113 (a) op `warning` met `error`/`info` bij naam; WF-098
+gesloten op `evaluationDate`/`evaluationYear` (de nieuwe getuige
+`wf098-v0-naam-rekendatum`, en `wf098-contextwaarde-naam-kapitalisatie`
+met de hand naar `EvaluationDate`); WF-108 (a) op `the`; WF-034 (q),
+WF-100, WF-109, WF-097 op `host` en `wholePeriod`; WF-049 op `base`/`date`;
+WF-053/WF-083/WF-034 op `subjectType`/`path`; WF-021/101 en
+WF-042/111/112 op `from`/`to`; de soorten en operatoren in elke melding in
+L5-spelling ("soort" in WF-091 blijft de term voor de datatypefamilie);
+elke pointer op de L5-wire (407 pointers in 337 getuigen bewogen, alleen
+in naam; alle 417 bestaande getuigen houden hun regels in dezelfde
+volgorde); uit de fixronde: WF-034 (q) zegt `host` zoals WF-097 en
+WF-109, en de vijf pointers die geen wirepointer waren (structvelden,
+functieparameters, een afwezige `threshold`) zijn indexpointers geworden. IR-SPEC: de spellingsregel in de Conventions, elke familietabel
+met de L5-waarden en een "v0 values:"-regel, het bronrecord in ch. 4 en
+3.5/3.6/3.9/4.1/4.4, `host?` in 4.5, `base`/`date` in 4.3a, de D51-namen,
+de Rules-tabel, 6.1 (101/500/245 v0-tokens in backticks → 87/471/187: wat
+bleef is `v0 name:`, geschiedenis, mapnamen en brontaal); RUNTIME-SEMANTICS
+op elke plek die een v0-vorm als levend noemde (52/138/69 → 8/74/1). De
+gedeelde weigerzinnen letterlijk gelijk in verifier, OCaml-lader, ref,
+clingo en Drools zonder regelnummerstaart (ook de staarten van WF-053 en
+WF-093 in ref, clingo en Drools weg).
+
+**Stempels (V14 (a)), lijst in `corpus/negatief/README.md` sectie "L5":**
+0 verwijderd, 2 met de hand (`wf113-marker-bron-leeg`,
+`wf098-contextwaarde-naam-kapitalisatie`), 46 herschreven (m) met een
+L5-delta op het defect (elk met `expect.txt`), 1 nieuw
+(`wf098-v0-naam-rekendatum`); negatief 417 → 418; `expect.txt` 228 → 260
+(46 opnieuw gepind — geen getuige wisselt van arm —, 31 nieuw;
+`EXPECTED_MIN_EXPECT` 228 → 260); vloer 350 blijft; 282 negatief-, 73
+golden- en 21 rood-NOTE's herschreven, de citaten opnieuw uit de echte
+L5-verifieruitvoer (270 van 275 citaatblokken; de overige 5 zijn gedateerde
+metingen met kader).
+
+**Consumenten en emitters.** Gedeelde OCaml-lader op de L5-vorm met elke
+v0-knoopnaam, v0-sleutel, v0-lijstsleutel, v0-enumwaarde en elke `null` op
+een D5 (a)-veld bij naam geweigerd (de L5-laadtabel in de clingo-suite: 167
+rijen in beide leesstanden; de M7-tabel: 32 rijen); de clingo-suite houdt
+`spelling.ml` tegen de sectie `waarden` van de naamtabel en de schema-enums
+(53 checks; een verkeerd gespelde waarde maakt gate 6 rood); ref en clingo
+noemen elke wireconstructie én elke enumwaarde in L5-spelling zoals de
+verifier (zuivere dialectwoorden in proza blijven), matchen de
+contextwaarde op `Spelling.evaluation_date`/`evaluation_year`, en hun
+veranderde zinnen dragen geen regelnummerstaart meer; de elf rood-fragmenten met
+een v0-naam opnieuw gepind en vijf bodemzinnen van `check-rood.sh` mee
+(`base`, `all`, `VariableReference`); nulmeting M8: ref, clingo en
+`ref --noop` over 619 golden-, 48 rood- en 29 toka-cases byte-gelijk tussen
+M7 en de unie op die elf fragmenten na, beide Drools-takken en de
+Drools-rood-poot 0 van 271/242/48 verschillend; Part I van
+`spec/ASP-TRANSLATION.md` op de L5-namen (U38; 90 vervangingen, Part II
+ongemoeid). Catala en flogic schrijven de L5-vorm via `spelling.ml` (geen
+eigen stringtabel meer; catala schrijft geen `line`; de flogic-emitter
+weigert nu een kwalificator in een vergelijking binnen een samengestelde
+conditie in plaats van hem stil te laten vallen); de twister van gate 13
+sleutelt op de L5-namen (40 twists over 22 goldens, DRL 21). `IrEmitter`
+schrijft de L5-vorm in canonieke volgorde via `Spelling.java` (17
+`.name()`-aanroepen weg; `IrEmitterTest` en twaalf andere testklassen plus
+`Verslag` en `VouwsoortenGrensTest` herschreven; commentaar in de frontend
+en `DIVERGENCES.md` op de L5-namen); de Drools-lader strikt op de L5-vorm
+met de zinnen van de OCaml-lader (`BronrecordWeigeringWitnessTest` 8 tests
+over 35 knoopsoorten; `HernoemingWeigeringWitnessTest` 12 tests over 33
+knoopnamen, 89 sleutels, 9 lijsten, 99 enumwaarden, 18 nullen en de bij
+naam geweigerde waarden; `CaseRunner` las `Rekenjaar` van de wire en leest
+nu via de tabel; 69 testbestanden met ingebedde documenten door `m5.py`;
+uit de fixronde: een knoopnaam buiten de v1-verzameling is in de
+Drools-lader een documentfout met de zin van de OCaml-lader,
+`OnbekendeKnoopWitnessTest` leest daarvoor als eerste Drools-test het
+schema);
+73 rgs-, 12 catala- en 2 flogic-goldens en de dump byte-identiek.
+
+**Gate-scripts (per regel):** `check-ir-schema.sh` (alle bases op de L5-vorm;
+`_l5_base` en `L5_SHAPE_ROWS`; patroonrijen 77 → 79 voor `Validity`,
+vormrijen 311 → 327 (M7) → 504); `check-verifier.sh` (`EXPECTED_MIN_EXPECT`
+228 → 229 → 260); `check-reftype-derivation.sh` (de twister op `Binary`/
+`Rounding`/`Clamp`/`Let`/`Aggregation`, `plus`/`minus`/`reducedBy`/`times`,
+de aggregatiesoorten, `duration`/`absoluteDuration`, `left`/`right`,
+`AttributeReference`/`subjectType`/`attribute`, `ParameterReference`,
+`DimensionCellRead`; vloeren 38/20 blijven); `check-rood.sh` (acht
+bodemzinrijen: `base` ×2, `all` ×2, `VariableReference`, en drie voor de
+L5-spelling van soorten in ref en clingo; het kopcommentaar en de
+redenkolom op de L5-namen); `check-ir-schema.sh` daarnaast 29
+besluitnummers in L2-rijen vervangen door de kaartnaam; `check-drools.sh`
+ongewijzigd (geen kanaalwissel).
+
+**Lens:** op unie 1 (`b34edf39`) EERST FIXEN — B1: geen gegate toets hield de OCaml-vertaaltabel tegen de sectie `waarden` van de naamtabel (een verkeerd gespelde waarde zonder corpusdrager liet zes gates en de naamtabeltoets groen; tien L5-waarden hebben geen drager), B2: de clipformule in RUNTIME-SEMANTICS 3.10 schreef nog `[vanaf, tot)`; 22 adviezen: een onbekende knoopnaam als Drools-Refusal in plaats van documentfout, zeven spec-onnauwkeurigheden (de tekenzin, `threshold`/`digits` als voorwaardelijk, `unordered` en `initialisation` als verplicht, dialectspelling in RUNTIME-SEMANTICS-tabellen, een citaat zonder redactionele noot, de `line`-regel), "owner" in WF-034 (q), regelnummerstaarten in veranderde uitvoerderzinnen, vijf verifierpointers die geen wirepointer waren, v0-namen in NOTE's, commentaar, catala-bronproza, de redenkolom van `check-rood.sh` en besluitnummers in `check-ir-schema.sh`, een dode hoofdletterongevoelige vergelijking, dode code, de `/tmp`-paden in de kaart, de dialectspelling van enumwaarden in ref en clingo, en twee geladen maar ongelezen velden — alle 24 in dezelfde kaart afgehandeld op vijf branches (SPEC, OCAML, JAVA, NOTE's, REST) behalve A22 (open punt 9), met wat de fixers zelf van dezelfde klasse vonden (`Default.initialisation` optioneel, `filledCount` in de 5.11-tabel, de drempelbewering op vier plaatsen, 19 extra besluitnummers, v0-namen in catala-testproza en Part I van ASP-TRANSLATION, de WF-100-zin met `host`); de herkeuring door een verse lens op unie 2 (`0577eb2c`): MERGEN, 24 van 24 gefixt of zoals besloten (841 eigen mutaties in de eerste ronde, 707 Drools-laadresultaten en 562 pointers hermeten in de tweede), met drie adviezen — drie veranderde zinnen met een WF-nummer tussen haakjes, `domeinen` in twee NOTE's, en de verfijning van U32 (een melding die een enumwaarde noemt, gebruikt de L5-spelling) — in de adviesronde afgehandeld zonder derde lens.
+
+**Gates op de landing (alle veertien, elk los):** Landingsunie `f0cb8fd4` (2026-09-25): 1 PASS; 2 PASS 289 bestanden, 79 patroon- + 504 vormrijen; 3 PASS 289 schoon / 418 negatief / 260 armfragmenten (vloer 260); 4 PASS 667; 5 PASS ref-suite 977 / 619 replays; 6 PASS clingo-suite 1726 / 619; 7 PASS 582 + 37; 8 PASS 48 / 96 (Drools-poot 11 / 37); 9 PASS 235 / 12; 10 PASS 577 tests / 73 goldens; 11 PASS 45 fragmenten, 29 slices, replay 29/29/29; 12 PASS played 188, DRL 167, JUnit 773; 13 PASS 40 twists / 22 goldens, 100 replays, DRL 21; 14 PASS 150 / 2. Nulmetingen: M7 (unie `14f1bfdb`) byte-gelijk op de tien verifierzinnen met `bron` na; M8 (unie 1 `b34edf39`) ref 3 en clingo 8 bestanden (de elf herpinde rood-fragmenten) en de verifier; de fixronde (unie 2) alleen de twee clingo-fragmenten van de L5-spelling en zes verifierzinnen; noop, beide Drools-takken, Drools-rood en toka 0 in elke meting.
+
+**Open punten (genummerd; L5 sluit de klap af, dus elk punt is een eigen
+kaart of een meting na v1):**
+1. De fase van de laadweigering verschilt: de Drools-lader weigert bij het
+   lezen, de OCaml-uitvoerder na de structurele lading; zin en pointer zijn
+   gelijk, alleen een document met twee defecten kan een andere eerste
+   melding geven (bestond sinds L4).
+2. De Java-emitter weigert een lege brontekst in het Nederlands
+   (producentproza, zoals al zijn weigeringen), de catala- en flogic-emitter
+   met de Engelse laderzin.
+3. Twee zinnen van ref die de kaart niet veranderde dragen nog een
+   regelnummerstaart: de datumrekenkundezin ("duration unit (WF-035)", waar
+   clingo voor dezelfde vorm "date arithmetic unit" zonder staart zegt) en
+   de WF-109-zin; de operatorlabels van `ref/lib/arith.ml` (`maal`,
+   `verminderd met`, …) blijven dialectwoorden (twee rood-pins hangen eraan).
+4. De reden-tekst van het anker `jutterswet-kustwacht` in `check-drools.sh`
+   ("identical in both branches") klopt niet met de meting (de DRL-teksttak
+   wijkt ook af op `gevarenwacht`); de pin toetst alleen het label en blijft
+   groen; de Refusal-tekst "(unknown expression node)" van de Drools-lader
+   bleef byte-gelijk (gate 12 drukt hem af, een NOTE citeert hem).
+5. Voor `Default.exceptions` (na `source`) en `PrioritizedDefaults.unordered`
+   (na `defaults`) wijkt de geschreven volgorde af van de
+   `properties`-volgorde van het schema (U16 gevolgd; 8 van 3110
+   catala-objecten; het corpus draagt dezelfde volgorde sinds L4).
+6. De frontend schrijft `type: null` op `dayCount` en `concatenation`
+   (WF-034 weigert zo'n document; pre-L5), kan geen `DimensionSelection`
+   schrijven (de emitter weigert die vouw) en schrijft nooit
+   `initialisation` of `exceptions` op een `Default`.
+7. Catala schrijft `wholePeriod`, `ParameterReference` en `VariableReference`
+   die geen plugindocument langs de verifier draagt (WF-043, WF-034); of de
+   catala-emitter die armen ook moet weigeren, zoals flogic nu doet, is een
+   latere keuze.
+8. De toka-zone is niet verifier-schoon (28 van de 30 documenten geven
+   exit 1, op de basis al zo); geen gate draait de verifier over `toka/`; de
+   nulmetingen eisen alleen dat die uitvoer op naamverschillen na gelijk
+   blijft.
+9. Pre-L5 restanten, gemeten en niet in deze kaart gefixt:
+   `IrEmitterTest.java:994` draagt een besluitnummer van de L2-kaart;
+   `Dimension.preposition` en `Predicate.digits` worden geladen maar door
+   geen OCaml-lezer gebruikt; twee Drools-testbestanden citeren de oude
+   woorden van de WF-100-zin als gedateerde meting; geen corpusgetuige raakt
+   de WF-092-pointerposities die de fixronde repareerde.
+10. `jutterswet-vaarwaterspelling` is sinds L2 geen ci-getuige van
+    WF-088/WF-089 meer (`VAARWATER` staat alleen in de snippet); drie NOTE's
+    met een pre-L5 verouderde bewering hebben alleen een kader
+    (`jutterswet-vangstklem`, `wf098-contextwaarde-naam-kapitalisatie`,
+    `jutterswet-wachtgeld`).
+11. Testwijzigingen (gemeld, onder kaartmandaat): ref 976 → 977, clingo
+    1284 → 1325 → 1726, catala 216 → 235, flogic 135 → 150, frontend JUnit
+    570 → 577, Drools JUnit 748 → 756 → 773 (`OnbekendVeldWitnessTest`
+    knoopsoortvloer 64); gate 2 van 77/311 naar 79/504 rijen; niets
+    verwijderd.
+12. Een contextwaarde landt in het Drools-geheugen onder haar v0-recordnaam
+    (`Rekendatum`/`Rekenjaar`), omdat de transpilers die naam lezen (D52); de
+    in-memory hernoeming van de Java-records en de OCaml-typen is, als ze
+    gewenst is, een eigen kaart.
+13. Additief na v1: de reden bij `Unresolved` (B24), `file` en `column` in
+    het bronrecord met de positieconventies (D45), `statuteAnnotations` op de
+    defaultslaag (D44), het aanscherpen van v0-nullable velden zonder
+    null-dragers (U18) en een voorwaardelijke `threshold`/`digits` (U19).
+14. Stap (k), de pin-bump van `regelspraak-java`: één keer, nu v1 compleet is,
+    in de nieuwe toolchain onder uchar (maintainerbesluit 2026-09-24); de
+    toolchain-impact van L5 (A.8: alle 12 asserties van de
+    toolchain-`IrEmitterTest` dragen Nederlandse sleutels) landt daar.
