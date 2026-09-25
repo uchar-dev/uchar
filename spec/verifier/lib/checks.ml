@@ -4195,6 +4195,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       let source_position =
         arity = 1 && f.element_objecttype <> None && List.mem f.kind aggregation_kinds
       in
+      (* a fold that names its population and hands no source (WF-037, the
+         arm below). Computed once because the filled count's arity and
+         set-source arms and WF-047's range arm step aside on it, so that the
+         node is reported once, by that arm *)
+      let sourceless =
+        match (f.element_objecttype, f.argumenten) with
+        | Some el, [] -> Some (el, `No_operand)
+        | Some el, [ List_literal _ ] when f.kind = Aantal || f.kind = Aantal_gevulde ->
+            Some (el, `List_literal)
+        | _ -> None
+      in
       (* WF-037: facet validity per kind *)
       (if f.leegwaarde <> None && f.kind <> Som then
          [ v "WF-037" at "empty-value fallback on a non-sum aggregation" ]
@@ -4308,6 +4319,37 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                   the count has no contributors to count, only its operand, whatever that \
                   operand holds (ch. 4.3)" ]
          | _ -> [])
+      (* WF-037, the fold that names its population and hands no source
+         (IR-SPEC ch. 4.3; the twin of the count's source arm above, where
+         the element type is missing and here the operand). An elementType
+         makes the node an instance fold, and an instance fold reads its
+         contributors from one source argument. Measured before this arm:
+         with no argument the fold was verifier-clean under every kind but
+         the filled count, whose arity arm refused it on the listed form's
+         ground (the listed-form clause above reads only folds without an
+         element type, the fold-source rules only a fold of one argument),
+         while ref and clingo refused it with their bottom sentences and both
+         Drools branches refused the rule. A single ListLiteral under a count
+         was refused on WF-047 alone, for its binding and never for its
+         argument. Under a value fold that list literal was already refused
+         on its type (WF-091, beside WF-038 or WF-047), so the arm takes it
+         under the two counts only. *)
+      @ (match sourceless with
+         | Some (el, `No_operand) ->
+             [ v "WF-037" at
+                 (Printf.sprintf
+                    "a %s aggregation carries elementType \"%s\" but no source operand: an \
+                     instance fold ranges over a written source"
+                    (Spelling.encode Spelling.aggregation_kind f.kind)
+                    el) ]
+         | Some (el, `List_literal) ->
+             [ v "WF-037" at
+                 (Printf.sprintf
+                    "a %s aggregation carries elementType \"%s\" and a ListLiteral operand: a \
+                     listed value is no source of instances"
+                    (Spelling.encode Spelling.aggregation_kind f.kind)
+                    el) ]
+         | None -> [])
       (* WF-037, the filled count's shape (IR-SPEC ch. 4.3, semantics
          RUNTIME-SEMANTICS ch. 3.4c). The law is a form demanded rather than
          refused: exactly one argument, and that one the set source. The
@@ -4316,8 +4358,11 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          established. The set source's range is the loader's since L2 (the
          schema's condition, B12): a filled count with an elementType
          and one argument carries sourceRole or sourcePath, so what is left here is
-         a source that is no attribute reference at all. *)
-      @ (if f.kind <> Aantal_gevulde then []
+         a source that is no attribute reference at all. A filled count that
+         names its population and hands no source is the arm above's: the
+         arity sentence reads its ground from the listed form, which an empty
+         argument list is not. *)
+      @ (if f.kind <> Aantal_gevulde || sourceless <> None then []
          else if arity <> 1 then
            [ v "WF-037" at
                (Printf.sprintf
@@ -4841,14 +4886,17 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
              match (fold_source, f.bron_rol) with
              | _, None -> []
              (* the range beside a count's union is WF-110 (c)'s second claim, and
-                the filled count's non-reference source is WF-037's: one defect,
-                one rule *)
+                the filled count's non-reference source is WF-037's, and so is a
+                fold that names its population and hands no source — what is
+                missing there is the operand, not an instance fold for the
+                binding to belong to: one defect, one rule *)
              | None, Some _ when f.kind = Aantal && arity = 1
                                  && (match f.argumenten with
                                     | [ Instance_set_union _ ] -> true
                                     | _ -> false) ->
                  []
              | None, Some _ when f.kind = Aantal_gevulde && source_position -> []
+             | None, Some _ when sourceless <> None -> []
              | None, Some _ ->
                  [ v "WF-047" (sub "sourceRole")
                      "a fold-source role binding on a node that is not an instance fold over a \
