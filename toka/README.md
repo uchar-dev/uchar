@@ -24,7 +24,8 @@ be removed in one move.
   no sibling `.rgs`, so gate 11 re-emits none of them (it schema-checks and
   replays them instead). A slice therefore does not follow the casus dump by
   itself — when the emitter moves, the slices are moved by hand in the same
-  card, or the zone carries two spellings of one construct.
+  card, or the zone carries two spellings of one construct. A slice carries
+  beside its scenario whatever anchors its model (see Well-formedness).
 - `src/test/java/**` — two of the three integration tests excluded at the
   frontend takeover (CasusTest, ModelTest), in their original form (only the
   fixture path and, where needed, the package were adjusted). They exercise
@@ -44,6 +45,49 @@ deliberately diverges from the toolchain here). Because `--ir` writes nothing
 for a model with any error, the pinned dump is emitted from every fragment
 **except** those two; the gate holds both out by name and fails if either
 holdout ever goes stale.
+
+## Well-formedness
+
+Since 2026-09-25 (the card `20260925-toka-welgevormd.md` in `backlog/`) the
+zone claims more than parity: every replay slice is a well-formed program,
+verifier-clean under gate 3's verifier, and gate 11 checks it (its obligation
+4). The casus dump is the exception, on purpose.
+
+- **The slice rule: a slice carries beside its scenario whatever anchors its
+  model.** The casus declares a timeline with a variable start, and such a
+  timeline is well-formed only when a start-point determination anchors it
+  (WF-016), at a member declared as a day-precision date on the object type
+  the determination names (WF-032). The frontend writes that member itself,
+  as the last attribute of its object type, when it resolves the
+  determination. Slicing had cut both from 27 of the 29 slices, which each
+  failed on WF-016 alone; with the determination only they fail on WF-032
+  instead (measured). Those 27 now carry the casus's one determination and
+  its member declaration, copied mechanically from `casus/ir.json`; the two
+  start-point slices carried both already and did not move, and all 29 now
+  carry one identical model. The anchor's write rule stays with its own
+  scenario: a slice needs its model anchored, not the anchor computed. The
+  replays in ref, clingo and Drools print byte for byte what they printed
+  before.
+- **The standing: 28 of the 29 slices are verifier-clean.** `toka-24` is held
+  out by gate 11, pinned to the one report it draws (WF-099 at
+  `/rules/rules/0/versions/0/value/base/minimum`): the casus writes a clamp's
+  minimum as a literal with a unit (EUR) over a base whose operands are
+  declared without one, the one-sided unit pair that IR-SPEC ch. 4.1 leaves
+  open as one decision for WF-023, WF-035, WF-036 and WF-099 together. That is
+  a property of the casus and not of the emitter, which writes the unit the
+  source writes; every executor replays the slice. The holdout fails when it
+  goes stale in either direction: when the slice turns clean, or when it draws
+  any other report.
+- **The casus dump is not a well-formed program, and is not meant to be.** As
+  one document it draws 18 reports. Its scenarios each write the same targets
+  in their own way, legitimate per scenario and not as one program (6 ×
+  WF-026, 1 × WF-079), and it uses four attributes it does not declare, which
+  the slices, cut in the scoping of the toolchain's own scenario tests, do
+  declare (8 × WF-034: seven references to them and the one derived position
+  their absence leaves untyped); WF-022, WF-045 and WF-099 draw one report
+  each, the last at the very rule `toka-24` carries. Its role is the parity
+  object of the byte-identical re-emission, so gate 11 keeps it out of the
+  well-formedness leg.
 
 ## Deliberate divergences from the toolchain emission
 
