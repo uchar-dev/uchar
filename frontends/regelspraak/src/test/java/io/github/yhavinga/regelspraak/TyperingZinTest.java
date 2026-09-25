@@ -105,16 +105,18 @@ class TyperingZinTest {
                 + "groter is dan 5."));
     }
 
-    /** WF-039's target clause: a number literal written into a sign-restricted target, read off the written lexeme
-     *  as the verifier reads it (a leading minus is negative, only zeros is zero). Measured on the frontend before
-     *  this: a Dutch refusal ({@code waarde -5 voldoet niet aan de teken-beperking …}), and for {@code -0} no
-     *  refusal at all where the verifier refuses the document. */
+    /** WF-039's target clause: a number literal written into a sign-restricted target, its sign read off its value
+     *  as the verifier reads it, zero neither negative nor positive; the sentence names the written lexeme. Measured
+     *  on the frontend before this: a Dutch refusal ({@code waarde -5 voldoet niet aan de teken-beperking …}). */
     @Test void tekenbeperking_van_het_doel() {
         String v = "De %s van een Vondst moet gesteld worden op %s.";
         assertEquals(fout("teken-beperking: negative literal '-5' is written into a target under a non-negative sign "
                 + "restriction"), meldingen(v.formatted("voorraad", "-5")));
-        assertEquals(fout("teken-beperking: negative literal '-0' is written into a target under a non-negative sign "
-                + "restriction"), meldingen(v.formatted("voorraad", "-0")));
+        assertEquals(List.of(), meldingen(v.formatted("voorraad", "-0")));
+        assertEquals(fout("teken-beperking: literal '-0' is written into a target under a negative sign restriction"),
+                meldingen(v.formatted("korting", "-0")));
+        assertEquals(fout("teken-beperking: literal '0/5' is written into a target under a positive sign restriction"),
+                meldingen(v.formatted("stukprijs", "0/5")));
         assertEquals(fout("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
                 meldingen(v.formatted("stukprijs", "0")));
         assertEquals(fout("teken-beperking: literal '5' is written into a target under a negative sign restriction"),

@@ -3383,23 +3383,21 @@ final class RuleChecker {
      *  enum-domein posture (Tabel 61 rij 7). A computed value's sign is undecidable here and stays
      *  unchecked (documented in grammar/DIVERGENCES.md). Percentage carries no Teken in the model.
      *
-     *  <p>The verifier refuses the same literals (WF-039's target clause) and reads the sign off the lexeme the
-     *  emitter writes: a leading minus is negative and a lexeme of zeros is zero, so {@code -0} is negative there.
-     *  This check reads it the same way and speaks its sentence. The verifier stands aside where the literal's own
-     *  type already refuses it; a number literal here is typed without a sign of its own, so this is the one
-     *  message. */
+     *  <p>The verifier refuses the same literals (WF-039's target clause), reading the sign off the literal's value:
+     *  zero is neither negative nor positive, so {@code -0} passes a non-negative target and {@code 0/5} fails a
+     *  positive one. This check reads it the same way and speaks its sentence, which names the lexeme the emitter
+     *  writes. The verifier stands aside where the literal's own type already refuses it; a number literal here is
+     *  typed without a sign of its own, so this is the one message. */
     private void keurTeken(Datatype doelType, Expr waarde, int line) {
         if (!(doelType instanceof Datatype.Numeriek n) || n.teken() == Datatype.Teken.ONBEPAALD) return;
         if (!(waarde instanceof Expr.Literal lit) || lit.type() == null || !lit.type().isNumeriek()) return;
+        java.math.BigDecimal v = Literalen.getal(lit);
+        if (v == null) return;
         String w = lit.waarde().replace(',', '.');   // the lexeme IrEmitter writes
-        String kaal = w.strip();
-        boolean negatief = kaal.startsWith("-");
-        String cijfers = negatief || kaal.startsWith("+") ? kaal.substring(1) : kaal;
-        boolean nul = !cijfers.isEmpty() && cijfers.chars().allMatch(c -> c == '0' || c == ',' || c == '.');
         String zin = switch (n.teken()) {
-            case NIET_NEGATIEF -> negatief ? "negative literal '" + w + "'" : null;
-            case POSITIEF      -> negatief || nul ? "literal '" + w + "'" : null;
-            case NEGATIEF      -> negatief ? null : "literal '" + w + "'";
+            case NIET_NEGATIEF -> v.signum() < 0 ? "negative literal '" + w + "'" : null;
+            case POSITIEF      -> v.signum() > 0 ? null : "literal '" + w + "'";
+            case NEGATIEF      -> v.signum() < 0 ? null : "literal '" + w + "'";
             case ONBEPAALD     -> null;   // unreachable (guarded above)
         };
         if (zin != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, "teken-beperking: " + zin
