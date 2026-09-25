@@ -1,0 +1,1 @@
+a count aggregation carries elementType "Vondst" and a BuiltinCall operand
