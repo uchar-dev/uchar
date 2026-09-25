@@ -30,7 +30,8 @@ outcomes — one per executor: `ref` faults at evaluation (`EVALUATION
 FAULT: unordered comparison: 2026-06-21 vs @1782022200000ms`); the ASP
 backend refuses ahead of translation (`TRANSLATION FAULT: a
 non-datum-tijd (or mixed-granularity) operand under a datum-tijd
-eerste/laatste fold has no order here`); and the Drools backend
+first/last fold has no order here`, re-measured 2026-09-25; until L5 it
+said `eerste/laatste fold`); and the Drools backend
 **throws** on the same input (`ERROR ConsequenceException: …
 java.lang.ClassCastException: class java.time.LocalDate cannot be cast
 to class java.time.chrono.ChronoLocalDate`) — a crash on a document

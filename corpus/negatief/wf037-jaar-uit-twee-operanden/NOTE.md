@@ -14,10 +14,10 @@ no corpus file in the repository's history carries its sentence.
 
 **The executors refuse it, each with its own sentence.** Measured 2026-09-24
 against the five cases of the source golden: the reference interpreter faults
-at evaluation (`EVALUATION FAULT: jaar uit expects one argument`), the ASP
-backend at translation (`TRANSLATION FAULT: a part extractor expects one
-argument`), and the Drools backend excludes the rule at transpilation
-(`transpiler SKIP`).
+at evaluation (`EVALUATION FAULT: yearOf expects one argument`; re-measured
+2026-09-25, until L5 it named the kind `jaar uit`), the ASP backend at
+translation (`TRANSLATION FAULT: a part extractor expects one argument`), and
+the Drools backend excludes the rule at transpilation (`transpiler SKIP`).
 
 **The document.** `corpus/golden/jutterswet-paasvondst/ir.json` with the one
 argument of the `yearOf` in its first rule's value repeated as a second.

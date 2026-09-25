@@ -18,8 +18,9 @@ principled way to elect one of the two as the offender.
 Measured before the clause, verifier-clean and three different
 outcomes: `ref` faults at evaluation (`EVALUATION FAULT: unordered
 comparison: 3 vs 2026-05-01`); the ASP backend already refused the form
-by name (`TRANSLATION FAULT: mixed date/non-date operands under an
-eerste/laatste fold are not translated`) — a backend fence that had no
+by name (`TRANSLATION FAULT: mixed date/non-date operands under a
+first/last fold are not translated`, re-measured 2026-09-25; until L5 it
+said `an eerste/laatste fold`) — a backend fence that had no
 document-layer rule behind it until now; and the Drools backend
 **throws** (`ERROR ConsequenceException: … java.lang.ClassCastException:
 class java.math.BigDecimal cannot be cast to class
