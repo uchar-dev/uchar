@@ -240,6 +240,20 @@ let lexeme_zero s =
           then String.sub s 1 (String.length s - 1) else s in
   s <> "" && String.for_all (fun c -> c = '0' || c = ',' || c = '.') s
 
+(* WF-039's sign clause: a numeric literal under a sign restriction satisfies
+   it — the restriction of its own type, or, where the literal is written
+   ([~target]), the restriction the target declares *)
+let literal_sign_refusal ~target t w =
+  let under = if target then " is written into a target under a " else " under a " in
+  match t with
+  | Niet_negatief when lexeme_negative w ->
+      Some ("negative literal '" ^ w ^ "'" ^ under ^ "non-negative sign restriction")
+  | Positief when lexeme_negative w || lexeme_zero w ->
+      Some ("literal '" ^ w ^ "'" ^ under ^ "positive sign restriction")
+  | Negatief when not (lexeme_negative w) ->
+      Some ("literal '" ^ w ^ "'" ^ under ^ "negative sign restriction")
+  | _ -> None
+
 (* WF-081: the string of a literal's number variant (IR-SPEC ch. 4.1) is
    the number pattern of the case format, one grammar for one variant:
      integer  ::= '-'? digits
@@ -4314,14 +4328,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | Lv_enumeration w, Some (Enumeratie { waarden; _ }) when not (mem_ci (some_names waarden) w) ->
           [ v "WF-039" vat ("enumeration label '" ^ w ^ "' is not in the declared domain") ]
       | Lv_number w, Some (Numeriek { teken = Some t; _ }) -> (
-          match t with
-          | Niet_negatief when lexeme_negative w ->
-              [ v "WF-039" vat ("negative literal '" ^ w ^ "' under a non-negative sign restriction") ]
-          | Positief when lexeme_negative w || lexeme_zero w ->
-              [ v "WF-039" vat ("literal '" ^ w ^ "' under a positive sign restriction") ]
-          | Negatief when not (lexeme_negative w) ->
-              [ v "WF-039" vat ("literal '" ^ w ^ "' under a negative sign restriction") ]
-          | _ -> [])
+          match literal_sign_refusal ~target:false t w with
+          | Some sentence -> [ v "WF-039" vat sentence ]
+          | None -> [])
       | _ -> [])
   | Tekst_reeks { delen; _ } ->
       List.concat
@@ -8156,7 +8165,7 @@ let wf054 ctx =
    reason). [target]/[value] are the expressions, for literal unit adoption
    (a defaults consequence and a member initialisation have no target
    expression). *)
-let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
+let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
   let sign_conflict d w =
     match (d, w) with
     | Numeriek { teken = Some (Niet_negatief | Positief); _ },
@@ -8174,6 +8183,22 @@ let wf023_assignment at ~target ~value (dt : datatype) (wt : datatype) =
          (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
             (datatype_kind dt)) ]
    else [])
+  @ (* WF-039's target clause, invoked from here (IR-SPEC ch. 4.6): a numeric
+       literal written into a declaration satisfies the sign restriction the
+       declaration carries. The literal's own annotation is crossed in the
+       expression walk; this reads the target's, and stands aside where the
+       literal's own restriction already refuses the value. *)
+  (match (value, dt) with
+   | Some (Literal { variant = Lv_number w; typ; _ }), Numeriek { teken = Some t; _ } -> (
+       let own =
+         match typ with
+         | Some (Numeriek { teken = Some o; _ }) -> literal_sign_refusal ~target:false o w
+         | _ -> None
+       in
+       match (own, literal_sign_refusal ~target:true t w) with
+       | None, Some sentence -> [ v "WF-039" (value_at ^ "/value") sentence ]
+       | _ -> [])
+   | _ -> [])
   @ (if
        is_number_like dt && is_number_like wt
        && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
@@ -8243,7 +8268,8 @@ let wf023 ctx =
       match (r.rr_soort, r.doel, r.waarde) with
       | Some (Gelijkstelling | Berekening | Initialisatie), Some doel, Some w -> (
           match (resolved_attr_datatype ctx doel, expr_type ctx ~binders:[] w) with
-          | Some dt, Some wt -> wf023_assignment at ~target:r.doel ~value:r.waarde dt wt
+          | Some dt, Some wt ->
+              wf023_assignment at ~target:r.doel ~value:r.waarde ~value_at:(at ^ "/value") dt wt
           | _ -> [])
       | _ -> [])
     ctx.doc.resolved_regels
@@ -8261,7 +8287,7 @@ let wf023 ctx =
                 | false, Some m, Some w -> (
                     match (attr_of ot m, expr_type ctx ~binders:[] w) with
                     | Some (Some dt), Some wt ->
-                        wf023_assignment tat ~target:None ~value:(Some w) dt wt
+                        wf023_assignment tat ~target:None ~value:(Some w) ~value_at:(tat ^ "/value") dt wt
                     | _ -> [])
                 | _ -> [])
               (List.mapi (fun j t -> (j, t)) r.toekenningen))
@@ -8281,7 +8307,8 @@ let wf023 ctx =
                      Option.map (fun wt -> (e, wt)) (expr_type ctx ~binders:[] e))
                with
               | Some (e, wt) ->
-                  wf023_assignment (prefix ^ "/consequence") ~target:None ~value:(Some e) dt wt
+                  wf023_assignment (prefix ^ "/consequence") ~target:None ~value:(Some e)
+                    ~value_at:(prefix ^ "/consequence") dt wt
               | None -> [])
               @
               match r.default_excepties with
