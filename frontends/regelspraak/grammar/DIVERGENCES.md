@@ -603,10 +603,14 @@ and the hand-written prioritized-defaults anchors.
   `ongeordend` now refuses loudly at the lexer) — the same loud posture the
   existing `Regelgroep`/`recursief` extension tokens take. The corpus and
   every committed source are free of these words. Since form 2 the capitalised
-  phrase `Afwijking van` is one whole-phrase token as well: no name can contain
-  it any more, while a name word `Afwijking` without `van` behind it still lexes
-  as a name. It occurs in no committed source besides the header of
-  `jutterswet-bergingsdrempel`.
+  phrase `Afwijking van` is one whole-phrase token as well: a name that is read
+  word by word — an object type, an attribute, a characteristic — can no longer
+  contain it (a syntax error), while a name word `Afwijking` without `van`
+  behind it still lexes as a name. A rule name runs up to `geldig` over any
+  token, so it can still contain the phrase (`Regel Afwijking van de norm`
+  emits a rule named 'Afwijking van de norm'); only at the head of a block does
+  the phrase open a deviation. It occurs in no committed source besides the
+  header of `jutterswet-bergingsdrempel`.
 - An exception whose validity window differs from its base refuses loudly:
   the defaults group carries one window and a per-default window is
   unrepresentable — split per window or align the windows.
