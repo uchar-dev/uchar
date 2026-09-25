@@ -846,18 +846,20 @@ EXPECTED_CHANNEL=(
 # Both branches play each golden's one case on the first run, PLAYED 1 each, with ref's and clingo's
 # values. L2 itself moves no golden: measured with this gate's own jar, no pinned golden changed
 # channel and the played set is the 186 of the base plus these two. EXPECTED_DRL_PLAYED moves by two.
-# 188 -> 193 (2026-09-25, card rgs-getuigen-bronloze-constructen): five new goldens, one for each
-# construct the RegelSpraak frontend parsed while no golden with a bron.rgs carried it. Four are source
+# 188 -> 192 (2026-09-25, card rgs-getuigen-bronloze-constructen): four new goldens, one for each
+# construct the RegelSpraak frontend parsed while no golden with a bron.rgs carried it — three are source
 # twins of hand-written goldens, with the carrier's case files: jutterswet-wrakboeking-rgs (an object
-# creation), synth-afrondingswaaier-rgs (the four rounding directions beside floor),
-# jutterswet-rangaflopend-rgs (an allocation in order) and jutterswet-rubriektabel-rgs (a decision table
-# with rows, desugared to two rules). The fifth, jutterswet-kistinhoud, is new and hand-computed: a power.
-# Both branches play all five on the first run, PLAYED 1, 5, 1, 3 and 2, with ref's and clingo's values.
+# creation), synth-afrondingswaaier-rgs (the four rounding directions beside floor) and
+# jutterswet-rubriektabel-rgs (a decision table with rows, desugared to two rules); the fourth,
+# jutterswet-kistinhoud, is new and hand-computed: a power. The fifth construct, an allocation in order,
+# got its source inside the hand-written jutterswet-rangaflopend itself (the emission is byte for byte
+# the hand-written document), which this branch already played.
+# Both branches play all four on the first run, PLAYED 1, 5, 3 and 2, with ref's and clingo's values.
 # jutterswet-wrakboeking-rgs carries no connectingRole, because the frontend writes none on a creation,
 # and this branch plays it too, deriving the back-link from the type pair; the 134 -> 135 block above
 # attributes the carrier's playing to its explicit binding, which is therefore not the only route.
-# EXPECTED_DRL_PLAYED moves by five.
-EXPECTED_PLAYED=193
+# EXPECTED_DRL_PLAYED moves by four.
+EXPECTED_PLAYED=192
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1097,10 +1099,10 @@ DRL_CHANNEL=(
 # the sum and the difference of two percentages in a condition, which L3 reads as percentages. This
 # branch plays its one case on the first run, PLAYED 1, with ref's and clingo's values; the exec-model
 # branch refuses it (EXPECTED_CHANNEL above), so EXPECTED_PLAYED does not move.
-# 167 -> 172 (2026-09-25, card rgs-getuigen-bronloze-constructen): the five new goldens of the block at
+# 167 -> 171 (2026-09-25, card rgs-getuigen-bronloze-constructen): the four new goldens of the block at
 # EXPECTED_PLAYED above. This branch plays each on the first run with no change of its own, PLAYED 1, 5,
-# 1, 3 and 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=172
+# 3 and 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=171
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

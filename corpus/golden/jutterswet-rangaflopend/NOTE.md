@@ -1,14 +1,14 @@
-# jutterswet-rangaflopend-rgs — an allocation in order, written in RegelSpraak
+# jutterswet-rangaflopend — an allocation in order, with its RegelSpraak source
 
-The RegelSpraak-source twin of `jutterswet-rangaflopend`: a `Sluitkas`
-distributes its `sluitpremie` over its `sluitjutters` in descending order of
-`strandrang`, in equal shares within a tie, each share floored at 0
-decimals, and the undistributed rest goes to its `sluitrest`. The source is
-`bron.rgs` (§13.4.10 verdeling, `op volgorde van`), the document is the
-RegelSpraak frontend's emission, and gate 10 re-emits it byte for byte, so an
-`Allocation` with `method: "ordered"` (IR-SPEC ch. 3.2) is pinned as
-frontend output for the first time. `case.json` is the carrier's case file,
-copied byte for byte, with the same absolute expectations.
+A `Sluitkas` distributes its `sluitpremie` over its `sluitjutters` in
+descending order of `strandrang`, in equal shares within a tie, each share
+floored at 0 decimals, and the undistributed rest goes to its `sluitrest`.
+The golden was hand-written; since 2026-09-25 (card
+rgs-getuigen-bronloze-constructen) it also carries its source `bron.rgs`
+(§13.4.10 verdeling, `op volgorde van`), because the RegelSpraak frontend's
+emission of that source is byte for byte the hand-written `ir.json`. Gate 10
+re-emits it byte for byte, so an `Allocation` with `method: "ordered"`
+(IR-SPEC ch. 3.2) is pinned as frontend output. `case.json` is unchanged.
 
 ## Source (`bron.rgs`)
 
@@ -29,12 +29,11 @@ allocation the frontend does write the `connectingRole`: it derives the
 binding from the pair `Sluitkas`/`Jutter` and refuses to emit an allocation
 whose pair has no unique relation (`IrEmitter.allocationVersion`).
 
-## Structural diff against `jutterswet-rangaflopend/ir.json`
+## Emission against the hand-written `ir.json`
 
-None. With every `source` stripped and the keys sorted the two documents are
-equal, and they are equal byte for byte as well: neither carries a `source`
-record, because the frontend writes none on an allocation and the carrier
-has none. The carrier could therefore have carried this source itself.
+Equal byte for byte: neither carries a `source` record, because the frontend
+writes none on an allocation and the hand-written document has none. The
+source therefore lives in this golden itself rather than in a twin.
 
 ## Hand computation
 
