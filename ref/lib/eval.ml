@@ -476,7 +476,7 @@ let rec clip_member_qualifications (c : conditie) =
       if eigenaar <> None then
         Value.fault
           "host on the gedurende clip member %S: the clip reads the subject's own \
-           characteristic timeline (WF-097)" naam;
+           characteristic timeline" naam;
       if periode <> None then
         Value.fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
@@ -990,7 +990,7 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                       && (static_type env a = Some Datum_in_dagen || static_type env b = Some Datum_in_dagen)
                     then
                       Value.fault
-                        "sub-day duration needs datum-tijd operands (WF-038)"
+                        "sub-day duration needs datum-tijd operands"
                     else `Calendar tu
                 | None -> (
                     (* not a calendar unit: the spelling may name a declared
@@ -1001,11 +1001,10 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
                     | None ->
                         Value.fault
                           "duration unit %S is neither a recognised time unit nor a declared \
-                           day kind (WF-038)"
+                           day kind"
                           (Option.value u.afkorting ~default:"?")))
             | _ ->
-                Value.fault "duration without a recognised time unit on its node type \
-                             (WF-038)"
+                Value.fault "duration without a recognised time unit on its node type"
           in
           (* ch. 5.11, wire order: "van" (argument 0) before "tot"
              (argument 1). Written as two positional arguments this build

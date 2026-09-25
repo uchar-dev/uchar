@@ -83,7 +83,7 @@ let rec clip_member_qualifications (c : conditie) =
       if eigenaar <> None then
         fault
           "host on the gedurende clip member %S: the clip reads the subject's own \
-           characteristic timeline (WF-097)" naam;
+           characteristic timeline" naam;
       if periode <> None then
         fault
           "whole-period qualifier on the gedurende clip member %S: the clip already ranges \
@@ -4596,7 +4596,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
            difference (so a month/year span stays unbounded), exactly ref/'s
            whole_units_between_ms. *)
         if not (is_datetime_operand ctx (Some a) && is_datetime_operand ctx (Some b)) then
-          fault "duration mixes date precisions (WF-038)";
+          fault "duration mixes date precisions";
         let tu = dt_time_unit_of ~doc:ctx.doc ~what:"duration" typ in
         let da_atoms, da, msa = dt_term ctx ~subject ~subject_ot a in
         let db_atoms, db, msb = dt_term ctx ~subject ~subject_ot b in
@@ -4734,7 +4734,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       (match static_type ctx y with
       | Some (Numeriek { geheel = true; eenheid = None; _ }) -> ()
-      | _ -> fault "easterSunday operand is not statically a whole unitless year (WF-038)");
+      | _ -> fault "easterSunday operand is not statically a whole unitless year");
       let by, ty, sy = expr_term ctx ~subject ~subject_ot y in
       if sy <> 1 then fault "easterSunday year operand must be an unscaled whole term";
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in

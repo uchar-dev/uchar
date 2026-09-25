@@ -531,7 +531,7 @@ let eerste_paasdag = function
       let maand = (h + l - (7 * m) + 114) / 31 in
       let dag = ((h + l - (7 * m) + 114) mod 31) + 1 in
       Date (days_from_civil ~y:j ~m:maand ~d:dag)
-  | v -> fault "easterSunday: expected a whole unitless year, got %s (WF-038)" (to_string v)
+  | v -> fault "easterSunday: expected a whole unitless year, got %s" (to_string v)
 
 (* --- the calendar kernel (ch. 3.8): proleptic Gregorian, zoneless civil
    time, built on the civil helpers of Value (days_from_civil /
@@ -813,15 +813,15 @@ let tijdsduur ?(absolute = false) ?unit_ ?(result_unit = Unitless) a b =
       | Some tu ->
           let n = whole_units_between tu za zb in
           Num (Q.of_int (if absolute then abs n else n), result_unit)
-      | None -> fault "duration without a resolved time unit (WF-038)")
+      | None -> fault "duration without a resolved time unit")
   | Date_time ta, Date_time tb -> (
       match unit_ with
       | Some tu ->
           let n = whole_units_between_ms tu ta tb in
           Num (Q.of_int (if absolute then abs n else n), result_unit)
-      | None -> fault "duration without a resolved time unit (WF-038)")
+      | None -> fault "duration without a resolved time unit")
   | (Date _, Date_time _ | Date_time _, Date _) ->
-      fault "duration operands mix date precisions (WF-038)"
+      fault "duration operands mix date precisions"
   | _ -> fault "duration: expected two dates, got %s and %s" (to_string a) (to_string b)
 
 (* --- text (ch. 1.2c): empty coerces to "" ------------------------------ *)
