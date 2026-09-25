@@ -197,6 +197,52 @@ let evaluation_date = "evaluationDate"
 let evaluation_year = "evaluationYear"
 let context_value_names = [ evaluation_date; evaluation_year ]
 
+(* The wire node name of an in-memory expression (IR-SPEC ch. 4), for a
+   reader that refuses a node by naming it: the constructors keep their v0
+   names, as the enumeration values above do, and [Loader.expr] reads the
+   other direction. [Functie] holds both an Aggregation and a BuiltinCall,
+   told apart by kind as the wire tells them apart. *)
+let expr_node (e : expr) : string =
+  match e with
+  | Literal _ -> "Literal"
+  | Tekst_reeks _ -> "TextComposition"
+  | Binair _ -> "Binary"
+  | Functie { kind; _ } ->
+      if List.exists (fun (_, k) -> k = kind) (pairs aggregation_kind) then "Aggregation"
+      else "BuiltinCall"
+  | Instance_set_union _ -> "InstanceSetUnion"
+  | Afgerond _ -> "Rounding"
+  | Begrensd _ -> "Clamp"
+  | Attribuut_ref _ -> "AttributeReference"
+  | Dimensie_cel _ -> "DimensionCellRead"
+  | Parameter_ref _ -> "ParameterReference"
+  | Variabele_ref _ -> "VariableReference"
+  | Constante _ -> "ContextValue"
+  | Bound_day _ -> "BoundDay"
+  | Expr_onopgelost _ -> "Unresolved"
+  | Temporal_read _ -> "TemporalRead"
+  | Construct _ -> "Construct"
+  | Match _ -> "Match"
+  | Binder_ref _ -> "BinderRef"
+  | Struct_literal _ -> "StructLiteral"
+  | Field_access _ -> "FieldAccess"
+  | Let _ -> "Let"
+  | List_literal _ -> "ListLiteral"
+  | Lambda _ -> "Lambda"
+  | If_then_else _ -> "IfThenElse"
+  | Invoke _ -> "Invoke"
+  | Fold _ -> "Fold"
+  | Map_list _ -> "MapList"
+  | Filter_list _ -> "FilterList"
+  | List_length _ -> "ListLength"
+
+(* The node name with its indefinite article, as a refusal sentence names
+   the node ("a Literal", "an Unresolved"). The Drools loader spells the
+   article by the same rule, on the first letter of the name. *)
+let a_node (e : expr) : string =
+  let n = expr_node e in
+  (match n.[0] with 'A' | 'E' | 'I' | 'O' | 'U' -> "an " | _ -> "a ") ^ n
+
 (* A family is a bijection: two wire values for one constructor, or one wire
    value for two, would make one direction ambiguous. Checked once, when a
    program that reads the wire starts, so a defect in this table stops every
