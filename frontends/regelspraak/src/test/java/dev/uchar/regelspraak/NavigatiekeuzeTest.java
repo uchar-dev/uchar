@@ -214,6 +214,23 @@ class NavigatiekeuzeTest {
         assertTrue(c.endsWith("\"diagnostics\":[]}"), () -> "zonder marker en zonder waarschuwing:\n" + c);
     }
 
+    /** A range of two steps from a possessive anchor has no spelling here, and the refusal names the step the author
+     *  wrote. Before: "(geen relatie verbindt Schuit met Schuit)", true of the one-step derivation the frontend tried
+     *  and of nothing in the sentence. */
+    @Test void een_bereik_vanaf_een_bezittelijk_anker_noemt_de_geschreven_stap() {
+        assertEquals(List.of("vouw 'de som van de romplengten van alle liggers van zijn thuishaven' zonder bereik (de "
+                        + "geschreven bron 'alle liggers van zijn thuishaven' loopt via 'zijn thuishaven', een ander anker "
+                        + "dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet): a "
+                        + "single-argument fold with an elementType carries its range (sourceRole or sourcePath) under "
+                        + "every kind but total: the range is written, never derived"),
+                fouten(TYPEN + THUISLIGGING + """
+
+                    Regel ligprijs van een schuit
+                        geldig altijd
+                            De ligprijs van een Schuit moet berekend worden als de som van de romplengten van alle liggers van zijn thuishaven.
+                    """));
+    }
+
     /** A fold whose source the wire cannot spell, each refused in the reader's sentence for what the emitter would
      *  write: a step written on the source (WF-053), the subject's own attribute under a sum (the loader's sentence
      *  for a fold without its range), and a total over another type's attribute, whose step a total without a range

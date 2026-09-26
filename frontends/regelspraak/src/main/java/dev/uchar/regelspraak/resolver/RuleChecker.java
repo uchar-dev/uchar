@@ -945,10 +945,25 @@ final class RuleChecker {
             case EIGEN_ATTRIBUUT -> vouw + "over een eigen attribuut van het onderwerp, dat geen instanties telt"
                     + zonderBereik(f, subject, bron);
             case GEEN_ONDERWERP -> vouw + "zonder onderwerp om haar bereik vanaf te bepalen" + zonderBereik(f, subject, bron);
-            case GEEN_RELATIE -> vouw + "zonder bereik (" + paarReden(subject, f.elementObjecttype(),
-                    bron.type() instanceof Datatype.Onbekend ? bron.attribuut() : bron.onderwerpBron()) + ")"
+            case GEEN_RELATIE -> vouw + "zonder bereik (" + (geschrevenAnker(bron, subject) != null
+                    ? "de geschreven bron '" + bron.onderwerpBron() + "' loopt via '" + geschrevenAnker(bron, subject) + "', een "
+                            + "ander anker dan het onderwerp, en een bereik vanaf zo'n anker schrijft deze frontend niet"
+                    : paarReden(subject, f.elementObjecttype(),
+                            bron.type() instanceof Datatype.Onbekend ? bron.attribuut() : bron.onderwerpBron())) + ")"
                     + zonderBereik(f, subject, bron);
         };
+    }
+
+    /** The anchor a fold source writes behind its element noun where it is another object than the subject
+     *  ("zijn thuishaven" in "alle liggers van zijn thuishaven"), or null where the source writes none or names the
+     *  subject's own type ("alle Schuiten van de Haven" on a Haven). Such a range is two steps from the subject, and
+     *  the derivation by the one relation from the subject to the element type says nothing about it. */
+    private static String geschrevenAnker(Expr.AttribuutRef bron, Objecttype subject) {
+        String o = bron.onderwerpBron() == null ? "" : bron.onderwerpBron().trim();
+        int van = o.toLowerCase(java.util.Locale.ROOT).indexOf(" van ");
+        if (van < 0) return null;
+        String anker = o.substring(van + 5).trim();
+        return subject != null && stripArtikel(anker).equalsIgnoreCase(subject.naam) ? null : anker;
     }
 
     /** The reader's sentence for a fold written without a range: the loader's under every kind but total; under a
