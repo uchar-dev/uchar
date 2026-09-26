@@ -397,7 +397,8 @@ A gate that gets no floor carries one sentence in its script saying why.
 ## Repo relationships
 
 - `uchar-dev/regelspraak-toolchain` (separate, private repository; the
-  successor of `yhavinga/regelspraak-java`, maintainer decision 2026-09-26)
+  successor of `yhavinga/regelspraak-java`, maintainer decision 2026-09-26;
+  the old repository is archived since the same day)
   is the DISTRIBUTION — CLI, service, docker/helm — with no semantics of its
   own: it consumes this repo as a git SUBMODULE (the submodule commit is the
   pin; no `SPEC_REV`, no conformance gate) and builds `frontends/regelspraak`

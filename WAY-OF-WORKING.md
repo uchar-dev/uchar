@@ -75,7 +75,9 @@ development:
 
 - the **regelspraak-java** toolchain — the IR being mirrored
   (mirror-then-diverge, `spec/IR-SPEC.md` § Method; the founding review's
-  citations are pinned to its commit `b85dff3`);
+  citations are pinned to its commit `b85dff3`); archived 2026-09-26, its
+  successor `uchar-dev/regelspraak-toolchain` consumes this repository as a
+  submodule;
 - the **calculemus course** — origin of the Jutterswet casus.
 
 The maintainer supplies their local locations when launching a session.

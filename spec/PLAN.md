@@ -864,7 +864,9 @@ qualifier (`gehele-periode-leeg-gevuld`) and a fixed start point off the
 calendar grid as a `Timeline` field (`vast-startpunt-tijdlijn`). Then the
 distribution rebuilds on the submodule, the workbench re-points its
 `toolchain` submodule, and the old repositories are archived — each step on
-the maintainer's signal. The UWV rule sets are rewritten by their authors on
+the maintainer's signal (`yhavinga/regelspraak-java` archived 2026-09-26
+with a deprecation notice; the nluwv toolchain fork awaits consultation).
+The UWV rule sets are rewritten by their authors on
 the richer dialect rather than ported.
 
 **The wave before the move landed (2026-09-26, `9d46e19d`):** the seven cards

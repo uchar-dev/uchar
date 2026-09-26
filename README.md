@@ -90,7 +90,7 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | `ref/` | The reference interpreter (OCaml): the executable definition of the semantics |
 | `backends/` | `clingo/` (translation to ASP-Core-2) and `drools/` (an IR loader plus two transpiler branches — DRL text for fast development and testing, the executable model for compiling services — over a shared runtime) |
 | `frontends/` | `regelspraak/` (Java parser/resolver, emits the IR), `catala/` (a Catala plugin), `flogic/` (OCaml, a second independent source language) |
-| `scripts/` | The gate set: fourteen checks that run on every change, locally and in CI |
+| `scripts/` | The gate set: sixteen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
 | `toka/` | **Temporary.** Third-party © parity fixtures (Belastingdienst TOKA material) used to prove the RegelSpraak frontend byte-identical to the original toolchain. Not covered by the licenses below; the repository stays private while this zone exists |
 
 ## Status
@@ -104,7 +104,7 @@ rules with conditions including quantified folds over linked instance sets
 subselection), aggregations, prioritized defaults, distribution rules, and
 temporal arithmetic.
 
-Fourteen gates guard it. Structural: self-containedness, schema validation
+Sixteen gates guard it. Structural: self-containedness, schema validation
 with byte-identical round-trip, the verifier over golden and negatief
 corpora, case-file validation. Semantic: the reference interpreter replays
 every case exactly; Clingo and Drools must reproduce the same pinned
@@ -121,10 +121,13 @@ Start with `spec/PLAN.md`; the review that motivates it is
 `spec/IR-REVIEW.md`. Day-to-day process is `WAY-OF-WORKING.md`; work items
 live in `backlog/`.
 
-The first consumer is `regelspraak-java` (separate repository): it vendors
-the RegelSpraak frontend at a pinned `SPEC_REV`, byte-identical, and builds
-an HTTP service, scenario tests and a CLI on top. Changes flow spec-first:
-a delta lands here (spec + corpus + schema), then a pin bump lands there.
+The first consumer is `uchar-dev/regelspraak-toolchain` (separate, private
+repository; the successor of the archived `regelspraak-java`): a
+distribution — CLI, decision service, container — that carries this
+repository as a git submodule and builds the RegelSpraak frontend and the
+Drools backend from it; the submodule commit is the pin. Changes flow
+spec-first: a delta lands here (spec + corpus + schema), then the
+distribution moves its pin.
 
 ## Provenance of the casus
 
