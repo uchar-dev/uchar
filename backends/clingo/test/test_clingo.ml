@@ -8095,6 +8095,86 @@ let () =
     ~niet:"true" ~w1:half [ "S1"; "S2" ];
   nav_frame ~name:"GEVULD negated navigated, W1 half year" ~soort:"filled" ~negatie:true ~w1:half
     [ "S3"; "S4" ];
+  (* a CHAIN of two to-one hops: Schuit -> Werf over ligplaats, Werf ->
+     Haven over havenligging. S1 reaches H1 (a value over the whole of
+     2025), S2 reaches H2 (the first half only), S3 reaches W3, which has
+     no haven, and S4 reaches no werf: the last two pass with the null
+     timeline. *)
+  let keten_ref =
+    {|{ "node": "AttributeReference", "attribute": "havengeld", "subjectType": "Haven",
+        "source": { "snippet": "het havengeld van de thuishaven van de werf" },
+        "path": [ { "node": "RoleBinding", "factType": "ligplaats", "role": "werf" },
+                  { "node": "RoleBinding", "factType": "havenligging", "role": "thuishaven" } ] }|}
+  in
+  let keten_ir soort =
+    {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens",
+        "attributes": [ { "node": "Attribute", "name": "havengeld", "datatype": |} ^ leeg_num
+    ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } } ],
+        "characteristics": [] },
+      { "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+        "attributes": [], "characteristics": [] },
+      { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+        "attributes": [ |} ^ attribuut "meldpremie" leeg_num ^ {| ], "characteristics": [] } ],
+    "factTypes": [
+      { "node": "FactType", "name": "ligplaats", "reciprocal": false,
+        "roles": [
+          { "node": "Role", "name": "werf", "objectType": "Werf", "many": false },
+          { "node": "Role", "name": "schuit", "objectType": "Schuit", "plural": "schuiten",
+            "many": true } ] },
+      { "node": "FactType", "name": "havenligging", "reciprocal": false,
+        "roles": [
+          { "node": "Role", "name": "thuishaven", "objectType": "Haven", "many": false },
+          { "node": "Role", "name": "aangesloten werf", "objectType": "Werf",
+            "plural": "aangesloten werven", "many": true } ] } ],
+    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [],
+    "dayKinds": [] },
+  "rules": {
+    "rules": [ |}
+    ^ snd
+        (leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+           (leeg_pred ~soort ~negatie:false ~periode:(periode ()) keten_ref))
+    ^ {| ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+    "ruleGroups": [] },
+  "diagnostics": []
+}
+|}
+  in
+  let keten_case hits =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+    { "label": "H1", "objectType": "Haven", "attributes": { "havengeld": |} ^ heel
+    ^ {| }, "roles": {}, "characteristics": [] },
+    { "label": "H2", "objectType": "Haven", "attributes": { "havengeld": |} ^ half
+    ^ {| }, "roles": {}, "characteristics": [] },
+    { "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { "thuishaven": ["H1"] },
+      "characteristics": [] },
+    { "label": "W2", "objectType": "Werf", "attributes": {}, "roles": { "thuishaven": ["H2"] },
+      "characteristics": [] },
+    { "label": "W3", "objectType": "Werf", "attributes": {}, "roles": {}, "characteristics": [] },
+    { "label": "S1", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W1"] },
+      "characteristics": [] },
+    { "label": "S2", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W2"] },
+      "characteristics": [] },
+    { "label": "S3", "objectType": "Schuit", "attributes": {}, "roles": { "werf": ["W3"] },
+      "characteristics": [] },
+    { "label": "S4", "objectType": "Schuit", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ |}
+    ^ String.concat ", " (leeg_rijen ~attr:"meldpremie" ~waarde:"40" ~labels:schuiten hits)
+    ^ {| ] }|}
+  in
+  List.iter
+    (fun (name, soort, hits) ->
+      let ir = keten_ir soort and case_text = keten_case hits in
+      ref_matches ~name ~ir ~case_text;
+      clingo_matches ~name ~ir ~case_text)
+    [ ("GEVULD over a chain of two hops", "filled", [ "S1"; "S3"; "S4" ]);
+      ("LEEG over a chain of two hops", "empty", [ "S3"; "S4" ]) ];
   (* the PARAMETER operand, which WF-043 admits and no executor folds: ref
      and this backend refuse it in one sentence *)
   let param_ir =

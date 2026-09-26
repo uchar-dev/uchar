@@ -6163,6 +6163,52 @@ let () =
   check "WV-3.9-leeg-nav-heel-jaar-gevuld" (ev_nav ~soort:Gevuld ~link:true rij_b);
   check "WV-3.9-leeg-nav-heel-jaar-leeg" (not (ev_nav ~link:true rij_b));
   check "WV-3.9-leeg-nav-half-jaar-gevuld" (not (ev_nav ~soort:Gevuld ~link:true rij_c));
+  (* a CHAIN of two to-one hops (WF-053 admits one): Schuit -> Werf over
+     ligplaats, Werf -> Haven over havenligging. An absent link at either hop
+     gives the null timeline. *)
+  let havenligging : string * Ir_v0.Ast.feittype =
+    ( "havenligging",
+      {
+        ft_naam = Some "havenligging";
+        wederkerig = false;
+        rollen =
+          [
+            { rol_naam = Some "thuishaven"; rol_objecttype_naam = Some "Haven"; rol_meervoud = None;
+              rol_meervoudig = false };
+            { rol_naam = Some "aangesloten werf"; rol_objecttype_naam = Some "Werf";
+              rol_meervoud = Some "aangesloten werven"; rol_meervoudig = true };
+          ];
+      } )
+  in
+  let keten_doc =
+    { doc with
+      objecttypen = doc.objecttypen @ [ maandelijks "havengeld" (ot "Haven" [ ("havengeld", Some num0) ] []) ];
+      feittypen = [ ligplaats; havenligging ] }
+  in
+  let havengeld_van_de_thuishaven : Ir_v0.Ast.expr =
+    Attribuut_ref
+      { attribuut = Some "havengeld"; objecttype = Some "Haven"; bron = None;
+        navigatie_bindingen =
+          Some
+            [ { rb_feittype = "ligplaats"; rb_rol = "werf" };
+              { rb_feittype = "havenligging"; rb_rol = "thuishaven" } ] }
+  in
+  let ev_keten ?soort ~haven tl =
+    let h1 = met_tijdlijn "havengeld" tl (inst "H1" "Haven" []) in
+    let w1 =
+      { (inst "W1" "Werf" []) with
+        links =
+          (if haven then World.SMap.add "thuishaven" [ "H1" ] World.SMap.empty else World.SMap.empty) }
+    in
+    let s1 = { (inst "S1" "Schuit" []) with links = World.SMap.add "werf" [ "W1" ] World.SMap.empty } in
+    let w = List.fold_left World.add_instance World.empty [ h1; w1; s1 ] in
+    Eval.eval_cond (env_of keten_doc) w (World.get w "S1") ~err:no_err
+      (toets ?soort havengeld_van_de_thuishaven)
+  in
+  check "WV-3.9-leeg-keten-heel-jaar-gevuld" (ev_keten ~soort:Gevuld ~haven:true rij_b);
+  check "WV-3.9-leeg-keten-heel-jaar-leeg" (not (ev_keten ~haven:true rij_b));
+  check "WV-3.9-leeg-keten-half-jaar-gevuld" (not (ev_keten ~soort:Gevuld ~haven:true rij_c));
+  check "WV-3.9-leeg-keten-geen-haven-gevuld" (ev_keten ~soort:Gevuld ~haven:false rij_c);
   (* the operands no executor folds, refused by name: a parameter (WF-043
      admits a time-dependent one), and a non-temporal attribute (WF-043's
      own refusal, kept as a belt in the verifier's sentence) *)
