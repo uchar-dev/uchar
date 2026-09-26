@@ -1,12 +1,12 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.ResolvedDagsoort;
-import io.github.yhavinga.regelspraak.kern.Literalen;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.ResolvedDagsoort;
+import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

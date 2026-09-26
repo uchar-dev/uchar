@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>What this file pins is a correctness boundary, not a missing feature. Before this card the
  * frontend PARSED the subselectie (it shows up in the operand's {@code bron}), lowered the sentence to
- * a {@link io.github.yhavinga.regelspraak.ir.Conditie.Kwantorvouw} — and wrote {@code filter: null}
+ * a {@link dev.uchar.regelspraak.ir.Conditie.Kwantorvouw} — and wrote {@code filter: null}
  * with no diagnostic at all. A sentence that quantifies over the AANGEMELDE vondsten produced a
  * document that quantifies over ALL of them: a verifier-clean wire form carrying the wrong set, which
  * every executor then answers consistently and wrongly.

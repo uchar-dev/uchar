@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Expr;
 
 /**
  * The execution year, as this backend refuses it. {@code spec/IR-SPEC.md} ch. 4.1 keeps the context value

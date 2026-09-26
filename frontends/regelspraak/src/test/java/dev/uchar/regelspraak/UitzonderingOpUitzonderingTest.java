@@ -1,15 +1,15 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Default;
-import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
-import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak;
-import io.github.yhavinga.regelspraak.parser.RegelSpraakLexer;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Default;
+import dev.uchar.regelspraak.ir.ExceptionGroup;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.parser.RegelSpraak;
+import dev.uchar.regelspraak.parser.RegelSpraakLexer;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

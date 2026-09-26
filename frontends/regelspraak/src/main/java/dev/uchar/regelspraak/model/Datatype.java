@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.model;
+package dev.uchar.regelspraak.model;
 
 import java.util.List;
 
 /**
  * The RegelSpraak datatypes (§13.3.3), the typed core of the resolved AST. Every
  * attribute, parameter, domain, and (inferred) expression carries one of these.
- * The typeringen matrix (see {@link io.github.yhavinga.regelspraak.resolver.Typering}) is
+ * The typeringen matrix (see {@link dev.uchar.regelspraak.resolver.Typering}) is
  * defined over them.
  *
  * Units live on {@link Numeriek}: a unit is optional, but once one operand in an

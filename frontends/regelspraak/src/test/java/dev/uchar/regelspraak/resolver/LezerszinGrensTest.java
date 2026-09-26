@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LezerszinGrensTest {
 
     private static final String VERIFIER = "spec/verifier/lib";
-    private static final String FRONTEND = "frontends/regelspraak/src/main/java/io/github/yhavinga/regelspraak";
+    private static final String FRONTEND = "frontends/regelspraak/src/main/java/dev/uchar/regelspraak";
 
     /** Words that make a fragment English; none of them is a Dutch word. */
     private static final Set<String> ENGELS = Set.of(("the must operand operands fold folds value values unit units "

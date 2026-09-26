@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.util.List;
 
@@ -189,12 +189,12 @@ public sealed interface Conditie {
      *  exclusive (IR-SPEC ch. 4.5, WF-108; RUNTIME-SEMANTICS ch. 3.9a). */
     record Kwantorvouw(Kwantor kwantor, int drempel, Objecttype elementObjecttype, Conditie filter,
                        Conditie toets,
-                       io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef bronRol,
-                       List<io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef> bronPad,
+                       dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef bronRol,
+                       List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bronPad,
                        Bron bron) implements Conditie {
         public Kwantorvouw(Kwantor kwantor, int drempel, Objecttype elementObjecttype, Conditie filter,
                            Conditie toets,
-                           io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef bronRol, Bron bron) {
+                           dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef bronRol, Bron bron) {
             this(kwantor, drempel, elementObjecttype, filter, toets, bronRol, List.of(), bron);
         }
     }

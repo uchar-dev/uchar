@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 /**
  * One entry in a back-end's coverage manifest: for one named construct, did the back-end lower it

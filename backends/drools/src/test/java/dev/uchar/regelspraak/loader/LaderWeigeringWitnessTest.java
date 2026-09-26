@@ -1,13 +1,13 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.cases.CaseRunner;
-import io.github.yhavinga.regelspraak.cases.IrPad;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.cases.CaseRunner;
+import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
 
@@ -466,7 +466,7 @@ class LaderWeigeringWitnessTest {
     // ---------------- what a refusal says ----------------
 
     @Test void een_onbekende_waarde_noemt_veld_en_waarde_en_geen_java_klasse() throws Exception {
-        // Before: "No enum constant io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit.jaar",
+        // Before: "No enum constant dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit.jaar",
         // the JDK's sentence, naming a Java class and no position in the document. Since L5 the value is read
         // through the translation table and refused in the shared loader's sentence, which names the field and the
         // value, the v0 spelling included.

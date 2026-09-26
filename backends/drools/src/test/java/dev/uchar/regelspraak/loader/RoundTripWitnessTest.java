@@ -1,13 +1,13 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.engine.BeanCompiler;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.schema.ContractValidator;
-import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
-import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
-import io.github.yhavinga.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.engine.BeanCompiler;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.schema.ContractValidator;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 
 import org.junit.jupiter.api.Test;
 

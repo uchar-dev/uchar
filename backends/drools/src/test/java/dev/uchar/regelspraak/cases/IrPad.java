@@ -1,12 +1,12 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.Spelling;
 
 /**
  * Navigation into a {@code uchar-ir-v1} document for the witnesses that twist a corpus golden in memory. Since M1

@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
 /**
  * THE Dutch-phrase → Java/DRL identifier contract (the shared naming contract) — the one place a RegelSpraak name

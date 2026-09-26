@@ -1,12 +1,12 @@
-package io.github.yhavinga.regelspraak.kern;
+package dev.uchar.regelspraak.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie.Operator;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.ir.Conditie.Operator;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
 /**
  * §9.9/§13.4.12 a resolved startpuntbepaling: for {@code objecttype}, the variable-startpunt

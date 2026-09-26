@@ -141,7 +141,7 @@ names, not wire names.
 | Drools DRL | — | — | every defaults document is refused before it lowers: `EXCLUDE drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering` (`CaseRunner.java:307`) |
 
 The Drools paths are under
-`backends/drools/src/main/java/io/github/yhavinga/regelspraak/`
+`backends/drools/src/main/java/dev/uchar/regelspraak/`
 (`cases/CaseRunner.java`, `transpiler/model/ExecModelTranspiler.java`).
 
 [I] The three executors that carry defaults reach the same outcome by the

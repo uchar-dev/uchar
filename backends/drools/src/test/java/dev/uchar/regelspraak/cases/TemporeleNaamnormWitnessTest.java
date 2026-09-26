@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
+import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 
 import org.junit.jupiter.api.Test;
 

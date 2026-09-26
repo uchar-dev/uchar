@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.kern.Literalen;
-import io.github.yhavinga.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 

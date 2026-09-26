@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * WF-096 raised an ERROR and the document never reached disk, let alone a backend. A sanctioned
  * sentence this frontend could read and never emit.
  *
- * <p>The IR has since grown {@link io.github.yhavinga.regelspraak.ir.Conditie.Kwantorvouw}, which is
+ * <p>The IR has since grown {@link dev.uchar.regelspraak.ir.Conditie.Kwantorvouw}, which is
  * that sentence's home: first-order quantification over the members of a linked instance set, with the
  * range spelled exactly as the instance fold spells it. The resolver now LOWERS to it, and the set
  * reading is not excused but REMOVED — the quantified operand comes out as an element-own

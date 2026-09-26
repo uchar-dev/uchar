@@ -1,7 +1,7 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 /**
  * The GASTHEER test of a characteristic check (WF-109, {@code spec/IR-SPEC.md} ch. 4.6 (q2);

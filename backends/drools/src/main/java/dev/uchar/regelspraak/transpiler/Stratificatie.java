@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.transpiler;
+package dev.uchar.regelspraak.transpiler;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.util.ArrayList;
 import java.util.HashMap;

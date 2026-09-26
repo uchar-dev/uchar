@@ -42,7 +42,7 @@ it whenever any backend source or the frontend IR records change:
 ```sh
 mvn -o -f backends/drools/pom.xml package
 # -> backends/drools/target/uchar-drools-backend-*-shaded.jar
-#    (Main-Class: io.github.yhavinga.regelspraak.cases.DroolsBackendMain)
+#    (Main-Class: dev.uchar.regelspraak.cases.DroolsBackendMain)
 ```
 
 `-o` builds offline against the local Maven repository cache. The `package` phase also runs the

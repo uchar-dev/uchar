@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.Geldigheid;
-import io.github.yhavinga.regelspraak.model.Parameterset;
-import io.github.yhavinga.regelspraak.model.Parameterset.WaardeInterval;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.model.Parameterset;
+import dev.uchar.regelspraak.model.Parameterset.WaardeInterval;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.Map;
  * ooit zijn collectie-set, dan moet deze spiegel meebewegen.
  *
  * <p><b>Versies.</b> Een regel kan meerdere §13.4.2.5-VERSIES hebben (zelfde geschreven naam, verschillende
- * {@link Geldigheid}). Elke versie is een aparte {@link io.github.yhavinga.regelspraak.ir.ResolvedRegel} met een eigen
+ * {@link Geldigheid}). Elke versie is een aparte {@link dev.uchar.regelspraak.ir.ResolvedRegel} met een eigen
  * {@code #k}-gesuffixte naam en eigen geldigheid, dus door direct over {@code resolvedRegels} te itereren checken we elke
  * versie afzonderlijk met de versie-{@link Geldigheid} als regelperiode.
  *

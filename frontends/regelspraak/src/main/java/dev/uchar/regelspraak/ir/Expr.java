@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * RegelSpraak expressie denotes, and the input the Drools transpiler will consume.
  *
  * Every node carries (a) its result {@link Datatype}, computed via the typeringen
- * matrix ({@link io.github.yhavinga.regelspraak.resolver.Typering}), and (b) the original
+ * matrix ({@link dev.uchar.regelspraak.resolver.Typering}), and (b) the original
  * source slice, for diagnostics and traceability back to the regel text.
  *
  * References are bound to the model where the resolver can do so —
@@ -226,7 +226,7 @@ public sealed interface Expr {
     record AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
                         String navigatieRol, Datatype type, Bron bron, boolean set,
                         java.util.List<String> navigatiePad,
-                        java.util.List<io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
+                        java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
                         Conditie.Kwantor kwantor, int drempel)
             implements Expr {
         /** {@code set} marks an operand that ranges over a SET (a §13.4.2 set quantifier — alle/al/geen van de/
@@ -263,7 +263,7 @@ public sealed interface Expr {
         public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
                             String navigatieRol, Datatype type, Bron bron, boolean set,
                             java.util.List<String> navigatiePad,
-                            java.util.List<io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad) {
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad) {
             this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, navigatiePad, bereikPad, null);
         }
         /** {@code drempel} defaults to 0: it is read only under a COUNTING {@code kwantor}, and every
@@ -271,7 +271,7 @@ public sealed interface Expr {
         public AttribuutRef(String attribuut, Objecttype objecttype, String onderwerpBron,
                             String navigatieRol, Datatype type, Bron bron, boolean set,
                             java.util.List<String> navigatiePad,
-                            java.util.List<io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
+                            java.util.List<dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef> bereikPad,
                             Conditie.Kwantor kwantor) {
             this(attribuut, objecttype, onderwerpBron, navigatieRol, type, bron, set, navigatiePad, bereikPad,
                     kwantor, 0);
@@ -337,7 +337,7 @@ public sealed interface Expr {
      * then EXACTLY the chosen branch is evaluated — strict, no coalesce, the other branch not evaluated at
      * all. Both branches agree on {@code type}, which is the node's. WF-069 restricts where it may stand.
      *
-     * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@link io.github.yhavinga.regelspraak.emit.IrEmitter}
+     * <p>Never emitter-produced: no RegelSpraak construct lowers to it, so {@link dev.uchar.regelspraak.emit.IrEmitter}
      * writes none and no {@code bron.rgs} golden carries one. It is here because the union is the shape
      * every consumer walks: a wire form parsed into anything else is an opaque leaf to {@link #bevat} and
      * to every hand-written tree walk built on it, which under-report in silence.

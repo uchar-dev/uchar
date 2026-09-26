@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
 /**
  * A resolved §9.8 dagsoortdefinitie: the rule "Een dag is een &lt;dagsoort&gt; indien

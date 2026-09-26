@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.engine;
+package dev.uchar.regelspraak.engine;
 
-import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
 
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * tests use (test code cannot be called from {@code engine/main}). The {@link ScenarioRunner}
  * compiles the bundle's beans ONCE (they are the same for every scenario in a run) and hands the loader to the
  * exec-model transpiler's {@code build(model, classLoader)} passthrough so the compiled rules bind against these
- * beans, and to the {@link io.github.yhavinga.regelspraak.schema.ContractValidator} so the contract is checked against them.
+ * beans, and to the {@link dev.uchar.regelspraak.schema.ContractValidator} so the contract is checked against them.
  *
  * <p>CHILD-FIRST for the classes it produced: the generated beans live in {@link FactModelGenerator#PAKKET}
  * (a shared package name), so a parent-first loader could let an unrelated same-named class on the parent shadow

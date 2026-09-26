@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Conditie;
 
 /**
  * THE comparison-operator table both back-ends share (single shared implementation): the mvel/rsAggVergelijk symbol,

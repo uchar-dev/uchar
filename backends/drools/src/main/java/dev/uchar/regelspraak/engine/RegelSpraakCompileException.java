@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.engine;
+package dev.uchar.regelspraak.engine;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public final class RegelSpraakCompileException extends RuntimeException {
      *  source line), so a consumer fixes the fact classes in one round trip. */
     public static RegelSpraakCompileException contract(List<String> schendingen) {
         return new RegelSpraakCompileException(schendingen.stream()
-                .map(s -> new Diagnostic(io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity.ERROR,
+                .map(s -> new Diagnostic(dev.uchar.regelspraak.model.RegelSpraakModel.Severity.ERROR,
                         "feitmodel-contract: " + s, 0)).toList());
     }
 

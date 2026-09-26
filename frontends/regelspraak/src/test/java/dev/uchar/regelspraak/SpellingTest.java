@@ -1,7 +1,7 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.ir.Spelling;
-import io.github.yhavinga.regelspraak.ir.Spelling.Familie;
+import dev.uchar.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.ir.Spelling.Familie;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -138,7 +138,7 @@ class SpellingTest {
         assertTrue(vouw.stream().noneMatch(ingebouwd::contains), "een functiesoort staat op beide knopen");
         Set<Object> samen = new HashSet<>(vouw);
         samen.addAll(ingebouwd);
-        assertEquals(new HashSet<>(EnumSet.allOf(io.github.yhavinga.regelspraak.ir.Expr.FunctieKind.class)), samen);
+        assertEquals(new HashSet<>(EnumSet.allOf(dev.uchar.regelspraak.ir.Expr.FunctieKind.class)), samen);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.schema;
+package dev.uchar.regelspraak.schema;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.schema.FactModelGenerator.Lid;
-import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.schema.FactModelGenerator.Lid;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Checks that the fact beans on a classpath honour the contract a resolved model implies:
- * per objecttype a class in {@code io.github.yhavinga.regelspraak.facts}, per implied member (the SAME derivation
+ * per objecttype a class in {@code dev.uchar.regelspraak.facts}, per implied member (the SAME derivation
  * {@link FactModelGenerator#leden} the generator renders) a getter and setter of the right shape, plus the
  * {@code Segment}/{@code Inconsistentie} carriers when the model needs them. Returns ALL violations — the
  * engine fails fast with the complete list, so a consumer fixes the bean contract in one round trip instead

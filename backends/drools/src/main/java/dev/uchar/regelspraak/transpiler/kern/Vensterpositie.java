@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.util.function.Predicate;
 

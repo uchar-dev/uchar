@@ -51,7 +51,7 @@ beside its residual one (`ref/test/test_ref.ml` pins `ref`'s, lines
 `WF-037-elementtype-*`). Since the card aantal-bronarm-en-drools-lader
 the Drools loader refuses the form too, at load and in the verifier's
 sentence, so neither branch reaches the refusals above
-(`backends/drools/src/test/java/io/github/yhavinga/regelspraak/loader/TellingBronarmWitnessTest.java`).
+(`backends/drools/src/test/java/dev/uchar/regelspraak/loader/TellingBronarmWitnessTest.java`).
 
 Rood-eerst, measured on this document. Verifier before the arm (source
 `spec/verifier/lib/checks.ml` md5 `2e9dd78483864a00da56bd327406f635`,

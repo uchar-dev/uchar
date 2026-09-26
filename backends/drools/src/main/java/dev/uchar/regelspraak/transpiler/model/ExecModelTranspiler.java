@@ -1,34 +1,34 @@
-package io.github.yhavinga.regelspraak.transpiler.model;
+package dev.uchar.regelspraak.transpiler.model;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Default;
-import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.ir.ResolvedVerdeling;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
-import io.github.yhavinga.regelspraak.model.Rationaal;
-import io.github.yhavinga.regelspraak.runtime.Accessors;
-import io.github.yhavinga.regelspraak.runtime.CreationMarker;
-import io.github.yhavinga.regelspraak.runtime.RuleFired;
-import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
-import io.github.yhavinga.regelspraak.schema.FactModelGenerator;
-import io.github.yhavinga.regelspraak.transpiler.kern.Dagsoorten;
-import io.github.yhavinga.regelspraak.transpiler.kern.Dekking;
-import io.github.yhavinga.regelspraak.transpiler.kern.Gastheer;
-import io.github.yhavinga.regelspraak.transpiler.kern.Eenheidsconflict;
-import io.github.yhavinga.regelspraak.kern.Literalen;
-import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
-import io.github.yhavinga.regelspraak.transpiler.kern.Operatoren;
-import io.github.yhavinga.regelspraak.transpiler.kern.Rekenjaar;
-import io.github.yhavinga.regelspraak.transpiler.kern.Tijdlijnen;
-import io.github.yhavinga.regelspraak.transpiler.kern.Vensterpositie;
-import io.github.yhavinga.regelspraak.kern.Tijdrekening;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Default;
+import dev.uchar.regelspraak.ir.ExceptionGroup;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
+import dev.uchar.regelspraak.model.Rationaal;
+import dev.uchar.regelspraak.runtime.Accessors;
+import dev.uchar.regelspraak.runtime.CreationMarker;
+import dev.uchar.regelspraak.runtime.RuleFired;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.kern.Dagsoorten;
+import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.kern.Gastheer;
+import dev.uchar.regelspraak.transpiler.kern.Eenheidsconflict;
+import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.kern.Operatoren;
+import dev.uchar.regelspraak.transpiler.kern.Rekenjaar;
+import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
+import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
+import dev.uchar.regelspraak.kern.Tijdrekening;
 
 import org.drools.model.DSL;
 import org.drools.model.Global;
@@ -79,14 +79,14 @@ import java.util.function.BiFunction;
  */
 public final class ExecModelTranspiler {
 
-    public static final String PKG = "io.github.yhavinga.regelspraak.generated";
-    static final String FACTS = "io.github.yhavinga.regelspraak.facts";
+    public static final String PKG = "dev.uchar.regelspraak.generated";
+    static final String FACTS = "dev.uchar.regelspraak.facts";
 
     private final RegelSpraakModel model;
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with DrlTranspiler. */
     /** Computed in {@link #build}, once the navigation bindings the reads depend on are known. */
-    private io.github.yhavinga.regelspraak.transpiler.Stratificatie strat;
-    /** The classloader the bean fact classes ({@code io.github.yhavinga.regelspraak.facts.*}, Segment, Inconsistentie) are
+    private dev.uchar.regelspraak.transpiler.Stratificatie strat;
+    /** The classloader the bean fact classes ({@code dev.uchar.regelspraak.facts.*}, Segment, Inconsistentie) are
      *  resolved against (card fase 1). Defaults to this transpiler's OWN loader; the {@link ScenarioRunner}/
      *  BeslisserKern shape (FactModelGenerator + BeanCompiler) threads a CHILD loader so child-loaded beans are
      *  visible at model-build time (a zero-arg {@code Class.forName} would miss them → a "geen fact-class" skip). */
@@ -140,8 +140,8 @@ public final class ExecModelTranspiler {
      *  Every unit restatement below takes its datatypes from here; a bare {@code e.type()} at a restatement site
      *  reads the wire's REPETITION of a declaration instead of the declaration, which is what made this backend
      *  answer 3.750,00 where ref and clingo answer 3,75 on a unit-lying aggregation result type. */
-    private io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid eff =
-            new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of());
+    private dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid eff =
+            new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of());
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
      *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
@@ -158,10 +158,10 @@ public final class ExecModelTranspiler {
      *  id-collision. A global counter makes every constraint id unique, so no rule ever inherits another's predicate. */
     private int idSeq;
     /** The ch. 7.8 / ch. 7.7 target classification — the SHARED derivation
-     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen}) the DRL-text branch reads too, so
+     *  ({@link dev.uchar.regelspraak.transpiler.kern.StaandeDoelen}) the DRL-text branch reads too, so
      *  neither branch can drift on WHERE a leeg write is suppressed. Built lazily: the ch. 7 defaults list it
      *  consults is threaded in after construction (see {@link #build}). */
-    private io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen staande;
+    private dev.uchar.regelspraak.transpiler.kern.StaandeDoelen staande;
 
     /** A lowered voorwaarde: the subject pattern with its in-pattern constraints, plus zero or more SEPARATE
      *  rule items (the §8.1.7 far-side {@code exists}/{@code not} joins) appended after it — the model analog of
@@ -181,7 +181,7 @@ public final class ExecModelTranspiler {
     private String kop(String geëmitteerdeNaam) { return model.geëmitteerdeRegelNaam(geëmitteerdeNaam); }
 
     /** The §4 restatement datatype of {@code e}: its annotation with the EFFECTIVE unit grafted on
-     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid}). Every restatement argument in
+     *  ({@link dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid}). Every restatement argument in
      *  this file goes through here — a bare {@code e.type()} feeding {@code herschaald} / {@code herschaalWaarde} /
      *  {@code restatement} / {@code eenheidOf} is the defect this replaces. Null-safe (null in, null out). */
     private Datatype effType(Expr e) { return eff.van(e); }
@@ -229,9 +229,9 @@ public final class ExecModelTranspiler {
             t.navigatieBindingen = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
             t.navigatieBindingen.putAll(navigatieBindingen);
         }
-        t.eff = new io.github.yhavinga.regelspraak.transpiler.kern.EffectieveEenheid(
+        t.eff = new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(
                 lets == null ? List.of() : lets);
-        t.strat = io.github.yhavinga.regelspraak.transpiler.Stratificatie.bereken(m.resolvedRegels, t::genavigeerd);
+        t.strat = dev.uchar.regelspraak.transpiler.Stratificatie.bereken(m.resolvedRegels, t::genavigeerd);
         t.model0 = t.run();
         return t;
     }
@@ -327,26 +327,26 @@ public final class ExecModelTranspiler {
             });
             for (Rule rule : rules) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedConsistentie c : model.consistenties) {   // §9.5 / §13.4.8 (Phase D)
+        for (dev.uchar.regelspraak.ir.ResolvedConsistentie c : model.consistenties) {   // §9.5 / §13.4.8 (Phase D)
             Rule rule = meet("consistentie", c.naam(), () -> consistentie(c));
             if (rule != null) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u : model.uniciteiten) {        // §8.1.6 (Phase D)
+        for (dev.uchar.regelspraak.ir.ResolvedUniciteit u : model.uniciteiten) {        // §8.1.6 (Phase D)
             Rule rule = meet("uniciteit", u.naam(), () -> uniciteit(u));
             if (rule != null) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v : model.verdelingen) {        // §9.7 / §13.4.10 (Phase E)
+        for (dev.uchar.regelspraak.ir.ResolvedVerdeling v : model.verdelingen) {        // §9.7 / §13.4.10 (Phase E)
             for (Rule rule : meet("verdeling", v.naam(), () -> verdeling(v))) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie oc : model.objectCreaties) {  // §13.4.6 (Phase G)
+        for (dev.uchar.regelspraak.ir.ResolvedObjectCreatie oc : model.objectCreaties) {  // §13.4.6 (Phase G)
             Rule rule = meet("objectcreatie", oc.naam(), () -> objectCreatie(oc));
             if (rule != null) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc : model.feitCreaties) {       // §13.4.7 (Phase G)
+        for (dev.uchar.regelspraak.ir.ResolvedFeitCreatie fc : model.feitCreaties) {       // §13.4.7 (Phase G)
             Rule rule = meet("feitcreatie", fc.naam(), () -> feitCreatie(fc));
             if (rule != null) m.addRule(rule);
         }
-        for (io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
+        for (dev.uchar.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
             for (Rule rule : meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u))) m.addRule(rule);
         // §6.1 / ch. 7 prioritized defaults: one reduce-rule per (group, subject), a port of ref's run_defaults_group.
         // The composition itself can refuse (ch. 7.10 corner (a), a declared-unordered SET across a
@@ -779,7 +779,7 @@ public final class ExecModelTranspiler {
      *
      *  <p>{@code staandDoel} carries the ch. 7.8 STANDING arm (the scalar twin of {@link #werkBijTijdlijn}'s): on a
      *  standing scalar target or a ch. 7.7 desugaring-domain target — the SHARED classification
-     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen#staandScalair}) the DRL-text branch
+     *  ({@link dev.uchar.regelspraak.transpiler.kern.StaandeDoelen#staandScalair}) the DRL-text branch
      *  reads too — a LEEG computed value decides nothing, so NOTHING is written and what the fact
      *  base holds — the case-supplied input, or the initialisatie's value — stands (ref: the {@code Value.Empty}
      *  arm of {@code ref/lib/eval.ml}'s Gelijkstelling/Berekening branch). Scalar leeg is {@code null}, tested
@@ -794,19 +794,19 @@ public final class ExecModelTranspiler {
         if (!java.util.Objects.equals(oud, v)) drools.update(s);
     }
 
-    /** §6.1.2 write-boundary collapse: a value at rest is decimal-typed, so any exact {@link io.github.yhavinga.regelspraak.runtime.Breuk}
+    /** §6.1.2 write-boundary collapse: a value at rest is decimal-typed, so any exact {@link dev.uchar.regelspraak.runtime.Breuk}
      *  that survived the computation (unrounded terminating result, or — impossible-by-resolver-guard — a
-     *  non-terminating one) is reduced to its {@link io.github.yhavinga.regelspraak.runtime.Breuk#naarDecimal()} value here:
+     *  non-terminating one) is reduced to its {@link dev.uchar.regelspraak.runtime.Breuk#naarDecimal()} value here:
      *  exact when it terminates, a defensive DECIMAL64 collapse otherwise (never a throw). A non-Breuk passes through. */
     private static Object collapseBreuk(Object v) {
-        return v instanceof io.github.yhavinga.regelspraak.runtime.Breuk b ? b.naarDecimal() : v;
+        return v instanceof dev.uchar.regelspraak.runtime.Breuk b ? b.naarDecimal() : v;
     }
 
     /** Write a TIMELINE doel ({@code List<Segment>}) — the timeline analogue of {@link #werkBij}, holding the two
      *  rules a timeline write obeys that a scalar write does not.
      *
      *  <p>(1) The ch. 7.8 STANDING arm: on a standing temporal target — the SHARED classification
-     *  ({@link io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen#staandTemporeel}) the DRL-text branch
+     *  ({@link dev.uchar.regelspraak.transpiler.kern.StaandeDoelen#staandTemporeel}) the DRL-text branch
      *  reads too — an EMPTY result is the temporal leeg and decides nothing, so NOTHING is written and the
      *  case-supplied input timeline stands whole (ref: {@code ref/lib/eval.ml}'s pro-rata and day-count arms).
      *  Emptiness itself is {@link RegelSpraakRuntime#rsTijdreeksGevuld}, the same predicate the DRL text imports.
@@ -833,9 +833,9 @@ public final class ExecModelTranspiler {
     /** The ch. 7.8 / ch. 7.7 target classification, built on first use — {@link #prioritizedDefaults} (which
      *  its {@code other_writer} clause consults) is threaded in after construction, so the derivation cannot be
      *  built in the constructor. */
-    private io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen staande() {
+    private dev.uchar.regelspraak.transpiler.kern.StaandeDoelen staande() {
         if (staande == null)
-            staande = io.github.yhavinga.regelspraak.transpiler.kern.StaandeDoelen.van(model, prioritizedDefaults);
+            staande = dev.uchar.regelspraak.transpiler.kern.StaandeDoelen.van(model, prioritizedDefaults);
         return staande;
     }
 
@@ -849,7 +849,7 @@ public final class ExecModelTranspiler {
     /** A written attribute name brought back to its DECLARED spelling on {@code ot} — the same shared name
      *  contract ({@link Namen#gedeclareerdeNaam}). Every reflective read below hands the name to the
      *  runtime's pascal-based property resolver, and the bean member was generated from the DECLARATION
-     *  ({@link io.github.yhavinga.regelspraak.schema.FactModelGenerator}), so a key written in another
+     *  ({@link dev.uchar.regelspraak.schema.FactModelGenerator}), so a key written in another
      *  capitalisation must be resolved here or it looks for a getter that does not exist. */
     private static String gedeclareerdAttribuut(Objecttype ot, String attr) {
         return ot == null ? attr : Namen.gedeclareerdeNaam(ot.attribuutLeden().keySet(), attr);
@@ -893,7 +893,7 @@ public final class ExecModelTranspiler {
     private record Agg(RuleItemBuilder<?> accItem, Variable resultVar, Variable countVar, WaardeFn somFallback, boolean isSom) {}
 
     /** Whether the bean model derives the scalar REFERENCE field for role {@code rol} on {@code ot}, pointing at
-     *  {@code doel} — asked of {@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#heeftReferentieVeld},
+     *  {@code doel} — asked of {@link dev.uchar.regelspraak.schema.FactModelGenerator#heeftReferentieVeld},
      *  which reads the ONE member derivation the generator renders and the ContractValidator demands, so a lowered
      *  read can never drift from what the beans carry.
      *  A derived ROLE is not yet a derived FIELD: a to-many role's storage is the far end's field, and where BOTH
@@ -901,7 +901,7 @@ public final class ExecModelTranspiler {
      *  name-dedup lets a declared member of the same name displace it, which is why the TYPE is part of the
      *  question (see that method). */
     private boolean heeftReferentieVeld(Objecttype ot, String rol, Objecttype doel) {
-        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel);
+        return dev.uchar.regelspraak.schema.FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel);
     }
 
     /** The same question on the READ side: whether a hop from {@code ot} over {@code rol} to {@code doel} has a bean
@@ -944,10 +944,10 @@ public final class ExecModelTranspiler {
      *  precise §13.3.9 reason, so a per-form refusal names the bean-model limit instead of the generic scope note
      *  (the {@code schendingReden} pattern, and the defaults arm's kenmerktarget SKIP, applied to the reference
      *  fields). The sentence itself lives beside the derivation it explains
-     *  ({@link io.github.yhavinga.regelspraak.schema.FactModelGenerator#geenReferentieveldReden}), so this branch
+     *  ({@link dev.uchar.regelspraak.schema.FactModelGenerator#geenReferentieveldReden}), so this branch
      *  and the DRL-text branch cannot drift into two wordings for one limit. */
     private static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
-        return io.github.yhavinga.regelspraak.schema.FactModelGenerator.geenReferentieveldReden(ot, rol, doel);
+        return dev.uchar.regelspraak.schema.FactModelGenerator.geenReferentieveldReden(ot, rol, doel);
     }
 
     /** Why the last {@link #aggregatie} call returned null, when the cause is a §13.3.9 bean-MODEL limit rather
@@ -994,7 +994,7 @@ public final class ExecModelTranspiler {
         // som/totaal bind, an IllegalStateException out of the min/max accumulate cast). A crash
         // names no form and reaches the gate as an ERROR instead of as a channel with a reason, so
         // the question is asked here, before anything lowers, through the reason BOTH branches share.
-        String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, arg);
+        String vw = dev.uchar.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, arg);
         if (vw != null) { aggregatieReden = vw; return null; }
 
         // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the whole one-step join derivation below. It is
@@ -1005,8 +1005,8 @@ public final class ExecModelTranspiler {
         // the path code.
         List<RegelSpraakModel.RolBindingRef> pad = bronPaden.get(f);
         if (pad != null) {
-            io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan =
-                    io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.ontleed(model, subject, pad, elem);
+            dev.uchar.regelspraak.transpiler.kern.Bronpad.Plan plan =
+                    dev.uchar.regelspraak.transpiler.kern.Bronpad.ontleed(model, subject, pad, elem);
             if (plan.weigering() != null) { aggregatieReden = plan.weigering(); return null; }
             PadBron pb = padBron(plan, elem, elemClass, subjectVar);
             if (pb == null) return null;                  // aggregatieReden set by padBron
@@ -1069,7 +1069,7 @@ public final class ExecModelTranspiler {
             // the cardinality half moved to FactModelGenerator.geenJoinveldReden (2026-09-18) so the DRL-text
             // branch diagnoses this same failure in the same words; the sentence itself is unchanged.
             aggregatieReden = "de aggregatie-join heeft geen beanveld — "
-                    + io.github.yhavinga.regelspraak.schema.FactModelGenerator
+                    + dev.uchar.regelspraak.schema.FactModelGenerator
                         .geenJoinveldReden(model, joinDrager, joinRol, joinDoel)
                     + " (§13.3.9 opslagrichting)";
             return null;
@@ -1171,7 +1171,7 @@ public final class ExecModelTranspiler {
         String joinRol = voorwaarts ? elemRol : backref;
         if (!heeftReferentieVeld(joinDrager, joinRol, joinDoel)) {
             aggregatieReden = "de join van een instantie-unie-selectie heeft geen beanveld — "
-                    + io.github.yhavinga.regelspraak.schema.FactModelGenerator
+                    + dev.uchar.regelspraak.schema.FactModelGenerator
                         .geenJoinveldReden(model, joinDrager, joinRol, joinDoel)
                     + " (§13.3.9 opslagrichting)";
             return null;
@@ -1313,7 +1313,7 @@ public final class ExecModelTranspiler {
     /**
      * IR-SPEC ch. 4.3 / WF-102 — the fold-source RANGE as a path, lowered to an accumulate source.
      *
-     * <p>Each hop reads the §13.3.9 bean field {@link io.github.yhavinga.regelspraak.transpiler.kern.Bronpad}
+     * <p>Each hop reads the §13.3.9 bean field {@link dev.uchar.regelspraak.transpiler.kern.Bronpad}
      * derived for it, and the shape of the lowering follows from WHICH end stores it. A backward hop is functional
      * FROM the element (one scalar getter), a forward hop functional FROM the subject, so:
      *
@@ -1331,7 +1331,7 @@ public final class ExecModelTranspiler {
      * intermediates may be declared in path order. null -> skip, with {@link #aggregatieReden} set.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private PadBron padBron(io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, Objecttype elem,
+    private PadBron padBron(dev.uchar.regelspraak.transpiler.kern.Bronpad.Plan plan, Objecttype elem,
             Class<?> elemClass, Variable subjectVar) {
         Variable elemVar = DSL.declarationOf(elemClass, "$e_" + (seq++));
         if (plan.ontmoet()) {
@@ -1373,7 +1373,7 @@ public final class ExecModelTranspiler {
      *  (a forward prefix), the element (a backward suffix) or an already-declared intermediate. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private PatternDSL.PatternDef koppel(PatternDSL.PatternDef p,
-            io.github.yhavinga.regelspraak.transpiler.kern.Bronpad.Plan plan, int stap, int dit,
+            dev.uchar.regelspraak.transpiler.kern.Bronpad.Plan plan, int stap, int dit,
             java.util.Map<Integer, Variable> tussen, Variable elemVar, Variable subjectVar) {
         int ander = stap - 1 == dit ? stap : stap - 1;
         final boolean ditIsDoel = ander == stap - 1;          // this node is the hop's TARGET, the other its source
@@ -1870,7 +1870,7 @@ public final class ExecModelTranspiler {
         // ClassCastException BigDecimal -> LocalDate (measured 2026-09-25), where the DRL-text branch refused the
         // document. Asked here, of the DECLARATION, with that branch's own question and sentence, so both branches
         // refuse the same document before any case is read.
-        String vw = io.github.yhavinga.regelspraak.transpiler.kern.Vouwwaarde.tijdlijnWeigering(f, a.objecttype(), a);
+        String vw = dev.uchar.regelspraak.transpiler.kern.Vouwwaarde.tijdlijnWeigering(f, a.objecttype(), a);
         if (vw != null) { tijdlijnReden = vw; return null; }
         if (Tijdlijnen.meerPeriodiek(a.objecttype().tijdlijnAantalLeden(), a.attribuut())) return null;   // §13.3.6.7 multi-period -> skip
         java.util.function.Function<Object, Object> reader = navReader(a, subject);   // own or to-one navigated, root-guarded
@@ -1977,7 +1977,7 @@ public final class ExecModelTranspiler {
         else return null;
         if (!(eff.typeVan(tijd).isNumeriek() || eff.typeVan(tijd).isPercentage())) return null;
         if (ander instanceof Expr.AttribuutRef ar && isTemporeel82(ar)) return null;   // both-temporal (timeline vs timeline) -> skip
-        io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
+        dev.uchar.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
         if (el != null && er != null && el.vereistOmrekening(er)) return null;   // cross-unit -> skip (raw-magnitude would be wrong)
         Integer code = Tijdrekening.toets(linksTemp ? v.op() : Operatoren.omkeren(v.op()));        // temporal operand on the left (REVERSE)
         if (code == null) return null;                                           // datum ordering -> skip
@@ -2717,7 +2717,7 @@ public final class ExecModelTranspiler {
         // ANNOTATION BY DESIGN (WF-035, RUNTIME-SEMANTICS ch. 2.10 exception 2): the duration operand's calendar
         // unit is what routes date arithmetic, and ref routes on the same static type — deriving it here would
         // split the two. scripts/check-reftype-derivation.sh leaves this position untwisted for that reason.
-        io.github.yhavinga.regelspraak.model.Eenheid durEenheid = eff.typeVan(durExpr).eenheidOf();
+        dev.uchar.regelspraak.model.Eenheid durEenheid = eff.typeVan(durExpr).eenheidOf();
         // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order and why.
         String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, durEenheid);
         if (dagsoortUnit != null) {
@@ -2860,7 +2860,7 @@ public final class ExecModelTranspiler {
             else if (v.rechts() instanceof Expr.AttribuutRef ra && isTemporeel82(ra)) { tijd = ra; ander = v.links();  linksTemp = false; }
             else return null;
             if (!(eff.typeVan(tijd).isNumeriek() || eff.typeVan(tijd).isPercentage())) return null;
-            io.github.yhavinga.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
+            dev.uchar.regelspraak.model.Eenheid el = eff.eenheidVan(tijd), er = eff.eenheidVan(ander);
             // §8.2 cross-unit grens: restate it from er into the timeline's unit el via the EXACT factor (mirrors DRL
             // herschaalExact); an OPAQUE product unit (no exact factors) stays a marker (symmetric with DRL).
             boolean crossUnit = el != null && er != null && el.vereistOmrekening(er);
@@ -3540,7 +3540,7 @@ public final class ExecModelTranspiler {
         if (c instanceof Conditie.Rollidmaatschap r) {
             FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rolBindingen.get(r));
             if (o.weigering() == null && !o.opSubject()) {
-                Objecttype tegenpartij = io.github.yhavinga.regelspraak.loader.IrLoader.tegenpartij(r);
+                Objecttype tegenpartij = dev.uchar.regelspraak.loader.IrLoader.tegenpartij(r);
                 Objecttype vuller = tegenpartij != null ? tegenpartij : o.ander();
                 Class<?> fillerClass = factClass(vuller);
                 if (fillerClass == null) return null;
@@ -4197,13 +4197,13 @@ public final class ExecModelTranspiler {
         // Literalen.waar, then compare `rhs.equals(prop) == gelijk`. A null Boolean prop reads leeg -> rhs.equals(null)
         // is false, so GELIJK -> onwaar / ONGELIJK -> WAAR (Tabel 44), matching DrlTranspiler's mvel `prop == true|false`.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && ongenavigeerd(la)
-                && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.Booleaan
+                && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof dev.uchar.regelspraak.model.Datatype.Booleaan
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (subject == null || !subject.heeftLid(la.attribuut())) return null;            // not the subject's own member
             if (Namen.bevatNaam(subject.granulariteitLeden(), la.attribuut())) return null;      // temporal -> Phase F
             if (!subject.dimensiesVan(la.attribuut()).isEmpty()) return null;                 // §3.6 gedimensioneerd -> marker
             String attr = la.attribuut();
-            Boolean rhs = io.github.yhavinga.regelspraak.kern.Literalen.waar(lit.waarde());
+            Boolean rhs = dev.uchar.regelspraak.kern.Literalen.waar(lit.waarde());
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> rhs.equals(RegelSpraakRuntime.get(s, attr)) == gelijk;   // prop may be null; rhs non-null
         }
@@ -4212,14 +4212,14 @@ public final class ExecModelTranspiler {
         // GELIJK of leeg vs the literal -> onwaar, ONGELIJK of leeg vs the literal -> WAAR (Tabel 44). Mirrors the
         // navigated Tekst/enum branch above.
         if (c instanceof Conditie.Vergelijking v && v.links() instanceof Expr.AttribuutRef la && !ongenavigeerd(la)
-                && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.Booleaan
+                && v.rechts() instanceof Expr.Literal lit && lit.type() instanceof dev.uchar.regelspraak.model.Datatype.Booleaan
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || Namen.bevatNaam(la.objecttype().granulariteitLeden(), la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
             String rol = navComparisonRole(la, subject);
             if (rol == null) return null;
             String attr = la.attribuut();
-            Boolean rhs = io.github.yhavinga.regelspraak.kern.Literalen.waar(lit.waarde());
+            Boolean rhs = dev.uchar.regelspraak.kern.Literalen.waar(lit.waarde());
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> {
                 Object rel = RegelSpraakRuntime.get(s, rol);
@@ -4280,7 +4280,7 @@ public final class ExecModelTranspiler {
             // subject fills the role. Measured 2026-09-10 on a verifier-clean, ref-clean model, both branches:
             // "FAIL verwacht leeg, werkelijk 8" — the rule fired where ref and clingo leave it unfired.
             if (!heeftVeld("rollidmaatschapscheck", subject, veld, o.ander())) return null;
-            Objecttype tegenpartij = io.github.yhavinga.regelspraak.loader.IrLoader.tegenpartij(r);
+            Objecttype tegenpartij = dev.uchar.regelspraak.loader.IrLoader.tegenpartij(r);
             Class<?> tegenKlasse = tegenpartij == null ? null : factClass(tegenpartij);
             if (tegenpartij != null && tegenKlasse == null) return null;
             boolean gevuldWanted = !r.negatie();
@@ -4316,7 +4316,7 @@ public final class ExecModelTranspiler {
     /** §4.2: true when ANY construct of ANY family carries a time-bounded (dated) version — the trigger for
      *  registering the Rekendatum global. Mirrors DrlTranspiler's `tijdgebonden` disjunction over every family. */
     private boolean heeftTijdgebonden() {
-        java.util.function.Predicate<io.github.yhavinga.regelspraak.ir.Geldigheid> dated = g -> g != null && !g.altijd();
+        java.util.function.Predicate<dev.uchar.regelspraak.ir.Geldigheid> dated = g -> g != null && !g.altijd();
         return model.resolvedRegels.stream().anyMatch(r -> dated.test(r.geldigheid()))
                 || model.objectCreaties.stream().anyMatch(o -> dated.test(o.geldigheid()))
                 || model.verdelingen.stream().anyMatch(v -> dated.test(v.geldigheid()))
@@ -4361,7 +4361,7 @@ public final class ExecModelTranspiler {
      *  predicate ignores the subject — it reads only the global — so it composes with any pattern (subject, anker,
      *  Pot source). The global is constant per session, so the guard introduces no extra reactivity. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private PatternDSL.PatternDef geldigGuard(PatternDSL.PatternDef pattern, io.github.yhavinga.regelspraak.ir.Geldigheid g) {
+    private PatternDSL.PatternDef geldigGuard(PatternDSL.PatternDef pattern, dev.uchar.regelspraak.ir.Geldigheid g) {
         if (g == null || g.altijd() || rekendatumGlobal == null) return pattern;
         java.time.LocalDate vanaf = g.vanaf(), tot = g.tot();
         return pattern.expr(nextId("geldig"), (Variable) rekendatumGlobal, (Predicate2) (s, rd) -> {
@@ -4389,7 +4389,7 @@ public final class ExecModelTranspiler {
             Eenheidsconflict.eisHerschaalbaar(van.eenheidOf(), naar.eenheidOf(), plek);
             BiFunction<Object, Map<String, BigDecimal>, Object> inner = fn;
             return new WaardeFn((s, gm) -> { Object v = inner.apply(s, gm);
-                return (v instanceof BigDecimal || v instanceof io.github.yhavinga.regelspraak.runtime.Breuk) ? herschaalWaarde(v, van, naar) : v; }, globals);
+                return (v instanceof BigDecimal || v instanceof dev.uchar.regelspraak.runtime.Breuk) ? herschaalWaarde(v, van, naar) : v; }, globals);
         }
     }
 
@@ -4833,7 +4833,7 @@ public final class ExecModelTranspiler {
      * arithmetic combinators over them all work — and the verdict comes from
      * {@link RegelSpraakRuntime#rsAggVergelijk}, the SAME shared helper the aggregation-comparison path uses.
      * That helper mirrors ref's Tabel 33/37/44 leeg semantics AND compares an exact {@link
-     * io.github.yhavinga.regelspraak.runtime.Breuk} exactly, so no cast can throw at fire.
+     * dev.uchar.regelspraak.runtime.Breuk} exactly, so no cast can throw at fire.
      *
      * <p>null (an honest, reason-carrying skip at the caller) for anything else: a non-comparison condition, a
      * datum operator, a non-numeric operand, an operand that does not lower — and for a comparison that would
@@ -4981,7 +4981,7 @@ public final class ExecModelTranspiler {
                 boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
                 // ANNOTATION BY DESIGN (WF-038, ch. 2.10 exception 3): a tijdsduur's own unit IS the operator's
                 // parameter ("in jaren"), not a derived result type — ref reads the same node type here.
-                io.github.yhavinga.regelspraak.model.Eenheid e = eff.typeVan(f).eenheidOf();
+                dev.uchar.regelspraak.model.Eenheid e = eff.typeVan(f).eenheidOf();
                 // ch. 3.8 puts the CALENDAR TABLE first — see Tijdrekening.dagsoortVoorEenheid for the order.
                 String dagsoortUnit = Tijdrekening.dagsoortVoorEenheid(model, e);
                 if (dagsoortUnit != null) {
@@ -5303,7 +5303,7 @@ public final class ExecModelTranspiler {
         // A Breuk value keeps its exact restatement (×fv ÷fn as exact rationals); a BigDecimal value takes the
         // original DECIMAL64 path unchanged. The single-runtime rs* helpers already return Breuk/BigDecimal, and a
         // unit restatement must not force a premature decimal collapse of a non-terminating intermediate.
-        if (v instanceof io.github.yhavinga.regelspraak.runtime.Breuk) {
+        if (v instanceof dev.uchar.regelspraak.runtime.Breuk) {
             if (ex != null) return RegelSpraakRuntime.rsGedeeld(RegelSpraakRuntime.rsMaal(v, ex[0]), ex[1]);
             BigDecimal vf = valueFactor(van, naar);
             return vf == null ? v : RegelSpraakRuntime.rsMaal(v, vf);
@@ -5318,7 +5318,7 @@ public final class ExecModelTranspiler {
     private static BigDecimal num(Object bean, String attr) { return (BigDecimal) RegelSpraakRuntime.get(bean, attr); }
     /** Parse a numeric literal's value, ignoring any trailing unit ("18 jr" -> 18, "3,5 EUR" -> 3.5; comma is the
      *  RegelSpraak decimal mark), or null for a non-numeric literal. Reads the §13.2.5 number via the SHARED
-     *  {@link Rationaal#van} parser — the same one {@link io.github.yhavinga.regelspraak.transpiler.DrlTranspiler} uses — so a
+     *  {@link Rationaal#van} parser — the same one {@link dev.uchar.regelspraak.transpiler.DrlTranspiler} uses — so a
      *  rational form ("4/2" -> 2, "3/2" -> 1.5, "1_1/2" -> 1.5) lowers to its EXACT value when the quotient
      *  terminates, else to a DECIMAL64 division (e.g. 1/3). A leading-integer regex would drop the denominator
      *  ("4/2" -> 4) and DIVERGE from the DRL oracle (grondslag maal 4/2 = 40 in exec vs 20 in DRL). */
@@ -5326,13 +5326,13 @@ public final class ExecModelTranspiler {
         return Literalen.getal(lit);   // the shared literal reader (single shared implementation)
     }
     /** §13.2.5/§389 a numeric literal as an EXACT value: a §13.2.16 rational whose quotient does NOT terminate
-     *  (1/3) becomes a {@link io.github.yhavinga.regelspraak.runtime.Breuk} (teller/noemer), so subsequent arithmetic keeps its
+     *  (1/3) becomes a {@link dev.uchar.regelspraak.runtime.Breuk} (teller/noemer), so subsequent arithmetic keeps its
      *  precision; a terminating literal (4/2, 3/2, 2,5) stays a plain BigDecimal (the fast path, pins unchanged).
      *  null for a non-numeric literal. */
     private static Object numeriekLit(Expr.Literal lit) {
         BigDecimal[] r = Rationaal.van(lit.waarde());
         if (r == null) return null;
-        io.github.yhavinga.regelspraak.runtime.Breuk b = io.github.yhavinga.regelspraak.runtime.Breuk.van(r[0]).delen(io.github.yhavinga.regelspraak.runtime.Breuk.van(r[1]));
+        dev.uchar.regelspraak.runtime.Breuk b = dev.uchar.regelspraak.runtime.Breuk.van(r[0]).delen(dev.uchar.regelspraak.runtime.Breuk.van(r[1]));
         return b.isTerminerend() ? b.naarDecimal() : b;
     }
     /** A numeric EXPRESSION operand (an arithmetic {@link Expr.Binair}, a builtin {@link Expr.Functie}, a §6.1.4
@@ -5410,7 +5410,7 @@ public final class ExecModelTranspiler {
      *  so ONGELIJK must be true when exactly one operand is leeg, while {@code ==} is false there and BOTH-leeg makes
      *  {@code ==} true / {@code !=} false. The ordering ops do NOT match when either operand is leeg (mvel returns
      *  false, no NPE). Getting this wrong flips firing decisions under the negated quantifiers (geen/precies/ten hoogste). */
-    /** Whether a value expression can compute to an exact {@link io.github.yhavinga.regelspraak.runtime.Breuk} — the trigger for
+    /** Whether a value expression can compute to an exact {@link dev.uchar.regelspraak.runtime.Breuk} — the trigger for
      *  routing a numeric comparison through the Breuk-aware rsAggVergelijk (mirrors DrlTranspiler.kanBreukOpleveren).
      *  A KNOWN non-numeric result (datum/text) is never a Breuk; arithmetic / begrenzing / afronding / abs / a
      *  NON-terminating rational literal can be. */
@@ -5544,7 +5544,7 @@ public final class ExecModelTranspiler {
      *  (not Inconsistentie(regel==naam, subject==$s)) keeps it from re-flagging an already-flagged subject.
      *  Mirrors DrlTranspiler.consistentie + schendingConstraint. null -> skip (no faithful violation predicate). */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule consistentie(io.github.yhavinga.regelspraak.ir.ResolvedConsistentie c) {
+    private Rule consistentie(dev.uchar.regelspraak.ir.ResolvedConsistentie c) {
         Objecttype subject = c.subject();
         if (subject == null) return skip("consistentie (geen subject): " + c.naam());
         Class<?> factClass = factClass(subject);
@@ -5985,7 +5985,7 @@ public final class ExecModelTranspiler {
      *  crash — an ERROR — where the red fence must observe a genuine runtime FAULT. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule vormFoutRegel(String regelNaam, Class<?> factClass,
-                               io.github.yhavinga.regelspraak.ir.Geldigheid g, String melding) {
+                               dev.uchar.regelspraak.ir.Geldigheid g, String melding) {
         Variable sVar = DSL.declarationOf(factClass, "$subject");
         PatternDSL.PatternDef pat = geldigGuard(PatternDSL.pattern(sVar), g);   // §4.2 window, as the real rule
         Block2<org.drools.model.Drools, Object> body = (drools, s) -> { throw new IllegalStateException(melding); };
@@ -5998,7 +5998,7 @@ public final class ExecModelTranspiler {
      *  duplicate group. A null key cannot establish a duplicate (§8.1.6) so it is filtered out. Mirrors
      *  DrlTranspiler.uniciteit. null -> skip (no fact class / a temporal key). */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule uniciteit(io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u) {
+    private Rule uniciteit(dev.uchar.regelspraak.ir.ResolvedUniciteit u) {
         Objecttype subject = u.subject();
         if (subject == null || u.sleutels().isEmpty()) return skip("uniciteit (geen subject/sleutel): " + u.naam());
         Class<?> factClass = factClass(subject);
@@ -6078,7 +6078,7 @@ public final class ExecModelTranspiler {
      *  is gated in the consequence (insert iff >1) — same observable as DRL's {@code eval(sum>1)} when-gate, but
      *  general over any source count. Mirrors DrlTranspiler.uniciteitUnie. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private List<Rule> uniciteitUnie(io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie u) {
+    private List<Rule> uniciteitUnie(dev.uchar.regelspraak.ir.ResolvedUniciteitUnie u) {
         var bronnen = u.bronnen();
         if (bronnen.isEmpty()) return skipList("uniciteit-unie (geen bronnen): " + u.naam());
         int arity = bronnen.get(0).sleutels().size();
@@ -6579,7 +6579,7 @@ public final class ExecModelTranspiler {
      *  forward link being empty; a to-many target (or a missing forward field) keys on a per-rule per-subject
      *  {@link CreationMarker} (inserted in the consequence). */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule objectCreatie(io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie oc) {
+    private Rule objectCreatie(dev.uchar.regelspraak.ir.ResolvedObjectCreatie oc) {
         Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
         if (subject == null || nieuw == null) return skip("objectcreatie (onopgelost type): " + oc.naam());
         Class<?> subjClass = factClass(subject), nieuwClass = factClass(nieuw);
@@ -6832,7 +6832,7 @@ public final class ExecModelTranspiler {
      *  anker (its pattern) or the doel (its pattern); a guard lowerable to NEITHER is REFUSED by name, never lowered
      *  to a silent never-fire. Mirrors DrlTranspiler.feitCreatie. null -> skip (unresolved). */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Rule feitCreatie(io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
+    private Rule feitCreatie(dev.uchar.regelspraak.ir.ResolvedFeitCreatie fc) {
         Objecttype anker = fc.anker(), doel = fc.doel();
         // The bean fields come from the role bindings (V1-WIREMIGRATIE P2); since L2 the wire carries nothing else,
         // and ref executes the bindings alone.
@@ -6858,14 +6858,14 @@ public final class ExecModelTranspiler {
             } else if (!Gastheer.doelpogingToegestaan(fc.voorwaarde())) {
                 // Under a whole-period qualifier the doel is not a bound object (WF-109), so the doel reading this
                 // branch used to give — the sister branch sank at compile on the same guard — is refused by name.
-                io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+                dev.uchar.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
                 String snip = gb == null ? null : gb.snippet();
                 return skip("feitcreatie (" + Gastheer.DOELPOGING_GEHEELPERIODE
                         + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
             } else if (Gastheer.doelgastheerBuitenBereik(fc.voorwaarde(), doel, this::genavigeerd)) {
                 // WF-109's first two doel fences, in the sentence the DRL-text branch gives: this branch has no
                 // composite or navigated route on the doel either, but refused the form only generically.
-                io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+                dev.uchar.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
                 String snip = gb == null ? null : gb.snippet();
                 return skip("feitcreatie (" + Gastheer.DOELPOGING_GENEST
                         + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());
@@ -6887,7 +6887,7 @@ public final class ExecModelTranspiler {
         // gate report can tell the two forms apart. The over-creation the old comment worried about is not at stake:
         // a refused construct creates nothing either.
         if (inert) {
-            io.github.yhavinga.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
+            dev.uchar.regelspraak.ir.Bron gb = fc.voorwaarde().bron();
             String snip = gb == null ? null : gb.snippet();
             return skip("feitcreatie (voorwaarde niet naar anker of doel te lowereren"
                     + (snip == null || snip.isBlank() ? "" : ": " + snip) + "): " + fc.naam());

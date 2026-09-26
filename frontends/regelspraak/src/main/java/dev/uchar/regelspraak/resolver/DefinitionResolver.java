@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.kern.Tijdrekening;
-import io.github.yhavinga.regelspraak.model.*;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.*;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak.*;
+import dev.uchar.regelspraak.kern.Tijdrekening;
+import dev.uchar.regelspraak.model.*;
+import dev.uchar.regelspraak.model.RegelSpraakModel.*;
+import dev.uchar.regelspraak.parser.RegelSpraak;
+import dev.uchar.regelspraak.parser.RegelSpraak.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -85,7 +85,7 @@ public final class DefinitionResolver {
     /** §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) every ordered 'Uitzondering op &lt;basis&gt;: &lt;naam&gt;' block of the
      *  document, in document order. Each resolves like a §13.4.2 regel (its regelNaam + regelVersie+ body) and is
      *  then lifted, with its named base rule, into one
-     *  {@link io.github.yhavinga.regelspraak.ir.PrioritizedDefaults}. */
+     *  {@link dev.uchar.regelspraak.ir.PrioritizedDefaults}. */
     static List<UitzonderingRegelContext> alleUitzonderingen(RegelSpraakDocumentContext doc) {
         List<UitzonderingRegelContext> uit = new ArrayList<>();
         for (ParseTree kind : doc.children == null ? List.<ParseTree>of() : doc.children)
@@ -521,7 +521,7 @@ public final class DefinitionResolver {
     private boolean tweedeAfkorting(String stelsel, List<String> afkortingen, java.util.Map<String, String[]> geschreven,
                                     EenheidDefinitieContext u) {
         for (String a : afkortingen) {
-            String[] eerder = geschreven.get(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a));
+            String[] eerder = geschreven.get(dev.uchar.regelspraak.emit.IrEmitter.norm(a));
             if (eerder == null) continue;
             // the second declaration beside the first on the wire is what the verifier refuses, in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
@@ -532,7 +532,7 @@ public final class DefinitionResolver {
             return true;
         }
         for (String a : afkortingen)
-            geschreven.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a),
+            geschreven.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(a),
                     new String[]{a, afkortingen.get(0)});
         return false;
     }
@@ -937,9 +937,9 @@ public final class DefinitionResolver {
     /** The structured source anchor of {@code ctx}: {@link #src} as the snippet, plus file/line/column
      *  from the start token (the file being the char stream's source name, set at the front end). A null
      *  ctx yields a synthetic empty anchor, mirroring {@link #src}'s null handling. */
-    static io.github.yhavinga.regelspraak.ir.Bron bron(ParserRuleContext ctx) {
-        return ctx == null ? io.github.yhavinga.regelspraak.ir.Bron.synthetisch("")
-                           : io.github.yhavinga.regelspraak.ir.Bron.van(ctx, src(ctx));
+    static dev.uchar.regelspraak.ir.Bron bron(ParserRuleContext ctx) {
+        return ctx == null ? dev.uchar.regelspraak.ir.Bron.synthetisch("")
+                           : dev.uchar.regelspraak.ir.Bron.van(ctx, src(ctx));
     }
 
     private static String unquote(String s) {

@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.runtime;
+package dev.uchar.regelspraak.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;

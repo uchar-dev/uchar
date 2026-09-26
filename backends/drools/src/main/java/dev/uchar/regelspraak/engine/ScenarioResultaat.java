@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.engine;
+package dev.uchar.regelspraak.engine;
 
 import java.util.List;
 

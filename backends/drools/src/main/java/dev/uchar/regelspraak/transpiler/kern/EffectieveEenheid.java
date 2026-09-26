@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.loader.IrLoader;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
 
 import java.util.Collection;
 import java.util.HashMap;

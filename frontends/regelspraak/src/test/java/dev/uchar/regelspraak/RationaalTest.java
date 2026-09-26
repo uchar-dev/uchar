@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.model.Rationaal;
+import dev.uchar.regelspraak.model.Rationaal;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

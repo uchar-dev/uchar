@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Expr;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p><b>Both failures have now happened, one from each side, which is why this reads the source
  * instead of pinning a list.</b> On 2026-09-19 the frontend was wider by {@code AANTAL} and emitted
  * ill-formed documents with {@code diagnostics: []}
- * ({@link io.github.yhavinga.regelspraak.AantalSetbronTest}). On 2026-09-20 the verifier grew
+ * ({@link dev.uchar.regelspraak.AantalSetbronTest}). On 2026-09-20 the verifier grew
  * {@code AANTAL_GEVULDE} with the wire and the frontend stayed at six for two cards; nothing measured
  * it, because no frontend could write the kind yet. A comment claiming the two agree is exactly what
  * was there both times.

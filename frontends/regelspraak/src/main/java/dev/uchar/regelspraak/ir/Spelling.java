@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype.KenmerkSoort;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype.KenmerkSoort;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 
 import java.util.Collections;
 import java.util.HashMap;

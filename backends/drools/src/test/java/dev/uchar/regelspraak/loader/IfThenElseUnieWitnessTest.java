@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.cases.IrPad;
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import org.junit.jupiter.api.Test;
 

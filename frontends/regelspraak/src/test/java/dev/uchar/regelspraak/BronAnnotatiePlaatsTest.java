@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

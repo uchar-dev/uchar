@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -177,9 +177,9 @@ class AantalUnieTest {
             assertEquals("vondst", t.bronRol().rol(), "de wire noemt de GEDECLAREERDE enkelvoudsrol");
             assertEquals("Vondst", t.elementType().naam);
         }
-        assertEquals("gemerkt", assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+        assertEquals("gemerkt", assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
                 u.takken().get(0).filter()).kenmerk());
-        assertEquals("gekeurd", assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+        assertEquals("gekeurd", assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
                 u.takken().get(1).filter()).kenmerk());
     }
 
@@ -249,10 +249,10 @@ class AantalUnieTest {
         assertEquals("vondstaanmelding", u.takken().get(0).bronRol().feittype());
         assertEquals("vondstaanmelding", u.takken().get(1).bronRol().feittype());
         assertEquals("gemerkt",
-                assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+                assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
                         u.takken().get(0).filter()).kenmerk());
         assertEquals("gekeurd",
-                assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk.class,
+                assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Kenmerk.class,
                         u.takken().get(1).filter()).kenmerk());
     }
 
@@ -353,7 +353,7 @@ class AantalUnieTest {
     @Test
     void de_unie_telling_staat_ook_in_een_voorwaarde() {
         RegelSpraakModel m = schoon(IN_VOORWAARDE);
-        var v = assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Vergelijking.class,
+        var v = assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Vergelijking.class,
                 m.resolvedRegels.get(0).voorwaarde());
         Expr.Functie tel = assertInstanceOf(Expr.Functie.class, v.links());
         assertEquals(Expr.FunctieKind.AANTAL, tel.kind());

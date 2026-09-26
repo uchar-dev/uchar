@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.transpiler;
+package dev.uchar.regelspraak.transpiler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 
@@ -167,7 +167,7 @@ class DrlEenheidsplekWitnessTest {
     }
 
     /** The emitted text, built exactly as {@code CaseRunner}'s DRL branch builds it — model AND the document's
-     *  ch. 4.10 Let index. The index is not decoration here: a {@link io.github.yhavinga.regelspraak.ir.Expr.BinderRef}
+     *  ch. 4.10 Let index. The index is not decoration here: a {@link dev.uchar.regelspraak.ir.Expr.BinderRef}
      *  asked for its unit in isolation has no route back up to its binding, so without it the read falls back to
      *  its own wire annotation and this witness would measure a transpiler no branch uses. */
     private static String drl(JsonNode ir) {

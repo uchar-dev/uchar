@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import org.junit.jupiter.api.Test;
 
@@ -365,7 +365,7 @@ class ObjectCreatieWitnessTest {
         assertEquals("Rekenkamer", mint.getClass().getSimpleName());
         assertSame(na.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"),
                 "the writable end (the back-reference) links mint and subject");
-        assertTrue(na.feiten().stream().anyMatch(f -> f instanceof io.github.yhavinga.regelspraak.runtime.CreationMarker),
+        assertTrue(na.feiten().stream().anyMatch(f -> f instanceof dev.uchar.regelspraak.runtime.CreationMarker),
                 "and the guard's marker IS in the fact base — the census must exclude it by type, not by luck");
         assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("240", "90")));
     }
@@ -474,11 +474,11 @@ class ObjectCreatieWitnessTest {
 
     /** Every post-fire fact that is NOT one of the case's own input beans — the mints. Two other fact kinds are
      *  equally not input beans and equally not created objects, so both are excluded by TYPE: the §9 idempotence
-     *  {@link io.github.yhavinga.regelspraak.runtime.CreationMarker} the guard inserts, and the §9.5
+     *  {@link dev.uchar.regelspraak.runtime.CreationMarker} the guard inserts, and the §9.5
      *  {@code Inconsistentie} a consistentie rule inserts (a generated class, so it is matched by name). */
     private static List<Object> mints(CaseRunner.NaFire na) {
         return na.feiten().stream()
-                .filter(f -> !(f instanceof io.github.yhavinga.regelspraak.runtime.CreationMarker))
+                .filter(f -> !(f instanceof dev.uchar.regelspraak.runtime.CreationMarker))
                 .filter(f -> !"Inconsistentie".equals(f.getClass().getSimpleName()))
                 .filter(f -> na.invoer().values().stream().noneMatch(b -> b == f)).toList();
     }

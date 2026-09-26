@@ -131,7 +131,7 @@ while IFS= read -r hit; do
             esac ;;
         backlog/doing/20260829-hernoem-prioritized-defaults.md|backlog/done/20260829-hernoem-prioritized-defaults.md)
             allowed=y; c_card=$((c_card+1)) ;;
-        backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/CaseRunner.java|backends/drools/src/main/java/io/github/yhavinga/regelspraak/cases/DroolsBackendMain.java|backlog/done/20260827-drools-backend.md)
+        backends/drools/src/main/java/dev/uchar/regelspraak/cases/CaseRunner.java|backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackendMain.java|backlog/done/20260827-drools-backend.md)
             if ! printf '%s' "$hit" | sed 's/runGolden//g' | grep -qiE 'ladder|rung'; then
                 allowed=y; c_rungolden=$((c_rungolden+1))
             fi ;;

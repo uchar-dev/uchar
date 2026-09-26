@@ -1,14 +1,14 @@
-package io.github.yhavinga.regelspraak.kern;
+package dev.uchar.regelspraak.kern;
 
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.Rationaal;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.Rationaal;
 
 import java.math.BigDecimal;
 
 /**
  * The single literal-to-typed-value reader both back-ends share (grown from the §9.8 dagsoort
  * compiler outward). A literal reaches the transpilers as its wire lexeme ({@code waarde}) plus a
- * resolved {@link io.github.yhavinga.regelspraak.model.Datatype}; the conversions here are the one place that
+ * resolved {@link dev.uchar.regelspraak.model.Datatype}; the conversions here are the one place that
  * lexeme is interpreted, so the two back-ends can never drift on what a literal MEANS. The dates read the
  * WIRE lexeme only — the frontend reads the RegelSpraak source snippet with a reader of its own.
  */
@@ -66,7 +66,7 @@ public final class Literalen {
      *  (it once passed for a whole turn as "the back-end cannot do milliseconds"). One predicate, so the two
      *  branches can never disagree about which lexemes are readable. */
     public static boolean onleesbaarDatumTijdLexeem(Expr e) {
-        return e instanceof Expr.Literal l && l.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.DatumTijd
+        return e instanceof Expr.Literal l && l.type() instanceof dev.uchar.regelspraak.model.Datatype.DatumTijd
                 && parseDatumTijd(l.waarde()) == null;
     }
 
@@ -74,7 +74,7 @@ public final class Literalen {
      *  {@link #parseDatum} cannot read. Without it a refused date lexeme was filed under the generic
      *  "outside scope" reason on one branch and "voorwaarde" on the other, while the cause is a document defect. */
     public static boolean onleesbaarDatumLexeem(Expr e) {
-        return e instanceof Expr.Literal l && l.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.DatumInDagen
+        return e instanceof Expr.Literal l && l.type() instanceof dev.uchar.regelspraak.model.Datatype.DatumInDagen
                 && parseDatum(l.waarde()) == null;
     }
 
@@ -125,7 +125,7 @@ public final class Literalen {
      *  ({@code Namen.drlString}). Escaping is not interpretation — it leaves the value itself untouched. */
     public static String tekstOfEnumLabel(Expr.Literal lit) {
         if (lit.type().isTekst()) return lit.waarde();
-        if (lit.type() instanceof io.github.yhavinga.regelspraak.model.Datatype.Enumeratie) return lit.waarde();
+        if (lit.type() instanceof dev.uchar.regelspraak.model.Datatype.Enumeratie) return lit.waarde();
         return enumLabel(lit.waarde());
     }
 

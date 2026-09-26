@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
 import java.util.ArrayList;
 import java.util.List;

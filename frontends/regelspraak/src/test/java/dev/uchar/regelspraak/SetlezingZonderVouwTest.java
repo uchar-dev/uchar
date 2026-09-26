@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p><b>One of those five left the fence on 2026-09-19</b>: the VOORWAARDE. A condition has a
  * quantifier to give the collection a home — the written "alle" lowers to a
- * {@link io.github.yhavinga.regelspraak.ir.Conditie.Kwantorvouw} — so the set reading is not excused
+ * {@link dev.uchar.regelspraak.ir.Conditie.Kwantorvouw} — so the set reading is not excused
  * there but removed, and there is nothing left for the fence to name. The two condition rows below
  * therefore measure the lowering; the counter-proofs that the fence still stands wherever the fold
  * DECLINES (an unbindable range, a multi-step range, an unbound die/dat, a telwoord under 1) live with

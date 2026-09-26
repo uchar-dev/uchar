@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
 import org.junit.jupiter.api.Test;
 

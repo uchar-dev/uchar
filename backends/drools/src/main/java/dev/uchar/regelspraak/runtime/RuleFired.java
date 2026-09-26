@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.runtime;
+package dev.uchar.regelspraak.runtime;
 
 /**
  * §8.1.9 / §13.4.15.66 execution-status control fact for the "regelversie &lt;X&gt; is gevuurd" regelpredicaat.
@@ -22,7 +22,7 @@ package io.github.yhavinga.regelspraak.runtime;
  *
  * <p>Like {@link CreationMarker} this is a fixed runtime class the generated rules import — model-independent
  * (its shape never varies), so it lives here with {@link RegelSpraakRuntime} rather than being emitted per model
- * by {@link io.github.yhavinga.regelspraak.schema.FactModelGenerator}. The getter gives Drools bean property access
+ * by {@link dev.uchar.regelspraak.schema.FactModelGenerator}. The getter gives Drools bean property access
  * ({@code regel}).
  */
 public final class RuleFired {

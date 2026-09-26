@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.transpiler;
+package dev.uchar.regelspraak.transpiler;
 
-import io.github.yhavinga.regelspraak.cases.IrPad;
+import dev.uchar.regelspraak.cases.IrPad;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 

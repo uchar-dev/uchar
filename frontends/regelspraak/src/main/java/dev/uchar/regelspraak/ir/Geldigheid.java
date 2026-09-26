@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
 import java.time.LocalDate;
 
@@ -19,7 +19,7 @@ public record Geldigheid(LocalDate vanaf, LocalDate tot) {
     /**
      * Whether {@code d} falls within this window — both bounds INCLUSIVE, a null bound OPEN (matching every
      * date on that side). {@link #ALTIJD} contains every date. Used by parameter-vintage selection to pick
-     * the interval that applies on a peildatum (see {@link io.github.yhavinga.regelspraak.model.Parameterset}).
+     * the interval that applies on a peildatum (see {@link dev.uchar.regelspraak.model.Parameterset}).
      */
     public boolean bevat(LocalDate d) {
         if (d == null) return false;

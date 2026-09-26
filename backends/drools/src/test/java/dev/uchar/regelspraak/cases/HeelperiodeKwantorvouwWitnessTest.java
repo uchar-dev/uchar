@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.loader.IrLoader;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -563,9 +563,9 @@ class HeelperiodeKwantorvouwWitnessTest {
      *  weesclausule zichtbaar is: een gemarkeerde regel compileert vaak gewoon, en dan is het de TEKST en
      *  niet de status die zegt of er iets is achtergebleven. */
     private static String drlTekst(Path ir) throws Exception {
-        io.github.yhavinga.regelspraak.loader.IrLoader.Loaded loaded =
-                io.github.yhavinga.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
-        return io.github.yhavinga.regelspraak.transpiler.DrlTranspiler
+        dev.uchar.regelspraak.loader.IrLoader.Loaded loaded =
+                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
+        return dev.uchar.regelspraak.transpiler.DrlTranspiler
                 .build(loaded.model(), loaded.lets()).drl();
     }
 

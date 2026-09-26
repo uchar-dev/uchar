@@ -180,7 +180,7 @@ while IFS= read -r dump; do
   [ "$n" -gt 0 ] || fail "$name carries an ir.json but no re-emittable .rgs beside it"
   out=$(mktemp -t toka-parity-XXXXXX.json)
   if ! java -cp "$JAR:$FE/out" \
-      io.github.yhavinga.regelspraak.resolver.Resolver --ir "$out" "${args[@]}" \
+      dev.uchar.regelspraak.resolver.Resolver --ir "$out" "${args[@]}" \
       >/dev/null 2>&1; then
     rm -f "$out"; fail "$name: the frontend refuses or errors re-emitting the casus"
   fi

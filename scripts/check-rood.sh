@@ -402,7 +402,7 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
         # against a future edit that forgets to — belt and braces, never the primary reporter
         [ $legfail -eq 1 ] || { echo 'check-rood: FAIL — Drools leg: no shaded jar and no verdict printed (script defect)' >&2; status=1; }
     else
-        MAIN=io.github.yhavinga.regelspraak.cases.DroolsRoodMain
+        MAIN=dev.uchar.regelspraak.cases.DroolsRoodMain
         excl=$(mktemp) || exit 2
         # <rood-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
         cat > "$excl" <<'EOF'

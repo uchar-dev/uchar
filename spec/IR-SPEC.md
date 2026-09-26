@@ -4896,9 +4896,9 @@ description: a set aggregation over a CHARACTERISTIC of the element type.
 The frontend's unresolved-member gate asks whether the element type
 declares a MEMBER, and a characteristic is one, so the gate stays open
 (`heeftLid`,
-`frontends/regelspraak/src/main/java/io/github/yhavinga/regelspraak/model/RegelSpraakModel.java:620`;
+`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java:620`;
 the gate at
-`frontends/regelspraak/src/main/java/io/github/yhavinga/regelspraak/resolver/ExpressieBouwer.java:470-481`),
+`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/ExpressieBouwer.java:470-481`),
 while the reference builder finds no attribute datatype and falls back to
 the sentinel (same file, :1663). Emitted and checked: "de som van het
 waardevol van alle vondsten van de Jutter" produces exactly this source,

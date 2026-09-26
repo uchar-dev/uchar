@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,17 +7,17 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Default;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
-import io.github.yhavinga.regelspraak.ir.ResolvedDagsoort;
-import io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep;
-import io.github.yhavinga.regelspraak.ir.ResolvedStartpunt;
-import io.github.yhavinga.regelspraak.ir.Spelling;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.RolBindingRef;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Default;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.ir.ResolvedDagsoort;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedRegelGroep;
+import dev.uchar.regelspraak.ir.ResolvedStartpunt;
+import dev.uchar.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
 
 import org.junit.jupiter.api.Test;
 

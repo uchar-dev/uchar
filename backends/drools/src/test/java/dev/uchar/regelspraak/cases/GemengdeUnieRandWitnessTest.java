@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -137,8 +137,8 @@ class GemengdeUnieRandWitnessTest {
 
     /** The dormant DRL back-end's rendering of one model. */
     private static String drl(Path ir) throws Exception {
-        return io.github.yhavinga.regelspraak.transpiler.DrlTranspiler.transpile(
-                io.github.yhavinga.regelspraak.loader.IrLoader.loadAll(
+        return dev.uchar.regelspraak.transpiler.DrlTranspiler.transpile(
+                dev.uchar.regelspraak.loader.IrLoader.loadAll(
                         JSON.readTree(Files.readString(ir))).model());
     }
 

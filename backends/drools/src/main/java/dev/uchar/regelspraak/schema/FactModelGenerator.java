@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.schema;
+package dev.uchar.regelspraak.schema;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Feittype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Rol;
-import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Feittype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Rol;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * Generates the fact-bean sources a resolved RegelSpraak model implies (the explicit fact-model contract) — the EXPLICIT form
- * of the contract the generated rules assume: one JavaBean per objecttype in {@code io.github.yhavinga.regelspraak.facts}
+ * of the contract the generated rules assume: one JavaBean per objecttype in {@code dev.uchar.regelspraak.facts}
  * with a getter/setter per attribute ({@code BigDecimal}/{@code String}/{@code Boolean}/{@code LocalDate}/
  * {@code LocalDateTime}; a {@code Map<String,BigDecimal>} for a §3.6 gedimensioneerd attribute; a
  * {@code List<Segment>} for a §13.3.6 tijdsafhankelijk attribute), an {@code is<X>}/{@code set<X>} boolean
@@ -31,7 +31,7 @@ public final class FactModelGenerator {
     private FactModelGenerator() {}
 
     /** The package the generated rules import their fact classes from (both back-ends). */
-    public static final String PAKKET = "io.github.yhavinga.regelspraak.facts";
+    public static final String PAKKET = "dev.uchar.regelspraak.facts";
 
     /** One expected bean member: the Java property, its type source-name, and whether the getter is the
      *  boolean {@code is<X>} form (a scalar kenmerk). */
@@ -409,7 +409,7 @@ public final class FactModelGenerator {
      * <p>Null when a binding names no declared role; the caller refuses the creation as unresolved.
      */
     public static Creatievelden creatievelden(RegelSpraakModel model,
-            io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie fc) {
+            dev.uchar.regelspraak.ir.ResolvedFeitCreatie fc) {
         if (fc.feittype() == null || fc.ankerRol() == null || fc.joinRol() == null) return null;
         Rol[] gemaakt = gebondenRolpaar(model, new RegelSpraakModel.RolBindingRef(fc.feittype(), fc.ankerRol()));
         Rol[] join = gebondenRolpaar(model, fc.joinRol());
@@ -431,7 +431,7 @@ public final class FactModelGenerator {
      * parent plays, hence the reference field on the subject. IR-SPEC ch. 3.6: the binding IS the scoping, so null
      * means an unscoped uniqueness, or a binding that names no declared role (the caller refuses).
      */
-    public static String scopeVeld(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedUniciteit u) {
+    public static String scopeVeld(RegelSpraakModel model, dev.uchar.regelspraak.ir.ResolvedUniciteit u) {
         if (u.scopeRol() == null) return null;
         Rol[] paar = gebondenRolpaar(model, u.scopeRol());
         return paar == null ? null : paar[0].naam();
@@ -475,7 +475,7 @@ public final class FactModelGenerator {
      * the same two types — the pair has no answer at all ({@code anchor/jutterswet-bergingstoezicht}). A binding
      * that names no declared role is refused by name, where ref faults; WF-047 is the fence on its fillers.
      */
-    public static Verdelingsjoin verdelingsjoin(RegelSpraakModel model, io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v,
+    public static Verdelingsjoin verdelingsjoin(RegelSpraakModel model, dev.uchar.regelspraak.ir.ResolvedVerdeling v,
             RegelSpraakModel.RolBindingRef rb) {
         Objecttype bron = v.bronType(), doel = v.doelType();
         if (bron == null || doel == null || rb == null) return new Verdelingsjoin(null, null);
@@ -559,7 +559,7 @@ public final class FactModelGenerator {
     }
 
     private static final String SEGMENT_BRON = """
-            package io.github.yhavinga.regelspraak.facts;
+            package dev.uchar.regelspraak.facts;
 
             import java.math.BigDecimal;
             import java.time.LocalDate;
@@ -585,7 +585,7 @@ public final class FactModelGenerator {
             """;
 
     private static final String INCONSISTENTIE_BRON = """
-            package io.github.yhavinga.regelspraak.facts;
+            package dev.uchar.regelspraak.facts;
 
             /** The observable §13.4.8/§9.5 "inconsistent" result: the violated rule + subject (generated, the explicit fact-model contract). */
             public class Inconsistentie {

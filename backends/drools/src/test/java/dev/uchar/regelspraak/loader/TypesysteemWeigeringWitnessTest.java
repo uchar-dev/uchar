@@ -1,15 +1,15 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Eenheidstelsel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Granulariteit;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Eenheidstelsel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 
 import org.junit.jupiter.api.Test;
 

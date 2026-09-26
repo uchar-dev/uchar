@@ -1,17 +1,17 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.ir.Bron;
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.Spelling;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Parameter;
-import io.github.yhavinga.regelspraak.kern.Literalen;
-import io.github.yhavinga.regelspraak.kern.Tijdrekening;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak.*;
+import dev.uchar.regelspraak.ir.Bron;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
+import dev.uchar.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.kern.Tijdrekening;
+import dev.uchar.regelspraak.parser.RegelSpraak.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -550,7 +550,7 @@ final class ExpressieBouwer {
      *  value (4/2 -> 0, 3/2 -> 1); a non-terminating one (1/3) has no finite scale, so it is read at
      *  DECIMAL64 and types as "many decimals" — which §6.1.2 then rightly demands be rounded. */
     private static int decimalenVanLiteral(String bron) {
-        java.math.BigDecimal[] r = io.github.yhavinga.regelspraak.model.Rationaal.van(bron);
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.Rationaal.van(bron);
         if (r == null) return 0;
         // the literal's exact value teller/noemer (a decimal/integer has noemer ONE, so the divide is exact);
         // a non-terminating rational (1/3) has no finite scale, so read it at DECIMAL64 — §6.1.2 then rightly
@@ -1730,7 +1730,7 @@ final class ExpressieBouwer {
      *  argument. Measured 2026-09-20: three sentences reached the wire unblocked — the {@code en} and
      *  {@code comma} spellings with {@code diagnostics: []} and the element-binding spelling with a
      *  non-blocking WARNING — all rejected by the verifier
-     *  ({@link io.github.yhavinga.regelspraak.AantalOpgesomdTest}).
+     *  ({@link dev.uchar.regelspraak.AantalOpgesomdTest}).
      *
      *  <p>ERROR and not WARNING, deliberately: {@link Resolver#irModus} writes nothing when the model
      *  carries an error, so the fail-fast is what keeps the ill-formed document off disk. That is the
@@ -1768,7 +1768,7 @@ final class ExpressieBouwer {
      *  Vondsten" — each an AANTAL with {@code elementObjecttype: null}, all with
      *  {@code diagnostics: []}, in the v0 wire spelling of that date; on the L5 wire the shape is a
      *  {@code count} without {@code elementType}. The verifier now rejects that shape, and {@code ref}
-     *  used to answer it with the operand counted, not a population ({@link io.github.yhavinga.regelspraak
+     *  used to answer it with the operand counted, not a population ({@link dev.uchar.regelspraak
      *  .AantalZonderBronTest}).
      *
      *  <p>ERROR for the same reason as the arity arm: {@link Resolver#irModus} then writes nothing.
@@ -1972,7 +1972,7 @@ final class ExpressieBouwer {
      *  that unit (whole when "hele" is present). Unit normalisation makes "jaren"
      *  convertible with a declared "jr". */
     private Datatype tijdsduurType(TijdsduurFuncContext t) {
-        io.github.yhavinga.regelspraak.model.Eenheid e = t.eenheidMeervoud() != null
+        dev.uchar.regelspraak.model.Eenheid e = t.eenheidMeervoud() != null
                 ? model.resolveEenheid(src(t.eenheidMeervoud())) : null;
         return new Datatype.Numeriek(t.HELE() != null, 0, Datatype.Teken.ONBEPAALD, e);
     }
@@ -3005,11 +3005,11 @@ final class ExpressieBouwer {
     }
 
     private static String src(ParserRuleContext ctx) { return DefinitionResolver.src(ctx); }
-    private static io.github.yhavinga.regelspraak.ir.Bron bron(ParserRuleContext ctx) { return DefinitionResolver.bron(ctx); }
+    private static dev.uchar.regelspraak.ir.Bron bron(ParserRuleContext ctx) { return DefinitionResolver.bron(ctx); }
     private static Datatype onbekend() { return new Datatype.Onbekend("niet opgelost"); }
     /** An unresolved expression marker carrying its {@code reden} — the Dutch sentence the frontend's
      *  survivor report raises over it when it reaches the finished model. {@code null} where the calling
      *  route already raises its own diagnostic (see {@link Expr.Onopgelost#reden()}). */
     private Expr onopgelost(ParserRuleContext ctx, String reden) { return new Expr.Onopgelost(onbekend(), bron(ctx), reden); }
-    private Expr onopgelost(io.github.yhavinga.regelspraak.ir.Bron bron, String reden) { return new Expr.Onopgelost(onbekend(), bron, reden); }
+    private Expr onopgelost(dev.uchar.regelspraak.ir.Bron bron, String reden) { return new Expr.Onopgelost(onbekend(), bron, reden); }
 }

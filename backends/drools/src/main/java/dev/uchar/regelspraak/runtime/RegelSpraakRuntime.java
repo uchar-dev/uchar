@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.runtime;
+package dev.uchar.regelspraak.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -135,7 +135,7 @@ public final class RegelSpraakRuntime {
     }
 
     /** An enumeration value read as the DECLARED NAME it is: ref's {@code Checks.norm} through
-     *  {@link io.github.yhavinga.regelspraak.transpiler.kern.Namen#norm}, the one definition the case comparator
+     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#norm}, the one definition the case comparator
      *  already reads it by. Both branches apply it to BOTH sides of every enumeration equality and of an enumeration
      *  uniqueness-key join, because ref and clingo compare two labels up to that normalisation and a byte comparison
      *  here split the square on a case input spelled "Gaaf" against a declared "gaaf" (maintainer decision
@@ -145,7 +145,7 @@ public final class RegelSpraakRuntime {
      *  compared as something else. */
     public static Object rsEnumNaam(Object waarde) {
         if (waarde == null) return null;
-        if (waarde instanceof String s) return io.github.yhavinga.regelspraak.transpiler.kern.Namen.norm(s);
+        if (waarde instanceof String s) return dev.uchar.regelspraak.transpiler.kern.Namen.norm(s);
         throw new IllegalStateException("enumeratiewaarde is geen String maar " + waarde.getClass().getName());
     }
 
@@ -1273,7 +1273,7 @@ public final class RegelSpraakRuntime {
 
     // ---- identifier convention: DELEGATES to the single naming authority kern.Namen.ident ----
     /** The PascalCase bean-member/class name for a RegelSpraak name — now a thin delegate to
-     *  {@link io.github.yhavinga.regelspraak.transpiler.kern.Namen#ident(String, boolean)}, the ONE authority the
+     *  {@link dev.uchar.regelspraak.transpiler.kern.Namen#ident(String, boolean)}, the ONE authority the
      *  fact-model generator and the DRL back-end also derive from. Delegating (instead of a whitespace-only
      *  twin split) is what routes BOTH back-ends through the single naming authority: the exec/runtime reads
      *  now split a name on EVERY non-letter/digit run exactly as the beans were generated, so a koppelteken
@@ -1282,6 +1282,6 @@ public final class RegelSpraakRuntime {
      *  targeted a non-existent {@code getDatum-tijd…}. No lidwoord stripping (Namen.ident carries the full
      *  name), matching the bean the generator wrote; the resolver already delivers declared names bare. */
     public static String pascal(String naam) {
-        return io.github.yhavinga.regelspraak.transpiler.kern.Namen.ident(naam, true);
+        return dev.uchar.regelspraak.transpiler.kern.Namen.ident(naam, true);
     }
 }

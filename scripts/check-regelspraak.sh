@@ -72,7 +72,7 @@ while IFS= read -r src; do
   [ -f "$d/ir.json" ] || fail "$n carries bron.rgs but no ir.json"
   out=$(mktemp -t regelspraak-gate-XXXXXX.json)
   if ! java -cp "$JAR:$FE/out" \
-      io.github.yhavinga.regelspraak.resolver.Resolver --ir "$out" "$src" \
+      dev.uchar.regelspraak.resolver.Resolver --ir "$out" "$src" \
       >/dev/null 2>&1; then
     echo "EMIT FAIL: $n (the frontend refuses or errors on its own golden source)"
     emitfail=$((emitfail + 1)); rm -f "$out"; continue

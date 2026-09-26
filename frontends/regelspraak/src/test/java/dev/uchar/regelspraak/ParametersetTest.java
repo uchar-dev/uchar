@@ -1,8 +1,8 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.ir.Geldigheid;
-import io.github.yhavinga.regelspraak.model.Parameterset;
-import io.github.yhavinga.regelspraak.model.Parameterset.WaardeInterval;
+import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.model.Parameterset;
+import dev.uchar.regelspraak.model.Parameterset.WaardeInterval;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

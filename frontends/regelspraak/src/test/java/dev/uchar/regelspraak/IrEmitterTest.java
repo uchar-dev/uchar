@@ -1,18 +1,18 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.ir.Bron;
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.ir.ResolvedUniciteit;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.ir.Bron;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedUniciteit;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -313,8 +313,8 @@ class IrEmitterTest {
         // resolver did not build reaches it, so this one is built by hand.
         RegelSpraakModel m = new RegelSpraakModel();
         RegelSpraakModel.Eenheidstelsel gewicht = new RegelSpraakModel.Eenheidstelsel("Gewicht");
-        gewicht.eenheden.put("kg", new io.github.yhavinga.regelspraak.model.Eenheid("kg", "Gewicht"));
-        gewicht.eenheden.put("KG", new io.github.yhavinga.regelspraak.model.Eenheid("KG", "Gewicht"));
+        gewicht.eenheden.put("kg", new dev.uchar.regelspraak.model.Eenheid("kg", "Gewicht"));
+        gewicht.eenheden.put("KG", new dev.uchar.regelspraak.model.Eenheid("KG", "Gewicht"));
         m.eenheidstelsels.put("Gewicht", gewicht);
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         assertTrue(e.getMessage().contains("'kg' en 'KG'") && e.getMessage().contains("(WF-009)"), e.getMessage());
@@ -1330,10 +1330,10 @@ class IrEmitterTest {
         assertEquals(1, m.verdelingen.size());
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"method\":\"equalShares\""),
                 "de ongemoeide verdeling wordt geschreven");
-        io.github.yhavinga.regelspraak.ir.ResolvedVerdeling v = m.verdelingen.get(0);
-        m.verdelingen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedVerdeling(v.naam(), v.bronType(),
+        dev.uchar.regelspraak.ir.ResolvedVerdeling v = m.verdelingen.get(0);
+        m.verdelingen.set(0, new dev.uchar.regelspraak.ir.ResolvedVerdeling(v.naam(), v.bronType(),
                 v.bronAttribuut(), v.doelType(), v.doelAttribuut(),
-                io.github.yhavinga.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX, v.ratoAttribuut(),
+                dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX, v.ratoAttribuut(),
                 v.maximumAttribuut(), v.afrondingDecimalen(), v.restantAttribuut(), v.groepeerAttribuut(), v.afnemend(),
                 v.voorwaarde(), v.geldigheid()));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -1486,9 +1486,9 @@ class IrEmitterTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         var cons = m.consistenties.get(0);
         var groep = m.regelGroepen.get(0);
-        m.consistenties.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
+        m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
                 cons.assertie(), cons.bron(), 0, cons.geldigheid()));
-        m.regelGroepen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
+        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
                 groep.leden(), groep.bron(), 0));
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
         assertTrue(c.contains("\"source\":{\"snippet\":\"HetgewichtvaneenVondstmoetgroterzijndan0\"}}"),
@@ -1496,7 +1496,7 @@ class IrEmitterTest {
         assertTrue(c.contains("\"source\":{\"snippet\":\"weging\"}}"), () -> "de regelgroep zonder regel:\n" + c);
         assertFalse(c.contains("\"line\":"), () -> "geen regel 0 op de wire:\n" + c);
 
-        m.regelGroepen.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
+        m.regelGroepen.set(0, new dev.uchar.regelspraak.ir.ResolvedRegelGroep(groep.naam(), groep.recursief(),
                 groep.leden(), groep.bron(), -1));
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
         // the refusal speaks the readers' sentence since the card frontend-emitterrestanten
@@ -1512,7 +1512,7 @@ class IrEmitterTest {
         Conditie.Vergelijking v = (Conditie.Vergelijking) cons.assertie();
         Expr.Literal nul = (Expr.Literal) v.rechts();
         for (String snippet : new String[] { null, "" }) {
-            m.consistenties.set(0, new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
+            m.consistenties.set(0, new dev.uchar.regelspraak.ir.ResolvedConsistentie(cons.naam(), cons.subject(),
                     new Conditie.Vergelijking(v.op(), v.links(), new Expr.Literal(nul.waarde(), nul.type(),
                             Bron.synthetisch(snippet)), v.periode(), v.bron()), cons.bron(), cons.line(), cons.geldigheid()));
             if (snippet == null) {

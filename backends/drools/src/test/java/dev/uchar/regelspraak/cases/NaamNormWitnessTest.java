@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -250,8 +250,8 @@ class NaamNormWitnessTest {
 
     /** The dormant DRL back-end's rendering of one model. */
     private static String drl(Path ir) throws Exception {
-        return io.github.yhavinga.regelspraak.transpiler.DrlTranspiler.transpile(
-                io.github.yhavinga.regelspraak.loader.IrLoader.loadAll(
+        return dev.uchar.regelspraak.transpiler.DrlTranspiler.transpile(
+                dev.uchar.regelspraak.loader.IrLoader.loadAll(
                         JSON.readTree(Files.readString(ir))).model());
     }
 

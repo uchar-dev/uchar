@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -364,9 +364,9 @@ class SubtypeDialectTest {
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertEquals(1, m.prioritizedDefaults.size());
         var basis = m.prioritizedDefaults.get(0).defaults().get(1);
-        var altijd = assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Samengesteld.class,
+        var altijd = assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Samengesteld.class,
                 basis.voorwaarde(), "de onvoorwaardelijke basis hoort een rechtvaardiging te dragen (WF-050)");
-        assertEquals(io.github.yhavinga.regelspraak.ir.Conditie.Kwantor.ALLE, altijd.kwantor());
+        assertEquals(dev.uchar.regelspraak.ir.Conditie.Kwantor.ALLE, altijd.kwantor());
         assertTrue(altijd.onderdelen().isEmpty(), "'altijd' is een ALLE-groep zonder onderdelen");
         assertTrue(emitCompact(m).contains(
                         "\"justification\":{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,"

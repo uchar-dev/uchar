@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.model;
+package dev.uchar.regelspraak.model;
 
-import io.github.yhavinga.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.Geldigheid;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

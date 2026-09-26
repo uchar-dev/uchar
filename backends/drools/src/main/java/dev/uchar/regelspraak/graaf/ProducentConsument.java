@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.graaf;
+package dev.uchar.regelspraak.graaf;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;

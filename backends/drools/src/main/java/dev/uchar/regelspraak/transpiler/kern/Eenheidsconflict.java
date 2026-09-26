@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
-import io.github.yhavinga.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.model.Eenheid;
 
 /**
  * The fault a restatement site raises when the two units it must reconcile <b>cannot</b> be reconciled: no

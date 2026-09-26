@@ -1,9 +1,9 @@
-package io.github.yhavinga.regelspraak.loader;
+package dev.uchar.regelspraak.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
 
 import org.junit.jupiter.api.Test;
 
@@ -159,7 +159,7 @@ class InstantieUnieWitnessTest {
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
                 + "\"ruleGroups\":[]},\"diagnostics\":[]}")
                 .formatted(jutter, vondst, ftAan, ftBerg,
-                        io.github.yhavinga.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", doel,
+                        dev.uchar.regelspraak.cases.IrPad.regel("aantal strandvondsten", "BEREKENING", doel,
                                 waarde, "null"));
     }
 }

@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.transpiler.model;
+package dev.uchar.regelspraak.transpiler.model;
 
 import org.drools.model.Drools;
 

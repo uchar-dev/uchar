@@ -1,8 +1,8 @@
-package io.github.yhavinga.regelspraak.kern;
+package dev.uchar.regelspraak.kern;
 
-import io.github.yhavinga.regelspraak.ir.Bron;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.ir.Bron;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.Datatype;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

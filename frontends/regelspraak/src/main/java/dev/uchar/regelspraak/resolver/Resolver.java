@@ -1,13 +1,13 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Diagnostic;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Severity;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak.RegelSpraakDocumentContext;
-import io.github.yhavinga.regelspraak.parser.RegelSpraakLexer;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.parser.RegelSpraak;
+import dev.uchar.regelspraak.parser.RegelSpraak.RegelSpraakDocumentContext;
+import dev.uchar.regelspraak.parser.RegelSpraakLexer;
 import org.antlr.v4.runtime.*;
 
 /**
@@ -25,7 +25,7 @@ public final class Resolver {
     }
 
     /** As {@link #resolve(String)}, but with the source file name threaded onto the char stream so every
-     *  {@link io.github.yhavinga.regelspraak.ir.Bron} anchors back to {@code bestandsnaam} (uitleg can then
+     *  {@link dev.uchar.regelspraak.ir.Bron} anchors back to {@code bestandsnaam} (uitleg can then
      *  cite the file/regel); otherwise identical. */
     public static RegelSpraakModel resolve(String source, String bestandsnaam) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, bestandsnaam));
@@ -72,7 +72,7 @@ public final class Resolver {
      * {@code IrEmitter} serialises: a marker unreachable from those never reaches a consumer either.
      */
     private static void meldOnopgelost(RegelSpraakModel m) {
-        java.util.function.BiConsumer<io.github.yhavinga.regelspraak.ir.Bron, String> meld = (bron, reden) -> {
+        java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Bron, String> meld = (bron, reden) -> {
             if (reden == null) return;
             m.diagnostics.add(new Diagnostic(Severity.WARNING,
                     "onopgelost: " + reden + " — '" + bron + "' blijft als marker op de wire staan",
@@ -100,8 +100,8 @@ public final class Resolver {
      *  restrictive exception repeats its carrier's conjuncts, the very same nodes (grammar/DIVERGENCES.md §4,
      *  form 2), so a guard is walked with {@link Conditie#elkConjunctEenmaal} and each node reported once: one
      *  marker in a base's condition is one WARNING, not one per exception above it. */
-    private static void meldDefaults(java.util.List<io.github.yhavinga.regelspraak.ir.Default> defaults,
-                                     java.util.function.BiConsumer<io.github.yhavinga.regelspraak.ir.Bron, String> meld,
+    private static void meldDefaults(java.util.List<dev.uchar.regelspraak.ir.Default> defaults,
+                                     java.util.function.BiConsumer<dev.uchar.regelspraak.ir.Bron, String> meld,
                                      java.util.Set<Conditie> gezien) {
         if (defaults == null) return;
         for (var d : defaults) {
@@ -167,7 +167,7 @@ public final class Resolver {
      *  the output file, the rest are the source files of the model chain (concatenated in order). Writes a
      *  FAITHFUL {@code uchar-ir-v1} JSON dump of the complete resolved model (the uchar "mirror" artifact, in the
      *  names of IR-SPEC since the L5 landing, warts included) via
-     *  {@link io.github.yhavinga.regelspraak.emit.IrEmitter}.
+     *  {@link dev.uchar.regelspraak.emit.IrEmitter}.
      *  Returns the process exit code (0 = ir geschreven, 1 = resolver-fouten, 2 = usage) instead of exiting, so the
      *  disk discipline is testable as the REAL CLI path: an unresolvable model writes NOTHING and exits non-zero. */
     public static int irModus(java.util.List<String> rest) throws java.io.IOException {
@@ -183,7 +183,7 @@ public final class Resolver {
                 ? resolve(bron.toString(), rest.get(1))
                 : resolve(bron.toString());
         // what the model resolves but the wire cannot carry is an ERROR at this boundary (IrEmitter.wireWeigeringen)
-        m.diagnostics.addAll(io.github.yhavinga.regelspraak.emit.IrEmitter.wireWeigeringen(m));
+        m.diagnostics.addAll(dev.uchar.regelspraak.emit.IrEmitter.wireWeigeringen(m));
         // Check errors BEFORE touching disk: an unresolvable model writes NOTHING (a mirror of a broken model
         // would carry half-bound references and misleading diagnostics as if authoritative).
         if (!m.isOk()) {
@@ -195,9 +195,9 @@ public final class Resolver {
         // invisible on the one path an author actually uses. stderr, so the stdout summary stays parseable.
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d));
         // the WARNINGs the emitter itself appends, for what the wire cannot carry, are shown the same way
-        io.github.yhavinga.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(m)
+        dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(m)
                 .forEach(d -> System.err.println("  " + d));
-        java.nio.file.Files.writeString(out, io.github.yhavinga.regelspraak.emit.IrEmitter.emit(m),
+        java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(m),
                 java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("ir: objecttypen=%d feittypen=%d resolvedRegels=%d geschreven naar %s%n",
                 m.objecttypen.size(), m.feittypen.size(), m.resolvedRegels.size(), out);

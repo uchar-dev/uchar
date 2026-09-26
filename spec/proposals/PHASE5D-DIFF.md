@@ -81,7 +81,7 @@ make ir FILE=<uchar>/corpus/golden/jutterswet-penningrecht/bron.rgs \
 Byte-identical to the checked-in `ir.json` (confirmed against a fresh
 resolve). Equivalent low-level form: `make resolver` once, then
 `java -cp lib/antlr-4.13.2-complete.jar:out
-io.github.yhavinga.regelspraak.resolver.Resolver --ir <out> <bron.rgs>`.
+dev.uchar.regelspraak.resolver.Resolver --ir <out> <bron.rgs>`.
 
 **Catala side** (the plugin) — from the uchar worktree, `eval $(opam env)`
 first:

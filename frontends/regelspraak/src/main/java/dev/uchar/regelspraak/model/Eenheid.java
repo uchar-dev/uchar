@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.model;
+package dev.uchar.regelspraak.model;
 
 import java.math.BigDecimal;
 import java.math.MathContext;

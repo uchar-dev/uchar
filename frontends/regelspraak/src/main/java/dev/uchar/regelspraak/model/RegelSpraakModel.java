@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.model;
+package dev.uchar.regelspraak.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,25 +30,25 @@ public final class RegelSpraakModel {
     public final Map<String, Dimensie> dimensies = new LinkedHashMap<>();
     public final List<Regel> regels = new ArrayList<>();
     /** Resolved rule IR (typed expressions + bound references) — the transpiler's input. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedRegel> resolvedRegels = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedRegel> resolvedRegels = new ArrayList<>();
     /** Resolved §9.8 dagsoortdefinities (dagsoort name + condition over "de dag") — each becomes a
      *  per-date boolean predicate the transpilers compile for §8.1.5 controls and the §6 durations. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedDagsoort> resolvedDagsoorten = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedDagsoort> resolvedDagsoorten = new ArrayList<>();
     /** Resolved object-creation rules (§13.4.6) — a separate IR shape (new object + attributes). */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie> objectCreaties = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> objectCreaties = new ArrayList<>();
     /** Resolved distribution rules (§13.4.10) — source amount spread over recipients. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedVerdeling> verdelingen = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedVerdeling> verdelingen = new ArrayList<>();
     /** Resolved consistency rules (§13.4.8) — an assertion that must hold, else inconsistent. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedConsistentie> consistenties = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedConsistentie> consistenties = new ArrayList<>();
     /** Resolved §8.1.6 uniqueness checks — a key that must be unique across instances, else inconsistent. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedUniciteit> uniciteiten = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedUniciteit> uniciteiten = new ArrayList<>();
     /** Resolved §8.1.6 cross-type "verenigd met" uniqueness — a key unique across the union of types. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie> uniciteitUnies = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedUniciteitUnie> uniciteitUnies = new ArrayList<>();
     /** Resolved §13.4.7 feitcreatie rules — a new feittype instance (a reference field) linking two existing objects. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie> feitCreaties = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedFeitCreatie> feitCreaties = new ArrayList<>();
     /** Resolved §9.9/§13.4.12 startpuntbepalingen — the anchor member per (objecttype, variable tijdlijn);
      *  the anchor WRITE itself is an ordinary entry in {@link #resolvedRegels}. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedStartpunt> resolvedStartpunten = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedStartpunt> resolvedStartpunten = new ArrayList<>();
     /** §13.3.6.3–.7 the FIXED startpunten that deviate from the calendar period, in source order. The model
      *  resolves them (granularity and count are right), but the wire has no field for the start point
      *  and every executor lays an anchorless tijdlijn on the calendar grid — so the emission boundary
@@ -62,13 +62,13 @@ public final class RegelSpraakModel {
     /** §9.10 Regelgroepen — a DOCUMENTED EXTENSION (see grammar/DIVERGENCES.md). Each carries its member
      *  RULE NAMES (the bare written names); members otherwise resolve exactly as ungrouped rules. Both back-ends
      *  prefix ONLY the engine-visible rule-name header with "<groep>: " — every data key stays the bare name. */
-    public final List<io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep> regelGroepen = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.ResolvedRegelGroep> regelGroepen = new ArrayList<>();
     /** §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) the PrioritizedDefaults nodes lowered from the uchar-dialect
      *  'Uitzondering op' / 'Uitzonderingen ongeordend' extension — the ONLY path by which the RegelSpraak
      *  frontend produces defaults groups (the flat v0-mirror rules never do). Empty for every document without
      *  the extension, so the emitter omits the {@code prioritizedDefaults} key there (the v0-mirror
      *  byte-identity of all flat goldens). */
-    public final List<io.github.yhavinga.regelspraak.ir.PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
+    public final List<dev.uchar.regelspraak.ir.PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
     /** §9.10 the group a rule belongs to, given an EMITTED rule name — which is the bare member name, optionally
@@ -76,9 +76,9 @@ public final class RegelSpraakModel {
      *  Matches the LONGEST group member name that is a prefix of {@code geëmitteerdeNaam} at a token boundary (end,
      *  " #", or " ("), so a member "R" never spuriously captures an ungrouped "R2". Null when the rule is ungrouped
      *  — the back-ends then emit the bare header. */
-    public io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep regelGroepVan(String geëmitteerdeNaam) {
+    public dev.uchar.regelspraak.ir.ResolvedRegelGroep regelGroepVan(String geëmitteerdeNaam) {
         if (geëmitteerdeNaam == null) return null;
-        io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep beste = null;
+        dev.uchar.regelspraak.ir.ResolvedRegelGroep beste = null;
         int besteLen = -1;
         for (var g : regelGroepen)
             for (String lid : g.leden())
@@ -129,7 +129,7 @@ public final class RegelSpraakModel {
      *  <p>Reads the OWN declaration deliberately, and it is the one temporality lookup that does. The
      *  §9.9 anchor family is not a member lookup but a protocol: a startpuntbepaling DECLARES a
      *  synthetic attribute on a named subject, {@link #startpuntLid} and {@link #isStartpuntLid} key on
-     *  that subject's name, and {@link io.github.yhavinga.regelspraak.resolver.RuleChecker} reserves the
+     *  that subject's name, and {@link dev.uchar.regelspraak.resolver.RuleChecker} reserves the
      *  name and writes the attribute. Resolving one of the four through the chain while the others key
      *  on the declared name would leave the anchor half-reachable. Closing the family is a change with
      *  its own measurement (its consumers are all in the back-ends, where no corpus witness exercises a
@@ -161,7 +161,7 @@ public final class RegelSpraakModel {
         String ref = normaliseerTijdlijnNaam(tijdlijnNaam);
         return resolvedStartpunten.stream()
                 .filter(sp -> sp.objecttype().equals(objecttype.naam) && normaliseerTijdlijnNaam(sp.tijdlijn()).equals(ref))
-                .map(io.github.yhavinga.regelspraak.ir.ResolvedStartpunt::lid).findFirst().orElse(null);
+                .map(dev.uchar.regelspraak.ir.ResolvedStartpunt::lid).findFirst().orElse(null);
     }
 
     public boolean isOk() { return diagnostics.stream().noneMatch(Diagnostic::isError); }
@@ -187,11 +187,11 @@ public final class RegelSpraakModel {
      *  {@code exists RuleFired} only for a name that is both referenced AND an instrumented producer. */
     public java.util.Set<String> gevuurdReferenties() {
         java.util.Set<String> uit = new java.util.LinkedHashSet<>();
-        for (var r : resolvedRegels) io.github.yhavinga.regelspraak.ir.Conditie.verzamelGevuurdReferenties(r.voorwaarde(), uit);
-        for (var v : verdelingen)    io.github.yhavinga.regelspraak.ir.Conditie.verzamelGevuurdReferenties(v.voorwaarde(), uit);
-        for (var oc : objectCreaties) io.github.yhavinga.regelspraak.ir.Conditie.verzamelGevuurdReferenties(oc.voorwaarde(), uit);
-        for (var fc : feitCreaties)  io.github.yhavinga.regelspraak.ir.Conditie.verzamelGevuurdReferenties(fc.voorwaarde(), uit);
-        for (var c : consistenties)  io.github.yhavinga.regelspraak.ir.Conditie.verzamelGevuurdReferenties(c.assertie(), uit);
+        for (var r : resolvedRegels) dev.uchar.regelspraak.ir.Conditie.verzamelGevuurdReferenties(r.voorwaarde(), uit);
+        for (var v : verdelingen)    dev.uchar.regelspraak.ir.Conditie.verzamelGevuurdReferenties(v.voorwaarde(), uit);
+        for (var oc : objectCreaties) dev.uchar.regelspraak.ir.Conditie.verzamelGevuurdReferenties(oc.voorwaarde(), uit);
+        for (var fc : feitCreaties)  dev.uchar.regelspraak.ir.Conditie.verzamelGevuurdReferenties(fc.voorwaarde(), uit);
+        for (var c : consistenties)  dev.uchar.regelspraak.ir.Conditie.verzamelGevuurdReferenties(c.assertie(), uit);
         return uit;
     }
 
@@ -210,11 +210,11 @@ public final class RegelSpraakModel {
     /** The §8.1.9 main-regel() rule kinds whose consequence carries a {@code RuleFired} insert (the scalar/kenmerk
      *  value writers routed through {@code regel()}); an objectcreatie/feitcreatie/verdeling/consistentie is out
      *  of this instrumented set (its status stays a marker). */
-    private static boolean gevuurdInstrumenteerbaar(io.github.yhavinga.regelspraak.ir.ResolvedRegel.Soort s) {
-        return s == io.github.yhavinga.regelspraak.ir.ResolvedRegel.Soort.GELIJKSTELLING
-                || s == io.github.yhavinga.regelspraak.ir.ResolvedRegel.Soort.BEREKENING
-                || s == io.github.yhavinga.regelspraak.ir.ResolvedRegel.Soort.INITIALISATIE
-                || s == io.github.yhavinga.regelspraak.ir.ResolvedRegel.Soort.KENMERKTOEKENNING;
+    private static boolean gevuurdInstrumenteerbaar(dev.uchar.regelspraak.ir.ResolvedRegel.Soort s) {
+        return s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.GELIJKSTELLING
+                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.BEREKENING
+                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.INITIALISATIE
+                || s == dev.uchar.regelspraak.ir.ResolvedRegel.Soort.KENMERKTOEKENNING;
     }
 
     /**
@@ -1032,7 +1032,7 @@ public final class RegelSpraakModel {
     }
 
     /** Package-visible role-name match (singular, declared plural, or best-effort plural),
-     *  used by {@link io.github.yhavinga.regelspraak.resolver.DefinitionResolver} to map a cardinaliteit
+     *  used by {@link dev.uchar.regelspraak.resolver.DefinitionResolver} to map a cardinaliteit
      *  noun onto a role. */
     public static boolean rolNaamMatcht(Rol r, String woord) { return rolMatcht(r, woord); }
 

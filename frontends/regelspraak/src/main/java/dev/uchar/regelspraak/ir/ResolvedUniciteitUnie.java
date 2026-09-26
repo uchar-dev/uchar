@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ import java.util.List;
  * one.
  */
 public record ResolvedUniciteitUnie(String naam, List<Bron> bronnen,
-                                    io.github.yhavinga.regelspraak.ir.Bron bron, Geldigheid geldigheid) {
+                                    dev.uchar.regelspraak.ir.Bron bron, Geldigheid geldigheid) {
     /** One side of the union: an object type and the key attribute(s) whose values join the shared space. */
     public record Bron(Objecttype type, List<String> sleutels) {}
 }

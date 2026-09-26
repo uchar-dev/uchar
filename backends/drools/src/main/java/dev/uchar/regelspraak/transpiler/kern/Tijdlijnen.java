@@ -1,4 +1,4 @@
-package io.github.yhavinga.regelspraak.transpiler.kern;
+package dev.uchar.regelspraak.transpiler.kern;
 
 import java.util.Map;
 

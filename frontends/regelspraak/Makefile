@@ -25,7 +25,7 @@ MAIN_SRC := $(shell find src/main/java -name '*.java' 2>/dev/null)
 TEST_SRC := $(shell find src/test/java -name '*.java' 2>/dev/null)
 
 # Java package for the generated parser, and the dirs that follow from it.
-PACKAGE  := io.github.yhavinga.regelspraak.parser
+PACKAGE  := dev.uchar.regelspraak.parser
 PKG_PATH := $(subst .,/,$(PACKAGE))
 GEN_DIR  := gen/$(PKG_PATH)
 OUT_DIR  := out
@@ -91,7 +91,7 @@ test: compile $(JUNIT_JAR)
 # NOTHING and exits 1.
 IR_OUT := $(if $(OUT),$(OUT),$(OUT_DIR)/ir.json)
 ir: compile
-	@java -cp $(ANTLR4_JAR):$(OUT_DIR) io.github.yhavinga.regelspraak.resolver.Resolver --ir $(IR_OUT) $(FILE)
+	@java -cp $(ANTLR4_JAR):$(OUT_DIR) dev.uchar.regelspraak.resolver.Resolver --ir $(IR_OUT) $(FILE)
 
 clean:
 	rm -rf gen $(OUT_DIR)

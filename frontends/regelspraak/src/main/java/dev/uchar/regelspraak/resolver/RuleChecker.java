@@ -1,24 +1,24 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.ir.Conditie;
-import io.github.yhavinga.regelspraak.ir.PrioritizedDefaults;
-import io.github.yhavinga.regelspraak.ir.Expr;
-import io.github.yhavinga.regelspraak.ir.Default;
-import io.github.yhavinga.regelspraak.ir.ExceptionGroup;
-import io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie;
-import io.github.yhavinga.regelspraak.ir.Geldigheid;
-import io.github.yhavinga.regelspraak.ir.ResolvedObjectCreatie;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.ir.ResolvedVerdeling;
-import io.github.yhavinga.regelspraak.ir.Bron;
-import io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie;
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.*;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak;
-import io.github.yhavinga.regelspraak.parser.RegelSpraak.*;
-import io.github.yhavinga.regelspraak.parser.RegelSpraakLexer;
-import io.github.yhavinga.regelspraak.kern.Literalen;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Default;
+import dev.uchar.regelspraak.ir.ExceptionGroup;
+import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
+import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.ir.Bron;
+import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.*;
+import dev.uchar.regelspraak.parser.RegelSpraak;
+import dev.uchar.regelspraak.parser.RegelSpraak.*;
+import dev.uchar.regelspraak.parser.RegelSpraakLexer;
+import dev.uchar.regelspraak.kern.Literalen;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -158,7 +158,7 @@ final class RuleChecker {
         for (int i = 0; i < t.getChildCount(); i++) verzamelDeelselecties(t.getChild(i), uit);
     }
 
-    /** §9.10 build the {@link io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the
+    /** §9.10 build the {@link dev.uchar.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the
      *  {@code recursief} marker) and run the fase-2 structural checks — a DOCUMENTED EXTENSION (see
      *  grammar/DIVERGENCES.md '§9.10 recursie / regelgroep'). Members were already resolved as ungrouped
      *  rules above (their {@link ResolvedRegel}/objectcreatie/… entries keep the bare written name); this only
@@ -179,7 +179,7 @@ final class RuleChecker {
                 if (lid.regel() != null) leden.add(DefinitionResolver.src(lid.regel().regelNaam()));
                 else if (lid.beslistabel() != null) leden.addAll(rijRegels.getOrDefault(lid.beslistabel(), List.of()));
             String naam = DefinitionResolver.src(g.kaleNaam());
-            model.regelGroepen.add(new io.github.yhavinga.regelspraak.ir.ResolvedRegelGroep(naam, recursief, leden, bron(g.kaleNaam()), line));
+            model.regelGroepen.add(new dev.uchar.regelspraak.ir.ResolvedRegelGroep(naam, recursief, leden, bron(g.kaleNaam()), line));
             if (!recursief) continue;
 
             // §9.10 fase-2: which members are objectcreatie rules. The model holds one entry per version, named
@@ -1335,7 +1335,7 @@ final class RuleChecker {
                         : lid.kenmerkSpecificatie() != null ? kenmerkDeclaratieNaam(lid.kenmerkSpecificatie()) : null;
                 if (naam == null) continue;
                 lidRegels.computeIfAbsent(t, k -> new java.util.HashMap<>())
-                        .putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam), lid.getStart().getLine());
+                        .putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(naam), lid.getStart().getLine());
                 if (gemarkeerdLid(lid)) { typen.add(t); gemarkeerd.add(lid); }
             }
         }
@@ -1415,13 +1415,13 @@ final class RuleChecker {
         // a subtype inherits the generated members, a supertype's members are inherited by T: either way one
         // instance would carry two declarations of one name (WF-105)
         for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
-            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(g);
+            String sleutel = dev.uchar.regelspraak.emit.IrEmitter.norm(g);
             for (Objecttype u : model.objecttypen.values()) {
                 if (u != t && !u.isEen(t) && !t.isEen(u)) continue;
                 boolean attribuut = u.attributen.keySet().stream()
-                        .anyMatch(k -> io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
+                        .anyMatch(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
                 boolean kenmerk = u.kenmerken.stream()
-                        .anyMatch(k -> io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
+                        .anyMatch(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k).equals(sleutel));
                 if (!attribuut && !kenmerk) continue;
                 int regel = lidRegels.getOrDefault(u, Map.of()).getOrDefault(sleutel, 0);
                 return o.kop() + " (bronregel " + o.line() + "): " + MARKERING + " genereert "
@@ -1538,11 +1538,11 @@ final class RuleChecker {
             String declaratie = a.getStart().getInputStream().getText(org.antlr.v4.runtime.misc.Interval.of(
                     a.getStart().getStartIndex(), a.MAG_OPGEGEVEN_WORDEN().getSymbol().getStopIndex()))
                     .replaceAll("\\s+", " ").trim();
-            model.consistenties.add(new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(o.controle(), t,
+            model.consistenties.add(new dev.uchar.regelspraak.ir.ResolvedConsistentie(o.controle(), t,
                     new Conditie.Kenmerk(o.afwijkend(), null, true, Bron.van(a, "hij heeft geen " + o.afwijkend())),
                     Bron.van(a, declaratie), o.line(), Geldigheid.ALTIJD));
             for (String n : List.of(o.groep(), o.regel(), o.controle()))
-                gegenereerd.put(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(n), o);
+                gegenereerd.put(dev.uchar.regelspraak.emit.IrEmitter.norm(n), o);
             gelowerd.add(o);
         }
     }
@@ -1556,8 +1556,8 @@ final class RuleChecker {
     }
 
     private static boolean zelfdeNaam(String a, String b) {
-        return a != null && b != null && io.github.yhavinga.regelspraak.emit.IrEmitter.norm(a)
-                .equals(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(b));
+        return a != null && b != null && dev.uchar.regelspraak.emit.IrEmitter.norm(a)
+                .equals(dev.uchar.regelspraak.emit.IrEmitter.norm(b));
     }
 
     /** The target {@code d} with the attribute renamed; its subject, its source text and everything else stay. */
@@ -1663,17 +1663,17 @@ final class RuleChecker {
         Map<String, String[]> uit = new java.util.HashMap<>();
         for (RegelContext r : DefinitionResolver.alleRegels(doc)) {
             String naam = src(r.regelNaam());
-            uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam),
+            uit.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(naam),
                     new String[] {"regel '" + naam + "'", String.valueOf(r.getStart().getLine())});
         }
         for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) {
             String naam = src(u.regelNaam());
-            uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam),
+            uit.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(naam),
                     new String[] {"regel '" + naam + "'", String.valueOf(u.getStart().getLine())});
         }
         for (var e : rijRegels.entrySet())
             for (String rij : e.getValue())
-                uit.putIfAbsent(io.github.yhavinga.regelspraak.emit.IrEmitter.norm(rij),
+                uit.putIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(rij),
                         new String[] {"regel '" + rij + "' van beslistabel '" + src(e.getKey().beslistabelNaam()) + "'",
                                 String.valueOf(e.getKey().getStart().getLine())});
         return uit;
@@ -1684,7 +1684,7 @@ final class RuleChecker {
     private String vormnaamFout(Opgave o, Map<String, String[]> vormen, Map<String, Opgave> gegenereerd) {
         String[][] namen = {{"de defaults-groep", o.groep()}, {"de regel", o.regel()}, {"de consistentie", o.controle()}};
         for (String[] vorm : namen) {
-            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(vorm[1]);
+            String sleutel = dev.uchar.regelspraak.emit.IrEmitter.norm(vorm[1]);
             String kop = o.kop() + " (bronregel " + o.line() + "): " + MARKERING + " genereert " + vorm[0] + " '"
                     + vorm[1] + "', en ";
             String staart = " — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) (dialect §7)";
@@ -1726,11 +1726,11 @@ final class RuleChecker {
      *  walk reaches every condition and value the emitter writes, conditions nested in expressions included. */
     private String gelezenGegenereerd(Opgave o) {
         for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
-            String sleutel = io.github.yhavinga.regelspraak.emit.IrEmitter.norm(g);
+            String sleutel = dev.uchar.regelspraak.emit.IrEmitter.norm(g);
             java.util.function.Predicate<Expr> ref = e -> e instanceof Expr.AttribuutRef r
                     && zelfdeNaam(r.attribuut(), g) && (r.objecttype() == null || inLijn(o.type(), r.objecttype()));
             java.util.function.Predicate<Conditie> check = c -> c instanceof Conditie.Kenmerk k
-                    && io.github.yhavinga.regelspraak.emit.IrEmitter.norm(k.kenmerk()).equals(sleutel);
+                    && dev.uchar.regelspraak.emit.IrEmitter.norm(k.kenmerk()).equals(sleutel);
             boolean gelezen = false;
             for (ResolvedRegel r : model.resolvedRegels)
                 gelezen |= leest(r.waarde(), ref, check) || leest(r.voorwaarde(), ref, check);
@@ -1846,8 +1846,8 @@ final class RuleChecker {
         for (Opgave o : gelowerd) {
             String type = o.type().naam;
             naarAuteur.put(
-                    new Leesknoop(type, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(o.berekende()), false),
-                    new Leesknoop(type, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(o.attribuut()), false));
+                    new Leesknoop(type, dev.uchar.regelspraak.emit.IrEmitter.norm(o.berekende()), false),
+                    new Leesknoop(type, dev.uchar.regelspraak.emit.IrEmitter.norm(o.attribuut()), false));
         }
         meldKringen(leest, tekst, naarAuteur);
     }
@@ -1895,7 +1895,7 @@ final class RuleChecker {
     private record Leesknoop(String type, String naam, boolean kenmerk) {}
 
     private static Leesknoop leesknoop(Objecttype type, String naam, boolean kenmerk, Map<Leesknoop, String> tekst) {
-        Leesknoop k = new Leesknoop(type.naam, io.github.yhavinga.regelspraak.emit.IrEmitter.norm(naam), kenmerk);
+        Leesknoop k = new Leesknoop(type.naam, dev.uchar.regelspraak.emit.IrEmitter.norm(naam), kenmerk);
         tekst.putIfAbsent(k, type.naam + "." + naam);
         return k;
     }
@@ -1998,7 +1998,7 @@ final class RuleChecker {
      *  collection the node does not read. Keeping it here was a LEAK, not a stale comment: measured
      *  2026-09-19, a count over a set reading passed this naloop untouched and was emitted with
      *  {@code diagnostics: []} although the verifier rejected it under WF-096 and nothing else
-     *  ({@link io.github.yhavinga.regelspraak.AantalSetbronTest}).
+     *  ({@link dev.uchar.regelspraak.AantalSetbronTest}).
      *
      *  <p><b>One boundary, one consumer — measured before narrowing.</b> The verifier had to SPLIT its
      *  hoisted exemption then, because one boolean there fed two rules (WF-034's sentinel fence, which
@@ -2034,7 +2034,7 @@ final class RuleChecker {
      *  question only the enclosing tree can answer, and it is a local one there.
      *
      *  <p>WARNING, deliberately, and the level is the one knob here. The diagnostic reaches the WIRE
-     *  ({@link io.github.yhavinga.regelspraak.emit.IrEmitter} writes every diagnostic), so the emitted
+     *  ({@link dev.uchar.regelspraak.emit.IrEmitter} writes every diagnostic), so the emitted
      *  document states that it is ill-formed and why — where it used to say {@code diagnostics: []}.
      *  ERROR would be the fail-fast level and would stop the document reaching disk at all
      *  ({@link Resolver#irModus} writes nothing when the model carries an error); it is deliberately
@@ -2169,7 +2169,7 @@ final class RuleChecker {
                     + "naming the relation's role, never a value read per contributor";
         if (telbron == null) {
             List<RegelSpraakModel.RolBindingRef> pad =
-                    io.github.yhavinga.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
+                    dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
             List<String> zinnen = new ArrayList<>();
             for (int i = 0; i < pad.size(); i++)
                 if (teVeel(pad.get(i)))
@@ -2203,7 +2203,7 @@ final class RuleChecker {
     /** §4 (PRIORITIZED-DEFAULTS-EVOLUTIE) resolve an ordered 'Uitzondering op' block's body exactly as a §13.4.2 regel — its
      *  own regelNaam + regelVersie+ run through the whole rule pipeline into resolvedRegels, so its condition,
      *  value, geldigheid and type-checks are the standard ones. The defaults pass then LIFTS it (and the base
-     *  rule) into a {@link io.github.yhavinga.regelspraak.ir.PrioritizedDefaults} group, removing it from
+     *  rule) into a {@link dev.uchar.regelspraak.ir.PrioritizedDefaults} group, removing it from
      *  resolvedRegels. */
     private void uitzonderingVersies(UitzonderingRegelContext u) {
         regelVersies(DefinitionResolver.src(u.regelNaam()), u.regelVersie(), bronAnnotaties(u), u.getStart().getLine());
@@ -2565,7 +2565,7 @@ final class RuleChecker {
                 model.resolvedDagsoorten.stream().filter(eerder -> eerder.naam().equalsIgnoreCase(dag)).findFirst()
                         .ifPresent(eerder -> model.diagnostics.add(new Diagnostic(Severity.ERROR, kop
                                 + "more than one definition for day kind '" + eerder.naam() + "'", rd.getStart().getLine())));
-                model.resolvedDagsoorten.add(new io.github.yhavinga.regelspraak.ir.ResolvedDagsoort(dag, voorwaarde, geldigheid));
+                model.resolvedDagsoorten.add(new dev.uchar.regelspraak.ir.ResolvedDagsoort(dag, voorwaarde, geldigheid));
             }
         } else if (rd.startpuntBepaling() != null) {
             startpunt(versieNaam, rd.startpuntBepaling(), voorwaarde, geldigheid);
@@ -2584,8 +2584,8 @@ final class RuleChecker {
      *  §5 ones; the subject is the object type the asserted expression is about. Compound
      *  criteria and uniciteit have since been lifted as well — the former into a
      *  {@link Conditie.Samengesteld} assertion on the same
-     *  {@link io.github.yhavinga.regelspraak.ir.ResolvedConsistentie}, the latter into
-     *  {@link io.github.yhavinga.regelspraak.ir.ResolvedUniciteit} / {@link ResolvedUniciteitUnie};
+     *  {@link dev.uchar.regelspraak.ir.ResolvedConsistentie}, the latter into
+     *  {@link dev.uchar.regelspraak.ir.ResolvedUniciteit} / {@link ResolvedUniciteitUnie};
      *  what neither path can carry keeps a WARNING. */
     private void consistentie(String naam, ConsistentieRegelContext cr, Geldigheid geldigheid) {
         EnkelvoudigeConsistentieRegelContext e = cr.enkelvoudigeConsistentieRegel();
@@ -2601,7 +2601,7 @@ final class RuleChecker {
                     geheelPeriode(e.toplevelOperator().gehelePeriodevergelijking()), bron(e));
             Objecttype subject = lhs instanceof Expr.AttribuutRef a ? a.objecttype() : null;
             if (subject != null && transpileerbaar(assertie)) {
-                model.consistenties.add(new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(naam, subject, assertie, bron(cr), cr.getStart().getLine(), geldigheid));
+                model.consistenties.add(new dev.uchar.regelspraak.ir.ResolvedConsistentie(naam, subject, assertie, bron(cr), cr.getStart().getLine(), geldigheid));
                 return;
             }
         }
@@ -2626,7 +2626,7 @@ final class RuleChecker {
             // criterion over a different object type would emit that type's attribute on the wrong fact
             // (an uncompilable property that sinks the whole DRL package). Mixed subjects -> WARNING.
             if (subject != null && transpileerbaar(assertie) && eenSubject(assertie, subject)) {
-                model.consistenties.add(new io.github.yhavinga.regelspraak.ir.ResolvedConsistentie(naam, subject, assertie, bron(cr), cr.getStart().getLine(), geldigheid));
+                model.consistenties.add(new dev.uchar.regelspraak.ir.ResolvedConsistentie(naam, subject, assertie, bron(cr), cr.getStart().getLine(), geldigheid));
                 return;
             }
         }
@@ -2645,7 +2645,7 @@ final class RuleChecker {
      *  or a §5.7 concatenatie "de concatenatie van &lt;attribuut&gt; en … van alle &lt;Type&gt; …". Resolves
      *  the object type (by name, declared meervoudsvorm, or regular plural) and the key attribute(s)
      *  over which the value — or the COMBINATION of values — must be unique, into a
-     *  {@link io.github.yhavinga.regelspraak.ir.ResolvedUniciteit}. The cross-type "verenigd met" union
+     *  {@link dev.uchar.regelspraak.ir.ResolvedUniciteit}. The cross-type "verenigd met" union
      *  and the parent-scoped form ("… van alle X van &lt;Y&gt;") have since been lifted too — the union into
      *  a {@link ResolvedUniciteitUnie}, the scoped one into a ResolvedUniciteit carrying its scope role.
      *  Returns false — leaving the WARNING — for a source that does not resolve, a union whose sources
@@ -2669,7 +2669,7 @@ final class RuleChecker {
         if (eerste == null) return false;
         if (u.vereniging().isEmpty()) {                              // the common single-source form
             if (telTemporeel(eerste.type(), eerste.sleutels()) > 1) return false;
-            model.uniciteiten.add(new io.github.yhavinga.regelspraak.ir.ResolvedUniciteit(
+            model.uniciteiten.add(new dev.uchar.regelspraak.ir.ResolvedUniciteit(
                     naam, eerste.type(), eerste.sleutels(), null, bron(u), geldigheid));
             return true;
         }
@@ -2695,7 +2695,7 @@ final class RuleChecker {
         for (ResolvedUniciteitUnie.Bron b : bronnen) {
             if (telTemporeel(b.type(), b.sleutels()) > 1) return false;
         }
-        model.uniciteitUnies.add(new io.github.yhavinga.regelspraak.ir.ResolvedUniciteitUnie(naam, bronnen, bron(u), geldigheid));
+        model.uniciteitUnies.add(new dev.uchar.regelspraak.ir.ResolvedUniciteitUnie(naam, bronnen, bron(u), geldigheid));
         return true;
     }
 
@@ -2733,7 +2733,7 @@ final class RuleChecker {
      *  Resolves the element Y, its key attribute X, and the reference field on a Y that points at its
      *  scope owner &lt;parent&gt; (so the count is restricted per-parent). Null when it is not the scoped
      *  shape — then the global single-source path applies — or when the scope does not resolve. */
-    private io.github.yhavinga.regelspraak.ir.ResolvedUniciteit parentScoped(String naam, AlleAttribuutVanOnderwerpContext a,
+    private dev.uchar.regelspraak.ir.ResolvedUniciteit parentScoped(String naam, AlleAttribuutVanOnderwerpContext a,
                                                                  Bron bron, Geldigheid g) {
         if (!a.onderwerpKeten().isEmpty()) return null;
         java.util.List<KaleNaamDeelContext> delen = a.kaleNaam(1).kaleNaamDeel();
@@ -2755,7 +2755,7 @@ final class RuleChecker {
         // scope-parent role. Withheld (null -> absent) when the connecting relation is not the
         // two-role shape the binding form covers; the wire then keeps only the bean-field scopeVeld.
         RolBindingRef scopeRol = model.verbindendeRolBinding(elem, parentType);
-        return new io.github.yhavinga.regelspraak.ir.ResolvedUniciteit(
+        return new dev.uchar.regelspraak.ir.ResolvedUniciteit(
                 naam, elem, java.util.List.of(attr), joinVeld, bron, g, scopeRol);
     }
 
@@ -3119,14 +3119,14 @@ final class RuleChecker {
                             && stappen.stream().allMatch(s -> s.rolBinding() != null);
                     if (symbolisch) {
                         RolBindingRef joinRol = new RolBindingRef(join.feittype(), join.elementRol());
-                        model.feitCreaties.add(new io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie(
+                        model.feitCreaties.add(new dev.uchar.regelspraak.ir.ResolvedFeitCreatie(
                                 naam, anker, doel, zetVeld, joinVeld, stappen, effectief, geldigheid,
                                 created.feittype(), created.subjectRol(), created.elementRol(), joinRol));
                     } else {
                         List<ResolvedFeitCreatie.Tussenstap> kaal = new ArrayList<>();
                         for (ResolvedFeitCreatie.Tussenstap s : stappen)
                             kaal.add(new ResolvedFeitCreatie.Tussenstap(s.type(), s.veld(), s.viaOuderVeld()));
-                        model.feitCreaties.add(new io.github.yhavinga.regelspraak.ir.ResolvedFeitCreatie(
+                        model.feitCreaties.add(new dev.uchar.regelspraak.ir.ResolvedFeitCreatie(
                                 naam, anker, doel, zetVeld, joinVeld, kaal, effectief, geldigheid));
                     }
                     return;
@@ -3385,7 +3385,7 @@ final class RuleChecker {
         }
         subject.attributen.putIfAbsent(lid, new Datatype.DatumInDagen());
         if (model.startpuntLid(subject, tijdlijnNaam) == null)
-            model.resolvedStartpunten.add(new io.github.yhavinga.regelspraak.ir.ResolvedStartpunt(tijdlijnNaam, subject.naam, lid));
+            model.resolvedStartpunten.add(new dev.uchar.regelspraak.ir.ResolvedStartpunt(tijdlijnNaam, subject.naam, lid));
         Expr doel = new Expr.AttribuutRef(lid, subject, src(sb.universeelOnderwerp()),
                 null, new Datatype.DatumInDagen(), bron(sb));
         model.resolvedRegels.add(new ResolvedRegel(naam, ResolvedRegel.Soort.GELIJKSTELLING, doel, anker, voorwaarde, geldigheid, huidigeBronAnnotaties));
@@ -3632,7 +3632,7 @@ final class RuleChecker {
         } else if (grens instanceof Expr.AttribuutRef a) {
             if (a.navigatieRol() != null || !a.navigatiePad().isEmpty() || a.set()
                     || subject != null && a.objecttype() != subject) {
-                if (io.github.yhavinga.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a).isEmpty())
+                if (dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a).isEmpty())
                     return periodeGrensZonderLezer(a, kant, subject);
                 wat = "a navigated read of '" + a.attribuut() + "'";
             } else if (subject == null)
@@ -4857,7 +4857,7 @@ final class RuleChecker {
     }
 
     private static String src(ParserRuleContext c) { return DefinitionResolver.src(c); }
-    private static io.github.yhavinga.regelspraak.ir.Bron bron(ParserRuleContext c) { return DefinitionResolver.bron(c); }
+    private static dev.uchar.regelspraak.ir.Bron bron(ParserRuleContext c) { return DefinitionResolver.bron(c); }
 
     /** The {@code // Bron: <wetsartikel>} statuutannotaties written directly above {@code ctx} — the line
      *  comments on the HIDDEN channel between the previous on-channel token and {@code ctx}'s start, each with
@@ -4980,7 +4980,7 @@ final class RuleChecker {
     }
 
     /** Re-state a numeriek datatype with {@code eenheid} (for promoting a dimensionless literal to a sibling's unit). */
-    private static Datatype metEenheid(Datatype t, io.github.yhavinga.regelspraak.model.Eenheid eenheid) {
+    private static Datatype metEenheid(Datatype t, dev.uchar.regelspraak.model.Eenheid eenheid) {
         return t instanceof Datatype.Numeriek n ? new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), eenheid) : t;
     }
     private void meldPredicaat(Typering.UnairePred p, Datatype operand, int line) {

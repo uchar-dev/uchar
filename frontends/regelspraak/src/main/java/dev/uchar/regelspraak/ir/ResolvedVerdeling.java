@@ -1,6 +1,6 @@
-package io.github.yhavinga.regelspraak.ir;
+package dev.uchar.regelspraak.ir;
 
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 /**
  * A resolved §13.4.10 verdeling: a source amount ({@code bronAttribuut} of

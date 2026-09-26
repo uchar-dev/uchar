@@ -1,8 +1,8 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.emit.IrEmitter;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
-import io.github.yhavinga.regelspraak.resolver.Resolver;
+import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -192,8 +192,8 @@ class DefaultsExtensieTest {
         assertFalse(l.ongeordend());
         assertEquals(2, l.defaults().size(), "verwachtte een uitzonderingsdefault boven een basisdefault");
         // the exception default (a Samengesteld voorwaarde) sits ABOVE the base default (a bare Vergelijking)
-        assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Samengesteld.class, l.defaults().get(0).voorwaarde());
-        assertInstanceOf(io.github.yhavinga.regelspraak.ir.Conditie.Vergelijking.class, l.defaults().get(1).voorwaarde());
+        assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Samengesteld.class, l.defaults().get(0).voorwaarde());
+        assertInstanceOf(dev.uchar.regelspraak.ir.Conditie.Vergelijking.class, l.defaults().get(1).voorwaarde());
         assertEquals(Boolean.TRUE, l.defaults().get(0).besluit());
         assertEquals(Boolean.TRUE, l.defaults().get(1).besluit());
     }

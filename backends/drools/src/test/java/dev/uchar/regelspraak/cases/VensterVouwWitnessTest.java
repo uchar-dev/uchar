@@ -1,11 +1,11 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.ir.Spelling;
+import dev.uchar.regelspraak.ir.Spelling;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

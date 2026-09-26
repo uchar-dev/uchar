@@ -1,8 +1,8 @@
-package io.github.yhavinga.regelspraak.graaf;
+package dev.uchar.regelspraak.graaf;
 
-import io.github.yhavinga.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import io.github.yhavinga.regelspraak.ir.ResolvedRegel;
-import io.github.yhavinga.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -58,7 +58,7 @@ public final class RegelGraaf {
      *  rule consumes it. {@code genavigeerd} tells a navigated kenmerk check from the subject's own (see
      *  {@link ProducentConsument#verbruikt}). */
     public static RegelGraaf bouw(RegelSpraakModel model,
-            java.util.function.Predicate<io.github.yhavinga.regelspraak.ir.Conditie.Kenmerk> genavigeerd) {
+            java.util.function.Predicate<dev.uchar.regelspraak.ir.Conditie.Kenmerk> genavigeerd) {
         Map<ElementSleutel, Set<String>> producenten = ProducentConsument.producentIndex(model);
         // Every element that is consumed by at least one rule, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();

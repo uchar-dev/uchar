@@ -1,12 +1,12 @@
-package io.github.yhavinga.regelspraak;
+package dev.uchar.regelspraak;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Datatype.Teken;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.resolver.Typering;
-import io.github.yhavinga.regelspraak.resolver.Typering.BinOp;
-import io.github.yhavinga.regelspraak.resolver.Typering.CmpOp;
-import io.github.yhavinga.regelspraak.resolver.Typering.UnairePred;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Datatype.Teken;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.resolver.Typering;
+import dev.uchar.regelspraak.resolver.Typering.BinOp;
+import dev.uchar.regelspraak.resolver.Typering.CmpOp;
+import dev.uchar.regelspraak.resolver.Typering.UnairePred;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

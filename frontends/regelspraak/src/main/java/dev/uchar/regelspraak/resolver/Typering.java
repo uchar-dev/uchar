@@ -1,8 +1,8 @@
-package io.github.yhavinga.regelspraak.resolver;
+package dev.uchar.regelspraak.resolver;
 
-import io.github.yhavinga.regelspraak.model.Datatype;
-import io.github.yhavinga.regelspraak.model.Eenheid;
-import io.github.yhavinga.regelspraak.kern.Tijdrekening;
+import dev.uchar.regelspraak.model.Datatype;
+import dev.uchar.regelspraak.model.Eenheid;
+import dev.uchar.regelspraak.kern.Tijdrekening;
 
 /**
  * The RegelSpraak v2.3.0 typeringen matrix (the "typeringen" specification),

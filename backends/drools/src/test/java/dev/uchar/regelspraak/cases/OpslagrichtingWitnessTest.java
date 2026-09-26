@@ -1,10 +1,10 @@
-package io.github.yhavinga.regelspraak.cases;
+package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.github.yhavinga.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import org.junit.jupiter.api.Test;
 
@@ -80,7 +80,7 @@ class OpslagrichtingWitnessTest {
         // ft.wederkerig. That gate is gone: ref's Case.materialise_relations mirrors EVERY two-role relation on
         // the SISTER role, and the 1:1 arm of CaseRunner.zetRollen writes the second bean field to match.
         // RED FIRST — this assertion measured on this model and case with that write removed again:
-        //     expected: <io.github.yhavinga.regelspraak.facts.Wachter@…> but was: <null>
+        //     expected: <dev.uchar.regelspraak.facts.Wachter@…> but was: <null>
         //
         // What the test still separates is the SISTER role from the WRITTEN one: the mirror fills
         // W2.voorganger, NOT W2.opvolger. A mirror that wrote the same role would make W2 its own successor's
