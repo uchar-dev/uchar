@@ -34,7 +34,10 @@ EXCEPTIONS=''
 # landed (decision V3-a): the production RegelSpraakRuntime now lives — legitimately and
 # by design — under backends/drools/runtime/. The no-share tripwire below re-imposes the
 # invariant precisely, forbidding that runtime ONLY where it must never be (ref/, spec/verifier/).
-PRIVATE='(/users/|/home/|~/|regelspraak-java|calculemus|[^a-zA-Z]main-spec)'
+# The successor of regelspraak-java is matched with its org prefix: the bare name
+# 'regelspraak-toolchain' also matches the compound "RegelSpraak-toolchain", which
+# artifact-zone prose uses for the toolchain in general (corpus/golden/README.md).
+PRIVATE='(/users/|/home/|~/|regelspraak-java|uchar-dev/regelspraak-toolchain|calculemus|[^a-zA-Z]main-spec)'
 
 status=0
 
