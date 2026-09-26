@@ -15,9 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * between the two types, however many relations join them, and a noun that is the other type's name and also a
  * role name counts as a written role; a type name alone binds only where exactly one relation joins the types.
  * Every other read is refused by the resolver with an ERROR, in the verifier's sentence for the document the
- * emitter would write without the path, so no emission route reaches the emitter's own refusal. The witnesses:
- * two relations between Schuit and Haven with different role names, one relation, none, and two relations of
- * which one role carries the type's own name.
+ * emitter would write without the path, so no emission route reaches the emitter's own refusal; a read whose binding
+ * reaches a to-many role, and a fold the wire cannot spell, are refused the same way. The witnesses: two relations
+ * between Schuit and Haven with different role names, one relation, none, and two relations of which one role
+ * carries the type's own name.
  */
 class NavigatiekeuzeTest {
 
