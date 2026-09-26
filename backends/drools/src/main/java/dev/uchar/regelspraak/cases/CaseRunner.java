@@ -3,30 +3,21 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
-import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
-import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
-import dev.uchar.regelspraak.transpiler.kern.Rekenjaar;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 
-import org.drools.modelcompiler.KieBaseBuilder;
 import org.kie.api.KieBase;
-import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieSession;
-import org.kie.internal.utils.KieHelper;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -41,7 +32,8 @@ import java.util.Map;
 /**
  * The uchar case runner for the Drools backend: it loads an {@code ir.json} off the wire (via
  * {@link IrLoader} — never the RegelSpraak source), builds the Drools {@link KieBase} through the ported
- * exec-model back-end, and replays every {@code case*.json} against it — a FRESH {@link KieSession} per
+ * exec-model back-end ({@link DroolsBackend}, the backend's public entry, the same build a consumer makes),
+ * and replays every {@code case*.json} against it — a FRESH {@link KieSession} per
  * case (the pom notes Drools' KieBuilder flakiness: the KieBase is built ONCE per model, the session is
  * fresh per case). Expectations are compared with the production comparison discipline of
  * {@code ScenarioRunner.Loop}: {@code BigDecimal.compareTo == 0} (scale-safe), null &hArr; leeg, boolean
@@ -57,8 +49,10 @@ public final class CaseRunner {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** A golden is not carried by the v0 backend — a reason-carrying exclusion, never a silent skip. */
-    static final class Excluded extends RuntimeException {
+    /** A golden is not carried by the v0 backend — a reason-carrying exclusion, never a silent skip. Public because
+     *  {@link DroolsBackend} refuses with it as well and a consumer outside this package catches it by type; the
+     *  constructor stays package-private, since only this backend says what it does not carry. */
+    public static final class Excluded extends RuntimeException {
         Excluded(String reason) { super(reason); }
     }
 
@@ -88,8 +82,8 @@ public final class CaseRunner {
         return replay(irPath, casePaths, false);
     }
 
-    /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which is
-     *  compiled to a {@link KieBase} here (the classic DRL build; the exec-model branch is untouched).
+    /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which
+     *  {@link DroolsBackend} compiles to a {@link KieBase} (the classic DRL build; the exec-model branch is untouched).
      *  SINCE 2026-09-19 THIS IS A GATE-12 PATH (card gate12-drl-takteller): check-drools.sh sweeps every
      *  golden through it (a {@code --drl} run of {@link DroolsBackendMain}) and pins the result in
      *  {@code EXPECTED_DRL_PLAYED} plus a reason-carrying non-player list, so gate 12's numbers DO move
@@ -212,124 +206,21 @@ public final class CaseRunner {
         return build(irPath, viaDrl).runCase("case", c);
     }
 
-    /** Load {@code irPath}, refuse the non-replayable forms, generate+contract-check the beans, lower every
-     *  construct, and build the {@link KieBase} — the shared prelude of both the green replay and the red probe.
-     *  Throws {@link Excluded} / {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
+    /** Build {@code irPath} on the exec-model branch — every gate path. Throws {@link Excluded} /
+     *  {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
         return build(irPath, false);
     }
 
     /** As above, with {@code viaDrl} choosing WHICH transpiler branch produces the KieBase: the exec-model
-     *  back-end (false — every gate path) or {@link DrlTranspiler}'s DRL TEXT compiled here (true). */
+     *  back-end (false — every gate path) or {@link DrlTranspiler}'s DRL TEXT (true). The whole prelude — load,
+     *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
+     *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
+     *  the red probe and every witness seam build exactly as a consumer of the backend does. */
     private static CaseRunner build(Path irPath, boolean viaDrl) throws java.io.IOException {
-        JsonNode ir = JSON.readTree(Files.readString(irPath));
-        IrLoader.Loaded loaded = IrLoader.loadAll(ir);   // the model plus the ch. 7 prioritized-defaults extension beside it
-        RegelSpraakModel model = loaded.model();
-
-        // Rekenjaar is admitted and not executed (kern.Rekenjaar). The loader has admitted it; it is refused here,
-        // before either branch lowers anything, so the reference interpreter's sentence is what the report says in
-        // both branches and whatever position the node holds.
-        if (draagtRekenjaar(ir)) throw new Excluded(Rekenjaar.WEIGERING);
-
-        // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
-        // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
-        // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
-        // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta.
-        // (§13.4.6 objectcreatie was refused here until 2026-08-30; the creation consequence now executes —
-        // both back-link ends written, the kenmerkinitialisatie honoured — so the shapes it still cannot carry
-        // are refused per creation by the transpiler, which knows WHICH one, not blanket for every model.)
-        //   §13.3.9.2 name-sharing bean limit — leden() ports every member through a name-dedup (attribute >
-        //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
-        //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
-        //     an unclassified ERROR at best. Refuse the shape loudly instead (lens finding, 2026-08-30).
-        for (Objecttype ot : model.objecttypen.values()) {
-            if (!FactModelGenerator.noemtWederkerig(model, ot)) continue;
-            String zelf = FactModelGenerator.zelfpaarRol(model, ot);
-            //   the UNDERIVABLE half of the same shape — an ambiguous pair (two wederkerig feittypen on one
-            //   objecttype) or a to-many reciprocal role: the transpilers navigate by the written role name
-            //   toward a getter no bean carries, an unclassified fire-time ERROR (lens 2, 2026-08-30).
-            if (zelf == null)
-                throw new Excluded("wederkerig self-relation (§13.3.9.2) on " + ot.naam + " derives no scalar "
-                        + "reference field (an ambiguous or to-many self-pair role) — not carried by the v0 backend");
-            if (!FactModelGenerator.heeftReferentieVeld(model, ot, zelf, ot))
-                throw new Excluded("wederkerig self-pair role '" + zelf + "' on " + ot.naam + " shares its name "
-                        + "with a declared member — the bean cannot carry the self-typed reference field "
-                        + "(name-sharing bean limit)");
-        }
-
-        Map<String, String> bronnen = FactModelGenerator.genereer(model);
-        ClassLoader cl = BeanCompiler.compileer(bronnen);
-        List<String> schendingen = ContractValidator.valideer(model, cl);
-        if (!schendingen.isEmpty()) throw new Excluded("contract: " + schendingen.get(0));
-
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(cl);
-        try {
-            if (viaDrl) return drlTak(model, loaded, cl);
-            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
-            // every construct must LOWER — a marker means the exec KieBase silently omits it,
-            // so the case's expectations could not be produced; that golden is not carried.
-            for (Dekking d : et.dekking())
-                if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
-                        + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-            KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
-            return new CaseRunner(model, kieBase, cl, Map.of());
-        } finally {
-            Thread.currentThread().setContextClassLoader(vorige);
-        }
-    }
-
-    /** Whether the document carries the evaluation year at any position: a context value whose wire name the
-     *  translation table reads as the records' Rekenjaar. Read off the wire, which the loader has just accepted: a
-     *  walk over the whole document finds the node wherever it stands, where a walk over the model's construct lists
-     *  finds it only in the surfaces it was written to visit. */
-    private static boolean draagtRekenjaar(JsonNode n) {
-        if (n.isObject() && "ContextValue".equals(n.path("node").asText()) && "Rekenjaar".equals(
-                Spelling.CONTEXT_VALUE_NAME.waarde("ContextValue.name", n.path("name").asText())))
-            return true;
-        for (JsonNode kind : n) if (draagtRekenjaar(kind)) return true;
-        return false;
-    }
-
-    /** The DRL-TEXT branch of the same prelude: {@link DrlTranspiler} emits DRL, which is compiled to a
-     *  {@link KieBase} by the classic DRL build ({@code KieHelper}, mvel dialect). Three forms are refused
-     *  here, each loudly and with the reason, because the text branch is NARROWER than the exec-model one:
-     *  <ul>
-     *    <li>a ch. 7 prioritizedDefaults extension — that lowering exists only in the exec branch, so a DRL
-     *        KieBase would silently omit the default and answer with an unwritten attribute;</li>
-     *    <li>any construct the text branch markers (its {@code TODO} discipline) — the DRL still compiles,
-     *        which is exactly why the marker must be refused rather than fired;</li>
-     *    <li>a DRL the Drools compiler rejects — a text-branch limit, not a semantic divergence.</li>
-     *  </ul> */
-    private static CaseRunner drlTak(RegelSpraakModel model, IrLoader.Loaded loaded, ClassLoader cl) {
-        if (!loaded.prioritizedDefaults().isEmpty())
-            throw new Excluded("drl: ch. 7 prioritizedDefaults — the DRL-text branch has no defaults lowering");
-        // ch. 4.10: the DRL branch lowers the §11 variabelendeel's Let chain, so it gets the document's Let INDEX
-        // beside the model — the ch. 2.10 unit derivation needs it to answer a BinderRef read, which carries no
-        // route back up to its own binding (the exec branch has taken the same index since the Let-node card).
-        // The defaults list is empty by the refusal above; it is passed rather than defaulted because the
-        // ch. 7.8 standing classification's other_writer clause reads it (see DrlTranspiler's constructor).
-        // ch. 4.3: and the symbolic role bindings, for the same reason the exec branch has taken them since
-        // 2026-08-30 — a fold whose argument is an ATTRIBUTE name has no written role to resolve its range
-        // from, so on a repeated or self-typed pair the wire's sourceRole is the only route there is. Withheld,
-        // this branch markered exactly the folds its sister played.
-        DrlTranspiler t = DrlTranspiler.build(model, loaded.lets(), loaded.prioritizedDefaults(),
-                loaded.bronPaden(), loaded.rolBindingen(), loaded.navigatieBindingen());
-        for (Dekking d : t.dekking())
-            if (!d.lowered()) throw new Excluded("drl-transpiler " + d.verdict() + ": " + d.sleutel()
-                    + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-        KieHelper helper = new KieHelper();
-        helper.setClassLoader(cl);
-        helper.addContent(t.drl(), ResourceType.DRL);
-        KieBase kieBase;
-        try {
-            kieBase = helper.build();
-        } catch (RuntimeException e) {
-            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            throw new Excluded("drl compile: " + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
-        }
-        return new CaseRunner(model, kieBase, cl, t.dagsoortGlobalen());
+        DroolsBackend.Build b = DroolsBackend.build(irPath,
+                viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL);
+        return new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
     }
 
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
@@ -659,7 +550,7 @@ public final class CaseRunner {
      *  characteristic > reference). Without this gate the write below reaches {@code set<X>(BigDecimal)} with a
      *  fact — "kon setter setOpvolger(Wachter) niet aanroepen", an unclassified ERROR the gate refuses to excuse
      *  — where the honest outcome is a loud, reason-carrying exclusion (lens 2, 2026-08-30). The §13.3.9.2
-     *  wederkerig twin of this limit is refused in {@link #build} for the whole model. */
+     *  wederkerig twin of this limit is refused in {@link DroolsBackend} for the whole model. */
     private void naamdelingsPoort(Objecttype drager, String rol, Objecttype doel, String geschreven) {
         if (FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel)) return;
         // The displacing name is not always a declared member: two same-named roles toward different types
