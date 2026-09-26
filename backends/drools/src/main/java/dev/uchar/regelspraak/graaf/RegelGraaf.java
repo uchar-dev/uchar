@@ -77,13 +77,16 @@ public final class RegelGraaf {
     public List<Afhankelijkheid> afhankelijkheden() {
         Map<String, String> label = new LinkedHashMap<>();
         for (Node n : nodes) label.put(n.id(), n.label());
+        // the consumer edges run element -> rule, so they leave an element node
+        Map<String, List<String>> lezers = new LinkedHashMap<>();
+        for (Edge e : edges)
+            if (elementen.containsKey(e.van())) lezers.computeIfAbsent(e.van(), k -> new ArrayList<>()).add(e.naar());
         List<Afhankelijkheid> uit = new ArrayList<>();
         for (Edge in : edges) {
             ElementSleutel el = elementen.get(in.naar());
             if (el == null) continue;                           // not a producer edge
-            for (Edge uitgaand : edges)
-                if (uitgaand.van().equals(in.naar()))
-                    uit.add(new Afhankelijkheid(label.get(in.van()), el, label.get(uitgaand.naar())));
+            for (String lezer : lezers.getOrDefault(in.naar(), List.of()))
+                uit.add(new Afhankelijkheid(label.get(in.van()), el, label.get(lezer)));
         }
         return uit;
     }

@@ -20,11 +20,12 @@ import java.util.TreeSet;
  *   weigering &lt;reason&gt;                                        instead, when the loader refuses a form
  * </pre>
  *
- * Fields are tab-separated and every name is normalised as the verifier normalises it ({@link Namen#norm}), so
- * the lines compare with the verifier's {@code --dependency-edges} report projected onto rules, attributes and
- * characteristics. The type of an element is left out on purpose: this graph keys a member on its DECLARING
- * type and the verifier's graph on the type a read spells, so the two agree on which rules depend on which
- * member and not on the spelling of the type in between.
+ * Fields are tab-separated and every name is normalised as the verifier normalises it ({@link Namen#norm}; an
+ * element's name already is, see {@link ProducentConsument.ElementSleutel}), so the lines compare with the
+ * verifier's {@code --dependency-edges} report projected onto rules, attributes and characteristics. The type of
+ * an element is left out on purpose: this graph keys a member on its DECLARING type and the verifier's graph on
+ * the type a read spells, so the two agree on which rules depend on which member and not on the spelling of the
+ * type in between.
  */
 public final class GraafProjectie {
     private GraafProjectie() {}
@@ -44,7 +45,7 @@ public final class GraafProjectie {
             TreeSet<String> regels = new TreeSet<>();
             for (RegelGraaf.Afhankelijkheid a : g.afhankelijkheden())
                 regels.add(String.join("\t", "rand", Namen.norm(a.producent()),
-                        a.element().kenmerk() ? "char" : "attr", Namen.norm(a.element().naam()),
+                        a.element().kenmerk() ? "char" : "attr", a.element().naam(),
                         Namen.norm(a.consument())));
             regels.forEach(System.out::println);
         }
