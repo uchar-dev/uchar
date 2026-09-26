@@ -1120,6 +1120,22 @@ with an ERROR in the loader's sentence for the document without the join
 came from the type pair only, and two relations ended in the emitter's
 exception whatever the phrase named.
 
+A parent-scoped uniqueness binds its scope (IR-SPEC ch. 3.6, `scope`) by the
+written names as well: the parent role the sentence writes ("van de
+thuishaven") where it names one relation from the element, however many
+relations join the two types, else the element role it writes where that
+names the element's role in exactly one of the relations carrying the parent
+role ("de nummers van alle liggers van de thuishaven", where two relations
+carry a role `thuishaven` and one a role `liggers`). A scope that binds
+neither, such as a type name over two such relations, is refused with an ERROR
+in this frontend's words: the document without the scope is a uniqueness over
+every instance, which no reader refuses (measured 2026-09-26: the verifier
+admits it, and admits it bound to the other relation). That refusal, like the
+one of a scope over a reciprocal fact type, is the rule's only message. Until
+the fix round of 2026-09-26 the scope was bound by the type pair only, so two
+relations between the element and the parent type left the rule with the
+WARNING that it was not lowered, and the uniqueness was left off the wire.
+
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
 each ended in an `IllegalStateException` of the emitter, and so did a count or
@@ -1928,7 +1944,10 @@ second definition of one day kind and a bounded window are WF-031's, refused
 beside the overlap in its sentences); a navigated read that binds nothing where
 it names the subject's own type or has no subject, and a total over the
 subject's own type without a range, since the document without the path or
-the range is the subject's own read (§13.4.1 above); a window bound that
+the range is the subject's own read (§13.4.1 above); a parent-scoped
+uniqueness whose written names bind no single relation for its scope, since
+the document without the scope is a uniqueness over every instance (§13.4.1
+above); a window bound that
 navigates where no
 path is derivable — a read of another object type, a sub- or supertype of the
 subject included, that no fact type reaches, or a written navigation without a

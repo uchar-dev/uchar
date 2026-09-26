@@ -352,6 +352,55 @@ class NavigatiekeuzeTest {
                 fouten(BERGINGEN.formatted("Bergers")));
     }
 
+    // ---------------- a parent-scoped uniqueness's scope ----------------
+
+    /** A second relation whose Haven role carries the name of the first's. */
+    private static final String WINTERLIGGING = """
+
+        Feittype winterligging
+            de thuishaven Haven
+            de winterligger (mv: winterliggers) Schuit
+        Eén thuishaven telt meerdere winterliggers
+        """;
+
+    private static String uniek(String element) {
+        return """
+
+            Regel romplengte uniek
+                geldig altijd
+                    De romplengten van alle %s van de thuishaven moeten uniek zijn.
+            """.formatted(element);
+    }
+
+    private static String scope(String feittype) {
+        return "\"scope\":{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"thuishaven\"}";
+    }
+
+    /** "de thuishaven" is a role in two relations, and the element role the sentence writes names one of them; where
+     *  the parent role names one relation, it decides, however many relations join the two types. Before: the scope
+     *  bound by the type pair only, so each of these was the WARNING that the rule was not lowered, and the uniqueness
+     *  stayed off the wire. */
+    @Test void een_begrensde_uniciteit_over_twee_relaties_bindt_op_de_geschreven_rol() {
+        String c = emitCompact(TYPEN + THUISLIGGING + WINTERLIGGING + uniek("liggers"));
+        assertTrue(c.contains(scope("thuisligging")), () -> "'liggers' wijst één relatie aan:\n" + c);
+        String d = emitCompact(TYPEN + THUISLIGGING + WINTERLIGGING + uniek("winterliggers"));
+        assertTrue(d.contains(scope("winterligging")), () -> "'winterliggers' wijst één relatie aan:\n" + d);
+        String e = emitCompact(TYPEN + THUISLIGGING + WINTERBERGING + uniek("Schuiten"));
+        assertTrue(e.contains(scope("thuisligging")), () -> "'de thuishaven' wijst één relatie aan:\n" + e);
+    }
+
+    /** A type name names no role, so nothing decides between the two relations; the document without the scope is a
+     *  uniqueness over every Schuit, which no reader refuses, so the refusal keeps this frontend's words, as the rule's
+     *  one message. */
+    @Test void een_begrensde_uniciteit_over_twee_relaties_weigert_op_de_typenaam() {
+        RegelSpraakModel m = Resolver.resolve(TYPEN + THUISLIGGING + WINTERLIGGING + uniek("Schuiten"));
+        assertEquals(List.of("ERROR: uniciteit 'romplengte uniek' binnen 'de thuishaven' zonder binding (2 relaties "
+                        + "kennen een rol 'thuishaven' tegenover Schuit, en 'Schuiten' noemt geen rol die er precies één "
+                        + "aanwijst): zonder binding zou de wire haar lezen als een uniciteit over alle instanties van "
+                        + "Schuit, en dat is niet wat er staat"),
+                m.diagnostics.stream().map(x -> x.severity() + ": " + x.message()).toList());
+    }
+
     // ---------------- every position the emitter writes a read at ----------------
 
     /** One unbound read, "het peil van de Vuurtoren" (no relation reaches a Vuurtoren), at each position the emitter

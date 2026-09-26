@@ -446,6 +446,29 @@ public final class RegelSpraakModel {
         return n == 1 ? gevonden : null;
     }
 
+    /**
+     * The scopes a parent-scoped uniqueness "de X van alle &lt;element&gt; van de &lt;ouder&gt;" can take (§8.1.6;
+     * IR-SPEC ch. 3.6 {@code scope}), each the binding of its parent role, found as a navigated read binds its written
+     * role (grammar/DIVERGENCES.md, §13.4.1): every relation in which a role {@code ouder} names relates
+     * {@code element}, counted as {@link #rolDoeltypeNaarSubject} counts them, whatever else joins the two types;
+     * where those are several and {@code elementNaam} names the element's role, by its declared name or plural, in
+     * exactly one of them, that one. A reciprocal relation counts, so that the caller refuses it for what it is.
+     */
+    public List<RolBindingRef> scopeBindingen(Objecttype element, String elementNaam, String ouder) {
+        List<RolBindingRef> alle = new ArrayList<>(), genoemd = new ArrayList<>();
+        if (element == null || ouder == null) return alle;
+        for (Feittype ft : feittypen.values())
+            for (Rol r : ft.rollen)
+                if (rolMatcht(r, ouder) && feittypeRelateert(ft, r, element)
+                        && objecttypeOpNaam(r.objecttypeNaam()) != null) {
+                    RolBindingRef rb = new RolBindingRef(ft.naam, r.naam());
+                    alle.add(rb);
+                    if (elementNaam != null && ft.rollen.stream().anyMatch(e -> (e != r || ft.wederkerig)
+                            && rolHeeftObjecttype(e, element) && rolMatchtExact(e, elementNaam))) genoemd.add(rb);
+                }
+        return alle.size() > 1 && genoemd.size() == 1 ? genoemd : alle;
+    }
+
     /** §8.1.7 rolcheck "{@code subject} is een &lt;geschrevenRol&gt;": the object type at the OTHER end
      *  of the feittype whose role {@code geschrevenRol} the {@code subject} FILLS — so the subject
      *  participates in that role iff its reference to that other end is set. The mirror of

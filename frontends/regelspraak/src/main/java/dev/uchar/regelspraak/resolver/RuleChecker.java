@@ -3193,18 +3193,25 @@ final class RuleChecker {
         String attr = MeervoudMatcher.vindAttribuut(elem, src(a.kaleNaam(0)));
         if (attr == null) return null;
         String parentNav = stripArtikel(src(delen.get(1)));
-        Objecttype parentType = model.rolDoeltypeNaarSubject(elem, parentNav);  // the role's object type
-        if (parentType == null) return null;
-        String joinVeld = model.verbindendeRol(elem, parentType);    // field on a Y pointing at its <parent>
-        if (joinVeld == null) return null;
-        // uchar scopeRol: the same reference field made symbolic — the fact type plus the (declared)
-        // scope-parent role. Withheld (null -> absent) when the connecting relation is not the
-        // two-role shape the binding form covers; the wire then keeps only the bean-field scopeVeld.
-        RolBindingRef scopeRol = model.verbindendeRolBinding(elem, parentType);
-        // the wire writes the scope as its binding, and a reciprocal fact type gives none: written without it, the
-        // uniqueness would hold over every instance. It ended in the emitter's exception until the fix round of
-        // 2026-09-26.
-        if (scopeRol == null) {
+        // the written names decide, as for a navigated read (grammar/DIVERGENCES.md, §13.4.1): the parent role, and
+        // where that role stands in several relations, the element role; until the fix round of 2026-09-26 the type
+        // pair decided, and two relations between the types left the rule unlowered whatever the sentence named
+        java.util.List<RolBindingRef> scope = model.scopeBindingen(elem, src(delen.get(0)), parentNav);
+        if (scope.isEmpty()) return null;
+        // the wire writes the scope as its binding, and written without it the uniqueness would hold over every
+        // instance, a document no reader refuses (IR-SPEC ch. 3.6), so the refusal keeps this frontend's words
+        if (scope.size() > 1) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "uniciteit '" + naam + "' binnen '" + src(delen.get(1))
+                    + "' zonder binding (" + scope.size() + " relaties kennen een rol '" + parentNav + "' tegenover "
+                    + elem.naam + ", en '" + src(delen.get(0)) + "' noemt geen rol die er precies één aanwijst): zonder "
+                    + "binding zou de wire haar lezen als een uniciteit over alle instanties van " + elem.naam
+                    + ", en dat is niet wat er staat", bron.line()));
+            return GEWEIGERD;
+        }
+        RolBindingRef scopeRol = scope.get(0);
+        // a reciprocal fact type has no two-role binding to write the scope as; this ended in the emitter's exception
+        // until the fix round of 2026-09-26
+        if (model.feittypen.get(scopeRol.feittype()).wederkerig) {
             model.diagnostics.add(new Diagnostic(Severity.ERROR, "uniciteit '" + naam + "' binnen '" + src(delen.get(1))
                     + "': de relatie die de begrenzing draagt is wederkerig, en een begrenzing over een wederkerig "
                     + "feittype schrijft deze frontend niet (de wire schrijft haar als rolbinding van een feittype met "
@@ -3212,7 +3219,7 @@ final class RuleChecker {
             return GEWEIGERD;
         }
         return new Begrensd(new dev.uchar.regelspraak.ir.ResolvedUniciteit(
-                naam, elem, java.util.List.of(attr), joinVeld, bron, g, scopeRol));
+                naam, elem, java.util.List.of(attr), scopeRol.rol(), bron, g, scopeRol));
     }
 
     /** §8.1.6: two union sources may be combined only when their key parts share a datatype. Compared
