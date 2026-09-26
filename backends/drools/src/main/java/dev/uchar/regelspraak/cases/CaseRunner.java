@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.uchar.regelspraak.engine.ScenarioResultaat;
+import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.ir.Expr;
@@ -14,9 +16,12 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
+import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import org.kie.api.KieBase;
+import org.kie.api.event.rule.AfterMatchFiredEvent;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
@@ -70,6 +75,9 @@ public final class CaseRunner {
     /** §9.8 the dagsoort predicates the DRL-text branch declares as globals (name -> predicate). The exec-model
      *  branch wires those predicates straight into its lambdas and needs none, so it passes an empty map. */
     private final Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen;
+    /** The exec branch's coverage manifest, every construct lowered (a build refuses any other): what the scenario
+     *  report's coverage ranges over ({@link #rapport}). Empty for the DRL-text branch, which reports nothing. */
+    private List<Dekking> dekking = List.of();
 
     private CaseRunner(RegelSpraakModel model, KieBase kieBase, ClassLoader cl,
                        Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen) {
@@ -126,6 +134,84 @@ public final class CaseRunner {
         } catch (java.io.IOException e) {
             throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
         }
+    }
+
+    /** The scenario report of a golden's replay: one {@link ScenarioResultaat} per case, from the same exec-model
+     *  replay the gate plays, carrying beside the verdict what the source toolchain's scenario runner reported on top
+     *  of a comparison — per expectation the expected and the actual value, the rules that fired with the labels
+     *  they bound, and per lowered construct whether it fired. A document or a case form this backend does not
+     *  carry (the replay's EXCLUDE, a construct the transpiler does not lower among them) is status MARKER with its
+     *  reason, so accepted-but-inert never reads as a pass. A red-path case is no scenario and is skipped, as the
+     *  replay skips it. */
+    public static List<ScenarioResultaat> rapport(Path irPath, List<Path> casePaths) {
+        List<Path> paden = new ArrayList<>();
+        List<JsonNode> cases = new ArrayList<>();
+        for (Path cp : casePaths) {
+            JsonNode c;
+            try { c = JSON.readTree(Files.readString(cp)); }
+            catch (java.io.IOException e) { throw new RuntimeException("could not read " + cp + ": " + e.getMessage(), e); }
+            if (c.has("expectedFault")) continue;
+            paden.add(cp);
+            cases.add(c);
+        }
+        List<ScenarioResultaat> uit = new ArrayList<>();
+        CaseRunner runner;
+        try {
+            runner = build(irPath);
+        } catch (Excluded e) {
+            for (Path p : paden) uit.add(marker(p, e.getMessage()));
+            return uit;
+        } catch (IrLoader.Refusal e) {
+            for (Path p : paden) uit.add(marker(p, "loader: " + e.getMessage()));
+            return uit;
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("could not read " + irPath + ": " + e.getMessage(), e);
+        }
+        for (int i = 0; i < paden.size(); i++) {
+            String naam = paden.get(i).getFileName().toString();
+            Waarneming w = new Waarneming();
+            String fout;
+            try {
+                fout = runner.runCase(naam, cases.get(i), w);
+            } catch (Excluded e) {
+                uit.add(marker(paden.get(i), e.getMessage()));
+                continue;
+            }
+            List<ScenarioResultaat.Vuring> vuringen = new ArrayList<>();
+            for (Map.Entry<String, Integer> e : w.telling.entrySet())
+                vuringen.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(w.labels.get(e.getKey())), "", e.getValue()));
+            List<ScenarioResultaat.DekkingRegel> dekking = new ArrayList<>();
+            for (Dekking d : runner.dekking)
+                dekking.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurd(d.naam(), w.telling.keySet())
+                        ? ScenarioResultaat.DekkingSoort.GEVUURD : ScenarioResultaat.DekkingSoort.NIET_GERAAKT));
+            uit.add(new ScenarioResultaat(naam, fout == null ? ScenarioResultaat.Status.PASS : ScenarioResultaat.Status.FAIL,
+                    List.copyOf(w.verwachtingen), new ScenarioResultaat.Trace(vuringen), dekking, fout == null ? "" : fout));
+        }
+        return uit;
+    }
+
+    private static ScenarioResultaat marker(Path casePad, String reden) {
+        return new ScenarioResultaat(casePad.getFileName().toString(), ScenarioResultaat.Status.MARKER, List.of(),
+                new ScenarioResultaat.Trace(List.of()), List.of(), reden);
+    }
+
+    /** Whether construct {@code construct} fired: a fired rule carries its base name, or a rule the transpiler derived
+     *  from it — its name with a parenthesised qualifier ({@code (onverdeelde rest)}, {@code (gevuurd)}). */
+    private static boolean gevuurd(String construct, java.util.Set<String> gevuurdeRegels) {
+        String basis = Namen.norm(ProducentConsument.basisNaam(construct));
+        for (String g : gevuurdeRegels) {
+            String n = Namen.norm(g);
+            if (n.equals(basis) || n.startsWith(basis + " (")) return true;
+        }
+        return false;
+    }
+
+    /** What one case's replay reports beside its verdict: the firings per rule with the labels of the input beans they
+     *  bound, and per expectation its verdict. */
+    private static final class Waarneming {
+        final Map<String, Integer> telling = new LinkedHashMap<>();
+        final Map<String, List<String>> labels = new LinkedHashMap<>();
+        final List<ScenarioResultaat.VerwachtingResultaat> verwachtingen = new ArrayList<>();
     }
 
     /** The witness seam of {@code backends/drools/src/test}: the beans one case's INPUT produces, before any
@@ -220,7 +306,10 @@ public final class CaseRunner {
     private static CaseRunner build(Path irPath, boolean viaDrl) throws java.io.IOException {
         DroolsBackend.Build b = DroolsBackend.build(irPath,
                 viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL);
-        return new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
+        CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
+        // the exec branch's coverage manifest feeds the scenario report; the DRL-text branch reports nothing
+        if (!viaDrl) runner.dekking = b.dekking();
+        return runner;
     }
 
     // ---------------- the red path (corpus/rood, gate 8's Drools leg) ----------------
@@ -325,6 +414,12 @@ public final class CaseRunner {
     private LocalDate rekendatum;
 
     private String runCase(String naam, JsonNode c) {
+        return runCase(naam, c, null);
+    }
+
+    /** One case: its verdict line, null on a match. With a {@link Waarneming} the replay also reports the firings and
+     *  every expectation's verdict ({@link #rapport}); the verdict itself does not depend on it. */
+    private String runCase(String naam, JsonNode c, Waarneming w) {
         labelNaarBean.clear();
         labelType.clear();
         rekendatum = asOfDatum(c);
@@ -339,13 +434,18 @@ public final class CaseRunner {
             for (JsonNode i : instances) zetRollen(i);
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
+            if (w != null) sessie.addEventListener(luisteraar(w));
             for (Object bean : labelNaarBean.values()) sessie.insert(bean);
             int n = sessie.fireAllRules(100_000);
             if (n >= 100_000) return naam + ": geen fixpunt (kringverwijzing?)";
             List<String> mis = new ArrayList<>();
+            int positie = 0;
             for (JsonNode v : c.get("expected")) {
                 String m = vergelijk(v, sessie);
                 if (m != null) mis.add(m);
+                positie++;
+                if (w != null) w.verwachtingen.add(new ScenarioResultaat.VerwachtingResultaat(
+                        bron(v), verwacht(v), werkelijk(v, sessie), m == null, positie));
             }
             return mis.isEmpty() ? null : naam + ": " + String.join("; ", mis);
         } finally {
@@ -881,11 +981,7 @@ public final class CaseRunner {
      *  allocation error on the source instead of each recipient ({@code jutterswet-rangmaximering}), fixed in the same
      *  card. An expectation carrying no rule falls back to bare presence. */
     private String consistentie(KieSession sessie, boolean inconsistentVerwacht, JsonNode v) {
-        List<Object> facts = new ArrayList<>();
-        try {
-            Class<?> inc = Class.forName(FactModelGenerator.PAKKET + ".Inconsistentie", true, cl);
-            facts.addAll(sessie.getObjects(inc::isInstance));
-        } catch (ClassNotFoundException e) { /* no Inconsistentie bean -> none */ }
+        List<Object> facts = inconsistenties(sessie);
         if (!inconsistentVerwacht)
             return facts.isEmpty() ? null : "verwacht consistent, werkelijk inconsistent (" + renderIncs(facts) + ")";
         String rule = v.has("rule") && !v.get("rule").isNull() ? v.get("rule").asText() : null;
@@ -898,6 +994,16 @@ public final class CaseRunner {
             if (label == null || label.equals(labelVanBean(lees(f, "getSubject")))) return null;
         }
         return "verwacht inconsistent" + sleutelTekst(rule, label) + ", niet gevonden onder " + renderIncs(facts);
+    }
+
+    /** Every §9.5 Inconsistentie fact the session holds. */
+    private List<Object> inconsistenties(KieSession sessie) {
+        List<Object> facts = new ArrayList<>();
+        try {
+            Class<?> inc = Class.forName(FactModelGenerator.PAKKET + ".Inconsistentie", true, cl);
+            facts.addAll(sessie.getObjects(inc::isInstance));
+        } catch (ClassNotFoundException e) { /* no Inconsistentie bean -> none */ }
+        return facts;
     }
 
     /** ref's rule-key identity on the §9.5 channel ({@code ref/lib/case.ml}, the {@code Inconsistent} arm):
@@ -936,6 +1042,75 @@ public final class CaseRunner {
         List<String> uit = new ArrayList<>();
         for (Object f : facts) uit.add(lees(f, "getRegel") + " @ " + labelVanBean(lees(f, "getSubject")));
         return String.join(", ", uit);
+    }
+
+    // ---------------- the report's renderings ----------------
+
+    /** Every firing, under its base name, with the labels of the input beans the match bound. */
+    private DefaultAgendaEventListener luisteraar(Waarneming w) {
+        return new DefaultAgendaEventListener() {
+            @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                String regel = ProducentConsument.basisNaam(e.getMatch().getRule().getName());
+                w.telling.merge(regel, 1, Integer::sum);
+                List<String> ls = w.labels.computeIfAbsent(regel, k -> new ArrayList<>());
+                for (Object o : e.getMatch().getObjects()) {
+                    String l = labelVanBean(o);
+                    if (l != null && !ls.contains(l)) ls.add(l);
+                }
+            }
+        };
+    }
+
+    /** The expectation itself: its kind and what it is about. */
+    private static String bron(JsonNode v) {
+        String kind = v.get("kind").asText();
+        if (kind.equals("inconsistent"))
+            return kind + sleutelTekst(v.hasNonNull("rule") ? v.get("rule").asText() : null,
+                    v.hasNonNull("label") ? v.get("label").asText() : null);
+        StringBuilder b = new StringBuilder(kind);
+        for (String veld : new String[]{"label", "attribute", "characteristic"})
+            if (v.hasNonNull(veld)) b.append(' ').append(v.get(veld).asText());
+        return b.toString();
+    }
+
+    /** The expected side, rendered as {@link #werkelijk} renders the actual one. */
+    private String verwacht(JsonNode v) {
+        return switch (v.get("kind").asText()) {
+            case "attributeValue" -> render(waardeNaarArg(v.get("value"), v.get("attribute").asText()));
+            case "attributeEmpty" -> "leeg";
+            case "attributeTimeline" -> {
+                List<String> segs = new ArrayList<>();
+                for (JsonNode s : v.get("timeline"))
+                    segs.add("[" + s.get("from").asText() + "," + s.get("to").asText() + ")="
+                            + render(waardeNaarArg(s.get("value"), v.get("attribute").asText())));
+                yield segs.isEmpty() ? "(leeg)" : String.join(" ", segs);
+            }
+            case "characteristicPresent" -> "aanwezig";
+            case "characteristicAbsent" -> "afwezig";
+            case "consistent" -> "consistent";
+            default -> "inconsistent" + sleutelTekst(v.hasNonNull("rule") ? v.get("rule").asText() : null,
+                    v.hasNonNull("label") ? v.get("label").asText() : null);
+        };
+    }
+
+    /** The actual side after fire, read where the comparison reads it. */
+    private String werkelijk(JsonNode v, KieSession sessie) {
+        Object bean = v.hasNonNull("label") ? labelNaarBean.get(v.get("label").asText()) : null;
+        return switch (v.get("kind").asText()) {
+            case "attributeValue", "attributeEmpty" ->
+                    render(bean == null ? null : lees(bean, Namen.getter(v.get("attribute").asText())));
+            case "attributeTimeline" -> {
+                Object gelezen = bean == null ? null : lees(bean, Namen.getter(v.get("attribute").asText()));
+                yield gelezen == null ? "(leeg)" : renderTl((List<?>) gelezen);
+            }
+            case "characteristicPresent", "characteristicAbsent" ->
+                    bean != null && Boolean.TRUE.equals(lees(bean, Namen.getter(v.get("characteristic").asText())))
+                            ? "aanwezig" : "afwezig";
+            default -> {
+                List<Object> facts = inconsistenties(sessie);
+                yield facts.isEmpty() ? "consistent" : "inconsistent (" + renderIncs(facts) + ")";
+            }
+        };
     }
 
     // ---------------- value helpers ----------------
