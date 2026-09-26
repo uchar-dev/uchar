@@ -206,14 +206,14 @@ public final class CaseRunner {
         return build(irPath, viaDrl).runCase("case", c);
     }
 
-    /** Build {@code irPath} on the exec-model branch — every gate path. Throws {@link Excluded} /
-     *  {@link IrLoader.Refusal} for any form the v0 backend does not carry. */
+    /** Build {@code irPath} on the exec-model branch. Throws {@link Excluded} / {@link IrLoader.Refusal} for any
+     *  form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
         return build(irPath, false);
     }
 
     /** As above, with {@code viaDrl} choosing WHICH transpiler branch produces the KieBase: the exec-model
-     *  back-end (false — every gate path) or {@link DrlTranspiler}'s DRL TEXT (true). The whole prelude — load,
+     *  back-end (false) or {@link DrlTranspiler}'s DRL TEXT (true). The whole prelude — load,
      *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
