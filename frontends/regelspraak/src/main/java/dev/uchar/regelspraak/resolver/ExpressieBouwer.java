@@ -791,7 +791,7 @@ final class ExpressieBouwer {
      * sentence named. Dropping the binding does not help — measured: a bindingless fold over a uniquely
      * related pair is verifier-clean and every executor re-derives the same wrong relation — so the
      * resolution itself must decline. The escape is the case where the author claimed no role at all: a
-     * written name that IS the element object type's own name.
+     * written name that IS an object type's own name or its declared plural.
      */
     private Expr keurVouwbron(FunctieAanroepContext f, Expr.AttribuutRef bron, Datatype type) {
         // WF-102 (2026-09-11): a range the resolver RESOLVED is carried on the wire, so there is nothing
@@ -854,6 +854,11 @@ final class ExpressieBouwer {
         List<String> namen = RegelSpraakModel.naamKandidaten(geschreven);
         if (namen.isEmpty()) return null;
         if (namen.stream().anyMatch(n -> model.objecttypeOpNaam(n) != null)) return null;
+        // a type named in its declared plural ("alle Schuiten") claims no role either, as a navigated read by type
+        // name does not: the pair binds where exactly one relation joins the two types. The whole written name only:
+        // "vondsten" at the end of "geborgen vondsten" names the role, not the type
+        if (model.objecttypen.values().stream().anyMatch(ot -> ot.meervoud != null
+                && ot.meervoud.equalsIgnoreCase(namen.get(0)))) return null;
         RegelSpraakModel.RolBindingRef paar = model.verbindendeRolBinding(huidigSubject, bron.objecttype());
         if (paar == null || namen.stream().anyMatch(n -> model.rolGenoemdAls(paar, n))) return null;
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,

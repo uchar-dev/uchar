@@ -199,6 +199,21 @@ class NavigatiekeuzeTest {
                 fouten(TYPEN + THUISLIGGING + WINTERBERGING + vouw.formatted("Schuiten")));
     }
 
+    /** A fold over the element type's plural binds by the type pair where one relation joins the two types, as a
+     *  navigated read by type name does. Before: a marker with the WARNING "vouwbron bindt niet op de geschreven
+     *  naam", where two relations gave the ERROR above. */
+    @Test void een_vouw_over_een_relatie_bindt_op_het_typemeervoud() {
+        String c = emitCompact(TYPEN + THUISLIGGING + """
+
+            Regel rompsom van een haven
+                geldig altijd
+                    De rompsom van een Haven moet berekend worden als de som van de romplengten van alle Schuiten van de Haven.
+            """);
+        assertTrue(c.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"thuisligging\","
+                + "\"role\":\"ligger\"}"), () -> "het typepaar draagt het bereik:\n" + c);
+        assertTrue(c.endsWith("\"diagnostics\":[]}"), () -> "zonder marker en zonder waarschuwing:\n" + c);
+    }
+
     /** A fold whose source the wire cannot spell, each refused in the reader's sentence for what the emitter would
      *  write: a step written on the source (WF-053), the subject's own attribute under a sum (the loader's sentence
      *  for a fold without its range), and a total over another type's attribute, whose step a total without a range
