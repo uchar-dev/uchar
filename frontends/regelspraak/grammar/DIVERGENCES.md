@@ -1676,8 +1676,10 @@ serialiser, so a case file and an IR document share one shape.
   `characteristics`, and all 51 instances in the corpus that carry the field
   write it after (measured 2026-09-26).
 - A number is an exact lexeme in the declared unit. Without a restatement it
-  keeps its written form, a decimal its written precision (`2400,00` is
-  `2400.00`) and a fraction its fraction, reduced (`6/8` is `3/4`). A
+  is the lexeme the emitter writes for the written number, one normalisation
+  for a case file and an IR document: a decimal keeps its written precision
+  (`2400,00` is `2400.00`), a fraction is reduced (`6/8` is `3/4`, `1_1/2` is
+  `3/2`) and a whole number where it reduces to one (`2_0/5` is `2`). A
   restated value is a terminating decimal without trailing zeros (`1,5 t` is
   `1500` kg), or else a reduced fraction (`1 voet` is `1/6` vadem). A
   date-time carries its three millisecond digits, as the language writes

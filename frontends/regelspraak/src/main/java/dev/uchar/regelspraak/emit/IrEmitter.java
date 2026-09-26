@@ -741,20 +741,24 @@ public final class IrEmitter {
         return vast;
     }
 
-    private static final java.util.regex.Pattern GEMENGDE_BREUK = java.util.regex.Pattern.compile("-?\\d+_\\d+/\\d+");
+    private static final java.util.regex.Pattern BREUK = java.util.regex.Pattern.compile("-?\\d+(_\\d+)?/\\d+");
 
-    /** The number lexeme the wire carries for a literal's written number (IR-SPEC ch. 4.1): an exact decimal with a
-     *  point, or a rational a/b whose sign stands on the numerator. The frontend keeps what the author wrote, so the
-     *  decimal comma becomes a point here, and a §13.2.5 mixed fraction ("1_1/2", "-0_1/2") becomes its reduced
-     *  rational ("3/2", "-1/2"): the verifier, ref, clingo and the Drools loader read no mixed form, and a document
-     *  carrying one was refused by every reader. The author's spelling stays in the source snippet. The resolver
-     *  names this lexeme in its sign refusal, so both read it here. */
+    /** The number lexeme the wire carries for a written number (IR-SPEC ch. 4.1), and the one normalisation of this
+     *  frontend: the scenario lowering writes a case number that needs no restatement with it too, so an IR document
+     *  and a case file spell one written number alike. A decimal keeps what the author wrote, the decimal comma a
+     *  point. A §13.2.5 fraction, a proper one ("6/8") or a mixed one ("1_1/2", "-0_1/2"), becomes its reduced
+     *  rational with the sign on the numerator ("3/4", "3/2", "-1/2"), and a whole number where it reduces to one
+     *  ("2_0/5" and "4/2" are "2"): the verifier, ref, clingo and the Drools loader read no mixed form, and one value
+     *  has one spelling. The author's spelling stays in the source snippet. The resolver names this lexeme in its
+     *  sign refusal, so both read it here. */
     public static String getalLexeem(String waarde) {
-        if (!GEMENGDE_BREUK.matcher(waarde).matches()) return waarde.replace(',', '.');
+        if (!BREUK.matcher(waarde).matches()) return waarde.replace(',', '.');
         BigDecimal[] r = dev.uchar.regelspraak.model.Rationaal.van(waarde);
         java.math.BigInteger teller = r[0].toBigIntegerExact(), noemer = r[1].toBigIntegerExact();
         java.math.BigInteger deler = teller.gcd(noemer);
-        return teller.divide(deler) + "/" + noemer.divide(deler);
+        teller = teller.divide(deler);
+        noemer = noemer.divide(deler);
+        return noemer.equals(java.math.BigInteger.ONE) ? teller.toString() : teller + "/" + noemer;
     }
 
     /** IR-SPEC ch. 4.1: the value variant of a literal, chosen by its type — a number (a percentage included), a

@@ -115,7 +115,8 @@ class TyperingZinTest {
         assertEquals(List.of(), meldingen(v.formatted("voorraad", "-0")));
         assertEquals(fout("teken-beperking: literal '-0' is written into a target under a negative sign restriction"),
                 meldingen(v.formatted("korting", "-0")));
-        assertEquals(fout("teken-beperking: literal '0/5' is written into a target under a positive sign restriction"),
+        // the lexeme the wire writes for the written "0/5", a fraction that reduces to the whole number 0
+        assertEquals(fout("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
                 meldingen(v.formatted("stukprijs", "0/5")));
         assertEquals(fout("teken-beperking: literal '0' is written into a target under a positive sign restriction"),
                 meldingen(v.formatted("stukprijs", "0")));

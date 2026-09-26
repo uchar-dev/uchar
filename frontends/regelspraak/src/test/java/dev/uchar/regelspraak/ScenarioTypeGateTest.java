@@ -372,6 +372,20 @@ class ScenarioTypeGateTest {
         assertEquals("250", sit.instantie("W").attributen().get(1).waarde().getal());
     }
 
+    @Test void een_geschreven_getal_is_het_lexeem_van_de_emitter() {
+        // one normalisation for a case file and an IR document: before, "2400,00" was read through a decimal of its own
+        ScenarioBundel b = resolve("Situatie getallen:\neen Vondst V\n- de sleepafstand is 6/8 vadem\n"
+                + "- het gewicht is 2400,00 kg\neen Vondst W\n- de sleepafstand is 2_0/5 vadem\n"
+                + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie getallen\n"
+                + "Gegeven is de volgende situatie:\nde parameter de vondstdrempel is 3\n"
+                + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        Situatie sit = b.scenarios().get(0).situatie();
+        for (String[] paar : new String[][]{{"V", "0", "6/8"}, {"V", "1", "2400,00"}, {"W", "0", "2_0/5"}})
+            assertEquals(dev.uchar.regelspraak.emit.IrEmitter.getalLexeem(paar[2]),
+                    sit.instantie(paar[0]).attributen().get(Integer.parseInt(paar[1])).waarde().getal(), paar[2]);
+    }
+
     @Test void de_rolsleutel_volgt_de_geschreven_vorm() {
         String s = """
             Situatie rollen:

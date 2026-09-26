@@ -1085,9 +1085,10 @@ public final class ScenarioResolver {
     }
 
     /** A number: its exact value in the unit written, typed against {@code doel}, restated exactly in the declared
-     *  unit. Without a restatement the lexeme keeps the written form — a decimal its written precision (2400,00 stays
-     *  2400.00), a fraction its fraction, reduced (6/8 is 3/4); a restated value is a terminating decimal without
-     *  trailing zeros, or else a reduced fraction. */
+     *  unit. Without a restatement the lexeme is the emitter's for the written number
+     *  ({@link dev.uchar.regelspraak.emit.IrEmitter#getalLexeem}) — a decimal its written precision (2400,00 stays
+     *  2400.00), a fraction reduced (6/8 is 3/4) and a whole number where it reduces to one (2_0/5 is 2); a restated
+     *  value is a terminating decimal without trailing zeros, or else a reduced fraction. */
     private Waarde getal(GetalWaardeContext g, Datatype doel, int line, String wat) {
         String tekst = g.NUMBER().getText();
         BigDecimal[] r = Rationaal.van(tekst);
@@ -1119,8 +1120,8 @@ public final class ScenarioResolver {
             BigInteger[] fb = breuk(f[0], f[1]);
             return Waarde.vanGetal(lexeem(breuk[0].multiply(fb[0]), breuk[1].multiply(fb[1])));
         }
-        if (r[1].compareTo(BigDecimal.ONE) == 0) return Waarde.vanGetal(r[0].toPlainString());
-        return Waarde.vanGetal(breuk[1].equals(BigInteger.ONE) ? breuk[0].toString() : breuk[0] + "/" + breuk[1]);
+        // no restatement: the written number in the emitter's lexeme, so a case file and an IR document agree
+        return Waarde.vanGetal(dev.uchar.regelspraak.emit.IrEmitter.getalLexeem(tekst));
     }
 
     /** {@code a / b} as a reduced fraction of integers, the denominator positive. */

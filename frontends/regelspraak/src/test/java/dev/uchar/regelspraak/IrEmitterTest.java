@@ -349,6 +349,14 @@ class IrEmitterTest {
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
     }
 
+    @Test void een_geschreven_getal_heeft_een_spelling() {
+        // one value, one lexeme: before, a proper fraction went out as written ("6/8") and a mixed one that reduces to
+        // a whole number as "2/1", where the scenario lowering wrote "3/4" and "2" for the same written numbers
+        for (String[] paar : new String[][]{{"6/8", "3/4"}, {"-6/8", "-3/4"}, {"4/2", "2"}, {"2_0/5", "2"},
+                {"1_1/2", "3/2"}, {"-0_1/2", "-1/2"}, {"3/4", "3/4"}, {"2400,00", "2400.00"}, {"-5", "-5"}})
+            assertEquals(paar[1], IrEmitter.getalLexeem(paar[0]), paar[0]);
+    }
+
     @Test void gemengde_breuk_wordt_het_gereduceerde_rationaal() {
         // IR-SPEC ch. 4.1: a number lexeme is an exact decimal or a rational a/b with the sign on the numerator; no
         // reader takes the §13.2.5 mixed form, so the emitter writes its reduced rational and the source keeps the
