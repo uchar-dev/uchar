@@ -1944,9 +1944,12 @@ them a member of an unordered block that is no kenmerktoekenning or
 gelijkstelling, or yields no rule at all — a timeline reference that names no
 declared timeline, among them a multi-period form written without its start
 date ("voor elke 2 maanden", which parses as the name of a timeline and was
-written as a single value until the fix round of 2026-09-26), and forms this
-frontend does not lower) have no reader either, because no document carries
-them. The same holds
+written as a single value until the fix round of 2026-09-26), a unit clause
+after an attribute's type that has no reading (a percentage, a value that is
+no number, a number that carries a unit already; on a domain-typed number the
+clause sets the unit, §3.4, where until that fix round it was parsed and
+dropped), and forms this frontend does not lower) have no reader either,
+because no document carries them. The same holds
 for the refusals of the scenariotoetsen extension (its section above): no reader
 refuses a case file for them, because a case file that carries such a defect is
 never written.

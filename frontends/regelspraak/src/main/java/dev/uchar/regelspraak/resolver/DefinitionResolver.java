@@ -298,7 +298,7 @@ public final class DefinitionResolver {
             AttribuutSpecificatieContext a = m.attribuutSpecificatie();
             String naam = naam(a.lowerNaam());
             meldHoofdletterBotsing(ot, naam, ot.attributen.keySet(), a.getStart().getLine());
-            ot.attributen.put(naam, datatypeVan(a.datatype(), a.domeinNaam()));
+            ot.attributen.put(naam, metEenheid(datatypeVan(a.datatype(), a.domeinNaam()), a, naam));
             if (a.meervoudsvorm() != null) ot.attribuutMeervoud.put(naam, src(a.meervoudsvorm())); // §3.3, for §8.1.6
             // §13.3.7 "gedimensioneerd met <dimensie> (en <dimensie>)*": record the attribute's dimensions
             // in declared order so a reference / aggregation can range over their label sets (§3.6).
@@ -385,6 +385,29 @@ public final class DefinitionResolver {
     }
 
     /** Resolve an attribute/parameter type: a concrete datatype, or a (possibly forward) domain reference. */
+    /** §3.4 the attribute-level unit clause ("de prijs Bedrag met eenheid €"): a domain-typed attribute pins a unit
+     *  on its number. The clause used to be parsed and never read, so the unit was dropped and the attribute written
+     *  as a bare number, where every unit check reads it. It sets the unit of a number without one; on a number that
+     *  carries a unit already, a percentage (whose unit is %) or a value of another kind it has no reading, and is
+     *  refused. */
+    private Datatype metEenheid(Datatype dt, AttribuutSpecificatieContext a, String naam) {
+        if (a.eenheidExpressie() == null || dt instanceof Datatype.Onbekend) return dt;
+        Eenheid e = eenheidVan(a.eenheidExpressie());
+        String reden = null;
+        if (dt instanceof Datatype.Numeriek n) {
+            if (!n.heeftEenheid() || n.eenheid().equals(e))
+                return new Datatype.Numeriek(n.geheel(), n.decimalen(), n.teken(), e);
+            reden = "het getal draagt al de eenheid '" + n.eenheid().weergave() + "'";
+        } else if (dt instanceof Datatype.Percentage) {
+            reden = "een percentage draagt de eenheid % ('Percentage (…) met eenheid %/<eenheid>' voor een verhouding)";
+        } else {
+            reden = "een " + dt.naam() + " draagt geen eenheid";
+        }
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                "attribuut '" + naam + "' met eenheid '" + src(a.eenheidExpressie()) + "': " + reden, a.getStart().getLine()));
+        return dt;
+    }
+
     private Datatype datatypeVan(DatatypeContext dt, DomeinNaamContext dom) {
         if (dt != null) return datatype(dt);
         if (dom != null) {

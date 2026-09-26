@@ -507,6 +507,38 @@ class StructuurZinTest {
         assertEquals(List.of(), fouten(stelsel("1/3")));
     }
 
+    // ---- §3.4: the unit clause of a domain-typed attribute
+
+    private static final String EENHEDEN = """
+        Eenheidsysteem Munt
+            de euro (mv: euros) EUR €
+
+        Eenheidsysteem Lengte
+            de meter (mv: meters) m
+
+        Domein Bedrag is van het type Numeriek (getal met 2 decimalen)
+        Domein Omschrijving is van het type Tekst
+
+        """;
+
+    @Test void de_eenheid_van_een_domeinattribuut_wordt_gelezen() {
+        // before: the clause was parsed and never read, and "de prijs Bedrag met eenheid €" went out as a bare number
+        RegelSpraakModel m = Resolver.resolve(EENHEDEN + "Objecttype de Schuit (mv: Schuiten)\n    de prijs Bedrag met "
+                + "eenheid €;\n");
+        assertEquals(List.of(), m.diagnostics);
+        assertEquals("EUR", ((dev.uchar.regelspraak.model.Datatype.Numeriek) m.objecttypen.get("Schuit").attribuut("prijs"))
+                .eenheid().afkorting());
+        assertEquals(List.of("attribuut 'aandeel' met eenheid '€': een percentage draagt de eenheid % ('Percentage (…) "
+                        + "met eenheid %/<eenheid>' voor een verhouding)"),
+                fouten(EENHEDEN + "Objecttype de Schuit (mv: Schuiten)\n    het aandeel Percentage (geheel getal) met "
+                        + "eenheid €;\n"));
+        assertEquals(List.of("attribuut 'omschrijving' met eenheid '€': een Tekst draagt geen eenheid"),
+                fouten(EENHEDEN + "Objecttype de Schuit (mv: Schuiten)\n    de omschrijving Omschrijving met eenheid €;\n"));
+        assertEquals(List.of("attribuut 'lengte' met eenheid 'm': het getal draagt al de eenheid 'EUR'"),
+                fouten(EENHEDEN + "Objecttype de Schuit (mv: Schuiten)\n    de lengte Numeriek (getal) met eenheid € "
+                        + "met eenheid m;\n"));
+    }
+
     // ---- WF-032 (and WF-023): the start point determination
 
     private static final String STARTPUNT = """
