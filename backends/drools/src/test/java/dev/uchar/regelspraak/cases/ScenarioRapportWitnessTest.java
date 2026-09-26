@@ -82,6 +82,29 @@ class ScenarioRapportWitnessTest {
                 "de diagnose is de verdictregel van de replay");
     }
 
+    @Test void een_case_die_de_replay_niet_kan_spelen_faalt_alleen_zelf() throws Exception {
+        // A timeline expectation whose first boundary is off the attribute's month grid: the case reader refuses it
+        // with a runtime exception, as ref and clingo refuse the file. That case is FAIL with the exception as its
+        // reason, and the report goes on, so the case beside it is reported as the replay plays it.
+        Path golden = GOLDEN.resolve("jutterswet-dagentelling-rgs");
+        Path d = Files.createTempDirectory("scenario-rapport");
+        String bron = Files.readString(golden.resolve("case1-voorbeeld.json"));
+        String gemuteerd = bron.replaceFirst("\"from\": \"2024-01-01\",\n          \"to\": \"2024-02-01\"",
+                "\"from\": \"2024-01-05\",\n          \"to\": \"2024-02-01\"");
+        assertNotEquals(bron, gemuteerd, "de mutatie moet het casebestand raken");
+        Path buiten = Files.writeString(d.resolve("case1-buiten-raster.json"), gemuteerd);
+        List<ScenarioResultaat> rapport =
+                CaseRunner.rapport(golden.resolve("ir.json"), List.of(buiten, golden.resolve("case2-jaargrens.json")));
+        assertEquals(2, rapport.size(), rapport::toString);
+        ScenarioResultaat rood = van(rapport, "case1-buiten-raster.json");
+        assertEquals(Status.FAIL, rood.status(), rood::toString);
+        assertEquals("case1-buiten-raster.json: ERROR IllegalArgumentException: "
+                + "segmentgrens op 'borgdagen' ligt niet op het MAAND-raster", rood.diagnose());
+        assertTrue(rood.verwachtingen().isEmpty() && rood.trace().vuringen().isEmpty() && rood.dekking().isEmpty(),
+                "een case die niet uitspeelde draagt geen verdicten: " + rood);
+        assertEquals(Status.PASS, van(rapport, "case2-jaargrens.json").status());
+    }
+
     @Test void een_document_dat_de_backend_niet_draagt_is_marker() throws Exception {
         Path erflijn = GOLDEN.resolve("anchor").resolve("jutterswet-erflijn");
         List<ScenarioResultaat> rapport = CaseRunner.rapport(erflijn.resolve("ir.json"), cases(erflijn));

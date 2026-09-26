@@ -142,8 +142,9 @@ public final class CaseRunner {
      *  of a comparison — per expectation the expected and the actual value, the rules that fired with the labels
      *  they bound, and per lowered construct whether it fired. A document or a case form this backend does not
      *  carry (the replay's EXCLUDE, a construct the transpiler does not lower among them) is status MARKER with its
-     *  reason, so accepted-but-inert never reads as a pass. A red-path case is no scenario and is skipped, as the
-     *  replay skips it. */
+     *  reason, so accepted-but-inert never reads as a pass. A case the replay cannot play, one whose play raises an
+     *  exception, is FAIL with that exception as its reason, and the report goes on with the next case. A red-path
+     *  case is no scenario and is skipped, as the replay skips it. */
     public static List<ScenarioResultaat> rapport(Path irPath, List<Path> casePaths) {
         List<Path> paden = new ArrayList<>();
         List<JsonNode> cases = new ArrayList<>();
@@ -177,6 +178,11 @@ public final class CaseRunner {
             } catch (Excluded e) {
                 uit.add(marker(paden.get(i), e.getMessage()));
                 continue;
+            } catch (RuntimeException e) {
+                // The replay calls this the golden's ERROR and stops; a report of several cases ends only this one,
+                // so the cases beside it keep their verdicts.
+                uit.add(onspeelbaar(paden.get(i), e));
+                continue;
             }
             List<ScenarioResultaat.Vuring> vuringen = new ArrayList<>();
             for (Map.Entry<String, Integer> e : w.telling.entrySet())
@@ -194,6 +200,16 @@ public final class CaseRunner {
     private static ScenarioResultaat marker(Path casePad, String reden) {
         return new ScenarioResultaat(casePad.getFileName().toString(), ScenarioResultaat.Status.MARKER, List.of(),
                 new ScenarioResultaat.Trace(List.of()), List.of(), reden);
+    }
+
+    /** A case whose play raised {@code e}: FAIL, with the exception in the words of the replay's ERROR line
+     *  ({@link DroolsBackendMain}) on one line, and no verdict, firing or coverage, because the case did not finish. */
+    private static ScenarioResultaat onspeelbaar(Path casePad, RuntimeException e) {
+        String naam = casePad.getFileName().toString();
+        String melding = String.valueOf(e.getMessage()).replace('\n', ' ');
+        return new ScenarioResultaat(naam, ScenarioResultaat.Status.FAIL, List.of(),
+                new ScenarioResultaat.Trace(List.of()), List.of(),
+                naam + ": ERROR " + e.getClass().getSimpleName() + ": " + melding);
     }
 
     /** Whether construct {@code construct} fired: a fired rule carries its base name, or a rule the transpiler derived

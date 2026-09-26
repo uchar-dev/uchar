@@ -9,13 +9,16 @@ import java.util.List;
  * It carries both the expected and the actual value per expectation, which is what a failing expectation prints.
  *
  * @param naam          the case file's name
- * @param status        PASS (every expectation met), FAIL (an expectation missed, or no fixpoint), or MARKER (the
- *                      backend does not carry the document or a form of the case — the replay's EXCLUDE, a construct
- *                      the transpiler does not lower among them — so accepted-but-inert never reads as a pass)
- * @param verwachtingen the per-expectation verdicts, in the case's order; empty for MARKER
+ * @param status        PASS (every expectation met), FAIL (an expectation missed, no fixpoint, or the case could not
+ *                      be played: its play raised an exception), or MARKER (the backend does not carry the document or
+ *                      a form of the case — the replay's EXCLUDE, a construct the transpiler does not lower among them —
+ *                      so accepted-but-inert never reads as a pass)
+ * @param verwachtingen the per-expectation verdicts, in the case's order; empty for MARKER and for a case that could not
+ *                      be played
  * @param trace         the fired rules with the labels of the input instances they bound
  * @param dekking       per lowered construct whether it fired in this case
- * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL, the reason for MARKER; empty for PASS
+ * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
+ *                      the case's name and the replay's ERROR line), the reason for MARKER; empty for PASS
  * @param uitleg        an explanation per line, for a layer that verbalises the outcome; the replay leaves it empty
  */
 public record ScenarioResultaat(String naam, Status status, List<VerwachtingResultaat> verwachtingen,
