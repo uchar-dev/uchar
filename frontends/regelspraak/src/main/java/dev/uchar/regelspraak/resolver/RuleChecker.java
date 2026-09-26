@@ -3086,7 +3086,8 @@ final class RuleChecker {
      *  a {@link ResolvedUniciteitUnie}, the scoped one into a ResolvedUniciteit carrying its scope role.
      *  Returns false — leaving the WARNING — for a source that does not resolve, a union whose sources
      *  disagree on key arity or datatype, and a key with more than one temporal component; the transpiler
-     *  then never silently drops or mis-checks. */
+     *  then never silently drops or mis-checks. Returns true for a scope refused with an ERROR, which is then
+     *  the rule's one message. */
     /** The count of temporal (attribuutGranulariteit) components in a uniqueness key list. */
     private static long telTemporeel(Objecttype type, java.util.List<String> sleutels) {
         return sleutels.stream().filter(k -> type.granulariteitVan(k) != null).count();
@@ -3095,10 +3096,13 @@ final class RuleChecker {
     private boolean uniciteit(String naam, UniciteitsControleContext u, Geldigheid geldigheid) {
         // §8.1.6 parent-scoped "de X van alle Y van <parent>": unique within each parent, not globally.
         if (u.vereniging().isEmpty() && u.alleAttribuutVanOnderwerp() != null) {
-            var scoped = parentScoped(naam, u.alleAttribuutVanOnderwerp(), bron(u), geldigheid);
+            Begrensd scoped = parentScoped(naam, u.alleAttribuutVanOnderwerp(), bron(u), geldigheid);
+            // the ERROR names the defect; a WARNING that the rule was not lowered would be a second message for it
+            if (scoped == GEWEIGERD) return true;
             if (scoped != null) {
-                if (telTemporeel(scoped.subject(), scoped.sleutels()) > 1) return false;
-                model.uniciteiten.add(scoped); return true;
+                var s = scoped.uniciteit();
+                if (telTemporeel(s.subject(), s.sleutels()) > 1) return false;
+                model.uniciteiten.add(s); return true;
             }
         }
         ResolvedUniciteitUnie.Bron eerste = bronVan(u.alleAttribuutVanOnderwerp(), u.uniciteitConcatenatie());
@@ -3165,12 +3169,18 @@ final class RuleChecker {
         return null;
     }
 
+    /** The scoped reading of a uniqueness: its record, or none where {@link #parentScoped} refused the scope. */
+    private record Begrensd(dev.uchar.regelspraak.ir.ResolvedUniciteit uniciteit) {}
+
+    /** A scope refused with an ERROR. */
+    private static final Begrensd GEWEIGERD = new Begrensd(null);
+
     /** §8.1.6 parent-scoped uniqueness "de X van alle Y van &lt;parent&gt;" — unique within each parent.
      *  Resolves the element Y, its key attribute X, and the reference field on a Y that points at its
      *  scope owner &lt;parent&gt; (so the count is restricted per-parent). Null when it is not the scoped
-     *  shape — then the global single-source path applies — or when the scope does not resolve. */
-    private dev.uchar.regelspraak.ir.ResolvedUniciteit parentScoped(String naam, AlleAttribuutVanOnderwerpContext a,
-                                                                 Bron bron, Geldigheid g) {
+     *  shape — then the global single-source path applies — or when the scope does not resolve;
+     *  {@link #GEWEIGERD} when it refused the scope with an ERROR. */
+    private Begrensd parentScoped(String naam, AlleAttribuutVanOnderwerpContext a, Bron bron, Geldigheid g) {
         if (!a.onderwerpKeten().isEmpty()) return null;
         java.util.List<KaleNaamDeelContext> delen = a.kaleNaam(1).kaleNaamDeel();
         if (delen.size() != 2) return null;                          // element + exactly one parent navigation
@@ -3199,10 +3209,10 @@ final class RuleChecker {
                     + "': de relatie die de begrenzing draagt is wederkerig, en een begrenzing over een wederkerig "
                     + "feittype schrijft deze frontend niet (de wire schrijft haar als rolbinding van een feittype met "
                     + "twee rollen)", bron.line()));
-            return null;
+            return GEWEIGERD;
         }
-        return new dev.uchar.regelspraak.ir.ResolvedUniciteit(
-                naam, elem, java.util.List.of(attr), joinVeld, bron, g, scopeRol);
+        return new Begrensd(new dev.uchar.regelspraak.ir.ResolvedUniciteit(
+                naam, elem, java.util.List.of(attr), joinVeld, bron, g, scopeRol));
     }
 
     /** §8.1.6: two union sources may be combined only when their key parts share a datatype. Compared

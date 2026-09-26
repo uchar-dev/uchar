@@ -541,24 +541,34 @@ class StructuurZinTest {
 
     // ---- a uniqueness scoped over a reciprocal fact type
 
+    private static final String WEDERKERIGE_UNICITEIT = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het nummer (mv: nummers) Numeriek (geheel getal);
+
+        Wederkerig feittype maatschap
+            de maat (mv: maten) Jutter
+        Eén maat heeft meerdere maten
+
+        Regel nummers uniek
+            geldig altijd
+                De nummers van alle maten van de maat moeten uniek zijn.
+        """;
+
     @Test void een_uniciteit_binnen_een_wederkerige_relatie() {
         // before: IrEmitter's exception ("de uniciteit 'nummers uniek' is begrensd tot 'maat', en de resolver vond
         // daarvoor geen unieke rol")
         assertEquals(List.of("uniciteit 'nummers uniek' binnen 'de maat': de relatie die de begrenzing draagt is "
                         + "wederkerig, en een begrenzing over een wederkerig feittype schrijft deze frontend niet (de wire "
                         + "schrijft haar als rolbinding van een feittype met twee rollen)"),
-                fouten("""
-                    Objecttype de Jutter (mv: Jutters) (bezield)
-                        het nummer (mv: nummers) Numeriek (geheel getal);
+                fouten(WEDERKERIGE_UNICITEIT));
+    }
 
-                    Wederkerig feittype maatschap
-                        de maat (mv: maten) Jutter
-                    Eén maat heeft meerdere maten
-
-                    Regel nummers uniek
-                        geldig altijd
-                            De nummers van alle maten van de maat moeten uniek zijn.
-                    """));
+    /** The refusal is the rule's one message. Before: beside the ERROR stood the WARNING "consistentieregel wordt nog
+     *  niet (volledig) naar IR/DRL omgezet (regel 'nummers uniek')" for the same sentence. */
+    @Test void een_uniciteit_binnen_een_wederkerige_relatie_geeft_een_melding() {
+        RegelSpraakModel m = Resolver.resolve(WEDERKERIGE_UNICITEIT);
+        assertEquals(List.of(RegelSpraakModel.Severity.ERROR),
+                m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::severity).toList(), m.diagnostics::toString);
     }
 
     // ---- WF-032 (and WF-023): the start point determination
