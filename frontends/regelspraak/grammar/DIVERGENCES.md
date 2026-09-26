@@ -1929,8 +1929,12 @@ members before it, since the lowering writes every member on the first member's
 target, a well-formed document. Refusals of the source text itself (syntax, the
 desugaring of decision tables and exception blocks, the dialect's fences — among
 them a member of an unordered block that is no kenmerktoekenning or
-gelijkstelling, or yields no rule at all — and forms this frontend does not
-lower) have no reader either, because no document carries them. The same holds
+gelijkstelling, or yields no rule at all — a timeline reference that names no
+declared timeline, among them a multi-period form written without its start
+date ("voor elke 2 maanden", which parses as the name of a timeline and was
+written as a single value until the fix round of 2026-09-26), and forms this
+frontend does not lower) have no reader either, because no document carries
+them. The same holds
 for the refusals of the scenariotoetsen extension (its section above): no reader
 refuses a case file for them, because a case file that carries such a defect is
 never written.

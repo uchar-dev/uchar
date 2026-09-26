@@ -759,16 +759,33 @@ public final class DefinitionResolver {
         // §13.3.6.9 the named form "voor elke <tijdlijn>" adopts the granularity of the standalone Tijdlijn
         // definition of that name (registered in pass 1). The reference drops the leading lidwoord the
         // definition carries ("elke periode …" vs "Tijdlijn de periode …") and may wrap across lines, so
-        // match on a whitespace-collapsed, lidwoord-stripped name. An unresolved name (e.g. the definition
-        // lives in another file) leaves the attribute untagged — no granularity claimed, not faked.
+        // match on a whitespace-collapsed, lidwoord-stripped name. An unresolved name is an ERROR: the member
+        // would lose its timeline without a word and be written as a single value. "voor elke 2 maanden" without
+        // its start date is such a name, since the multi-period form (§13.3.6.7) does not parse without one.
         if (t.ELKE() != null && t.tijdlijnNaam() != null) {
             String ref = normaliseerTijdlijnNaam(src(t.tijdlijnNaam()));
-            return model.tijdlijnen.stream()
+            Granulariteit g = model.tijdlijnen.stream()
                     .filter(tl -> normaliseerTijdlijnNaam(tl.naam()).equals(ref))
                     .map(Tijdlijn::granulariteit).findFirst().orElse(null);
+            if (g == null) {
+                String geschreven = src(t.tijdlijnNaam()).trim().replaceAll("\\s+", " ");
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "tijdlijn 'voor elke " + geschreven + "': " + (MEERVOUDIGE_PERIODE.matcher(geschreven).matches()
+                                ? "een tijdlijn van meer perioden noemt haar startdatum ('voor elke " + geschreven
+                                        + " startend op <datum>', §13.3.6.7); zonder startdatum leest deze frontend '"
+                                        + geschreven + "' als de naam van een tijdlijn, en die is niet gedeclareerd"
+                                : "de tijdlijn '" + geschreven + "' is niet gedeclareerd ('Tijdlijn " + geschreven
+                                        + " heeft tijdvakken van …', §13.3.6.10)"),
+                        t.getStart().getLine()));
+            }
+            return g;
         }
         return null;
     }
+
+    /** A multi-period form written as a name: a count and a plural time unit ("2 maanden"). */
+    private static final java.util.regex.Pattern MEERVOUDIGE_PERIODE =
+            java.util.regex.Pattern.compile("(?i)\\d+ (dagen|weken|maanden|kwartalen|jaren)");
 
     /** Normalise a tijdlijn name for cross-reference matching — the shared model implementation
      *  (§9.9 startpuntbepaling resolution matches by the same rule). */

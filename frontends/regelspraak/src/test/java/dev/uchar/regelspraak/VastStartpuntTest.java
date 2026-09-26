@@ -197,6 +197,30 @@ class VastStartpuntTest {
                 emissie(attribuut("voor elk jaar startend op dag 1 van maand 1")));
     }
 
+    /** A multi-period timeline names its start date (§13.3.6.7); written without one, "voor elke 2 maanden" parses
+     *  as a reference to a named timeline "2 maanden", and a named timeline nobody declares is refused as well.
+     *  Measured before this: the attribute, the characteristic and the parameter were written without any timeline,
+     *  as single values, with {@code diagnostics: []}. */
+    @Test void een_tijdlijn_zonder_startdatum_of_declaratie_wordt_geweigerd() {
+        String zonderStart = "een tijdlijn van meer perioden noemt haar startdatum ('voor elke 2 maanden startend op "
+                + "<datum>', §13.3.6.7); zonder startdatum leest deze frontend '2 maanden' als de naam van een tijdlijn, "
+                + "en die is niet gedeclareerd";
+        RegelSpraakModel m = Resolver.resolve(KOP + """
+                    de waarde Bedrag voor elke 2 maanden;
+                    is gecharterd kenmerk (bijvoeglijk) voor elke 2 maanden;
+                    de toeslag Bedrag voor elke zeejaar;
+
+                Parameter de heffing : Bedrag voor elke 2 maanden
+                """);
+        assertEquals(List.of("ERROR (line 3): tijdlijn 'voor elke 2 maanden': " + zonderStart,
+                        "ERROR (line 4): tijdlijn 'voor elke 2 maanden': " + zonderStart,
+                        "ERROR (line 5): tijdlijn 'voor elke zeejaar': de tijdlijn 'zeejaar' is niet gedeclareerd "
+                                + "('Tijdlijn zeejaar heeft tijdvakken van …', §13.3.6.10)",
+                        "ERROR (line 7): tijdlijn 'voor elke 2 maanden': " + zonderStart),
+                m.diagnostics.stream().map(RegelSpraakModel.Diagnostic::toString).toList());
+        emitteert(attribuut("voor elke 2 maanden startend op 01-01-2024"), facet("month", 2, "2024-01-01"));
+    }
+
     /** WF-032: a start point determination anchors a timeline declared with a VARIABLE start (§9.9), and the verifier
      *  refuses one for a fixed-start timeline. Measured on the frontend before this: a WARNING, the document written,
      *  and {@code WF-032 FAIL /rules/startPointDeterminations/0: start point for fixed-start timeline 'penningjaar'}. */
