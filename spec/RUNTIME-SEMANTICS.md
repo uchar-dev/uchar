@@ -4746,13 +4746,48 @@ normative:
   timeline into "its value today": the only bridges from a timeline to
   a scalar are the dedicated collapses (ch. 3.6, 3.9) and the explicit
   point read (ch. 3.3, `IR-SPEC.md` ch. 4.3a). The evaluation date is
-  available to expressions solely as the execution-date context value —
-  a `ContextValue` named `evaluationDate` (`Rekendatum` until L5, the v0
-  `Constante` until L4; day precision; its sibling
-  `evaluationYear`, a whole number, is not yet exercised by any corpus case
-  and every executor refuses it by name with one sentence — the reference
-  interpreter and the ASP backend at evaluation, the Drools backend before
-  lowering — recorded in `IR-SPEC.md` ch. 4.1).
+  available to expressions solely through the two context values: a
+  `ContextValue` named `evaluationDate` (`Rekendatum` until L5, the v0
+  `Constante` until L4; day precision), and its sibling
+  `evaluationYear`, the calendar year of that date (below).
+
+**The execution year.** A `ContextValue` named `evaluationYear` denotes
+the calendar year of the evaluation date: a whole number without a unit,
+the value `yearOf(evaluationDate)` has (ch. 3.8). It is derived from the
+session's one date and is never supplied beside it. A session carries
+one date (ch. 8.1); a year supplied as a second value could contradict
+that date, and a rule that reads both would then read a date from one
+year and a year number that names another. It needs the date exactly as
+`evaluationDate` does: where the session carries none (`asOfDate` null)
+the read faults — "the evaluationYear context value needs an evaluation
+date; the case carries asOfDate null" — and never falls back to a year
+of its own. Its type is fixed by `IR-SPEC.md` ch. 4.1 and not declared
+in the document: `Number`, `whole: true`, `decimals: 0`, no `unit`. All
+three executors carry it: the reference interpreter at evaluation, the
+ASP backend as a program constant written at translation time, and both
+Drools branches from the session's evaluation date. The golden
+`jutterswet-rekenjaar` pins the same outcomes in all three. *History:*
+from L4 until 2026-09-26 (card `rekenjaar-als-waarde`) the name was
+admitted but no document carried it, and every executor refused it by
+name in one sentence.
+
+**Worked example (absolute; `ref/` tests verbatim, WV-8.2-rekenjaar-\*).**
+Document: object type `Vondst` with three whole-number attributes,
+`vondstjaar`, `meldjaar` and `aantal verstreken penningjaren`; two
+rules, *het meldjaar van een Vondst* = `evaluationYear`, and *het
+aantal verstreken penningjaren van een Vondst* = `evaluationYear` min
+`vondstjaar`. One Vondst V1 with `vondstjaar` 2025.
+
+| session `asOfDate` | `meldjaar` of V1 | `aantal verstreken penningjaren` of V1 |
+|---|---|---|
+| 2026-12-31 | **2026** | **1** |
+| 2027-01-01 | **2027** | **2** |
+| null | the evaluation faults: "the evaluationYear context value needs an evaluation date; the case carries asOfDate null" | — |
+
+The first two sessions are one day apart and one year apart: the year
+follows the calendar, not a count of days. At 2026-12-31 the value is
+the number 2026 without a unit, equal to `yearOf(evaluationDate)` in
+the same session.
 
 **The bound day is not a session value.** Until L4 `IR-SPEC.md` ch. 4.1
 admitted a third context-value name, `de dag`; since L4 it is the node
