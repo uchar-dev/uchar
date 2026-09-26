@@ -1700,7 +1700,11 @@ The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
 or `make ir FILE="bron.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
 sources are read as one test document. A model with an ERROR writes neither
 the IR document nor a case file; each diagnostic names its file and the line
-in it.
+in it. Every file is decided before one is written, and a map that already
+holds a case file this document does not write is refused (it is not
+cleaned): a case left beside the new ones would be replayed against an IR
+document it was not written for. A case file the run writes itself is
+overwritten.
 
 ### Refusals
 
@@ -1802,7 +1806,10 @@ prefix `scenario: `, placeholders in angle brackets:
   geen exacte omrekening`, `de tekstwaarde draagt een «expressie», en een
   waarde in een scenario is letterlijk`
 - and from the CLI: `het document draagt geen scenario, dus er valt geen
-  casebestand te schrijven`
+  casebestand te schrijven`, and `de map <map> draagt al casebestanden die
+  dit document niet schrijft (<bestanden>); ruim ze op of kies een andere map,
+  want een casebestand naast de nieuwe speelt tegen een IR-document waarvoor
+  het niet geschreven is`
 
 ### Witnesses
 

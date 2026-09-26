@@ -608,6 +608,26 @@ class ScenarioLoweringTest {
         assertEquals(List.of(), bestanden(d.resolve("cases")), "een weigering schrijft geen casebestand");
     }
 
+    @Test void de_casesmodus_weigert_een_map_met_een_casebestand_dat_zij_niet_schrijft() throws IOException {
+        // before: the old file stayed beside the new ones, and the run wrote them and exited 0
+        Path d = Files.createTempDirectory("scenario-cli");
+        Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);
+        Path scen = Files.writeString(d.resolve("scenario.rgs"), SCENARIO);
+        Files.createDirectories(d.resolve("cases"));
+        Files.writeString(d.resolve("cases/case9-oud.json"), "{}\n");
+        Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
+        assertEquals(1, u.code(), u.tekst());
+        assertTrue(u.tekst().contains("draagt al casebestanden die dit document niet schrijft (case9-oud.json)"),
+                u.tekst());
+        assertEquals(List.of("case9-oud.json"), bestanden(d.resolve("cases")), "de weigering schrijft geen casebestand");
+        assertFalse(Files.exists(d.resolve("ir.json")), "de weigering schrijft geen IR-document");
+        // a case file the run writes itself is overwritten
+        Files.delete(d.resolve("cases/case9-oud.json"));
+        Files.writeString(d.resolve("cases/case1-een-wrak.json"), "{}\n");
+        assertEquals(0, cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen).code());
+        assertEquals(CASEBESTAND, Files.readString(d.resolve("cases/case1-een-wrak.json")));
+    }
+
     @Test void een_document_zonder_scenario_heeft_niets_te_loweren() throws IOException {
         Path d = Files.createTempDirectory("scenario-cli");
         Path bron = Files.writeString(d.resolve("bron.rgs"), MODEL);

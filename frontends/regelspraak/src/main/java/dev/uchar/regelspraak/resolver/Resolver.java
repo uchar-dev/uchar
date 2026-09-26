@@ -250,19 +250,35 @@ public final class Resolver {
         m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d + plaats.apply(d)));
         dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(irModel)
                 .forEach(d -> System.err.println("  " + d));
-        java.nio.file.Files.createDirectories(map);
-        java.util.List<String> geschreven = new java.util.ArrayList<>();
+        // Everything is decided before anything is written: the IR document and every case file as text, and the
+        // case files the map already holds that this run would not write — a case left there beside the new ones
+        // would be replayed against an IR document it was not written for. Written until the fix round of
+        // 2026-09-26 file by file, a refusal after the first file left half a case directory behind.
+        String ir = dev.uchar.regelspraak.emit.IrEmitter.emit(irModel);
+        java.util.Map<String, String> cases = new java.util.LinkedHashMap<>();
         for (int i = 0; i < b.scenarios().size(); i++) {
             var s = b.scenarios().get(i);
-            String naam = dev.uchar.regelspraak.emit.CaseEmitter.bestandsnaam(i + 1, s);
-            java.nio.file.Files.writeString(map.resolve(naam), dev.uchar.regelspraak.emit.CaseEmitter.emit(s),
-                    java.nio.charset.StandardCharsets.UTF_8);
-            geschreven.add(naam);
+            cases.put(dev.uchar.regelspraak.emit.CaseEmitter.bestandsnaam(i + 1, s),
+                    dev.uchar.regelspraak.emit.CaseEmitter.emit(s));
         }
-        java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(irModel),
-                java.nio.charset.StandardCharsets.UTF_8);
+        java.util.List<String> vreemd = new java.util.ArrayList<>();
+        if (java.nio.file.Files.isDirectory(map))
+            try (var inhoud = java.nio.file.Files.list(map)) {
+                inhoud.map(p -> p.getFileName().toString())
+                        .filter(n -> n.matches("case.*\\.json") && !cases.containsKey(n)).sorted().forEach(vreemd::add);
+            }
+        if (!vreemd.isEmpty()) {
+            System.out.println("  ERROR: scenario: de map " + map + " draagt al casebestanden die dit document niet "
+                    + "schrijft (" + String.join(", ", vreemd) + "); ruim ze op of kies een andere map, want een "
+                    + "casebestand naast de nieuwe speelt tegen een IR-document waarvoor het niet geschreven is");
+            return 1;
+        }
+        java.nio.file.Files.createDirectories(map);
+        for (var e : cases.entrySet())
+            java.nio.file.Files.writeString(map.resolve(e.getKey()), e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+        java.nio.file.Files.writeString(out, ir, java.nio.charset.StandardCharsets.UTF_8);
         System.out.printf("cases: %d casebestand(en) naar %s (%s); ir: resolvedRegels=%d geschreven naar %s%n",
-                geschreven.size(), map, String.join(", ", geschreven), irModel.resolvedRegels.size(), out);
+                cases.size(), map, String.join(", ", cases.keySet()), irModel.resolvedRegels.size(), out);
         return 0;
     }
 
