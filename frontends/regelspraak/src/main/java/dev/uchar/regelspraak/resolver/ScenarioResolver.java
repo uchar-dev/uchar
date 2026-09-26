@@ -1113,17 +1113,46 @@ public final class ScenarioResolver {
         if (!toekenbaar(doel, ruw, line, wat)) return null;
         Eenheid doelE = doel == null ? null : doel.eenheidOf();
         if (bronE != null && doelE != null && bronE.convertibleNaar(doelE) && bronE.vereistOmrekening(doelE)) {
-            BigDecimal[] f = bronE.exacteHerschaalFactoren(doelE);
-            if (f == null) {
+            BigInteger[] fb = exacteHerschaling(bronE, doelE);
+            if (fb == null) {
                 fout(line, wat + ": tussen de eenheden '" + bronE.weergave() + "' en '" + doelE.weergave() + "' is geen "
                         + "exacte omrekening");
                 return null;
             }
-            BigInteger[] fb = breuk(f[0], f[1]);
             return Waarde.vanGetal(lexeem(breuk[0].multiply(fb[0]), breuk[1].multiply(fb[1])));
         }
         // no restatement: the written number in the emitter's lexeme, so a case file and an IR document agree
         return Waarde.vanGetal(dev.uchar.regelspraak.emit.IrEmitter.getalLexeem(tekst));
+    }
+
+    /** The exact factor {num, den} that restates a quantity in {@code van} as one in {@code naar}: each unit's
+     *  factor to the shared canonical as its system declares it, a rate's denominators inverted. The unit records
+     *  carry those factors rounded to 16 digits, and a restatement through them was a rounding: "2 gtd" with
+     *  "gtd = 1/3 etm" became 0.6666666666666666 etm where the wire and every executor read 2/3. Null where a unit
+     *  has no exact factor. */
+    private BigInteger[] exacteHerschaling(Eenheid van, Eenheid naar) {
+        BigInteger[] a = exacteFactor(van.teller()), b = exacteFactor(naar.teller());
+        if (a == null || b == null) return null;
+        BigInteger num = a[0].multiply(b[1]), den = a[1].multiply(b[0]);
+        if (van.noemer() != null && naar.noemer() != null) {
+            BigInteger[] c = exacteFactor(van.noemer()), d = exacteFactor(naar.noemer());
+            if (c == null || d == null) return null;
+            num = num.multiply(d[0]).multiply(c[1]);
+            den = den.multiply(d[1]).multiply(c[0]);
+        }
+        return new BigInteger[]{num, den};
+    }
+
+    /** The exact factor of {@code e} to its canonical: the fraction its system declares, else a whole decimal factor
+     *  (a unit that is its own canonical, a built-in unit), else null — as the emitter writes it on the wire. */
+    private BigInteger[] exacteFactor(Eenheid e) {
+        BigDecimal f = e.factorNaarCanoniek();
+        if (f == null) return null;
+        RegelSpraakModel.Eenheidstelsel es = e.stelsel() == null ? null : model.eenheidstelsels.get(e.stelsel());
+        RegelSpraakModel.Eenheidstelsel.Factor x = es == null ? null : es.exacteFactoren.get(e.afkorting());
+        if (x != null) return new BigInteger[]{x.num(), x.den()};
+        return f.signum() > 0 && f.stripTrailingZeros().scale() <= 0 ? new BigInteger[]{f.toBigIntegerExact(), BigInteger.ONE}
+                : null;
     }
 
     /** {@code a / b} as a reduced fraction of integers, the denominator positive. */

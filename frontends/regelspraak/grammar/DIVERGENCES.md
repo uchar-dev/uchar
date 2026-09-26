@@ -1681,7 +1681,9 @@ serialiser, so a case file and an IR document share one shape.
   (`2400,00` is `2400.00`), a fraction is reduced (`6/8` is `3/4`, `1_1/2` is
   `3/2`) and a whole number where it reduces to one (`2_0/5` is `2`). A
   restated value is a terminating decimal without trailing zeros (`1,5 t` is
-  `1500` kg), or else a reduced fraction (`1 voet` is `1/6` vadem). A
+  `1500` kg), or else a reduced fraction (`1 voet` is `1/6` vadem), restated
+  through the fractions the unit declarations write, as the wire carries them
+  (`2 gtd` with `gtd = 1/3 etm` is `2/3` etm). A
   date-time carries its three millisecond digits, as the language writes
   every date-time and as the IR literal's lexeme does; a hand-written case
   whose date-time leaves the fraction out, which the case format admits (31

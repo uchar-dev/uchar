@@ -372,6 +372,32 @@ class ScenarioTypeGateTest {
         assertEquals("250", sit.instantie("W").attributen().get(1).waarde().getal());
     }
 
+    @Test void de_omrekening_rekent_met_de_gedeclareerde_breuk() {
+        // before: through the unit records' 16-digit factors, "2 gtd" became 0.6666666666666666 etm, where the wire
+        // writes the factor 1/3 and every executor reads 2/3
+        ScenarioBundel b = ScenarioResolver.resolve("""
+                Eenheidsysteem Getijden
+                    het etmaal (mv: etmalen) etm
+                    het getij (mv: getijden) gtd = 1/3 etm
+
+                Objecttype de Vloed (mv: Vloeden)
+                    de duur Numeriek (getal) met eenheid etm;
+                    de rust Numeriek (getal) met eenheid gtd;
+
+                Scenario s
+                Gegeven is de volgende situatie:
+                een Vloed V
+                - de duur is 2 gtd
+                - de rust is 1 etm
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        Instantie v = b.scenarios().get(0).situatie().instantie("V");
+        assertEquals("2/3", v.attributen().get(0).waarde().getal());
+        assertEquals("3", v.attributen().get(1).waarde().getal());
+    }
+
     @Test void een_geschreven_getal_is_het_lexeem_van_de_emitter() {
         // one normalisation for a case file and an IR document: before, "2400,00" was read through a decimal of its own
         ScenarioBundel b = resolve("Situatie getallen:\neen Vondst V\n- de sleepafstand is 6/8 vadem\n"
