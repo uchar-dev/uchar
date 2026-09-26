@@ -194,14 +194,24 @@ CP="$FE/out:$ANTLR:$JAR"
 mkdir -p "$TMP/klassen"
 javac -cp "$CP:$JUNIT" -d "$TMP/klassen" $SRC 2>"$TMP/javac.err" || { cat "$TMP/javac.err" >&2; fail "the route suite does not compile"; }
 
+# A red run shows each failing test by name with the first line of its message, then the console's counts. The
+# tail of the output does not: a route failure's message carries two whole renders, which push the test names
+# out of any tail (measured: 129 lines for two red goldens, their names on lines 3 and 59). Output that names no
+# failing test (a class that does not load, a discovery error) is shown as its tail instead.
+junit_rood() {
+    fouten=$(printf '%s\n' "$1" | grep -E '^(Failures \([0-9]+\):|  JUnit Jupiter:|    => )')
+    if [ -n "$fouten" ]; then printf '%s\n' "$fouten" >&2; else printf '%s\n' "$1" | tail -40 >&2; fi
+    printf '%s\n' "$1" | grep -E '^\[ *[0-9]+ tests (found|skipped|successful|failed|aborted) *\]$' >&2
+}
+
 # the JUnit console's own summary: N successful, and nothing failed or skipped
 junit() {
     out=$(java -jar "$JUNIT" execute --class-path "$CP:$TMP/klassen" "$@" --details=summary --disable-banner 2>&1)
     status=$?
-    if [ $status -ne 0 ]; then printf '%s\n' "$out" | tail -40 >&2; return 1; fi
+    if [ $status -ne 0 ]; then junit_rood "$out"; return 1; fi
     ok=$(printf '%s\n' "$out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests successful *\]$/\1/p' | tail -1)
     skipped=$(printf '%s\n' "$out" | sed -n 's/^\[ *\([0-9][0-9]*\) tests skipped *\]$/\1/p' | tail -1)
-    [ -n "$ok" ] && [ "${skipped:-1}" -eq 0 ] || { printf '%s\n' "$out" | tail -20 >&2; return 1; }
+    [ -n "$ok" ] && [ "${skipped:-1}" -eq 0 ] || { junit_rood "$out"; return 1; }
     echo "$ok"
 }
 
