@@ -3342,16 +3342,17 @@ let fixed_grid_span ctx (lo, hi) =
         (lo, hi) ot.attribuut_granulariteit)
     (lo, hi) ctx.doc.objecttypen
 
-(* calendar as data: buckets over the case's endpoint span (shared by
-   the ch. 3.7 pro-rata fold, the ch. 3.8 day count and — since
-   2026-09-11 — the ch. 3.9 whole-period qualifier, which is why the two
-   emitters sit here, above the expression/condition recursion, rather
-   than beside the pro-rata that first needed them). The buckets are the
-   periods of [grid]: the calendar's for the qualifier and the pro-rata,
-   the target's own for the day count, whose fixed start point lays them
-   (RUNTIME-SEMANTICS ch. 3.2) — ref's one grid function, so the two
-   executors cut at the same walls. The span is [fixed_grid_span]'s. *)
-let emit_bucket_calendar ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
+(* the periods of a grid as data, one [p_b(start, next, days)] fact each,
+   over the span [fixed_grid_span] gives (shared by the ch. 3.7 pro-rata
+   fold, the ch. 3.8 day count and — since 2026-09-11 — the ch. 3.9
+   whole-period qualifier, which is why the two emitters sit here, above
+   the expression/condition recursion, rather than beside the pro-rata that
+   first needed them). The periods are those of [grid]: the calendar's
+   buckets for the qualifier and the pro-rata, the target's own grid for
+   the day count, whose fixed start point lays them (RUNTIME-SEMANTICS
+   ch. 3.2) — ref's one grid function, so the two executors cut at the
+   same walls. *)
+let emit_grid_buckets ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
   let endpoints =
     Eval.SMap.fold
       (fun _ (i : Uchar_ref.World.instance) acc ->
@@ -3500,7 +3501,7 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
   if gevuld then begin
     (* the qualifier's OWN grid, never the attribute's declared granularity *)
     let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
-    emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+    emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
     emit_value_days ctx ~p ~attr:a ~sat:[];
     emit ctx
       "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
@@ -4394,7 +4395,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              over-counts a single subject's share — conservative in the
              safe direction, and loud.
              The sister calendars (the gedurende clip and
-             [emit_bucket_calendar]) dedupe ENDPOINTS and then bound the
+             [emit_grid_buckets]) dedupe ENDPOINTS and then bound the
              single endpoint SPAN, never a sum of per-member segments;
              both were checked against this requirement and are sound as
              written. *)
@@ -6394,7 +6395,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~(gp : geheel
   let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "gpv%d" ctx.fresh in
-  emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
   emit_value_days ctx ~p ~attr:a ~sat:(sat_atoms @ [ Printf.sprintf "%s %s %s" vt sym bt ]);
   (* per TOUCHED bucket: fail when the satisfying days fall short of the
      bucket's whole calendar length. A gap day contributes to _t and not to
@@ -7174,7 +7175,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "gp%d" ctx.fresh in
-      emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+      emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
       emit_true_days ctx ~p ~k;
       (* satisfied days per touched bucket: the true days for the positive
          test, their complement inside the bucket for "gedurende … niet" —
@@ -9219,7 +9220,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : granulariteit
        ch. 3.2)";
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "pr%d" ctx.fresh in
-  emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
+  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
   emit_true_days ctx ~p ~k;
   let ta = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let tb = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
@@ -9286,7 +9287,7 @@ let translate_aantal_dagen ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : granularitei
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "adg%d" ctx.fresh in
   (* the target's periods: the calendar's, or its fixed start point's (ch. 3.2) *)
-  emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx ot) a);
+  emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx ot) a);
   emit_true_days ctx ~p ~k;
   let vterm = if ta = 1 then "TD" else Printf.sprintf "(TD*%d)" ta in
   let body =
