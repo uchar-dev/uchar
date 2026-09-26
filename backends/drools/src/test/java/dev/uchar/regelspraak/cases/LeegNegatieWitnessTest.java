@@ -6,13 +6,19 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,8 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>The fixture is a corpus golden</b>, {@code corpus/golden/jutterswet-waardemelding}, read from there. It
  * lived in this suite's resources until the ASP backend carried the three forms it faulted on ({@code condition
  * kind not translated}; card clingo-leeg-negatie, 2026-09-23). Gates 5, 6 and 12 now replay the document itself;
- * this class keeps what the golden cannot say: the unbound step, the mirrored unnegated twin, and the two
- * whole-period refusals (negated and unnegated).
+ * this class keeps what the golden cannot say: the unbound step and the mirrored unnegated twin. It also plays the
+ * whole-period forms on this document (RUNTIME-SEMANTICS ch. 3.9, decided 2026-09-26; their own golden is
+ * {@code corpus/golden/jutterswet-gehele-periode-leeg}), where both branches refused them by name until that date,
+ * and pins the one clause of that decision no case input can reach: a leeg segment touches no bucket.
  *
  * <p><b>Hand computation</b> ({@code jutterswet-waardemelding/case.json}): W1 has tarief 312, W2 none. S1 (lengte 8, werf W1),
  * S2 (no lengte, werf W1), S3 (lengte 5, no werf), S4 (no lengte, werf W2). meldpremie = 40 iff lengte is niet
@@ -77,66 +85,107 @@ class LeegNegatieWitnessTest {
         BeideTakken.groen(tijdelijk(ir), gespiegeld(geval()), "leeg / gevuld unnegated");
     }
 
-    /** Under the ch. 3.9 whole-period qualifier the norm is OPEN: {@code negatie} is the inner, per-day negation
-     *  (the qualifier's own is {@code GeheelPeriode.niet}), and ch. 3.9 gives the leeg test the touched-days
-     *  threshold and every other test days(B) without saying which a NEGATED leeg test takes — under days(B) the
-     *  sister swap would be exact, under touched days not. ref faults on every whole-period leeg/gevuld test, so
-     *  both branches refuse the negated form by name rather than choose a threshold. */
-    @Test void de_negatie_onder_geheel_periode_weigert_in_beide_takken() throws Exception {
-        ObjectNode ir = ir();
-        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "month");
-        // meldpremie's rule alone: the ongemeten rule reads the now-temporal lengte unqualified and would be
-        // excluded for THAT, hiding the refusal under test.
-        ArrayNode een = JSON.createArrayNode().add(IrPad.rulesLijst(ir, "rules").get(0));
-        IrPad.rules(ir).set("rules", een);
-        ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
-        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", false);
-        Path p = tijdelijk(ir);
-        // lengte is now month-granular, so the case supplies it as a timeline (a scalar input would be refused
-        // for that reason first and hide the one under test). Before the fix both branches PLAYED this document
-        // and answered the unnegated whole-period test: `verwacht 40, werkelijk leeg; verwacht leeg, werkelijk 40`.
-        ObjectNode c = (ObjectNode) geval();
-        for (JsonNode inst : c.get("input").get("instances"))
-            if (inst.get("attributes").has("lengte"))
-                ((ObjectNode) inst.get("attributes")).set("lengte", JSON.readTree(
-                        "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"2026-01-01\",\"value\":{\"number\":\"8\"}}]}"));
-        for (boolean viaDrl : new boolean[] { false, true }) {
-            IrLoader.Refusal e = assertThrows(IrLoader.Refusal.class, () -> CaseRunner.speelCase(p, c, viaDrl),
-                    (viaDrl ? "drl-tekst" : "exec-model") + " refuses the negated whole-period leeg test");
-            assertTrue(e.getMessage().contains("Predicaat.negatie"), e.getMessage());
-            assertTrue(e.getMessage().contains("threshold of the negated test is not normed"), e.getMessage());
-        }
+    /** Under the ch. 3.9 whole-period qualifier the inner negation is still per day (decided 2026-09-26): the leeg
+     *  and the gevuld test both take the threshold days(B), so the negated leeg test IS the gevuld test and the
+     *  negated gevuld test the leeg test, which is exactly the loader's lowering. S3 carries its lengte over the
+     *  first half of 2025 only, and that row tells this reading from one that negates the folded verdict:
+     *  "gedurende het gehele jaar niet leeg" fails on S3, where "niet gedurende het gehele jaar leeg" holds. Until
+     *  that date both branches refused the negated form by name, on the then open threshold. */
+    @Test void de_negatie_onder_geheel_periode_speelt_als_de_zustertest() throws Exception {
+        speelGeheelJaar("empty", true, false, "S1", "S2", "S4");
+        speelGeheelJaar("filled", true, false, "S2", "S4");
     }
 
     /** The UNNEGATED leeg and gevuld tests under the same qualifier, with and without the qualifier's own
-     *  {@code niet}. ch. 3.9 norms both (touched days for leeg, days(B) for gevuld), but ref faults on every
-     *  whole-period leeg/gevuld test and the ASP backend refuses it in ref's words. Before this refusal both
-     *  branches PLAYED all four variants (measured 2026-09-23, card drools-heeltijdvak-leegtest): an answer where
-     *  the other two executors refuse by name, with nothing to check it against. */
-    @Test void de_ongenegeerde_test_onder_geheel_periode_weigert_in_beide_takken() throws Exception {
-        for (String soort : new String[] { "empty", "filled" })
-            for (boolean niet : new boolean[] { false, true }) {
-                ObjectNode ir = ir();
-                IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "month");
-                IrPad.rules(ir).set("rules",
-                        JSON.createArrayNode().add(IrPad.rulesLijst(ir, "rules").get(0)));
-                ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
-                vw.put("kind", soort).put("negated", false);
-                vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", niet);
-                Path p = tijdelijk(ir);
-                ObjectNode c = (ObjectNode) geval();
-                for (JsonNode inst : c.get("input").get("instances"))
-                    if (inst.get("attributes").has("lengte"))
-                        ((ObjectNode) inst.get("attributes")).set("lengte", JSON.readTree(
-                                "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"2026-01-01\",\"value\":{\"number\":\"8\"}}]}"));
-                for (boolean viaDrl : new boolean[] { false, true }) {
-                    String wat = (viaDrl ? "drl-tekst" : "exec-model") + " refuses whole-period " + soort
-                            + (niet ? " (niet gedurende)" : "");
-                    IrLoader.Refusal e = assertThrows(IrLoader.Refusal.class, () -> CaseRunner.speelCase(p, c, viaDrl), wat);
-                    assertTrue(e.getMessage().contains("Predicaat.periode"), wat + ": " + e.getMessage());
-                    assertTrue(e.getMessage().contains("ref executes neither the leeg fold"), wat + ": " + e.getMessage());
-                }
-            }
+     *  {@code niet}, which complements the folded verdict. S2 and S4 carry no lengte and pass both tests. Until
+     *  2026-09-26 both branches refused all four by name, because ref did not execute the fold. */
+    @Test void de_ongenegeerde_test_onder_geheel_periode_speelt() throws Exception {
+        speelGeheelJaar("empty", false, false, "S2", "S4");
+        speelGeheelJaar("empty", false, true, "S1", "S3");
+        speelGeheelJaar("filled", false, false, "S1", "S2", "S4");
+        speelGeheelJaar("filled", false, true, "S3");
+    }
+
+    /** A time-dependent PARAMETER as the operand passes WF-043 and is folded by no executor: the loader refuses it
+     *  in the sentence ref and the ASP backend give, so the three executors refuse it with one voice. Before
+     *  2026-09-26 the exec-model branch skipped the rule and the DRL-text branch markered it, each in its own
+     *  words. */
+    @Test void een_parameter_onder_geheel_periode_weigert_in_de_zin_van_ref() throws Exception {
+        ObjectNode ir = ir();
+        ObjectNode par = ((ArrayNode) ir.get("model").get("parameters")).addObject();
+        par.put("node", "Parameter").put("name", "havenpeil");
+        par.set("datatype", IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte").get("datatype").deepCopy());
+        IrPad.timeline(par, "month");
+        ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
+        vw.put("kind", "filled").put("negated", false);
+        vw.putObject("operand").put("node", "ParameterReference").put("parameter", "havenpeil")
+                .putObject("source").put("snippet", "het havenpeil");
+        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", false);
+        IrLoader.Refusal e = assertThrows(IrLoader.Refusal.class, () -> IrLoader.loadAll(ir));
+        assertTrue(e.getMessage().endsWith("Predicate.operand (a whole-period leeg/gevuld test over the parameter"
+                + " 'havenpeil' is not executed: the fold reads the timeline of an attribute)"), e.getMessage());
+    }
+
+    /** ch. 3.9 reads the touched buckets of the leeg and gevuld tests off {@code read} (ch. 3.1): a leeg segment
+     *  reads as a gap and touches no bucket by itself. No case input can carry one — the case format has no leeg
+     *  value — and ch. 3.5's temporal sum is what writes them, so the runtime fold is pinned directly. Before
+     *  2026-09-26 the gevuld check counted the leeg segment's bucket as touched and failed it. */
+    @Test void een_leeg_segment_raakt_geen_emmer() {
+        List<Object> alleenLeeg = List.of(new Seg("2025-01-01", "2026-01-01", null));
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(alleenLeeg, "JAAR", 6, null), "gevuld: no bucket is touched");
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(alleenLeeg, "JAAR", 8, null), "leeg: every day reads leeg");
+        List<Object> halfEnLeeg = List.of(new Seg("2025-01-01", "2025-07-01", "4"),
+                new Seg("2025-07-01", "2026-01-01", null));
+        assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfEnLeeg, "JAAR", 6, null), "gevuld: 181 of 365 days");
+        assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfEnLeeg, "JAAR", 8, null), "leeg: a half year of 4");
+    }
+
+    /** meldpremie's rule alone, its test set to {@code soort}/{@code negatie} under "gedurende het gehele jaar"
+     *  (with the qualifier's own {@code niet}), over a month-granular lengte: S1 carries 8 over the whole of 2025,
+     *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code treffers}, leeg on the
+     *  others. The ongemeten rule is dropped because it reads the now-temporal lengte without a qualifier and
+     *  would be refused for THAT; the werfpremie rule because it reads the werf, not the lengte. */
+    private void speelGeheelJaar(String soort, boolean negatie, boolean niet, String... treffers) throws Exception {
+        ObjectNode ir = ir();
+        IrPad.timeline(IrPad.attribute(IrPad.objectType(ir, "Schuit"), "lengte"), "month");
+        IrPad.rules(ir).set("rules", JSON.createArrayNode().add(IrPad.rulesLijst(ir, "rules").get(0)));
+        ObjectNode vw = (ObjectNode) IrPad.versie(ir, "rules", 0, 0).get("condition");
+        vw.put("kind", soort).put("negated", negatie);
+        vw.putObject("wholePeriod").put("node", "WholePeriod").put("granularity", "year").put("negated", niet);
+        ObjectNode c = (ObjectNode) geval();
+        for (JsonNode inst : c.get("input").get("instances")) {
+            String label = inst.get("label").asText();
+            String tot = label.equals("S1") ? "2026-01-01" : "2025-07-01";
+            if (inst.get("attributes").has("lengte"))
+                ((ObjectNode) inst.get("attributes")).set("lengte", JSON.readTree(
+                        "{\"timeline\":[{\"from\":\"2025-01-01\",\"to\":\"" + tot + "\",\"value\":"
+                                + inst.get("attributes").get("lengte") + "}]}"));
+        }
+        ArrayNode rijen = JSON.createArrayNode();
+        for (String label : new String[] { "S1", "S2", "S3", "S4" }) {
+            ObjectNode r = rijen.addObject().put("label", label).put("attribute", "meldpremie");
+            if (Arrays.asList(treffers).contains(label)) {
+                r.put("kind", "attributeValue");
+                r.putObject("value").put("number", "40");
+            } else r.put("kind", "attributeEmpty");
+        }
+        rijen.addObject().put("kind", "consistent");
+        c.set("expected", rijen);
+        BeideTakken.groen(tijdelijk(ir), c, "whole-period " + soort + (negatie ? " negated" : "")
+                + (niet ? ", niet gedurende" : ""));
+    }
+
+    /** Shape-faithful segment stand-in for the runtime fold: the {@code van}/{@code tot}/{@code waarde} properties
+     *  it reads reflectively, a null waarde being a leeg segment. */
+    public static final class Seg {
+        private final LocalDate van, tot; private final BigDecimal waarde;
+        Seg(String van, String tot, String waarde) {
+            this.van = LocalDate.parse(van); this.tot = LocalDate.parse(tot);
+            this.waarde = waarde == null ? null : new BigDecimal(waarde);
+        }
+        public LocalDate getVan() { return van; }
+        public LocalDate getTot() { return tot; }
+        public BigDecimal getWaarde() { return waarde; }
     }
 
     // ---------------- fixtures ----------------

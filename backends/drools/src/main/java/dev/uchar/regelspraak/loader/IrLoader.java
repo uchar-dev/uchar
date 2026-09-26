@@ -2020,15 +2020,13 @@ public final class IrLoader {
      *  a dozen sites and none of them reads {@code negatie} — the RegelSpraak frontend never writes it on these two
      *  soorten — so answering it once at the wire boundary covers every site, own and navigated, in both branches.
      *  {@code negatie} is the INNER negation, per day; the qualifier's own "niet gedurende …" is
-     *  {@code GeheelPeriode.niet} and is untouched here. Under the ch. 3.9 whole-period qualifier the swap stays
-     *  unanswered: ch. 3.9 gives the leeg test the touched-days threshold and every other test days(B), and which
-     *  of the two a NEGATED leeg test takes is fixed nowhere — under days(B) the swap would be exact, under
-     *  touched days it would not. ref faults on every whole-period leeg/gevuld test, so this backend refuses the
-     *  negated one by name rather than pick a threshold the norm has not chosen.
+     *  {@code GeheelPeriode.niet} and is untouched here.
      *
-     *  <p>The UNNEGATED whole-period leeg/gevuld test is normed (touched days for leeg, days(B) for gevuld), but
-     *  ref faults on it and the ASP backend refuses it in ref's words, so no executor pins what an answer should
-     *  be; both branches used to play it. It is refused here too, under its own key, until ref executes the fold. */
+     *  <p>The swap holds under the ch. 3.9 whole-period qualifier as well (decided 2026-09-26): the leeg and the
+     *  gevuld test both take the threshold days(B), a gap day being a leeg day, so a negated test asks for the
+     *  complementary days of the same touched buckets, which is exactly its sister test. Until that date both
+     *  forms were refused here, the negated one because the leeg test still had a threshold of its own and the
+     *  unnegated one because ref did not execute the fold. */
     private Conditie.Predicaat predicaat(JsonNode n) {
         String p = padVan(n);
         Conditie.Predicaatsoort soort = enumWaarde(Spelling.PREDICATE_KIND, "Predicate.kind", tekst(n, p, "kind"),
@@ -2036,18 +2034,18 @@ public final class IrLoader {
         boolean negatie = bool(n, "negated");
         Conditie.GeheelPeriode periode = geheelPeriode(knoopVeld(n, "wholePeriod"));
         boolean leegOfGevuld = soort == Conditie.Predicaatsoort.LEEG || soort == Conditie.Predicaatsoort.GEVULD;
-        if (leegOfGevuld && periode != null && !negatie)
-            throw new Refusal("Predicaat.periode",
-                    "a leeg/gevuld test under a whole-period qualifier (ch. 3.9): ref executes neither the leeg fold (touched days) nor the gevuld fold (days(B)), so this backend does not answer the form either");
+        // WF-043 admits a time-dependent PARAMETER as the operand of a whole-period test, and no executor folds one:
+        // ref and the ASP backend refuse it in this sentence, the wire's own spelling of the name included
+        JsonNode operand = knoopVeld(n, "operand");
+        if (leegOfGevuld && periode != null && operand != null && "ParameterReference".equals(operand.path("node").asText()))
+            throw new Refusal("Predicate.operand", "a whole-period leeg/gevuld test over the parameter '"
+                    + operand.path("parameter").asText() + "' is not executed: the fold reads the timeline of an attribute");
         if (leegOfGevuld && negatie) {
-            if (periode != null)
-                throw new Refusal("Predicaat.negatie",
-                        "a negated leeg/gevuld test under a whole-period qualifier (ch. 3.9): the threshold of the negated test is not normed");
             soort = soort == Conditie.Predicaatsoort.LEEG ? Conditie.Predicaatsoort.GEVULD : Conditie.Predicaatsoort.LEEG;
             negatie = false;
         }
         // the day kind is written on a predicate of kind dayKind alone: absent elsewhere, the record's null
-        return new Conditie.Predicaat(soort, expr(knoopVeld(n, "operand")), text(n, "dayKind"), negatie,
+        return new Conditie.Predicaat(soort, expr(operand), text(n, "dayKind"), negatie,
                 intOf(n, "digits"),
                 periode, bron(n));
     }

@@ -3321,6 +3321,96 @@ let emit_value_days ctx ~p ~attr ~sat =
   rules "t" "_" "";
   rules "g" "V" (String.concat "" (List.map (fun a -> ", " ^ a) sat))
 
+(* ch. 3.9, the LEEG and GEVULD tests under the whole-period qualifier: the
+   name of a predicate that holds for [subject] when the fold FAILS, so the
+   caller reads its negation for the plain qualifier and the atom itself
+   under the qualifier's "niet", as on the comparison arm.
+
+   [soort] and [negatie] together pick one of two folds, because the inner
+   negation is per day and "niet leeg" holds on exactly the days "gevuld"
+   does (ch. 3.9, decided 2026-09-26):
+   - GEVULD: per touched bucket the filled days must reach the bucket's
+     calendar length — the comparison's _t/_g pair with no condition on the
+     value, so _g is every segment day. This encoding writes leeg as
+     absence, so the touched buckets are the ones a FILLED segment reaches,
+     which is ch. 3.1's reading and ref's.
+   - LEEG: every day of every touched bucket must read leeg, and each
+     touched bucket holds a filled day, so the fold fails exactly when the
+     subject has any filled segment at all; the grid does not enter.
+   A timeline with no segments derives no failure and passes, and so does a
+   navigated operand whose hop reaches nothing: the hop is a positive
+   literal in the helper that carries the failure over to the subject. *)
+let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~operand
+    ~(gp : geheel_periode) : string =
+  let a, hops =
+    match operand with
+    | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; navigatie_bindingen; _ })
+      when attr_temporal_decl ctx ~otype:ot ~attr:a ->
+        let hops =
+          match navigatie_bindingen with
+          | None ->
+              if norm ot <> norm subject_ot then
+                fault
+                  "an attribute reference without a path is the subject's own read, so its \
+                   subjectType is the subject type '%s' — '%s' names another type, which only a \
+                   navigation reaches"
+                  subject_ot ot;
+              []
+          | Some rbs ->
+              let env =
+                { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
+                  as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None }
+              in
+              let roles = List.map (Eval.bound_role env) rbs in
+              List.iter
+                (fun (r : rol) ->
+                  if r.rol_meervoudig then
+                    fault "navigation over the to-many role %S in a scalar slot is refused"
+                      (Option.value r.rol_naam ~default:"?"))
+                roles;
+              roles
+        in
+        (a, hops)
+    | Some (Parameter_ref { parameter; _ }) ->
+        fault
+          "a whole-period leeg/gevuld test over the parameter '%s' is not executed: the fold reads the \
+           timeline of an attribute"
+          (Option.value parameter ~default:"?")
+    | _ ->
+        (* WF-043, in the verifier's sentence, as ref refuses it *)
+        fault "wholePeriod qualifier on a non-time-dependent operand"
+  in
+  let gevuld = (soort = Gevuld) <> negatie in
+  ctx.fresh <- ctx.fresh + 1;
+  let p = Printf.sprintf "gpl%d" ctx.fresh in
+  if gevuld then begin
+    (* the qualifier's OWN grid, never the attribute's declared granularity *)
+    let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
+    emit_bucket_calendar ctx ~p ~g;
+    emit_value_days ctx ~p ~attr:a ~sat:[];
+    emit ctx
+      "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
+       Tot."
+      p p p p
+  end
+  else emit ctx "%s(S) :- tl(S,%s,KV,KT,_), KV < KT." p (str a);
+  match hops with
+  | [] -> Printf.sprintf "%s(%s)" p subject
+  | roles ->
+      let atoms, target =
+        List.fold_left
+          (fun (atoms, cur) (r : rol) ->
+            let n = fresh ctx "N" in
+            (atoms @ [ Printf.sprintf "rol(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
+          ([], subject) roles
+      in
+      let q = fresh ctx "gplnav" in
+      emit ctx "%s(%s) :- %s." q subject
+        (String.concat ", "
+           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: atoms)
+           @ [ Printf.sprintf "%s(%s)" p target ]));
+      Printf.sprintf "%s(%s)" q subject
+
 (* ch. 3.9a, the quantifier fold's short circuit, for the unbound-parameter
    guard in its matrix. ref settles the contributors first and then reads the
    matrix member by member in the contributors' own order, stopping at the
@@ -6724,13 +6814,18 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
   | Vergelijking { op; links; rechts; periode = Some gp; _ } ->
       let p = whole_period_fails ctx ~subject ~subject_ot ~op ~links ~rechts ~gp in
       [ (if gp.gp_niet then "" else "not ") ^ Printf.sprintf "%s(%s)" p subject ]
-  (* ch. 3.9's remaining value test. A qualified leeg/gevuld predicate would
-     otherwise fall through to the catch-all — loud, but under a message that
-     says nothing about the clause it belongs to, and not the message ref
-     gives for the same node. Named here so the two executors refuse the same
-     form in the same words. *)
-  | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
-      fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
+  (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier,
+     executed here since 2026-09-26 (the fold is
+     [whole_period_leeg_gevuld_fails]); until then this arm refused the form
+     by name. It stands before the plain leeg/gevuld arm, which takes the
+     unqualified test only. "Negation complements the folded result": the
+     qualifier's "niet gedurende …" reads the failure atom itself, the plain
+     form reads its negation. *)
+  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; periode = Some gp; _ } ->
+      let fails =
+        whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~operand ~gp
+      in
+      [ (if gp.gp_niet then "" else "not ") ^ fails ]
   | Vergelijking { op = (Gelijk | Ongelijk) as op; links; rechts; periode = None; _ }
     when is_struct_operand ctx links || is_struct_operand ctx rechts ->
       (* ch. 11.2: record equality is POSITIVE ground-term unification, the
@@ -7523,9 +7618,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : conditie) : string list =
       (* the leeg/gevuld tests (ch. 1.2; ref eval: leeg is `value = leeg`,
          gevuld its complement, `negated` the inner pointwise negation of
          either — so negated leeg IS gevuld and negated gevuld IS leeg). The
-         whole-period form never reaches here: the named refusal above takes
-         every qualified test, negated or not, because the threshold of a
-         negated leeg test under ch. 3.9 is not normed.
+         whole-period form never reaches here: the arm above takes every
+         qualified test, negated or not (ch. 3.9).
 
          Gevuld is the operand's binding atoms as a positive join. A struct
          operand rides struct_term (its val atom), any other operand rides

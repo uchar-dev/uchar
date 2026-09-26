@@ -45,12 +45,10 @@ negations in its shared condition translation, refused the document
 instead. The unnegated twin and the unbound written step are pinned in the
 backends' own suites (`LeegNegatieWitnessTest`, `test_clingo.ml`), not
 here, because a golden carries one expectation set. Under a whole-period
-qualifier the test is refused, and four red cases hold that refusal and
-close the square `kind` × `negated`: `corpus/rood/leegnegatie-heel-tijdvak`
-and `corpus/rood/gevuldnegatie-heel-tijdvak` for the negated tests, whose
-threshold is not normed, and `corpus/rood/leegtest-heel-tijdvak` and
-`corpus/rood/gevuldtest-heel-tijdvak` for the unnegated ones, which
-ch. 3.9 norms and no executor runs.
+qualifier the same negation is per day as well (`RUNTIME-SEMANTICS.md`
+ch. 3.9, decided 2026-09-26), and `corpus/golden/jutterswet-gehele-periode-leeg`
+carries the four forms there. Until that date the form was refused under
+the qualifier, and four red cases held the refusal.
 
 No `bron.rgs`: RegelSpraak spells no "is niet leeg", and the frontend
 never writes `negated: true` on these two kinds. The document is hand-written

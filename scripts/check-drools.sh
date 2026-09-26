@@ -984,7 +984,16 @@ EXPECTED_CHANNEL=(
 # three executors; both branches read the year from the session's evaluation date through the
 # runtime's rsRekenjaar. The exec branch plays both cases, PLAYED 2, with ref's and clingo's values.
 # EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=210
+# 210 -> 211 (2026-09-26, card gehele-periode-leeg-gevuld): jutterswet-gehele-periode-leeg, new and
+# hand-computed — the leeg and gevuld tests under the whole-period qualifier (RUNTIME-SEMANTICS
+# ch. 3.9, decided that day): both tests, the inner negation of each, the qualifier's own negation, the
+# month grid and a navigated operand, over an entirely empty, an entirely filled and a partly filled
+# timeline. Both branches refused the form in the loader until that day (the negated test on its then
+# open threshold, the unnegated one because ref did not execute the fold); the loader now lowers the
+# inner negation to the sister test under the qualifier too, and the runtime fold was already there.
+# The exec branch plays the three cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED
+# moves by one as well.
+EXPECTED_PLAYED=211
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1286,7 +1295,10 @@ DRL_CHANNEL=(
 # 179 -> 180 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new. This branch lowers the
 # node as rsRekenjaar(rekendatum) and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED
 # above.
-EXPECTED_DRL_PLAYED=180
+# 180 -> 181 (2026-09-26, card gehele-periode-leeg-gevuld): jutterswet-gehele-periode-leeg, new. This
+# branch plays its three cases once the shared loader no longer refuses the form, PLAYED 3. Reason
+# block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=181
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

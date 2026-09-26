@@ -6057,6 +6057,132 @@ let () =
                 periode = Some { gp_jaar = true; gp_niet = false }; bron = None })))
     "whole-period qualifier on a comparison whose operands are not a time-dependent attribute"
 
+(* ch. 3.9, the LEEG and GEVULD tests under the whole-period qualifier
+   (decided 2026-09-26), the chapter's worked-example table verbatim: one
+   threshold, days(B), for both tests; a day that reads leeg satisfies the
+   leeg test and fails the gevuld test; the inner negation per day, so the
+   negated leeg test IS the gevuld test; the qualifier's own negation on
+   the folded verdict. Schuit.bemanning and Werf.havengeld are
+   month-granular, and the qualifier's grid is the year unless a row says
+   month. Until that date this arm faulted by name on every form below. *)
+let () =
+  let ligplaats : string * Ir_v0.Ast.feittype =
+    ( "ligplaats",
+      {
+        ft_naam = Some "ligplaats";
+        wederkerig = false;
+        rollen =
+          [
+            { rol_naam = Some "werf"; rol_objecttype_naam = Some "Werf"; rol_meervoud = None;
+              rol_meervoudig = false };
+            { rol_naam = Some "schuit"; rol_objecttype_naam = Some "Schuit";
+              rol_meervoud = Some "schuiten"; rol_meervoudig = true };
+          ];
+      } )
+  in
+  let maandelijks naam (otn, (o : Ir_v0.Ast.objecttype)) =
+    (otn, { o with attribuut_granulariteit = [ (naam, Some Ir_v0.Ast.Maand) ] })
+  in
+  let doc =
+    { empty_doc with
+      objecttypen =
+        [ maandelijks "bemanning" (ot "Schuit" [ ("bemanning", Some num0) ] []);
+          maandelijks "havengeld" (ot "Werf" [ ("havengeld", Some num0) ] []) ];
+      feittypen = [ ligplaats ] }
+  in
+  let toets ?(soort : Ir_v0.Ast.predicaat_soort = Leeg) ?(negatie = false) ?(jaar = true)
+      ?(niet = false) operand : Ir_v0.Ast.conditie =
+    Predicaat
+      { soort; operand = Some operand; dagsoort = None; negatie; cijfers = 0;
+        periode = Some { gp_jaar = jaar; gp_niet = niet }; bron = None }
+  in
+  let met_tijdlijn naam tl (i : World.instance) =
+    match tl with [] -> i | _ -> { i with World.tls = World.SMap.add naam tl World.SMap.empty }
+  in
+  (* the own operand: S1's bemanning *)
+  let ev ?soort ?negatie ?jaar ?niet tl =
+    let w = World.add_instance World.empty (met_tijdlijn "bemanning" tl (inst "S1" "Schuit" [])) in
+    Eval.eval_cond (env_of doc) w (World.get w "S1") ~err:no_err
+      (toets ?soort ?negatie ?jaar ?niet (aref "bemanning" "Schuit"))
+  in
+  let vier = n "4" in
+  let rij_b = [ seg "2025-01-01" "2026-01-01" vier ] in
+  let rij_c = [ seg "2025-01-01" "2025-07-01" vier ] in
+  let rij_d = [ seg "2025-01-01" "2025-07-01" vier; seg "2025-07-01" "2027-01-01" (n "5") ] in
+  (* the table: columns leeg, gevuld, niet leeg, niet gevuld, niet gedurende … leeg *)
+  let rij naam tl (leeg_, gevuld, niet_leeg, niet_gevuld, niet_gedurende) =
+    check ("WV-3.9-leeg-" ^ naam ^ "-leeg") (ev tl = leeg_);
+    check ("WV-3.9-leeg-" ^ naam ^ "-gevuld") (ev ~soort:Gevuld tl = gevuld);
+    check ("WV-3.9-leeg-" ^ naam ^ "-niet-leeg") (ev ~negatie:true tl = niet_leeg);
+    check ("WV-3.9-leeg-" ^ naam ^ "-niet-gevuld") (ev ~soort:Gevuld ~negatie:true tl = niet_gevuld);
+    check ("WV-3.9-leeg-" ^ naam ^ "-niet-gedurende") (ev ~niet:true tl = niet_gedurende)
+  in
+  rij "a-geen-segmenten" [] (true, true, true, true, false);
+  rij "b-heel-jaar" rij_b (false, true, true, false, true);
+  rij "c-half-jaar" rij_c (false, false, false, false, true);
+  rij "d-twee-segmenten-twee-jaar" rij_d (false, true, true, false, true);
+  (* the MONTH grid: the qualifier's own, never the declared granularity *)
+  check "WV-3.9-leeg-maand-c-gevuld" (ev ~soort:Gevuld ~jaar:false rij_c);
+  let over_de_jaargrens = [ seg "2025-07-01" "2026-07-01" vier ] in
+  check "WV-3.9-leeg-jaargrens-jaar-gevuld" (not (ev ~soort:Gevuld over_de_jaargrens));
+  check "WV-3.9-leeg-jaargrens-maand-gevuld" (ev ~soort:Gevuld ~jaar:false over_de_jaargrens);
+  let half_januari = [ seg "2025-01-15" "2025-03-01" vier ] in
+  check "WV-3.9-leeg-deelmaand-jaar-gevuld" (not (ev ~soort:Gevuld half_januari));
+  check "WV-3.9-leeg-deelmaand-maand-gevuld" (not (ev ~soort:Gevuld ~jaar:false half_januari));
+  check "WV-3.9-leeg-deelmaand-jaar-leeg" (not (ev half_januari));
+  check "WV-3.9-leeg-deelmaand-maand-leeg" (not (ev ~jaar:false half_januari));
+  (* an EXPLICIT leeg segment reads as a gap (ch. 3.1) and touches no bucket:
+     alone it reads as row a, after a half year of 4 as row c *)
+  let alleen_leeg = [ seg "2025-01-01" "2026-01-01" leeg ] in
+  check "WV-3.9-leeg-expliciet-alleen-leeg" (ev alleen_leeg);
+  check "WV-3.9-leeg-expliciet-alleen-gevuld" (ev ~soort:Gevuld alleen_leeg);
+  let half_en_leeg = [ seg "2025-01-01" "2025-07-01" vier; seg "2025-07-01" "2026-01-01" leeg ] in
+  check "WV-3.9-leeg-expliciet-half-leeg" (not (ev half_en_leeg));
+  check "WV-3.9-leeg-expliciet-half-gevuld" (not (ev ~soort:Gevuld half_en_leeg));
+  (* the NAVIGATED operand, one to-one hop: a hop that reaches nothing gives
+     the null timeline, which passes both tests *)
+  let havengeld_van_de_werf : Ir_v0.Ast.expr =
+    Attribuut_ref
+      { attribuut = Some "havengeld"; objecttype = Some "Werf"; bron = None;
+        navigatie_bindingen = Some [ { rb_feittype = "ligplaats"; rb_rol = "werf" } ] }
+  in
+  let ev_nav ?soort ?niet ~link tl =
+    let w1 = met_tijdlijn "havengeld" tl (inst "W1" "Werf" []) in
+    let s1 =
+      { (inst "S1" "Schuit" []) with
+        links = (if link then World.SMap.add "werf" [ "W1" ] World.SMap.empty else World.SMap.empty) }
+    in
+    let w = List.fold_left World.add_instance World.empty [ w1; s1 ] in
+    Eval.eval_cond (env_of doc) w (World.get w "S1") ~err:no_err
+      (toets ?soort ?niet havengeld_van_de_werf)
+  in
+  check "WV-3.9-leeg-nav-geen-koppeling-gevuld" (ev_nav ~soort:Gevuld ~link:false rij_b);
+  check "WV-3.9-leeg-nav-geen-koppeling-leeg" (ev_nav ~link:false rij_b);
+  check "WV-3.9-leeg-nav-geen-koppeling-niet-gedurende"
+    (not (ev_nav ~soort:Gevuld ~niet:true ~link:false rij_b));
+  check "WV-3.9-leeg-nav-heel-jaar-gevuld" (ev_nav ~soort:Gevuld ~link:true rij_b);
+  check "WV-3.9-leeg-nav-heel-jaar-leeg" (not (ev_nav ~link:true rij_b));
+  check "WV-3.9-leeg-nav-half-jaar-gevuld" (not (ev_nav ~soort:Gevuld ~link:true rij_c));
+  (* the operands no executor folds, refused by name: a parameter (WF-043
+     admits a time-dependent one), and a non-temporal attribute (WF-043's
+     own refusal, kept as a belt in the verifier's sentence) *)
+  expect_fault_msg "WV-3.9-leeg-parameter-operand"
+    (fun () ->
+      let w = World.add_instance World.empty (inst "S1" "Schuit" []) in
+      Value.Bool
+        (Eval.eval_cond (env_of doc) w (World.get w "S1") ~err:no_err
+           (toets (Parameter_ref { parameter = Some "havengeldtarief"; bron = None }))))
+    "a whole-period leeg/gevuld test over the parameter 'havengeldtarief' is not executed: the fold \
+     reads the timeline of an attribute";
+  expect_fault_msg "WV-3.9-leeg-niet-tijdsafhankelijk"
+    (fun () ->
+      let vlak = { empty_doc with objecttypen = [ ot "Schuit" [ ("bemanning", Some num0) ] [] ] } in
+      let w = World.add_instance World.empty (inst "S1" "Schuit" [ ("bemanning", n "4") ]) in
+      Value.Bool
+        (Eval.eval_cond (env_of vlak) w (World.get w "S1") ~err:no_err
+           (toets ~soort:Gevuld (aref "bemanning" "Schuit"))))
+    "wholePeriod qualifier on a non-time-dependent operand"
+
 (* WV-3.10-geldigheid-datumlezing: the validity gate reads its three dates —
    the case's asOfDate and the form's validity.from / .to — through the
    strict date reader, and refuses a non-date by position. Until 2026-09-23

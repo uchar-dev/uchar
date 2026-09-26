@@ -2838,8 +2838,9 @@ public final class ExecModelTranspiler {
 
     /** Build the §8.2 model representation of a whole-period-qualified predicate, or null when outside the supported
      *  set (mirrors DrlTranspiler.geheelPeriodeCall exactly): a numeric comparison of a temporal attribute vs a scalar
-     *  grens, a GEVULD over a temporal attribute, or a temporal kenmerkcheck; a mixed-unit comparison / DATUM ordering
-     *  / LEEG / ELFPROEF / NUMERIEK-met-exact whole-period form -> null (an honest skip, symmetric with the DRL marker). */
+     *  grens, a GEVULD or LEEG over a temporal attribute, or a temporal kenmerkcheck; a mixed-unit comparison / DATUM
+     *  ordering / ELFPROEF / NUMERIEK-met-exact whole-period form -> null (an honest skip, symmetric with the DRL
+     *  marker). */
     private Gp82 geheelPeriode82(Conditie c, Conditie.GeheelPeriode gp, Objecttype subject) {
         String gran = gp.jaar() ? "JAAR" : "MAAND";
         if (c instanceof Conditie.Vergelijking v) {

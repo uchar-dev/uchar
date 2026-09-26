@@ -1,0 +1,182 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Werf",
+        "attributes": {
+          "havengeld": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "bemanning": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "4"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "werf": [
+            "W1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Schuit",
+        "attributes": {
+          "bemanning": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2025-07-01",
+                "value": {
+                  "number": "4"
+                }
+              },
+              {
+                "from": "2025-07-01",
+                "to": "2027-01-01",
+                "value": {
+                  "number": "5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "leegtoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "vultoeslag",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "nietleegtoeslag",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "nietvultoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "onderbrekingstoeslag",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "maandtoeslag",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "werftoeslag",
+      "value": {
+        "number": "70"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "leegtoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "vultoeslag",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "nietleegtoeslag",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "nietvultoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "onderbrekingstoeslag",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "maandtoeslag",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "werftoeslag",
+      "value": {
+        "number": "70"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

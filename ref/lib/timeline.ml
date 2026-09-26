@@ -244,6 +244,39 @@ let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.
       satisfied >= b.s_tot - b.s_van)
     geraakt
 
+(* ch. 3.9, the LEEG and GEVULD tests over a value timeline:
+
+     satisfied-days(B, gevuld) = the days of B on which tl reads a value
+     satisfied-days(B, leeg)   = days(B) - satisfied-days(B, gevuld)
+
+   with the threshold days(B) for both, like every other test. The buckets
+   are the ones the FILLED segments touch: ch. 3.1 makes an explicit leeg
+   segment and a gap the same thing under [read], so a bucket only an
+   explicit leeg segment reaches is not touched, where
+   [geheel_periode_waarde] above would count it — the ASP backend cannot
+   write such a segment at all, so this is also where the two executors
+   agree. Every bucket touched this way holds at least one filled day, so
+   the leeg fold comes down to "no filled day anywhere" and the grid does
+   not change its verdict; it is still computed per bucket, so the code
+   reads as the formula does.
+
+   [gevuld] selects the test after the INNER negation, which is per day:
+   "niet leeg" holds on exactly the days "gevuld" does, so the caller passes
+   the sister test. The qualifier's own negation is the caller's too. *)
+let geheel_periode_leeg_gevuld (g : Ir_v0.Ast.granulariteit) ~(gevuld : bool) ~(tl : t) : bool =
+  let gevuld_segs = List.filter (fun s -> match s.s_waarde with Empty -> false | _ -> true) (normalise tl) in
+  List.for_all
+    (fun (b : segment) ->
+      let dagen_b = b.s_tot - b.s_van in
+      let gevulde_dagen =
+        match b.s_waarde with
+        | Num (q, _) -> Q.to_int q
+        | v -> fault "whole-period day count is not numeric: %s" (Value.to_string v)
+      in
+      let satisfied = if gevuld then gevulde_dagen else dagen_b - gevulde_dagen in
+      satisfied >= dagen_b)
+    (aantal_dagen_in g (List.map (fun s -> (s.s_van, s.s_tot)) gevuld_segs))
+
 (* anchored bucket walls: every wall computed directly from the anchor —
    never by incrementing the previous wall — so a month-end anchor
    clamps consistently (ch. 3.2) *)

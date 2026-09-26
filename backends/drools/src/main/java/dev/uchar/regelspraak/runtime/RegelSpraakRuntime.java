@@ -1194,7 +1194,8 @@ public final class RegelSpraakRuntime {
      *  for an empty/leeg timeline (no period to violate; the caller's NIET-prefix complements). {@code toets}: 0..5 =
      *  KLEINER/KLEINER_OF_GELIJK/GROTER/GROTER_OF_GELIJK/GELIJK/ONGELIJK of {@code waarde} vs {@code grens} (a leeg
      *  waarde never satisfies), 6 = GEVULD (any non-leeg waarde), 7 = covered (a §8.2 kenmerk true-period — any
-     *  covering segment). The single implementation; the DRL imports it (single-runtime principle). */
+     *  covering segment), 8 = LEEG (a leeg waarde). The single implementation; the DRL imports it (single-runtime
+     *  principle). */
     public static boolean rsGeheelPeriode(List<?> tijdlijn, String granulariteit, int toets, BigDecimal grens) {
         if (tijdlijn == null) return true;
         boolean jaar = "JAAR".equals(granulariteit);
@@ -1203,6 +1204,10 @@ public final class RegelSpraakRuntime {
         for (Object o : tijdlijn) {
             LocalDate van = segVan(o), tot = segTot(o);
             if (van == null || tot == null || !van.isBefore(tot)) continue;
+            // RUNTIME-SEMANTICS ch. 3.9 reads the touched buckets of the gevuld test off read (ch. 3.1): a leeg segment
+            // reads as a gap and touches no bucket by itself. The comparison checks (0..5) still count it, a question
+            // ch. 3.9 leaves open for them.
+            if (toets == 6 && segWaarde(o) == null) continue;
             boolean ok = segmentVoldoet(toets, segWaarde(o), grens);
             LocalDate cursor = jaar ? van.withDayOfYear(1) : van.withDayOfMonth(1);
             while (cursor.isBefore(tot)) {
@@ -1223,8 +1228,10 @@ public final class RegelSpraakRuntime {
             long totaal = ChronoUnit.DAYS.between(bucket, eind);
             long goed = goedDagen.getOrDefault(bucket, 0L);
             // §8.2 LEEG (toets 8): a GAP day carries no value, so it is ALSO leeg — only the TOUCHED days must be
-            // leeg-satisfying (compare against the bucket's touched days). Every other check requires the WHOLE calendar
-            // period to satisfy (a gap leaves fewer satisfying days than the period has -> fail).
+            // leeg-satisfying (compare against the bucket's touched days). That is RUNTIME-SEMANTICS ch. 3.9's days(B)
+            // threshold with a gap day counted as a leeg day, and it passes exactly when no segment carries a value.
+            // Every other check requires the WHOLE calendar period to satisfy (a gap leaves fewer satisfying days than
+            // the period has -> fail).
             long drempel = toets == 8 ? en.getValue() : totaal;
             if (goed < drempel) return false;   // a moment in this calendar period fails the check
         }

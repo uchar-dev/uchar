@@ -4335,6 +4335,57 @@ let () =
          ~rechts:kv_vangst_ref ())
     ~tijdlijn:(heel_jaar "30") ~waar:false ()
 
+(* "de vangst van de Schuit is gedurende de gehele ⟨periode⟩ leeg / gevuld":
+   the ch. 3.9 leeg and gevuld tests (decided 2026-09-26). [negatie] is the
+   inner, per-day negation; [niet] the qualifier's own. *)
+let kv_leeg ?(soort = "empty") ?(negatie = false) ?(jaar = true) ?(niet = "false")
+    ?(operand = kv_vangst_ref) () =
+  Printf.sprintf
+    {|{ "node": "Predicate", "kind": "%s", "operand": %s, "negated": %b, "digits": 0,
+        "wholePeriod": { "node": "WholePeriod", "granularity": "%s", "negated": %s },
+        "source": { "snippet": "de vangst van de Schuit gedurende de gehele periode leeg of gevuld" } }|}
+    soort operand negatie (if jaar then "year" else "month") niet
+
+let () =
+  (* THE ch. 3.9 LEEG/GEVULD TABLE, verbatim: the timelines of rows a-d, the
+     five columns leeg, gevuld, niet leeg, niet gevuld and niet gedurende …
+     leeg, then the month-grid rows. ref is the control that the rows are
+     right; clingo must reach the same verdicts by its own route. *)
+  let rij ~name ~toets ~tijdlijn ~waar =
+    let ir = gpv_doc ~toets () and case_text = gpv_case ~tijdlijn ~waar in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  let tabel naam tijdlijn (leeg_, gevuld, niet_leeg, niet_gevuld, niet_gedurende) =
+    let r kolom toets waar = rij ~name:("ch3.9 leeg-" ^ naam ^ " " ^ kolom) ~toets ~tijdlijn ~waar in
+    r "leeg" (kv_leeg ()) leeg_;
+    r "gevuld" (kv_leeg ~soort:"filled" ()) gevuld;
+    r "niet leeg" (kv_leeg ~negatie:true ()) niet_leeg;
+    r "niet gevuld" (kv_leeg ~soort:"filled" ~negatie:true ()) niet_gevuld;
+    r "niet gedurende leeg" (kv_leeg ~niet:"true" ()) niet_gedurende
+  in
+  let jaar_2025 = seg ~van:"2025-01-01" ~tot:"2026-01-01" ~waarde:"4" in
+  let half_2025 = seg ~van:"2025-01-01" ~tot:"2025-07-01" ~waarde:"4" in
+  tabel "a geen segmenten" "" (true, true, true, true, false);
+  tabel "b heel 2025" jaar_2025 (false, true, true, false, true);
+  tabel "c half 2025" half_2025 (false, false, false, false, true);
+  tabel "d twee segmenten, twee jaar"
+    (half_2025 ^ ", " ^ seg ~van:"2025-07-01" ~tot:"2027-01-01" ~waarde:"5")
+    (false, true, true, false, true);
+  (* the qualifier's own grid: six whole months pass where the year failed *)
+  rij ~name:"ch3.9 leeg-maand c gevuld" ~toets:(kv_leeg ~soort:"filled" ~jaar:false ())
+    ~tijdlijn:half_2025 ~waar:true;
+  let jaargrens = seg ~van:"2025-07-01" ~tot:"2026-07-01" ~waarde:"4" in
+  rij ~name:"ch3.9 leeg-jaargrens jaar gevuld" ~toets:(kv_leeg ~soort:"filled" ())
+    ~tijdlijn:jaargrens ~waar:false;
+  rij ~name:"ch3.9 leeg-jaargrens maand gevuld" ~toets:(kv_leeg ~soort:"filled" ~jaar:false ())
+    ~tijdlijn:jaargrens ~waar:true;
+  rij ~name:"ch3.9 leeg-jaargrens maand leeg" ~toets:(kv_leeg ~jaar:false ()) ~tijdlijn:jaargrens
+    ~waar:false
+  (* the off-grid row of the chapter (4 on [2025-01-15, 2025-03-01)) is ref's
+     alone: a case input sits on the attribute's declared month grid, so no
+     frame here can carry it *)
+
 let () =
   (* THE FIVE PINS of the quantifier fold over a whole-period comparison,
      `all`, `> 40`, year grid. *)
@@ -4579,20 +4630,26 @@ let () =
      kwantor-asymmetrie — the verdict rows are above). What it does not carry
      is a matrix [cond_atoms] itself refuses, and that refusal must still reach
      the surface THROUGH the fold rather than be swallowed by the reification.
-     The whole-period leeg test is the cheapest such form: ch. 3.9 states it,
-     this backend refuses it by name, and it is refused here in those same
-     words. *)
+     The whole-period leeg test over a time-dependent PARAMETER is the cheapest
+     such form: WF-043 admits it, no executor folds it, and it is refused here
+     in the words ref uses. (Until 2026-09-26 every whole-period leeg test was
+     refused, and this flank used the own attribute.) *)
   faults_with ~name:"ch3.9a ALLE over een matrix die de vertaler zelf weigert"
     ~ir:
       (kv_doc
          ~toets:
-           ({|{ "node": "Predicate", "kind": "empty", "operand": |} ^ kv_vangst_ref
-           ^ {|, "negated": false, "digits": 0,
-               "wholePeriod": { "node": "WholePeriod", "granularity": "year", "negated": false },
-               "source": { "snippet": "de vangst van de Schuit gedurende het gehele jaar leeg is" } }|})
-         ())
+           (kv_leeg
+              ~operand:
+                {|{ "node": "ParameterReference", "parameter": "havenpeil",
+                    "source": { "snippet": "het havenpeil" } }|}
+              ())
+         ()
+      |> replace ~tok:{|"parameters": []|}
+           ~by:
+             ({|"parameters": [ { "node": "Parameter", "name": "havenpeil", "datatype": |} ^ kv_num0
+             ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } } ]|}))
     ~case_text:vals
-    ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope";
+    ~needle:"a whole-period leeg/gevuld test over the parameter 'havenpeil' is not executed";
   (* the matrix that is absent, and the two REFUSALS this node still carries
      on its quantifier field. Until 2026-09-16 the counting quantors were
      refused here too — they are built since, and the rows above are their
@@ -7964,36 +8021,122 @@ let () =
       clingo_matches ~name ~ir ~case_text)
     [ ("ALLE over a LEEG matrix", "all", "empty", false);
       ("GEEN over a negated LEEG matrix", "none", "empty", true) ];
-  (* the whole-period qualifier: ref faults on every leeg/gevuld test under
-     it, and the threshold of the NEGATED test is an open point of the norm
-     (ch. 3.9 gives leeg touched-days and every other test days(B)). The
-     negated forms must refuse in ref's words, not be answered by the new
-     arm — measured already so before this card; pinned so a reordering of
-     the arms cannot let them through. *)
-  List.iter
-    (fun soort ->
-      let ir =
-        leeg_doc ~werf_attrs:""
-          ~regels:
-            [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
-                (leeg_pred ~soort ~negatie:true
-                   ~periode:{|{ "node": "WholePeriod", "granularity": "year", "negated": false }|}
-                   (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)) ]
-        |> replace ~tok:(attribuut "lengte" leeg_num)
-             ~by:
-               ({|{ "node": "Attribute", "name": "lengte", "datatype": |} ^ leeg_num
-               ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } }|})
-      in
-      let case_text =
-        leeg_case
-          ~lengte:(fun n ->
-            {|{ "timeline": [ { "from": "2025-01-01", "to": "2026-01-01", "value": { "number": "|}
-            ^ n ^ {|" } } ] }|})
-          [ {|{ "kind": "consistent" }|} ]
-      in
-      faults_with ~name:(soort ^ " negated under a whole-period qualifier") ~ir ~case_text
-        ~needle:"whole-period leeg/gevuld test is ch. 3.9 scope, not executed here")
-    [ "empty"; "filled" ]
+  (* the whole-period qualifier (ch. 3.9, decided 2026-09-26): the inner
+     negation stays per day, so under the qualifier too the negated leeg test
+     is the gevuld test and the negated gevuld test the leeg test. Until that
+     date both forms were refused here in ref's words, on an open threshold.
+     S1 carries its lengte (8) over the whole of 2025, S3 its lengte (5) over
+     the first half only; S2 and S4 carry none and pass every test
+     vacuously. S3 is the row that tells the inner negation from the
+     qualifier's: "niet leeg" needs a value on every day and fails there. *)
+  let periode ?(niet = "false") () =
+    {|{ "node": "WholePeriod", "granularity": "year", "negated": |} ^ niet ^ " }"
+  in
+  let temporeel naam doc =
+    replace ~tok:(attribuut naam leeg_num)
+      ~by:
+        ({|{ "node": "Attribute", "name": "|} ^ naam ^ {|", "datatype": |} ^ leeg_num
+        ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } }|})
+      doc
+  in
+  let tijdlijn van tot n =
+    {|{ "timeline": [ { "from": "|} ^ van ^ {|", "to": "|} ^ tot ^ {|", "value": { "number": "|} ^ n
+    ^ {|" } } ] }|}
+  in
+  let eigen_frame ~name ~soort ~negatie ?niet hits =
+    let ir =
+      leeg_doc ~werf_attrs:""
+        ~regels:
+          [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+              (leeg_pred ~soort ~negatie ~periode:(periode ?niet ())
+                 (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)) ]
+      |> temporeel "lengte"
+    in
+    let case_text =
+      leeg_case
+        ~lengte:(function "8" -> tijdlijn "2025-01-01" "2026-01-01" "8" | n -> tijdlijn "2025-01-01" "2025-07-01" n)
+        (leeg_rijen ~attr:"meldpremie" ~waarde:"40" ~labels:schuiten hits)
+    in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  eigen_frame ~name:"LEEG negated, whole year" ~soort:"empty" ~negatie:true [ "S1"; "S2"; "S4" ];
+  eigen_frame ~name:"GEVULD negated, whole year" ~soort:"filled" ~negatie:true [ "S2"; "S4" ];
+  eigen_frame ~name:"LEEG, whole year" ~soort:"empty" ~negatie:false [ "S2"; "S4" ];
+  eigen_frame ~name:"GEVULD, whole year" ~soort:"filled" ~negatie:false [ "S1"; "S2"; "S4" ];
+  eigen_frame ~name:"LEEG, niet gedurende het gehele jaar" ~soort:"empty" ~negatie:false
+    ~niet:"true" [ "S1"; "S3" ];
+  (* the NAVIGATED operand, one to-one hop to the werf's tarief: S1 and S2
+     reach W1, S3 reaches nothing and S4 reaches W2, which carries no tarief.
+     A hop that reaches nothing and a timeline without segments both pass. *)
+  let nav_frame ~name ~soort ~negatie ?niet ~w1 hits =
+    let ir =
+      leeg_doc ~werf_attrs:""
+        ~regels:
+          [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+              (leeg_pred ~soort ~negatie ~periode:(periode ?niet ())
+                 (leeg_ref ~ot:"Werf" ~attr:"tarief" ~nav:(Some "werf"))) ]
+      |> temporeel "tarief"
+    in
+    let case_text =
+      leeg_case (leeg_rijen ~attr:"meldpremie" ~waarde:"40" ~labels:schuiten hits)
+      |> replace ~tok:{|"tarief": { "number": "312" }|} ~by:({|"tarief": |} ^ w1)
+    in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  let heel = tijdlijn "2025-01-01" "2026-01-01" "312" and half = tijdlijn "2025-01-01" "2025-07-01" "312" in
+  nav_frame ~name:"GEVULD navigated, W1 whole year" ~soort:"filled" ~negatie:false ~w1:heel schuiten;
+  nav_frame ~name:"LEEG navigated, W1 whole year" ~soort:"empty" ~negatie:false ~w1:heel
+    [ "S3"; "S4" ];
+  nav_frame ~name:"GEVULD navigated, W1 half year" ~soort:"filled" ~negatie:false ~w1:half
+    [ "S3"; "S4" ];
+  nav_frame ~name:"GEVULD navigated, niet gedurende, W1 half year" ~soort:"filled" ~negatie:false
+    ~niet:"true" ~w1:half [ "S1"; "S2" ];
+  nav_frame ~name:"GEVULD negated navigated, W1 half year" ~soort:"filled" ~negatie:true ~w1:half
+    [ "S3"; "S4" ];
+  (* the PARAMETER operand, which WF-043 admits and no executor folds: ref
+     and this backend refuse it in one sentence *)
+  let param_ir =
+    leeg_doc_vol
+      ~parameters:
+        ({|{ "node": "Parameter", "name": "havenpeil", "datatype": |} ^ leeg_num
+        ^ {|, "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } }|})
+      ~consistenties:"" ~werf_attrs:""
+      ~regels:
+        [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+            (leeg_pred ~soort:"filled" ~negatie:false ~periode:(periode ())
+               {|{ "node": "ParameterReference", "parameter": "havenpeil", "source": { "snippet": "het havenpeil" } }|}) ]
+  in
+  let param_case = leeg_case [ {|{ "kind": "consistent" }|} ] in
+  let zin =
+    "a whole-period leeg/gevuld test over the parameter 'havenpeil' is not executed: the fold reads \
+     the timeline of an attribute"
+  in
+  faults_with ~name:"GEVULD over a parameter, whole year (clingo)" ~ir:param_ir ~case_text:param_case
+    ~needle:zin;
+  (* a NON-temporal operand is WF-043's; both executors refuse it in the
+     verifier's sentence *)
+  let vlak_ir =
+    leeg_doc ~werf_attrs:""
+      ~regels:
+        [ leeg_regel ~naam:"meldpremie" ~ot:"Schuit" ~doel:"meldpremie" ~waarde:"40"
+            (leeg_pred ~soort:"filled" ~negatie:false ~periode:(periode ())
+               (leeg_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None)) ]
+  in
+  let wf043 = "wholePeriod qualifier on a non-time-dependent operand" in
+  faults_with ~name:"GEVULD over a non-temporal lengte (clingo)" ~ir:vlak_ir ~case_text:param_case
+    ~needle:wf043;
+  (let doc, case = load_pair ~ir:vlak_ir ~case_text:param_case in
+   match ref_report doc case with
+   | (_ : string list) -> check "GEVULD over a non-temporal lengte (ref): expected a fault" false
+   | exception Uchar_ref.Value.Fault m ->
+       check ("GEVULD over a non-temporal lengte (ref): " ^ m) (m = wf043));
+  (let doc, case = load_pair ~ir:param_ir ~case_text:param_case in
+   match ref_report doc case with
+   | (_ : string list) -> check "GEVULD over a parameter, whole year (ref): expected a fault" false
+   | exception Uchar_ref.Value.Fault m ->
+       check ("GEVULD over a parameter, whole year (ref): " ^ m) (m = zin))
 
 (* THE SHARED FAIL-FAST's two checks (card clingo-parameter-failfast): an
    unbound parameter's frame, where ref must fault in its own words and

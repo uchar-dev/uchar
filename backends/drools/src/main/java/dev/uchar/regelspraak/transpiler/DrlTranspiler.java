@@ -3837,8 +3837,8 @@ public final class DrlTranspiler {
     /** §8.2 / §13.4.15.70: the RAW boolean {@code rsGeheelPeriode(timeline, "JAAR"|"MAAND", toets, grens)} call for a
      *  whole-period-qualified predicate (the caller appends {@code == true|false}, NIET flips which), or a marker Frag
      *  when the form is outside the supported set. Supported: a numeric comparison of a temporal attribute vs a scalar
-     *  grens (§8.2 line 3467), a GEVULD over a temporal attribute, and a temporal kenmerkcheck (§8.2 line 3469). A
-     *  LEEG / ELFPROEF / NUMERIEK-met-exact whole-period form is degenerate without a bounding period -> marker. */
+     *  grens (§8.2 line 3467), a GEVULD or LEEG over a temporal attribute, and a temporal kenmerkcheck (§8.2 line
+     *  3469). An ELFPROEF / NUMERIEK-met-exact whole-period form -> marker. */
     private Frag geheelPeriodeCall(Acc acc, Conditie c, Conditie.GeheelPeriode gp, Objecttype subject) {
         String gran = gp.jaar() ? "JAAR" : "MAAND";
         String getter; int toets; String grens = "null";
@@ -3882,7 +3882,7 @@ public final class DrlTranspiler {
             if (getter == null) return Frag.todo("§8.2 kenmerk", c.bron());
             toets = 7;
         } else {
-            return Frag.todo("§8.2 predicaat", c.bron());     // LEEG / ELFPROEF / NUMERIEK-met-exact whole-period
+            return Frag.todo("§8.2 predicaat", c.bron());     // ELFPROEF / NUMERIEK-met-exact whole-period
         }
         fnImport("rsGeheelPeriode");
         return Frag.ok("rsGeheelPeriode(" + getter + ", \"" + gran + "\", " + toets + ", " + grens + ")");

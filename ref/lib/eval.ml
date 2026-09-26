@@ -677,6 +677,38 @@ let nav_target env world (self : World.instance) ~(bindings : rol_binding list) 
   in
   walk self roles
 
+(* ch. 3.9, the timeline a whole-period leeg/gevuld test folds: an own
+   time-dependent attribute, or one reached over to-one hops (ch. 5.8). A
+   hop that reaches nothing gives the null timeline, which touches no bucket
+   and passes (ch. 3.9 lifts the ch. 1.2 leeg-navigation discipline). WF-043
+   admits one operand more, a time-dependent parameter, and no executor
+   folds one; it is refused by name, in the ASP backend's and the Drools
+   loader's words as well. Any other operand is what WF-043 rejects, and it
+   is refused here in the verifier's sentence, so a hand-built node never
+   folds an empty timeline to a pass. *)
+let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
+  match e with
+  | Attribuut_ref { attribuut = Some a; objecttype = Some otn; navigatie_bindingen; _ }
+    when Ir_v0.Checks.attr_temporal (objecttype env otn) a -> (
+      match navigatie_bindingen with
+      | None ->
+          if not (own_read env self otn) then
+            Value.fault
+              "a read of %S on %S without navigation bindings is the subject's own read, but the \
+               subject is %S"
+              a otn self.otype;
+          Option.value (World.timeline self a) ~default:[]
+      | Some bindings -> (
+          match nav_target env world self ~bindings ~endpoint:otn with
+          | None -> []
+          | Some target -> Option.value (World.timeline target a) ~default:[]))
+  | Parameter_ref { parameter; _ } ->
+      Value.fault
+        "a whole-period leeg/gevuld test over the parameter '%s' is not executed: the fold reads the \
+         timeline of an attribute"
+        (Option.value parameter ~default:"?")
+  | _ -> Value.fault "wholePeriod qualifier on a non-time-dependent operand"
+
 (* --- literals ----------------------------------------------------------- *)
 
 let unit_of_datatype = function
@@ -2071,14 +2103,19 @@ and eval_cond env world (self : World.instance) ~err (c : conditie) : bool =
       in
       (* ch. 3.9: "Negation complements the folded result" *)
       if gp.gp_niet then not verdict else verdict
-  | Predicaat { soort = Leeg | Gevuld; periode = Some _; _ } ->
-      (* ch. 3.9's leeg/gevuld tests over a timeline. Both arms below matched
-         `periode` away with `_` until 2026-09-11, so the qualifier was
-         DROPPED and the operand answered its scalar reading — the silent
-         shape this refusal replaces. The characteristic-holds test is built
-         (above); these two are not, and a gap that says so is not a gap that
-         answers the opposite. *)
-      Value.fault "whole-period leeg/gevuld test is ch. 3.9 scope, not executed here"
+  (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier. The
+     two arms below match `periode` away with `_`, which is why this one
+     stands before them: until 2026-09-11 the qualifier was dropped there and
+     the operand answered its scalar reading, and until 2026-09-26 this arm
+     refused the form by name. The inner negation is per day (ch. 1.2), so it
+     picks the sister test before the fold; the qualifier's own negation
+     complements the fold's verdict. *)
+  | Predicaat { soort = (Leeg | Gevuld) as soort; operand; negatie; periode = Some gp; _ } ->
+      let tl = whole_period_operand env world self (req "Predicate.operand" operand) in
+      let g : Ir_v0.Ast.granulariteit = if gp.gp_jaar then Jaar else Maand in
+      let gevuld = (soort = Gevuld) <> negatie in
+      let verdict = Timeline.geheel_periode_leeg_gevuld g ~gevuld ~tl in
+      if gp.gp_niet then not verdict else verdict
   | Predicaat { soort = Leeg; operand; negatie; _ } ->
       let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
       let is_empty = v = Value.Empty in
