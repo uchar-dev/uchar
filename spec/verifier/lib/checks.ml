@@ -464,6 +464,30 @@ let context_value_refusal name =
      ^ "' is not one of the two admissible names evaluationDate, evaluationYear: the \
         context-value name is a closed set, spelled byte for byte")
 
+(* WF-098's type arm (IR-SPEC ch. 4.1): the name fixes the type, and nothing
+   in the document declares it, so the node's annotation can only repeat it.
+   Every executor derives the value from the name (RUNTIME-SEMANTICS ch.
+   2.10) and reads the annotation nowhere, which is why a year annotated with
+   two decimals passed through all of them unnoticed: the wire carried a type
+   the value does not have. The arm is the verifier's alone, since no
+   executor has an annotation it would refuse. [None] for a name outside the
+   set, which the name arm reports. *)
+let context_value_type_refusal name (typ : datatype) =
+  let fixed =
+    if name = Spelling.evaluation_date then
+      match typ with Datum_in_dagen -> None | _ -> Some "a day-precision Date"
+    else if name = Spelling.evaluation_year then
+      match typ with
+      | Numeriek { geheel = true; decimalen = 0; teken = Some Onbepaald; eenheid = None } -> None
+      | _ -> Some "a whole Number with 0 decimals, the sign unspecified and no unit"
+    else None
+  in
+  Option.map
+    (fun t ->
+      "context value '" ^ name
+      ^ "' is annotated with a type other than the one its name fixes: " ^ t)
+    fixed
+
 (* WF-108 (a) (IR-SPEC ch. 4.5): the one quantifier a QuantifierFold does not
    admit. The schema admits `the` on a Compound alone; the verifier loads it
    on a fold so that the rule names it, and every executor refuses it at load
@@ -5653,7 +5677,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               "parameter reference without a parameter name: it resolves against no declaration"
           ])
   | Variabele_ref { naam; _ } -> [ v "WF-034" at (variable_reference_refusal naam) ]
-  | Constante { naam; _ } -> (
+  | Constante { naam; typ; _ } -> (
       (* WF-098 (maintainer decision 2026-09-10): the context-value name is a
          CLOSED SET, not a reference. Nothing in the document declares it, so
          there is no table to resolve against — the two admissible names are
@@ -5676,7 +5700,10 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       | Some n -> (
           match context_value_refusal n with
           | Some sentence -> [ v "WF-098" (sub "name") sentence ]
-          | None -> []))
+          | None -> (
+              match Option.bind typ (context_value_type_refusal n) with
+              | Some sentence -> [ v "WF-098" (sub "type") sentence ]
+              | None -> [])))
   | Bound_day _ -> []
   | Expr_onopgelost _ -> [] (* honest marker; WF-044 is behavioural *)
   | Temporal_read { basis; datum; typ; _ } ->
