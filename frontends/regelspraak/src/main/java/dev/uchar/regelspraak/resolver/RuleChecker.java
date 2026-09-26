@@ -3191,6 +3191,16 @@ final class RuleChecker {
         // scope-parent role. Withheld (null -> absent) when the connecting relation is not the
         // two-role shape the binding form covers; the wire then keeps only the bean-field scopeVeld.
         RolBindingRef scopeRol = model.verbindendeRolBinding(elem, parentType);
+        // the wire writes the scope as its binding, and a reciprocal fact type gives none: written without it, the
+        // uniqueness would hold over every instance. It ended in the emitter's exception until the fix round of
+        // 2026-09-26.
+        if (scopeRol == null) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "uniciteit '" + naam + "' binnen '" + src(delen.get(1))
+                    + "': de relatie die de begrenzing draagt is wederkerig, en een begrenzing over een wederkerig "
+                    + "feittype schrijft deze frontend niet (de wire schrijft haar als rolbinding van een feittype met "
+                    + "twee rollen)", bron.line()));
+            return null;
+        }
         return new dev.uchar.regelspraak.ir.ResolvedUniciteit(
                 naam, elem, java.util.List.of(attr), joinVeld, bron, g, scopeRol);
     }
