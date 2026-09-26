@@ -900,6 +900,25 @@ calendar year; a name that is both a role and a type binds as the role where
 the type pair does not decide; characteristic periods in a scenario stay
 day-precise.
 
+**The distribution's first card landed (2026-09-26, `uchar-dev/regelspraak-toolchain`
+`316d448`):** the successor repository now builds `frontends/regelspraak`
+and `backends/drools` from this repository as a submodule pinned at
+`d67f5da1`, in one Maven reactor, its own copies of parser, loader,
+transpiler and runtime deleted and its own code under
+`dev.uchar.regelspraak.toolchain`; its service, engine facade and scenario
+runner build through `DroolsBackend.build` and the frontend's scenario
+layer. Three questions came back to this repository, recorded here and not
+opened as cards (same maintainer decision): the scenario layer refuses a
+scope that names a fact creation, and a scope in a document that carries a
+fixed-start declaration — three of the twenty-nine scenarios of the
+distribution's parity zone, which its manifest lists as reason-carrying
+holdouts; the facade's refusal is a sentence rather than a typed value, so
+the distribution reads the construct's name out of the sentence for its
+marker verdict; and the tests the distribution deleted (the runtime and
+kernel tests free of parity material, the frontend tests without a
+counterpart here, the differential integration test; history at its commit
+`b002492`) await the triage cards.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
