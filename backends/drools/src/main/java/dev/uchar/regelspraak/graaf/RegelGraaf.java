@@ -15,28 +15,38 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The regelgraaf: the bipartite dataflow graph regels ↔ gegevens extracted from a resolved
- * {@link RegelSpraakModel}. A rule node connects to a data node it PRODUCES (rule → data, its {@code doel}) and a
- * data node connects to a rule that CONSUMES it (data → rule, its voorwaarde/operanden). Direction is therefore
- * dataflow: a request-input (a datum no rule produces) feeds rules, rules produce data, that data feeds
- * downstream rules, and a datum no rule consumes is a product-less eind-output.
+ * The regelgraaf: the bipartite dataflow graph between the forms of the rule layer and the data they write and read,
+ * extracted from a resolved {@link RegelSpraakModel}. A form is a rule, an object creation, an allocation, a
+ * consistency, a uniqueness, a fact creation or a defaults group ({@link ProducentConsument.Vormsoort}). A form node
+ * connects to a data node it PRODUCES (form → data: a rule's or a defaults group's target, an allocation's target and
+ * remainder, the members an object creation assigns) and a data node connects to a form that CONSUMES it (data →
+ * form: what its conditions, values, keys and justifications read). Direction is therefore dataflow: a request-input
+ * (a datum no form produces) feeds forms, forms produce data, that data feeds downstream forms, and a datum no form
+ * consumes is a product-less eind-output.
  *
  * <p>The producer/consumer analysis is the SHARED {@link ProducentConsument} core (also the authority behind a
  * scope-completeness check), so the graph is coloured by the very facts that check uses:
  * <ul>
- *   <li>{@link NodeKind#REGEL} — a rule;</li>
- *   <li>{@link NodeKind#ATTRIBUUT} — an attribuut written and/or read by rules;</li>
- *   <li>{@link NodeKind#KENMERK} — a §13.4.5 boolean kenmerk;</li>
- *   <li>{@link NodeKind#INVOER} — a datum CONSUMED but produced by no rule (a request/koppelvlak input);</li>
+ *   <li>{@link NodeKind#REGEL} — a form of the rule layer, of whichever kind;</li>
+ *   <li>{@link NodeKind#ATTRIBUUT} — an attribuut some form writes;</li>
+ *   <li>{@link NodeKind#KENMERK} — a §13.4.5 boolean kenmerk some form writes;</li>
+ *   <li>{@link NodeKind#INVOER} — a datum CONSUMED but produced by no form (a request/koppelvlak input);</li>
  * </ul>
  * and a produced-but-never-consumed datum is flagged as a product-less eind-output. A data node is one member keyed
- * on the type that declares it, so a member written on a supertype and read on a subtype is one node.
+ * on the type that declares it, so a member written on a supertype and read on a subtype is one node, and a
+ * navigated kenmerk check reads the kenmerk of the type its hop reaches, which each route to a model answers
+ * ({@link ProducentConsument.Navigatie}).
  *
- * <p>The graph is a reading of the dependency graph of IR-SPEC ch. 5, restricted to rules, attributes and
- * characteristics: every path rule → data → rule is an edge producer → consumer there
- * ({@link #afhankelijkheden}). It is built from the records the loader rebuilds from {@code ir.json}, so a consumer
- * without sources gets the graph a resolver's model gives. {@code scripts/check-graaf.sh} holds both claims: the
- * dependencies against the verifier's, over every golden, and the two routes against each other.
+ * <p>The graph is a reading of the dependency graph of IR-SPEC ch. 5 over its attribute and characteristic nodes:
+ * every path form → data → form is an edge producer → consumer there ({@link #afhankelijkheden}). The other nodes of
+ * ch. 5.1 (a population, a relation's link set, a channel) are not drawn, and neither are the edges that run over
+ * them. Keying a member on its declaring type draws more than ch. 5.1 in two known places, where the verifier closes
+ * a write over the instances it reaches: between two sibling subtypes that share an inherited member, and from an
+ * object creation that assigns an inherited member to a read of it on a strict subtype of the created type, which
+ * the creation never mints. The graph is built from the records the loader rebuilds from {@code ir.json}, with the
+ * defaults groups and the navigation bindings it returns beside the model, so a consumer without sources gets the
+ * graph a resolver's model gives. {@code scripts/check-graaf.sh} holds both claims: the dependencies against the
+ * verifier's, over every golden, and the two routes against each other.
  *
  * <p>The render is jar-only: {@link #mermaid()} is the bare Mermaid flowchart source (offline-usable), and
  * {@link #html()} wraps it in a self-contained page that loads Mermaid from a CDN (needs the network to render).

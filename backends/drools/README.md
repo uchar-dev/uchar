@@ -84,17 +84,24 @@ differs from ref/clingo and fails when stale.
 
 ## The rule graph and gate 15
 
-`graaf/RegelGraaf` draws which rule writes and which rule reads which attribute or characteristic, a member
-keyed on the type that declares it (`ProducentConsument.elementVan`), so a write on a supertype and a read on a
-subtype meet on one node. It is a reading of the IR-SPEC ch. 5 dependency graph restricted to rules, attributes
-and characteristics, built from the records the loader rebuilds from `ir.json`; the caller says whether a
-characteristic check navigates, because a wire model carries the hop beside the model
-(`k -> geladen.navigatieBindingen().containsKey(k)`) and a resolver's model on the record
-(`k -> k.navigatie() != null`). `scripts/check-graaf.sh` holds it: over every golden the loader reads, the graph's
-dependencies (`GraafProjectie`) must equal the verifier's ch. 5 edges (`verifier --dependency-edges`) projected
-onto the same rules and members, and the graph of every golden with a `bron.rgs` must render the same from the
-source as from the wire. The tests that need the frontend's resolver live under `src/bronroute/`, outside this
-build, which carries no parser; the gate compiles them against the frontend's classes and this jar.
+`graaf/RegelGraaf` draws which form of the rule layer writes and which reads which attribute or characteristic:
+the rules, object creations, allocations, consistencies, uniquenesses, fact creations and defaults groups of
+IR-SPEC ch. 5.1, a member keyed on the type that declares it (`ProducentConsument.elementVan`), so a write on a
+supertype and a read on a subtype meet on one node. It is built from the records the loader rebuilds from
+`ir.json`, and each route to a model supplies what rides beside it: the defaults groups (`model.prioritizedDefaults`
+of a resolver's model, `Loaded.prioritizedDefaults()` beside a loaded one) and the type a navigated characteristic
+check reaches (`ProducentConsument.bronNavigatie(model)` from the role the record names,
+`ProducentConsument.wireNavigatie(loaded)` from the binding beside the model). `scripts/check-graaf.sh` holds it:
+over every golden the loader reads, the graph's dependencies (`GraafProjectie`) must equal the verifier's ch. 5
+edges (`verifier --dependency-edges`) over an attribute or characteristic node, whatever forms they join, and the
+graph of every golden with a `bron.rgs` must render the same from the source as from the wire. Outside the
+comparison, and reported per class by the gate: the edges over a population, a relation or a channel, nodes the
+graph does not draw, and the edges of a golden the loader refuses. Two readings differ by design, recorded in the
+gate beside its list of deliberate differences: keyed on the declaring type, the graph draws a dependency between
+two sibling subtypes sharing an inherited member, and from an object creation assigning an inherited member to a
+read of it on a strict subtype of the created type, where ch. 5.1 closes the write over the instances it reaches.
+The tests that need the frontend's resolver live under `src/bronroute/`, outside this build, which carries no
+parser; the gate compiles them against the frontend's classes and this jar.
 
 ## Recorded: the DRL-text branch answers where the others refuse
 

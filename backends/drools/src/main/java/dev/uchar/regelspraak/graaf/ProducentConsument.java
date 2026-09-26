@@ -24,15 +24,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The pure-IR producer/consumer analysis over a resolved {@link RegelSpraakModel}: which rule WRITES which
- * kenmerk/attribuut ({@link #producentIndex}) and which kenmerken/attributen a rule READS ({@link #verbruikt}).
+ * The pure-IR producer/consumer analysis over a resolved {@link RegelSpraakModel}: which form of the rule layer
+ * WRITES which kenmerk/attribuut ({@link #producentIndex}) and which kenmerken/attributen a form READS
+ * ({@link #vormen}, and {@link #verbruikt} for one rule). The forms are those of IR-SPEC ch. 5.1: rules, object
+ * creations, allocations, consistencies, uniquenesses, fact creations and defaults groups.
  *
  * <p>It walks the IR records only (no Drools), so a model the loader rebuilt from {@code ir.json} and a model a
- * resolver built from source give the same answers. It is the one authority for its two readers: the
- * {@link RegelGraaf} dataflow graph, and a scope-completeness check that asks whether a consumed element has a
- * producer outside a rule scope. Names are compared as the verifier compares them ({@link Namen#norm}), so a
- * case-only spelling difference still matches producer to consumer and the element identity is the node identity
- * of IR-SPEC ch. 5.1.
+ * resolver built from source give the same answers, once each route supplies what rides beside its model: the
+ * defaults-group list, and where a navigated kenmerk check leads ({@link Navigatie}). It is the one authority for
+ * its two readers: the {@link RegelGraaf} dataflow graph, and a scope-completeness check that asks whether a
+ * consumed element has a producer outside a rule scope. Names are compared as the verifier compares them
+ * ({@link Namen#norm}), so a case-only spelling difference still matches producer to consumer and the element
+ * identity is the node identity of IR-SPEC ch. 5.1.
  */
 public final class ProducentConsument {
 
@@ -42,7 +45,7 @@ public final class ProducentConsument {
      *  when the owner is unknown), its kenmerk/attribuut naam, and whether it is a kenmerk (§13.4.5 boolean
      *  property) rather than an ordinary attribuut. Objecttype and naam are held in {@link Namen#norm} form.
      *
-     *  <p><b>The objecttype is the member's DECLARING type</b> (IR-SPEC ch. 2.2), not the type the rule that
+     *  <p><b>The objecttype is the member's DECLARING type</b> (IR-SPEC ch. 2.2), not the type the form that
      *  touched it happens to range over — see {@link #elementVan}. A member is declared once and inherited, so
      *  a write on the supertype and a read on the subtype touch ONE element and must key alike. */
     public record ElementSleutel(String objecttype, String naam, boolean kenmerk) {
