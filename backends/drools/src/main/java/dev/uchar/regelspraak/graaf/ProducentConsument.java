@@ -4,35 +4,78 @@ import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * The pure-IR producer/consumer analysis over a resolved {@link RegelSpraakModel}: which rule WRITES which
  * kenmerk/attribuut ({@link #producentIndex}) and which kenmerken/attributen a rule READS ({@link #verbruikt}).
  *
- * <p>This is the analysis {@code BeslisserKern}'s scope-completeness validation performs; it is lifted here into
- * the jar-only parser module (no Drools dependency — it walks the IR only) so it is a SINGLE authority shared by
- * the service's scope check and the {@link RegelGraaf} dataflow-graph builder. The element identity is
- * case-folded so a case-only spelling difference (the resolver's own tolerance) still matches producer to
- * consumer.
+ * <p>It walks the IR records only (no Drools), so a model the loader rebuilt from {@code ir.json} and a model a
+ * resolver built from source give the same answers. It is the one authority for its two readers: the
+ * {@link RegelGraaf} dataflow graph, and a scope-completeness check that asks whether a consumed element has a
+ * producer outside a rule scope. Names are compared as the verifier compares them ({@link Namen#norm}), so a
+ * case-only spelling difference still matches producer to consumer and the element identity is the node identity
+ * of IR-SPEC ch. 5.1.
  */
 public final class ProducentConsument {
 
     private ProducentConsument() {}
 
     /** The identity of a consumed/produced model element: the objecttype it lives on (canonical name, or ""
-     *  when the resolver could not bind the owner), its kenmerk/attribuut naam, and whether it is a kenmerk
-     *  (§13.4.5 boolean property) rather than an ordinary attribuut. Case-folded on objecttype and naam. */
+     *  when the owner is unknown), its kenmerk/attribuut naam, and whether it is a kenmerk (§13.4.5 boolean
+     *  property) rather than an ordinary attribuut. Objecttype and naam are held in {@link Namen#norm} form.
+     *
+     *  <p><b>The objecttype is the member's DECLARING type</b> (IR-SPEC ch. 2.2), not the type the rule that
+     *  touched it happens to range over — see {@link #elementVan}. A member is declared once and inherited, so
+     *  a write on the supertype and a read on the subtype touch ONE element and must key alike. */
     public record ElementSleutel(String objecttype, String naam, boolean kenmerk) {
         public static ElementSleutel van(String objecttype, String naam, boolean kenmerk) {
-            return new ElementSleutel(objecttype == null ? "" : objecttype.toLowerCase(Locale.ROOT),
-                    naam == null ? "" : naam.trim().toLowerCase(Locale.ROOT), kenmerk);
+            return new ElementSleutel(Namen.norm(objecttype), Namen.norm(naam), kenmerk);
         }
+    }
+
+    /**
+     * The element identity of member {@code naam} touched through {@code houder} — keyed by the type on
+     * {@code houder}'s chain that DECLARES it (IR-SPEC ch. 2.2), so producer and consumer meet on one key.
+     *
+     * <p>This is the whole ⊑-awareness of this analysis, and it sits HERE rather than in each reader because
+     * both readers ask the same question of the same index: the scope check matches a consumed element against
+     * the producer index, and {@link RegelGraaf} decides INVOER / eind-output by the same membership. Keying on
+     * the rule's own subject type instead makes a producer on the supertype and a consumer on the subtype two
+     * different elements: the scope check then concludes "no producer at all, so this is a genuine request
+     * input" and lets a scope through whose kenmerk silently evaluates false, and the graph draws the same
+     * member twice — once as INVOER nobody writes, once as an eind-output nobody reads. Both claims are false.
+     *
+     * <p>Both directions collapse onto the declarant, deliberately. Producer-on-supertype / consumer-on-subtype
+     * is the full-coverage case. Producer-on-subtype / consumer-on-supertype is PARTIAL coverage (that producer
+     * only serves subtype instances), and it still keys the same: the scope check's question is whether a
+     * producer EXISTS that fell outside the scope, and a partial producer outside the scope is one. Chain
+     * awareness here can therefore only ever report MORE than the flat reading, never silence it.
+     *
+     * <p>The chain walk reads the OWN declaration maps per type on purpose, because the question is WHICH type
+     * declares the member, and it is kind-aware: a kenmerk and an attribuut may legally share a name on
+     * different types of one chain, and the model's own {@code declarantVan} answers for both kinds at once. A
+     * member nothing on the chain declares keeps its holder, which is the reading from before this rule existed.
+     */
+    public static ElementSleutel elementVan(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
+        if (houder == null) return ElementSleutel.van("", naam, kenmerk);
+        return ElementSleutel.van(declarant(houder, naam, kenmerk).naam, naam, kenmerk);
+    }
+
+    private static RegelSpraakModel.Objecttype declarant(RegelSpraakModel.Objecttype houder, String naam,
+                                                         boolean kenmerk) {
+        if (naam == null) return houder;
+        for (RegelSpraakModel.Objecttype t : houder.keten())
+            if (kenmerk ? t.kenmerken.stream().anyMatch(k -> zelfdeNaam(k, naam))
+                        : t.attributen.keySet().stream().anyMatch(a -> zelfdeNaam(a, naam)))
+                return t;
+        return houder;
     }
 
     /**
@@ -45,70 +88,144 @@ public final class ProducentConsument {
         for (ResolvedRegel r : model.resolvedRegels) {
             if (!(r.doel() instanceof Expr.AttribuutRef ref)) continue;
             boolean kenmerk = r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING;
-            String ot = ref.objecttype() == null ? "" : ref.objecttype().naam;
-            uit.computeIfAbsent(ElementSleutel.van(ot, ref.attribuut(), kenmerk),
+            uit.computeIfAbsent(elementVan(ref.objecttype(), ref.attribuut(), kenmerk),
                     k -> new LinkedHashSet<>()).add(basisNaam(r.naam()));
         }
         return uit;
     }
 
-    /** The kenmerken/attributen a resolved rule CONSUMES: the kenmerk-membership tests + operand attribuut-reads
-     *  of its voorwaarde, plus every attribuut-read in its RHS {@code waarde}. The rule's OWN write target
-     *  ({@code doel}) is excluded — a rule reading what it writes is not a cross-rule dependency. Whether a kenmerk
-     *  check navigates is {@code genavigeerd}'s answer: IR-SPEC ch. 4.5, its binding is the hop, and the binding
-     *  rides beside the model ({@code IrLoader.Loaded.navigatieBindingen}). */
-    public static Set<ElementSleutel> verbruikt(ResolvedRegel r, java.util.function.Predicate<Conditie.Kenmerk> genavigeerd) {
+    /** The kenmerken/attributen a resolved rule CONSUMES: every kenmerk check and attribuut read in its
+     *  voorwaarde and in its RHS {@code waarde}, at any depth — the conditions inside an expression included (an
+     *  aggregation's filter, a branch of an instance-set union, the guard of an if-then-else), each with the
+     *  subject it is evaluated against. The rule's OWN write target ({@code doel}) is not scanned — a rule
+     *  reading what it writes is not a cross-rule dependency. The walk reads what IR-SPEC ch. 5.1 lets a rule
+     *  read of attributes and characteristics, node kind by node kind, and each switch below is exhaustive, so a
+     *  node kind the IR records gain later fails to compile here until someone decides what it reads.
+     *
+     *  <p>Whether a kenmerk check navigates is {@code genavigeerd}'s answer, because the two routes to a model
+     *  record it in different places: a model the loader rebuilt from the wire carries the hop beside the model
+     *  (IR-SPEC ch. 4.5, the binding is the hop: {@code k -> geladen.navigatieBindingen().containsKey(k)}), and
+     *  a resolver's model on the record itself ({@code k -> k.navigatie() != null}). The analysis cannot tell
+     *  which route built its input, so the caller says it; a fixed guess would read every navigated check of
+     *  the other route as the subject's own. {@code model} answers what a navigated check reads (see
+     *  {@link #verreKenmerken}). */
+    public static Set<ElementSleutel> verbruikt(RegelSpraakModel model, ResolvedRegel r,
+                                                Predicate<Conditie.Kenmerk> genavigeerd) {
         Set<ElementSleutel> uit = new LinkedHashSet<>();
-        String subject = r.doel() instanceof Expr.AttribuutRef ref && ref.objecttype() != null
-                ? ref.objecttype().naam : "";
-        verzamelConditie(r.voorwaarde(), subject, genavigeerd, uit);
-        verzamelExpr(r.waarde(), uit);
+        Lezer lezer = new Lezer(model, genavigeerd, uit);
+        RegelSpraakModel.Objecttype subject = r.doel() instanceof Expr.AttribuutRef ref ? ref.objecttype() : null;
+        lezer.conditie(r.voorwaarde(), subject);
+        lezer.expr(r.waarde(), subject);
         return uit;
     }
 
-    /** Collect consumed kenmerken (from {@link Conditie.Kenmerk}) and operand attributen out of a condition tree.
-     *  A subject-own kenmerk (not navigated, no eigenaar) is attributed to {@code subject}; a kenmerk with a bound
-     *  {@code eigenaar} to that owner; a navigated kenmerk stays owner-unknown ("") (matched producer-side by
-     *  naam only). */
-    private static void verzamelConditie(Conditie c, String subject,
-            java.util.function.Predicate<Conditie.Kenmerk> genavigeerd, Set<ElementSleutel> uit) {
-        if (c == null) return;
-        if (c instanceof Conditie.Kenmerk k) {
-            String ot = k.eigenaar() != null ? k.eigenaar().naam : (!genavigeerd.test(k) ? subject : "");
-            uit.add(ElementSleutel.van(ot, k.kenmerk(), true));
+    /** The one walk behind {@link #verbruikt}, over a condition or an expression with the subject a kenmerk check
+     *  without an owner of its own is evaluated against. Only a kenmerk check asks for the subject; an attribuut
+     *  read names its type itself. */
+    private record Lezer(RegelSpraakModel model, Predicate<Conditie.Kenmerk> genavigeerd, Set<ElementSleutel> uit) {
+
+        void conditie(Conditie c, RegelSpraakModel.Objecttype subject) {
+            if (c == null) return;
+            switch (c) {
+                case Conditie.Vergelijking v -> { expr(v.links(), subject); expr(v.rechts(), subject); }
+                case Conditie.Predicaat p -> expr(p.operand(), subject);
+                case Conditie.Periode p -> { expr(p.vanaf(), subject); expr(p.tot(), subject); }
+                // A navigated check lives on the object its hop reaches, a type the record does not name (see
+                // verreKenmerken); any other check lives on its host, or on the subject when it names none.
+                case Conditie.Kenmerk k -> {
+                    if (genavigeerd.test(k)) uit.addAll(verreKenmerken(model, k.kenmerk()));
+                    else uit.add(elementVan(k.eigenaar() != null ? k.eigenaar() : subject, k.kenmerk(), true));
+                }
+                case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) conditie(d, subject); }
+                // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are evaluated with the ELEMENT as subject
+                // (RUNTIME-SEMANTICS ch. 3.9a), hence the element type rather than the enclosing subject.
+                case Conditie.Kwantorvouw kv -> {
+                    conditie(kv.filter(), kv.elementObjecttype());
+                    conditie(kv.toets(), kv.elementObjecttype());
+                }
+                // A role check reads a relation's link set and a rule-version test a channel: nodes of IR-SPEC
+                // ch. 5.1 this graph does not draw, so neither contributes an element.
+                case Conditie.Rollidmaatschap ignored -> { }
+                case Conditie.VerreRollidmaatschap ignored -> { }
+                case Conditie.Regelversie ignored -> { }
+                case Conditie.Onopgelost ignored -> { }
+            }
         }
-        if (c instanceof Conditie.Samengesteld s)
-            for (Conditie d : s.onderdelen()) verzamelConditie(d, subject, genavigeerd, uit);
-        // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are conditions, and their kenmerk reads are
-        // consumptions of this rule like any other. The generic bevatOperand scan below already reaches the
-        // ATTRIBUTE reads inside them (Conditie.bevatExpr recurses through the node); only the kenmerk arm above is
-        // node-specific, so only it needs this. The children are evaluated with the ELEMENT as subject
-        // (RUNTIME-SEMANTICS ch. 3.9a), hence the element type rather than the rule's own subject.
-        if (c instanceof Conditie.Kwantorvouw kv) {
-            String elem = kv.elementObjecttype() == null ? "" : kv.elementObjecttype().naam;
-            verzamelConditie(kv.filter(), elem, genavigeerd, uit);
-            verzamelConditie(kv.toets(), elem, genavigeerd, uit);
+
+        void expr(Expr e, RegelSpraakModel.Objecttype subject) {
+            if (e == null) return;
+            switch (e) {
+                case Expr.AttribuutRef ref -> uit.add(elementVan(ref.objecttype(), ref.attribuut(), false));
+                case Expr.Binair b -> { expr(b.links(), subject); expr(b.rechts(), subject); }
+                case Expr.Functie f -> {
+                    // A count's source names the relation's ROLE, never a member of the element type (the loader
+                    // refuses a member there): it reads the link set, not an attribuut of each contributor.
+                    if (!isTelbron(f)) for (Expr a : f.argumenten()) expr(a, subject);
+                    expr(f.leegwaarde(), subject);
+                    // the filter is evaluated per contributor, with the element as subject
+                    conditie(f.filter(), f.elementObjecttype() != null ? f.elementObjecttype() : subject);
+                }
+                // each selection's filter is evaluated per contributor, as a fold's filter is
+                case Expr.InstanceSetUnion u -> {
+                    for (Expr.InstanceSetUnion.Tak t : u.takken()) conditie(t.filter(), t.elementType());
+                }
+                case Expr.Afgerond a -> expr(a.basis(), subject);
+                case Expr.Begrensd b -> { expr(b.basis(), subject); expr(b.minimum(), subject); expr(b.maximum(), subject); }
+                case Expr.DimensieCel c -> expr(c.attribuut(), subject);
+                case Expr.TekstReeks t -> {
+                    for (Expr.TekstReeks.Deel d : t.delen())
+                        if (d instanceof Expr.TekstReeks.Ingevoegd i) expr(i.expr(), subject);
+                }
+                // Call-by-need does not narrow this: a value that is never evaluated is still a read the author
+                // wrote, and IR-SPEC ch. 5 draws the edge for it as well (a static over-approximation).
+                case Expr.Let l -> { expr(l.value(), subject); expr(l.body(), subject); }
+                case Expr.IfThenElse i -> { conditie(i.conditie(), subject); expr(i.dan(), subject); expr(i.anders(), subject); }
+                case Expr.Literal ignored -> { }
+                case Expr.ParameterRef ignored -> { }
+                case Expr.VariabeleRef ignored -> { }
+                case Expr.BinderRef ignored -> { }
+                case Expr.Constante ignored -> { }
+                case Expr.Onopgelost ignored -> { }
+            }
         }
-        // operand attribuut-reads inside comparisons/predicates/periodes
-        Conditie.bevatOperand(c, e -> { verzamelExpr(e, uit); return false; });
     }
 
-    /** Collect the attribuut-reads ({@link Expr.AttribuutRef}, kenmerk-flag false) out of an expression tree
-     *  via the generic IR scan. */
-    private static void verzamelExpr(Expr e, Set<ElementSleutel> uit) {
-        Expr.bevat(e, x -> {
-            if (x instanceof Expr.AttribuutRef ref) {
-                String ot = ref.objecttype() == null ? "" : ref.objecttype().naam;
-                uit.add(ElementSleutel.van(ot, ref.attribuut(), false));
-            }
-            return false;
-        });
+    /** A count over one source whose argument names no member of the element type: the count source of IR-SPEC
+     *  ch. 4.3, which names the relation's role. */
+    private static boolean isTelbron(Expr.Functie f) {
+        return f.kind() == Expr.FunctieKind.AANTAL && f.elementObjecttype() != null && f.argumenten().size() == 1
+                && f.argumenten().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
+                && f.elementObjecttype().attribuut(bron.attribuut()) == null
+                && f.elementObjecttype().kenmerkNaam(bron.attribuut()) == null;
+    }
+
+    /**
+     * The elements a NAVIGATED kenmerk check reads. The check reads the kenmerk of the object its hop reaches, and
+     * the record does not name that object's type: on the wire the hop rides beside the model, and a resolver's
+     * record names the role, not its filler. The key does not need the type, only the type that DECLARES the
+     * kenmerk (see {@link #elementVan}), and the reached type carries the kenmerk, so a type declaring a kenmerk of
+     * this name is on its chain. When exactly one type in the model declares it, that type is the key and the
+     * reading is exact. When several do, the check reads the kenmerk of each of them: the analysis cannot see which
+     * one the hop reaches, and it reports more rather than less, as the chain key does. When none does, the owner
+     * stays unknown ("").
+     */
+    private static Set<ElementSleutel> verreKenmerken(RegelSpraakModel model, String naam) {
+        Set<ElementSleutel> uit = new LinkedHashSet<>();
+        if (naam != null)
+            for (RegelSpraakModel.Objecttype t : model.objecttypen.values())
+                if (t.kenmerken.stream().anyMatch(k -> zelfdeNaam(k, naam)))
+                    uit.add(ElementSleutel.van(t.naam, naam, true));
+        if (uit.isEmpty()) uit.add(ElementSleutel.van("", naam, true));
+        return uit;
+    }
+
+    private static boolean zelfdeNaam(String a, String b) {
+        return Namen.norm(a).equals(Namen.norm(b));
     }
 
     /** Strip a §9.10 "&lt;groep&gt;: " prefix and a §13.4.2.3 " #k" version suffix (and a beslistabel " (n)"
-     *  multi-conclusie suffix) off an emitted rule name — the base name the index, the scope, and the transpiler
-     *  dekking all agree on. Mirrors {@code ScenarioRunner.basisNaam} + {@code RegelBestandIndex.basisNaam} +
-     *  {@code BeslisserKern.basisNaam}. */
+     *  multi-conclusie suffix) off an emitted rule name — the base name the index, a rule scope, and the
+     *  transpiler dekking all agree on. */
     public static String basisNaam(String naam) {
         if (naam == null) return "";
         String n = naam;

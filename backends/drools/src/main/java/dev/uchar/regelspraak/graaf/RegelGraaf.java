@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -10,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * The regelgraaf: the bipartite dataflow graph regels ↔ gegevens extracted from a resolved
@@ -18,15 +20,22 @@ import java.util.Set;
  * dataflow: a request-input (a datum no rule produces) feeds rules, rules produce data, that data feeds
  * downstream rules, and a datum no rule consumes is a product-less eind-output.
  *
- * <p>The producer/consumer analysis is the SHARED {@link ProducentConsument} core (also the authority behind the
- * service's scope-completeness validation), so the graph is coloured by the very facts that check uses:
+ * <p>The producer/consumer analysis is the SHARED {@link ProducentConsument} core (also the authority behind a
+ * scope-completeness check), so the graph is coloured by the very facts that check uses:
  * <ul>
  *   <li>{@link NodeKind#REGEL} — a rule;</li>
  *   <li>{@link NodeKind#ATTRIBUUT} — an attribuut written and/or read by rules;</li>
  *   <li>{@link NodeKind#KENMERK} — a §13.4.5 boolean kenmerk;</li>
  *   <li>{@link NodeKind#INVOER} — a datum CONSUMED but produced by no rule (a request/koppelvlak input);</li>
  * </ul>
- * and a produced-but-never-consumed datum is flagged as a product-less eind-output.
+ * and a produced-but-never-consumed datum is flagged as a product-less eind-output. A data node is one member keyed
+ * on the type that declares it, so a member written on a supertype and read on a subtype is one node.
+ *
+ * <p>The graph is a reading of the dependency graph of IR-SPEC ch. 5, restricted to rules, attributes and
+ * characteristics: every path rule → data → rule is an edge producer → consumer there
+ * ({@link #afhankelijkheden}). It is built from the records the loader rebuilds from {@code ir.json}, so a consumer
+ * without sources gets the graph a resolver's model gives. {@code scripts/check-graaf.sh} holds both claims: the
+ * dependencies against the verifier's, over every golden, and the two routes against each other.
  *
  * <p>The render is jar-only: {@link #mermaid()} is the bare Mermaid flowchart source (offline-usable), and
  * {@link #html()} wraps it in a self-contained page that loads Mermaid from a CDN (needs the network to render).
@@ -42,27 +51,52 @@ public final class RegelGraaf {
     /** A directed dataflow edge from {@code van} to {@code naar} (both node ids). */
     public record Edge(String van, String naar) {}
 
+    /** One dependency the graph draws: rule {@code producent} writes {@code element} and rule {@code consument}
+     *  reads it — a path producent → element → consument over two of its edges. This is the reading IR-SPEC
+     *  ch. 5.2 calls an edge (producer → consumer), restricted to what this graph knows: rules, attributes and
+     *  characteristics. */
+    public record Afhankelijkheid(String producent, ElementSleutel element, String consument) {}
+
     private final List<Node> nodes;
     private final List<Edge> edges;
+    /** The element behind every element node, by node id: the key a node label only spells for a reader. */
+    private final Map<String, ElementSleutel> elementen;
 
-    private RegelGraaf(List<Node> nodes, List<Edge> edges) {
+    private RegelGraaf(List<Node> nodes, List<Edge> edges, Map<String, ElementSleutel> elementen) {
         this.nodes = nodes;
         this.edges = edges;
+        this.elementen = elementen;
     }
 
     public List<Node> nodes() { return nodes; }
     public List<Edge> edges() { return edges; }
 
+    /** Every {@link Afhankelijkheid} the graph draws, read off its own edges (never off the analysis behind
+     *  them), so an edge the builder dropped or invented shows here as well: each producer edge into an element
+     *  node paired with each consumer edge out of it. */
+    public List<Afhankelijkheid> afhankelijkheden() {
+        Map<String, String> label = new LinkedHashMap<>();
+        for (Node n : nodes) label.put(n.id(), n.label());
+        List<Afhankelijkheid> uit = new ArrayList<>();
+        for (Edge in : edges) {
+            ElementSleutel el = elementen.get(in.naar());
+            if (el == null) continue;                           // not a producer edge
+            for (Edge uitgaand : edges)
+                if (uitgaand.van().equals(in.naar()))
+                    uit.add(new Afhankelijkheid(label.get(in.van()), el, label.get(uitgaand.naar())));
+        }
+        return uit;
+    }
+
     /** Build the graph from a resolved model. Only value-writing rules and the elements they read/write appear;
      *  a data element is INVOER when no rule produces it and a produced element is marked eind-output when no
      *  rule consumes it. {@code genavigeerd} tells a navigated kenmerk check from the subject's own (see
      *  {@link ProducentConsument#verbruikt}). */
-    public static RegelGraaf bouw(RegelSpraakModel model,
-            java.util.function.Predicate<dev.uchar.regelspraak.ir.Conditie.Kenmerk> genavigeerd) {
+    public static RegelGraaf bouw(RegelSpraakModel model, Predicate<Conditie.Kenmerk> genavigeerd) {
         Map<ElementSleutel, Set<String>> producenten = ProducentConsument.producentIndex(model);
         // Every element that is consumed by at least one rule, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(r, genavigeerd));
+        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(model, r, genavigeerd));
 
         // Stable id allocation. Rule ids by base name; element ids by sleutel.
         Map<String, String> regelId = new LinkedHashMap<>();
@@ -106,12 +140,14 @@ public final class RegelGraaf {
         // 4. consumer edges: element -> rule that reads it.
         for (ResolvedRegel r : model.resolvedRegels) {
             String to = regelId.get(ProducentConsument.basisNaam(r.naam()));
-            for (ElementSleutel el : ProducentConsument.verbruikt(r, genavigeerd)) {
+            for (ElementSleutel el : ProducentConsument.verbruikt(model, r, genavigeerd)) {
                 String from = elemId.get(el);
                 if (from != null && to != null) edgeSet.add(new Edge(from, to));
             }
         }
-        return new RegelGraaf(nodes, new ArrayList<>(edgeSet));
+        Map<String, ElementSleutel> elementen = new LinkedHashMap<>();
+        elemId.forEach((el, id) -> elementen.put(id, el));
+        return new RegelGraaf(nodes, new ArrayList<>(edgeSet), elementen);
     }
 
     /** The label of an element node: "attribuut van Objecttype" (or just the naam when the owner is unknown). */
