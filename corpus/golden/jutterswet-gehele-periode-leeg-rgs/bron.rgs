@@ -1,0 +1,40 @@
+Objecttype de Werf (mv: Werven)
+    het havengeld Numeriek (geheel getal) voor elke maand;
+
+Objecttype de Schuit (mv: Schuiten)
+    de bemanning Numeriek (geheel getal) voor elke maand;
+    de leegtoeslag Numeriek (geheel getal);
+    de vultoeslag Numeriek (geheel getal);
+    de onderbrekingstoeslag Numeriek (geheel getal);
+    de maandtoeslag Numeriek (geheel getal);
+    de werftoeslag Numeriek (geheel getal);
+
+Feittype ligplaats
+    de werf Werf
+    de schuit (mv: schuiten) Schuit
+Eén werf herbergt meerdere schuiten
+
+Regel leegtoeslag van een schuit
+    geldig altijd
+        De leegtoeslag van een Schuit moet berekend worden als 10
+        indien de bemanning van de Schuit gedurende het gehele jaar leeg is.
+
+Regel vultoeslag van een schuit
+    geldig altijd
+        De vultoeslag van een Schuit moet berekend worden als 20
+        indien de bemanning van de Schuit gedurende het gehele jaar gevuld is.
+
+Regel onderbrekingstoeslag van een schuit
+    geldig altijd
+        De onderbrekingstoeslag van een Schuit moet berekend worden als 50
+        indien de bemanning van de Schuit niet gedurende het gehele jaar leeg is.
+
+Regel maandtoeslag van een schuit
+    geldig altijd
+        De maandtoeslag van een Schuit moet berekend worden als 60
+        indien de bemanning van de Schuit gedurende de gehele maand gevuld is.
+
+Regel werftoeslag van een schuit
+    geldig altijd
+        De werftoeslag van een Schuit moet berekend worden als 70
+        indien het havengeld van de werf van de Schuit gedurende het gehele jaar gevuld is.

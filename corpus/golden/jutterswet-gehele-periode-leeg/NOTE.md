@@ -7,7 +7,9 @@ inner negation per day, so the negated leeg test is the gevuld test and
 the negated gevuld test is the leeg test; the qualifier's own negation on
 the folded verdict. Hand-written, with no `bron.rgs`: two of the seven
 rules carry the inner negation of the test, which RegelSpraak cannot
-spell.
+spell. The other five are written in RegelSpraak in the twin
+`jutterswet-gehele-periode-leeg-rgs`, whose emission equals these five
+rules, source snippets included, so gate 10 holds the form there.
 
 ## The shape
 

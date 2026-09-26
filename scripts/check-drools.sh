@@ -1016,7 +1016,13 @@ EXPECTED_CHANNEL=(
 # subtype and read on the supertype. It is the golden gate 15's spec leg needed to see the rule graph's
 # declarant key. No source file of this backend changed: both branches play the two cases, PLAYED 2, with ref's
 # and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=214
+# 214 -> 215 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new, from bron.rgs — the
+# RegelSpraak twin of jutterswet-gehele-periode-leeg with the five rules RegelSpraak can spell (the leeg and
+# gevuld tests under the whole-period qualifier, its negation, the month grid, a navigated operand); the two
+# rules with the inner negation stay hand-written in the original. Its emission equals those five rules of the
+# original, so gate 10 now holds the form. No source file of this backend changed: both branches play the three
+# cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=215
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1068,8 +1074,9 @@ DRL_CHANNEL=(
   # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold. Recounted again the same
   # day (fix round on the union of the wave): jutterswet-gehele-periode-leeg, jutterswet-vast-startpunt
   # and jutterswet-breukliteral play in both branches and move neither the gap nor a class head, so the
-  # gap is 30 (213 - 183) and the heads hold at 86 lines. jutterswet-erfketen, the same fix round, plays in
-  # both branches too: the gap stays 30 (214 - 184), the heads 86 lines.
+  # gap is 30 (213 - 183) and the heads hold at 86 lines. jutterswet-erfketen and
+  # jutterswet-gehele-periode-leeg-rgs, the same fix round, play in both branches too: the gap stays 30
+  # (215 - 185), the heads 86 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1332,7 +1339,9 @@ DRL_CHANNEL=(
 # plays its two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 183 -> 184 (2026-09-26, the same fix round): jutterswet-erfketen, new. This branch plays its two cases with
 # no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=184
+# 184 -> 185 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new. This branch plays its
+# three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=185
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
