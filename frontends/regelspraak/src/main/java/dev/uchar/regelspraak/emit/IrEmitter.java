@@ -1954,9 +1954,10 @@ public final class IrEmitter {
      * backslash, control chars, non-ASCII as {@code \\uXXXX}), numbers via
      * {@link BigDecimal#toPlainString()}, explicit {@code null}. Containers track their own
      * child count so commas and newlines are placed deterministically; a key emits its own
-     * separator and the following value is written inline.
+     * separator and the following value is written inline. Package-visible because the case lowering
+     * ({@link CaseEmitter}) writes its files with it: the IR and the case files share one shape.
      */
-    private static final class Json {
+    static final class Json {
         final StringBuilder sb = new StringBuilder();
         private final java.util.ArrayDeque<int[]> counts = new java.util.ArrayDeque<>();
         private boolean afterKey = false;

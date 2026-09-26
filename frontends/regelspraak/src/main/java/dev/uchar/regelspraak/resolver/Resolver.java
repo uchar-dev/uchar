@@ -43,6 +43,15 @@ public final class Resolver {
         parser.removeErrorListeners(); parser.addErrorListener(listener);
 
         RegelSpraakDocumentContext doc = parser.regelSpraakDocument();
+        return bouw(doc, tokens, syntax);
+    }
+
+    /** The model of a parsed document: definitions, the syntax diagnostics the parse raised, the rule
+     *  check and the marker sweep. One pipeline for both routes: the scenario route parses a test document
+     *  and hands its non-scenario blocks here as a document of their own ({@link ScenarioResolver}), so
+     *  the IR it emits is the one this route emits for the same blocks. */
+    static RegelSpraakModel bouw(RegelSpraakDocumentContext doc, CommonTokenStream tokens,
+                                 java.util.List<Diagnostic> syntax) {
         RegelSpraakModel model = new DefinitionResolver().build(doc);
         model.diagnostics.addAll(syntax);
         if (!syntax.isEmpty()) kopvormHints(tokens, model);
@@ -204,14 +213,79 @@ public final class Resolver {
         return 0;
     }
 
+    /** The --cases mode body, beside --ir: {@code rest} = [out.json, file.rgs...] as for {@link #irModus}, the sources
+     *  read as ONE test document (scenariotoetsen, grammar/DIVERGENCES.md). It writes the IR document the scenarios
+     *  run against — the whole model, or with a scope the forms the scope carries — to {@code out.json}, and each
+     *  scenario as one case file {@code case<n>-<slug>.json} into {@code map}. Exit codes as {@link #irModus}: a model
+     *  that carries an ERROR, the scenarios' own included, writes NOTHING. */
+    public static int casesModus(java.util.List<String> rest, java.nio.file.Path map) throws java.io.IOException {
+        String gebruik = "usage: Resolver --ir <out.json> --cases <map> <file.rgs...>";
+        if (rest.size() < 2) { System.err.println(gebruik); return 2; }
+        java.nio.file.Path out = java.nio.file.Path.of(rest.get(0));
+        StringBuilder bron = new StringBuilder();
+        java.util.List<String> bestanden = rest.subList(1, rest.size());
+        java.util.List<Integer> eersteRegels = new java.util.ArrayList<>();
+        int regel = 1;
+        for (String f : bestanden) {
+            String tekst = java.nio.file.Files.readString(java.nio.file.Path.of(f));
+            eersteRegels.add(regel);
+            bron.append(tekst).append('\n');
+            regel += (int) (tekst + '\n').chars().filter(c -> c == '\n').count();
+        }
+        ScenarioResolver.ScenarioBundel b = ScenarioResolver.resolve(bron.toString());
+        RegelSpraakModel m = b.model();
+        if (b.scenarios().isEmpty())
+            m.diagnostics.add(new Diagnostic(Severity.ERROR, "scenario: het document draagt geen scenario, dus er valt "
+                    + "geen casebestand te schrijven", 0));
+        RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
+                : dev.uchar.regelspraak.emit.CaseEmitter.metScope(m, b.scenarios().get(0).scope());
+        m.diagnostics.addAll(dev.uchar.regelspraak.emit.IrEmitter.wireWeigeringen(irModel));
+        // one chain of files, one line count: each diagnostic names the file and the line in it as well
+        java.util.function.Function<Diagnostic, String> plaats = d -> {
+            int i = eersteRegels.size() - 1;
+            while (i > 0 && eersteRegels.get(i) > d.line()) i--;
+            return d.line() <= 0 ? "" : " [" + bestanden.get(i) + ":" + (d.line() - eersteRegels.get(i) + 1) + "]";
+        };
+        if (!m.isOk()) {
+            m.diagnostics.forEach(d -> System.out.println("  " + d + plaats.apply(d)));
+            return 1;
+        }
+        m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d + plaats.apply(d)));
+        dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(irModel)
+                .forEach(d -> System.err.println("  " + d));
+        java.nio.file.Files.createDirectories(map);
+        java.util.List<String> geschreven = new java.util.ArrayList<>();
+        for (int i = 0; i < b.scenarios().size(); i++) {
+            var s = b.scenarios().get(i);
+            String naam = dev.uchar.regelspraak.emit.CaseEmitter.bestandsnaam(i + 1, s);
+            java.nio.file.Files.writeString(map.resolve(naam), dev.uchar.regelspraak.emit.CaseEmitter.emit(s),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            geschreven.add(naam);
+        }
+        java.nio.file.Files.writeString(out, dev.uchar.regelspraak.emit.IrEmitter.emit(irModel),
+                java.nio.charset.StandardCharsets.UTF_8);
+        System.out.printf("cases: %d casebestand(en) naar %s (%s); ir: resolvedRegels=%d geschreven naar %s%n",
+                geschreven.size(), map, String.join(", ", geschreven), irModel.resolvedRegels.size(), out);
+        return 0;
+    }
+
     /** CLI: with --ir &lt;out.json&gt; over one-or-more source files, emit a FAITHFUL {@code uchar-ir-v1} JSON dump of the
-     *  complete resolved model (the uchar "mirror" artifact). This frontend carries exactly one output mode —
-     *  the IR is the product; a bare invocation prints usage and exits 2. */
+     *  complete resolved model (the uchar "mirror" artifact); with --cases &lt;map&gt; beside it, the sources are read
+     *  as one test document and its scenarios are lowered to case files as well ({@link #casesModus}). The IR is the
+     *  product; a bare invocation prints usage and exits 2. */
     public static void main(String[] args) throws java.io.IOException {
         var rest = new java.util.ArrayList<>(java.util.List.of(args));
         boolean ir = rest.remove("--ir");
-        if (!ir) { System.err.println("usage: Resolver --ir <out.json> <file.rgs...>"); System.exit(2); }
-        System.exit(irModus(rest));
+        int c = rest.indexOf("--cases");
+        java.nio.file.Path map = null;
+        if (c >= 0) {
+            if (c + 1 >= rest.size()) { System.err.println("usage: Resolver --ir <out.json> --cases <map> <file.rgs...>"); System.exit(2); }
+            map = java.nio.file.Path.of(rest.get(c + 1));
+            rest.remove(c + 1);
+            rest.remove(c);
+        }
+        if (!ir) { System.err.println("usage: Resolver --ir <out.json> [--cases <map>] <file.rgs...>"); System.exit(2); }
+        System.exit(map == null ? irModus(rest) : casesModus(rest, map));
     }
 
     private Resolver() {}

@@ -525,7 +525,7 @@ final class ExpressieBouwer {
             "(?:dd\\. +)?(\\d{1,2})-(\\d{1,2})-(\\d{4}) +(\\d{2}):(\\d{2}):(\\d{2})(?:\\.(\\d{3}))?");
 
     /** The day-first date snippet ({@code [dd. ]d-m-yyyy}) as a LocalDate; null when it is not one. */
-    private static java.time.LocalDate bronDatum(String snippet) {
+    static java.time.LocalDate bronDatum(String snippet) {
         java.util.regex.Matcher m = BRON_DATUM.matcher(snippet);
         if (!m.matches()) return null;
         try { return java.time.LocalDate.of(Integer.parseInt(m.group(3)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(1))); }
@@ -534,7 +534,7 @@ final class ExpressieBouwer {
 
     /** The day-first datum-tijd snippet ({@code [dd. ]d-m-yyyy hh:mm:ss[.SSS]}) as a LocalDateTime, the
      *  milliseconds scaled to nanoOfSecond; null when it is not one. */
-    private static java.time.LocalDateTime bronDatumTijd(String snippet) {
+    static java.time.LocalDateTime bronDatumTijd(String snippet) {
         java.util.regex.Matcher m = BRON_DATUM_TIJD.matcher(snippet);
         if (!m.matches()) return null;
         try {

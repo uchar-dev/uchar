@@ -42,6 +42,7 @@ help:
 	@echo "  make compile               Compile the generated parser + the frontend sources"
 	@echo "  make test                  Run the JUnit 5 suite via the standalone console launcher"
 	@echo "  make ir FILE=\"a.rgs …\" [OUT=…]  Emit the IR JSON (uchar-ir-v1) for one-or-more .rgs files"
+	@echo "  make ir FILE=\"bron.rgs scenario.rgs\" OUT=… CASES=<map>  … and lower the scenarios to case files"
 	@echo "  make clean                 Remove generated sources (gen/) and classes (out/)"
 	@echo "  make clean-jar             Remove the downloaded jars (lib/)"
 
@@ -88,10 +89,12 @@ test: compile $(JUNIT_JAR)
 # every node, key and enumeration value under its IR-SPEC name (the Java records
 # keep their v0 names). Over one-or-more
 # .rgs files (concatenated in listed order). An unresolvable model writes
-# NOTHING and exits 1.
+# NOTHING and exits 1. With CASES=<map> the files are read as one test document
+# and each scenario is lowered to a case file in <map> as well (scenariotoetsen,
+# grammar/DIVERGENCES.md).
 IR_OUT := $(if $(OUT),$(OUT),$(OUT_DIR)/ir.json)
 ir: compile
-	@java -cp $(ANTLR4_JAR):$(OUT_DIR) dev.uchar.regelspraak.resolver.Resolver --ir $(IR_OUT) $(FILE)
+	@java -cp $(ANTLR4_JAR):$(OUT_DIR) dev.uchar.regelspraak.resolver.Resolver --ir $(IR_OUT) $(if $(CASES),--cases $(CASES)) $(FILE)
 
 clean:
 	rm -rf gen $(OUT_DIR)

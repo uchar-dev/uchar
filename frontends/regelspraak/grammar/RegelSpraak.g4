@@ -29,6 +29,9 @@ options { tokenVocab = RegelSpraakLexer; }
 // the stray '-2024' into the next name. Gate the NUMBER branch on the literal
 // shape so half-dates (12-2024, 3-15) are a hard parse error while a real jaar
 // (2024) and a full datumwaarde (01-03-2024, one DATE token) still match.
+// Scenariotoetsen: a LOWER_ID that must be one particular word, on one position of the
+// testDocument extension only (see volgensWoord).
+private boolean isWoord(String woord) { return woord.equals(_input.LT(1).getText()); }
 private static boolean isJaar(org.antlr.v4.runtime.Token t) {
     String s = t.getText();
     if (s.length() != 4) return false;
@@ -90,8 +93,8 @@ groepLid   : regel | beslistabel ;
 // Scenariotoetsen — a DOCUMENTED EXTENSION, not a §13 production (v2.3.0 has no
 // test chapter). Reachable ONLY via `testDocument`; `regelSpraakDocument` and
 // `corpusEntry` above stay byte-for-byte unchanged, so production parsing and the
-// corpus verifier are isolated (gate G6). Binding contract: docs/SCENARIOTOETSEN.md;
-// token/collision analysis: the '§Scenariotoetsen' section of grammar/DIVERGENCES.md.
+// corpus verifier are isolated. Binding contract, token/collision analysis and the
+// lowering to case files: the 'Scenariotoetsen' section of grammar/DIVERGENCES.md.
 // Alternatives are #-labelled so the resolver can visit each form directly.
 // The document parts are regelSpraakDocument's, the §4 extension blocks included (grammar/DIVERGENCES.md §4), so a
 // scenario can stand beside the defaults it tests; before that, a test document with a defaults block did not parse.
@@ -103,20 +106,28 @@ testDocument
 
 // A herbruikbare situatie: `Situatie <naam>:` header, then a situatieblok. The name
 // is a vrijeNaam and ends at the COLON (SITUATIE is a keyword, so it never opens a
-// bare rule/definition; the ':' closes the name).
-situatieDefinitie : SITUATIE situatieNaam COLON situatieBlok ;
-situatieNaam      : vrijeNaam ; // free name up to the ':'
+// bare rule/definition; the ':' closes the name). Before the ':' a situation may be
+// based on others ('Situatie B gebaseerd op de situatie A:'): the header keyword
+// GEBASEERD_OP_DE_SITUATIE is no name word, so it ends the name, and each basis name
+// ends at the next basis or at the ':'. The resolver refuses a cycle of bases.
+situatieDefinitie : SITUATIE situatieNaam scenarioBasis* COLON situatieBlok ;
+situatieNaam      : vrijeNaam ; // free name up to the ':' (or a basis)
 
-// A scenario: header (name + scope + optional peildatum + optional gebaseerd-op),
+// A scenario: header (name + optional scope + optional peildatum + optional gebaseerd-op),
 // then an optional inline situatiesectie, then the (mandatory) verwachtingsectie.
-// The scenarionaam is the token run up to the `toetst …` scope keyword.
+// The scenarionaam is the token run up to the first header keyword. The scope is
+// optional: without one the scenario tests the whole document, and with one the
+// emitted IR carries only the rules it names (grammar/DIVERGENCES.md, Scenariotoetsen).
 scenario
-    : SCENARIO scenarioNaam scenarioScope
+    : SCENARIO scenarioNaam scenarioScope?
       scenarioPeildatum? scenarioBasis*
       inlineSituatie?
       MET_ALS_VERWACHT_RESULTAAT verwachting+
     ;
-scenarioNaam : ~( TOETST_DE_REGEL | TOETST_DE_REGELS | TOETST_DE_REGELGROEP )+ ; // free name up to 'toetst …'
+scenarioNaam // free name up to the first header keyword
+    : ~( TOETST_DE_REGEL | TOETST_DE_REGELS | TOETST_DE_REGELGROEP | MET_PEILDATUM
+       | GEBASEERD_OP_DE_SITUATIE | GEGEVEN_IS_DE_VOLGENDE_SITUATIE | MET_ALS_VERWACHT_RESULTAAT )+
+    ;
 
 scenarioScope
     : TOETST_DE_REGEL      enkeleRegelReferentie                            # scopeEnkeleRegel
@@ -148,7 +159,7 @@ regelReferentieWoord
 // token (e.g. 'in gelijke delen', 'op basis van'), which is exactly what lets a golden
 // scenario scope a real §9.7 verdeling rule or any rule whose name
 // embeds such words. The resolver reconstructs the name from the token text and matches
-// it against the model's rule names (normalised). See docs/SCENARIOTOETSEN.md.
+// it against the model's rule names (normalised). See grammar/DIVERGENCES.md, Scenariotoetsen.
 enkeleRegelReferentie
     : ~( MET_PEILDATUM | GEBASEERD_OP_DE_SITUATIE | GEGEVEN_IS_DE_VOLGENDE_SITUATIE | MET_ALS_VERWACHT_RESULTAAT )+ ;
 
@@ -166,11 +177,16 @@ situatieOnderdeel
 // UPPER_ID (V1, Tom); the resolver checks its uniqueness and non-collision with a type.
 instantie : EEN objectTypeNaam UPPER_ID toewijzing* ;
 toewijzing
-    : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde              DOT? # attribuutToewijzing   // de/het <attr> is <waarde>
+    : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?     DOT? # attribuutToewijzing   // de/het <attr> is <waarde> [van <d> tot <d>]
     | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                    DOT? # rolToOneToewijzing    // de/het <rol> is <LABEL>
-    | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( EN UPPER_ID )* DOT? # rolToManyToewijzing   // de/het <rol> zijn <LABEL> en <LABEL> …
-    | bullet ( IS | HEEFT ) lidwoord? kaleNaam               DOT? # kenmerkToewijzing     // is/heeft [lidw] <kenmerk>
+    | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* DOT? # rolToManyToewijzing // de/het <rol> zijn <LABEL>, <LABEL> en <LABEL>
+    | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?      DOT? # kenmerkToewijzing     // is/heeft [lidw] <kenmerk> [van <d> tot <d>]
     ;
+// One period of a timeline, from inclusive to exclusive, the case format's [from, to): a
+// segment of a time-dependent attribute or parameter, or a period in which a time-dependent
+// characteristic holds. Bare DATE tokens only: a name word may be a NUMBER, so a
+// datumWaarde's NUMBER arm would let a kaleNaam's 'van'-segment compete for 'van 2024'.
+periode : VAN DATE TOT DATE ;
 // The attribute/role name in a bulleted toewijzing. It must STOP before the trailing
 // ' is <UPPER_ID>' / ' is <waarde>' / ' zijn <UPPER_ID>' — kaleNaam already excludes
 // the UPPER_ID of a following LABEL, and IS/ZIJN are not name words, so the name loop
@@ -182,7 +198,7 @@ toewijzingNaam : begrensdeNaam ;
 
 // Ongebullette parameterwaarde — the missing bullet is what distinguishes it from an
 // instantie-toewijzing (`de parameter …`, whole-phrase token DE_PARAMETER).
-parameterWaarde : DE_PARAMETER parameterNaam IS situatieWaarde DOT? ;
+parameterWaarde : DE_PARAMETER parameterNaam IS situatieWaarde periode? DOT? ;
 
 // A situatie/verwachting value: the existing literal tokens (nothing new). A bare
 // `NUMBER` unit run reuses getalWaarde. `leeg` is NOT a situatieWaarde — only a
@@ -205,12 +221,19 @@ situatieWaarde
 // membership'). The optional lidwoord (een|de|het) covers `is een/de/het <kenmerk>`.
 verwachting
     : bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS LEEG                 DOT? # verwachtAttribuutLeeg     // … is leeg (listed first: LEEG is not a situatieWaarde)
-    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS situatieWaarde       DOT? # verwachtAttribuutWaarde   // de/het <attr> van <LABEL> is <waarde>
+    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS ALTIJD LEEG          DOT? # verwachtTijdlijnLeeg      // … is altijd leeg: the whole timeline is empty
+    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS situatieWaarde periode? DOT? # verwachtAttribuutWaarde // de/het <attr> van <LABEL> is <waarde> [van <d> tot <d>]
     | bullet UPPER_ID IS      lidwoord? kaleNaam                     DOT? # verwachtKenmerk           // <LABEL> is [lidw]|geen <kenmerk>
     | bullet UPPER_ID HEEFT   lidwoord? kaleNaam                     DOT? # verwachtKenmerkHeeft      // <LABEL> heeft [lidw]|geen <kenmerk>
-    | bullet DE_GEGEVENS_ZIJN INCONSISTENT                           DOT? # verwachtInconsistent      // de gegevens zijn inconsistent
+    | bullet DE_GEGEVENS_ZIJN INCONSISTENT inconsistentieSleutel?    DOT? # verwachtInconsistent      // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
     | bullet DE_GEGEVENS_ZIJN CONSISTENT                             DOT? # verwachtConsistent        // de gegevens zijn consistent
     ;
+// The optional key of an inconsistency expectation: the rule whose channel fact is expected,
+// written as a text literal because a conflict channel's name ('Jutter.vrijgesteld/0') is no
+// token run, and optionally the flagged instance. 'volgens' is no keyword token (a name may
+// carry the word), so the word is matched on its text here, on this one position only.
+inconsistentieSleutel : volgensWoord tekstWaarde ( VOOR UPPER_ID )? ;
+volgensWoord          : { isWoord("volgens") }? LOWER_ID ;
 // The attribuutnaam of a verwachting, which MUST stop before the trailing ' van <LABEL>'
 // (VAN then the UPPER_ID label). A plain kaleNaam would ambiguously absorb ' van <LABEL>'
 // because kaleNaam's '(VAN kaleNaamDeel)*' loop accepts a bare UPPER_ID as a kaleNaamDeel —
@@ -218,7 +241,7 @@ verwachting
 // label sometimes swallowed the label, mismatching the outer 'VAN UPPER_ID IS'). The bounded
 // form below extends a 'van'-segment ONLY when it is LOWER_ID-led (an attribute-name segment
 // is always a lowercase word: 'van afstand', 'van bestemming'), so a 'van <UPPER_ID>' label
-// is never absorbed. Deterministic; see grammar/DIVERGENCES.md '§Scenariotoetsen'.
+// is never absorbed. Deterministic; see grammar/DIVERGENCES.md, Scenariotoetsen.
 verwachtingNaam : begrensdeNaam ;
 // A name that may contain internal ' van <lowercase segment>' but never a trailing
 // ' van <UPPER_ID>' — the UPPER_ID label/right-hand side is left for the enclosing rule.

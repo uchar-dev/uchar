@@ -158,8 +158,8 @@ GEEN_VAN_DE           : 'geen' WSP 'van' WSP 'de'           ; // §13.4.14 quant
 TEN_MINSTE            : 'ten' WSP 'minste' | 'tenminste' ; // §13.4.14 quantifier
 TEN_HOOGSTE           : 'ten' WSP 'hoogste'           ; // §13.4.14 quantifier
 
-// --- scenariotoetsen (DOCUMENTED EXTENSION — see docs/SCENARIOTOETSEN.md and the
-//     '§Scenariotoetsen' section of grammar/DIVERGENCES.md). v2.3.0 has NO test
+// --- scenariotoetsen (DOCUMENTED EXTENSION — see the 'Scenariotoetsen' section of
+//     grammar/DIVERGENCES.md). v2.3.0 has NO test
 //     chapter; these forms are reachable ONLY via the `testDocument` start rule and are
 //     inert on production input. Each surface form is a WHOLE-PHRASE token (WSP-joined),
 //     so it wins by maximal munch ONLY when the complete phrase is present — none of the
