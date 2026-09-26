@@ -1628,6 +1628,17 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   periods only, as every case reader demands; a period belongs to a
   time-dependent attribute, characteristic or parameter only. The periods of
   one timeline stand in order and do not overlap.
+- **The grid**: both bounds of a segment of an attribute, a parameter or an
+  expected timeline sit on a wall of the declared grid — its granularity,
+  count and fixed start point, and without a start point the calendar's month,
+  quarter or year grid or every day — because every case reader holds a
+  timeline's segments to those walls. A variable start lays its walls per
+  object from an anchor a rule writes, and a week grid or a grid of several
+  units without a date start lays none a day can be held against: those are
+  left to the readers. A characteristic's periods count in days whatever its
+  grid, as the readers take them and as the pinned anchor cases write them
+  (the case schema's description of `characteristicTimelines` asks for the
+  grid; the readers and the anchors do not).
 - **Two gates**, over the forms the scenario carries: a form with a validity
   window, or one that reads the evaluation date, needs a peildatum; every
   parameter a form reads needs a value in the merged situation. Measured
@@ -1751,6 +1762,10 @@ prefix `scenario: `, placeholders in angle brackets:
 - `de periodegrens '<d>' draagt een tijd, maar een periode telt in hele
   dagen`, and `de periodegrens '<d>' is geen geldige datum`
 - `de periode van <d> tot <d> is leeg of loopt terug`
+- `de periodegrens <d> van <het attribuut '<a>' | de parameter '<p>' | de
+  verwachting voor '<a>'> ligt niet op het <maandraster | raster van <n>
+  maanden | …> van de declaratie[ (vast startpunt <s>)]; een casebestand
+  levert een tijdlijn in de perioden van dat raster`, once per bound
 - `de periode van <d> tot <d> begint vóór het einde van de vorige (<d>); de
   perioden van één tijdlijn staan in volgorde en overlappen niet`
 - `het label '<l>' in de verwachting is nergens in de situatie gedeclareerd`

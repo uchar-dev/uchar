@@ -166,6 +166,85 @@ class ScenarioTypeGateTest {
                 "de periodegrens '01-01-2024 10:00:00.000' draagt een tijd, maar een periode telt in hele dagen");
     }
 
+    // Every case reader holds a timeline's segments to the walls of the declared grid; before this check such a
+    // bound was lowered with rc 0 and ref and clingo refused the case file ("segment boundaries must sit on the
+    // declared granularity grid").
+    private static final String RASTER = "; een casebestand levert een tijdlijn in de perioden van dat raster";
+
+    @Test void een_attribuutperiode_ligt_op_het_raster_van_de_declaratie() {
+        fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 05-01-2024 tot 01-02-2024\n", "05-01-2024",
+                "de periodegrens 2024-01-05 van het attribuut 'borgdagen' ligt niet op het maandraster van de "
+                        + "declaratie" + RASTER);
+    }
+
+    @Test void een_parameterperiode_ligt_op_het_raster_van_de_declaratie() {
+        fout("Situatie s:\nde parameter het penningbedrag is 7 van 01-03-2024 tot 01-01-2025\n", "01-03-2024",
+                "de periodegrens 2024-03-01 van de parameter 'penningbedrag' ligt niet op het jaarraster van de "
+                        + "declaratie" + RASTER);
+    }
+
+    @Test void een_verwachte_periode_ligt_op_het_raster_van_de_declaratie() {
+        fout(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 15-02-2024\n"), "15-02-2024",
+                "de periodegrens 2024-02-15 van de verwachting voor 'borgdagen' ligt niet op het maandraster van de "
+                        + "declaratie" + RASTER);
+    }
+
+    private static final String VASTE_RASTERS = """
+        Tijdlijn het stormjaar heeft tijdvakken van een jaar startend op dag 1 van maand 10;
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de stormwachtdagen Numeriek (niet-negatief geheel getal) voor elke stormjaar;
+            de maandwachtdagen Numeriek (niet-negatief geheel getal) voor elke maand startend op dag 31 van de maand;
+            de kwartaalteller Numeriek (niet-negatief geheel getal) voor elke 3 maanden startend op 01-01-2024;
+            de weekteller Numeriek (niet-negatief geheel getal) voor elke week startend op 30-9-2024;
+
+        """;
+
+    private static ScenarioBundel vastScenario(String toewijzingen) {
+        return ScenarioResolver.resolve(VASTE_RASTERS + "Scenario s\nmet peildatum 15-03-2025\n"
+                + "Gegeven is de volgende situatie:\neen Jutter J\n" + toewijzingen
+                + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
+    }
+
+    @Test void een_vast_startpunt_en_een_aantal_leggen_het_raster() {
+        // the walls computed from the start point: the month-end start clamps to 29 February and returns to the 31st
+        String opRaster = "- de stormwachtdagen is 4 van 01-10-2024 tot 01-10-2025\n"
+                + "- de maandwachtdagen is 4 van 31-01-2024 tot 29-02-2024\n"
+                + "- de maandwachtdagen is 5 van 29-02-2024 tot 31-03-2024\n"
+                + "- de kwartaalteller is 4 van 01-04-2024 tot 01-07-2024\n"
+                + "- de weekteller is 4 van 07-10-2024 tot 14-10-2024\n";
+        ScenarioBundel goed = vastScenario(opRaster);
+        assertTrue(goed.isOk(), () -> goed.model().errors().toString());
+        String scheef = "- de stormwachtdagen is 4 van 01-01-2025 tot 01-10-2025\n"
+                + "- de maandwachtdagen is 4 van 01-02-2024 tot 29-02-2024\n"
+                + "- de kwartaalteller is 4 van 01-04-2024 tot 01-06-2024\n"
+                + "- de weekteller is 4 van 07-10-2024 tot 15-10-2024\n";
+        ScenarioBundel b = vastScenario(scheef);
+        String bron = VASTE_RASTERS + "Scenario s\nmet peildatum 15-03-2025\nGegeven is de volgende situatie:\n"
+                + "een Jutter J\n" + scheef;
+        foutOpRegel(b, bron, "stormwachtdagen is 4", "de periodegrens 2025-01-01 van het attribuut 'stormwachtdagen' "
+                + "ligt niet op het jaarraster van de declaratie (vast startpunt --10-01)" + RASTER);
+        foutOpRegel(b, bron, "maandwachtdagen is 4", "de periodegrens 2024-02-01 van het attribuut 'maandwachtdagen' "
+                + "ligt niet op het maandraster van de declaratie (vast startpunt --01-31)" + RASTER);
+        foutOpRegel(b, bron, "kwartaalteller is 4", "de periodegrens 2024-06-01 van het attribuut 'kwartaalteller' "
+                + "ligt niet op het raster van 3 maanden van de declaratie (vast startpunt 2024-01-01)" + RASTER);
+        foutOpRegel(b, bron, "weekteller is 4", "de periodegrens 2024-10-15 van het attribuut 'weekteller' ligt niet "
+                + "op het weekraster van de declaratie (vast startpunt 2024-09-30)" + RASTER);
+        assertEquals(4, b.model().errors().size(), () -> b.model().errors().toString());
+    }
+
+    @Test void een_kenmerkperiode_telt_in_dagen() {
+        // the readers take a characteristic's periods day-precise, whatever its grid (the grid buckets its day counts),
+        // and the pinned anchor cases carry such periods: no grid check here
+        ScenarioBundel b = resolve("Situatie s:\neen Jutter J\n- is borgplichtig van 03-01-2024 tot 20-02-2024\n"
+                + "de parameter de vondstdrempel is 3\n"
+                + "Scenario k\nmet peildatum 15-03-2024\ngebaseerd op de situatie s\n"
+                + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        assertEquals(List.of(new Periode(LocalDate.of(2024, 1, 3), LocalDate.of(2024, 2, 20))),
+                b.scenarios().get(0).situatie().instantie("J").kenmerken().get(0).perioden());
+    }
+
     @Test void vaste_waarde_en_perioden_in_een_blok() {
         fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen is 5\n",
                 "de borgdagen is 5", "het attribuut 'borgdagen' krijgt in dit blok zowel perioden als een vaste waarde");

@@ -117,6 +117,37 @@ public final class VastStartpunt {
         return s == null ? "none" : "'" + s + "'";
     }
 
+    /** Whether day {@code d} is a wall of the grid of {@code g}, {@code aantal} units and fixed start point
+     *  {@code vast} (null: no fixed start), or null where that grid lays no wall a day can be held against: a grid of
+     *  several units without a date start, a week grid of one unit without one, and a fixed start point that is no
+     *  lexeme of WF-115 for its grid (RUNTIME-SEMANTICS ch. 3.2). The calendar's month, quarter and year grids are
+     *  the grids {@code --01-01} lays; a day grid of one unit has a wall at every day. */
+    public static Boolean opWand(Granulariteit g, int aantal, String vast, LocalDate d) {
+        if (g == null || aantal < 1 || d == null) return null;
+        if (aantal >= 2) {
+            Lexeem l = lees(vast);
+            if (l == null || !l.isDatum()) return null;
+            LocalDate a = l.datum();
+            return switch (g) {
+                case DAG -> Math.floorMod(ChronoUnit.DAYS.between(a, d), (long) aantal) == 0;
+                case WEEK -> Math.floorMod(ChronoUnit.DAYS.between(a, d), 7L * aantal) == 0;
+                case MAAND, KWARTAAL, JAAR -> {
+                    long stap = (long) stapMaanden(g) * aantal;
+                    long k = Math.floorDiv(ChronoUnit.MONTHS.between(a.withDayOfMonth(1), d.withDayOfMonth(1)), stap);
+                    yield a.plusMonths(stap * k).equals(d);
+                }
+            };
+        }
+        if (g == Granulariteit.DAG) return vast == null ? Boolean.TRUE : null;
+        String start = vast != null ? vast : g == Granulariteit.WEEK ? null : "--01-01";
+        if (start == null || weigering(g, 1, start) != null && vast != null) return null;
+        try {
+            return periode(g, start, d)[0].equals(d);
+        } catch (IllegalArgumentException geenRaster) {
+            return null;
+        }
+    }
+
     /** The date a day-month start's walls are computed from: day {@code dag} of month {@code maand} in a leap
      *  year. A date start is its own anchor. */
     public static LocalDate anker(Lexeem l) {

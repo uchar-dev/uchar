@@ -501,7 +501,7 @@ public final class ScenarioResolver {
             return;
         }
         Periode p = leesPeriode(a.periode());
-        if (p == null || w == null) return;
+        if (p == null || w == null || !opRaster(p, ot, attr, "het attribuut '" + attr + "'", line)) return;
         List<Segment> tl = tijdlijnen.get(norm(attr));
         if (tl == null) {
             tl = new ArrayList<>();
@@ -638,7 +638,9 @@ public final class ScenarioResolver {
             return null;
         }
         Periode per = leesPeriode(pw.periode());
-        if (per == null || w == null) return null;
+        if (per == null || w == null
+                || !opRaster(per, p.granulariteit(), 1, p.vastStartpunt(), false, "de parameter '" + p.naam() + "'", line))
+            return null;
         List<Segment> tl = tijdlijnen.get(norm(p.naam()));
         boolean nieuw = tl == null;
         if (nieuw) { tl = new ArrayList<>(); tijdlijnen.put(norm(p.naam()), tl); }
@@ -677,6 +679,44 @@ public final class ScenarioResolver {
         fout(line, "de periode van " + p.van() + " tot " + p.tot() + " begint vóór het einde van de vorige ("
                 + vorigeTot + "); de perioden van één tijdlijn staan in volgorde en overlappen niet");
         return false;
+    }
+
+    /** Whether both bounds of {@code p} sit on the grid of attribute {@code attr} of {@code ot}: its granularity,
+     *  count and fixed start point, as its facet declares them. */
+    private boolean opRaster(Periode p, Objecttype ot, String attr, String wat, int line) {
+        Integer aantal = ot.tijdlijnAantalVan(attr);
+        return opRaster(p, ot.granulariteitVan(attr), aantal == null ? 1 : aantal, ot.vastStartpuntVan(attr),
+                model.heeftVariabelStartpunt(ot, attr), wat, line);
+    }
+
+    /** Every case reader holds the segments of a timeline to the walls of its declared grid (the case format's
+     *  timeline value), so a bound off the grid is an ERROR here, per bound, rather than a case file those readers
+     *  refuse. A variable start lays its grid per object from an anchor a rule writes, and a grid that lays no wall
+     *  a day can be held against ({@link dev.uchar.regelspraak.kern.VastStartpunt#opWand}) has nothing to hold a
+     *  bound to: both are left to the readers. */
+    private boolean opRaster(Periode p, RegelSpraakModel.Granulariteit g, int aantal, String vast, boolean variabel, String wat,
+                             int line) {
+        if (variabel) return true;
+        boolean goed = true;
+        for (LocalDate grens : List.of(p.van(), p.tot()))
+            if (Boolean.FALSE.equals(dev.uchar.regelspraak.kern.VastStartpunt.opWand(g, aantal, vast, grens))) {
+                fout(line, "de periodegrens " + grens + " van " + wat + " ligt niet op het " + rasterNaam(g, aantal)
+                        + " van de declaratie" + (vast == null ? "" : " (vast startpunt " + vast + ")")
+                        + "; een casebestand levert een tijdlijn in de perioden van dat raster");
+                goed = false;
+            }
+        return goed;
+    }
+
+    private static String rasterNaam(RegelSpraakModel.Granulariteit g, int aantal) {
+        String[] woord = switch (g) {
+            case DAG -> new String[]{"dag", "dagen"};
+            case WEEK -> new String[]{"week", "weken"};
+            case MAAND -> new String[]{"maand", "maanden"};
+            case KWARTAAL -> new String[]{"kwartaal", "kwartalen"};
+            case JAAR -> new String[]{"jaar", "jaren"};
+        };
+        return aantal == 1 ? woord[0] + "raster" : "raster van " + aantal + " " + woord[1];
     }
 
     // ---------------- the merge ----------------
@@ -788,7 +828,9 @@ public final class ScenarioResolver {
                 }
                 if (!temporeelAttribuut(label, attr, situatie, line)) continue;
                 Periode p = leesPeriode(a.periode());
-                if (p == null || w == null) continue;
+                if (p == null || w == null
+                        || !opRaster(p, situatie.instantie(label).objecttype(), attr, "de verwachting voor '" + attr + "'", line))
+                    continue;
                 String sleutel = label + "|" + norm(attr);
                 if (Boolean.TRUE.equals(altijdLeeg.get(sleutel))) {
                     fout(line, "de periode voor '" + attr + "' van " + label + " spreekt de verwachting tegen dat het "
