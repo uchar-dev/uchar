@@ -1881,7 +1881,9 @@ outside the wire's bounds (zero, negative, or past 2^62 - 1 along its chain,
 in the loader's sentence), a role check whose written role names no relation
 from the subject or several (in the loader's sentence for the check without
 its binding, `missing field 'factType'`), a rule target whose name is both an
-attribute and a characteristic of its type (WF-022); witnesses `EenheidZinTest`,
+attribute and a characteristic of its type (WF-022), a written day-kind spelling
+another day kind already carries (WF-017; a derived plural gives way instead);
+witnesses `EenheidZinTest`,
 `TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the

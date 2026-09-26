@@ -126,6 +126,28 @@ class DagsoortKalenderspellingTest {
 
     // ---------------- the counter-measurement: the guard refuses nothing else ----------------
 
+    /** A written spelling another day kind already carries names two day kinds (WF-017), in the verifier's
+     *  sentence. Before: the second day kind silently lost its declared plural, or its name came to stand for the
+     *  first day kind and the document went to disk for the verifier to refuse. */
+    @Test void een_spelling_van_twee_dagsoorten_is_een_fout() {
+        assertEquals(List.of("dagsoort 'rustdag': the plural 'vrijedagen' of day kind 'rustdag' is the plural "
+                        + "'vrijedagen' of day kind 'havendag': one spelling names two day kinds"),
+                Resolver.resolve("Dagsoort de havendag (mv: vrijedagen);\nDagsoort de rustdag (mv: vrijedagen);\n")
+                        .errors().stream().map(Diagnostic::message).toList());
+        assertEquals(List.of("dagsoort 'rustdag': the plural 'rustdag' of day kind 'havendag' is the name of day kind "
+                        + "'rustdag': one spelling names two day kinds"),
+                Resolver.resolve("Dagsoort de havendag (mv: rustdag);\nDagsoort de rustdag (mv: rustdagen);\n")
+                        .errors().stream().map(Diagnostic::message).toList());
+        assertEquals(List.of("dagsoort 'rustdag': the plural 'havendag' of day kind 'rustdag' is the name of day kind "
+                        + "'havendag': one spelling names two day kinds"),
+                Resolver.resolve("Dagsoort de havendag (mv: havendagen);\nDagsoort de rustdag (mv: havendag);\n")
+                        .errors().stream().map(Diagnostic::message).toList());
+        // a derived plural gives way without a refusal: "vrijdag" derives "vrijdagen", which the second day kind is
+        RegelSpraakModel afgeleid = Resolver.resolve("Dagsoort de vrijdag;\nDagsoort de vrijdagen (mv: vrijedagen);\n");
+        assertEquals(List.of(), afgeleid.errors());
+        assertEquals("vrijdagen", afgeleid.dagsoortPerEenheid.get("vrijdagen"), "de geschreven naam wint");
+    }
+
     @Test void een_gewone_dagsoort_wordt_onveranderd_geregistreerd() {
         // A guard that refuses too much is as wrong as one that refuses nothing: every spelling OUTSIDE
         // the table is a declared day kind (ch. 3.8), and both of this one's spellings are.

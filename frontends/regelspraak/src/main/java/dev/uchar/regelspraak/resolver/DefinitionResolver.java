@@ -1010,12 +1010,16 @@ public final class DefinitionResolver {
         }
         int regel = d.getStart().getLine();
         model.dagsoorten.add(enkel);
-        registreerDagsoortEenheid(enkel, enkel, regel);
+        registreerDagsoortEenheid(enkel, enkel, regel, false);
         // §3.12 a duration unit is naturally the PLURAL ("5 werkdagen"); register the declared meervoud, or — when
         // none is declared — the derived "-en" plural ("werkdag" -> "werkdagen"), so the unit still resolves.
-        if (d.meervoudsvorm() != null) registreerDagsoortEenheid(src(d.meervoudsvorm()).trim(), enkel, regel);
-        else registreerDagsoortEenheid(enkel + "en", enkel, regel);
+        if (d.meervoudsvorm() != null) registreerDagsoortEenheid(src(d.meervoudsvorm()).trim(), enkel, regel, true);
+        else registreerDagsoortEenheid(enkel + "en", enkel, regel, null);
     }
+
+    /** Every written spelling of a day kind so far, lower-cased: the day kind, and its written plural or null where
+     *  the spelling is the day kind's name. */
+    private final java.util.Map<String, String[]> dagsoortSpellingen = new java.util.HashMap<>();
 
     /** A dagsoort unit spelling that collides with a spelling of the NORMATIVE calendar table
      *  (uchar's RUNTIME-SEMANTICS ch. 3.8 — thirty spellings, abbreviations and second plurals included) is
@@ -1026,14 +1030,39 @@ public final class DefinitionResolver {
      *  remaining spellings through into an IR that WF-017 refuses.
      *  {@code regel} is the declaration's own line: the warning used to be raised at a hard-coded 0, which
      *  points an author at nothing in a document with many day kinds. */
-    private void registreerDagsoortEenheid(String spelling, String dagsoort, int regel) {
+    private void registreerDagsoortEenheid(String spelling, String dagsoort, int regel, Boolean meervoud) {
         String k = spelling.trim().toLowerCase();
         if (Tijdrekening.isKalenderSpelling(k)) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "dagsoort-eenheid '" + spelling + "' valt samen met een ingebouwde tijdseenheid en wordt niet als dagsoort-eenheid geregistreerd", regel));
             return;
         }
-        model.dagsoortPerEenheid.putIfAbsent(k, dagsoort);
+        // A written spelling another day kind already carries names two day kinds (WF-017). It used to be dropped
+        // without a word: the second day kind lost its declared plural, or its name came to stand for the first. A
+        // derived plural ({@code meervoud} null) is this frontend's own convenience and gives way without a refusal,
+        // also to a written spelling that comes after it.
+        if (meervoud == null) {                 // a derived plural gives way to every spelling already there
+            model.dagsoortPerEenheid.putIfAbsent(k, dagsoort);
+            return;
+        }
+        String[] eerder = dagsoortSpellingen.get(k);
+        if (eerder == null) {                   // a written spelling: a derived plural there gives way to it
+            dagsoortSpellingen.put(k, new String[]{dagsoort, meervoud ? spelling : null});
+            model.dagsoortPerEenheid.put(k, dagsoort);
+            return;
+        }
+        if (!eerder[0].equalsIgnoreCase(dagsoort)) {
+            String zin = meervoud
+                    ? "the plural '" + spelling + "' of day kind '" + dagsoort + "' is the "
+                            + (eerder[1] == null ? "name of day kind '" + eerder[0] + "'"
+                                                 : "plural '" + eerder[1] + "' of day kind '" + eerder[0] + "'")
+                    : eerder[1] == null ? null
+                    : "the plural '" + eerder[1] + "' of day kind '" + eerder[0] + "' is the name of day kind '"
+                            + dagsoort + "'";
+            if (zin != null)
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "dagsoort '" + dagsoort + "': " + zin + ": one spelling names two day kinds", regel));
+        }
     }
 
     private static String naam(LowerNaamContext ctx) { return src(ctx); }
