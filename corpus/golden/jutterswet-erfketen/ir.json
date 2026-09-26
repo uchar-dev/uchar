@@ -1,0 +1,479 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstwaarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kliptoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jutterloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogtepremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "hoogwerker",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Klipjutter",
+        "supertype": "Jutter",
+        "animate": true,
+        "plural": "Klipjutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "klimhoogte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "klipbonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "strandloon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "strandloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het strandloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstwaarde",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstwaarde"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn vondstwaarde maal 2"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "klipbonus van een klipjutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "klipbonus",
+              "subjectType": "Klipjutter",
+              "source": {
+                "snippet": "De klipbonus van een Klipjutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Klipjutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus 5"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Klipjutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "zijn strandloon groter is dan 10"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kliptoeslag van een klipjutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kliptoeslag",
+              "subjectType": "Klipjutter",
+              "source": {
+                "snippet": "De kliptoeslag van een Klipjutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "klimhoogte",
+                "subjectType": "Klipjutter",
+                "source": {
+                  "snippet": "zijn klimhoogte"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "3"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn klimhoogte maal 3"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "jutterloon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jutterloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het jutterloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "kliptoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn kliptoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn kliptoeslag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogwerker",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogwerker",
+              "subjectType": "Klipjutter",
+              "source": {
+                "snippet": "Een Klipjutter is hoogwerker"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "klimhoogte",
+                "subjectType": "Klipjutter",
+                "source": {
+                  "snippet": "zijn klimhoogte"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "20"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "20"
+                }
+              },
+              "source": {
+                "snippet": "zijn klimhoogte groter is dan 20"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogtepremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogtepremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De hoogtepremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "7"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "hoogwerker",
+              "negated": false,
+              "source": {
+                "snippet": "hij hoogwerker is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,126 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Klipjutter",
+        "attributes": {
+          "vondstwaarde": {
+            "number": "8"
+          },
+          "klimhoogte": {
+            "number": "25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Klipjutter",
+        "attributes": {
+          "vondstwaarde": {
+            "number": "4"
+          },
+          "klimhoogte": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "strandloon",
+      "value": {
+        "number": "16"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "klipbonus",
+      "value": {
+        "number": "21"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "kliptoeslag",
+      "value": {
+        "number": "75"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "jutterloon",
+      "value": {
+        "number": "91"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "K1",
+      "characteristic": "hoogwerker"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "hoogtepremie",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "strandloon",
+      "value": {
+        "number": "8"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K2",
+      "attribute": "klipbonus"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "kliptoeslag",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "jutterloon",
+      "value": {
+        "number": "68"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "K2",
+      "characteristic": "hoogwerker"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K2",
+      "attribute": "hoogtepremie"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

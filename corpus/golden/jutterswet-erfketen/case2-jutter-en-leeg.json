@@ -1,0 +1,102 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstwaarde": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Klipjutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "strandloon",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "kliptoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jutterloon",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "hoogwerker"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "hoogtepremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "strandloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "klipbonus"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "kliptoeslag",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K3",
+      "attribute": "jutterloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "K3",
+      "characteristic": "hoogwerker"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "hoogtepremie"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

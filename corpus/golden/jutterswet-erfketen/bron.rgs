@@ -1,0 +1,38 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vondstwaarde Numeriek (niet-negatief geheel getal);
+    het strandloon Numeriek (niet-negatief geheel getal);
+    de kliptoeslag Numeriek (niet-negatief geheel getal);
+    het jutterloon Numeriek (niet-negatief geheel getal);
+    de hoogtepremie Numeriek (niet-negatief geheel getal);
+    is hoogwerker kenmerk (bijvoeglijk);
+
+Objecttype de Klipjutter is een Jutter (mv: Klipjutters) (bezield)
+    de klimhoogte Numeriek (niet-negatief geheel getal);
+    de klipbonus Numeriek (niet-negatief geheel getal);
+
+Regel strandloon van een jutter
+    geldig altijd
+        Het strandloon van een Jutter moet berekend worden als zijn vondstwaarde maal 2.
+
+Regel klipbonus van een klipjutter
+    geldig altijd
+        De klipbonus van een Klipjutter moet berekend worden als zijn strandloon plus 5
+        indien zijn strandloon groter is dan 10.
+
+Regel kliptoeslag van een klipjutter
+    geldig altijd
+        De kliptoeslag van een Klipjutter moet berekend worden als zijn klimhoogte maal 3.
+
+Regel jutterloon van een jutter
+    geldig altijd
+        Het jutterloon van een Jutter moet berekend worden als zijn strandloon plus zijn kliptoeslag.
+
+Regel hoogwerker
+    geldig altijd
+        Een Klipjutter is hoogwerker
+        indien zijn klimhoogte groter is dan 20.
+
+Regel hoogtepremie van een jutter
+    geldig altijd
+        De hoogtepremie van een Jutter moet gesteld worden op 7
+        indien hij hoogwerker is.

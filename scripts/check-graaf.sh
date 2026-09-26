@@ -47,9 +47,17 @@ fail() { echo "check-graaf: FAIL — $*" >&2; exit 1; }
 # touches no protected script. Raised deliberately, at an occasion. Accepted weakness, recorded rather than
 # hidden: a count that stays equal while its content shifted passes; VERSCHIL_BEWUST and the per-golden
 # comparison are what cover that direction. A deliberate removal lowers the floor in the same commit.
-EXPECTED_MIN_GOLDENS=228      # 2026-09-26: measured 228 (goldens the loader reads, compared with the verifier)
-EXPECTED_MIN_AFHANKELIJK=45   # 2026-09-26: measured 45 (dependencies compared, in 31 of those goldens)
-EXPECTED_MIN_BRONROUTE=93     # 2026-09-26: measured 93 (goldens with a bron.rgs, bron route against wire route)
+# Raised the same day (fix round on the union of the wave), at the arrival of jutterswet-erfketen: the first
+# golden with a rule -> rule dependency over a subtype chain, in both directions (an attribute written on the
+# supertype and read on the subtype, an attribute and a characteristic written on the subtype and read on the
+# supertype).
+# Before it the spec leg could not see the declarant key: a graph keyed on the holder type stayed green here
+# (232 of 269 goldens, 45 dependencies) and only the route leg's unit tests caught it; with it, the spec leg
+# fails on the golden's three chain dependencies. The union of the wave and that fix round brought 5 goldens
+# the loader reads, 4 dependencies and 4 goldens with a bron.rgs.
+EXPECTED_MIN_GOLDENS=233      # 2026-09-26: measured 233 (goldens the loader reads, compared with the verifier)
+EXPECTED_MIN_AFHANKELIJK=49   # 2026-09-26: measured 49 (dependencies compared)
+EXPECTED_MIN_BRONROUTE=97     # 2026-09-26: measured 97 (goldens with a bron.rgs, bron route against wire route)
 EXPECTED_MIN_TESTS=18         # 2026-09-26: measured 18 (the graph's unit tests under backends/drools/src/bronroute)
 
 # --- the deliberate differences (reason-carrying; fails when stale) ------------------------------

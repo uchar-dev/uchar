@@ -1010,7 +1010,13 @@ EXPECTED_CHANNEL=(
 # rational at the smallest scale that holds its value (ASP-TRANSLATION S4). No source file of this
 # backend changed: both branches play the two cases, PLAYED 2, with ref's and clingo's values.
 # EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=213
+# 213 -> 214 (2026-09-26, fix round on the union of the wave): jutterswet-erfketen, new, from bron.rgs and
+# hand-computed — rule -> rule dependencies over the subtype chain Klipjutter of Jutter in both directions: an
+# attribute written on the supertype and read on the subtype, an attribute and a characteristic written on the
+# subtype and read on the supertype. It is the golden gate 15's spec leg needed to see the rule graph's
+# declarant key. No source file of this backend changed: both branches play the two cases, PLAYED 2, with ref's
+# and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=214
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1062,7 +1068,8 @@ DRL_CHANNEL=(
   # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold. Recounted again the same
   # day (fix round on the union of the wave): jutterswet-gehele-periode-leeg, jutterswet-vast-startpunt
   # and jutterswet-breukliteral play in both branches and move neither the gap nor a class head, so the
-  # gap is 30 (213 - 183) and the heads hold at 86 lines.
+  # gap is 30 (213 - 183) and the heads hold at 86 lines. jutterswet-erfketen, the same fix round, plays in
+  # both branches too: the gap stays 30 (214 - 184), the heads 86 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1323,7 +1330,9 @@ DRL_CHANNEL=(
 # Reason block at EXPECTED_PLAYED above.
 # 182 -> 183 (2026-09-26, fix round on the union of the wave): jutterswet-breukliteral, new. This branch
 # plays its two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=183
+# 183 -> 184 (2026-09-26, the same fix round): jutterswet-erfketen, new. This branch plays its two cases with
+# no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=184
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
