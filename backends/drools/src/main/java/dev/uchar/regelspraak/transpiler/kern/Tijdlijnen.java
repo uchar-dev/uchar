@@ -53,7 +53,7 @@ public final class Tijdlijnen {
     /** RUNTIME-SEMANTICS ch. 3.2: why a pro-rata part onto {@code doel} of {@code subject} is not carried when its
      *  target or its base lies on the grid of a fixed start point, or null. The base is constant across a bucket
      *  because its grid nests in the target's, and a start point off the calendar breaks that nesting; {@code ref}
-     *  and the ASP backend refuse the form, so both branches do as well. */
+     *  and the ASP backend refuse the form, so both branches do as well, in their sentence. */
     public static String proRataVastRaster(RegelSpraakModel.Objecttype subject, String doel, Expr waarde) {
         if (!(waarde instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.TIJDSEVENREDIG_DEEL) return null;
         boolean vast = subject != null && subject.vastStartpuntVan(doel) != null;
@@ -63,7 +63,7 @@ public final class Tijdlijnen {
             if (basis instanceof Expr.ParameterRef bp && bp.parameter() != null
                     && bp.parameter().vastStartpunt() != null) vast = true;
         }
-        return vast ? "pro-rata op of vanaf een raster dat niet op de kalender ligt (vast startpunt) is omheind "
-                + "— RUNTIME-SEMANTICS ch. 3.2" : null;
+        return vast ? "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS "
+                + "ch. 3.2)" : null;
     }
 }

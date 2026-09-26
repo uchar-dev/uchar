@@ -1882,6 +1882,47 @@ let () =
     | exception Case.Error m -> substring m "a multi-period grid, which carries no operation"
     | _ -> false)
 
+(* WV-3.2-zinnen: the sentences in which a grid without an operation is
+   refused, whole and word for word, because the ASP backend and the Drools
+   backend speak them too: at load for a case timeline, with its position,
+   and at evaluation for the asOfDate bucket of a scalar case value. *)
+let () =
+  let laad ~at gr =
+    match
+      Case.timeline_of_json ~at ~grid:gr (Some num0)
+        (Yojson.Safe.from_string {|[{"from":"2024-01-01","to":"2024-03-01","value":{"number":"1"}}]|})
+    with
+    | exception Case.Error m -> m
+    | _ -> "(geladen)"
+  in
+  let bij_de_peildatum gr =
+    match Timeline.grid_bucket gr (day "2024-02-15") with
+    | exception Value.Fault m -> m
+    | _ -> "(een periode)"
+  in
+  let meervoudig = Timeline.grid_of ~gran:Maand ~count:2 ~fixed:(Some "2024-01-01") ~variable:false in
+  let variabel = Timeline.grid_of ~gran:Jaar ~count:1 ~fixed:None ~variable:true in
+  check "WV-3.2-zinnen-meervoudig-invoer"
+    (laad ~at:"J1.m2" meervoudig
+    = "J1.m2: the declared grid is 2 month units, a multi-period grid, which carries no operation, a \
+       case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not \
+       as a defect of the case");
+  check "WV-3.2-zinnen-variabel-invoer"
+    (laad ~at:"S1.waterstand" variabel
+    = "S1.waterstand: the declared grid is laid per object from the anchor of a variable start, which \
+       this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect of \
+       the case");
+  check "WV-3.2-zinnen-meervoudig-peildatum"
+    (bij_de_peildatum meervoudig
+    = "a multi-period grid (2 month periods) carries no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in \
+       ch. 3.12)");
+  check "WV-3.2-zinnen-variabel-peildatum"
+    (bij_de_peildatum variabel
+    = "a variable-start grid is laid per object from the anchor its start-point determination binds, \
+       which this interpreter does not execute (ch. 3.2)");
+  check "WV-3.2-zinnen-kalenderweek-peildatum"
+    (bij_de_peildatum (Timeline.calendar_grid Week) = "bucketing is defined for month and year only (ch. 3.2)")
+
 (* WV-3.2-vast-prorata: the pro-rata part onto a target on a fixed start
    point, or from a base on one, is fenced (RUNTIME-SEMANTICS ch. 3.2): the
    base is constant across a bucket because its grid nests in the target's,

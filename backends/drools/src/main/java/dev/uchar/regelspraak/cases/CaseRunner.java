@@ -11,6 +11,7 @@ import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Granulariteit;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -516,7 +517,8 @@ public final class CaseRunner {
                 // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
                 // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
                 roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.granulariteitLeden().keySet(), e.getKey())), List.class,
-                        temporeleInvoer(e.getValue(), e.getKey(), rooster(ot, e.getKey())));
+                        temporeleInvoer(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
+                                rooster(ot, e.getKey())));
                 continue;
             }
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
@@ -785,13 +787,13 @@ public final class CaseRunner {
      *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
      *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
      *  looks, by construction. */
-    private List<Object> temporeleInvoer(JsonNode w, String attr, Rooster gran) {
+    private List<Object> temporeleInvoer(JsonNode w, String attr, String plek, Rooster gran) {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
-        if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, gran, false);
+        if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, plek, gran, false);
         if (rekendatum == null)
             throw new Excluded("scalar input on temporal attribute '" + attr + "' without an asOfDate: the "
                     + "bucket convention (corpus/golden/README.md) has no evaluation date to place it in");
-        LocalDate[] emmer = emmer(gran, rekendatum, attr);
+        LocalDate[] emmer = emmer(gran, rekendatum);
         return List.of(segment(emmer[0], emmer[1], segmentWaarde(w, attr)));
     }
 
@@ -799,19 +801,32 @@ public final class CaseRunner {
      *  EXPECTATION may be empty — {@code leegToegestaan}), {@code from} before {@code to}, both boundaries on the
      *  declared granularity grid, and the list ordered and non-overlapping as written. A malformed timeline is a
      *  hard failure, never a silent acceptance: the case schema (gate 4) and ref (gate 5) reject it first, so
-     *  reaching it here means the corpus and this reader disagree. */
-    private List<Object> tijdreeks(JsonNode segs, String veld, Rooster gran, boolean leegToegestaan) {
+     *  reaching it here means the corpus and this reader disagree. A grid that carries no case timeline is a
+     *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code plek}
+     *  ({@code J1.m2} for an input, {@code expected J1.m2} for an expectation): a grid of several units and a
+     *  variable start before any segment is read, the calendar's day, week and quarter grid at the first segment. */
+    private List<Object> tijdreeks(JsonNode segs, String veld, String plek, Rooster gran, boolean leegToegestaan) {
         if (segs == null || !segs.isArray())
             throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + veld + "'");
         if (segs.isEmpty() && !leegToegestaan)
             throw new IllegalArgumentException("tijdlijnwaarde op '" + veld + "' draagt geen enkel segment");
+        if (gran.aantal() != 1)
+            throw new Excluded(plek + ": the declared grid is " + gran.aantal() + " " + spelling(gran.gran())
+                    + " units, a multi-period grid, which carries no operation, a case input included"
+                    + " (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the"
+                    + " case");
+        if (gran.variabel())
+            throw new Excluded(plek + ": the declared grid is laid per object from the anchor of a variable start,"
+                    + " which this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a"
+                    + " defect of the case");
         List<Object> uit = new ArrayList<>();
         LocalDate vorigeTot = null;
         for (JsonNode sj : segs) {
             LocalDate van = grensDatum(sj, "from", veld), tot = grensDatum(sj, "to", veld);
             if (!van.isBefore(tot))
                 throw new IllegalArgumentException("segment 'to' op '" + veld + "' ligt niet na 'from'");
-            if (!emmer(gran, van, veld)[0].equals(van) || !emmer(gran, tot, veld)[0].equals(tot))
+            if (gran.vast() == null) kalenderRoosterVoorInvoer(gran.gran(), plek);
+            if (!emmer(gran, van)[0].equals(van) || !emmer(gran, tot)[0].equals(tot))
                 throw new IllegalArgumentException("segmentgrens op '" + veld + "' ligt niet op het "
                         + gran.gran() + "-raster" + (gran.vast() == null ? "" : " vanaf " + gran.vast()));
             if (vorigeTot != null && vorigeTot.isAfter(van))
@@ -861,28 +876,50 @@ public final class CaseRunner {
 
     /** The period {@code [van, tot)} of the member's grid that contains {@code d} (ch. 3.2), as ref lays it: the
      *  period a fixed start point lays, every wall computed from it; otherwise the calendar bucket — year buckets run
-     *  1 Jan → 1 Jan, month buckets first-of-month → first-of-next, and a DAG/WEEK/KWARTAAL declaration is a loud
-     *  not-carried, never a guessed grid. A grid of several units carries no operation and a variable start is laid
-     *  per object from an anchor the case does not give: both not carried, as ref refuses them at load. */
-    private static LocalDate[] emmer(Rooster r, LocalDate d, String veld) {
+     *  1 Jan → 1 Jan, month buckets first-of-month → first-of-next. A grid that lays no such period is a loud
+     *  not-carried, never a guessed grid, in the sentence of ref's grid function, which the ASP backend speaks as
+     *  well: a grid of several units carries no operation, a variable start is laid per object from an anchor the
+     *  case does not give, and the calendar lays no day, week or quarter bucket. For a case timeline
+     *  {@link #tijdreeks} refuses the same grids first, in the sentence of ref's case loader. */
+    private static LocalDate[] emmer(Rooster r, LocalDate d) {
         if (r.aantal() != 1)
-            throw new Excluded("multi-period grid (" + r.aantal() + " × " + r.gran() + ") on '" + veld + "' is not "
-                    + "carried: a grid of several units carries no operation (ch. 3.2)");
+            throw new Excluded("a multi-period grid (" + r.aantal() + " " + spelling(r.gran()) + " periods) carries"
+                    + " no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12)");
         if (r.variabel())
-            throw new Excluded("variable-start grid on '" + veld + "' is not carried: its periods run from a "
-                    + "per-object anchor (ch. 3.2)");
+            throw new Excluded("a variable-start grid is laid per object from the anchor its start-point"
+                    + " determination binds, which this interpreter does not execute (ch. 3.2)");
         if (r.vast() != null) return VastStartpunt.periode(r.gran(), r.vast(), d);
-        Granulariteit gran = r.gran();
-        switch (gran) {
+        switch (r.gran()) {
             case JAAR:
                 return new LocalDate[]{ LocalDate.of(d.getYear(), 1, 1), LocalDate.of(d.getYear() + 1, 1, 1) };
             case MAAND:
                 LocalDate van = d.withDayOfMonth(1);
                 return new LocalDate[]{ van, van.plusMonths(1) };
             default:
-                throw new Excluded("granularity " + gran + " on '" + veld + "' is not carried by the v0 backend: "
-                        + "bucketing is defined for month and year only (ch. 3.2)");
+                throw new Excluded("bucketing is defined for month and year only (ch. 3.2)");
         }
+    }
+
+    /** ref's loader checks a case timeline on the calendar grid through the calendar bucketing, which has month and
+     *  year buckets only (ch. 3.2), and refuses the other three granularities as a v0 limit, each in its own
+     *  sentence; this is that refusal, at position {@code plek}. */
+    private static void kalenderRoosterVoorInvoer(Granulariteit gran, String plek) {
+        switch (gran) {
+            case JAAR, MAAND -> { }
+            case DAG -> throw new Excluded(plek + ": the declared grid is day, which every day boundary sits on, yet"
+                    + " this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets"
+                    + " for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit,"
+                    + " not as a defect of the case");
+            default -> throw new Excluded(plek + ": the declared grid is " + spelling(gran) + ", and v0 defines"
+                    + " calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so"
+                    + " this loader has no " + spelling(gran) + " grid to check the segment boundaries against:"
+                    + " refused as a v0 limit, not as a defect of the case");
+        }
+    }
+
+    /** A granularity in its wire spelling (IR-SPEC ch. 2.2), the word ref's sentences carry. */
+    private static String spelling(Granulariteit gran) {
+        return Spelling.GRANULARITY.spelling(gran);
     }
 
     /** The numeric value of one segment. The generated {@code Segment} holds a {@code BigDecimal} waarde, so a
@@ -967,7 +1004,8 @@ public final class CaseRunner {
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
         if (!temporeel(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
-        List<Object> verwacht = tijdreeks(v.get("timeline"), attr, rooster(ot, attr), true);
+        List<Object> verwacht = tijdreeks(v.get("timeline"), attr, "expected " + label + "." + attr, rooster(ot, attr),
+                true);
         Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
         if (gelezen == null)
             return verwacht.isEmpty() ? null

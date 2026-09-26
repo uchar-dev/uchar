@@ -14705,6 +14705,53 @@ let () =
     ~case_text:(zaak "null")
     ~needle:"the temporal total of \"a\" needs the evaluation date: the case carries the asOfDate bucket's value"
 
+(* RUNTIME-SEMANTICS ch. 3.2, the grids without an operation, in ref's words on
+   this backend's path: a case timeline on a multi-period grid or on a
+   variable start is refused when the case is read (the loader this backend
+   shares with ref), and the asOfDate bucket of a scalar on a variable start
+   is refused at translation. The Drools backend speaks the same sentences. *)
+let () =
+  let getal = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
+  let ir ~facet ~tijdlijnen ~bepalingen =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Schouwveld","animate":false,"plural":"Schouwvelden","attributes":[{"node":"Attribute","name":"meetdatum","datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"waterstand","datatype":%s,"timeline":%s},{"node":"Attribute","name":"t","datatype":%s}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[%s],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"t","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"t","subjectType":"Schouwveld","source":{"snippet":"t"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"waterstand","subjectType":"Schouwveld","source":{"snippet":"zijn waterstand"}}],"elementType":"Schouwveld","type":%s,"source":{"snippet":"het totaal van zijn waterstand"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[%s],"ruleGroups":[]},"diagnostics":[]}|}
+      getal facet getal tijdlijnen getal bepalingen
+  in
+  let variabel =
+    ir ~facet:{|{"node":"TimelineFacet","granularity":"year","count":1,"timelineName":"boekjaar"}|}
+      ~tijdlijnen:{|{"node":"Timeline","name":"boekjaar","variableStart":true,"granularity":"year","count":1}|}
+      ~bepalingen:{|{"node":"StartPointDetermination","timeline":"boekjaar","objectType":"Schouwveld","member":"meetdatum"}|}
+  in
+  let meervoudig =
+    ir ~facet:{|{"node":"TimelineFacet","granularity":"month","count":2,"fixedStart":"2024-01-01"}|}
+      ~tijdlijnen:"" ~bepalingen:""
+  in
+  let zaak waarde =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":"2024-06-01","input":{"instances":[{"label":"S1","objectType":"Schouwveld","attributes":{"waterstand":%s},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+      waarde
+  in
+  let tijdlijn = {|{"timeline":[{"from":"2024-01-01","to":"2024-03-01","value":{"number":"3"}}]}|} in
+  let bij_het_lezen ~name ~ir ~zin =
+    match load_pair ~ir ~case_text:(zaak tijdlijn) with
+    | (_ : Ir_v0.Ast.document * Uchar_ref.Case.t) -> check (name ^ ": expected a refusal at load") false
+    | exception Uchar_ref.Case.Error m -> check (name ^ " (" ^ m ^ ")") (m = zin)
+  in
+  bij_het_lezen ~name:"ch3.2 a case timeline on a multi-period grid" ~ir:meervoudig
+    ~zin:
+      "S1.waterstand: the declared grid is 2 month units, a multi-period grid, which carries no \
+       operation, a case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a \
+       v0 limit, not as a defect of the case";
+  bij_het_lezen ~name:"ch3.2 a case timeline on a variable start" ~ir:variabel
+    ~zin:
+      "S1.waterstand: the declared grid is laid per object from the anchor of a variable start, which \
+       this loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect \
+       of the case";
+  faults_with ~name:"ch3.2 the asOfDate bucket on a variable start" ~ir:variabel ~case_text:(zaak {|{"number":"3"}|})
+    ~needle:
+      "a variable-start grid is laid per object from the anchor its start-point determination binds, \
+       which this interpreter does not execute (ch. 3.2)"
+
 (* RUNTIME-SEMANTICS ch. 3.2: the pro-rata part onto a target on a fixed start
    point, or from a base on one, is fenced in ref's sentence; the calendar
    document beside them translates, so the fault is the fence's alone. ref's

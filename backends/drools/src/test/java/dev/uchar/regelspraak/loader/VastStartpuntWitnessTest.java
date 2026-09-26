@@ -79,16 +79,17 @@ class VastStartpuntWitnessTest {
     }
 
     /** RUNTIME-SEMANTICS ch. 3.2: both branches ask this predicate before lowering a pro-rata part, and skip the rule
-     *  with its reason when the target or the base lies on a fixed start point's grid, as ref and clingo refuse it;
-     *  on the calendar grid it answers null and the rule lowers as before. */
+     *  with its reason when the target or the base lies on a fixed start point's grid, as ref and clingo refuse it,
+     *  in their sentence word for word (it was a Dutch sentence of this backend's own until the fix round of
+     *  2026-09-26); on the calendar grid it answers null and the rule lowers as before. */
     @Test void pro_rata_over_een_vast_startpunt_is_omheind() throws Exception {
         for (String[] geval : new String[][]{{null, null}, {"--01-15", null}, {null, "--10-01"}}) {
             RegelSpraakModel m = IrLoader.load(proRata(geval[0], geval[1]));
             var regel = m.resolvedRegels.get(0);
             String reden = Tijdlijnen.proRataVastRaster(m.objecttypen.get("Jutter"), "borgdeel", regel.waarde());
             if (geval[0] == null && geval[1] == null) assertNull(reden, "het kalenderraster is niet omheind");
-            else assertTrue(reden != null && reden.contains("RUNTIME-SEMANTICS ch. 3.2"),
-                    "omheind bij doel " + geval[0] + " en basis " + geval[1] + ": " + reden);
+            else assertEquals("pro-rata onto or from a grid that does not lie on the calendar is fenced"
+                    + " (RUNTIME-SEMANTICS ch. 3.2)", reden, "omheind bij doel " + geval[0] + " en basis " + geval[1]);
         }
     }
 
