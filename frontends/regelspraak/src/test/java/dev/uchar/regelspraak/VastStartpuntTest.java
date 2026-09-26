@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -135,6 +136,22 @@ class VastStartpuntTest {
     @Test void parameter_over_meerdere_perioden_wordt_geweigerd() {
         weigert(KOP + "Parameter het bloktarief : Numeriek (geheel getal) voor elke 5 maanden startend op 1-4-2026\n",
                 "parameter 'bloktarief'", "has count 5 > 1: a parameter's timeline is one period");
+    }
+
+    /** A named timeline on the calendar grid has no start point, and the facet that names it none either. Measured on
+     *  the first build of this card: the adoption looked the start point up by mapping the timelines before taking
+     *  the first, and a null start point threw — gate 10 caught it on jutterswet-penningjaar. */
+    @Test void benoemde_tijdlijn_op_het_kalenderraster_geeft_het_facet_geen_startpunt() {
+        // a named definition writes its start point or "met variabel startpunt"; the calendar's is day 1
+        for (String[] definitie : List.of(new String[]{"een jaar startend op dag 1 van maand 1", "year"},
+                new String[]{"een maand startend op dag 1 van de maand", "month"},
+                new String[]{"een kwartaal startend op dag 1 van maand 1, 4, 7 en 10", "quarter"})) {
+            String ir = wire("Tijdlijn het boekjaar heeft tijdvakken van " + definitie[0] + ";\n" + KOP
+                    + "    de waarde Bedrag voor elke boekjaar;\n");
+            assertTrue(ir.contains("\"timeline\":{\"node\":\"TimelineFacet\",\"granularity\":\"" + definitie[1]
+                    + "\",\"count\":1,\"timelineName\":\"boekjaar\"}"), ir);
+            assertFalse(ir.contains("fixedStart"), ir);
+        }
     }
 
     @Test void benoemde_tijdlijn_draagt_haar_startpunt_en_het_facet_neemt_het_over() {

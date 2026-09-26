@@ -647,8 +647,9 @@ public final class DefinitionResolver {
             return vastStartpunt(g, aantal, t.meervoudigePeriode().vastStartpuntDatum(), null, null, null);
         if (t.ELKE() != null && t.tijdlijnNaam() != null) {
             String ref = normaliseerTijdlijnNaam(src(t.tijdlijnNaam()));
+            // the timeline first, then its start point: a timeline on the calendar grid has none (null)
             return model.tijdlijnen.stream().filter(tl -> normaliseerTijdlijnNaam(tl.naam()).equals(ref))
-                    .map(Tijdlijn::vastStartpunt).findFirst().orElse(null);
+                    .findFirst().map(Tijdlijn::vastStartpunt).orElse(null);
         }
         return null;
     }
