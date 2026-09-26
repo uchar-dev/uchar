@@ -134,6 +134,20 @@ refused at load by the shared case loader (both executors identically
 differential). A granular parameter is only ever read temporally
 (S4/S9): the scalar-slot read faults.
 
+A numeric value is scaled by its declaration's decimals. The
+**unbounded form** (IR-SPEC ch. 2.4 (c): `whole: false`, `decimals:
+0`, a "getal" declared without decimals) fixes no scale, and this
+encoding holds it as a whole number (the limit RUNTIME-SEMANTICS
+ch. 2.4 records). A case input on it that is not whole — an attribute
+or parameter, scalar or timeline segment, a struct field, a list
+element, a constructor payload — is refused at translation in that
+form's own words, `input V1.sleepafstand = 1/6 is not a whole number,
+and this encoding holds a number declared without decimals (the
+unbounded form) as a whole number`, where ref carries it exactly
+(RUNTIME-SEMANTICS ch. 2.4 point 3). Until 2026-09-26 it was refused
+as a value that "does not fit 0 decimals", a ceiling the declaration
+does not have.
+
 The ch. 1.2d **non-numeric scalars** ride ground *symbolic* terms in
 the same `val/3` slot, beside the integer encoding
 (`symbolic_value_term`): a **text** value is its verbatim quoted
@@ -2425,7 +2439,14 @@ restating sibling's unit (S6, golden `jutterswet-sleeprest`); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is
-lost); a rational literal that no power-of-ten scale up to 10^9 holds
+lost) — inside the write of the unbounded form (S2) both name that
+form instead, `result of <target> is not a whole number, and this
+encoding holds a number declared without decimals (the unbounded form)
+as a whole number` and `a division into a number declared without
+decimals is not whole, and this encoding holds the unbounded form as a
+whole number`, since the spec mandates no rounding there and ref writes
+the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3); a non-whole case
+input on that form (S2); a rational literal that no power-of-ten scale up to 10^9 holds
 exactly (S4, `rational literal 1/3 has no finite decimal expansion
 within 9 decimals`) — ref computes it exactly and both Drools branches
 play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden

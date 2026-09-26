@@ -318,6 +318,68 @@ let () =
   expect_num "WV-2.4-c" (Arith.round_v Rekenkundig 2 (n "2/3")) "0.67";
   expect_num "WV-2.4-d" (Arith.round_v Naar_beneden 2 (n "2/3")) "0.66"
 
+(* ch. 2.4 point 3: the unbounded form (IR-SPEC ch. 2.4 (c): whole false, 0
+   decimals, a "getal" declared without decimals) has no ceiling, so the gate
+   does not apply to it: the exact value lands, a non-terminating one
+   included, where the same 3/2 into the whole form is the error of
+   WV-2.4-a. The case input fence reads the same form: an input 1/6 on an
+   unbounded attribute is carried exactly, and the rules compute on it. *)
+let unbounded : Ir_v0.Ast.datatype option =
+  Some (Numeriek { geheel = false; decimalen = 0; teken = None; eenheid = None })
+
+let () =
+  let w = mini_world None in
+  let w', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:unbounded (n "3/2") in
+  expect_num "WV-2.4-e" (World.attr (World.get w' "x") "a") "3/2";
+  let w'', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:unbounded (n "1/3") in
+  expect_num "WV-2.4-f" (World.attr (World.get w'' "x") "a") "1/3";
+  let doc = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"dubbele sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"gedeelde sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"dubbele sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"dubbele sleepafstand","subjectType":"Vondst","source":{"snippet":"De dubbele sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand maal 2"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"gedeelde sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"gedeelde sleepafstand","subjectType":"Vondst","source":{"snippet":"De gedeelde sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand gedeeld door 4"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let zaak invoer =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V1", "objectType": "Vondst",
+      "attributes": { "sleepafstand": { "number": "%s" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+      invoer
+  in
+  let schrijf suffix tekst =
+    let f = Filename.temp_file "ref-wv24" suffix in
+    let oc = open_out f in
+    output_string oc tekst;
+    close_out oc;
+    f
+  in
+  let irf = schrijf ".ir.json" doc in
+  let reken invoer =
+    let casef = schrijf ".case.json" (zaak invoer) in
+    Fun.protect
+      ~finally:(fun () -> Sys.remove casef)
+      (fun () ->
+        let d = Ir_v0.Loader.load_file irf in
+        let c = Case.load_file d casef in
+        let final =
+          Eval.evaluate
+            { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+            c.world
+        in
+        let v1 = World.get final "V1" in
+        (World.attr v1 "sleepafstand", World.attr v1 "dubbele sleepafstand",
+         World.attr v1 "gedeelde sleepafstand"))
+  in
+  Fun.protect
+    ~finally:(fun () -> Sys.remove irf)
+    (fun () ->
+      let invoer, dubbel, gedeeld = reken "1/6" in
+      expect_num "WV-2.4-g-invoer" invoer "1/6";
+      expect_num "WV-2.4-g-maal" dubbel "1/3";
+      expect_num "WV-2.4-g-gedeeld" gedeeld "1/24";
+      let invoer, dubbel, gedeeld = reken "1.5" in
+      expect_num "WV-2.4-h-invoer" invoer "3/2";
+      expect_num "WV-2.4-h-maal" dubbel "3";
+      expect_num "WV-2.4-h-gedeeld" gedeeld "3/8")
+
 (* --- ch. 2.5: the two rounding tables, cell by cell --------------------- *)
 
 let () =

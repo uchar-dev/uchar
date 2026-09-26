@@ -198,6 +198,37 @@ let scaled_of_value ~decimals (v : Value.t) : int =
   | Date z -> z
   | v -> fault "unscalable value %s" (Value.to_string v)
 
+(* The unbounded form (IR-SPEC ch. 2.4 (c): a Number that is not whole and
+   has 0 decimals, a "getal" declared without decimals) has no ceiling, and
+   ref carries any exact value there (RUNTIME-SEMANTICS ch. 2.4 point 3).
+   This encoding holds a number at the scale its declaration fixes, and the
+   unbounded form fixes none, so it is held as a whole number, the limit
+   ch. 2.4 records for the ASP side. A value that is not whole is refused in
+   that form's own words: "does not fit 0 decimals" would name a ceiling the
+   declaration does not have. *)
+let unbounded_datatype = function
+  | Some (Numeriek { geheel = false; decimalen = 0; _ } | Percentage { geheel = false; decimalen = 0; _ })
+    ->
+      true
+  | _ -> false
+
+let unbounded_refusal ~what q =
+  fault
+    "input %s = %s is not a whole number, and this encoding holds a number declared without \
+     decimals (the unbounded form) as a whole number"
+    what (Q.to_string q)
+
+(* a case input scaled by its declaration, the unbounded form refused by name
+   where its value is not whole *)
+let non_exact_division_bounded =
+  "non-exact division (an explicit rounding is mandated before precision is lost)"
+
+let scaled_input ~what dt (v : Value.t) =
+  (match v with
+  | Num (q, _) when unbounded_datatype dt && not (Z.equal (Q.den q) Z.one) -> unbounded_refusal ~what q
+  | _ -> ());
+  scaled_of_value ~decimals:(decimals_of_datatype dt) v
+
 (* --- the datum-tijd pair term (RUNTIME-SEMANTICS ch. 3.8; the A4 pair-term
    encoding) -------------------------------------------------------------
    A millisecond-precision date rides as dt(D, MS) — the civil day D beside
@@ -323,6 +354,11 @@ type ctx = {
      the target's declared decimals exactly must translate — testing
      exactness on max(sl,sr) alone would refuse it (1 outside a write) *)
   mutable write_scale : int;
+  (* the write target is the unbounded form (see [unbounded_datatype]): a
+     bare division's non-exact viol/2 then names that form instead of a
+     mandated rounding, which the spec does not mandate there (false
+     outside a write) *)
+  mutable write_unbounded : bool;
   (* the enclosing rule's (or creation's) name: the §9.5 channel fact
      is keyed by it, exactly as ref's insert_error keys its channel —
      the reason text stays executor-internal (a hunted checker split:
@@ -460,6 +496,14 @@ let refuse_attr_timeline ctx ~otype ~attr =
 
 let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n")) fmt
 
+(* a bare division's non-exact viol/2: inside the write of the unbounded form
+   it names that form, since the spec mandates no rounding there *)
+let non_exact_division ctx =
+  if ctx.write_unbounded then
+    "a division into a number declared without decimals is not whole, and this encoding holds the \
+     unbounded form as a whole number"
+  else non_exact_division_bounded
+
 (* the conjunctions under which term [t] is negative ([~neg:true]) or positive
    ([~neg:false]), read without any product formed on the way. A product
    wraps where an operand passes its fence, and a sign fence on the wrapped
@@ -544,6 +588,11 @@ let attr_decimals ctx ~otype ~attr =
   let ot = objecttype ctx otype in
   match Ir_v0.Checks.find_ci ot.attributen attr with
   | Some dt -> decimals_of_datatype dt
+  | None -> fault "unknown attribute %S on %S" attr otype
+
+let attr_datatype ctx ~otype ~attr =
+  match Ir_v0.Checks.find_ci (objecttype ctx otype).attributen attr with
+  | Some dt -> dt
   | None -> fault "unknown attribute %S on %S" attr otype
 
 let attr_unit ctx ~otype ~attr =
@@ -2787,7 +2836,7 @@ let rec struct_value_term (domein, velden) (fs : (string * Value.t) list) : stri
             fault
               "a nested sum/list field value has no integer encoding in the ASP struct term (no \
                corpus case)"
-        | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some fdt)) v))
+        | _ -> string_of_int (scaled_input ~what:("field " ^ fname) (Some fdt) v))
   in
   Printf.sprintf "%s(%s)" f (String.concat "," (List.map arg velden))
 
@@ -2797,7 +2846,7 @@ let ctor_value_term constructoren (tag, (payload : Value.t option)) =
   let f = ctor_functor tag in
   match (ctor_payload_datatype constructoren tag, payload) with
   | None, None -> f
-  | Some d, Some v -> Printf.sprintf "%s(%d)" f (scaled_of_value ~decimals:(decimals_of_datatype (Some d)) v)
+  | Some d, Some v -> Printf.sprintf "%s(%d)" f (scaled_input ~what:("the payload of " ^ tag) (Some d) v)
   | Some _, None -> fault "unary constructor %S carries no payload value" tag
   | None, Some _ -> fault "nullary constructor %S carries a payload value" tag
 
@@ -6061,10 +6110,8 @@ and translate_division ctx ~subject ~subject_ot ~links ~rechts ~rounding =
   | None ->
       emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p subject full tr numt
         dent numt dent;
-      emit ctx
-        "viol(\"non-exact division (an explicit rounding is mandated before precision is \
-         lost)\",%s) :- %s, (%s) != 0, %s \\ %s != 0."
-        subject full tr numt dent
+      emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0." (non_exact_division ctx) subject
+        full tr numt dent
   | Some (modus, _) ->
       let value =
         match modus with
@@ -8732,10 +8779,7 @@ and closed_division ctx ~guard_body ~witness ~rounding ~links ~rechts : string l
   let nonzero = if runtime then [ Printf.sprintf "(%s) != 0" tr ] else [] in
   match rounding with
   | None ->
-      emit ctx
-        "viol(\"non-exact division (an explicit rounding is mandated before precision is lost)\",%s) \
-         :- %s, %s \\ %s != 0."
-        witness
+      emit ctx "viol(\"%s\",%s) :- %s, %s \\ %s != 0." (non_exact_division ctx) witness
         (String.concat ", " (gbody @ nonzero))
         numt dent;
       ( bl @ br @ nonzero @ [ Printf.sprintf "%s \\ %s == 0" numt dent ],
@@ -8976,7 +9020,7 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
    first), so [scale = target = 0] cannot arise. Measured: hoisting the fence
    ABOVE the identity test changes nothing — suite 47/0, gate 6 405/405. The
    fence stays where the division is, which is where it reads. *)
-let fitted ctx ~subject ~what ~body term scale target =
+let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
   if scale = target then (term, [])
   else
     let scale = numeric_scale ~what:(Printf.sprintf "the write to %S" what) scale in
@@ -8986,11 +9030,19 @@ let fitted ctx ~subject ~what ~body term scale target =
     end
     else if scale > target && scale mod target = 0 then begin
       let k = scale / target in
-      emit ctx
-        "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
-        (norm what) subject
-        (String.concat ", " body)
-        term k;
+      (if unbounded then
+         emit ctx
+           "viol(\"result of %s is not a whole number, and this encoding holds a number declared \
+            without decimals (the unbounded form) as a whole number\",%s) :- %s, (%s) \\ %d != 0."
+           (norm what) subject
+           (String.concat ", " body)
+           term k
+       else
+         emit ctx
+           "viol(\"result of %s does not fit its declared decimals\",%s) :- %s, (%s) \\ %d != 0."
+           (norm what) subject
+           (String.concat ", " body)
+           term k);
       (Printf.sprintf "((%s)/%d)" term k, [ Printf.sprintf "(%s) \\ %d == 0" term k ])
     end
     else fault "value scale %d does not align with target scale %d for %S" scale target what
@@ -9510,8 +9562,10 @@ let translate_regel ctx (r : resolved_regel) =
                 ~what:(Printf.sprintf "the write to %S" a)
                 (attr_unit ctx ~otype:ot ~attr:a)
                 (Option.bind r.waarde (eff_unit ctx));
+              let unbounded = unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) in
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
+              ctx.write_unbounded <- unbounded;
               (* the value lowers to one or more guarded branches (§6): a
                  non-branching value is one branch, identical to the single-head
                  emission; a Let-nested IfThenElse is one val head per branch,
@@ -9519,6 +9573,7 @@ let translate_regel ctx (r : resolved_regel) =
               let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
+              ctx.write_unbounded <- false;
               (* ch. 7.8 standing target: the rule decides like a default. The
                  effectiveness atom carries the SAME body as each val head —
                  condition and value bindings — so a leeg evaluation derives
@@ -9552,7 +9607,7 @@ let translate_regel ctx (r : resolved_regel) =
               List.iter
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ bindings in
-                  let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
+                  let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                     (body @ fit_guards);
@@ -9644,15 +9699,18 @@ let translate_regel ctx (r : resolved_regel) =
                 (Option.bind r.waarde (eff_unit ctx));
               (* ref evaluates the value only where it would write, so the
                  fences its translation emits carry the write guard *)
+              let unbounded = unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) in
               ctx.rule_guard <- cond @ guard;
               ctx.write_scale <- target_scale;
+              ctx.write_unbounded <- unbounded;
               let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
+              ctx.write_unbounded <- false;
               List.iter
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ guard @ bindings in
-                  let term, fit_guards = fitted ctx ~subject ~what:a ~body term scale target_scale in
+                  let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                     (body @ fit_guards);
@@ -9799,15 +9857,18 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
           ~what:(Printf.sprintf "the initialisation of %S" m)
           (attr_unit ctx ~otype:nieuw ~attr:m)
           (Option.bind t.toe_waarde (eff_unit ctx));
+        let unbounded = unbounded_datatype (attr_datatype ctx ~otype:nieuw ~attr:m) in
         ctx.rule_guard <- cond @ guard @ depth_guard;
         ctx.write_scale <- target_scale;
+        ctx.write_unbounded <- unbounded;
         let bindings, tm, scale =
           expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.toe_waarde)
         in
         ctx.rule_guard <- [];
         ctx.write_scale <- 1;
+        ctx.write_unbounded <- false;
         let wbody = body @ bindings in
-        let tm, fit_guards = fitted ctx ~subject ~what:m ~body:wbody tm scale target_scale in
+        let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
       end)
     oc.toekenningen;
@@ -10844,7 +10905,9 @@ let reify_list ctx ~lid ~element (xs : Value.t list) =
             match v with
             | Value.Record fs -> struct_value_term (domein, velden) fs
             | _ -> fault "a non-record value in a struct-typed list element")
-        | _ -> string_of_int (scaled_of_value ~decimals:(decimals_of_datatype (Some element)) v)
+        | _ ->
+            string_of_int
+              (scaled_input ~what:(Printf.sprintf "%s element %d" lid (n + 1)) (Some element) v)
       in
       emit ctx "lelem(%s,%d,%s)." lid (n + 1) term)
     xs
@@ -10965,10 +11028,9 @@ let translate_case ctx (case : Case.t) =
                  A4 pair-term encoding) *)
               emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (datetime_term t)
           | _ ->
-              let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
               let pred = if defaults_target i.otype aname then "inputval" else "val" in
               emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
-                (scaled_of_value ~decimals:d v))
+                (scaled_input ~what:(label ^ "." ^ aname) (attr_datatype ctx ~otype:i.otype ~attr:aname) v))
         i.attrs;
       List.iter (fun k -> emit ctx "heeft(%s,%s)." (str_raw label) (str k)) i.chars;
       Eval.SMap.iter
@@ -10982,7 +11044,7 @@ let translate_case ctx (case : Case.t) =
           | Some (Some (Struct_type _)) ->
               fault "temporal struct carriage is a recorded flank; no corpus case"
           | _ -> ());
-          let d = attr_decimals ctx ~otype:i.otype ~attr:aname in
+          let dt = attr_datatype ctx ~otype:i.otype ~attr:aname in
           (* a standing temporal target's input timeline enters
              defeasibly (inputtl/5), standing whole unless the fold
              decides (ch. 7.8, the timeline arm) *)
@@ -10994,7 +11056,7 @@ let translate_case ctx (case : Case.t) =
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
               emit ctx "%s(%s,%s,%d,%d,%d)." pred (str_raw label) (str aname) s.s_van s.s_tot
-                (scaled_of_value ~decimals:d s.s_waarde))
+                (scaled_input ~what:(label ^ "." ^ aname) dt s.s_waarde))
             tl)
         i.tls;
       Eval.SMap.iter
@@ -11028,19 +11090,18 @@ let translate_case ctx (case : Case.t) =
           | Value.Lijst xs -> reify_list ctx ~lid:(Printf.sprintf "plist(%s)" (str pname)) ~element xs
           | _ -> fault "list-typed parameter %S carries a non-list value" pname)
       | Some p ->
-          let d = decimals_of_datatype p.par_datatype in
-          emit ctx "param(%s,%d)." (str pname) (scaled_of_value ~decimals:d v)
+          emit ctx "param(%s,%d)." (str pname)
+            (scaled_input ~what:("parameter " ^ pname) p.par_datatype v)
       | None -> fault "unknown parameter %S" pname)
     case.params;
   Eval.SMap.iter
     (fun pname (tl : Uchar_ref.Timeline.t) ->
       match Ir_v0.Checks.find_ci doc.parameters pname with
       | Some p ->
-          let d = decimals_of_datatype p.par_datatype in
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
               emit ctx "param_tl(%s,%d,%d,%d)." (str pname) s.s_van s.s_tot
-                (scaled_of_value ~decimals:d s.s_waarde))
+                (scaled_input ~what:("parameter " ^ pname) p.par_datatype s.s_waarde))
             tl
       | None -> fault "unknown parameter %S" pname)
     case.param_tls
@@ -11078,7 +11139,7 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
+      write_unbounded = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
       pre_asks = []; signs = []; sign_helpers = [] }

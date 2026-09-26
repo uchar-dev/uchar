@@ -83,11 +83,14 @@ let timeline i name = SMap.find_opt (norm name) i.tls
 let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
   match (v, decl) with
   | Empty, _ -> Value.Empty
-  | Num (q, u), Some (Numeriek { decimalen; eenheid; _ } | Percentage { decimalen; eenheid; _ }) ->
+  | Num (q, u), Some (Numeriek { geheel; decimalen; eenheid; _ } | Percentage { geheel; decimalen; eenheid; _ }) ->
       let target_u = match eenheid with Some e -> Value.Unit e | None -> Value.Unitless in
       let q = Arith.restate_into target_u q u in
       let scaled = Q.mul q (Q.of_bigint (Z.pow (Z.of_int 10) decimalen)) in
-      if Z.equal (Q.den scaled) Z.one then Value.Num (q, target_u)
+      (* the unbounded form (not whole, 0 decimals: IR-SPEC ch. 2.4 (c)) has
+         no ceiling, so ch. 2.4 point 3 exempts it: 0 decimals is its
+         spelling, not a scale *)
+      if Z.equal (Q.den scaled) Z.one || ((not geheel) && decimalen = 0) then Value.Num (q, target_u)
       else
         Value.fault
           "%s: value %s does not fit the declared %d decimals — an explicit rounding is \

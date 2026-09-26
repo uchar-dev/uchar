@@ -3628,6 +3628,10 @@ let validate_input_precision env world =
   in
   let rec check ~what dt (v : Value.t) =
     match (dt, v) with
+    (* the unbounded form has no ceiling and carries any exact value (ch. 2.4
+       point 3); the ASP backend holds it as a whole number and refuses a
+       non-whole input on it by name, so the two part here on purpose *)
+    | Some (Numeriek { geheel = false; decimalen = 0; _ } | Percentage { geheel = false; decimalen = 0; _ }), Value.Num _ -> ()
     | Some (Numeriek { decimalen; _ }), Value.Num (q, _)
     | Some (Percentage { decimalen; _ }), Value.Num (q, _) ->
         if not (fits ~decimals:decimalen q) then

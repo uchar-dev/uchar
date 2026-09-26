@@ -14673,6 +14673,47 @@ let () =
   faults_with ~name:"rational literal 1/1024, ten decimals" ~ir:(doc "1/1024")
     ~case_text:(zaak ("0.01", waarde "V2" "0.01")) ~needle:(geen_schaal "1/1024")
 
+(* THE UNBOUNDED FORM (IR-SPEC ch. 2.4 (c): a Number that is not whole and
+   has 0 decimals, a "getal" declared without decimals). It has no ceiling:
+   ref carries any exact value there, as input and as a written result
+   (RUNTIME-SEMANTICS ch. 2.4 point 3, WV-2.4-e..h). This encoding holds a
+   number at the scale its declaration fixes, and the unbounded form fixes
+   none, so it holds it as a whole number (the limit RUNTIME-SEMANTICS
+   ch. 2.4 records for the ASP side). A whole value plays; a value that is
+   not whole is refused by name — at translation for a case input, and by a
+   named viol/2 for a written result — instead of as a value that "does not
+   fit 0 decimals" or a division that needs "an explicit rounding", neither
+   of which the declaration says. *)
+let () =
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"dubbele sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"gedeelde sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"dubbele sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"dubbele sleepafstand","subjectType":"Vondst","source":{"snippet":"De dubbele sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand maal 2"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"gedeelde sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"gedeelde sleepafstand","subjectType":"Vondst","source":{"snippet":"De gedeelde sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand gedeeld door 4"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let zaak invoer dubbel gedeeld =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Vondst","attributes":{"sleepafstand":{"number":"%s"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"V1","attribute":"dubbele sleepafstand","value":{"number":"%s"}},{"kind":"attributeValue","label":"V1","attribute":"gedeelde sleepafstand","value":{"number":"%s"}}]}|}
+      invoer dubbel gedeeld
+  in
+  clingo_matches ~name:"unbounded form, whole values" ~ir ~case_text:(zaak "8" "16" "2");
+  faults_with ~name:"unbounded form, a non-whole input" ~ir ~case_text:(zaak "1/6" "1/3" "1/24")
+    ~needle:
+      "input V1.sleepafstand = 1/6 is not a whole number, and this encoding holds a number \
+       declared without decimals (the unbounded form) as a whole number";
+  translates_carrying ~name:"unbounded form, a non-exact division into it" ~ir
+    ~case_text:(zaak "6" "12" "3/2")
+    ~needle:
+      "a division into a number declared without decimals is not whole, and this encoding holds \
+       the unbounded form as a whole number";
+  (* the fit guard of a written product: 3 × 3/2 is 9/2, at the literal's
+     scale, into the unbounded target *)
+  let product =
+    replace_first ~needle:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"}|}
+      ~by:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"3/2"}|}
+      ir
+  in
+  translates_carrying ~name:"unbounded form, a non-whole product into it" ~ir:product
+    ~case_text:(zaak "3" "9/2" "3/4")
+    ~needle:
+      "result of dubbele sleepafstand is not a whole number, and this encoding holds a number \
+       declared without decimals (the unbounded form) as a whole number"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

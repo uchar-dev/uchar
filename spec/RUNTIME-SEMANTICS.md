@@ -406,6 +406,26 @@ an explicit rounding. At assignment:
 3. An unbounded target (the "getal" precision form, `IR-SPEC.md` ch. 2.4)
    is exempt from the check.
 
+Worked example — the unbounded form (`whole: false`, `decimals: 0`, a
+"getal" declared without decimals) has no ceiling, so the exact value lands:
+3/2 written into it is **3/2**, and 1/3 is **1/3**, where the same 3/2 into
+a whole-number attribute is the error of point 1. A case input on it is
+read the same way: with `sleepafstand` unbounded and the input **1/6**, the
+rules "de dubbele sleepafstand = zijn sleepafstand maal 2" and "de gedeelde
+sleepafstand = zijn sleepafstand gedeeld door 4", both on unbounded
+attributes, write **1/3** and **1/24**; with the input 1,5 they write **3**
+and **3/8**. (Measured 2026-09-26: until then the reference interpreter
+refused both, the write as a value that "does not fit the declared 0
+decimals" and the input as one that "does not fit 0 decimals", against
+point 3.) The ASP backend holds a number at the scale its declaration fixes
+and the unbounded form fixes none, so it holds that form as a whole number
+(the limit recorded below for Catala decimals as well): a whole value plays,
+and a value that is not whole is refused by name, at translation for a case
+input and by a named `viol/2` for a written result (`ASP-TRANSLATION.md`
+S2, S19). The Drools backend carries a decimal value on the unbounded form
+in both branches, and refuses a case value written as a rational (`1/6`) by
+name.
+
 Worked example — the exact value 2/3 into a 2-decimal attribute: with
 `afgerond op 2 decimalen` rekenkundig → **0,67**; with `naar beneden` →
 **0,66**. The rounding applies to the true rational, never to a
