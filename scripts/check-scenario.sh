@@ -11,7 +11,11 @@
 #      handwritten expectations are the anchor, never the lowering;
 #   2. write the golden's ir.json byte-identically: without a scope that is the
 #      production route's IR document, with one the forms the scope carries,
-#      and both must be the pinned document.
+#      and both must be the pinned document. The one scoped golden
+#      (jutterswet-rubriektabel-rgs) names every form of its document, so this
+#      gate reads a scope but sees none leave a form out: a scope that does
+#      writes an ir.json other than the pinned one, which no golden pins. The
+#      leaving out is witnessed by the frontend suite (ScenarioLoweringTest).
 # Gate 4 stays the schema gate of the same case files and gates 5, 6 and 12
 # their replay; this gate adds only that a RegelSpraak scenario document
 # regenerates them.

@@ -1817,7 +1817,10 @@ reproduces their pinned case files, and whose scenario route reproduces their
 `ir.json`, byte for byte — the handwritten expectations are the anchor —:
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
 `jutterswet-nestkenmerk-rgs`, `jutterswet-dagentelling-rgs` (the timelines),
-`jutterswet-rubriektabel-rgs` (a scope over a decision table and a rule) and
+`jutterswet-rubriektabel-rgs` (a scope over a decision table and a rule, which
+names every form of its document: a scope that leaves a form out writes an IR
+document no golden pins, so the leaving out, the dropped diagnostics among it,
+is witnessed by `ScenarioLoweringTest` alone) and
 `jutterswet-dubbelverbinding` (a shared situation, roles written from both
 sides with a plural key, a peildatum). Together they carry every expectation
 kind of the case format.
