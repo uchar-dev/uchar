@@ -6993,6 +6993,73 @@ let () =
     (World.attr (World.get (run_datum (contextwaarde Ir_v0.Spelling.evaluation_date)) "J1") "peildatum"
     = Value.date_of_iso "2026-03-15")
 
+(* --- ch. 8.2: the execution year (worked example verbatim) -------------- *)
+
+(* WV-8.2-rekenjaar: evaluationYear is the calendar year of the evaluation
+   date, a whole unitless number, the value yearOf gives that date. It is
+   derived from the session's one date and never supplied beside it, so a
+   session one day later across a year boundary answers one year more; a
+   session without a date faults in the sibling of evaluationDate's
+   sentence *)
+let () =
+  let rekenjaar : Ir_v0.Ast.expr =
+    Constante { naam = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; bron = None }
+  in
+  let rekendatum : Ir_v0.Ast.expr =
+    Constante { naam = Some Ir_v0.Spelling.evaluation_date; typ = Some Datum_in_dagen; bron = None }
+  in
+  let doc : Ir_v0.Ast.document =
+    { empty_doc with
+      objecttypen =
+        [ ot "Vondst"
+            [ ("vondstjaar", Some num0); ("meldjaar", Some num0);
+              ("aantal verstreken penningjaren", Some num0) ]
+            [] ];
+      resolved_regels =
+        [ rr "meldjaar" Gelijkstelling (Some (aref "meldjaar" "Vondst")) (Some rekenjaar) None;
+          rr "aantal verstreken penningjaren" Berekening
+            (Some (aref "aantal verstreken penningjaren" "Vondst"))
+            (Some
+               (Binair
+                  { op = Min; links = Some rekenjaar; rechts = Some (aref "vondstjaar" "Vondst");
+                    typ = Some num0; bron = None }))
+            None ] }
+  in
+  let run as_of =
+    let w =
+      Eval.evaluate { (env_of doc) with as_of }
+        (World.add_instance World.empty (inst "V1" "Vondst" [ ("vondstjaar", n "2025") ]))
+    in
+    let v1 = World.get w "V1" in
+    (World.attr v1 "meldjaar", World.attr v1 "aantal verstreken penningjaren")
+  in
+  let meldjaar, verstreken = run (Some "2026-12-31") in
+  expect_num "WV-8.2-rekenjaar-oudjaarsdag-meldjaar" meldjaar "2026";
+  expect_num "WV-8.2-rekenjaar-oudjaarsdag-verstreken" verstreken "1";
+  let meldjaar, verstreken = run (Some "2027-01-01") in
+  expect_num "WV-8.2-rekenjaar-nieuwjaarsdag-meldjaar" meldjaar "2027";
+  expect_num "WV-8.2-rekenjaar-nieuwjaarsdag-verstreken" verstreken "2";
+  expect_fault_msg "WV-8.2-rekenjaar-zonder-rekendatum-faalt"
+    (fun () -> run None)
+    "the evaluationYear context value needs an evaluation date; the case carries asOfDate null";
+  (* the value itself: the number 2026 without a unit, equal to what yearOf
+     gives the evaluation date in the same session *)
+  let env = { (env_of doc) with as_of = Some "2026-12-31" } in
+  let w = World.add_instance World.empty (inst "V1" "Vondst" []) in
+  let lees e = Eval.eval_expr env w (World.get w "V1") ~err:no_err e in
+  (match lees rekenjaar with
+  | Value.Num (q, Value.Unitless) ->
+      check "WV-8.2-rekenjaar-eenheidsloos" (Q.equal q (Q.of_int 2026))
+  | v -> check ("WV-8.2-rekenjaar-eenheidsloos (got " ^ Value.to_string v ^ ")") false);
+  match (lees rekenjaar, Arith.jaar_uit (lees rekendatum)) with
+  | Value.Num (a, ua), Value.Num (b, ub) ->
+      check "WV-8.2-rekenjaar-is-jaar-uit-rekendatum" (Q.equal a b && ua = ub)
+  | a, b ->
+      check
+        ("WV-8.2-rekenjaar-is-jaar-uit-rekendatum (got " ^ Value.to_string a ^ " and "
+       ^ Value.to_string b ^ ")")
+        false
+
 (* WV-4.1-variabele (WF-034): a VariableReference is the frontend's marker
    for a variable its resolver could not bind, and the wire serializes no
    binding site, so it resolves against nothing. ref loads the wire as an

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
-import dev.uchar.regelspraak.ir.Spelling;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -13,7 +12,6 @@ import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.kern.Rekenjaar;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 
 import org.drools.modelcompiler.KieBaseBuilder;
@@ -102,11 +100,6 @@ public final class DroolsBackend {
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
 
-        // Rekenjaar is admitted and not executed (kern.Rekenjaar). The loader has admitted it; it is refused here,
-        // before either branch lowers anything, so the reference interpreter's sentence is what the report says in
-        // both branches and whatever position the node holds.
-        if (draagtRekenjaar(document)) throw new Excluded(Rekenjaar.WEIGERING);
-
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
         // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
@@ -164,17 +157,6 @@ public final class DroolsBackend {
         return new Build(loaded.model(), cl, et, null, List.copyOf(et.dekking()), kieBase);
     }
 
-    /** Whether the document carries the evaluation year at any position: a context value whose wire name the
-     *  translation table reads as the records' Rekenjaar. Read off the wire, which the loader has just accepted: a
-     *  walk over the whole document finds the node wherever it stands, where a walk over the model's construct lists
-     *  finds it only in the surfaces it was written to visit. */
-    private static boolean draagtRekenjaar(JsonNode n) {
-        if (n.isObject() && "ContextValue".equals(n.path("node").asText()) && "Rekenjaar".equals(
-                Spelling.CONTEXT_VALUE_NAME.waarde("ContextValue.name", n.path("name").asText())))
-            return true;
-        for (JsonNode kind : n) if (draagtRekenjaar(kind)) return true;
-        return false;
-    }
 
     /** The DRL-TEXT branch: {@link DrlTranspiler} emits DRL, which is compiled to a {@link KieBase} by the classic
      *  DRL build ({@code KieHelper}, mvel dialect). Three forms are refused here, each loudly and with the reason,

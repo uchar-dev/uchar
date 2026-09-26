@@ -562,6 +562,19 @@ public final class RegelSpraakRuntime {
         return BigDecimal.valueOf(absoluut ? Math.abs(n) : n);
     }
 
+    /** RUNTIME-SEMANTICS ch. 8.2, the execution year: the calendar year of the session's evaluation date, a whole
+     *  number without a unit. It is derived from that date, so a session without one faults, in the sentence the
+     *  reference interpreter and the ASP backend give, instead of reading leeg. The single implementation; the DRL
+     *  imports it (single-runtime principle). */
+    public static BigDecimal rsRekenjaar(java.time.LocalDate rekendatum) {
+        if (rekendatum == null) throw new IllegalStateException(REKENJAAR_ZONDER_REKENDATUM);
+        return BigDecimal.valueOf(rekendatum.getYear());
+    }
+
+    /** The fault of {@link #rsRekenjaar} without an evaluation date, verbatim as the two OCaml executors word it. */
+    public static final String REKENJAAR_ZONDER_REKENDATUM =
+            "the evaluationYear context value needs an evaluation date; the case carries asOfDate null";
+
     /** §13.4.17.37 "de eerste paasdag van" a year — Gauss/Anonymous Easter algorithm; a leeg year -> leeg.
      *  The single implementation; the DRL imports it (single-runtime principle). */
     public static java.time.LocalDate rsEerstePaasdag(Object jaar) {

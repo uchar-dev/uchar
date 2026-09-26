@@ -25,7 +25,6 @@ import dev.uchar.regelspraak.transpiler.kern.Eenheidsconflict;
 import dev.uchar.regelspraak.kern.Literalen;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.kern.Operatoren;
-import dev.uchar.regelspraak.transpiler.kern.Rekenjaar;
 import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 import dev.uchar.regelspraak.kern.Tijdrekening;
@@ -4322,7 +4321,21 @@ public final class ExecModelTranspiler {
                         || o.toekenningen().stream().anyMatch(t -> leestRekendatum(t.waarde())))
                 || model.feitCreaties.stream().anyMatch(f -> leestRekendatum(f.voorwaarde()))
                 || model.verdelingen.stream().anyMatch(v -> leestRekendatum(v.voorwaarde()))
-                || model.consistenties.stream().anyMatch(cs -> leestRekendatum(cs.assertie()));
+                || model.consistenties.stream().anyMatch(cs -> leestRekendatum(cs.assertie()))
+                // a default's consequence or condition reads the same global; the defaults sit beside the model,
+                // so without this scan such a group was refused as reading an unregistered global
+                || prioritizedDefaults.stream().anyMatch(pd -> leestRekendatum(pd.defaults()));
+    }
+
+    /** {@link #leestRekendatum(Expr)} over a chain of ch. 7 defaults, their nested exception groups included. */
+    private static boolean leestRekendatum(List<Default> defaults) {
+        for (Default d : defaults) {
+            if (leestRekendatum(d.voorwaarde()) || leestRekendatum(d.consequentie())) return true;
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden())
+                    if (leestRekendatum(g.defaults())) return true;
+        }
+        return false;
     }
 
     /** Whether a condition contains a §8.4.3 periode-window or a §5.3 Rekendatum/Rekenjaar operand. A window is
@@ -4408,20 +4421,19 @@ public final class ExecModelTranspiler {
         // attribute init) -> its Boolean constant; DRL renders the same true/false.
         if (e instanceof Expr.Literal bl && bl.type() instanceof Datatype.Booleaan)
             return WaardeFn.constant(Literalen.waar(bl.waarde()));
-        // Rekenjaar is admitted and not executed (kern.Rekenjaar): this branch never lowers it, and names why.
-        if (Rekenjaar.is(e)) {
-            navReden = Rekenjaar.WEIGERING;
-            return null;
-        }
-        // §5.3 Rekendatum as a VALUE operand (§13.4.17.34): the §4.2 rekendatum global, bound into the
+        // §5.3 Rekendatum/Rekenjaar as a VALUE operand (§13.4.17.34): the §4.2 rekendatum global, bound into the
         // globals map under its own name (the map's values are BigDecimal-typed but ERASED; only this reader
         // touches the "rekendatum" slot and it instanceof-guards, so the LocalDate rides through safely — the
-        // binder side uses the raw-put vulGlobalMap / cast-free bindGlobal). An unset rekendatum reads leeg.
-        // DRL lowers the same shape as the free global name.
-        if (e instanceof Expr.Constante rc && "Rekendatum".equals(rc.naam())) {
+        // binder side uses the raw-put vulGlobalMap / cast-free bindGlobal). An unset rekendatum reads leeg as
+        // the Rekendatum; the Rekenjaar is its calendar year (RUNTIME-SEMANTICS ch. 8.2) through rsRekenjaar,
+        // which faults on an unset one as the reference interpreter does. DRL lowers the same shapes as the free
+        // global name / rsRekenjaar(rekendatum).
+        if (e instanceof Expr.Constante rc && Expr.isRekenConstante(rc)) {
+            boolean jaar = "Rekenjaar".equals(rc.naam());
             return new WaardeFn((s, gm) -> {
                 Object rd = ((Map<?, ?>) gm).get("rekendatum");
-                return rd instanceof java.time.LocalDate d ? d : null;
+                java.time.LocalDate d = rd instanceof java.time.LocalDate ld ? ld : null;
+                return jaar ? RegelSpraakRuntime.rsRekenjaar(d) : d;
             }, java.util.Set.of("rekendatum"));
         }
         if (e instanceof Expr.Literal dl && dl.type() instanceof Datatype.DatumInDagen) {
@@ -5329,8 +5341,7 @@ public final class ExecModelTranspiler {
      *  expr-vs-attr / expr-vs-expr comparison through the {@link #scalarWaarde} value-path lowering on both sides. */
     private static boolean numeriekeExpressie(Expr e) {
         // a §5.3 Rekenjaar constant counts as a numeric expression so a bare "Rekenjaar groter is dan 2020"
-        // routes through scalarWaarde, whose named arm refuses it (kern.Rekenjaar); the fact-only leaf would skip
-        // it under a generic scope line.
+        // routes through scalarWaarde, which reads the rekendatum pseudo-global; the fact-only leaf would skip it.
         return e instanceof Expr.Binair || e instanceof Expr.Functie || e instanceof Expr.Begrensd
                 || e instanceof Expr.Afgerond || Expr.isRekenConstante(e);
     }
@@ -6750,7 +6761,7 @@ public final class ExecModelTranspiler {
         java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body = (drools, args) -> {
             Object s = args[0];
             Map<String, BigDecimal> gm = new LinkedHashMap<>();
-            for (int i = 0; i < nG; i++) gm.put(fG.get(i), (BigDecimal) args[1 + i]);
+            vulGlobalMap(gm, fG, args, 1);                           // no BigDecimal cast: the rekendatum slot holds a LocalDate
             Object[] aggsAll = new Object[nAgg];                     // the aggregation result vars, bound after [subject, globals...]
             for (int i = 0; i < nAgg; i++) aggsAll[i] = args[1 + nG + i];
             Object newObj = RegelSpraakRuntime.newInstance(fNieuwClass);
@@ -6796,7 +6807,7 @@ public final class ExecModelTranspiler {
         List<Variable> vars = new ArrayList<>();
         vars.add(sVar);
         for (String gn : gList) {
-            Global<BigDecimal> g = globals.get(gn);
+            Global<?> g = waardeGlobal(gn);   // numeric Parameter or the §5.3 rekendatum pseudo-slot
             if (g == null) return skip("objectcreatie (niet-geregistreerde global): " + oc.naam());
             vars.add((Variable) g);
         }

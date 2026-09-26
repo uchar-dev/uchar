@@ -12255,9 +12255,11 @@ let () =
         {|"factType": "onbekendfeit", "anchorRole"|},
         "created fact type 'onbekendfeit' is not declared" ) ]
 
-(* The execution year (ch. 8.2) is admitted and executed by no one: the
-   verifier passes the document, and ref and this backend refuse it by name,
-   in one sentence, never by the fall-through that names no construct. *)
+(* The execution year (ch. 8.2) is the civil year of the session's one
+   evaluation date, a whole unitless number. The verifier passes the
+   document; ref and this backend answer the year on both sides of a year
+   boundary, one day apart, and refuse a session without a date in one
+   sentence, the sibling of evaluationDate's. *)
 let () =
   let ir =
     {|{ "format": "uchar-ir-v1",
@@ -12284,26 +12286,36 @@ let () =
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
   "diagnostics": [] }|}
   in
-  let case_text =
-    {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  let case_text as_of jaar =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": %s,
   "input": { "instances": [
     { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] } ],
     "parameters": {} },
   "expected": [
-    { "kind": "attributeValue", "label": "V1", "attribute": "meldjaar", "value": { "number": "2026" } } ] }|}
+    { "kind": "attributeValue", "label": "V1", "attribute": "meldjaar", "value": { "number": "%s" } } ] }|}
+      as_of jaar
   in
-  let zin = "the evaluationYear context value is not exercised by any corpus case (ch. 8.2)" in
   check "Rekenjaar: de verifier laat het document door"
     (Ir_v0.Checks.all
        (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (Yojson.Safe.from_string ir))
     = []);
-  let doc, case = load_pair ~ir ~case_text in
+  both_answer ~name:"Rekenjaar: oudjaarsdag 2026 geeft 2026" ~ir
+    ~case_text:(case_text {|"2026-12-31"|} "2026");
+  both_answer ~name:"Rekenjaar: nieuwjaarsdag 2027 geeft 2027" ~ir
+    ~case_text:(case_text {|"2027-01-01"|} "2027");
+  let zin =
+    "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"
+  in
+  let doc, case = load_pair ~ir ~case_text:(case_text "null" "2026") in
   (match ref_report doc case with
-  | (_ : string list) -> check "Rekenjaar: ref weigert bij naam (kreeg een wereld)" false
-  | exception Uchar_ref.Value.Fault m -> check ("Rekenjaar: ref weigert bij naam (" ^ m ^ ")") (m = zin));
+  | (_ : string list) -> check "Rekenjaar zonder rekendatum: ref weigert (kreeg een wereld)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("Rekenjaar zonder rekendatum: ref weigert (" ^ m ^ ")") (m = zin));
   match translate doc case with
-  | (_ : string) -> check "Rekenjaar: clingo weigert bij naam (kreeg een programma)" false
-  | exception Uchar_ref.Value.Fault m -> check ("Rekenjaar: clingo weigert bij naam (" ^ m ^ ")") (m = zin)
+  | (_ : string) -> check "Rekenjaar zonder rekendatum: clingo weigert (kreeg een programma)" false
+  | exception Uchar_ref.Value.Fault m ->
+      check ("Rekenjaar zonder rekendatum: clingo weigert (" ^ m ^ ")") (m = zin)
 
 (* WF-108 (c) over the wire, on the probe that found the gap: the golden
    jutterswet-ketenkwantor with its first rule alone and that rule's sourcePath

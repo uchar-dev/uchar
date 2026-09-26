@@ -1044,8 +1044,16 @@ let rec eval_expr env world (self : World.instance) ~err (e : expr) : Value.t =
           Value.fault
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year ->
-      Value.fault "the evaluationYear context value is not exercised by any corpus case (ch. 8.2)"
+  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
+      (* ch. 8.2: the execution year is derived from the session's one date,
+         never supplied beside it — yearOf(evaluationDate), a whole unitless
+         number — so a session cannot carry a year its date contradicts *)
+      match env.as_of with
+      | Some d -> Arith.jaar_uit (Value.date_of_iso d)
+      | None ->
+          Value.fault
+            "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
+             null")
   (* any other name is outside WF-098's closed set, spelled byte for byte —
      the bound day of a day-kind definition included, which is a BoundDay.
      An executor's loader refuses such a node, so only one built by hand

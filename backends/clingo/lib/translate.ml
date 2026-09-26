@@ -5389,10 +5389,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           fault
             "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
              null")
-  (* ch. 8.2: the execution year is admitted and executed by no one, so it is
-     refused by name, in ref's sentence, rather than by the fall-through *)
-  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year ->
-      fault "the evaluationYear context value is not exercised by any corpus case (ch. 8.2)"
+  | Constante { naam = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
+      (* ch. 8.2: the execution year is a program constant too — the civil
+         year of the session's one evaluation date, a whole unitless term,
+         the value yearOf gives that date *)
+      match ctx.case.as_of with
+      | Some d ->
+          let y, _, _ = Value.civil_from_days (day_of_lexeme d) in
+          ([], string_of_int y, 1)
+      | None ->
+          fault
+            "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
+             null")
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
      day included, which is a BoundDay): refused at load for an executor, so
      only a node built by hand arrives, refused in the loader's own sentence *)
