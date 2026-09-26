@@ -1,12 +1,22 @@
 package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Default;
+import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
+import dev.uchar.regelspraak.ir.ResolvedConsistentie;
+import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
+import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.ir.ResolvedUniciteit;
+import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -80,17 +90,117 @@ public final class ProducentConsument {
     }
 
     /**
-     * The model-wide producer index: for every value-writing {@link ResolvedRegel} (a kenmerktoekenning,
-     * gelijkstelling, berekening or initialisatie), map the element it WRITES (its {@code doel}) to the set of
-     * rule base-names that write it. A kenmerk and an attribuut of the same spelling are distinct keys.
+     * The model-wide producer index: every element a form WRITES ({@link #vormen}), mapped to the base names of
+     * the forms that write it. A kenmerk and an attribuut of the same spelling are distinct keys. {@code defaults}
+     * is the defaults-group list, which a resolver's model holds ({@code model.prioritizedDefaults}) and a model the
+     * loader rebuilt carries beside it ({@code IrLoader.Loaded.prioritizedDefaults()}).
      */
-    public static Map<ElementSleutel, Set<String>> producentIndex(RegelSpraakModel model) {
+    public static Map<ElementSleutel, Set<String>> producentIndex(RegelSpraakModel model,
+                                                                  List<PrioritizedDefaults> defaults) {
         Map<ElementSleutel, Set<String>> uit = new LinkedHashMap<>();
+        for (Vorm v : lees(model, defaults, null))
+            for (ElementSleutel el : v.schrijft()) uit.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(v.naam());
+        return uit;
+    }
+
+    /** The kind of a form of the rule layer (IR-SPEC ch. 2, Rules), one per list the forms sit in: a rule (an
+     *  assignment, initialisation or characteristic attribution), an object creation, an allocation, a
+     *  consistency, a uniqueness (single-source or a union), a fact creation, a defaults group. */
+    public enum Vormsoort { REGEL, OBJECTCREATIE, VERDELING, CONSISTENTIE, UNICITEIT, FEITCREATIE, DEFAULTSGROEP }
+
+    /** One form as this analysis reads it: its kind, its base name ({@link #basisNaam}; a defaults group without a
+     *  name is named by its pointer in the document), the elements it WRITES and the elements it READS. */
+    public record Vorm(Vormsoort soort, String naam, Set<ElementSleutel> schrijft, Set<ElementSleutel> leest) {}
+
+    /**
+     * Every form of the rule layer with the attributes and characteristics it writes and reads, per IR-SPEC ch. 5.1
+     * and the producer-consumer table of RUNTIME-SEMANTICS ch. 6.1. The forms come in the order of the document's
+     * lists (the rules, the object creations, the allocations, the consistencies, the uniquenesses with the
+     * single-source ones first, the fact creations), and the defaults groups of {@code defaults} last.
+     *
+     * <ul>
+     *   <li>a rule writes its target and reads its condition and value ({@link #verbruikt});</li>
+     *   <li>an object creation writes the members its assignments set on the created type, and reads its condition
+     *       and the assigned values, evaluated against the creation's subject;</li>
+     *   <li>an allocation writes its target attribute and its remainder attribute, and reads its source amount,
+     *       the ratio, maximum and ordering attributes of the recipients, and its condition;</li>
+     *   <li>a consistency reads its assertion, a uniqueness its key attributes (a union those of every source);
+     *       what either writes is its channel, no member;</li>
+     *   <li>a fact creation reads its condition; what it writes is a population and a relation, no member;</li>
+     *   <li>a defaults group writes its target and reads the justification and consequence of every default,
+     *       nested exception groups included.</li>
+     * </ul>
+     *
+     * A population, a relation's link set and a channel are nodes of ch. 5.1 too; this analysis does not key them,
+     * so a form's reads and writes of those are not here.
+     */
+    public static List<Vorm> vormen(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
+        return lees(model, defaults, java.util.Objects.requireNonNull(navigatie, "navigatie"));
+    }
+
+    /** The reading behind {@link #vormen} and {@link #producentIndex}. Without {@code navigatie} every read set is
+     *  empty: the producer index asks what a form writes, and no write depends on where a check navigates. */
+    private static List<Vorm> lees(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
+        java.util.Objects.requireNonNull(defaults, "defaults");
+        List<Vorm> uit = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) {
-            if (!(r.doel() instanceof Expr.AttribuutRef ref)) continue;
-            boolean kenmerk = r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING;
-            uit.computeIfAbsent(elementVan(ref.objecttype(), ref.attribuut(), kenmerk),
-                    k -> new LinkedHashSet<>()).add(basisNaam(r.naam()));
+            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            if (r.doel() instanceof Expr.AttribuutRef ref)
+                schrijft.add(elementVan(ref.objecttype(), ref.attribuut(),
+                        r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING));
+            uit.add(new Vorm(Vormsoort.REGEL, basisNaam(r.naam()), schrijft,
+                    navigatie == null ? Set.of() : verbruikt(r, navigatie)));
+        }
+        for (ResolvedObjectCreatie o : model.objectCreaties) {
+            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            for (ResolvedObjectCreatie.Toekenning t : o.toekenningen())
+                if (t.attribuut() != null) schrijft.add(elementVan(o.nieuwType(), t.attribuut(), t.kenmerk()));
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            l.conditie(o.voorwaarde(), o.subject());
+            for (ResolvedObjectCreatie.Toekenning t : o.toekenningen()) l.expr(t.waarde(), o.subject());
+            uit.add(new Vorm(Vormsoort.OBJECTCREATIE, basisNaam(o.naam()), schrijft, l.uit()));
+        }
+        for (ResolvedVerdeling v : model.verdelingen) {
+            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            if (v.doelAttribuut() != null) schrijft.add(elementVan(v.doelType(), v.doelAttribuut(), false));
+            if (v.restantAttribuut() != null) schrijft.add(elementVan(v.bronType(), v.restantAttribuut(), false));
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            l.lid(v.bronType(), v.bronAttribuut(), false);
+            for (String a : new String[] { v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut() })
+                l.lid(v.doelType(), a, false);
+            l.conditie(v.voorwaarde(), v.bronType());
+            uit.add(new Vorm(Vormsoort.VERDELING, basisNaam(v.naam()), schrijft, l.uit()));
+        }
+        for (ResolvedConsistentie c : model.consistenties) {
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            l.conditie(c.assertie(), c.subject());
+            uit.add(new Vorm(Vormsoort.CONSISTENTIE, basisNaam(c.naam()), Set.of(), l.uit()));
+        }
+        for (ResolvedUniciteit u : model.uniciteiten) {
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            for (String sleutel : u.sleutels()) l.lid(u.subject(), sleutel, false);
+            uit.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.uit()));
+        }
+        for (ResolvedUniciteitUnie u : model.uniciteitUnies) {
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            for (ResolvedUniciteitUnie.Bron b : u.bronnen())
+                if (b.type() != null) for (String sleutel : b.sleutels()) l.lid(b.type(), sleutel, false);
+            uit.add(new Vorm(Vormsoort.UNICITEIT, basisNaam(u.naam()), Set.of(), l.uit()));
+        }
+        for (ResolvedFeitCreatie f : model.feitCreaties) {
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            l.conditie(f.voorwaarde(), f.anker());
+            uit.add(new Vorm(Vormsoort.FEITCREATIE, basisNaam(f.naam()), Set.of(), l.uit()));
+        }
+        for (int i = 0; i < defaults.size(); i++) {
+            PrioritizedDefaults p = defaults.get(i);
+            RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(p.onderwerp());
+            Set<ElementSleutel> schrijft = new LinkedHashSet<>();
+            if (p.doel() != null) schrijft.add(elementVan(onderwerp, p.doel(), p.isKenmerk()));
+            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
+            for (Default d : p.defaults()) l.dflt(d, onderwerp);
+            uit.add(new Vorm(Vormsoort.DEFAULTSGROEP,
+                    p.naam() != null ? basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, schrijft, l.uit()));
         }
         return uit;
     }
@@ -160,20 +270,38 @@ public final class ProducentConsument {
      *  answer (see {@link Navigatie}). */
     public static Set<ElementSleutel> verbruikt(ResolvedRegel r, Navigatie navigatie) {
         Set<ElementSleutel> uit = new LinkedHashSet<>();
-        Lezer lezer = new Lezer(navigatie, uit);
+        Lezer lezer = new Lezer(java.util.Objects.requireNonNull(navigatie, "navigatie"), uit);
         RegelSpraakModel.Objecttype subject = r.doel() instanceof Expr.AttribuutRef ref ? ref.objecttype() : null;
         lezer.conditie(r.voorwaarde(), subject);
         lezer.expr(r.waarde(), subject);
         return uit;
     }
 
-    /** The one walk behind {@link #verbruikt}, over a condition or an expression with the subject a kenmerk check
-     *  without an owner of its own is evaluated against, and from which a navigated check's hop starts. Only a
-     *  kenmerk check asks for the subject; an attribuut read names its type itself. */
+    /** The one walk behind {@link #verbruikt} and {@link #vormen}, over a condition or an expression with the
+     *  subject a kenmerk check without an owner of its own is evaluated against, and from which a navigated check's
+     *  hop starts. Only a kenmerk check asks for the subject; an attribuut read names its type itself. Without a
+     *  {@code navigatie} it reads nothing (see {@link #lees}). */
     private record Lezer(Navigatie navigatie, Set<ElementSleutel> uit) {
 
+        /** A member a form names outright rather than through an expression: an allocation's source amount or
+         *  recipient attribute, a key of a uniqueness. */
+        void lid(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
+            if (navigatie == null || naam == null) return;
+            uit.add(elementVan(houder, naam, kenmerk));
+        }
+
+        /** A default's justification and consequence, and those of every default in its nested exception groups,
+         *  all against the group's subject (RUNTIME-SEMANTICS ch. 7.9: a descendant's read is the group's read). */
+        void dflt(Default d, RegelSpraakModel.Objecttype onderwerp) {
+            conditie(d.voorwaarde(), onderwerp);
+            expr(d.consequentie(), onderwerp);
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden())
+                    for (Default sub : g.defaults()) dflt(sub, onderwerp);
+        }
+
         void conditie(Conditie c, RegelSpraakModel.Objecttype subject) {
-            if (c == null) return;
+            if (c == null || navigatie == null) return;
             switch (c) {
                 case Conditie.Vergelijking v -> { expr(v.links(), subject); expr(v.rechts(), subject); }
                 case Conditie.Predicaat p -> expr(p.operand(), subject);
@@ -203,7 +331,7 @@ public final class ProducentConsument {
         }
 
         void expr(Expr e, RegelSpraakModel.Objecttype subject) {
-            if (e == null) return;
+            if (e == null || navigatie == null) return;
             switch (e) {
                 case Expr.AttribuutRef ref -> uit.add(elementVan(ref.objecttype(), ref.attribuut(), false));
                 case Expr.Binair b -> { expr(b.links(), subject); expr(b.rechts(), subject); }

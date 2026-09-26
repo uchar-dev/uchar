@@ -2,7 +2,9 @@ package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.graaf.ProducentConsument.Navigatie;
-import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.graaf.ProducentConsument.Vorm;
+import dev.uchar.regelspraak.graaf.ProducentConsument.Vormsoort;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
 import java.util.ArrayList;
@@ -50,21 +52,26 @@ public final class RegelGraaf {
     /** A directed dataflow edge from {@code van} to {@code naar} (both node ids). */
     public record Edge(String van, String naar) {}
 
-    /** One dependency the graph draws: rule {@code producent} writes {@code element} and rule {@code consument}
-     *  reads it — a path producent → element → consument over two of its edges. This is the reading IR-SPEC
-     *  ch. 5.2 calls an edge (producer → consumer), restricted to what this graph knows: rules, attributes and
-     *  characteristics. */
-    public record Afhankelijkheid(String producent, ElementSleutel element, String consument) {}
+    /** One dependency the graph draws: form {@code producent}, of kind {@code producentVorm}, writes {@code element},
+     *  and form {@code consument}, of kind {@code consumentVorm}, reads it — a path producent → element → consument
+     *  over two of its edges. This is the reading IR-SPEC ch. 5.2 calls an edge (producer → consumer), over the
+     *  nodes this graph draws: attributes and characteristics. */
+    public record Afhankelijkheid(Vormsoort producentVorm, String producent, ElementSleutel element,
+                                  Vormsoort consumentVorm, String consument) {}
 
     private final List<Node> nodes;
     private final List<Edge> edges;
     /** The element behind every element node, by node id: the key a node label only spells for a reader. */
     private final Map<String, ElementSleutel> elementen;
+    /** The kind of form behind every form node, by node id. */
+    private final Map<String, Vormsoort> vormsoorten;
 
-    private RegelGraaf(List<Node> nodes, List<Edge> edges, Map<String, ElementSleutel> elementen) {
+    private RegelGraaf(List<Node> nodes, List<Edge> edges, Map<String, ElementSleutel> elementen,
+                       Map<String, Vormsoort> vormsoorten) {
         this.nodes = nodes;
         this.edges = edges;
         this.elementen = elementen;
+        this.vormsoorten = vormsoorten;
     }
 
     public List<Node> nodes() { return nodes; }
@@ -76,7 +83,7 @@ public final class RegelGraaf {
     public List<Afhankelijkheid> afhankelijkheden() {
         Map<String, String> label = new LinkedHashMap<>();
         for (Node n : nodes) label.put(n.id(), n.label());
-        // the consumer edges run element -> rule, so they leave an element node
+        // the consumer edges run element -> form, so they leave an element node
         Map<String, List<String>> lezers = new LinkedHashMap<>();
         for (Edge e : edges)
             if (elementen.containsKey(e.van())) lezers.computeIfAbsent(e.van(), k -> new ArrayList<>()).add(e.naar());
@@ -85,23 +92,33 @@ public final class RegelGraaf {
             ElementSleutel el = elementen.get(in.naar());
             if (el == null) continue;                           // not a producer edge
             for (String lezer : lezers.getOrDefault(in.naar(), List.of()))
-                uit.add(new Afhankelijkheid(label.get(in.van()), el, label.get(lezer)));
+                uit.add(new Afhankelijkheid(vormsoorten.get(in.van()), label.get(in.van()), el,
+                        vormsoorten.get(lezer), label.get(lezer)));
         }
         return uit;
     }
 
-    /** Build the graph from a resolved model. Only value-writing rules and the elements they read/write appear;
-     *  a data element is INVOER when no rule produces it and a produced element is marked eind-output when no
-     *  rule consumes it. {@code navigatie} is the route's answer to which type a navigated kenmerk check reaches
-     *  (see {@link Navigatie}). */
-    public static RegelGraaf bouw(RegelSpraakModel model, Navigatie navigatie) {
-        Map<ElementSleutel, Set<String>> producenten = ProducentConsument.producentIndex(model);
-        // Every element that is consumed by at least one rule, so we can tell producties zonder afnemer apart.
+    /** Build the graph of a resolved model: every form of the rule layer ({@link ProducentConsument#vormen}) and
+     *  the attributes and characteristics it writes and reads. A data element is INVOER when no form writes it, and
+     *  a written element is marked eind-output when no form reads it. {@code defaults} is the defaults-group list
+     *  (a resolver's {@code model.prioritizedDefaults}, the loader's {@code Loaded.prioritizedDefaults()}), and
+     *  {@code navigatie} the route's answer to which type a navigated kenmerk check reaches (see
+     *  {@link Navigatie}). */
+    public static RegelGraaf bouw(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Navigatie navigatie) {
+        List<Vorm> vormen = ProducentConsument.vormen(model, defaults, navigatie);
+        // A form node is one form under its kind and base name, so the versions of a form are one node.
+        record VormSleutel(Vormsoort soort, String naam) {}
+        Map<ElementSleutel, Set<VormSleutel>> producenten = new LinkedHashMap<>();
+        for (Vorm v : vormen)
+            for (ElementSleutel el : v.schrijft())
+                producenten.computeIfAbsent(el, k -> new LinkedHashSet<>()).add(new VormSleutel(v.soort(), v.naam()));
+        // Every element that is consumed by at least one form, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(r, navigatie));
+        for (Vorm v : vormen) verbruikt.addAll(v.leest());
 
-        // Stable id allocation. Rule ids by base name; element ids by sleutel.
-        Map<String, String> regelId = new LinkedHashMap<>();
+        // Stable id allocation. Form ids by kind and base name; element ids by sleutel.
+        Map<VormSleutel, String> vormId = new LinkedHashMap<>();
+        Map<String, Vormsoort> vormsoorten = new LinkedHashMap<>();
         Map<ElementSleutel, String> elemId = new LinkedHashMap<>();
         List<Node> nodes = new ArrayList<>();
         Set<Edge> edgeSet = new LinkedHashSet<>();
@@ -121,35 +138,26 @@ public final class RegelGraaf {
             nodes.add(new Node(id, elementLabel(el), kind, eindOutput));
         }
 
-        // 2. rule nodes: every rule that produces or consumes something (a value-writer, plus any pure reader).
-        for (ResolvedRegel r : model.resolvedRegels) {
-            String basis = ProducentConsument.basisNaam(r.naam());
-            regelId.computeIfAbsent(basis, b -> {
-                String id = "r" + regelId.size();
-                nodes.add(new Node(id, b, NodeKind.REGEL, false));
+        // 2. form nodes: every form, whatever it writes or reads.
+        for (Vorm v : vormen)
+            vormId.computeIfAbsent(new VormSleutel(v.soort(), v.naam()), s -> {
+                String id = "r" + vormId.size();
+                nodes.add(new Node(id, s.naam(), NodeKind.REGEL, false));
+                vormsoorten.put(id, s.soort());
                 return id;
             });
-        }
 
-        // 3. producer edges: rule -> element it writes.
-        for (var e : producenten.entrySet()) {
-            String to = elemId.get(e.getKey());
-            for (String rn : e.getValue()) {
-                String from = regelId.get(rn);
-                if (from != null && to != null) edgeSet.add(new Edge(from, to));
-            }
-        }
-        // 4. consumer edges: element -> rule that reads it.
-        for (ResolvedRegel r : model.resolvedRegels) {
-            String to = regelId.get(ProducentConsument.basisNaam(r.naam()));
-            for (ElementSleutel el : ProducentConsument.verbruikt(r, navigatie)) {
-                String from = elemId.get(el);
-                if (from != null && to != null) edgeSet.add(new Edge(from, to));
-            }
+        // 3. producer edges: form -> element it writes.
+        for (var e : producenten.entrySet())
+            for (VormSleutel s : e.getValue()) edgeSet.add(new Edge(vormId.get(s), elemId.get(e.getKey())));
+        // 4. consumer edges: element -> form that reads it.
+        for (Vorm v : vormen) {
+            String to = vormId.get(new VormSleutel(v.soort(), v.naam()));
+            for (ElementSleutel el : v.leest()) edgeSet.add(new Edge(elemId.get(el), to));
         }
         Map<String, ElementSleutel> elementen = new LinkedHashMap<>();
         elemId.forEach((el, id) -> elementen.put(id, el));
-        return new RegelGraaf(nodes, new ArrayList<>(edgeSet), elementen);
+        return new RegelGraaf(nodes, new ArrayList<>(edgeSet), elementen, vormsoorten);
     }
 
     /** The label of an element node: "attribuut van Objecttype" (or just the naam when the owner is unknown). */

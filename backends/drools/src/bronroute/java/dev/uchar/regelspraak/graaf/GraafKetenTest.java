@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.graaf.ProducentConsument.Navigatie;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -65,13 +66,15 @@ class GraafKetenTest {
 
     @Test void producent_en_consument_sleutelen_op_het_declarerende_type() {
         TweeRoutes.Tweeling t = TweeRoutes.lees(MODEL_KETEN + PRODUCENT_SUPER + CONSUMENT_SUB);
-        assertSleutel(t.bronModel(), "bron", ProducentConsument.bronNavigatie(t.bronModel()));
-        assertSleutel(t.wire().model(), "wire", ProducentConsument.wireNavigatie(t.wire()));
+        assertSleutel(t.bronModel(), t.bronModel().prioritizedDefaults, "bron",
+                ProducentConsument.bronNavigatie(t.bronModel()));
+        assertSleutel(t.wire().model(), t.wire().prioritizedDefaults(), "wire", ProducentConsument.wireNavigatie(t.wire()));
     }
 
-    private static void assertSleutel(RegelSpraakModel m, String route, Navigatie nav) {
-        assertTrue(ProducentConsument.producentIndex(m).containsKey(ERVAREN),
-                () -> route + ": producentsleutel " + ProducentConsument.producentIndex(m).keySet());
+    private static void assertSleutel(RegelSpraakModel m, List<PrioritizedDefaults> defaults, String route,
+                                      Navigatie nav) {
+        assertTrue(ProducentConsument.producentIndex(m, defaults).containsKey(ERVAREN),
+                () -> route + ": producentsleutel " + ProducentConsument.producentIndex(m, defaults).keySet());
         ResolvedRegel consument = m.resolvedRegels.stream()
                 .filter(r -> ProducentConsument.basisNaam(r.naam()).equals("premie van een ervaren jutter"))
                 .findFirst().orElseThrow();

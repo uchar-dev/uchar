@@ -35,6 +35,9 @@ final class TweeRoutes {
     static Tweeling lees(String tekst) {
         RegelSpraakModel m = Resolver.resolve(tekst);
         assertTrue(m.isOk(), () -> "de bron resolvet niet: " + m.diagnostics);
+        // an allocation the wire has no spelling for stays out of the IR, so the two routes would read two models
+        assertTrue(IrEmitter.ongeschrevenVerdelingen(m).isEmpty(),
+                () -> "de wire laat een verdeling weg: " + IrEmitter.ongeschrevenVerdelingen(m));
         IrLoader.Loaded w;
         try {
             w = IrLoader.loadAll(JSON.readTree(IrEmitter.emit(m)));
@@ -46,14 +49,16 @@ final class TweeRoutes {
         return t;
     }
 
-    /** The bron route's navigation answer: the resolver writes the hop's role onto the record. */
+    /** The bron route's side tables: the resolver's model holds the defaults groups, and its records name the role
+     *  a hop walks. */
     static RegelGraaf bouwBron(RegelSpraakModel m) {
-        return RegelGraaf.bouw(m, ProducentConsument.bronNavigatie(m));
+        return RegelGraaf.bouw(m, m.prioritizedDefaults, ProducentConsument.bronNavigatie(m));
     }
 
-    /** The wire route's navigation answer: the loader keeps the hop beside the model (IR-SPEC ch. 4.5). */
+    /** The wire route's side tables: the loader keeps the defaults groups and the hops beside the model (IR-SPEC
+     *  ch. 4.5). */
     static RegelGraaf bouwWire(IrLoader.Loaded w) {
-        return RegelGraaf.bouw(w.model(), ProducentConsument.wireNavigatie(w));
+        return RegelGraaf.bouw(w.model(), w.prioritizedDefaults(), ProducentConsument.wireNavigatie(w));
     }
 
     /** The graph's node by its human label. */

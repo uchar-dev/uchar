@@ -63,7 +63,8 @@ class GraafLezingTest {
         // own kenmerk. The graph then draws a kenmerk of the Wachter nobody writes, and the Post's kenmerk nobody
         // reads.
         TweeRoutes.Tweeling t = TweeRoutes.lees(POSTEN);
-        RegelGraaf fout = RegelGraaf.bouw(t.wire().model(), ProducentConsument.bronNavigatie(t.wire().model()));
+        RegelGraaf fout = RegelGraaf.bouw(t.wire().model(), t.wire().prioritizedDefaults(),
+                ProducentConsument.bronNavigatie(t.wire().model()));
         assertEquals(RegelGraaf.NodeKind.INVOER, knoop(fout, "risicopost · wachter").kind());
         assertTrue(knoop(fout, "risicopost · post").eindOutput());
     }
