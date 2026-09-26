@@ -4895,12 +4895,10 @@ never constructs the sentinel at all — but one route escapes that
 description: a set aggregation over a CHARACTERISTIC of the element type.
 The frontend's unresolved-member gate asks whether the element type
 declares a MEMBER, and a characteristic is one, so the gate stays open
-(`heeftLid`,
-`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/model/RegelSpraakModel.java:620`;
-the gate at
-`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/ExpressieBouwer.java:470-481`),
-while the reference builder finds no attribute datatype and falls back to
-the sentinel (same file, :1663). Emitted and checked: "de som van het
+(`RegelSpraakModel.heeftLid` in the frontend's model package; the gate in
+`ExpressieBouwer`, the resolver's expression builder), while the reference
+builder finds no attribute datatype and falls back to the sentinel (the same
+class). Emitted and checked: "de som van het
 waardevol van alle vondsten van de Jutter" produces exactly this source,
 with `set: true`, no `navigatieRol` and no diagnostic at all — and the
 verifier reports THREE rules on it, WF-034 (the fold's own `type` is the

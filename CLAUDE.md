@@ -344,14 +344,22 @@ A gate that gets no floor carries one sentence in its script saying why.
 
 ## Repo relationships
 
-- `regelspraak-java` (separate repository) is the first frontend + Drools
-  backend. It consumes this repo at a pinned `SPEC_REV`; changes flow
-  **spec-first**: the delta lands here (spec + corpus + schema), then a
-  pin-bump conformance PR lands there.
-- Its `RegelSpraakRuntime` is production semantics. That production runtime
-  now lives HERE too, in exactly ONE place — `backends/drools/runtime/` (the
-  Drools backend, ported at the drools-backend card so the IR has a third
-  executor). `ref/` (the reference interpreter) and `spec/verifier/` (the
+- `uchar-dev/regelspraak-toolchain` (separate, private repository; the
+  successor of `yhavinga/regelspraak-java`, maintainer decision 2026-09-26)
+  is the DISTRIBUTION — CLI, service, docker/helm — with no semantics of its
+  own: it consumes this repo as a git SUBMODULE (the submodule commit is the
+  pin; no `SPEC_REV`, no conformance gate) and builds `frontends/regelspraak`
+  and `backends/drools` from that submodule in a Maven reactor. Package
+  ownership: `dev.uchar.regelspraak.*` is THIS repo's (renamed from
+  `io.github.yhavinga.regelspraak` at the card `pakkethernoeming`,
+  2026-09-26); the distribution lives in `dev.uchar.regelspraak.toolchain.*`
+  and reads only public API — never the same package. Changes still flow
+  **spec-first**: the delta lands here (spec + corpus + schema), then the
+  distribution moves its submodule pin.
+- The production `RegelSpraakRuntime` lives in exactly ONE place —
+  `backends/drools/runtime/` (the Drools backend, ported at the
+  drools-backend card so the IR has a third executor; since the move the
+  distribution carries no copy). `ref/` (the reference interpreter) and `spec/verifier/` (the
   OCaml verifier) must share NO code with it: separate implementations are the
   structural proof the spec is engine-neutral, no copy-paste imports either.
   Gate 1's no-share tripwire (decision V3-a) enforces this mechanically —

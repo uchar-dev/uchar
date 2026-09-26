@@ -831,6 +831,37 @@ written with a unit against a unitless base, WF-099) and the casus dump
 outside that leg (over-determined by its nature: its scenarios write the
 same targets each in their own way). The replays did not move.
 
+**The pin bump became the toolchain move (2026-09-26, `359570c4`):** the
+successor of `yhavinga/regelspraak-java` is `uchar-dev/regelspraak-toolchain`,
+a private mirror with the full history, to become a DISTRIBUTION without
+semantics of its own — CLI, service, docker/helm — that consumes this
+repository as a git submodule (the submodule commit is the pin; `SPEC_REV` and
+the conformance gate go) and builds `frontends/regelspraak` and
+`backends/drools` in a Maven reactor. An independent investigation (report kept
+beside the repository, `research/toolchain-verhuizing/`) measured why the plain
+plan was not enough: the toolchain's service built through the two-argument
+`ExecModelTranspiler.build`, which here delegates with EMPTY side tables, so
+every defaults family would have fired nowhere — silently, HTTP 200. Hence the
+order: first the mechanical package rename (this landing, card
+`pakkethernoeming`: `io.github.yhavinga.regelspraak` → `dev.uchar.regelspraak`,
+gates byte-identical), then one wave HERE before the distribution cuts its
+copies — a public facade for the replay prelude with the short overloads
+removed (`publieke-api-distributie`), the scenario layer as a frontend
+extension lowered to case files (`scenariolaag-in-uchar`; maintainer decision:
+it is semantics over the IR, so it lives here), the rule graph merged with the
+toolchain's subtype key and gated (`graaf-samenvoeging-en-gate`), and the forms
+the toolchain's in-memory route fired but the wire or the executors did not
+carry: a mixed-fraction literal normalised to the wire's rational and a
+navigated read that chooses its relation or refuses in a sentence
+(`frontend-breuk-en-navigatiekeuze`), `evaluationYear` executed with its corpus
+witness (`rekenjaar-als-waarde`), the empty/filled test under the whole-period
+qualifier (`gehele-periode-leeg-gevuld`) and a fixed start point off the
+calendar grid as a `Timeline` field (`vast-startpunt-tijdlijn`). Then the
+distribution rebuilds on the submodule, the workbench re-points its
+`toolchain` submodule, and the old repositories are archived — each step on
+the maintainer's signal. The UWV rule sets are rewritten by their authors on
+the richer dialect rather than ported.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
