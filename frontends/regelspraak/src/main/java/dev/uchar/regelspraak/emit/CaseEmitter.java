@@ -41,8 +41,10 @@ public final class CaseEmitter {
     }
 
     /** The model the IR document is emitted from: {@code m} itself without a scope, and with one a copy of the whole
-     *  model ({@link RegelSpraakModel#kopie}) from which every named form the scope does not carry is dropped. A rule
-     *  group keeps its carried members and is dropped when none is left. */
+     *  model ({@link RegelSpraakModel#kopie}) from which every named form the scope does not carry is dropped, and
+     *  every diagnostic raised on a line of a source block whose forms it leaves out entirely
+     *  ({@link Scope#weggelaten}): the document carries what its forms and its declarations raise. A rule group keeps
+     *  its carried members and is dropped when none is left. */
     public static RegelSpraakModel metScope(RegelSpraakModel m, Scope scope) {
         if (scope == null) return m;
         Set<String> namen = new HashSet<>();
@@ -57,6 +59,7 @@ public final class CaseEmitter {
         k.uniciteitUnies.removeIf(x -> !draagt.test(x.naam()));
         k.feitCreaties.removeIf(x -> !draagt.test(x.naam()));
         k.prioritizedDefaults.removeIf(x -> !draagt.test(x.naam()));
+        k.diagnostics.removeIf(d -> scope.weggelaten().stream().anyMatch(b -> b.bevat(d.line())));
         k.regelGroepen.clear();
         for (ResolvedRegelGroep g : m.regelGroepen) {
             List<String> leden = g.leden().stream().filter(draagt).toList();

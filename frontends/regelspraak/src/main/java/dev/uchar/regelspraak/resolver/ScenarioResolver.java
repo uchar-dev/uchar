@@ -308,7 +308,7 @@ public final class ScenarioResolver {
                     + "laat vallen legt de tijdlijn op een ander raster");
         if (scope instanceof ScopeEnkeleRegelContext s) {
             String naam = src(s.enkeleRegelReferentie());
-            return new Scope(ScopeSoort.ENKELE_REGEL, List.of(naam), vormenVan(naam, s.getStart().getLine()));
+            return gescoped(ScopeSoort.ENKELE_REGEL, List.of(naam), vormenVan(naam, s.getStart().getLine()));
         }
         if (scope instanceof ScopeMeerdereRegelsContext s) {
             List<String> namen = new ArrayList<>();
@@ -318,18 +318,106 @@ public final class ScenarioResolver {
                 namen.add(naam);
                 vormen.addAll(vormenVan(naam, ref.getStart().getLine()));
             }
-            return new Scope(ScopeSoort.MEERDERE_REGELS, namen, List.copyOf(vormen));
+            return gescoped(ScopeSoort.MEERDERE_REGELS, namen, List.copyOf(vormen));
         }
         ScopeRegelgroepContext s = (ScopeRegelgroepContext) scope;
         String groep = src(s.enkeleRegelReferentie());
         var g = model.regelGroepen.stream().filter(rg -> norm(rg.naam()).equals(norm(groep))).findFirst().orElse(null);
         if (g == null) {
             fout(s.getStart().getLine(), "de regelgroep '" + groep + "' uit de scope bestaat niet in het document");
-            return new Scope(ScopeSoort.REGELGROEP, List.of(groep), List.of());
+            return gescoped(ScopeSoort.REGELGROEP, List.of(groep), List.of());
         }
         LinkedHashSet<String> vormen = new LinkedHashSet<>();
         for (String lid : g.leden()) vormen.addAll(vormenVan(lid, s.getStart().getLine()));
-        return new Scope(ScopeSoort.REGELGROEP, List.of(groep), List.copyOf(vormen));
+        return gescoped(ScopeSoort.REGELGROEP, List.of(groep), List.copyOf(vormen));
+    }
+
+    /** A scope over {@code vormen}, with the source lines of the blocks whose every form it leaves out. */
+    private Scope gescoped(ScopeSoort soort, List<String> regels, List<String> vormen) {
+        Set<String> gedragen = new java.util.HashSet<>();
+        for (String v : vormen) gedragen.add(norm(v));
+        List<Regelbereik> weggelaten = new ArrayList<>();
+        for (Blok b : blokken()) weggelaten(b, gedragen, weggelaten);
+        return new Scope(soort, regels, vormen, List.copyOf(weggelaten));
+    }
+
+    /** A source block that yields named forms: a rule or a decision table (its forms carry its name, a table's rows
+     *  its name and a number), an extension block (its defaults land in the group of its base rule, found by the
+     *  source lines of the group's nodes), or a rule group (its members). */
+    private record Blok(String soort, String naam, int van, int tot, List<Blok> leden) {}
+
+    private List<Blok> blokken() {
+        List<Blok> uit = new ArrayList<>();
+        for (ParseTree kind : test.children == null ? List.<ParseTree>of() : test.children) {
+            if (kind instanceof RegelGroepContext g) {
+                List<Blok> leden = new ArrayList<>();
+                for (GroepLidContext lid : g.groepLid()) {
+                    if (lid.regel() != null) leden.add(blok("regel", src(lid.regel().regelNaam()), lid.regel(), List.of()));
+                    if (lid.beslistabel() != null)
+                        leden.add(blok("tabel", src(lid.beslistabel().beslistabelNaam()), lid.beslistabel(), List.of()));
+                }
+                uit.add(blok("groep", src(g.kaleNaam()), g, leden));
+            } else if (kind instanceof RegelContext r) uit.add(blok("regel", src(r.regelNaam()), r, List.of()));
+            else if (kind instanceof BeslistabelContext b) uit.add(blok("tabel", src(b.beslistabelNaam()), b, List.of()));
+            else if (kind instanceof UitzonderingRegelContext || kind instanceof UitzonderingGroepContext)
+                uit.add(blok("uitbreiding", null, (ParserRuleContext) kind, List.of()));
+        }
+        return uit;
+    }
+
+    private static Blok blok(String soort, String naam, ParserRuleContext ctx, List<Blok> leden) {
+        int van = ctx.getStart().getLine();
+        return new Blok(soort, naam, van, ctx.getStop() == null ? van : ctx.getStop().getLine(), leden);
+    }
+
+    /** Whether block {@code b} yields a carried form (TRUE), only forms the scope leaves out (FALSE) or no named form
+     *  at all (null); the lines of each block that yields only left-out forms go to {@code uit}. */
+    private Boolean weggelaten(Blok b, Set<String> gedragen, List<Regelbereik> uit) {
+        Boolean draagt = null;
+        if (b.leden().isEmpty()) {
+            for (Vorm v : vormen())
+                if (uitBlok(v, b)) draagt = Boolean.TRUE.equals(draagt) || gedragen.contains(norm(v.naam()));
+        } else {
+            List<Regelbereik> binnen = new ArrayList<>();
+            for (Blok lid : b.leden()) {
+                Boolean d = weggelaten(lid, gedragen, binnen);
+                if (d != null) draagt = Boolean.TRUE.equals(draagt) || d;
+            }
+            if (!Boolean.FALSE.equals(draagt)) uit.addAll(binnen);
+        }
+        if (Boolean.FALSE.equals(draagt)) uit.add(new Regelbereik(b.van(), b.tot()));
+        return draagt;
+    }
+
+    /** Whether form {@code v} comes from block {@code b}: by name for a rule and a decision table, and for an
+     *  extension block by the source lines of the form's nodes. A table row's nodes are read in a stream of their own,
+     *  so their lines are no document lines, and the name is what places them. */
+    private static boolean uitBlok(Vorm v, Blok b) {
+        return switch (b.soort()) {
+            case "regel" -> norm(v.naam()).equals(norm(b.naam()));
+            case "tabel" -> norm(v.naam()).matches(java.util.regex.Pattern.quote(norm(b.naam())) + " [0-9]+");
+            default -> regelsVan(v).stream().anyMatch(r -> r >= b.van() && r <= b.tot());
+        };
+    }
+
+    /** The source lines of the nodes of form {@code v}. */
+    private static Set<Integer> regelsVan(Vorm v) {
+        Set<Integer> uit = new java.util.HashSet<>();
+        Predicate<Expr> vang = x -> {
+            if (x.bron() != null && x.bron().line() > 0) uit.add(x.bron().line());
+            return false;
+        };
+        v.exprs().forEach(e -> Expr.bevat(e, vang));
+        v.condities().forEach(c -> regelsVan(c, vang, uit));
+        return uit;
+    }
+
+    private static void regelsVan(Conditie c, Predicate<Expr> vang, Set<Integer> uit) {
+        if (c == null) return;
+        if (c.bron() != null && c.bron().line() > 0) uit.add(c.bron().line());
+        Conditie.bevatOperand(c, vang);
+        if (c instanceof Conditie.Samengesteld s) s.onderdelen().forEach(o -> regelsVan(o, vang, uit));
+        if (c instanceof Conditie.Kwantorvouw k) { regelsVan(k.filter(), vang, uit); regelsVan(k.toets(), vang, uit); }
     }
 
     /** The model forms a scope name carries: the named form itself, or every row of the decision table it names. */

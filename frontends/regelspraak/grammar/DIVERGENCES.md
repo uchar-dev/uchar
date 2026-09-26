@@ -1681,10 +1681,16 @@ serialiser, so a case file and an IR document share one shape.
   lowercased, every run of characters other than `a-z` and `0-9` one `-`,
   none at either end.
 - **The scope lowers to the IR document**, not to the case files: the
-  document keeps the declarations, the day-kind definitions, the start points
-  and the diagnostics whole, and of the named forms — rules, object and fact
-  creations, allocations, consistencies, uniquenesses and defaults groups —
-  the ones the scope names. A rule is named by its name without a version
+  document keeps the declarations, the day-kind definitions and the start
+  points whole, and of the named forms — rules, object and fact creations,
+  allocations, consistencies, uniquenesses and defaults groups — the ones the
+  scope names. It keeps the diagnostics of its declarations and its forms: a
+  diagnostic raised on a line of a source block whose every form the scope
+  leaves out — a rule, a decision table, an extension block, a rule group — is
+  dropped. A rule and a table are placed by name, an extension block by the
+  source lines of its defaults group's nodes; a block that yields no named
+  form (a day-kind definition, a start point, a rule that yields nothing)
+  keeps its diagnostics, and so does a diagnostic without a line. A rule is named by its name without a version
   suffix, a decision table by its name (all its rows), a defaults group by
   the name of its base rule, a rule group by its name (its members). A rule
   group keeps its carried members and disappears without one. Without a

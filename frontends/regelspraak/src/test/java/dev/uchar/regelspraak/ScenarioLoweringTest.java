@@ -493,6 +493,74 @@ class ScenarioLoweringTest {
         assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.metScope(m, alles)));
     }
 
+    // ---------------- the diagnostics a scoped document carries ----------------
+
+    /** A declaration that draws a WARNING, and a marker WARNING in a rule, a rule the scope leaves out, the exception
+     *  block of a defaults group it leaves out, and the member of a group it keeps one other member of. */
+    private static final String WAARSCHUWINGEN = """
+        Dagsoort de rustdag (mv: wk);
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het totaalgewicht Numeriek (getal met 2 decimalen);
+            het restgewicht Numeriek (getal met 2 decimalen);
+            het vangsttotaal Numeriek (getal met 2 decimalen);
+            is bevoegd kenmerk (bijvoeglijk);
+            is ervaren kenmerk (bijvoeglijk);
+            is gemeld kenmerk (bijvoeglijk);
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht Numeriek (getal met 2 decimalen);
+
+        Feittype vondstaanmelding
+            de aanmelder Jutter
+            de aangemelde vondst (mv: aangemelde vondsten) Vondst
+        Eén aanmelder meldt meerdere aangemelde vondsten
+
+        Regel totaalgewicht
+            geldig altijd
+                Het totaalgewicht van een Jutter moet berekend worden als de som van de schelpen van alle aangemelde vondsten van de Jutter.
+
+        Regel bevoegdheid
+            geldig altijd
+                Een Jutter is bevoegd
+                indien de som van de kiezels van alle aangemelde vondsten van de Jutter groter is dan 5.
+
+        Regel ervaring
+            geldig altijd
+                Een Jutter is ervaren
+                indien zijn vangsttotaal groter is dan 5.
+
+        Uitzondering op ervaring: geen ervaring
+            geldig altijd
+                Een Jutter is niet ervaren
+                indien de som van de keien van alle aangemelde vondsten van de Jutter groter is dan 9.
+
+        Regelgroep meldingen
+        Regel melding
+            geldig altijd
+                Een Jutter is gemeld
+                indien zijn vangsttotaal groter is dan 1.
+        Regel restgewicht
+            geldig altijd
+                Het restgewicht van een Jutter moet berekend worden als de som van de stenen van alle aangemelde vondsten van de Jutter.
+        """;
+
+    /** Before: the scoped document kept every diagnostic of the whole model, also the WARNINGs of the rules it left
+     *  out (open point of the scenario card, measured again by the lens: a WARNING about a left-out rule in a
+     *  document without it). */
+    @Test void een_gescopet_document_draagt_de_diagnoses_van_zijn_vormen_en_declaraties() {
+        ScenarioBundel b = ScenarioResolver.resolve(WAARSCHUWINGEN + "Scenario s\n"
+                + "toetst de regels bevoegdheid en melding\nGegeven is de volgende situatie:\neen Jutter J\n"
+                + "Met als verwacht resultaat:\n- de gegevens zijn consistent\n");
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        assertEquals(5, b.model().diagnostics.size(), () -> "het hele model: " + b.model().diagnostics);
+        List<String> gescopet = CaseEmitter.metScope(b.model(), enig(b).scope()).diagnostics.stream()
+                .map(d -> d.line() + " " + d.message().substring(0, d.message().indexOf(' '))).toList();
+        assertEquals(List.of("1 dagsoort-eenheid", "26 'kiezels'"), gescopet,
+                "de declaratie en de gedragen regel houden hun WARNING; de weggelaten regel, het uitzonderingsblok "
+                        + "van de weggelaten defaultsgroep en het weggelaten groepslid niet");
+    }
+
     // ---------------- the CLI ----------------
 
     private record Uitvoer(int code, String tekst) {}

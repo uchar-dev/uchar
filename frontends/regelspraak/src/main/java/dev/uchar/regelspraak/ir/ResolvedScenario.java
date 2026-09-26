@@ -30,8 +30,19 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
 
     /** The rules a scenario tests. {@code regels} holds each name as written (a rule, a decision table, a
      *  defaults group, or for {@link ScopeSoort#REGELGROEP} the one group); {@code vormen} holds the names of the
-     *  model forms the scope carries, as the model spells them — what the emitted IR keeps. */
-    public record Scope(ScopeSoort soort, List<String> regels, List<String> vormen) {}
+     *  model forms the scope carries, as the model spells them — what the emitted IR keeps; {@code weggelaten} holds
+     *  the source lines of the blocks (a rule, a decision table, an extension block, a rule group) whose every form
+     *  the scope leaves out, so the IR document drops the diagnostics raised there. */
+    public record Scope(ScopeSoort soort, List<String> regels, List<String> vormen, List<Regelbereik> weggelaten) {
+        public Scope(ScopeSoort soort, List<String> regels, List<String> vormen) {
+            this(soort, regels, vormen, List.of());
+        }
+    }
+
+    /** The source lines {@code van} to {@code tot}, both inclusive. */
+    public record Regelbereik(int van, int tot) {
+        public boolean bevat(int regel) { return regel >= van && regel <= tot; }
+    }
     public enum ScopeSoort { ENKELE_REGEL, MEERDERE_REGELS, REGELGROEP }
 
     /** The merged situation: the instances by label, in first-seen order, and the parameter values (a later
