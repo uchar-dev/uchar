@@ -994,7 +994,6 @@ EXPECTED_CHANNEL=(
 # (its gevuld check now skips an explicit leeg segment, which no case input can carry).
 # The exec branch plays the three cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED
 # moves by one as well.
-EXPECTED_PLAYED=212
 # 211 -> 212 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new, from bron.rgs
 # and hand-computed — a timeline with a fixed start point off the calendar (IR-SPEC ch. 2.8, fixedStart;
 # RUNTIME-SEMANTICS ch. 3.2): a named year grid from 1 October and an inline month grid from the 31st,
@@ -1003,7 +1002,7 @@ EXPECTED_PLAYED=212
 # start point at the constant anchor through the anchored producers a variable start uses, and the case
 # runner lays a case timeline on the fixed grid. Both branches play the four cases, PLAYED 4, with ref's
 # and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=210
+EXPECTED_PLAYED=212
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1308,11 +1307,10 @@ DRL_CHANNEL=(
 # 180 -> 181 (2026-09-26, card gehele-periode-leeg-gevuld): jutterswet-gehele-periode-leeg, new. This
 # branch plays its three cases once the shared loader no longer refuses the form, PLAYED 3. Reason
 # block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=182
 # 181 -> 182 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new. This branch plays
 # its four cases through the constant anchor it now gives a doel on a fixed start point, PLAYED 4.
 # Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=180
+EXPECTED_DRL_PLAYED=182
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

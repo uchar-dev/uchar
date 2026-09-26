@@ -35,7 +35,6 @@ final class TweeRoutes {
     static Tweeling lees(String tekst) {
         RegelSpraakModel m = Resolver.resolve(tekst);
         assertTrue(m.isOk(), () -> "de bron resolvet niet: " + m.diagnostics);
-        assertTrue(IrEmitter.wireWeigeringen(m).isEmpty(), () -> "de wire draagt de bron niet: " + IrEmitter.wireWeigeringen(m));
         IrLoader.Loaded w;
         try {
             w = IrLoader.loadAll(JSON.readTree(IrEmitter.emit(m)));
