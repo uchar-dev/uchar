@@ -862,6 +862,44 @@ distribution rebuilds on the submodule, the workbench re-points its
 the maintainer's signal. The UWV rule sets are rewritten by their authors on
 the richer dialect rather than ported.
 
+**The wave before the move landed (2026-09-26, `9d46e19d`):** the seven cards
+above landed as one union with two new gates — 15, the rule graph against
+the verifier's ch. 5 edges; 16, scenario documents regenerating their pinned
+case files — after three lenses and one fix round of four fixers on disjoint
+branches. What the lenses caught and the round fixed: the scenario lowering
+wrote case files whose period bounds sat off the declaration's grid (now
+refused with a sentence); an allocation over two relations still ended in an
+emitter exception (now bound on the written role); the Drools runtime counted
+whole months between clamped walls as zero where ref and clingo counted one
+(a pre-existing gap the fixed grid made reachable); clingo's bucket calendar
+spanned only the case input's endpoints, so a derived timeline on a fixed
+grid passed the whole-period test vacuously; the graph called a member INPUT
+when only a defaults group or a creation wrote it (the graph now reads every
+form of the rule layer, and keys a navigated characteristic on the type the
+hop reaches); clingo refused every non-whole rational literal (now read at
+the smallest exact scale; `jutterswet-breukliteral` and `jutterswet-erfketen`
+landed with it); `evaluationYear` without a date faults in one sentence in all
+three (red case), and WF-098 crosses a context value's type annotation. Open,
+recorded and not reopened (maintainer, 2026-09-26: finish, no scope creep,
+on to the distribution): a rational without a finite decimal expansion (`1/3`)
+is refused by name in clingo where ref computes exactly; the Drools replay
+without an evaluation date reads `evaluationDate` as empty and plays where ref
+and clingo fault; the graph draws no population, relation or channel nodes
+(counted per class in gate 15) and keys sister subtypes where the verifier's
+walk does not; a week grid's fixed start date is not canonical (two dates lay
+the same grid); the general refusal of an undeclared read waits for the
+parity zone to leave; a scenario has no surface for an absent parameter;
+handwritten case files whose names or date-times do not follow the lowering's
+spelling cannot be regenerated from a scenario; the loader cites a different
+first finding than the verifier on doubly ill-formed documents. Norm
+decisions taken by default and to be confirmed: the negation inside a
+whole-period leeg/gevuld test is per day and "filled the whole year" is
+vacuously true on a timeline without any value; an explicitly empty segment
+is empty everywhere; "the whole year" over a member on a fixed grid reads the
+calendar year; a name that is both a role and a type binds as the role where
+the type pair does not decide; characteristic periods in a scenario stay
+day-precise.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3

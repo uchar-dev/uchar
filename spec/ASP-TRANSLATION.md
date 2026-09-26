@@ -1274,8 +1274,9 @@ full timeline in the case; the asOfDate-bucket scalar cannot serve it
 and faults (the ch. 4.3a convention: executors fault, never guess).
 
 **Pro-rata** (tijdsevenredig-deel, ch. 3.7): per fold N, the bucket
-calendar as data (`prN_b(bs,bn,days)` — every bucket in the corpus
-endpoints' span; the calendar is condition-blind), the true-day
+calendar as data (`prN_b(bs,bn,days)` — every bucket in the span of the case's
+endpoints, widened by one period of every fixed start point's grid around
+each end (RUNTIME-SEMANTICS ch. 3.2); the calendar is condition-blind), the true-day
 intersection (`prN_d(S,B,KV,KT,D)`: days of `ktl` overlap per
 bucket), and the head `tl(S,a,B,N,⟨W·TD/Tot⟩)` under a `TD > 0`
 gate — the *head*, not the calendar, restricts to touched buckets:

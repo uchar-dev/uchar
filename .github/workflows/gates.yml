@@ -291,3 +291,52 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gringo && clingo --version
       - name: check-flogic
         run: opam exec -- bash scripts/check-flogic.sh
+
+  graaf:
+    # Gate 15 — the rule graph of the Drools backend holds to IR-SPEC ch. 5
+    # (card graaf-samenvoeging-en-gate, 2026-09-26). Needs OCaml (the
+    # verifier's --dependency-edges mode), a JDK with javac (the route
+    # suite is compiled by the gate), the frontend's tool jars (fetched by
+    # make) and mvn (the backend jar). Unconditional and blocking.
+    name: "Gate 15: rule graph vs IR-SPEC ch. 5 (unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5"
+      - name: install yojson + zarith
+        run: opam install -y yojson zarith
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: cache the ANTLR + JUnit tool jars
+        uses: actions/cache@v4
+        with:
+          path: frontends/regelspraak/lib
+          key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
+      - name: check-graaf
+        run: opam exec -- bash scripts/check-graaf.sh
+
+  scenario:
+    # Gate 16 — the scenariotoetsen extension of the RegelSpraak frontend
+    # (card scenariolaag-in-uchar, 2026-09-26): scenario documents
+    # regenerate their pinned case files byte-identically. Jar-only, like
+    # gate 10. Unconditional and blocking.
+    name: "Gate 16: RegelSpraak scenario documents (unconditional, blocking)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: cache the ANTLR + JUnit tool jars
+        uses: actions/cache@v4
+        with:
+          path: frontends/regelspraak/lib
+          key: regelspraak-jars-antlr-4.13.2-junit-1.10.2
+      - name: check-scenario
+        run: bash scripts/check-scenario.sh

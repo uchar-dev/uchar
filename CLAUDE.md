@@ -328,6 +328,47 @@ green. Current gates:
     9 this frontend links no external toolchain, so every runner can run
     it.
 
+15. `scripts/check-graaf.sh` — the rule graph of the Drools backend
+    (`backends/drools/.../graaf/`, a reading of the IR the distribution's
+    scope analysis consumes; card `graaf-samenvoeging-en-gate`, 2026-09-26)
+    holds to IR-SPEC ch. 5. SPEC LEG: the graph is built for every golden
+    from its `ir.json` through the loader — never from the source — and
+    compared per golden with the verifier's ch. 5 edges
+    (`verifier --dependency-edges`, the list WF-045/046 walk) over an
+    attribute or characteristic node, whatever forms of the rule layer they
+    join (rules, object and fact creations, allocations, consistencies,
+    uniquenesses, prioritized-defaults groups), without the edge kind and
+    without the type in the node (the graph keys a member on its declaring
+    type); edges over a population, a relation or a channel are counted per
+    class and reported, never compared; a difference fails unless it is
+    listed in `VERSCHIL_BEWUST`, one projected line per entry with both
+    forms' lists and its reason, stale-failing in both directions; a golden
+    the loader refuses cannot be compared and is reported with its form.
+    ROUTE LEG: on every golden with a `bron.rgs` the graph from the source
+    route equals the graph from the wire route byte for byte, and the
+    graph's own unit tests (under `backends/drools/src/bronroute`, compiled
+    by the gate against the frontend and the backend jar) pass with a
+    non-zero count. Floors in the script (measured 2026-09-26 at the wave's
+    landing): `EXPECTED_MIN_GOLDENS=234`, `EXPECTED_MIN_AFHANKELIJK=116`,
+    `EXPECTED_MIN_BRONROUTE=98`, `EXPECTED_MIN_TESTS=23`. An empty
+    comparison is a failure, never silently green. CI leg unconditional and
+    blocking.
+
+16. `scripts/check-scenario.sh` — the scenariotoetsen extension of the
+    RegelSpraak frontend (`frontends/regelspraak/grammar/DIVERGENCES.md`,
+    "Scenariotoetsen"; card `scenariolaag-in-uchar`, 2026-09-26): every
+    corpus golden carrying a `scenario.rgs` beside its `bron.rgs`
+    regenerates, through the frontend's `--cases` mode, exactly its pinned
+    case files (the same names, none missing and none extra)
+    byte-identically, and its `ir.json` byte-identically — without a scope
+    the production route's IR document, with one the forms the scope
+    carries; the handwritten expectations are the anchor, never the
+    lowering. An empty scenario-golden set is a failure; floors
+    `EXPECTED_MIN_SCENARIO_GOLDENS=6` and
+    `EXPECTED_MIN_SCENARIO_CASES=29` (measured 2026-09-26). Gate 4 stays
+    the schema gate of those case files and gates 5, 6 and 12 their
+    replay. CI leg unconditional and blocking (jar-only, like gate 10).
+
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty
 checks and the name-carrying lists, every gate whose count could shrink unseen
 carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason

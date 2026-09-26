@@ -81,7 +81,7 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "characteristicTimelines": {
-          "description": "Full timelines of temporal characteristics: per declared temporal characteristic the true-periods, day-precision, from inclusive / to exclusive, ordered and non-overlapping, aligned to the declaration's granularity grid. Absence of a period means the characteristic does not hold there (a gap is clipped away, never leeg).",
+          "description": "Full timelines of temporal characteristics: per declared temporal characteristic the true-periods, day-precision, from inclusive / to exclusive, ordered and non-overlapping; day-precise, not held to the declaration's granularity grid (the readers and the anchor cases hold characteristic periods so; decision at the landing of 2026-09-26). Absence of a period means the characteristic does not hold there (a gap is clipped away, never leeg).",
           "type": "object",
           "additionalProperties": {
             "type": "array",

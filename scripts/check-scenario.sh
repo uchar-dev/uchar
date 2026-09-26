@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The scenario gate — the scenariotoetsen extension of the RegelSpraak frontend
+# Gate 16 — the scenario gate: the scenariotoetsen extension of the RegelSpraak frontend
 # (frontends/regelspraak/grammar/DIVERGENCES.md, "Scenariotoetsen"): a scenario
 # is a case file written in RegelSpraak, and its lowering must reproduce the
 # pinned corpus.
