@@ -14647,6 +14647,64 @@ let () =
   ref_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:zonder;
   clingo_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:zonder
 
+(* RUNTIME-SEMANTICS ch. 3.2 and 3.6, the asOfDate bucket on the member's own
+   grid: a scalar case value is the value of the period of that grid which
+   holds the evaluation date, and the subject's own total weighs that one
+   period. A fixed start point lays such a period on a week and a quarter grid
+   as well as on a month and a year grid, so the total answers there, as ref
+   answers it: 2025-02-15 lies in the week [2025-02-10, 2025-02-17) of the grid
+   from Monday 2024-09-30 and in the quarter [2024-11-30, 2025-02-28) of the
+   --05-31 grid, each one whole unit. Where ref refuses the grid — the
+   calendar's week, which lays no bucket; a grid of several units; a session
+   without an evaluation date — the translation refuses it in ref's sentence.
+   Measured 2026-09-26 before the arm read the grid: the week and the quarter
+   were refused as "only month and year granularity have a calendar bucket",
+   and the multi-period grid and the missing date were answered. *)
+let () =
+  let getal = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
+  let facet g ~count vast =
+    Printf.sprintf {|{"node":"TimelineFacet","granularity":"%s","count":%d%s}|} g count
+      (match vast with Some v -> Printf.sprintf {|,"fixedStart":"%s"|} v | None -> "")
+  in
+  let lid naam f =
+    Printf.sprintf {|{"node":"Attribute","name":"%s","datatype":%s%s}|} naam getal
+      (match f with Some f -> {|,"timeline":|} ^ f | None -> "")
+  in
+  let ref_ naam = Printf.sprintf {|{"node":"AttributeReference","attribute":"%s","subjectType":"Jutter","source":{"snippet":"%s"}}|} naam naam in
+  let totaal doel bron =
+    Printf.sprintf
+      {|{"node":"Rule","name":"%s","versions":[{"validity":{"node":"Validity"},"target":%s,"value":{"node":"Aggregation","kind":"total","arguments":[%s],"elementType":"Jutter","type":%s,"source":{"snippet":"het totaal van zijn %s"}},"initialisation":false,"presentation":"equation"}]}|}
+      doel (ref_ doel) (ref_ bron) getal bron
+  in
+  (* two temporal members, [a] and [b], each totalled over the asOfDate bucket *)
+  let ir ~a ~b =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[%s],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[%s],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      (String.concat "," [ lid "a" (Some a); lid "b" (Some b); lid "t_a" None; lid "t_b" None ])
+      (String.concat "," [ totaal "t_a" "a"; totaal "t_b" "b" ])
+  in
+  let zaak as_of =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":%s,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"a":{"number":"7"},"b":{"number":"30"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"J1","attribute":"t_a","value":{"number":"7"}},{"kind":"attributeValue","label":"J1","attribute":"t_b","value":{"number":"30"}},{"kind":"consistent"}]}|}
+      as_of
+  in
+  let datum = {|"2025-02-15"|} in
+  let week = facet "week" ~count:1 (Some "2024-09-30") and kwartaal = facet "quarter" ~count:1 (Some "--05-31") in
+  let maand = facet "month" ~count:1 (Some "--01-31") and jaar = facet "year" ~count:1 (Some "--10-01") in
+  ref_matches ~name:"ch3.2/3.6 asOfDate bucket on a fixed week and quarter grid" ~ir:(ir ~a:week ~b:kwartaal)
+    ~case_text:(zaak datum);
+  clingo_matches ~name:"ch3.2/3.6 asOfDate bucket on a fixed week and quarter grid"
+    ~ir:(ir ~a:week ~b:kwartaal) ~case_text:(zaak datum);
+  faults_with ~name:"ch3.2 asOfDate bucket on the calendar's week grid"
+    ~ir:(ir ~a:maand ~b:(facet "week" ~count:1 None)) ~case_text:(zaak datum)
+    ~needle:"bucketing is defined for month and year only (ch. 3.2)";
+  faults_with ~name:"ch3.2 asOfDate bucket on a multi-period grid"
+    ~ir:(ir ~a:maand ~b:(facet "month" ~count:2 (Some "2024-01-01"))) ~case_text:(zaak datum)
+    ~needle:"a multi-period grid (2 month periods) carries no operation";
+  faults_with ~name:"ch3.6 asOfDate bucket without an evaluation date" ~ir:(ir ~a:maand ~b:jaar)
+    ~case_text:(zaak "null")
+    ~needle:"the temporal total of \"a\" needs the evaluation date: the case carries the asOfDate bucket's value"
+
 (* RUNTIME-SEMANTICS ch. 3.2: the pro-rata part onto a target on a fixed start
    point, or from a base on one, is fenced in ref's sentence; the calendar
    document beside them translates, so the fault is the fence's alone. ref's

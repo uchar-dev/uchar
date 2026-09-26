@@ -833,10 +833,14 @@ two distinct jobs, with different v0 support:
 2. **Bucketing** (producers that emit one segment per calendar period:
    ch. 3.7, 3.8, 3.9) uses calendar-aligned walls: a month bucket runs
    from the first of the month to the first of the next; a year bucket
-   from 1 January to 1 January. Only **month and year buckets exist** —
-   the source language's bucketing operators are grammatically restricted
-   to "de maand"/"het jaar", and v0 implements exactly that. Bucketing by
-   day, week, or quarter is not defined (ch. 3.12).
+   from 1 January to 1 January. Only **month and year buckets exist** on
+   the calendar — the source language's bucketing operators are
+   grammatically restricted to "de maand"/"het jaar", and v0 implements
+   exactly that. Calendar bucketing by day, week, or quarter is not
+   defined (ch. 3.12): a member declared on the calendar's day, week or
+   quarter grid has no bucket, and every reader of one refuses it. A fixed
+   start point (below) lays periods of its own on a week, month, quarter or
+   year grid, and they are read where a bucket is read.
 
 Worked examples of the weighting (absolute; `ref/` tests verbatim):
 [2024-01-31, 2024-02-29) holds **1** whole month, where the duration from
@@ -904,8 +908,10 @@ lies on the calendar grid above.
 The grid is read where the calendar grid was read, from the member's facet:
 the boundaries of a case-supplied timeline sit on its walls, a scalar case
 value is the value of the period that contains the evaluation date
-(ch. 3.6), and the day count of ch. 3.8 into a month or year target of
-`count` 1 buckets on the target's periods. The whole-period qualifier
+(ch. 3.6) — on a week or quarter grid as on a month or year grid, since a
+fixed start point lays the period there where the calendar lays none —
+and the day count of ch. 3.8 into a month or year target of `count` 1
+buckets on the target's periods. The whole-period qualifier
 (ch. 3.9) does not read it: its buckets are the calendar month or year the
 qualifier names, whatever grid the tested member declares. Two things stay
 as they were. A multi-period grid (below) is defined by its date start and
@@ -939,6 +945,12 @@ Worked examples (absolute; `ref/` tests verbatim):
   15 October – 15 October, written `--10-15`: a case input over
   [2024-10-15, 2025-10-15) sits on the grid, one over
   [2025-01-01, 2026-01-01) is refused as off it.
+- the subject's own total over the asOfDate bucket, evaluation date
+  2025-02-15: a member on the week grid `2024-09-30` with the scalar case
+  value 7 reads the period [2025-02-10, 2025-02-17), one whole week →
+  **7**; a member on the quarter grid `--05-31` with 30 reads
+  [2024-11-30, 2025-02-28), one whole quarter → **30**; the calendar's
+  week grid has no such period, and the total is refused.
 
 *v0 mirror note:* v0 resolved the fixed start point in its model and had
 no wire field for it. Until the wire carried one, the RegelSpraak frontend
@@ -3004,7 +3016,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Subject | Status |
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1. A parameter's facet is restricted to `count` = 1 since L3 (`IR-SPEC.md` ch. 2.10, WF-005), because no executor evaluates a parameter's count |
-| Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
+| Calendar bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision. A fixed start point lays week and quarter periods of its own (ch. 3.2), and the case loader and the asOfDate bucket read them in all three executors |
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |

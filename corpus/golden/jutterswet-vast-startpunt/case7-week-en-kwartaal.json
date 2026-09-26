@@ -1,0 +1,109 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-02-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "maandtoelage": {
+            "number": "10"
+          },
+          "weektoelage": {
+            "number": "7"
+          },
+          "kwartaaltoelage": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2025-02-10",
+              "to": "2025-02-17"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormwachtdagen",
+      "timeline": [
+        {
+          "from": "2024-10-01",
+          "to": "2025-10-01",
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "maandwachtdagen",
+      "timeline": [
+        {
+          "from": "2025-01-31",
+          "to": "2025-02-28",
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "toelagesom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "maandtoelagesom",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "weektoelagesom",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "kwartaaltoelagesom",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "stormpremie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "maandpremie"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1839,6 +1839,28 @@ let () =
     | exception Case.Error m -> substring m "segment boundaries must sit on the declared granularity grid"
     | _ -> false)
 
+(* WV-3.2-vast-peildatum: the subject's own total over the asOfDate bucket
+   reads the period of the member's grid that holds the evaluation date
+   (RUNTIME-SEMANTICS ch. 3.2, 3.6), on a week and a quarter grid as on a month
+   and a year grid; the calendar's week grid lays no period. The chapter's
+   worked example verbatim. *)
+let () =
+  let peildatum = day "2025-02-15" in
+  let totaal gran fixed waarde =
+    let gr = Timeline.grid_of ~gran ~count:1 ~fixed ~variable:false in
+    let van, tot = Timeline.grid_bucket gr peildatum in
+    ((van, tot), Timeline.totaal gran [ { Timeline.s_van = van; s_tot = tot; s_waarde = n waarde } ])
+  in
+  let (wv, wt), w = totaal Week (Some "2024-09-30") "7" in
+  check "WV-3.2-vast-peildatum-week" (wv = day "2025-02-10" && wt = day "2025-02-17");
+  expect_num "WV-3.2-vast-peildatum-week-7" w "7";
+  let (kv, kt), k = totaal Kwartaal (Some "--05-31") "30" in
+  check "WV-3.2-vast-peildatum-kwartaal" (kv = day "2024-11-30" && kt = day "2025-02-28");
+  expect_num "WV-3.2-vast-peildatum-kwartaal-30" k "30";
+  expect_fault_msg "WV-3.2-vast-peildatum-kalenderweek"
+    (fun () -> totaal Week None "7")
+    "bucketing is defined for month and year only (ch. 3.2)"
+
 (* WV-3.2-vast, what a grid refuses: several units carry no operation, a
    variable start is laid per object from an anchor ref does not execute, and
    the pro-rata over a fixed start point is fenced — each loud, in its own

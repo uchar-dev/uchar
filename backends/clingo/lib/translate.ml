@@ -1874,13 +1874,26 @@ let lexeme_decimals lex =
   | None -> (
       match String.index_opt lex '.' with Some i -> String.length lex - i - 1 | None -> 0)
 
-(* the year-bucket whole-units factor of the temporal total: for a
-   year-granular attribute over the calendar-year bucket the factor is
-   exactly 1; other granularities await a corpus case *)
-let total_factor (g : granulariteit) =
-  match g with
-  | Jaar | Maand -> 1
-  | _ -> fault "temporal total: only month and year granularity have a calendar bucket (ch. 3.2)"
+(* the whole units of the asOfDate bucket, the factor of the subject's own
+   temporal total (RUNTIME-SEMANTICS ch. 3.2, 3.6): a scalar case value is
+   the value of the period of the member's grid that holds the evaluation
+   date, and ref weighs that one period. The period is ref's own, from ref's
+   grid function: the calendar's month or year bucket, or the period a fixed
+   start point lays on a week, month, quarter or year grid. A grid ref
+   refuses — the calendar's week, quarter or day, which lay no bucket, a grid
+   of several units, a variable start — is refused in ref's sentence, and so
+   is a session without an evaluation date. A period of one unit weighs 1. *)
+let as_of_bucket_units ctx ~otype ~attr =
+  match ctx.case.as_of with
+  | None ->
+      fault
+        "the temporal total of %S needs the evaluation date: the case carries the asOfDate bucket's \
+         value"
+        attr
+  | Some d ->
+      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (objecttype ctx otype) attr in
+      let van, tot = Uchar_ref.Timeline.grid_bucket grid (day_of_lexeme d) in
+      Uchar_ref.Timeline.whole_units grid.g_gran van tot
 
 (* the §4.20 noemer strip, as ARITHMETIC. ref integrates a rate by
    multiplying the segment value by a duration stated in the GRID's own
@@ -4979,7 +4992,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Functie { kind = Totaal; argumenten = [ Attribuut_ref { attribuut = Some a; objecttype = Some aot; navigatie_bindingen = None; _ } ]; bron_rol = None; bron_pad = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
-         the year bucket); an absent timeline stays underivable = leeg.
+         the one period of the member's grid); an absent timeline stays
+         underivable = leeg.
          The pattern is the gedurende sister arm's above minus its filter,
          and ref's own temporal-total arm narrowing for narrowing, because
          the body emits val(<SUBJECT>,…): a form that reaches here without
@@ -4998,7 +5012,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ~what:(Printf.sprintf "the temporal total of %S" a)
         ~gran:(attr_granularity ctx ~otype:aot ~attr:a)
         (attr_unit ctx ~otype:aot ~attr:a);
-      let f = total_factor (attr_granularity ctx ~otype:aot ~attr:a) in
+      let f = as_of_bucket_units ctx ~otype:aot ~attr:a in
       let v = fresh ctx "T" in
       let term = if f = 1 then v else Printf.sprintf "(%s*%d)" v f in
       ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],

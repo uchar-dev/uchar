@@ -96,6 +96,58 @@
           },
           {
             "node": "Attribute",
+            "name": "weektoelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "week",
+              "count": 1,
+              "fixedStart": "2024-09-30"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weektoelagesom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kwartaaltoelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "quarter",
+              "count": 1,
+              "fixedStart": "--05-31"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kwartaaltoelagesom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "stormpremie",
             "datatype": {
               "node": "Number",
@@ -457,6 +509,96 @@
               },
               "source": {
                 "snippet": "zijn maandwachtdagen gedurende de gehele maand groter is dan 0"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "weektoelagesom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "weektoelagesom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De weektoelagesom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "weektoelage",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn weektoelage"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn weektoelage"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kwartaaltoelagesom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kwartaaltoelagesom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De kwartaaltoelagesom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "kwartaaltoelage",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn kwartaaltoelage"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn kwartaaltoelage"
               }
             },
             "initialisation": false,

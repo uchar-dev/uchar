@@ -52,6 +52,16 @@
       "attribute": "maandtoelagesom"
     },
     {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "weektoelagesom"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "kwartaaltoelagesom"
+    },
+    {
       "kind": "attributeValue",
       "label": "J1",
       "attribute": "stormpremie",

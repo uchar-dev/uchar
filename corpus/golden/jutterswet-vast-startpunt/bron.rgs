@@ -8,6 +8,10 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de toelagesom Numeriek (geheel getal);
     de maandtoelage Numeriek (geheel getal) voor elke maand startend op dag 31 van de maand;
     de maandtoelagesom Numeriek (geheel getal);
+    de weektoelage Numeriek (geheel getal) voor elke week startend op 30-9-2024;
+    de weektoelagesom Numeriek (geheel getal);
+    de kwartaaltoelage Numeriek (geheel getal) voor elk kwartaal startend op dag 31 van maand 2, 5, 8 en 11;
+    de kwartaaltoelagesom Numeriek (geheel getal);
     de stormpremie Numeriek (geheel getal);
     de maandpremie Numeriek (geheel getal);
 
@@ -34,3 +38,11 @@ Regel stormpremie van een jutter
 Regel maandpremie van een jutter
     geldig altijd
         De maandpremie van een Jutter moet gesteld worden op 20 indien zijn maandwachtdagen gedurende de gehele maand groter is dan 0.
+
+Regel weektoelagesom van een jutter
+    geldig altijd
+        De weektoelagesom van een Jutter moet gesteld worden op het totaal van zijn weektoelage.
+
+Regel kwartaaltoelagesom van een jutter
+    geldig altijd
+        De kwartaaltoelagesom van een Jutter moet gesteld worden op het totaal van zijn kwartaaltoelage.
