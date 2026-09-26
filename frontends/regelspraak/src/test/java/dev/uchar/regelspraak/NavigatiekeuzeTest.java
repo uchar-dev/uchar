@@ -223,6 +223,52 @@ class NavigatiekeuzeTest {
             assertEquals(List.of(vouw[1]), fouten(TYPEN + THUISLIGGING + regel(vouw[0])), vouw[0]);
     }
 
+    // ---------------- an allocation's recipient join ----------------
+
+    private static final String BERGINGEN = """
+        Eenheidsysteem Munt
+            de euro (mv: euros) EUR €
+
+        Objecttype de Berging (mv: Bergingen)
+            de opbrengst Numeriek (geheel getal) met eenheid €;
+            de onverdeelde rest Numeriek (geheel getal) met eenheid €;
+
+        Objecttype de Berger (mv: Bergers) (bezield)
+            het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal) met eenheid €;
+
+        Feittype hoofddeelname
+            de hoofdberging Berging
+            de hoofdberger (mv: hoofdbergers) Berger
+        Eén hoofdberging heeft meerdere hoofdbergers
+
+        Feittype nevendeelname
+            de nevenberging Berging
+            de nevenberger (mv: nevenbergers) Berger
+        Eén nevenberging heeft meerdere nevenbergers
+
+        Regel verdeel de opbrengst van een berging
+            geldig altijd
+                De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle %s van de berging, waarbij wordt verdeeld:
+                - in gelijke delen,
+                - afgerond op 0 decimalen naar beneden.
+                Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+        """;
+
+    @Test void een_verdeling_over_twee_relaties_bindt_op_de_rolnaam() {
+        // before: the emitter's IllegalStateException ("heeft geen unieke relatie tussen Berging en Berger")
+        assertTrue(emitCompact(BERGINGEN.formatted("hoofdbergers")).contains("\"connectingRole\":{\"node\":"
+                + "\"RoleBinding\",\"factType\":\"hoofddeelname\",\"role\":\"hoofdberger\"}"));
+        assertTrue(emitCompact(BERGINGEN.formatted("nevenbergers")).contains("\"connectingRole\":{\"node\":"
+                + "\"RoleBinding\",\"factType\":\"nevendeelname\",\"role\":\"nevenberger\"}"));
+    }
+
+    @Test void een_verdeling_over_twee_relaties_weigert_op_de_typenaam() {
+        assertEquals(List.of("verdeling 'verdeel de opbrengst van een berging' zonder verbindende rol (2 relaties "
+                        + "verbinden Berging met Berger, en 'Bergers' noemt geen rol die er precies één aanwijst): "
+                        + "missing field 'connectingRole'"),
+                fouten(BERGINGEN.formatted("Bergers")));
+    }
+
     // ---------------- every position the emitter writes a read at ----------------
 
     /** One unbound read, "het peil van de Vuurtoren" (no relation reaches a Vuurtoren), at each position the emitter

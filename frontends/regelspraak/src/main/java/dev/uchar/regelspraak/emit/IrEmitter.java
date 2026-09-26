@@ -1454,8 +1454,11 @@ public final class IrEmitter {
     private void allocationVersion(ResolvedVerdeling v) {
         if (v.methode() == null)
             throw new IllegalStateException("IrEmitter: de verdeling '" + v.naam() + "' heeft geen methode");
-        // IR-SPEC ch. 3.2: the recipient join is the binding; a verdeling without it has no join to execute
-        RegelSpraakModel.RolBindingRef rb = m.verbindendeRolBinding(v.bronType(), v.doelType());
+        // IR-SPEC ch. 3.2: the recipient join is the binding; a verdeling without it has no join to execute. The
+        // resolver binds it (the written role, else the one relation) and refuses what binds nothing, so the
+        // refusal below guards a model built by hand
+        RegelSpraakModel.RolBindingRef rb = v.verbindendeRol() != null ? v.verbindendeRol()
+                : m.verbindendeRolBinding(v.bronType(), v.doelType());
         if (rb == null)
             throw new IllegalStateException("IrEmitter: de verdeling '" + v.naam() + "' heeft geen unieke relatie "
                     + "tussen " + naamVan(v.bronType()) + " en " + naamVan(v.doelType()));

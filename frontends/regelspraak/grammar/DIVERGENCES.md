@@ -1088,6 +1088,16 @@ the target is reached over the to-many role. Where the target is named as its
 type, case 2 now binds its role, and the sentence ends in this refusal instead
 of the emitter's exception.
 
+An allocation's recipient join (IR-SPEC ch. 3.2, `connectingRole`) binds in the
+same order: the role the recipient phrase writes ("de bergingsaandelen van alle
+hoofdbergers van de berging"), where it names one relation between the source
+and the recipient type, else the one relation between the two types. An
+allocation that binds neither — a type name with two relations — is refused
+with an ERROR in the loader's sentence for the document without the join
+(`missing field 'connectingRole'`). Until the fix round of 2026-09-26 the join
+came from the type pair only, and two relations ended in the emitter's
+exception whatever the phrase named.
+
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
 each ended in an `IllegalStateException` of the emitter, and so did a count or

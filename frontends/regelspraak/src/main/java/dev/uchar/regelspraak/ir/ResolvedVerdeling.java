@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.ir;
 
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 /**
@@ -43,12 +44,27 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
  *                           groups; null unless {@link Methode#OP_VOLGORDE}
  * @param afnemend           §9.7.2 true = descending ("afnemende"), false = ascending ("toenemende");
  *                           read only when {@link Methode#OP_VOLGORDE}
+ * @param verbindendeRol     the recipient join (IR-SPEC ch. 3.2 {@code connectingRole}): the role the recipient
+ *                           phrase names where it names one relation between the two types, else the one relation
+ *                           between them; null where the resolver bound none, and the emitter then derives it from
+ *                           the type pair
  */
 public record ResolvedVerdeling(String naam, Objecttype bronType, String bronAttribuut,
                                 Objecttype doelType, String doelAttribuut,
                                 Methode methode, String ratoAttribuut, String maximumAttribuut,
                                 Integer afrondingDecimalen, String restantAttribuut,
                                 String groepeerAttribuut, boolean afnemend,
-                                Conditie voorwaarde, Geldigheid geldigheid) {
+                                Conditie voorwaarde, Geldigheid geldigheid,
+                                RegelSpraakModel.RolBindingRef verbindendeRol) {
     public enum Methode { GELIJKE_DELEN, NAAR_RATO, OP_VOLGORDE, COMPLEX }
+
+    /** Without a bound join: the reader that carries the wire's binding beside the record (the Drools backend's
+     *  loader) builds it this way. */
+    public ResolvedVerdeling(String naam, Objecttype bronType, String bronAttribuut, Objecttype doelType,
+                             String doelAttribuut, Methode methode, String ratoAttribuut, String maximumAttribuut,
+                             Integer afrondingDecimalen, String restantAttribuut, String groepeerAttribuut,
+                             boolean afnemend, Conditie voorwaarde, Geldigheid geldigheid) {
+        this(naam, bronType, bronAttribuut, doelType, doelAttribuut, methode, ratoAttribuut, maximumAttribuut,
+                afrondingDecimalen, restantAttribuut, groepeerAttribuut, afnemend, voorwaarde, geldigheid, null);
+    }
 }

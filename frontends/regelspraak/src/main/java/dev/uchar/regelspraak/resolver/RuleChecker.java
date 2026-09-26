@@ -3251,8 +3251,8 @@ final class RuleChecker {
         // not getalachtig is lowered to an honest no-op, and EVERY method markers when the join is unresolvable
         // (the transpiler gates all three on join != null), so flagging the precision of a share that is never
         // computed would be a false positive. (No-op for all-integer verdelingen.)
-        boolean joinResolves = b.objecttype() != null && d.objecttype() != null
-                && model.verbindendeRol(d.objecttype(), b.objecttype()) != null;
+        RegelSpraakModel.RolBindingRef join = verdelingsjoin(naam, b, d, v.getStart().getLine());
+        boolean joinResolves = join != null;
         if (methode != ResolvedVerdeling.Methode.COMPLEX && joinResolves) {
             Datatype gewType = (methode == ResolvedVerdeling.Methode.NAAR_RATO
                     || methode == ResolvedVerdeling.Methode.OP_VOLGORDE) && rato != null
@@ -3269,7 +3269,31 @@ final class RuleChecker {
         }
         model.verdelingen.add(new ResolvedVerdeling(naam, b.objecttype(), b.attribuut(),
                 d.objecttype(), d.attribuut(), methode, rato, maxAttr, afrDec, restAttr,
-                groepeerAttr, afnemend, voorwaarde, geldigheid));
+                groepeerAttr, afnemend, voorwaarde, geldigheid, join));
+    }
+
+    /** The recipient join of an allocation (IR-SPEC ch. 3.2 {@code connectingRole}), as a navigated read binds
+     *  (grammar/DIVERGENCES.md, "§13.4.1 A navigated read binds its written role"): the role the recipient phrase
+     *  names ("alle hoofdbergers van de berging") where it names one relation between the two types, else the one
+     *  relation between them. Where neither binds, the emitter has no join to write, and the refusal is an ERROR in
+     *  the loader's sentence for the document without it. Null as well where a type did not resolve: that
+     *  allocation is refused or markered on its own. */
+    private RegelSpraakModel.RolBindingRef verdelingsjoin(String naam, Expr.AttribuutRef bron, Expr.AttribuutRef doel,
+                                                          int line) {
+        Objecttype verdeler = bron.objecttype(), ontvanger = doel.objecttype();
+        if (verdeler == null || ontvanger == null) return null;
+        String geschreven = doel.onderwerpBron() == null ? "" : doel.onderwerpBron().trim()
+                .replaceFirst("^(?i)(alle|de|het|een|elke)\\s+", "");
+        for (String kandidaat : RegelSpraakModel.naamKandidaten(geschreven)) {
+            RegelSpraakModel.RolBindingRef rb = model.verbindendeRolViaNaamBinding(verdeler, ontvanger, kandidaat);
+            if (rb != null) return rb;
+        }
+        RegelSpraakModel.RolBindingRef rb = model.verbindendeRolBinding(verdeler, ontvanger);
+        if (rb != null) return rb;
+        String kop = RegelSpraakModel.naamKandidaten(geschreven).stream().findFirst().orElse(geschreven);
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "verdeling '" + naam + "' zonder verbindende rol ("
+                + paarReden(verdeler, ontvanger, kop) + "): missing field 'connectingRole'", line));
+        return null;
     }
 
     /** §13.4.6 objectcreatie: "<subject> heeft <het rol> met <attribuut> gelijk aan <expr>
