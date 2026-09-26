@@ -1343,6 +1343,18 @@ verkeerde volgorde.
 `Rekenjaar` is toegelaten-en-onuitgevoerd: geen document draagt hem en `ref`
 faalt erop bij naam. Dat is de eerlijke stand en hoeft niet te veranderen.
 
+*Bijgewerkt 2026-09-26: de alinea hierboven beschrijft de stand van de meting
+(2026-09-19) en geldt niet meer.* Sinds de kaart `rekenjaar-als-waarde`
+(2026-09-26) voeren `ref`, de ASP-backend en beide Drools-takken
+`evaluationYear` (L5-spelling van `Rekenjaar`) uit als het kalenderjaar van de
+evaluatiedatum, een heel getal zonder eenheid (`RUNTIME-SEMANTICS.md` ch. 8.2).
+De weigering bij naam is uit alle uitvoerders verdwenen, de golden
+`jutterswet-rekenjaar` draagt de knoop op vier posities, en een sessie zonder
+`asOfDate` faalt in alle drie met één zin (rode case
+`corpus/rood/rekenjaar-zonder-rekendatum`). WF-098 kruist sinds dezelfde dag
+ook de `type`-annotatie van een contextwaarde tegen het type dat haar naam
+vastlegt (IR-SPEC ch. 4.1, de typearm).
+
 **Beslisvraag: V10.**
 
 ---
