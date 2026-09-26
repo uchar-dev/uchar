@@ -1003,7 +1003,7 @@ EXPECTED_PLAYED=210
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 34 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 29 below the exec one: the exec branch grew a
+  # remaining reason of size for this count sitting 30 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
   # toolchain does not have, and DrlTranspiler never did. 33 of the 34 lines refuse on that one
   # sentence; the 34th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
@@ -1011,7 +1011,8 @@ DRL_CHANNEL=(
   # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 33
   # exec-only players: the exec branch refuses it too, on a different sentence (its kenmerk target
   # shares its name with an attribute, a v0 bean-model limit), so it contributes nothing to the gap.
-  # The 29 is 33 exec-only players — those 32 and jutterswet-vouwrand of class (C) — minus 4 goldens
+  # The 30 is 34 exec-only players — those 32, jutterswet-vouwrand of class (C) and
+  # jutterswet-initialisatievolgorde of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
   # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
@@ -1028,7 +1029,11 @@ DRL_CHANNEL=(
   # dialect-opgave-boven-berekening, lens round): jutterswet-opgave-vormen joins the class, 32 -> 33
   # lines and 27 -> 28 (204 -> 205 at EXPECTED_PLAYED). Recounted again the same day (the fold keeps
   # an initialisation's condition): jutterswet-wrakinitialisatie joins the class, 33 -> 34 lines and
-  # 28 -> 29 (207 -> 208 at EXPECTED_PLAYED).
+  # 28 -> 29 (207 -> 208 at EXPECTED_PLAYED). Recounted 2026-09-26 (card rekenjaar-als-waarde): the 29
+  # stopped holding at 208 -> 209 at EXPECTED_PLAYED, when jutterswet-initialisatievolgorde entered
+  # class (D) as a golden the exec branch plays and this one does not, so the gap is 30 (210 - 180).
+  # jutterswet-rekenjaar plays in both branches and moves neither number; the five class heads (A 34,
+  # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
