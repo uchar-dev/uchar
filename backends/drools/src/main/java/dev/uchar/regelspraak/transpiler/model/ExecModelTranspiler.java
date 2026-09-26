@@ -2048,8 +2048,9 @@ public final class ExecModelTranspiler {
      *  getter per declared role hop, short-circuiting to null (leeg) on ANY intervening null relation — the chain
      *  generalisation of {@link #navReader}'s single-hop root-guard, mirroring DrlTranspiler's KETEN value read.
      *  The pad is re-validated against THIS subject (volgKeten), so a chain resolved against another subject skips.
-     *  Deliberately reached ONLY from the consequence VALUE path (scalarWaarde's chain branch, gated by
-     *  {@code ketenWaardePad}) — the condition side keeps the symmetric marker both back-ends emit. */
+     *  Reached from the consequence VALUE path (scalarWaarde's chain branch, gated by {@code ketenWaardePad}) and,
+     *  on the condition side, only by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}); every
+     *  other condition keeps the symmetric marker both back-ends emit. */
     private java.util.function.Function<Object, Object> navKetenReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
         FactModelGenerator.Navigatiewandeling w = keten(a, subject);
@@ -2839,6 +2840,15 @@ public final class ExecModelTranspiler {
         return s -> { Object rel = RegelSpraakRuntime.get(s, rol); return rel == null ? null : RegelSpraakRuntime.get(rel, attr); };
     }
 
+    /** The timeline a whole-period leeg/gevuld test folds (RUNTIME-SEMANTICS ch. 3.9): the own or one-hop read of
+     *  {@link #temporeelTijdlijnReader}, or one reached over a CHAIN of to-one hops through {@link #navKetenReader},
+     *  which reads null (the null timeline, which passes) where a hop reaches nothing — as ref and the ASP backend
+     *  fold it. The comparison keeps the one-hop reader: ref folds no navigated comparison (ch. 3.12). Mirrors
+     *  DrlTranspiler.leegGevuldTijdlijnGetter. */
+    private java.util.function.Function<Object, Object> leegGevuldTijdlijnReader(Expr.AttribuutRef a, Objecttype subject) {
+        return keten(a) ? navKetenReader(a, subject) : temporeelTijdlijnReader(a, subject);
+    }
+
     /** A resolved §8.2 whole-period predicate: the subject-&gt;timeline reader, the toets code, the grenswaarde
      *  (null for gevuld/kenmerk), the granularity, and the NIET flag. */
     private record Gp82(java.util.function.Function<Object, Object> timeline, int toets, WaardeFn grens, String gran, boolean niet) {}
@@ -2885,14 +2895,14 @@ public final class ExecModelTranspiler {
         }
         if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && isTemporeel82(pa)) {
-            java.util.function.Function<Object, Object> tl = temporeelTijdlijnReader(pa, subject);
+            java.util.function.Function<Object, Object> tl = leegGevuldTijdlijnReader(pa, subject);
             if (tl == null) return null;
             return new Gp82(tl, 6, null, gran, gp.niet());
         }
         if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.LEEG
                 && p.operand() instanceof Expr.AttribuutRef pa && isTemporeel82(pa)) {
             // §8.2 line 3468 "... gedurende de gehele maand leeg is": the inverse of GEVULD (toets 8 in rsGeheelPeriode).
-            java.util.function.Function<Object, Object> tl = temporeelTijdlijnReader(pa, subject);
+            java.util.function.Function<Object, Object> tl = leegGevuldTijdlijnReader(pa, subject);
             if (tl == null) return null;
             return new Gp82(tl, 8, null, gran, gp.niet());
         }

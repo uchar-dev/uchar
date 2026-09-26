@@ -3849,6 +3849,22 @@ public final class DrlTranspiler {
         return null;
     }
 
+    /** The timeline a whole-period leeg/gevuld test folds (RUNTIME-SEMANTICS ch. 3.9): the own or one-hop read of
+     *  {@link #temporeelTijdlijnGetter}, or one reached over a CHAIN of to-one hops, every relation prefix
+     *  null-guarded so a hop that reaches nothing gives the null timeline, which passes — as ref and the ASP backend
+     *  fold it. The comparison keeps the one-hop getter: ref folds no navigated comparison (ch. 3.12). */
+    private String leegGevuldTijdlijnGetter(Expr.AttribuutRef a, Objecttype subject) {
+        NaviRef n = naviResolve(a, subject);
+        if (n.soort() != NaviSoort.KETEN) return temporeelTijdlijnGetter(a, subject);
+        List<String> guards = new ArrayList<>();
+        String pad = SUBJECT;
+        for (String rol : n.pad()) {
+            pad = pad + "." + getter(rol) + "()";
+            guards.add(pad + " == null");
+        }
+        return "(" + String.join(" || ", guards) + " ? null : " + pad + "." + getter(a.attribuut()) + "())";
+    }
+
     /** §8.2 / §13.4.15.70: the RAW boolean {@code rsGeheelPeriode(timeline, "JAAR"|"MAAND", toets, grens)} call for a
      *  whole-period-qualified predicate (the caller appends {@code == true|false}, NIET flips which), or a marker Frag
      *  when the form is outside the supported set. Supported: a numeric comparison of a temporal attribute vs a scalar
@@ -3881,14 +3897,14 @@ public final class DrlTranspiler {
             toets = code; grens = crossUnit ? herschaalExact(g.text(), effType(ander), effType(tijd)) : g.text();
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.GEVULD
                 && p.operand() instanceof Expr.AttribuutRef pa && isTemporeelAttribuut(pa)) {
-            getter = temporeelTijdlijnGetter(pa, subject);
+            getter = leegGevuldTijdlijnGetter(pa, subject);
             if (getter == null) return Frag.todo("§8.2 navigatie", c.bron());
             toets = 6;
         } else if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.LEEG
                 && p.operand() instanceof Expr.AttribuutRef pa && isTemporeelAttribuut(pa)) {
             // §8.2 line 3468 "... gedurende de gehele maand leeg is": the inverse of GEVULD (toets 6) — every moment
             // of each touched bucket carries NO value (toets 8 in rsGeheelPeriode).
-            getter = temporeelTijdlijnGetter(pa, subject);
+            getter = leegGevuldTijdlijnGetter(pa, subject);
             if (getter == null) return Frag.todo("§8.2 navigatie", c.bron());
             toets = 8;
         } else if (c instanceof Conditie.Kenmerk k) {
