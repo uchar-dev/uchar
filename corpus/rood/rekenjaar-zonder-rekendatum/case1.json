@@ -1,0 +1,25 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vondstjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null",
+    "clingo": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null",
+    "drools": "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"
+  }
+}

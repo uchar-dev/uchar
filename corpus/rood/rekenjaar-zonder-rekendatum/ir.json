@@ -1,0 +1,249 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal verstreken penningjaren",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "laat gemeld",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "meldjaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldjaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het meldjaar van een Vondst"
+              }
+            },
+            "value": {
+              "node": "ContextValue",
+              "name": "evaluationYear",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het Rekenjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal verstreken penningjaren",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal verstreken penningjaren",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het aantal verstreken penningjaren van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "ContextValue",
+                "name": "evaluationYear",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het Rekenjaar"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "vondstjaar",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vondstjaar"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het Rekenjaar min zijn vondstjaar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "lessOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstjaar",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vondstjaar"
+                }
+              },
+              "right": {
+                "node": "ContextValue",
+                "name": "evaluationYear",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het Rekenjaar"
+                }
+              },
+              "source": {
+                "snippet": "zijn vondstjaar kleiner of gelijk is aan het Rekenjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "Kenmerktoekenning laat gemeld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laat gemeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is laat gemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "ContextValue",
+                "name": "evaluationYear",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het Rekenjaar"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "vondstjaar",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vondstjaar"
+                }
+              },
+              "source": {
+                "snippet": "het Rekenjaar groter is dan zijn vondstjaar"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
