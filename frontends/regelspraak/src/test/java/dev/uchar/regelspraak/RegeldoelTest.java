@@ -72,7 +72,9 @@ class RegeldoelTest {
             "De vakpremie van het strandvak van een Jutter moet gesteld worden op 10.  | genavigeerd",
             "De vakpremie van het strandvak van een Jutter moet berekend worden als 10. | genavigeerd",
             "De onbekende premie van een Jutter moet gesteld worden op 10.             | geen gedeclareerd attribuut van Jutter",
-            "Het strandvak van een Jutter is gemarkeerd.                               | lost niet op tot een objecttype"
+            "Het strandvak van een Jutter is gemarkeerd.                               | lost niet op tot een objecttype",
+            // before: IrEmitter's exception ("het doel van regel 'doel' … navigeert; het doel legt het onderwerp vast")
+            "De premie van zijn vakhouder moet gesteld worden op 10.                   | het doel navigeert via 'zijn vakhouder'"
     })
     void een_doel_buiten_het_onderwerp_weigert(String resultaat, String fragment) {
         RegelSpraakModel m = Resolver.resolve(regel(resultaat));

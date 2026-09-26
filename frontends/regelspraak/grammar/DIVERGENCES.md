@@ -1005,7 +1005,11 @@ refused target inside an extension block speaks alone: the defaults lowering
 skips its family, whose checks would otherwise judge a target the author did
 not write and add a second refusal ("is geen kenmerktoekenning of
 gelijkstelling", "schrijft een ander doel") beside the true one (fix round 3).
-Witness: `RegeldoelTest`.
+A target that navigates from an implied subject ("De premie van zijn vakhouder
+…") is refused the same way; it ended in the emitter's exception until the fix
+round of 2026-09-26. A name that is both an attribute and a characteristic of
+the subject type decides no member and is refused in WF-022's sentence
+(`StructuurZinTest`). Witness: `RegeldoelTest`.
 
 **A cell of a dimensioned attribute as the target** (fix round 3). The wire has
 no cell assignment: a rule's target is an attribute reference, which WF-022

@@ -565,6 +565,12 @@ final class RuleChecker {
                     && celNaOnderwerp(a.objecttype(), a.attribuut(), a.onderwerpBron()) != null)
                 fout = "het doel is een " + celNaOnderwerp(a.objecttype(), a.attribuut(), a.onderwerpBron())
                         + CEL_GEEN_DOEL + "; zonder dit hek schreef de zin het hele attribuut";
+            else if (a.navigatieRol() != null || (a.navigatiePad() != null && !a.navigatiePad().isEmpty()))
+                // "Het kadegeld van zijn thuishaven moet …": the target reads another instance's attribute, which
+                // ended in the emitter's exception, since the target fixes the rule's subject
+                fout = "het doel navigeert via '" + a.onderwerpBron() + "': een regel schrijft een attribuut van zijn "
+                        + "eigen universele onderwerp; schrijf de regel op het objecttype dat het attribuut draagt ('De "
+                        + "<attribuut> van een <Objecttype> …')";
             else if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && a.objecttype().attribuut(a.attribuut()) == null)
                 fout = a.attribuut().matches("(?i).*\\svan\\s.*")
                         ? "het doel is een genavigeerde lezing: '" + a.attribuut() + "' is geen attribuut van "
