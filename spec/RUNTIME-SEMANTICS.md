@@ -93,7 +93,7 @@ recorded as such.
 | non-numeric equality (text/enum/boolean, §5 Tabel 38) | any empty operand → false | leeg =ₜ leeg → onwaar |
 | date equality (v0's Tabel-38 guard on the date shape) | any empty operand → false — in particular **both** empty, never the numeric two-empties-equal cell | leeg =ᴰ leeg → onwaar; leeg =ᴰ 2026-06-21 → onwaar |
 | **inequality — every datatype (§5.6 Tabel 44)** | true iff **exactly one** empty, else value inequality — uniform over numeric, percentage, text, enum, boolean, date, and the ch. 9/11 constructor and record values | leeg ≠ 5 → waar; 5 ≠ 3 → waar; leeg ≠ leeg → onwaar; leeg ≠ₜ "a" → waar; leeg ≠ᴰ 2026-06-21 → waar; leeg ≠ᴰ leeg → onwaar |
-| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar; the `negated` field is the inner, per-value negation and complements the test — negated leeg is gevuld, negated gevuld is leeg (the qualifier's own negation is `WholePeriod.negated`, ch. 3.9; which threshold a negated leeg test takes under that qualifier — touched-days or days(B) — is an OPEN norm point, and all three executors refuse the form by name: ref and the ASP backend in the same words, because neither executes any whole-period leeg/gevuld test, and both Drools branches in the loader as `Predicaat.negatie`, on that open threshold. Red case `corpus/rood/leegnegatie-heel-tijdvak` holds the refusal, and `corpus/rood/gevuldnegatie-heel-tijdvak` the same refusal of a negated gevuld test (the Drools refusal names both); their twins `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` hold the refusal of the unnegated leeg and gevuld tests, which ch. 3.9 norms and no executor runs, ch. 3.12) | "de leeftijd van zijn partner is leeg" is waar for a partnerless person; `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar (WV-1.2-neg) |
+| leeg / gevuld predicates | absence — including a failed to-one navigation — **is** leeg = waar; the `negated` field is the inner, per-value negation and complements the test — negated leeg is gevuld, negated gevuld is leeg (the qualifier's own negation is `WholePeriod.negated`, ch. 3.9. Under that qualifier the inner negation is per day as well, so there too the negated leeg test is the gevuld test and the negated gevuld test is the leeg test — ch. 3.9, decided 2026-09-26; until then the threshold a negated leeg test takes under the qualifier was an OPEN norm point and all three executors refused the form by name) | "de leeftijd van zijn partner is leeg" is waar for a partnerless person; `leeg(5)` negated = waar, `leeg(leeg)` negated = onwaar (WV-1.2-neg) |
 
 Note the deliberate asymmetry, now confined to **equality**: numeric
 equality treats two empties as equal; non-numeric equality (text, enum,
@@ -2246,18 +2246,22 @@ condition into a per-bucket one and folds it to a single boolean:
 
 ```
 geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
-                            satisfied-days(B, toets) ≥ threshold(B)
-threshold(B) = days(B)          for every toets except the leeg test
-             = touched-days(B)  for the leeg test
+                            satisfied-days(B, toets) ≥ days(B)
 ```
 
 - A value test (ordering, equality, filled, characteristic-holds) demands
   satisfaction on **every day of each touched bucket**: a gap day, a leeg
   day, or a partial-coverage bucket fails it — "at every moment of the
   whole period" is literal.
-- The **leeg test** is the one exception: a gap day is itself
-  leeg-satisfying, so only the *touched* days need be leeg — a timeline
-  leeg throughout its touched buckets passes.
+- The **leeg test** is the one test a leeg day satisfies: a gap day and
+  a day under an explicit leeg segment both read leeg (ch. 3.1), so a
+  timeline leeg throughout its touched buckets passes. Its threshold is
+  days(B), as for every other test (decided 2026-09-26; the leeg and
+  gevuld tests below). Until that date this bullet gave the leeg test a
+  threshold of its own, the touched days of B. Because a gap day
+  satisfies the leeg test, demanding every day of B demands exactly the
+  days a segment covers, so the two formulations give the same verdict on
+  every timeline.
 - A timeline with **no segments at all touches no bucket and passes
   vacuously** (the qualifier's negation then fails). A leeg comparison
   bound makes the test false, never a fault. Negation complements the
@@ -2323,8 +2327,8 @@ value 12 on the whole of 2024 → all 366 days of the touched bucket
 satisfy → **waar**. Value 12 on [2024-01-01, 2024-07-01) only → the 2024
 bucket is touched for 182 days but has 366 → **onwaar** (a July moment
 carries no value); the negated form → waar. Same half-year timeline
-under the **leeg** test → touched days must be leeg, but they carry 12 →
-**onwaar**.
+under the **leeg** test → every day of the touched bucket must read leeg,
+but 182 of them carry 12 → **onwaar**.
 
 **Where the buckets come from, on a VALUE timeline** (stated apart
 because it is the one place the formula can be implemented backwards and
@@ -2396,6 +2400,85 @@ waar, c → onwaar (bucket 2026 satisfies 0 of 365), d → onwaar (184 of
 row d passes — January through June are each touched in full, 181 of 181
 days — while a true-period of [2026-01-15, 2026-03-01) fails it (January
 is touched for 17 of 31 days).
+
+**The leeg and gevuld tests** (decided 2026-09-26; until then specified
+in part and executed by no executor). "De bemanning van de Schuit is
+gedurende het gehele jaar leeg" holds when the timeline reads leeg on
+every day of every bucket it touches; "… gevuld" holds when it reads a
+value on every such day. In the formula above:
+
+```
+satisfied-days(B, gevuld) = the days of B on which tl reads a value
+satisfied-days(B, leeg)   = the days of B on which tl reads leeg
+                          = days(B) − satisfied-days(B, gevuld)
+```
+
+- **Touched**, for these two tests, is read off `read` (ch. 3.1): a
+  bucket is touched when the timeline reads a value on at least one of
+  its days. An explicit leeg
+  segment reads as a gap and touches no bucket by itself; ch. 3.1 forbids
+  telling the two apart. Only the contributor-skipping rule of ch. 3.5
+  writes such a segment; a case input cannot carry one.
+- The **leeg test** therefore comes down to "the timeline reads a value
+  on no day at all": every day that reads a value lies in a bucket the
+  timeline touches, and that bucket then holds a day that is not leeg.
+  The grid does not change its verdict.
+- A timeline that reads a value on no day **touches no bucket** and
+  passes both tests, the gevuld test vacuously, as a timeline with no
+  segments passes every test (the third bullet above). An absent member
+  is "gedurende het gehele jaar leeg" and "gedurende het gehele jaar
+  gevuld" at once, and the qualifier's negation fails on it both ways.
+- The **inner negation** (`negated`) is per day, as everywhere (ch. 1.2):
+  "niet leeg" holds on the days the timeline reads a value, "niet gevuld"
+  on the days it reads leeg. Under the qualifier the negated leeg test is
+  therefore the gevuld test and the negated gevuld test is the leeg test:
+  the same touched buckets, the same threshold, the complementary days.
+  It has no threshold of its own. Until 2026-09-26, when the leeg test
+  still had one, which threshold the negated leeg test takes was an open
+  point (ch. 1.2).
+- The **qualifier's negation** (`WholePeriod.negated`, "niet gedurende
+  …") complements the folded result, as for every test.
+- The **operand** is a time-dependent attribute of the subject, or one
+  reached over to-one hops (ch. 5.8); a hop that reaches nothing
+  contributes the null timeline, which passes (the fourth bullet above).
+  A time-dependent **parameter** as the operand passes WF-043 and is
+  folded by no executor: all three refuse it by name, in one sentence
+  (ch. 3.12).
+- **Source.** RegelSpraak writes both tests under the qualifier, with and
+  without the qualifier's "niet". It has no spelling for the inner
+  negation of either test, so a document carrying `negated: true` on them
+  under the qualifier is written on the wire only, and its reading is
+  this paragraph's.
+
+Worked examples (absolute; `ref/` tests and the ASP backend's suite
+verbatim, and the rows of `corpus/golden/jutterswet-gehele-periode-leeg`;
+month-granular attribute `bemanning`, qualifier "gedurende het gehele
+jaar"; 2025 and 2026 have 365 days each):
+
+| # | `bemanning` timeline | leeg | gevuld | niet leeg | niet gevuld | niet gedurende … leeg |
+|---|---|---|---|---|---|---|
+| a | no segments | **waar** | **waar** | **waar** | **waar** | onwaar |
+| b | 4 on [2025-01-01, 2026-01-01) | onwaar | **waar** (365 of 365) | **waar** | onwaar | **waar** |
+| c | 4 on [2025-01-01, 2025-07-01) | onwaar | onwaar (181 of 365) | onwaar | onwaar | **waar** |
+| d | 4 on [2025-01-01, 2025-07-01), 5 on [2025-07-01, 2027-01-01) | onwaar | **waar** (365 of 365 in 2025 and in 2026) | **waar** | onwaar | **waar** |
+
+Row c is where the inner negation and the qualifier's negation give
+different answers: "niet leeg" asks for a value on every day of 2025 and
+fails on the second half, while "niet gedurende het gehele jaar leeg"
+asks only that some day holds one. Under the **month** grid the gevuld
+test passes on row c — January through June 2025 each read a value on
+all their days — and on 4 on [2025-07-01, 2026-07-01), which fails it
+under the year grid (184 of 365 in 2025, 181 of 365 in 2026), while 4 on
+[2025-01-15, 2025-03-01) fails it under both grids (January holds 17 of
+31) and fails the leeg test under both; that timeline lies off the
+attribute's declared month grid, where no case input may lie, so it is
+pinned in `ref/`'s suite alone. An **explicit leeg segment**
+changes no verdict: leeg on [2025-01-01, 2026-01-01) alone touches no
+bucket and reads as row a, and 4 on [2025-01-01, 2025-07-01) followed by
+leeg on [2025-07-01, 2026-01-01) reads as row c. Those two rows are
+pinned in `ref/`'s suite and on the Drools runtime's fold, not in the ASP
+suite, whose encoding writes leeg as absence and has no second
+representation to tell apart.
 
 ### 3.9a The quantifier fold — a condition over a linked set
 
@@ -2862,7 +2945,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, the qualifier's negation) | **specified and executed, ch. 3.9** — all three executors, witnessed by `corpus/golden/synth-gehelejaarkenmerk`; the two OCaml ones carry it since 2026-09-11, the Drools backend carried it already |
 | Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
 | Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
-| Whole-period qualifier, the **leeg/gevuld** tests | specified (ch. 3.9), **executed by no executor** — all three refuse them by name. The two OCaml executors refuse every whole-period leeg/gevuld test in the same words. The Drools loader refuses the NEGATED test as `Predicaat.negatie`, because the threshold it takes is an open norm point (ch. 1.2), and since 2026-09-23 the UNNEGATED test as `Predicaat.periode`, because `ref` executes neither fold, so no second executor could check its answer. Four red cases hold the refusals and close the square `kind` × `negated`: `corpus/rood/leegnegatie-heel-tijdvak` and `corpus/rood/gevuldnegatie-heel-tijdvak` (negated), `corpus/rood/leegtest-heel-tijdvak` and `corpus/rood/gevuldtest-heel-tijdvak` (unnegated). Gate 8 pins the OCaml sentence in both OCaml executors and lists each case as a Drools loader EXCLUDE; the backend's own witness test, run in gate 8's build step, asserts key and ground for three of them, and for the negated gevuld test the listed category is the only guard. The threshold clause the leeg test needs (touched-days rather than calendar days) is stated in ch. 3.9 and implemented in the Drools runtime, which no document reaches while the loader refuses both forms; the sibling that landed above deliberately did not take it along, because a clause with no witness on this side would be a green subset |
+| Whole-period qualifier, the **leeg/gevuld** tests | **specified and executed, ch. 3.9** (decided 2026-09-26: one threshold, days(B), for every test; the inner negation per day, so the negated leeg test is the gevuld test and the negated gevuld test the leeg test) — all three executors, both branches of the Drools backend included, over an own and a navigated operand, both grids and both negations; witnessed by `corpus/golden/jutterswet-gehele-periode-leeg`. Until that date all three refused the form by name, and four red cases held the refusals (`leegtest-heel-tijdvak`, `leegnegatie-heel-tijdvak`, `gevuldtest-heel-tijdvak`, `gevuldnegatie-heel-tijdvak`); they left the red zone with them. A time-dependent PARAMETER as the operand passes WF-043 and is executed by no executor: all three refuse it by name in one sentence, the Drools backend in its loader for both branches |
 | **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — `all` and `none` in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where `all` and `none` read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `the`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
 | **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `dagsoort-onvervulbare-wandeling`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
 | **`datum-tijd ± N <dagsoort>`** | **specified and executed, ch. 3.8** (maintainer decision 2026-09-19): the day kind is judged on the civil day part and the original clock time rides through unchanged; golden `jutterswet-getijklok` closes the square. The DELTA is the rule itself — the source admits datum-tijd operands and settles nothing about the time of day |
