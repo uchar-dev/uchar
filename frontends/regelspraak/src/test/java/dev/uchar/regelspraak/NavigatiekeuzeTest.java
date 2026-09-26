@@ -401,6 +401,22 @@ class NavigatiekeuzeTest {
                 m.diagnostics.stream().map(x -> x.severity() + ": " + x.message()).toList());
     }
 
+    /** A scope parent is one instance. Over a relation whose parent role is to-many the scope binds, and before it went
+     *  to disk with {@code diagnostics: []}, where the verifier refused the document (WF-054); now the resolver refuses
+     *  it in that sentence, as the rule's one message. */
+    @Test void een_begrensde_uniciteit_over_een_meervoudige_ouderrol_weigert_in_de_zin_van_de_verifier() {
+        RegelSpraakModel m = Resolver.resolve(TYPEN + """
+
+            Feittype thuisligging
+                de thuishaven (mv: thuishavens) Haven
+                de ligger (mv: liggers) Schuit
+            meerdere thuishavens tellen meerdere liggers
+            """ + uniek("liggers"));
+        assertEquals(List.of("ERROR: uniciteit 'romplengte uniek' binnen 'de thuishaven': the scope role 'thuishaven' is "
+                        + "to-many — a scope parent is one instance"),
+                m.diagnostics.stream().map(x -> x.severity() + ": " + x.message()).toList());
+    }
+
     // ---------------- every position the emitter writes a read at ----------------
 
     /** One unbound read, "het peil van de Vuurtoren" (no relation reaches a Vuurtoren), at each position the emitter

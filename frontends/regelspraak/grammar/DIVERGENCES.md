@@ -1130,11 +1130,15 @@ carry a role `thuishaven` and one a role `liggers`). A scope that binds
 neither, such as a type name over two such relations, is refused with an ERROR
 in this frontend's words: the document without the scope is a uniqueness over
 every instance, which no reader refuses (measured 2026-09-26: the verifier
-admits it, and admits it bound to the other relation). That refusal, like the
-one of a scope over a reciprocal fact type, is the rule's only message. Until
-the fix round of 2026-09-26 the scope was bound by the type pair only, so two
-relations between the element and the parent type left the rule with the
-WARNING that it was not lowered, and the uniqueness was left off the wire.
+admits it, and admits it bound to the other relation). A scope whose parent
+role is to-many is refused in the verifier's WF-054 sentence (`the scope role
+… is to-many — a scope parent is one instance`); until the fix round of
+2026-09-26 it went to disk with `diagnostics: []` and the verifier refused the
+document. Each of these refusals, like the one of a scope over a reciprocal
+fact type, is the rule's only message. Until the fix round of 2026-09-26 the
+scope was bound by the type pair only, so two relations between the element
+and the parent type left the rule with the WARNING that it was not lowered,
+and the uniqueness was left off the wire.
 
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
@@ -1903,7 +1907,8 @@ in the loader's sentence), a role check whose written role names no relation
 from the subject or several (in the loader's sentence for the check without
 its binding, `missing field 'factType'`), a rule target whose name is both an
 attribute and a characteristic of its type (WF-022), a written day-kind spelling
-another day kind already carries (WF-017; a derived plural gives way instead);
+another day kind already carries (WF-017; a derived plural gives way instead), a
+parent-scoped uniqueness whose parent role is to-many (WF-054);
 witnesses `EenheidZinTest`,
 `TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the

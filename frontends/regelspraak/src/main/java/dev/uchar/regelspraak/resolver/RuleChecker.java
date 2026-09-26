@@ -3218,6 +3218,14 @@ final class RuleChecker {
                     + "twee rollen)", bron.line()));
             return GEWEIGERD;
         }
+        // a scope parent is one instance: over a to-many role the document went to disk without a diagnostic and the
+        // verifier refused it (WF-054), so the refusal is that sentence
+        if (teVeel(scopeRol)) {
+            model.diagnostics.add(new Diagnostic(Severity.ERROR, "uniciteit '" + naam + "' binnen '" + src(delen.get(1))
+                    + "': the scope role '" + scopeRol.rol() + "' is to-many — a scope parent is one instance",
+                    bron.line()));
+            return GEWEIGERD;
+        }
         return new Begrensd(new dev.uchar.regelspraak.ir.ResolvedUniciteit(
                 naam, elem, java.util.List.of(attr), scopeRol.rol(), bron, g, scopeRol));
     }
