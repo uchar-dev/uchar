@@ -1815,10 +1815,13 @@ prefix `scenario: `, placeholders in angle brackets:
 - after a value's position (`het attribuut '<a>'`, `de parameter '<p>'`,
   `de verwachting voor '<a>'`): `de datum '<d>' is geen geldige datum`, `een
   enumeratiewaarde ('<w>') past niet op een <type>`, `'<w>' is geen waarde van
-  de enumeratie <domein> (<waarden>)`, `de waarde '<bron>' is niet gelezen`,
-  `het getal '<g>' is niet gelezen`, `tussen de eenheden '<e>' en '<f>' is
-  geen exacte omrekening`, `de tekstwaarde draagt een «expressie», en een
-  waarde in een scenario is letterlijk`
+  de enumeratie <domein> (<waarden>)`, `de waarde '<bron>' is niet gelezen`
+  and `er staat geen waarde` (beside a syntax error), `de tekstwaarde draagt
+  een «expressie», en een waarde in een scenario is letterlijk`. A number the
+  parse cannot read and a restatement without an exact factor are no refusal:
+  the parse enters a number on a number token only, and the typing admits two
+  units with one canonical only, each with the exact factor its system
+  declares; both stand as invariants.
 - and from the CLI: `het document draagt geen scenario, dus er valt geen
   casebestand te schrijven`, and `de map <map> draagt al casebestanden die
   dit document niet schrijft (<bestanden>); ruim ze op of kies een andere map,

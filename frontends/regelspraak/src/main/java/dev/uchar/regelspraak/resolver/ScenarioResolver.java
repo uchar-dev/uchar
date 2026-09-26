@@ -968,8 +968,9 @@ public final class ScenarioResolver {
                     uit.add(new Verwachting(VerwachtingSoort.INCONSISTENT, label, null, null, null, null, regel, line));
             } else if (v instanceof VerwachtConsistentContext c) {
                 uit.add(new Verwachting(VerwachtingSoort.CONSISTENT, null, null, null, null, null, null, line));
-            } else {
-                // error recovery leaves a bare VerwachtingContext; the syntax error is reported already
+            } else if (!src(v).isBlank()) {
+                // error recovery leaves a bare VerwachtingContext; the syntax error is reported already, and a bare
+                // context without text is recovery's own and names nothing
                 fout(line, "de verwachting '" + src(v) + "' is syntactisch niet herkend");
             }
         }
@@ -1074,7 +1075,9 @@ public final class ScenarioResolver {
             if (tekst == null || !toekenbaar(doel, new Datatype.Tekst(), line, wat)) return null;
             return Waarde.vanTekst(tekst);
         }
-        fout(line, wat + ": de waarde '" + src(ctx) + "' is niet gelezen");
+        // a value the parse could not read ("de parameter de vondstdrempel is" and no value): the syntax error stands
+        // beside this one, which names the position
+        fout(line, wat + (src(ctx).isBlank() ? ": er staat geen waarde" : ": de waarde '" + src(ctx) + "' is niet gelezen"));
         return null;
     }
 
@@ -1094,10 +1097,8 @@ public final class ScenarioResolver {
     private Waarde getal(GetalWaardeContext g, Datatype doel, int line, String wat) {
         String tekst = g.NUMBER().getText();
         BigDecimal[] r = Rationaal.van(tekst);
-        if (r == null) {
-            fout(line, wat + ": het getal '" + tekst + "' is niet gelezen");
-            return null;
-        }
+        // the parse enters a number value on a NUMBER token only, and every NUMBER token is a number Rationaal reads
+        if (r == null) throw new IllegalStateException("ScenarioResolver: het getal '" + tekst + "' is geen getal");
         BigInteger[] breuk = breuk(r[0], r[1]);
         int dec = r[1].compareTo(BigDecimal.ONE) == 0 ? Math.max(0, r[0].stripTrailingZeros().scale())
                 : eindigt(breuk[1]) ? Math.max(0, new BigDecimal(breuk[0]).divide(new BigDecimal(breuk[1])).stripTrailingZeros().scale())
@@ -1114,11 +1115,10 @@ public final class ScenarioResolver {
         Eenheid doelE = doel == null ? null : doel.eenheidOf();
         if (bronE != null && doelE != null && bronE.convertibleNaar(doelE) && bronE.vereistOmrekening(doelE)) {
             BigInteger[] fb = exacteHerschaling(bronE, doelE);
-            if (fb == null) {
-                fout(line, wat + ": tussen de eenheden '" + bronE.weergave() + "' en '" + doelE.weergave() + "' is geen "
-                        + "exacte omrekening");
-                return null;
-            }
+            // the typing admits two units with one canonical only, and every declared unit has its exact factor
+            if (fb == null)
+                throw new IllegalStateException("ScenarioResolver: tussen de eenheden '" + bronE.weergave() + "' en '"
+                        + doelE.weergave() + "' is geen exacte factor, terwijl de typering ze omwisselbaar noemt");
             return Waarde.vanGetal(lexeem(breuk[0].multiply(fb[0]), breuk[1].multiply(fb[1])));
         }
         // no restatement: the written number in the emitter's lexeme, so a case file and an IR document agree

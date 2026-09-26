@@ -314,6 +314,152 @@ class ScenarioTypeGateTest {
                 + "- de gegevens zijn inconsistent volgens \"Jutter.vondstklasse/0\"\n")).isOk());
     }
 
+    // ---------------- every refusal has a witness ----------------
+    // Each sentence below had no test (the lens counted 17 of the resolver's refusal sites without one); two of those
+    // cannot be reached and are invariants now, and every other one stands here on the line that carries its defect.
+
+    @Test void een_peildatum_die_geen_datum_is() {
+        String s = KAAL + "Scenario s\nmet peildatum 31-02-2025\ngebaseerd op de situatie kaal\n"
+                + "Met als verwacht resultaat:\n- J is bergingsbevoegd\n";
+        fout(s, "met peildatum", "de peildatum '31-02-2025' is geen geldige datum");
+        assertEquals(1, resolve(s).model().errors().size(), () -> resolve(s).model().errors().toString());
+    }
+
+    @Test void een_scope_naast_een_startpuntbepaling() {
+        String bron = """
+                Tijdlijn het wachtjaar heeft tijdvakken van een jaar met variabel startpunt;
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    de aanvangsdatum Datum in dagen;
+                    de wachtdagen Numeriek (geheel getal) voor elke wachtjaar;
+                    de bonus Numeriek (geheel getal);
+
+                Regel startpunt wachtjaar
+                    geldig altijd
+                        Het startpunt van het wachtjaar voor een Jutter wordt bepaald door zijn aanvangsdatum.
+
+                Regel bonus
+                    geldig altijd
+                        De bonus van een Jutter moet gesteld worden op 3.
+
+                Scenario s
+                toetst de regel bonus
+                Gegeven is de volgende situatie:
+                een Jutter J
+                Met als verwacht resultaat:
+                - de bonus van J is 3
+                """;
+        ScenarioBundel b = ScenarioResolver.resolve(bron);
+        foutOpRegel(b, bron, "toetst de regel bonus", "een scope in een document met een startpuntbepaling wordt "
+                + "geweigerd: de bepaling en de regel die haar anker schrijft horen bij elkaar");
+    }
+
+    @Test void een_scope_die_niets_uit_het_document_noemt() {
+        String kop = KAAL + "Scenario s\n";
+        String staart = "met peildatum 01-06-2025\ngebaseerd op de situatie kaal\nMet als verwacht resultaat:\n"
+                + "- J is bergingsbevoegd\n";
+        fout(kop + "toetst de regelgroep nergens\n" + staart, "toetst de regelgroep",
+                "de regelgroep 'nergens' uit de scope bestaat niet in het document");
+        fout(kop + "toetst de regel nergens\n" + staart, "toetst de regel",
+                "de regel 'nergens' uit de scope bestaat niet in het document");
+    }
+
+    @Test void de_peildatumpoort_voor_een_regel_die_de_rekendatum_leest() {
+        String bron = MODEL + """
+
+                Regel bergingsdatum
+                    geldig altijd
+                        De bergingsdatum van een Jutter moet gesteld worden op de Rekendatum.
+
+                Scenario s
+                toetst de regel bergingsdatum
+                Gegeven is de volgende situatie:
+                een Jutter J
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ScenarioBundel b = ScenarioResolver.resolve(bron);
+        foutOpRegel(b, bron, "Scenario s", "de regel 'bergingsdatum' leest de rekendatum, maar het scenario 's' heeft "
+                + "geen peildatum (voeg 'met peildatum <datum>' toe)");
+    }
+
+    @Test void een_vaste_waarde_voor_perioden_in_een_blok() {
+        fout("Situatie s:\neen Jutter J\n- de borgdagen is 5\n- de borgdagen is 4 van 01-01-2024 tot 01-02-2024\n",
+                "de borgdagen is 4", "het attribuut 'borgdagen' krijgt in dit blok zowel een vaste waarde als perioden");
+        fout("Situatie s:\nde parameter het penningbedrag is 7\n"
+                        + "de parameter het penningbedrag is 8 van 01-01-2024 tot 01-01-2025\n", "is 8 van",
+                "de parameter 'penningbedrag' krijgt in dit blok zowel een vaste waarde als perioden");
+    }
+
+    @Test void een_rol_die_twee_feittypen_kennen() {
+        String bron = """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    de naam Tekst;
+
+                Objecttype de Vondst (mv: Vondsten)
+                    het gewicht Numeriek (geheel getal);
+
+                Feittype vondstaanmelding
+                    de aanmelder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén aanmelder heeft meerdere vondsten
+
+                Feittype vondstberging
+                    de berger Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén berger heeft meerdere vondsten
+
+                Situatie s:
+                een Jutter J
+                - de vondsten zijn V
+                een Vondst V
+                Scenario x
+                gebaseerd op de situatie s
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ScenarioBundel b = ScenarioResolver.resolve(bron);
+        foutOpRegel(b, bron, "de vondsten zijn V", "de rol 'vondsten' vanaf het objecttype 'Jutter' is niet eenduidig: "
+                + "meer dan één feittype kent haar");
+    }
+
+    @Test void een_periodegrens_die_geen_datum_is() {
+        fout("Situatie s:\neen Jutter J\n- de borgdagen is 4 van 31-02-2024 tot 01-04-2024\n", "31-02-2024",
+                "de periodegrens '31-02-2024' is geen geldige datum");
+    }
+
+    @Test void een_label_van_twee_typen() {
+        String s = "Situatie a:\neen Jutter X\nSituatie b gebaseerd op de situatie a:\neen Vondst X\n"
+                + "Scenario x\nmet peildatum 01-06-2025\ngebaseerd op de situatie b\nGegeven is de volgende situatie:\n"
+                + "de parameter de vondstdrempel is 3\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
+        fout(s, "een Vondst X", "het label 'X' is eerder gedeclareerd als 'Jutter', hier als 'Vondst'");
+    }
+
+    @Test void altijd_leeg_na_perioden() {
+        fout(scenario("- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen van J is altijd leeg\n"),
+                "altijd leeg", "de verwachting dat 'borgdagen' van J altijd leeg is, spreekt de perioden ervoor tegen");
+    }
+
+    @Test void een_verwachting_die_niet_parst() {
+        String s = scenario("- de gegevens zijn\n- J is bergingsbevoegd\n");
+        fout(s, "- de gegevens zijn", "de verwachting '- de gegevens zijn' is syntactisch niet herkend");
+        // error recovery leaves a second bare expectation without text; it names nothing and draws no sentence
+        assertTrue(resolve(s).model().errors().stream().noneMatch(d -> d.message().contains("de verwachting ''")),
+                () -> resolve(s).model().errors().toString());
+    }
+
+    @Test void een_waarde_die_geen_datum_is_of_geen_enumeratie_hoort() {
+        fout("Situatie s:\neen Jutter J\n- de bergingsdatum is 31-02-2024\n", "31-02-2024",
+                "het attribuut 'bergingsdatum': de datum '31-02-2024' is geen geldige datum");
+        fout("Situatie s:\neen Jutter J\n- de naam is 'drijfgoed'\n", "de naam is 'drijfgoed'",
+                "het attribuut 'naam': een enumeratiewaarde ('drijfgoed') past niet op een Tekst");
+    }
+
+    @Test void een_parameter_zonder_waarde() {
+        String s = "Situatie s:\nde parameter de vondstdrempel is\n";
+        fout(s + "een Jutter J\n", "de vondstdrempel is", "de parameter 'vondstdrempel': er staat geen waarde");
+    }
+
     // ---------------- semantics the lowering reads ----------------
 
     @Test void samenvoegen_later_wint_op_zijn_plaats() {
