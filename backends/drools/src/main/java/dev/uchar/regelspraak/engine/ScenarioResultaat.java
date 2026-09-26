@@ -8,6 +8,9 @@ import java.util.List;
  * RegelSpraak frontend or one written by hand; the report reads the case file and the IR document and nothing else.
  * It carries both the expected and the actual value per expectation, which is what a failing expectation prints.
  *
+ * <p>It carries what the replay knows and nothing a later layer adds: an explanation of the outcome in words is
+ * presentation, built by a layer that verbalises, and that layer carries it beside this record.
+ *
  * @param naam          the case file's name
  * @param status        PASS (every expectation met), FAIL (an expectation missed, no fixpoint, or the case could not
  *                      be played: its play raised an exception), or MARKER (the backend does not carry the document or
@@ -19,22 +22,9 @@ import java.util.List;
  * @param dekking       per lowered construct whether it fired in this case
  * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
  *                      the case's name and the replay's ERROR line), the reason for MARKER; empty for PASS
- * @param uitleg        an explanation per line, for a layer that verbalises the outcome; the replay leaves it empty
  */
 public record ScenarioResultaat(String naam, Status status, List<VerwachtingResultaat> verwachtingen,
-                                Trace trace, List<DekkingRegel> dekking, String diagnose, List<String> uitleg) {
-
-    /** Without an explanation, as the replay reports. */
-    public ScenarioResultaat(String naam, Status status, List<VerwachtingResultaat> verwachtingen,
-                             Trace trace, List<DekkingRegel> dekking, String diagnose) {
-        this(naam, status, verwachtingen, trace, dekking, diagnose, List.of());
-    }
-
-    /** This resultaat with an explanation attached. */
-    public ScenarioResultaat metUitleg(List<String> uitleg) {
-        return new ScenarioResultaat(naam, status, verwachtingen, trace, dekking, diagnose,
-                uitleg == null ? List.of() : List.copyOf(uitleg));
-    }
+                                Trace trace, List<DekkingRegel> dekking, String diagnose) {
 
     public enum Status { PASS, FAIL, MARKER }
 
@@ -49,8 +39,8 @@ public record ScenarioResultaat(String naam, Status status, List<VerwachtingResu
         public int totaal() { return vuringen.stream().mapToInt(Vuring::aantal).sum(); }
     }
     /** One fired rule: its base name (no group prefix, no version suffix), the labels of the input instances its
-     *  matches bound, the produced value where the report determines one (else empty), and how often it fired. */
-    public record Vuring(String regel, List<String> labels, String waarde, int aantal) {}
+     *  matches bound, and how often it fired. */
+    public record Vuring(String regel, List<String> labels, int aantal) {}
 
     /** One lowered construct's coverage in this case. */
     public record DekkingRegel(String regel, DekkingSoort soort) {}

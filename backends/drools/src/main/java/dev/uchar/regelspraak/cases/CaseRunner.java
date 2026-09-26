@@ -186,7 +186,7 @@ public final class CaseRunner {
             }
             List<ScenarioResultaat.Vuring> vuringen = new ArrayList<>();
             for (Map.Entry<String, Integer> e : w.telling.entrySet())
-                vuringen.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(w.labels.get(e.getKey())), "", e.getValue()));
+                vuringen.add(new ScenarioResultaat.Vuring(e.getKey(), List.copyOf(w.labels.get(e.getKey())), e.getValue()));
             List<ScenarioResultaat.DekkingRegel> dekking = new ArrayList<>();
             for (Dekking d : runner.dekking)
                 dekking.add(new ScenarioResultaat.DekkingRegel(d.naam(), gevuurd(d.naam(), w.telling.keySet())
