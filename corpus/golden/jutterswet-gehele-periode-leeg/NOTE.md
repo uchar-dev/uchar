@@ -100,9 +100,10 @@ executor (gate 7) without a survivor entry.
 
 Measured before the card that decided the clause, on the same three cases:
 `ref` and the ASP backend faulted with "whole-period leeg/gevuld test is
-ch. 3.9 scope, not executed here", and both Drools branches reported
-`EXCLUDE loader: form not carried by the v0 Drools backend:
-Predicaat.periode (…)`.
+ch. 3.9 scope, not executed here", and both Drools branches reported an
+`EXCLUDE loader: form not carried by the v0 Drools backend: …` line, the
+loader's refusal of the unnegated whole-period test, which went with that
+card.
 
 ## What the case files cannot carry
 
