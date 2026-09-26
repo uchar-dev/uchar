@@ -284,7 +284,7 @@ let timeline_json j = match j with `Assoc [ ("timeline", t) ] -> Some t | _ -> N
    segments aligned to the declaration's granularity grid; segment values
    are scalars of the element datatype. From inclusive, to exclusive;
    absence between segments is a gap (leeg on read, ch. 3.1). *)
-let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : datatype option)
+let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : datatype option)
     (t : Yojson.Safe.t) : Timeline.t =
   let segs = list_ ~at:(child at "timeline") t in
   if segs = [] && not allow_empty then
@@ -303,20 +303,41 @@ let timeline_of_json ?(allow_empty = false) ~at ~(gran : granulariteit) (decl : 
        segment boundaries against: refused as a v0 limit, not as a defect of the case"
       at grid grid
   in
+  (* A grid of several units carries no operation, a case input included, and
+     a variable start is laid per object from an anchor this loader does not
+     read (RUNTIME-SEMANTICS ch. 3.2): both are refused as a v0 limit. A
+     fixed start point lays a grid of its own, whose walls the segments
+     must sit on whatever the granularity. *)
+  if grid.g_count <> 1 then
+    fail
+      "%s: the declared grid is %d %s units, a multi-period grid, which carries no operation, a \
+       case input included (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, \
+       not as a defect of the case"
+      at grid.g_count (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity grid.g_gran);
+  if grid.g_start = Timeline.Variabel then
+    fail
+      "%s: the declared grid is laid per object from the anchor of a variable start, which this \
+       loader does not read (RUNTIME-SEMANTICS ch. 3.2): refused as a v0 limit, not as a defect \
+       of the case"
+      at;
+  let gran = grid.g_gran in
   let aligned d =
-    match gran with
-    | Maand | Jaar ->
+    match (grid.g_start, gran) with
+    | (Timeline.Vast_datum _ | Timeline.Vast_dag_maand _), _ ->
+        let van, _ = Timeline.grid_bucket grid d in
+        van = d
+    | _, (Maand | Jaar) ->
         let van, _ = Timeline.bucket gran d in
         van = d
-    | Dag ->
+    | _, Dag ->
         fail
           "%s: the declared grid is day, which every day boundary sits on, yet this loader checks \
            a timeline's grid through the calendar bucketing and v0 defines buckets for month and \
            year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
            a defect of the case"
           at
-    | Week -> geen_rooster "week"
-    | Kwartaal -> geen_rooster "quarter"
+    | _, Week -> geen_rooster "week"
+    | _, Kwartaal -> geen_rooster "quarter"
   in
   let parsed =
     List.mapi
@@ -422,8 +443,9 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
             match timeline_json vj with
             | Some t -> (
               match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
-              | Some (Some gran) ->
-                  (attrs, SMap.add (norm name) (timeline_of_json ~at ~gran decl t) tls)
+              | Some (Some _) ->
+                  let grid = Timeline.attr_grid doc ot name in
+                  (attrs, SMap.add (norm name) (timeline_of_json ~at ~grid decl t) tls)
               | Some None ->
                   (* An internal invariant, not a load error: since M1 the
                      loader reads a timeline facet's granularity as a required
@@ -700,9 +722,9 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
         | Some d -> d
         | None -> fail "expected attribute %S is not declared on %S" attr i.otype
       in
-      let gran =
+      let grid =
         match Ir_v0.Checks.find_ci ot.attribuut_granulariteit attr with
-        | Some (Some g) -> g
+        | Some (Some _) -> Timeline.attr_grid doc ot attr
         | Some None ->
             (* the internal invariant of the input arms above *)
             invalid_arg
@@ -720,7 +742,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
           tl =
             timeline_of_json ~allow_empty:true
               ~at:("expected " ^ i.label ^ "." ^ attr)
-              ~gran decl
+              ~grid decl
               (field ~at kvs "timeline");
         }
   | "characteristicPresent" | "characteristicAbsent" ->
@@ -877,8 +899,11 @@ let load_file (doc : document) path : t =
             match timeline_json vj with
             | Some t -> (
               match p.par_granulariteit with
-              | Some gran ->
-                  (params, SMap.add (norm name) (timeline_of_json ~at ~gran p.par_datatype t) ptls)
+              | Some _ ->
+                  (params,
+                   SMap.add (norm name)
+                     (timeline_of_json ~at ~grid:(Timeline.param_grid p) p.par_datatype t)
+                     ptls)
               | None -> fail "%s: a timeline value on a non-granular parameter" at)
             | None ->
                 if p.par_granulariteit <> None then

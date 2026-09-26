@@ -459,6 +459,12 @@ and conditie =
    this record can hold are no longer produced: [ot_naam] is always [Some],
    every granularity and period count is [Some], and a facet table holds a
    key only for a member that carries that facet. *)
+(* The period of a member's timeline facet beyond its unit: the number of
+   units it spans ([tv_aantal], the facet's count) and the point the periods
+   run from when the facet fixes one ([tv_vast_startpunt], its fixedStart,
+   IR-SPEC ch. 2.8). *)
+type tijdvak = { tv_aantal : int option; tv_vast_startpunt : string option }
+
 type objecttype = {
   ot_naam : string option;
   ot_supertype : string option;
@@ -469,24 +475,30 @@ type objecttype = {
   attribuut_meervoud : (string * string option) list;
   attribuut_dimensies : (string * string option list) list;
   attribuut_granulariteit : (string * granulariteit option) list;
-  attribuut_tijdlijn_aantal : (string * int option) list;
+  attribuut_tijdlijn_aantal : (string * tijdvak) list;
+      (* named for the v0 side-map it mirrors, the count; an entry carries the
+         facet's fixed start point beside it because the Catala and F-logic
+         frontends build this record whole, so a field of its own would reach
+         into both *)
   attribuut_tijdlijn_naam : (string * string option) list;
   kenmerken : string option list;
   kenmerk_soorten : (string * kenmerk_soort option) list;
   kenmerk_granulariteit : (string * granulariteit option) list;
-  kenmerk_tijdlijn_aantal : (string * int option) list;
+  kenmerk_tijdlijn_aantal : (string * tijdvak) list; (* as [attribuut_tijdlijn_aantal] *)
   bezield : bool;
   meervoud : string option;
 }
 
 (* Built by the loader from a Parameter node: its timeline facet is split
-   into the two fields an attribute's facet tables hold, both [Some] iff the
-   facet is present. [par_datatype] is always [Some]: the wire requires it. *)
+   into the fields an attribute's facet tables hold — granularity and count
+   both [Some] iff the facet is present, the fixed start point [Some] iff the
+   facet carries one. [par_datatype] is always [Some]: the wire requires it. *)
 type parameter = {
   par_naam : string option;
   par_datatype : datatype option;
   par_granulariteit : granulariteit option;
   par_tijdlijn_aantal : int option;
+  par_vast_startpunt : string option;
 }
 
 (* A unit as its unit system declares it: the unit itself and the further
@@ -528,6 +540,7 @@ type tijdlijn = {
   variabel_startpunt : bool;
   tl_granulariteit : granulariteit option;
   tl_aantal : int;
+  tl_vast_startpunt : string option; (* fixedStart, IR-SPEC ch. 2.8; None = absent *)
 }
 
 (* --- rule layer -------------------------------------------------------- *)

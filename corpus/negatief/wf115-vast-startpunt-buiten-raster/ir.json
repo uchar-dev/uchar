@@ -1,0 +1,258 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "stormwachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1,
+              "fixedStart": "--10-01",
+              "timelineName": "stormjaar"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandwachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1,
+              "fixedStart": "2024-01-31"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stormtoelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1,
+              "fixedStart": "--10-01",
+              "timelineName": "stormjaar"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toelagesom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "wachtplichtig",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "week",
+              "count": 1,
+              "fixedStart": "2024-09-30"
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [
+      {
+        "node": "Timeline",
+        "name": "het stormjaar",
+        "variableStart": false,
+        "granularity": "year",
+        "count": 1,
+        "fixedStart": "--10-01"
+      }
+    ],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "stormwachtdagen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stormwachtdagen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De stormwachtdagen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "het aantal dagen in het jaar dat hij wachtplichtig is"
+                }
+              },
+              "granularity": "year",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in het jaar dat hij wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maandwachtdagen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandwachtdagen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De maandwachtdagen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "toelagesom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toelagesom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De toelagesom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "stormtoelage",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn stormtoelage"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

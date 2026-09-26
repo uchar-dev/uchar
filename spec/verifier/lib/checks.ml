@@ -516,6 +516,91 @@ let date_time_lexeme_refusal w =
         never a space, the seconds field written, no zone or offset, a fraction of exactly \
         three digits; the day-first source snippet belongs in `source` — ch. 4.1)")
 
+(* WF-115 (IR-SPEC ch. 2.8): the fixed start point of a timeline, in its two
+   lexemes — a date yyyy-mm-dd (WF-084's) or a day-month --mm-dd naming a day
+   of a leap year, the year a day-month is anchored in (RUNTIME-SEMANTICS
+   ch. 3.2) — and the three sentences the rule refuses in. The executors
+   read a fixed start point through [lees_vast_startpunt] and refuse at load
+   in the same sentences ([Loader.reader]), and the Drools loader copies them
+   letter for letter, so the four readers cannot drift apart. *)
+type vast_startpunt = Vs_datum of int * int * int | Vs_dag_maand of int * int
+
+let lees_vast_startpunt s =
+  let digits str = str <> "" && String.for_all (fun c -> c >= '0' && c <= '9') str in
+  if lexeme_iso_date s then Scanf.sscanf s "%4d-%2d-%2d" (fun y m d -> Some (Vs_datum (y, m, d)))
+  else
+    match String.split_on_char '-' s with
+    | [ ""; ""; m; d ] when String.length m = 2 && String.length d = 2 && digits m && digits d ->
+        let m = int_of_string m and d = int_of_string d in
+        if m >= 1 && m <= 12 && d >= 1 && d <= days_in_month 2000 m then Some (Vs_dag_maand (m, d))
+        else None
+    | _ -> None
+
+(* The months between two walls of a one-unit month, quarter or year grid;
+   0 for a day or week grid. *)
+let stap_maanden = function Maand -> 1 | Kwartaal -> 3 | Jaar -> 12 | Dag | Week -> 0
+
+(* The canonical day-month of a one-unit month, quarter or year grid with a
+   wall on day [d] of month [m]: the earliest month of the year in that
+   month's cycle that has the day itself; None when no month of it has. *)
+let canonieke_dag_maand g m d =
+  let stap = stap_maanden g in
+  if stap = 0 || m < 1 || m > 12 || d < 1 then None
+  else
+    let rec vanaf mm =
+      if mm > 12 then None
+      else if d <= days_in_month 2000 mm then Some (Printf.sprintf "--%02d-%02d" mm d)
+      else vanaf (mm + stap)
+    in
+    vanaf (((m - 1) mod stap) + 1)
+
+(* WF-115 (b): the refusal of fixed start point [s] on a grid of [g] and
+   count [n], or None when it fits. A count below 1 is WF-005's. *)
+let vast_startpunt_refusal g n s =
+  if n < 1 then None
+  else
+    let reden =
+      match (g, lees_vast_startpunt s) with
+      | Dag, _ when n = 1 -> Some "a day grid has a wall at every day boundary and takes no start point"
+      | _, l when g = Week || n >= 2 -> (
+          match l with
+          | Some (Vs_datum _) -> None
+          | _ ->
+              Some
+                "a week grid and a grid of several units start on a date, written yyyy-mm-dd, the \
+                 ISO form of a day of the calendar")
+      | _, (None | Some (Vs_datum _)) ->
+          Some
+            "a month, quarter or year grid of one unit starts on a day-month, written --mm-dd, a \
+             day of month mm in a leap year"
+      | _, Some (Vs_dag_maand (m, d)) -> (
+          match canonieke_dag_maand g m d with
+          | Some "--01-01" -> Some "it lays the calendar's own grid, which is written without a fixedStart"
+          | Some c when c = s -> None
+          | Some c ->
+              Some
+                ("its canonical spelling is " ^ c
+               ^ ", with the earliest month of the year that has a wall on that day")
+          | None -> assert false (* a day of month m is a day of m's cycle *))
+    in
+    Option.map
+      (fun r ->
+        "fixed start point '" ^ s ^ "' does not fit a " ^ Spelling.encode Spelling.granularity g
+        ^ " grid of count " ^ string_of_int n ^ ": " ^ r)
+      reden
+
+(* WF-115 (a). *)
+let vast_startpunt_variabel_refusal tijdlijn s =
+  "timeline '" ^ tijdlijn ^ "' has a variable start and a fixedStart '" ^ s
+  ^ "': its periods run from the anchor its start-point determination binds per object, and a \
+     timeline has one start"
+
+(* WF-115 (c): a facet's fixed start point against its named timeline's. *)
+let vast_startpunt_overname_refusal ~facet ~tijdlijn ~van_tijdlijn =
+  let tekst = function None -> "none" | Some s -> "'" ^ s ^ "'" in
+  "named-timeline adoption is partial: fixed start point " ^ tekst facet ^ " on the facet, "
+  ^ tekst van_tijdlijn ^ " on timeline '" ^ tijdlijn ^ "'"
+
 (* --- document context --------------------------------------------------- *)
 
 type ctx = { doc : document }
@@ -1022,8 +1107,8 @@ let wf005 ctx =
       let at = "/objecttypen/" ^ otn in
       let counts prefix l =
         List.concat_map
-          (fun (a, n) ->
-            match n with
+          (fun (a, (t : tijdvak)) ->
+            match t.tv_aantal with
             | Some n when n < 1 ->
                 [ v "WF-005" (at ^ prefix ^ a)
                     (Printf.sprintf "timeline facet count %d < 1" n) ]
@@ -1041,7 +1126,7 @@ let wf005 ctx =
                 | Some tl ->
                     let facet_gran = find_ci ot.attribuut_granulariteit a |> Option.join in
                     let facet_count =
-                      match find_ci ot.attribuut_tijdlijn_aantal a |> Option.join with
+                      match Option.bind (find_ci ot.attribuut_tijdlijn_aantal a) (fun t -> t.tv_aantal) with
                       | Some c -> c
                       (* a timeline name sits inside a TimelineFacet, whose count
                          is a required field since M1: v0's "absent = 1" has no
@@ -9720,8 +9805,10 @@ let m1_named (doc : document) at =
       ("attribuutDimensies", ("attributes", "/dimensions"));
       ("attribuutTijdlijnAantal", ("attributes", "/timeline/count"));
       ("attribuutTijdlijnNaam", ("attributes", "/timeline/timelineName"));
+      ("attribuutVastStartpunt", ("attributes", "/timeline/fixedStart"));
       ("kenmerken", ("characteristics", ""));
-      ("kenmerkTijdlijnAantal", ("characteristics", "/timeline/count")) ]
+      ("kenmerkTijdlijnAantal", ("characteristics", "/timeline/count"));
+      ("kenmerkVastStartpunt", ("characteristics", "/timeline/fixedStart")) ]
   in
   let member_tail (ot : objecttype) tail =
     match String.split_on_char '/' tail with
@@ -9751,6 +9838,80 @@ let m1_named (doc : document) at =
           | "objecttypen" -> decl ^ member_tail (snd (List.nth doc.objecttypen i)) tail
           | _ -> decl ^ tail))
 
+(* WF-115 (IR-SPEC ch. 2.8): every fixed start point fits its grid — on a
+   Timeline, (a) none with a variable start and (b) the lexeme its grid
+   takes; on the timeline facet of an attribute, a characteristic or a
+   parameter, (b) as well; and (c) an attribute's facet that names a
+   timeline carries that timeline's, or none when it has none. The findings
+   carry their wire pointers, mapped here because the executors' loader
+   refuses the first of them itself ([Loader.reader]). (c) points at the
+   timeline name, which is present where the fixed start point may not be. *)
+let wf115_bevindingen (doc : document) : (string * string) list =
+  let benoemd n =
+    List.find_opt
+      (fun tl -> match tl.tl_naam with Some x -> tl_norm x = tl_norm n | None -> false)
+      doc.tijdlijnen
+  in
+  let tijdlijnen =
+    List.concat
+      (List.mapi
+         (fun i (tl : tijdlijn) ->
+           let at = Printf.sprintf "/tijdlijnen/%d/fixedStart" i in
+           match (tl.tl_vast_startpunt, tl.variabel_startpunt, tl.tl_granulariteit) with
+           | Some s, true, _ ->
+               [ (at, vast_startpunt_variabel_refusal (Option.value tl.tl_naam ~default:"") s) ]
+           | Some s, false, Some g ->
+               Option.to_list (Option.map (fun r -> (at, r)) (vast_startpunt_refusal g tl.tl_aantal s))
+           | _ -> [])
+         doc.tijdlijnen)
+  in
+  let facetten =
+    List.concat_map
+      (fun (otn, (ot : objecttype)) ->
+        let at tabel lid = "/objecttypen/" ^ otn ^ "/" ^ tabel ^ "/" ^ lid in
+        let past tabel granulariteiten tijdvakken =
+          List.filter_map
+            (fun (lid, (t : tijdvak)) ->
+              match (t.tv_vast_startpunt, Option.join (find_ci granulariteiten lid), t.tv_aantal) with
+              | Some s, Some g, Some n ->
+                  Option.map (fun r -> (at tabel lid, r)) (vast_startpunt_refusal g n s)
+              | _ -> None)
+            tijdvakken
+        in
+        past "attribuutVastStartpunt" ot.attribuut_granulariteit ot.attribuut_tijdlijn_aantal
+        @ past "kenmerkVastStartpunt" ot.kenmerk_granulariteit ot.kenmerk_tijdlijn_aantal
+        @ List.filter_map
+            (fun (lid, naam) ->
+              match Option.bind naam benoemd with
+              | None -> None (* WF-003 reports the dangling reference *)
+              | Some tl ->
+                  let facet =
+                    Option.bind (find_ci ot.attribuut_tijdlijn_aantal lid) (fun t -> t.tv_vast_startpunt)
+                  in
+                  if facet = tl.tl_vast_startpunt then None
+                  else
+                    Some
+                      ( at "attribuutTijdlijnNaam" lid,
+                        vast_startpunt_overname_refusal ~facet ~tijdlijn:(Option.get naam)
+                          ~van_tijdlijn:tl.tl_vast_startpunt ))
+            ot.attribuut_tijdlijn_naam)
+      doc.objecttypen
+  in
+  let parameters =
+    List.filter_map
+      (fun (p, (par : parameter)) ->
+        match (par.par_vast_startpunt, par.par_granulariteit, par.par_tijdlijn_aantal) with
+        | Some s, Some g, Some n ->
+            Option.map
+              (fun r -> ("/parameters/" ^ p ^ "/timeline/fixedStart", r))
+              (vast_startpunt_refusal g n s)
+        | _ -> None)
+      doc.parameters
+  in
+  List.map (fun (at, r) -> (m1_named doc (m1_root at), r)) (tijdlijnen @ facetten @ parameters)
+
+let wf115 ctx = List.map (fun (at, r) -> v "WF-115" at r) (wf115_bevindingen ctx.doc)
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.map (fun x -> { x with at = m1_named doc x.at })
@@ -9759,7 +9920,7 @@ let all (doc : document) : violation list =
       wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf007_presentatie ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
-      wf015 ctx; wf016 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
+      wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_verdelingen ctx; wf034_verdeling_namen ctx; wf034_verdeling_typen ctx;

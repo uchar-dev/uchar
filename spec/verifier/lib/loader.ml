@@ -1048,10 +1048,11 @@ let timeline_facet ~named path j =
   let kvs = obj path j in
   expect_node path kvs "TimelineFacet";
   check_keys path kvs
-    ~ext:(if named then [ "timelineName" ] else [])
+    ~ext:(if named then [ "fixedStart"; "timelineName" ] else [ "fixedStart" ])
     [ "node"; "granularity"; "count" ];
   ( enum Spelling.granularity (path / "granularity") (field path kvs "granularity"),
-    int_ (path / "count") (field path kvs "count"),
+    { tv_aantal = Some (int_ (path / "count") (field path kvs "count"));
+      tv_vast_startpunt = ext_field path kvs "fixedStart" str },
     ext_field path kvs "timelineName" str )
 
 let objecttype path j : string * objecttype =
@@ -1101,7 +1102,7 @@ let objecttype path j : string * objecttype =
       attribuut_meervoud = table (fun (n, _, pl, _, _) -> Option.map (fun p -> (n, Some p)) pl) attrs;
       attribuut_dimensies = table (fun (n, _, _, ds, _) -> Option.map (fun d -> (n, d)) ds) attrs;
       attribuut_granulariteit = tl_attr (fun (g, _, _) -> Some g);
-      attribuut_tijdlijn_aantal = tl_attr (fun (_, c, _) -> Some c);
+      attribuut_tijdlijn_aantal = tl_attr (fun (_, t, _) -> t);
       attribuut_tijdlijn_naam =
         table
           (fun (n, _, _, _, t) ->
@@ -1110,7 +1111,7 @@ let objecttype path j : string * objecttype =
       kenmerken = List.map (fun (n, _, _) -> Some n) chars;
       kenmerk_soorten = List.map (fun (n, k, _) -> (n, Some k)) chars;
       kenmerk_granulariteit = tl_char (fun (g, _, _) -> Some g);
-      kenmerk_tijdlijn_aantal = tl_char (fun (_, c, _) -> Some c);
+      kenmerk_tijdlijn_aantal = tl_char (fun (_, t, _) -> t);
       bezield = bool_ (path / "animate") (f "animate");
       meervoud = ext_field path kvs "plural" str;
     } )
@@ -1149,7 +1150,8 @@ let parameter path j : string * parameter =
       par_naam = Some name;
       par_datatype = Some (datatype (path / "datatype") (field path kvs "datatype"));
       par_granulariteit = Option.map (fun (g, _, _) -> g) facet;
-      par_tijdlijn_aantal = Option.map (fun (_, c, _) -> c) facet;
+      par_tijdlijn_aantal = Option.bind facet (fun (_, t, _) -> t.tv_aantal);
+      par_vast_startpunt = Option.bind facet (fun (_, t, _) -> t.tv_vast_startpunt);
     } )
 
 let eenheidstelsel path j : string * eenheidstelsel =
@@ -1213,12 +1215,13 @@ let dimensie path j : dimensie =
 let tijdlijn path j : tijdlijn =
   let kvs = obj path j in
   expect_node path kvs "Timeline";
-  check_keys path kvs [ "node"; "name"; "variableStart"; "granularity"; "count" ];
+  check_keys path kvs ~ext:[ "fixedStart" ] [ "node"; "name"; "variableStart"; "granularity"; "count" ];
   {
     tl_naam = str_opt (path / "name") (field path kvs "name");
     variabel_startpunt = bool_ (path / "variableStart") (field path kvs "variableStart");
     tl_granulariteit = enum_opt Spelling.granularity (path / "granularity") (field path kvs "granularity");
     tl_aantal = int_ (path / "count") (field path kvs "count");
+    tl_vast_startpunt = ext_field path kvs "fixedStart" str;
   }
 
 (* --- rule layer --------------------------------------------------------- *)
@@ -1710,7 +1713,10 @@ let presentatie_annotaties (j : json) : string list =
    So is a VariableReference (WF-034, [Checks.variable_reference_refusal]):
    the marker of a variable the frontend could not bind resolves against
    nothing, and an executor that met it only at evaluation would refuse it in
-   a residual arm's words. *)
+   a residual arm's words. And so is a fixed start point that does not fit its
+   grid (WF-115, [Checks.wf115_bevindingen]): an executor lays the periods
+   from it, and one it cannot read or that contradicts the timeline has no
+   grid to lay. *)
 type reader = Verifier | Executor
 
 (* The executor's refusals, after the structural load: every Literal,
@@ -1830,7 +1836,11 @@ let document ?(reader = Executor) (j : json) : document =
       presentatie_annotaties = presentatie_annotaties j;
     }
   in
-  (match reader with Executor -> executor_refusals j | Verifier -> ());
+  (match reader with
+  | Executor -> (
+      executor_refusals j;
+      match Checks.wf115_bevindingen doc with (at, sentence) :: _ -> fail at sentence | [] -> ())
+  | Verifier -> ());
   doc
 
 let load_file ?reader (filename : string) : document =

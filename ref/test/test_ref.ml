@@ -1702,6 +1702,134 @@ let () =
     (wall 0 = day "2024-01-31" && wall 1 = day "2024-02-29" && wall 2 = day "2024-03-31"
     && wall 3 = day "2024-04-30")
 
+(* WV-3.2-vast: the grid a fixed start point lays (RUNTIME-SEMANTICS ch. 3.2,
+   "Fixed starting points"), the chapter's worked examples verbatim. A wall
+   is a day whose period starts on it; consecutive walls bound one period. *)
+let () =
+  let grid gran s = Timeline.grid_of ~gran ~count:1 ~fixed:(Some s) ~variable:false in
+  let periode gr d = Timeline.grid_bucket gr (day d) in
+  let is (a, b) (x, y) = a = day x && b = day y in
+  let walls gr ws =
+    let rec opeen = function
+      | a :: (b :: _ as rest) -> periode gr a = (day a, day b) && opeen rest
+      | [ a ] -> fst (periode gr a) = day a
+      | [] -> true
+    in
+    opeen ws
+  in
+  let jaar = grid Jaar "--10-01" in
+  check "WV-3.2-vast-jaar-feb" (is (periode jaar "2025-02-01") ("2024-10-01", "2025-10-01"));
+  check "WV-3.2-vast-jaar-sep" (is (periode jaar "2024-09-30") ("2023-10-01", "2024-10-01"));
+  check "WV-3.2-vast-maand-klem"
+    (walls (grid Maand "--01-31") [ "2024-01-31"; "2024-02-29"; "2024-03-31"; "2024-04-30" ]);
+  check "WV-3.2-vast-kwartaal"
+    (walls (grid Kwartaal "--05-31")
+       [ "2024-02-29"; "2024-05-31"; "2024-08-31"; "2024-11-30"; "2025-02-28" ]);
+  check "WV-3.2-vast-schrikkeldag"
+    (walls (grid Jaar "--02-29")
+       [ "2024-02-29"; "2025-02-28"; "2026-02-28"; "2027-02-28"; "2028-02-29" ]);
+  let week = grid Week "2026-01-05" in
+  check "WV-3.2-vast-week-ervoor" (is (periode week "2026-01-04") ("2025-12-29", "2026-01-05"));
+  check "WV-3.2-vast-week-erop" (is (periode week "2026-01-05") ("2026-01-05", "2026-01-12"));
+  (* the day count into a target on the --10-01 year grid, against the same
+     count on the calendar grid *)
+  let tp = [ (day "2024-09-28", day "2024-10-03") ] in
+  (match Timeline.aantal_dagen_in_grid jaar tp with
+  | [ a; b ] ->
+      check "WV-3.2-vast-dagtelling-grenzen"
+        (is (a.s_van, a.s_tot) ("2023-10-01", "2024-10-01")
+        && is (b.s_van, b.s_tot) ("2024-10-01", "2025-10-01"));
+      expect_num "WV-3.2-vast-dagtelling-3" a.s_waarde "3";
+      expect_num "WV-3.2-vast-dagtelling-2" b.s_waarde "2"
+  | _ -> check "WV-3.2-vast-dagtelling (two periods)" false);
+  (match Timeline.aantal_dagen_in Jaar tp with
+  | [ k ] ->
+      check "WV-3.2-vast-dagtelling-kalender" (is (k.s_van, k.s_tot) ("2024-01-01", "2025-01-01"));
+      expect_num "WV-3.2-vast-dagtelling-kalender-5" k.s_waarde "5"
+  | _ -> check "WV-3.2-vast-dagtelling-kalender (one period)" false);
+  (* a case input on the --10-15 year grid: 15 October to 15 October sits on
+     it, the calendar year is refused as off it *)
+  let invoer van tot =
+    Yojson.Safe.from_string
+      (Printf.sprintf {|[{"from":"%s","to":"%s","value":{"number":"1"}}]|} van tot)
+  in
+  let laad van tot =
+    Case.timeline_of_json ~at:"J1.stormtoelage" ~grid:(grid Jaar "--10-15") (Some num0) (invoer van tot)
+  in
+  check "WV-3.2-vast-invoer-op-het-raster"
+    (match laad "2024-10-15" "2025-10-15" with [ _ ] -> true | _ -> false);
+  check "WV-3.2-vast-invoer-naast-het-raster"
+    (match laad "2025-01-01" "2026-01-01" with
+    | exception Case.Error m -> substring m "segment boundaries must sit on the declared granularity grid"
+    | _ -> false)
+
+(* WV-3.2-vast, what a grid refuses: several units carry no operation, a
+   variable start is laid per object from an anchor ref does not execute, and
+   the pro-rata over a fixed start point is fenced — each loud, in its own
+   sentence, where the calendar grid used to answer. *)
+let () =
+  let meervoudig = Timeline.grid_of ~gran:Maand ~count:5 ~fixed:(Some "2026-04-01") ~variable:false in
+  expect_fault_msg "WV-3.2-vast-meervoudig"
+    (fun () -> Timeline.grid_bucket meervoudig (day "2026-05-01"))
+    "a multi-period grid (5 month periods) carries no operation";
+  let variabel = Timeline.grid_of ~gran:Jaar ~count:1 ~fixed:None ~variable:true in
+  expect_fault_msg "WV-3.2-variabel"
+    (fun () -> Timeline.grid_bucket variabel (day "2026-05-01"))
+    "a variable-start grid is laid per object";
+  check "WV-3.2-meervoudig-invoer"
+    (match
+       Case.timeline_of_json ~at:"J1.blok" ~grid:meervoudig (Some num0)
+         (Yojson.Safe.from_string {|[{"from":"2026-04-01","to":"2026-09-01","value":{"number":"1"}}]|})
+     with
+    | exception Case.Error m -> substring m "a multi-period grid, which carries no operation"
+    | _ -> false)
+
+(* WF-115's sentences, which this interpreter's loader speaks when it refuses a
+   fixed start point ([Loader.reader]): one per reason of arm (b), and arms (a)
+   and (c). The golden and the three negatief witnesses pin the verifier's
+   side; these pin every reason of (b) the witnesses do not reach. *)
+let () =
+  let weigert g n s frag =
+    match Ir_v0.Checks.vast_startpunt_refusal g n s with
+    | Some m -> substring m frag
+    | None -> false
+  in
+  let past g n s = Ir_v0.Checks.vast_startpunt_refusal g n s = None in
+  check "WF-115-b-dag"
+    (weigert Dag 1 "2026-01-05"
+       "fixed start point '2026-01-05' does not fit a day grid of count 1: a day grid has a wall at \
+        every day boundary and takes no start point");
+  check "WF-115-b-datum-gevraagd"
+    (weigert Week 1 "--01-05" "does not fit a week grid of count 1: a week grid and a grid of several units start on a date"
+    && weigert Maand 5 "--01-15" "does not fit a month grid of count 5"
+    && weigert Week 1 "2026-02-30" "the ISO form of a day of the calendar");
+  check "WF-115-b-dag-maand-gevraagd"
+    (weigert Jaar 1 "2024-10-01" "starts on a day-month, written --mm-dd, a day of month mm in a leap year"
+    && weigert Jaar 1 "--02-30" "a day of month mm in a leap year"
+    && weigert Maand 1 "--13-01" "a day of month mm in a leap year");
+  check "WF-115-b-kalender"
+    (weigert Jaar 1 "--01-01" "it lays the calendar's own grid, which is written without a fixedStart"
+    && weigert Maand 1 "--02-01" "it lays the calendar's own grid"
+    && weigert Kwartaal 1 "--04-01" "it lays the calendar's own grid");
+  check "WF-115-b-canoniek"
+    (weigert Maand 1 "--03-15" "its canonical spelling is --01-15"
+    && weigert Kwartaal 1 "--04-15" "its canonical spelling is --01-15"
+    && weigert Kwartaal 1 "--02-31" "a day of month mm in a leap year"
+    && weigert Kwartaal 1 "--08-31" "its canonical spelling is --05-31");
+  check "WF-115-b-past"
+    (past Jaar 1 "--10-01" && past Jaar 1 "--02-29" && past Maand 1 "--01-31" && past Kwartaal 1 "--05-31"
+    && past Kwartaal 1 "--02-15" && past Week 1 "2026-01-05" && past Maand 5 "2026-04-01"
+    && past Dag 5 "2026-04-01");
+  check "WF-115-a"
+    (Ir_v0.Checks.vast_startpunt_variabel_refusal "stormjaar" "--10-01"
+    = "timeline 'stormjaar' has a variable start and a fixedStart '--10-01': its periods run from the \
+       anchor its start-point determination binds per object, and a timeline has one start");
+  check "WF-115-c"
+    (Ir_v0.Checks.vast_startpunt_overname_refusal ~facet:None ~tijdlijn:"stormjaar"
+       ~van_tijdlijn:(Some "--10-01")
+    = "named-timeline adoption is partial: fixed start point none on the facet, '--10-01' on timeline \
+       'stormjaar'")
+
 (* WF-091's second line in this evaluator (ch. 3.6, 3.7, 1.2e). Since the
    card ref-klipvouw-nul, WF-091 (IR-SPEC ch. 4.1) demands a Number as the
    operand of `sum` and `total` and as the pro-rata base; the five documents
@@ -1963,7 +2091,8 @@ let () =
    nothing (the empirically observed divergence this test pins shut). *)
 let () =
   let param name dt : Ir_v0.Ast.parameter =
-    { par_naam = Some name; par_datatype = Some dt; par_granulariteit = None; par_tijdlijn_aantal = None }
+    { par_naam = Some name; par_datatype = Some dt; par_granulariteit = None; par_tijdlijn_aantal = None;
+      par_vast_startpunt = None }
   in
   let doc =
     {
@@ -6387,7 +6516,7 @@ let () =
   in
   let par naam dt gran =
     (naam, { Ir_v0.Ast.par_naam = Some naam; par_datatype = Some dt; par_granulariteit = gran;
-             par_tijdlijn_aantal = Option.map (fun _ -> 1) gran })
+             par_tijdlijn_aantal = Option.map (fun _ -> 1) gran; par_vast_startpunt = None })
   in
   let doc =
     { empty_doc with

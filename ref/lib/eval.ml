@@ -1641,7 +1641,9 @@ and eval_functie env world self ~err ~kind ~argumenten ~element_objecttype ~leeg
           | Value.Empty -> Value.Empty (* absent timeline totals to leeg (ch. 3.6) *)
           | v ->
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
-              let van, tot = Timeline.bucket gran day in
+              (* the period of the member's own grid that holds the evaluation
+                 date: the calendar bucket, or the fixed start point's (ch. 3.2) *)
+              let van, tot = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
               Timeline.totaal ~grid_unit:grid gran
                 [ { Timeline.s_van = van; s_tot = tot; s_waarde = v } ]))))
   | _ ->
@@ -2566,6 +2568,16 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
       in
       if base_gran < g then
         Value.fault "pro-rata base granularity is finer than the bucket";
+      (* ch. 3.2: the base is constant across a bucket because its grid nests
+         in the target's, which a start point off the calendar breaks — fenced
+         until a corpus case lands *)
+      if
+        (Timeline.attr_grid env.doc ot_decl attr).g_start <> Timeline.Kalender
+        || (Timeline.attr_grid env.doc ot_decl b).g_start <> Timeline.Kalender
+      then
+        Value.fault
+          "pro-rata onto or from a grid that does not lie on the calendar is fenced \
+           (RUNTIME-SEMANTICS ch. 3.2)";
       (match Ir_v0.Checks.find_ci ot_decl.attributen b with
       | Some (Some (Numeriek { eenheid = Some _; _ } | Percentage { eenheid = Some _; _ })) ->
           (* ch. 3.7: a rate base restates by its exact factor FIRST —
@@ -2624,7 +2636,12 @@ let run_pro_rata ?venster env w (self : World.instance) ~ot ~attr waarde =
               "unsupported day-count condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
-      let result = clip_venster venster (Timeline.aantal_dagen_in g true_periods) in
+      (* the target's periods: the calendar's, or its fixed start point's
+         (ch. 3.2) *)
+      let result =
+        clip_venster venster
+          (Timeline.aantal_dagen_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
+      in
       (* the ch. 7.8 timeline arm, as for pro-rata *)
       if
         result = []

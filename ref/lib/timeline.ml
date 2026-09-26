@@ -7,7 +7,7 @@
    change-detection rule compares segment lists.
 
    Implemented here: read, calendar and anchored buckets with the
-   month-end clamp (ch. 3.2), cut-merge arithmetic with the
+   month-end clamp and the grid a fixed start point lays (ch. 3.2), cut-merge arithmetic with the
    period-coalescing rule (ch. 3.4), temporal summation with the
    contributor-skipping rule (ch. 3.5), the temporal total with clipping
    (ch. 3.6), and the whole-period qualifier's characteristic-holds fold
@@ -77,6 +77,66 @@ let bucket (g : Ir_v0.Ast.granulariteit) d =
       (van, days_from_civil ~y:y' ~m:m' ~d:1)
   | _ -> fault "bucketing is defined for month and year only (ch. 3.2)"
 
+(* --- the grid a member reads (ch. 3.2) ----------------------------------- *)
+
+(* Where a timeline's periods start: on the calendar (no start point), from
+   a fixed start point (a date, or a day-month anchored in a leap year), or
+   from the anchor a start-point determination binds per object. *)
+type start = Kalender | Vast_datum of int | Vast_dag_maand of int | Variabel
+
+type grid = { g_gran : Ir_v0.Ast.granulariteit; g_count : int; g_start : start }
+
+let calendar_grid g = { g_gran = g; g_count = 1; g_start = Kalender }
+
+(* The grid of a facet: its granularity and count, and the start its fixed
+   start point or its named timeline gives it. A fixed start point that is
+   no WF-115 lexeme never reaches here: the loader refuses it. *)
+let grid_of ~gran ~count ~(fixed : string option) ~variable =
+  let g_start =
+    if variable then Variabel
+    else
+      match fixed with
+      | None -> Kalender
+      | Some s -> (
+          match Ir_v0.Checks.lees_vast_startpunt s with
+          | Some (Vs_datum (y, m, d)) -> Vast_datum (days_from_civil ~y ~m ~d)
+          | Some (Vs_dag_maand (m, d)) -> Vast_dag_maand (days_from_civil ~y:2000 ~m ~d)
+          | None -> fault "fixed start point '%s' is no WF-115 lexeme" s)
+  in
+  { g_gran = gran; g_count = count; g_start }
+
+(* The period of grid [gr] that contains day [d] (ch. 3.2): the calendar
+   bucket, or the one a fixed start point lays, every wall computed from the
+   start point. A multi-period grid and a variable-start grid are refused:
+   the first has a grid and no operation, the second is laid per object from
+   an anchor this interpreter does not execute. *)
+let grid_bucket (gr : grid) d =
+  if gr.g_count <> 1 then
+    fault
+      "a multi-period grid (%d %s periods) carries no operation (RUNTIME-SEMANTICS ch. 3.2, OPEN \
+       in ch. 3.12)"
+      gr.g_count (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity gr.g_gran);
+  match (gr.g_start, gr.g_gran) with
+  | Kalender, g -> bucket g d
+  | Variabel, _ ->
+      fault
+        "a variable-start grid is laid per object from the anchor its start-point determination \
+         binds, which this interpreter does not execute (ch. 3.2)"
+  | Vast_datum a, Week ->
+      let k = if d >= a then (d - a) / 7 else -(((a - d) + 6) / 7) in
+      (a + (7 * k), a + (7 * (k + 1)))
+  | Vast_dag_maand anchor, ((Maand | Kwartaal | Jaar) as g) ->
+      let step = Ir_v0.Checks.stap_maanden g in
+      let ya, ma, _ = civil_from_days anchor and yd, md, _ = civil_from_days d in
+      let months = ((yd - ya) * 12) + (md - ma) in
+      let k = if months >= 0 then months / step else -(((-months) + step - 1) / step) in
+      let wall k = add_months anchor (step * k) in
+      let k = if wall k > d then k - 1 else k in
+      (wall k, wall (k + 1))
+  | (Vast_datum _ | Vast_dag_maand _), _ ->
+      fault "a fixed start point of this form lays no %s grid of one unit (WF-115)"
+        (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity gr.g_gran)
+
 (* ch. 3.7: the time-proportional part. One segment per calendar bucket
    the condition's true periods touch, spanning the WHOLE bucket, value
    = base(bucket start) × true-days/bucket-days as an exact rational —
@@ -123,12 +183,15 @@ let pro_rata (g : Ir_v0.Ast.granulariteit) (basis : t) (true_periods : (int * in
   |> List.rev
 
 (* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched
-   calendar bucket one segment whose value is the true-day count in
-   that bucket (multiple true intervals in one bucket sum); empty
-   buckets emit nothing. The counting fold is pro_rata's numerator
-   (ch. 3.7), value the whole-day count itself, unitless. *)
-let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) list) : t =
-  (match g with
+   period of the grid one segment whose value is the true-day count in
+   that period (multiple true intervals in one period sum); empty
+   periods emit nothing. The counting fold is pro_rata's numerator
+   (ch. 3.7), value the whole-day count itself, unitless. The grid is the
+   target's: the calendar grid, or the one its fixed start point lays
+   (ch. 3.2); [aantal_dagen_in] below is the calendar case the whole-period
+   qualifier folds over. *)
+let aantal_dagen_in_grid (gr : grid) (true_periods : (int * int) list) : t =
+  (match gr.g_gran with
   | Maand | Jaar -> ()
   | _ -> fault "day-count buckets are month or year only (ch. 3.8)");
   let module IMap = Map.Make (Int) in
@@ -140,7 +203,7 @@ let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) li
           let rec walk acc d =
             if d >= pt then acc
             else
-              let bs, bn = bucket g d in
+              let bs, bn = grid_bucket gr d in
               let days = min pt bn - max pv bs in
               let acc =
                 if days > 0 then
@@ -154,10 +217,13 @@ let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) li
   in
   IMap.fold
     (fun bs days segs ->
-      let _, bn = bucket g bs in
+      let _, bn = grid_bucket gr bs in
       { s_van = bs; s_tot = bn; s_waarde = Value.Num (Q.of_int days, Value.Unitless) } :: segs)
     acc []
   |> List.rev
+
+let aantal_dagen_in (g : Ir_v0.Ast.granulariteit) (true_periods : (int * int) list) : t =
+  aantal_dagen_in_grid (calendar_grid g) true_periods
 
 (* ch. 3.9 "gedurende de gehele maand / het gehele jaar", the
    CHARACTERISTIC-HOLDS test:
@@ -285,6 +351,37 @@ let anchored_wall (g : Ir_v0.Ast.granulariteit) ~anchor k =
   | Maand -> add_months anchor k
   | Jaar -> add_months anchor (12 * k)
   | _ -> fault "anchored buckets are defined for month and year only (ch. 3.2)"
+
+(* The grid of attribute [name] of [ot] (the chain-merged type): its facet's
+   granularity, count and fixed start point, and a variable start where the
+   facet names a timeline declared with one. *)
+let attr_grid (doc : Ir_v0.Ast.document) (ot : Ir_v0.Ast.objecttype) name =
+  let gran =
+    match Ir_v0.Checks.find_ci ot.attribuut_granulariteit name with
+    | Some (Some g) -> g
+    | _ -> fault "temporal attribute %S without a granularity" name
+  in
+  let tijdvak = Ir_v0.Checks.find_ci ot.attribuut_tijdlijn_aantal name in
+  let variable =
+    match Option.join (Ir_v0.Checks.find_ci ot.attribuut_tijdlijn_naam name) with
+    | Some n -> (
+        match Ir_v0.Checks.find_tijdlijn { Ir_v0.Checks.doc } n with
+        | Some tl -> tl.variabel_startpunt
+        | None -> false)
+    | None -> false
+  in
+  grid_of ~gran
+    ~count:(Option.value (Option.bind tijdvak (fun t -> t.tv_aantal)) ~default:1)
+    ~fixed:(Option.bind tijdvak (fun t -> t.tv_vast_startpunt))
+    ~variable
+
+(* The grid of a time-dependent parameter; a parameter names no timeline. *)
+let param_grid (p : Ir_v0.Ast.parameter) =
+  match p.par_granulariteit with
+  | Some gran ->
+      grid_of ~gran ~count:(Option.value p.par_tijdlijn_aantal ~default:1) ~fixed:p.par_vast_startpunt
+        ~variable:false
+  | None -> fault "parameter %S has no timeline" (Option.value p.par_naam ~default:"")
 
 (* --- cut sets ----------------------------------------------------------- *)
 
