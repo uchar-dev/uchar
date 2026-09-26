@@ -1652,9 +1652,14 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
 - **Two gates**, over the forms the scenario carries: a form with a validity
   window, or one that reads the evaluation date, needs a peildatum; every
   parameter a form reads needs a value in the merged situation. Measured
-  against the pinned corpus on 2026-09-26: none of the 73 cases whose
-  document reads a parameter leaves one without a value, and none of the 9
-  cases whose document carries a validity window lacks an `asOfDate`.
+  against the pinned corpus on 2026-09-26, `corpus/golden` with its anchor
+  subset: none of the 12 cases whose document carries a validity window
+  lacks an `asOfDate`, and of the 86 cases whose document reads a parameter
+  one leaves it without a value (73 and none without the anchor subset).
+  That one, `anchor/jutterswet-staffelvergoeding/case3-afwezig.json`, leaves
+  the parameter out on purpose and pins the empty result: a scenario document
+  cannot write it, since the gate refuses the absent value and the surface has
+  no form for one.
 - **One document, one IR document**: every scenario of a document must
   carry the same forms, because one case directory has one `ir.json`.
 
