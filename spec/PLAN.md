@@ -924,6 +924,26 @@ kernel tests free of parity material, the frontend tests without a
 counterpart here, the differential integration test; history at its commit
 `b002492`) await the triage cards.
 
+**The distribution's second and third cards landed (2026-09-26, `9821576`
+and `ingangen-en-deploy` the same evening):** its service, scenario runner
+and playground now answer as this repository's replay does, proven by three
+gates of its own — the three dialect twins over HTTP, a replay of the
+gate-12 played set through the service (188 of 215 goldens; the 27 that
+carry a timeline are excluded by name) and its parity manifest — plus
+stable entry points (`bin/regelspraak`), the container, and one local gate
+sequence (`make gates`) run before every landing there. What came back
+here, recorded and not opened as cards: the case-input step of
+`CaseRunner` (beans, roles, the mirror of a reciprocal relation, timelines)
+is not public API, so the distribution mirrors the non-timeline part and
+cannot express a timeline in a request; a scope on the wire and the
+scope-to-forms reading of `ScenarioResolver` are not public either, and
+are mirrored too; and one norm question, answered by default: the scenario
+layer refuses every scope in a document that carries a fixed-start
+declaration, where the service keeps the declaration and builds the
+scope's forms — the default reading is the service's (a scope selects
+rule-layer forms and carries the document-level declarations), to be taken
+up when the scenario layer next moves.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
