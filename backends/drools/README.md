@@ -41,7 +41,7 @@ distribution (CLI, decision service, scenario runner) that builds this repositor
 `DroolsBackend.build(document, branch)` takes a loaded `uchar-ir-v1` document (a `JsonNode`, or a path) and
 returns a `Build` record: the model, the bean class loader, the transpiler of the chosen branch (`EXEC_MODEL` or
 `DRL_TEXT`), its coverage manifest and the `KieBase`. It is the whole prelude of the case runner, which builds
-every golden through it, so gate 12 plays exactly what a consumer fires, and it refuses in the replay's
+every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the replay's
 sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). Each transpiler has one build,
 and it takes every side table the loader returns beside the model: a build that left one out still produced a
 KieBase — a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker said

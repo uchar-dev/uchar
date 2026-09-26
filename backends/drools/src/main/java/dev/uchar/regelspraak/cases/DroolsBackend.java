@@ -91,10 +91,10 @@ public final class DroolsBackend {
      *
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.Documentfout a document that is not well-formed {@code uchar-ir-v1}
-     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: the evaluation year, a
-     *      reciprocal self-relation the bean model cannot hold, a bean-contract violation, a construct the branch
-     *      does not lower, and on the DRL-text branch a prioritized-defaults extension or a DRL text the Drools
-     *      compiler rejects */
+     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a reciprocal
+     *      self-relation the bean model cannot hold, a bean-contract violation, a construct the branch does not
+     *      lower, and on the DRL-text branch a prioritized-defaults extension or a DRL text the Drools compiler
+     *      rejects */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
