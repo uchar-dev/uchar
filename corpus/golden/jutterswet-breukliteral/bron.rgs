@@ -1,0 +1,18 @@
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (niet-negatief geheel getal);
+    de taxatie Numeriek (niet-negatief geheel getal);
+    het strandgeld Numeriek (niet-negatief getal met 2 decimalen);
+    de gemeentekorting Numeriek (getal met 2 decimalen);
+    het gemeentedeel Numeriek (niet-negatief getal met 2 decimalen);
+
+Regel strandgeld van een vondst
+    geldig altijd
+        Het strandgeld van een Vondst moet berekend worden als zijn gewicht maal 1_1/2.
+
+Regel gemeentekorting van een vondst
+    geldig altijd
+        De gemeentekorting van een Vondst moet berekend worden als zijn gewicht maal -0_1/2.
+
+Regel gemeentedeel van een vondst
+    geldig altijd
+        Het gemeentedeel van een Vondst moet berekend worden als zijn taxatie maal 3/4.

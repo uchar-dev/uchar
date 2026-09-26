@@ -14623,6 +14623,56 @@ let () =
     ~ir:(doc ~doel:(Some "--01-01") ~basis:None)
     ~needle:"it lays the calendar's own grid, which is written without a fixedStart"
 
+(* A RATIONAL LITERAL (IR-SPEC ch. 4.1: a number lexeme is an exact decimal or
+   a rational a/b, the sign on the numerator). The integer encoding holds a
+   number at a power-of-ten scale, and until this arm it read a literal's scale
+   from the digits after the lexeme's point: a rational has none, so 3/2 was
+   read at scale 1 and faulted "value 3/2 does not fit 0 decimals" where ref
+   computes it exactly (golden jutterswet-breukliteral). The arm reads a
+   rational at the smallest scale that holds its value exactly (3/2 and -1/2 at
+   one decimal, 3/4 at two), in a product and in a comparison operand. A value
+   no scale up to 10^9 holds — 1/3 has no finite expansion at all, 1/1024 needs
+   ten decimals — stays a named refusal: ref computes 1/3 exactly, this
+   encoding cannot. *)
+let () =
+  let doc ?(voorwaarde = "") lit =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"}},{"node":"Attribute","name":"strandgeld","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"strandgeld van een vondst","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"strandgeld","subjectType":"Vondst","source":{"snippet":"Het strandgeld van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"zijn gewicht"}},"right":{"node":"Literal","value":{"number":"%s"},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"%s"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn gewicht maal %s"}}%s,"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      lit lit lit voorwaarde
+  in
+  (* V1 weighs 7, V2 weighs 6: the comparison threshold 13/2 lies between them *)
+  let zaak verwacht =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Vondst","attributes":{"gewicht":{"number":"7"}},"roles":{},"characteristics":[]},{"label":"V2","objectType":"Vondst","attributes":{"gewicht":{"number":"6"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"V1","attribute":"strandgeld","value":{"number":"%s"}},%s]}|}
+      (fst verwacht) (snd verwacht)
+  in
+  let waarde label w =
+    Printf.sprintf {|{"kind":"attributeValue","label":"%s","attribute":"strandgeld","value":{"number":"%s"}}|} label w
+  in
+  let beide ~name ~ir ~case_text =
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  beide ~name:"rational literal 3/2 in a product" ~ir:(doc "3/2") ~case_text:(zaak ("10.50", waarde "V2" "9.00"));
+  beide ~name:"rational literal -1/2 in a product" ~ir:(doc "-1/2") ~case_text:(zaak ("-3.50", waarde "V2" "-3.00"));
+  beide ~name:"rational literal 3/4 in a product" ~ir:(doc "3/4") ~case_text:(zaak ("5.25", waarde "V2" "4.50"));
+  let drempel =
+    {|,"condition":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"zijn gewicht"}},"right":{"node":"Literal","value":{"number":"13/2"},"type":{"node":"Number","whole":false,"decimals":1,"sign":"unspecified"},"source":{"snippet":"6_1/2"}},"source":{"snippet":"zijn gewicht groter is dan 6_1/2"}}|}
+  in
+  beide ~name:"rational literal 13/2 as a comparison operand" ~ir:(doc ~voorwaarde:drempel "3/2")
+    ~case_text:(zaak ("10.50", {|{"kind":"attributeEmpty","label":"V2","attribute":"strandgeld"}|}));
+  (* 1/512 = 0.001953125 is exact at nine decimals, the widest scale the
+     encoding admits; 1/1024 needs ten *)
+  translates_with ~name:"rational literal 1/512 at nine decimals" ~ir:(doc "1/512")
+    ~case_text:(zaak ("0.01", waarde "V2" "0.01"));
+  let geen_schaal lit =
+    Printf.sprintf "rational literal %s has no finite decimal expansion within 9 decimals" lit
+  in
+  faults_with ~name:"rational literal 1/3, exact in ref, refused here" ~ir:(doc "1/3")
+    ~case_text:(zaak ("2.33", waarde "V2" "2.00")) ~needle:(geen_schaal "1/3");
+  faults_with ~name:"rational literal 1/1024, ten decimals" ~ir:(doc "1/1024")
+    ~case_text:(zaak ("0.01", waarde "V2" "0.01")) ~needle:(geen_schaal "1/1024")
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

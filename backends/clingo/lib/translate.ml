@@ -1805,8 +1805,25 @@ let set_source_attribute ctx ~subject_ot ~el a =
         a el;
   a
 
+(* the scale of a literal. A decimal lexeme carries it in the digits after its
+   point. A rational lexeme (a/b, IR-SPEC ch. 4.1) has no point, so it takes
+   the smallest power-of-ten scale that holds its value exactly (3/2 at one
+   decimal, 3/4 at two); read at scale 1 it faulted as a value that does not
+   fit 0 decimals. A value no scale within [pow10]'s fence holds (1/3 has no
+   finite decimal expansion, 1/1024 needs ten decimals) is refused by name:
+   ref computes it exactly, and this encoding has no exact form for it. *)
 let lexeme_decimals lex =
-  match String.index_opt lex '.' with Some i -> String.length lex - i - 1 | None -> 0
+  match String.index_opt lex '/' with
+  | Some _ ->
+      let q = Value.q_of_lexeme lex in
+      let rec at d =
+        if d > 9 then fault "rational literal %s has no finite decimal expansion within 9 decimals" lex
+        else if Z.equal (Q.den (Q.mul q (Q.of_int (pow10 d)))) Z.one then d
+        else at (d + 1)
+      in
+      at 0
+  | None -> (
+      match String.index_opt lex '.' with Some i -> String.length lex - i - 1 | None -> 0)
 
 (* the year-bucket whole-units factor of the temporal total: for a
    year-granular attribute over the calendar-year bucket the factor is

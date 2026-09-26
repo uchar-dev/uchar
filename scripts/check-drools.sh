@@ -1002,7 +1002,15 @@ EXPECTED_CHANNEL=(
 # start point at the constant anchor through the anchored producers a variable start uses, and the case
 # runner lays a case timeline on the fixed grid. Both branches play the four cases, PLAYED 4, with ref's
 # and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=212
+# 212 -> 213 (2026-09-26, fix round on the union of the wave): jutterswet-breukliteral, new, from
+# bron.rgs and hand-computed — the RegelSpraak fraction as the wire's rational (IR-SPEC ch. 4.1): a mixed
+# fraction and its negative, which the frontend writes reduced (1_1/2 as 3/2, -0_1/2 as -1/2), and a
+# proper fraction, each in a product. The golden waited outside the repository for the ASP backend,
+# which read a literal's scale from the digits after its point and faulted on 3/2; it now reads a
+# rational at the smallest scale that holds its value (ASP-TRANSLATION S4). No source file of this
+# backend changed: both branches play the two cases, PLAYED 2, with ref's and clingo's values.
+# EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=213
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1051,7 +1059,10 @@ DRL_CHANNEL=(
   # stopped holding at 208 -> 209 at EXPECTED_PLAYED, when jutterswet-initialisatievolgorde entered
   # class (D) as a golden the exec branch plays and this one does not, so the gap is 30 (210 - 180).
   # jutterswet-rekenjaar plays in both branches and moves neither number; the five class heads (A 34,
-  # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold.
+  # B 37, C 10, D 2, E 3 = 86 lines) were counted against the list and hold. Recounted again the same
+  # day (fix round on the union of the wave): jutterswet-gehele-periode-leeg, jutterswet-vast-startpunt
+  # and jutterswet-breukliteral play in both branches and move neither the gap nor a class head, so the
+  # gap is 30 (213 - 183) and the heads hold at 86 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1310,7 +1321,9 @@ DRL_CHANNEL=(
 # 181 -> 182 (2026-09-26, card vast-startpunt-tijdlijn): jutterswet-vast-startpunt, new. This branch plays
 # its four cases through the constant anchor it now gives a doel on a fixed start point, PLAYED 4.
 # Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=182
+# 182 -> 183 (2026-09-26, fix round on the union of the wave): jutterswet-breukliteral, new. This branch
+# plays its two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=183
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

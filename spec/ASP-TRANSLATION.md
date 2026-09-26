@@ -297,7 +297,15 @@ native arm has no guard for (above).
 
 Every value expression lowers to a triple ⟨body atoms, integer term,
 scale⟩ (`expr_term`). **Literal**: the scaled constant, scale from its
-lexeme's decimals; a **date literal** (`|2000-01-01|`) is its civil day
+lexeme's decimals. A **rational literal** (IR-SPEC ch. 4.1: `a/b`, the
+sign on the numerator) has no decimals to read, so it takes the smallest
+power-of-ten scale that holds its value exactly: `3/2` and `-1/2` at one
+decimal, `3/4` at two (golden `jutterswet-breukliteral`). Until
+2026-09-26 it was read at scale 1 and faulted `value 3/2 does not fit 0
+decimals`. A rational that no scale up to 10^9 holds — `1/3`, which has
+no finite decimal expansion, or `1/1024`, which needs ten decimals — is
+refused by name, `rational literal 1/3 has no finite decimal expansion
+within 9 decimals`, where ref computes it exactly (S19). A **date literal** (`|2000-01-01|`) is its civil day
 number at scale 1 — the *same* encoding as a date attribute read
 (`val/3`), the point read and the evaluationDate context value, so a date
 comparison harmonises day numbers directly and needs no second date
@@ -2417,7 +2425,14 @@ restating sibling's unit (S6, golden `jutterswet-sleeprest`); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is
-lost). And one decided *future* delta, recorded rather than encoded:
+lost); a rational literal that no power-of-ten scale up to 10^9 holds
+exactly (S4, `rational literal 1/3 has no finite decimal expansion
+within 9 decimals`) — ref computes it exactly and both Drools branches
+play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden
+afgerond op 2 decimalen" over a taxatie of 10: ref `oracle: PASS` on
+3.33, the exec-model and the DRL-text branch `PLAYED 1`), while this
+encoding holds a number only as an integer at a power-of-ten scale. And
+one decided *future* delta, recorded rather than encoded:
 numeric-zero division is today the v0-mirror hard fault in both
 executors (`corpus/rood/division-by-numeric-zero`,
 `division-abs-by-numeric-zero`); ch. 1.4 point 4 routes it into the
