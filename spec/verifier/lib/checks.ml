@@ -7787,9 +7787,13 @@ let dep_edges (forms : dep_form array) =
    WF-045 and WF-046 walk, one tab-separated line each, sorted and without
    repeats. The fields are the kind (positive, strict or negative, ch. 5.2),
    the producer's pointer and name, the node, and the consumer's pointer
-   and name. The node is the walk's own key (ch. 5.1), every name in it
-   normalised: attr:<type>:<attribute>, char:<type>:<characteristic>,
-   chan:<rule>, pop:<type> or rel:<fact type>. It is printed for a reader
+   and name. A pointer is the one WF-045 and WF-046 cite, mapped onto the
+   document by [m1_root]: [dep_forms] records a defaults group at
+   `/prioritizedDefaults/<i>`, and the document has it at
+   `/rules/prioritizedDefaults/<i>`. The node is the walk's own key
+   (ch. 5.1), every name in it normalised: attr:<type>:<attribute>,
+   char:<type>:<characteristic>, chan:<rule>, pop:<type> or
+   rel:<fact type>. It is printed for a reader
    that must agree with this graph, such as the Drools backend's rule graph
    (scripts/check-graaf.sh). *)
 let dependency_edges (doc : document) =
@@ -7799,7 +7803,14 @@ let dependency_edges (doc : document) =
     (List.map
        (fun (pi, ci, node, k) ->
          String.concat "\t"
-           [ kind k; forms.(pi).df_at; forms.(pi).df_name; node; forms.(ci).df_at; forms.(ci).df_name ])
+           [
+             kind k;
+             m1_root forms.(pi).df_at;
+             forms.(pi).df_name;
+             node;
+             m1_root forms.(ci).df_at;
+             forms.(ci).df_name;
+           ])
        (dep_edges forms))
 
 let wf045_046 ctx =
