@@ -237,7 +237,6 @@ public final class Resolver {
                     + "geen casebestand te schrijven", 0));
         RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
                 : dev.uchar.regelspraak.emit.CaseEmitter.metScope(m, b.scenarios().get(0).scope());
-        m.diagnostics.addAll(dev.uchar.regelspraak.emit.IrEmitter.wireWeigeringen(irModel));
         // one chain of files, one line count: each diagnostic names the file and the line in it as well
         java.util.function.Function<Diagnostic, String> plaats = d -> {
             int i = eersteRegels.size() - 1;

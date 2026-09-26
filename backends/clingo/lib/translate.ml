@@ -3390,7 +3390,7 @@ let whole_period_leeg_gevuld_fails ctx ~subject ~subject_ot ~soort ~negatie ~ope
   if gevuld then begin
     (* the qualifier's OWN grid, never the attribute's declared granularity *)
     let g : granulariteit = if gp.gp_jaar then Jaar else Maand in
-    emit_bucket_calendar ctx ~p ~g;
+    emit_bucket_calendar ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
     emit_value_days ctx ~p ~attr:a ~sat:[];
     emit ctx
       "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \

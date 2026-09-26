@@ -68,7 +68,6 @@ public final class CaseEmitter {
         m.uniciteitUnies.stream().filter(x -> draagt.test(x.naam())).forEach(k.uniciteitUnies::add);
         m.feitCreaties.stream().filter(x -> draagt.test(x.naam())).forEach(k.feitCreaties::add);
         k.resolvedStartpunten.addAll(m.resolvedStartpunten);
-        k.vasteStartpunten.addAll(m.vasteStartpunten);
         for (ResolvedRegelGroep g : m.regelGroepen) {
             List<String> leden = g.leden().stream().filter(draagt).toList();
             if (!leden.isEmpty()) k.regelGroepen.add(new ResolvedRegelGroep(g.naam(), g.recursief(), leden, g.bron(), g.line()));
