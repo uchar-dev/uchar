@@ -143,10 +143,10 @@ vijfenveertigste bestand is de kaart zelf.
   `--diff-algorithm=histogram` of `patience` telt de vervanging precies 1260/1260.
 
 #### Logdiff per gate
-Basislogs `/tmp/hernoem/base/<n>.log` (hoofdcheckout op `df370d07`, volgorde 1, 10,
-12, 11, 13); kaartlogs `/tmp/hernoem/kaart/<n>.log` (deze worktree op `bc7550ed`, in
+Basislogs de basislogs `<n>.log` (buiten de repo) (hoofdcheckout op `df370d07`, volgorde 1, 10,
+12, 11, 13); kaartlogs de kaartlogs `<n>.log` (buiten de repo) (deze worktree op `bc7550ed`, in
 dezelfde volgorde, elke gate een losse aanroep: `eval $(opam env)`, dan
-`./scripts/<gate>.sh > /tmp/hernoem/kaart/<n>.log 2>&1`). Vergelijking, in `/tmp/hernoem`:
+`./scripts/<gate>.sh > <n>.log 2>&1`). Vergelijking, in de logmap:
 
     diff <(sed 's/io\.github\.yhavinga/dev.uchar/g; s#io/github/yhavinga#dev/uchar#g' base/N.log) \
          <(sed 's/io\.github\.yhavinga/dev.uchar/g; s#io/github/yhavinga#dev/uchar#g' kaart/N.log)
