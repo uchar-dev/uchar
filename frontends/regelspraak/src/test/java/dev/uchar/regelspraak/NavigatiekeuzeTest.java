@@ -255,6 +255,29 @@ class NavigatiekeuzeTest {
             assertEquals(List.of(vouw[1]), fouten(TYPEN + THUISLIGGING + regel(vouw[0])), vouw[0]);
     }
 
+    // ---------------- a quantifier fold's range ----------------
+
+    /** A counting quantifier over two relations binds by the role its member phrase writes, as a fold does. Before:
+     *  the phrase's count words ("ten minste twee") were offered as the written name, nothing bound, and the fold was
+     *  a marker whose WARNING said no fact type joined the two types. A type plural over two relations stays a marker,
+     *  and its WARNING now says what did not bind. */
+    @Test void een_kwantorvouw_over_twee_relaties_bindt_op_de_geschreven_rol() {
+        String kwantor = """
+
+            Regel veilige haven
+                geldig altijd
+                    Een Haven is veilig
+                    indien %s van de Haven gekeurd zijn.
+            """;
+        String c = emitCompact(TYPEN + THUISLIGGING + WINTERBERGING + kwantor.formatted("ten minste twee van de liggers"));
+        assertTrue(c.contains("\"quantifier\":\"atLeast\",\"threshold\":2") && c.contains("\"sourceRole\":{\"node\":"
+                + "\"RoleBinding\",\"factType\":\"thuisligging\",\"role\":\"ligger\"}"), c);
+        RegelSpraakModel m = Resolver.resolve(TYPEN + THUISLIGGING + WINTERBERGING + kwantor.formatted("alle Schuiten"));
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().startsWith("de kwantorvouw over 'alle Schuiten van de "
+                + "Haven' wordt NIET gelowerd: 2 relaties verbinden Haven met Schuit, en 'alle Schuiten van de Haven' "
+                + "noemt geen rol die er precies één aanwijst")), () -> m.diagnostics.toString());
+    }
+
     // ---------------- a role check ----------------
 
     /** The Haven plays the role `thuishaven` in two fact types, and "de Haven heeft een ligger" names that role from

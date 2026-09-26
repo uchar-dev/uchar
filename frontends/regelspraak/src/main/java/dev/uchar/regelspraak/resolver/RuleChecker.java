@@ -4791,14 +4791,17 @@ final class RuleChecker {
                 + "kan voldoen en wordt op de wire geweigerd (WF-041, IR-SPEC ch. 4.5)", bron.line()));
             return null;
         }
-        RegelSpraakModel.RolBindingRef bronRol =
-                model.vouwbronBinding(bouwer.subject(), g.element(), g.onderwerpBron());
+        // the member phrase without its counting quantifier: "ten minste twee van de liggers van de Haven" names the
+        // role 'liggers', and the whole phrase would offer "ten minste twee" as the written name
+        String lid = g.onderwerpBron().replaceFirst("(?i)^(ten minste|ten hoogste|precies)\\s+\\S+\\s+van\\s+", "")
+                .replaceFirst("(?i)^geen\\s+van\\s+", "");
+        RegelSpraakModel.RolBindingRef bronRol = model.vouwbronBinding(bouwer.subject(), g.element(), lid);
         if (bronRol == null) {                                 // unresolvable range — never a silent misbinding
-            meldVouwWeigering(g.onderwerpBron(),
-                    "geen enkel feittype verbindt " + (bouwer.subject() == null ? "het regelonderwerp"
-                            : bouwer.subject().naam) + " met " + g.element().naam + ", dus het bereik van de "
-                    + "kwantor is niet te binden — een gegokte relatie zou een andere verzameling vouwen dan "
-                    + "de zin noemt (IR-SPEC ch. 4.5)", bron);
+            meldVouwWeigering(g.onderwerpBron(), (bouwer.subject() == null
+                    ? "het regelonderwerp is onbekend"
+                    : paarReden(bouwer.subject(), g.element(), lid)) + ", dus het bereik van de kwantor is niet te "
+                    + "binden — een gegokte relatie zou een andere verzameling vouwen dan de zin noemt (IR-SPEC ch. 4.5)",
+                    bron);
             return null;
         }
         Conditie toets = elementKenmerk(g.element(), naamCtx, metEen, heeftWerkwoord,

@@ -1078,7 +1078,12 @@ would fold another set than the sentence names, so the fold stays a marker.
 A source that writes a step beyond its element from an anchor other than the
 subject ("de som van de romplengten van alle liggers van zijn thuishaven" on a
 Schuit) has a range of two steps from another object, which this frontend
-does not spell; the refusal's Dutch part names that anchor. A fold without a range is
+does not spell; the refusal's Dutch part names that anchor. A quantifier fold
+("ten minste twee van de liggers van de Haven") binds its range the same way,
+by the role its member phrase writes where the pair does not decide; until the
+fix round of 2026-09-26 the count words were offered as the written name, the
+fold stayed a marker over two relations, and its WARNING said no fact type
+joined the types. A fold without a range is
 refused with an ERROR in the loader's sentence (`a single-argument fold with
 an elementType carries its range … : the range is written, never derived`),
 and under a total whose element is another type in WF-083's sentence; a total
