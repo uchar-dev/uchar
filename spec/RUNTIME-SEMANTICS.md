@@ -4913,7 +4913,12 @@ in the document: `Number`, `whole: true`, `decimals: 0`, no `unit`. All
 three executors carry it: the reference interpreter at evaluation, the
 ASP backend as a program constant written at translation time, and both
 Drools branches from the session's evaluation date. The golden
-`jutterswet-rekenjaar` pins the same outcomes in all three. *History:*
+`jutterswet-rekenjaar` pins the same outcomes in all three. Three
+positions the Drools exec-model branch does not lower and refuses by name:
+the assertion of a consistency, the filter of a fold and the justification
+of a prioritized default; the DRL-text branch plays the first two and has
+no defaults lowering (measured 2026-09-26, each pinned by the backend's
+`RekenjaarWitnessTest`; no golden carries the node there). *History:*
 from L4 until 2026-09-26 (card `rekenjaar-als-waarde`) the name was
 admitted but no document carried it, and every executor refused it by
 name in one sentence.

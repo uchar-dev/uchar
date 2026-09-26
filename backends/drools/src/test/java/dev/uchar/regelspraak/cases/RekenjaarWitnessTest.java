@@ -160,7 +160,15 @@ class RekenjaarWitnessTest {
             new Plek("anchor/jutterswet-strandrechtketen", "/rules/prioritizedDefaults/1/defaults/1/consequence/right",
                     "case1-basis.json", "2026-03-15",
                     Map.of("W1.uitkering", "{\"number\":\"20260.00\"}", "K1.uitkeringstotaal", "{\"number\":\"20270.00\"}"),
-                    false, null, "the DRL-text branch has no defaults lowering", "the consequence of a prioritized default"));
+                    false, null, "the DRL-text branch has no defaults lowering", "the consequence of a prioritized default"),
+            // "zijn bergingsdiepte groter is dan het Rekenjaar": W1's depth of 25 is not greater than 2026, so the
+            // exception for a deep wreck no longer applies and the wreck rule's grondslag maal 2, 20.00, stands (ref
+            // and clingo, measured 2026-09-26); the exec branch declines the justification as a whole
+            new Plek("jutterswet-wrakrecht", "/rules/prioritizedDefaults/1/defaults/0/justification/right",
+                    "case3-eigen-uitzondering.json", "2026-03-15",
+                    Map.of("W1.uitkering", "{\"number\":\"20.00\"}", "K1.uitkeringstotaal", "{\"number\":\"20.00\"}"),
+                    false, "niet-reduceerbare justificatie", "the DRL-text branch has no defaults lowering",
+                    "the justification of a prioritized default"));
         for (Plek p : plekken) {
             Path ir = getwist(p.golden(), p.pointer());
             JsonNode c = zaakVan(p);
