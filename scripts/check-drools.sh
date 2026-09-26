@@ -990,7 +990,8 @@ EXPECTED_CHANNEL=(
 # month grid and a navigated operand, over an entirely empty, an entirely filled and a partly filled
 # timeline. Both branches refused the form in the loader until that day (the negated test on its then
 # open threshold, the unnegated one because ref did not execute the fold); the loader now lowers the
-# inner negation to the sister test under the qualifier too, and the runtime fold was already there.
+# inner negation to the sister test under the qualifier too, and the runtime fold was already there
+# (its gevuld check now skips an explicit leeg segment, which no case input can carry).
 # The exec branch plays the three cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED
 # moves by one as well.
 EXPECTED_PLAYED=211
