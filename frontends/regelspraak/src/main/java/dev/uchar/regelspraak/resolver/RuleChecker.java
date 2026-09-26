@@ -912,11 +912,29 @@ final class RuleChecker {
             }
             case Conditie.Periode ignored -> { }       // every bound that navigates is the window check's refusal
             case Conditie.Kenmerk ignored -> { }
-            case Conditie.Rollidmaatschap ignored -> { }
-            case Conditie.VerreRollidmaatschap ignored -> { }
+            case Conditie.Rollidmaatschap r -> rolcheckBinding(r, r.rol(), r.anderTeFiller(), r.bron(), subject, gemeld);
+            case Conditie.VerreRollidmaatschap r ->
+                    rolcheckBinding(r, r.backref(), r.filler(), r.bron(), subject, gemeld);
             case Conditie.Regelversie ignored -> { }
             case Conditie.Onopgelost ignored -> { }
         }
+    }
+
+    /** A role check whose binding is not one relation: the emitter writes a role check as its fact type and role, and
+     *  refused it with an exception where the written role names none from the subject or several ("de Haven heeft
+     *  een ligger" where the Haven plays the written role in two fact types). The refusal is the loader's sentence for
+     *  the check without its binding. A day kind has no subject, and the day-kind check refuses the role check there
+     *  already. */
+    private void rolcheckBinding(Conditie c, String rol, Objecttype ander, Bron bron, Objecttype subject,
+                                 Set<Object> gemeld) {
+        if (subject == null) return;
+        int n = dev.uchar.regelspraak.emit.IrEmitter.rolcheckBindingen(model, subject, c);
+        if (n == 1 || !gemeld.add(c)) return;
+        String tegen = " van " + subject.naam + " tegenover " + (ander == null ? "?" : ander.naam);
+        model.diagnostics.add(new Diagnostic(Severity.ERROR, "rolcheck '" + bron + "' zonder binding ("
+                + (n == 0 ? "geen feittype kent de rol '" + rol + "'" + tegen
+                          : n + " feittypen kennen de rol '" + rol + "'" + tegen)
+                + "): missing field 'factType'", bron == null ? 0 : bron.line()));
     }
 
     /** The refusal of a read without a binding: what did not bind, then the verifier's WF-053 sentence for the

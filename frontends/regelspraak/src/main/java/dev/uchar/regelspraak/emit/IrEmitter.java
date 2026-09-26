@@ -1812,61 +1812,77 @@ public final class IrEmitter {
      *  the role by declared name or declared plural; a check the resolver bound in any other way has no
      *  binding to write, and is refused. */
     private Lidmaatschap lidmaatschapNabij(Conditie.Rollidmaatschap r) {
-        Lidmaatschap gevonden = null;
-        int n = 0;
-        if (m != null && huidigSubject != null && r.rol() != null && r.anderTeFiller() != null)
-            for (Feittype ft : m.feittypen.values()) {
-                if (ft.wederkerig || ft.rollen.size() != 2) continue;
-                for (int i = 0; i < 2; i++) {
-                    Rol eigen = ft.rollen.get(i), ander = ft.rollen.get(1 - i);
-                    if (duidtAan(eigen, r.rol()) && vult(huidigSubject, eigen) && vult(r.anderTeFiller(), ander)) {
-                        gevonden = lidmaatschap(ft, eigen, ander, r.anderTeFiller());
-                        n++;
-                    }
-                }
-            }
-        if (n != 1)
-            throw new IllegalStateException("IrEmitter: de rolcheck '" + r.bron().snippet() + "' bindt " + n
+        List<Lidmaatschap> k = kandidatenNabij(m, huidigSubject, r);
+        if (k.size() != 1)
+            throw new IllegalStateException("IrEmitter: de rolcheck '" + r.bron().snippet() + "' bindt " + k.size()
                     + " rollen '" + r.rol() + "' die " + (huidigSubject == null ? "het onderwerp" : huidigSubject.naam)
                     + " vult tegenover " + naamVan(r.anderTeFiller()) + " (gedeclareerde naam of meervoud); de wire "
                     + "eist er precies één");
-        return gevonden;
+        return k.get(0);
     }
 
     /** The role check with the subject on the far side ("de wachtpost heeft een wachtjutter"): the fact type
      *  in which the subject plays the role {@code backref} names and {@code filler} fills the other. */
     private Lidmaatschap lidmaatschapVer(Conditie.VerreRollidmaatschap r) {
-        Lidmaatschap gevonden = null;
-        int n = 0;
-        if (m != null && huidigSubject != null && r.backref() != null && r.filler() != null)
+        List<Lidmaatschap> k = kandidatenVer(m, huidigSubject, r);
+        if (k.size() != 1)
+            throw new IllegalStateException("IrEmitter: de rolcheck '" + r.bron().snippet() + "' bindt " + k.size()
+                    + " rollen '" + r.backref() + "' die " + (huidigSubject == null ? "het onderwerp" : huidigSubject.naam)
+                    + " speelt tegenover " + naamVan(r.filler()) + "; de wire eist er precies één");
+        return k.get(0);
+    }
+
+    /** How many bindings a role check has from {@code subject}: the emitter writes it where exactly one, and the
+     *  resolver asks the same of every role check the emitter will write, so a model it built never reaches the two
+     *  refusals above: it refuses such a model itself, with an ERROR. 1 for any other condition. */
+    public static int rolcheckBindingen(RegelSpraakModel m, Objecttype subject, Conditie c) {
+        return switch (c) {
+            case Conditie.Rollidmaatschap r -> kandidatenNabij(m, subject, r).size();
+            case Conditie.VerreRollidmaatschap r -> kandidatenVer(m, subject, r).size();
+            default -> 1;
+        };
+    }
+
+    private static List<Lidmaatschap> kandidatenNabij(RegelSpraakModel m, Objecttype subject,
+                                                      Conditie.Rollidmaatschap r) {
+        List<Lidmaatschap> uit = new java.util.ArrayList<>();
+        if (m != null && subject != null && r.rol() != null && r.anderTeFiller() != null)
+            for (Feittype ft : m.feittypen.values()) {
+                if (ft.wederkerig || ft.rollen.size() != 2) continue;
+                for (int i = 0; i < 2; i++) {
+                    Rol eigen = ft.rollen.get(i), ander = ft.rollen.get(1 - i);
+                    if (duidtAan(eigen, r.rol()) && vult(m, subject, eigen) && vult(m, r.anderTeFiller(), ander))
+                        uit.add(lidmaatschap(m, ft, eigen, ander, r.anderTeFiller()));
+                }
+            }
+        return uit;
+    }
+
+    private static List<Lidmaatschap> kandidatenVer(RegelSpraakModel m, Objecttype subject,
+                                                    Conditie.VerreRollidmaatschap r) {
+        List<Lidmaatschap> uit = new java.util.ArrayList<>();
+        if (m != null && subject != null && r.backref() != null && r.filler() != null)
             for (Feittype ft : m.feittypen.values()) {
                 if (ft.wederkerig && ft.rollen.size() == 1) {
                     Rol rol = ft.rollen.get(0);
-                    if (duidtAan(rol, r.backref()) && vult(huidigSubject, rol) && vult(r.filler(), rol)) {
-                        gevonden = lidmaatschap(ft, rol, rol, r.filler());
-                        n++;
-                    }
+                    if (duidtAan(rol, r.backref()) && vult(m, subject, rol) && vult(m, r.filler(), rol))
+                        uit.add(lidmaatschap(m, ft, rol, rol, r.filler()));
                     continue;
                 }
                 if (ft.rollen.size() != 2) continue;
                 for (int i = 0; i < 2; i++) {
                     Rol eigen = ft.rollen.get(i), ander = ft.rollen.get(1 - i);
-                    if (duidtAan(eigen, r.backref()) && vult(huidigSubject, eigen) && vult(r.filler(), ander)) {
-                        gevonden = lidmaatschap(ft, eigen, ander, r.filler());
-                        n++;
-                    }
+                    if (duidtAan(eigen, r.backref()) && vult(m, subject, eigen) && vult(m, r.filler(), ander))
+                        uit.add(lidmaatschap(m, ft, eigen, ander, r.filler()));
                 }
             }
-        if (n != 1)
-            throw new IllegalStateException("IrEmitter: de rolcheck '" + r.bron().snippet() + "' bindt " + n
-                    + " rollen '" + r.backref() + "' die " + (huidigSubject == null ? "het onderwerp" : huidigSubject.naam)
-                    + " speelt tegenover " + naamVan(r.filler()) + "; de wire eist er precies één");
-        return gevonden;
+        return uit;
     }
 
     /** The check's other end narrows only where it names a STRICT subtype of the other role's declared filler;
      *  naming the declared type itself is no narrowing, and the field then stays absent. */
-    private Lidmaatschap lidmaatschap(Feittype ft, Rol eigen, Rol ander, Objecttype tegenpartij) {
+    private static Lidmaatschap lidmaatschap(RegelSpraakModel m, Feittype ft, Rol eigen, Rol ander,
+                                            Objecttype tegenpartij) {
         Objecttype gedeclareerd = m.objecttypeOpNaam(ander.objecttypeNaam());
         return new Lidmaatschap(new RegelSpraakModel.RolBindingRef(ft.naam, eigen.naam()),
                 tegenpartij == gedeclareerd ? null : tegenpartij.naam);
@@ -1882,7 +1898,7 @@ public final class IrEmitter {
     }
 
     /** Whether {@code ot} fills {@code r}: its declared filler type or a subtype of it (IR-SPEC ch. 2.6). */
-    private boolean vult(Objecttype ot, Rol r) {
+    private static boolean vult(RegelSpraakModel m, Objecttype ot, Rol r) {
         Objecttype filler = m.objecttypeOpNaam(r.objecttypeNaam());
         return ot != null && filler != null && ot.isEen(filler);
     }

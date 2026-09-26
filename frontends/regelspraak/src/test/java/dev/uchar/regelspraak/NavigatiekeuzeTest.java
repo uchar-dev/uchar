@@ -255,6 +255,34 @@ class NavigatiekeuzeTest {
             assertEquals(List.of(vouw[1]), fouten(TYPEN + THUISLIGGING + regel(vouw[0])), vouw[0]);
     }
 
+    // ---------------- a role check ----------------
+
+    /** The Haven plays the role `thuishaven` in two fact types, and "de Haven heeft een ligger" names that role from
+     *  the Haven's side: two bindings where the wire takes one. Before: the emitter's exception ("de rolcheck … bindt 2
+     *  rollen 'thuishaven'"). With one such fact type the check binds. */
+    @Test void een_rolcheck_die_twee_relaties_aanwijst_weigert() {
+        String regel = """
+
+            Regel veilige haven
+                geldig altijd
+                    Een Haven is veilig
+                    indien hij een ligger heeft.
+            """;
+        String tweede = """
+
+            Feittype winterligging
+                de thuishaven Haven
+                de winterligger (mv: winterliggers) Schuit
+            Eén thuishaven telt meerdere winterliggers
+            """;
+        assertEquals(List.of("rolcheck 'hij een ligger heeft' zonder binding (2 feittypen kennen de rol 'thuishaven' "
+                        + "van Haven tegenover Schuit): missing field 'factType'"),
+                fouten(TYPEN + THUISLIGGING + tweede + regel));
+        String c = emitCompact(TYPEN + THUISLIGGING + regel);
+        assertTrue(c.contains("{\"node\":\"RoleMembership\",\"factType\":\"thuisligging\",\"role\":\"thuishaven\""),
+                () -> "met één relatie bindt de rolcheck:\n" + c);
+    }
+
     // ---------------- an allocation's recipient join ----------------
 
     private static final String BERGINGEN = """
