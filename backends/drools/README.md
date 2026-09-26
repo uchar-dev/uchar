@@ -82,6 +82,20 @@ per-form auto-refusals print their reason, and a reason-carrying value-divergenc
 in the script (the check-noop survivor pattern) names each golden whose fired outcome
 differs from ref/clingo and fails when stale.
 
+## The rule graph and gate 15
+
+`graaf/RegelGraaf` draws which rule writes and which rule reads which attribute or characteristic, a member
+keyed on the type that declares it (`ProducentConsument.elementVan`), so a write on a supertype and a read on a
+subtype meet on one node. It is a reading of the IR-SPEC ch. 5 dependency graph restricted to rules, attributes
+and characteristics, built from the records the loader rebuilds from `ir.json`; the caller says whether a
+characteristic check navigates, because a wire model carries the hop beside the model
+(`k -> geladen.navigatieBindingen().containsKey(k)`) and a resolver's model on the record
+(`k -> k.navigatie() != null`). `scripts/check-graaf.sh` holds it: over every golden the loader reads, the graph's
+dependencies (`GraafProjectie`) must equal the verifier's ch. 5 edges (`verifier --dependency-edges`) projected
+onto the same rules and members, and the graph of every golden with a `bron.rgs` must render the same from the
+source as from the wire. The tests that need the frontend's resolver live under `src/bronroute/`, outside this
+build, which carries no parser; the gate compiles them against the frontend's classes and this jar.
+
 ## Recorded: the DRL-text branch answers where the others refuse
 
 One corner, measured 2026-09-25 and deliberately not built. A computing rule and a conditional
