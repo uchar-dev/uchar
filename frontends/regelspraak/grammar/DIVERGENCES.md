@@ -1680,7 +1680,11 @@ serialiser, so a case file and an IR document share one shape.
   `2400.00`) and a fraction its fraction, reduced (`6/8` is `3/4`). A
   restated value is a terminating decimal without trailing zeros (`1,5 t` is
   `1500` kg), or else a reduced fraction (`1 voet` is `1/6` vadem). A
-  date-time carries its three millisecond digits, the IR literal's lexeme.
+  date-time carries its three millisecond digits, as the language writes
+  every date-time and as the IR literal's lexeme does; a hand-written case
+  whose date-time leaves the fraction out, which the case format admits (31
+  of the 50 date-times pinned in `corpus/golden`), therefore does not come
+  out of a scenario document byte for byte.
 - The file name is `case<n>-<slug>.json`: `n` the scenario's 1-based
   position in the document, the slug its name with diacritics taken off,
   lowercased, every run of characters other than `a-z` and `0-9` one `-`,
