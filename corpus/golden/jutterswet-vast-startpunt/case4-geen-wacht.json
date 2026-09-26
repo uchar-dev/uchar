@@ -1,6 +1,6 @@
 {
   "format": "uchar-case-v0",
-  "asOfDate": null,
+  "asOfDate": "2025-04-01",
   "input": {
     "instances": [
       {
@@ -45,6 +45,11 @@
       "value": {
         "number": "0"
       }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "maandtoelagesom"
     },
     {
       "kind": "consistent"

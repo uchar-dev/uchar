@@ -67,6 +67,32 @@
               "decimals": 0,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandtoelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1,
+              "fixedStart": "--01-31"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandtoelagesom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": [
@@ -237,6 +263,51 @@
               },
               "source": {
                 "snippet": "het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maandtoelagesom van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandtoelagesom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De maandtoelagesom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maandtoelage",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn maandtoelage"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het totaal van zijn maandtoelage"
               }
             },
             "initialisation": false,

@@ -24,11 +24,21 @@ Jutterswet, whose penningjaar is the calendar year (art. 3b).
   characteristic's grid (its timeline is its true periods, day-precise); the
   facet carries it so the declaration is written whole.
 - `toelagesom`, a scalar.
-- Three rules: the day count "het aantal dagen in het jaar dat hij
+- `maandtoelage`, `voor elke maand startend op dag 31 van de maand`: the same
+  inline month grid as `maandwachtdagen`, supplied as a scalar case value;
+  `maandtoelagesom`, a scalar.
+- Four rules: the day count "het aantal dagen in het jaar dat hij
   wachtplichtig is" into `stormwachtdagen`, the same count "in de maand" into
   `maandwachtdagen` (ch. 3.8; each stated bucket equals its target's
-  granularity, WF-058), and "het totaal van zijn stormtoelage gedurende de tijd
-  dat hij wachtplichtig is" into `toelagesom` (ch. 3.6).
+  granularity, WF-058), "het totaal van zijn stormtoelage gedurende de tijd
+  dat hij wachtplichtig is" into `toelagesom` (ch. 3.6), and "het totaal van
+  zijn maandtoelage" into `maandtoelagesom`: the subject's own total over the
+  asOfDate bucket, where a scalar case value is the value of the period of the
+  member's grid that holds the evaluation date (ch. 3.2, 3.6).
+
+Every case carries an evaluation date, because that total needs one: `ref`
+faults without it ("needs the evaluation date"). Cases 1 to 4 supply no scalar
+value, so their date changes none of their expectations.
 
 The day count buckets on its target's periods: the October years for
 `stormwachtdagen`, the months from the 31st (clamped) for `maandwachtdagen`.
@@ -80,17 +90,38 @@ the leap day; no `stormtoelage`.
 - Both day counts write no period: `stormwachtdagen` and `maandwachtdagen`
   are **empty** timelines.
 - `toelagesom`: the clip over no period → **0**.
+- `maandtoelagesom`: no `maandtoelage`, and the total of an absent member is
+  **leeg** (ch. 3.6).
+
+**case5-geklemde-maand** — evaluation date 2024-02-15; `maandtoelage` 10 as a
+scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
+
+- `maandtoelagesom`: the period of the `--01-31` grid that holds 2024-02-15 is
+  [2024-01-31, 2024-02-29): its end is the 31st clamped to the leap day, and
+  2024-01-31 plus one month is 2024-02-29 (ch. 3.8), so the period is one
+  whole month (ch. 3.2, the weighting) → 10 × 1 = **10**. The duration from
+  31-01-2024 to 29-02-2024 is 0 whole months (ch. 3.8); the total does not
+  weigh by that rule.
+- `maandwachtdagen`: 28 February in [2024-01-31, 2024-02-29) → **1**; 29
+  February in [2024-02-29, 2024-03-31) → **1**.
+- `stormwachtdagen`: [2023-10-01, 2024-10-01) → **2**.
+- `toelagesom`: no `stormtoelage` under the clip → **0**.
 
 ## Executors
 
-`ref`, clingo and both Drools branches replay the four cases with these
-values (measured 2026-09-26: `oracle: PASS (4 expectations)` and
-`clingo: PASS (4 expectations)` per case, `PLAYED 4` in the exec-model branch
-and in the DRL-text branch). `ref` lays the grid in one function
+`ref`, clingo and both Drools branches replay the five cases with these
+values (measured 2026-09-26: `oracle: PASS` and `clingo: PASS` per case,
+`PLAYED 5` in the exec-model branch and in the DRL-text branch). `ref` lays the grid in one function
 (`Timeline.grid_bucket`), which the ASP backend's bucket calendar calls as
 well; the Drools branches hand the doel's constant anchor to the anchored
 producers a variable start uses, and the case runner lays a case timeline on
 the fixed grid through the frontend's shared `kern/VastStartpunt`.
+
+Case 5 was red in both Drools branches before the fix round of 2026-09-26,
+which weighs a span by the clamped month step: measured on the union
+`e6844fba`, `FAIL case5-geklemde-maand.json: attribuut maandtoelagesom:
+verwacht 10, werkelijk 0` in each; the runtime counted whole months by the
+duration's packed-month rule.
 
 No case survives a no-op run: each expects a day count or a total the input
 does not carry (gate 7). No annotation of this document carries a unit, so the
@@ -106,6 +137,7 @@ describes calendar grids — and `ref` refuses every case at load, measured
     case2-heel-stormjaar.json    CASE ERROR: J1.stormtoelage.timeline[0]: segment boundaries must sit on the declared granularity grid
     case3-schrikkelmaand.json    CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
     case4-geen-wacht.json        CASE ERROR: J1.stormtoelage.timeline[0]: segment boundaries must sit on the declared granularity grid
+    case5-geklemde-maand.json    CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
 
 Before this card the frontend refused `bron.rgs` at emission: the wire had no
 field for the start point, and a timeline written without it lies on the

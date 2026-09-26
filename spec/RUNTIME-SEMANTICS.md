@@ -823,7 +823,13 @@ two distinct jobs, with different v0 support:
 
 1. **Weighting** (the temporal total, ch. 3.6) counts *whole* granularity
    units between two dates: days, weeks, months, quarters = whole months
-   ÷ 3, years. All five granularities weight.
+   ÷ 3, years. All five granularities weight. A span [van, tot) holds k
+   whole months for the greatest k with van + k months ≤ tot, the month
+   step clamping to the last valid day of the target month (ch. 3.8), and
+   k ÷ 12 whole years; a week is seven days. A period between clamped
+   walls is therefore one whole unit. This is the date-plus-unit step,
+   not the packed-month rule by which ch. 3.8 counts a duration, and the
+   two differ exactly where the end is a clamped day.
 2. **Bucketing** (producers that emit one segment per calendar period:
    ch. 3.7, 3.8, 3.9) uses calendar-aligned walls: a month bucket runs
    from the first of the month to the first of the next; a year bucket
@@ -831,6 +837,13 @@ two distinct jobs, with different v0 support:
    the source language's bucketing operators are grammatically restricted
    to "de maand"/"het jaar", and v0 implements exactly that. Bucketing by
    day, week, or quarter is not defined (ch. 3.12).
+
+Worked examples of the weighting (absolute; `ref/` tests verbatim):
+[2024-01-31, 2024-02-29) holds **1** whole month, where the duration from
+31-01-2024 to 29-02-2024 is **0** whole months (ch. 3.8, "Clamp, not
+inverse"); [2024-11-30, 2025-02-28) holds **1** whole quarter;
+[2024-02-29, 2025-02-28) holds **1** whole year; [2024-01-31, 2024-02-28)
+holds **0** whole months.
 
 Bucket lengths are actual calendar lengths, leap-aware: February 2024 has
 29 days, 2025 has 365. There is no 360-day convention anywhere.

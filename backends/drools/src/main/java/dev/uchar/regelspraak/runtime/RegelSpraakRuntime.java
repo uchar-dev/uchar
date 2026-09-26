@@ -755,7 +755,10 @@ public final class RegelSpraakRuntime {
     /** §7.1 "het totaal van" a temporal attribute: fold a {@code List<Segment>} by weighting each segment's value
      *  by the count of whole granularity periods (DAG/WEEK/MAAND/KWARTAAL/JAAR) between its van and tot. A null
      *  list -> null (leeg); a segment with a null bound/value contributes nothing (§4.20 leeg telt als 0); an empty
-     *  timeline totals 0. Kwartaal = three maanden (ChronoUnit has no quarter). The single implementation; the DRL imports it (single-runtime principle). */
+     *  timeline totals 0. Kwartaal = three maanden (ChronoUnit has no quarter). Whole months are counted by the
+     *  clamped step of {@link #heleMaanden}, never by {@code ChronoUnit.MONTHS.between}: RUNTIME-SEMANTICS ch. 3.2
+     *  weighs a period between clamped walls as one unit. The single implementation; the DRL imports it
+     *  (single-runtime principle). */
     public static BigDecimal rsTijdTotaal(List<?> segmenten, String granulariteit) {
         if (segmenten == null) return null;
         BigDecimal som = BigDecimal.ZERO;
@@ -767,9 +770,9 @@ public final class RegelSpraakRuntime {
             switch (granulariteit) {
                 case "DAG":      n = ChronoUnit.DAYS.between(van, tot); break;
                 case "WEEK":     n = ChronoUnit.WEEKS.between(van, tot); break;
-                case "MAAND":    n = ChronoUnit.MONTHS.between(van, tot); break;
-                case "KWARTAAL": n = ChronoUnit.MONTHS.between(van, tot) / 3; break;
-                case "JAAR":     n = ChronoUnit.YEARS.between(van, tot); break;
+                case "MAAND":    n = heleMaanden(van, tot); break;
+                case "KWARTAAL": n = heleMaanden(van, tot) / 3; break;
+                case "JAAR":     n = heleMaanden(van, tot) / 12; break;
                 // fail FAST on an unknown granularity: a silent 0-weight would total 0 without a trace
                 // The transpilers only ever emit the five names above.
                 default: throw new IllegalArgumentException("onbekende granulariteit voor rsTijdTotaal: " + granulariteit);
@@ -777,6 +780,17 @@ public final class RegelSpraakRuntime {
             som = som.add(w.multiply(BigDecimal.valueOf(n)));
         }
         return som;
+    }
+
+    /** The whole months in [van, tot): the greatest k for which van plus k months, clamped to the end of the target
+     *  month (ch. 3.8), does not pass tot. It is the weighting of the temporal total, which the reference interpreter
+     *  and the ASP backend share, and it differs from the duration's packed-month rule ({@link #rsTijdsduur}) exactly
+     *  where tot is a clamped wall: [2024-01-31, 2024-02-29) is one whole month here and none there. The packed count
+     *  is never larger and falls short by at most one, so the search starts from it. */
+    private static long heleMaanden(LocalDate van, LocalDate tot) {
+        long k = ChronoUnit.MONTHS.between(van, tot);
+        while (!van.plusMonths(k + 1).isAfter(tot)) k++;
+        return k;
     }
 
     /** §7.1 clip a value timeline by a condition's TRUE-period timeline: intersect each value Segment with each

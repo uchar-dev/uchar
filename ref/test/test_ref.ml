@@ -1764,6 +1764,20 @@ let () =
     (wall 0 = day "2024-01-31" && wall 1 = day "2024-02-29" && wall 2 = day "2024-03-31"
     && wall 3 = day "2024-04-30")
 
+(* WV-3.2-weging: the whole units the temporal total weighs a span by
+   (RUNTIME-SEMANTICS ch. 3.2, job 1), the chapter's worked examples
+   verbatim: the greatest k with van + k months <= tot, the month step
+   clamping, so a period between clamped walls is one unit — where the
+   duration of ch. 3.8 counts 0 whole months between the same two dates. *)
+let () =
+  let wu g van tot = Timeline.whole_units g (day van) (day tot) in
+  check "WV-3.2-weging-maand-klem" (wu Maand "2024-01-31" "2024-02-29" = 1);
+  check "WV-3.2-weging-niet-de-tijdsduur"
+    (Arith.whole_units_between Tu_maand (day "2024-01-31") (day "2024-02-29") = 0);
+  check "WV-3.2-weging-kwartaal-klem" (wu Kwartaal "2024-11-30" "2025-02-28" = 1);
+  check "WV-3.2-weging-jaar-klem" (wu Jaar "2024-02-29" "2025-02-28" = 1);
+  check "WV-3.2-weging-dag-te-kort" (wu Maand "2024-01-31" "2024-02-28" = 0)
+
 (* WV-3.2-vast: the grid a fixed start point lays (RUNTIME-SEMANTICS ch. 3.2,
    "Fixed starting points"), the chapter's worked examples verbatim. A wall
    is a day whose period starts on it; consecutive walls bound one period. *)
