@@ -113,6 +113,7 @@ final class RuleChecker {
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
         keurNavigatiebindingen();   // a read or a fold the emitter could write only with a binding none supplies
         keurOpgeslokteNamen();      // a read whose name took in a word before 'van' and a declared attribute
+        keurConstanten();           // a constant the wire has no node for ("hij" as a value)
     }
 
     /**
@@ -751,14 +752,38 @@ final class RuleChecker {
      */
     private void keurOpgeslokteNamen() {
         Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-        java.util.function.Predicate<Expr> vang = x -> {
+        elkeGeschrevenExpr(x -> {
             if (x instanceof Expr.AttribuutRef a && !a.set() && gemeld.add(a)) {
                 String fout = opgeslokteNaamFout(a);
                 if (fout != null)
                     model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron() == null ? 0 : a.bron().line()));
             }
             return false;
-        };
+        });
+    }
+
+    /** A constant the wire has no node for: the bound day of a day-kind definition is a BoundDay and the two session
+     *  values a ContextValue, and every other name — "hij" written as a value, "de naam … op hij" — would be a
+     *  ContextValue outside WF-098's closed set. Before this check such a document ended in the emitter's exception;
+     *  now it is refused in the verifier's WF-098 sentence. */
+    private void keurConstanten() {
+        Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        elkeGeschrevenExpr(x -> {
+            if (x instanceof Expr.Constante c && c.naam() != null && !c.naam().equals("de dag")
+                    && !dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.rijen().containsKey(c.naam())
+                    && gemeld.add(c))
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "'" + c.naam() + "' als waarde ('" + c.bron()
+                        + "'): context value '" + c.naam() + "' is not one of the two admissible names evaluationDate, "
+                        + "evaluationYear: the context-value name is a closed set, spelled byte for byte",
+                        c.bron() == null ? 0 : c.bron().line()));
+            return false;
+        });
+    }
+
+    /** Every expression the emitter writes, after the lift, handed to {@code vang} (which returns false to walk on):
+     *  rule values and conditions, day-kind conditions, creation values and conditions, allocation and fact-creation
+     *  conditions, consistency assertions and the defaults, window bounds and fold sources included. */
+    private void elkeGeschrevenExpr(java.util.function.Predicate<Expr> vang) {
         for (ResolvedRegel r : model.resolvedRegels) {
             Expr.bevat(r.waarde(), vang);
             Conditie.bevatOperand(r.voorwaarde(), vang);
@@ -771,16 +796,16 @@ final class RuleChecker {
         for (var v : model.verdelingen) Conditie.bevatOperand(v.voorwaarde(), vang);
         for (var c : model.consistenties) Conditie.bevatOperand(c.assertie(), vang);
         for (var fc : model.feitCreaties) Conditie.bevatOperand(fc.voorwaarde(), vang);
-        for (var pd : model.prioritizedDefaults) opgeslokteNamenDefaults(pd.defaults(), vang);
+        for (var pd : model.prioritizedDefaults) geschrevenDefaults(pd.defaults(), vang);
     }
 
-    private static void opgeslokteNamenDefaults(List<Default> defaults, java.util.function.Predicate<Expr> vang) {
+    private static void geschrevenDefaults(List<Default> defaults, java.util.function.Predicate<Expr> vang) {
         if (defaults == null) return;
         for (Default d : defaults) {
             Conditie.bevatOperand(d.voorwaarde(), vang);
             Expr.bevat(d.consequentie(), vang);
             if (d.excepties() != null)
-                for (ExceptionGroup g : d.excepties().leden()) opgeslokteNamenDefaults(g.defaults(), vang);
+                for (ExceptionGroup g : d.excepties().leden()) geschrevenDefaults(g.defaults(), vang);
         }
     }
 

@@ -454,6 +454,16 @@ class StructuurZinTest {
                 + "van de romplengte van de Schuit en 3.")));
     }
 
+    // ---- WF-098: a constant the wire has no node for
+
+    @Test void hij_als_waarde() {
+        // before: IrEmitter's exception ("de constante 'hij' ('hij') heeft geen spelling in uchar-ir-v1")
+        String zin = "'hij' als waarde ('hij'): context value 'hij' is not one of the two admissible names "
+                + "evaluationDate, evaluationYear: the context-value name is a closed set, spelled byte for byte";
+        assertEquals(List.of(zin), fouten(regel("De ligprijs van een Schuit moet berekend worden als hij.")));
+        assertEquals(List.of(zin, zin), fouten(regel("Een Schuit is gekeurd\n        indien hij gelijk is aan hij.")));
+    }
+
     // ---- WF-032 (and WF-023): the start point determination
 
     private static final String STARTPUNT = """
