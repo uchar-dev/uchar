@@ -1597,31 +1597,69 @@ public final class IrEmitter {
      * the aanmelder), which reads nothing beyond the subject.
      *
      * <p>A source that denotes the subject's own attribute has no range. That is a fold under TOTAAL (the
-     * total over the subject's own timeline); a fold of another kind over it has no spelling.
+     * total over the subject's own timeline); a fold of another kind over it has no spelling, and neither has a
+     * source of another type that denotes no instances, since written without a range it reads the subject.
      */
     private Vouwbereik vouwbereik(Expr.Functie f) {
         if (!isVouwbron(f)) return null;
         Expr.AttribuutRef arg = (Expr.AttribuutRef) f.argumenten().get(0);
-        boolean telbron = arg.type() instanceof Datatype.Onbekend;
-        if (arg.navigatiePad() != null && !arg.navigatiePad().isEmpty())
-            throw vouwWeigering(f, "haar bron draagt een geschreven pad; de relatie van een vouwbron is het bereik");
-        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(m, huidigSubject, arg.navigatieRol())))
-            throw vouwWeigering(f, "haar bron draagt de geschreven stap '" + arg.navigatieRol()
-                    + "', en alleen een telbron die het onderwerp zelf aanduidt mag er een dragen");
-        if (!telbron && !arg.set()) {
-            if (f.kind() == Expr.FunctieKind.TOTAAL) return new Vouwbereik(null, List.of(), null);
-            throw vouwWeigering(f, "haar bron is het eigen attribuut van het onderwerp en geen instantiebron");
-        }
-        if (m == null || huidigSubject == null)
-            throw vouwWeigering(f, "er is geen onderwerp om haar bereik vanaf te bepalen");
+        Vouwweigering weigering = vouwweigering(m, huidigSubject, f);
+        if (weigering != null) throw vouwWeigering(f, switch (weigering) {
+            case GESCHREVEN_PAD -> "haar bron draagt een geschreven pad; de relatie van een vouwbron is het bereik";
+            case GESCHREVEN_STAP -> "haar bron draagt de geschreven stap '" + arg.navigatieRol()
+                    + "', en alleen een telbron die het onderwerp zelf aanduidt mag er een dragen";
+            case VREEMD_ATTRIBUUT -> "haar bron leest '" + arg.attribuut() + "' op " + naamVan(arg.objecttype())
+                    + ", en zonder bereik leest een vouw het eigen attribuut van " + huidigSubject.naam;
+            case EIGEN_ATTRIBUUT -> "haar bron is het eigen attribuut van het onderwerp en geen instantiebron";
+            case GEEN_ONDERWERP -> "er is geen onderwerp om haar bereik vanaf te bepalen";
+            case GEEN_RELATIE -> "geen unieke relatie van " + huidigSubject.naam + " naar "
+                    + f.elementObjecttype().naam + " draagt haar bereik";
+        });
+        // the total over the subject's own timeline has no range
+        if (!(arg.type() instanceof Datatype.Onbekend) && !arg.set()) return new Vouwbereik(null, List.of(), null);
         List<RegelSpraakModel.RolBindingRef> stappen = arg.set() && arg.bereikPad() != null ? arg.bereikPad() : List.of();
         if (!stappen.isEmpty())
             return new Vouwbereik(null, stappen, telbronNaam(f, arg, stappen.get(stappen.size() - 1)));
         RegelSpraakModel.RolBindingRef rb = bereikRol(m, huidigSubject, f, arg);
-        if (rb == null)
-            throw vouwWeigering(f, "geen unieke relatie van " + huidigSubject.naam + " naar "
-                    + f.elementObjecttype().naam + " draagt haar bereik");
         return new Vouwbereik(rb, List.of(), telbronNaam(f, arg, rb));
+    }
+
+    /** Why the wire has no spelling for a fold over one source, as {@link #vouwweigering} finds it. */
+    public enum Vouwweigering {
+        /** the source carries a written chain, where a fold source's relation is the fold's range */
+        GESCHREVEN_PAD,
+        /** the source carries a written step and is no count source that names the subject itself */
+        GESCHREVEN_STAP,
+        /** the source reads another type than the subject's, and no range carries that step */
+        VREEMD_ATTRIBUUT,
+        /** the source is the subject's own attribute under a kind other than total, and has no instances */
+        EIGEN_ATTRIBUUT,
+        /** there is no subject to derive the range from */
+        GEEN_ONDERWERP,
+        /** no relation carries the range */
+        GEEN_RELATIE
+    }
+
+    /** Why the fold {@code f}, written from {@code subject}, has no spelling on the wire; null where it has one and
+     *  where {@code f} is no fold over one source. {@link #vouwbereik} refuses each reason, and the resolver asks the
+     *  same of every fold it hands the emitter and refuses such a model itself, with an ERROR, so a model it built
+     *  never reaches the refusal here. */
+    public static Vouwweigering vouwweigering(RegelSpraakModel m, Objecttype subject, Expr.Functie f) {
+        if (!isVouwbron(f)) return null;
+        Expr.AttribuutRef arg = (Expr.AttribuutRef) f.argumenten().get(0);
+        boolean telbron = arg.type() instanceof Datatype.Onbekend;
+        if (arg.navigatiePad() != null && !arg.navigatiePad().isEmpty()) return Vouwweigering.GESCHREVEN_PAD;
+        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(m, subject, arg.navigatieRol())))
+            return Vouwweigering.GESCHREVEN_STAP;
+        if (!telbron && !arg.set()) {
+            // written without a range the source is read on the subject, so a source of another type loses its step
+            if (subject != null && arg.objecttype() != null && arg.objecttype() != subject)
+                return Vouwweigering.VREEMD_ATTRIBUUT;
+            return f.kind() == Expr.FunctieKind.TOTAAL ? null : Vouwweigering.EIGEN_ATTRIBUUT;
+        }
+        if (m == null || subject == null) return Vouwweigering.GEEN_ONDERWERP;
+        if (arg.set() && arg.bereikPad() != null && !arg.bereikPad().isEmpty()) return null;
+        return bereikRol(m, subject, f, arg) == null ? Vouwweigering.GEEN_RELATIE : null;
     }
 
     /** The one-step range of an instance fold whose source {@code arg} denotes instances: for the count source the
@@ -1644,21 +1682,6 @@ public final class IrEmitter {
         return soortFamilie(f.kind()) == Spelling.AGGREGATION_KIND && f.dimensieSelectie() == null
                 && f.elementObjecttype() != null && f.argumenten().size() == 1
                 && f.argumenten().get(0) instanceof Expr.AttribuutRef;
-    }
-
-    /** Whether {@link #vouwbereik} reaches the range derivation for {@code f}, written from {@code subject}, and
-     *  finds no relation: its one refusal that is about the binding and not about the fold's shape. The resolver
-     *  asks it of every fold the emitter will write and refuses such a model itself, with an ERROR. A fold the
-     *  emitter refuses on its shape answers false here; that refusal stays the emitter's. */
-    public static boolean ongebondenBereik(RegelSpraakModel m, Objecttype subject, Expr.Functie f) {
-        if (m == null || subject == null || !isVouwbron(f)) return false;
-        Expr.AttribuutRef arg = (Expr.AttribuutRef) f.argumenten().get(0);
-        boolean telbron = arg.type() instanceof Datatype.Onbekend;
-        if (arg.navigatiePad() != null && !arg.navigatiePad().isEmpty()) return false;
-        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(m, subject, arg.navigatieRol()))) return false;
-        if (!telbron && !arg.set()) return false;
-        if (arg.set() && arg.bereikPad() != null && !arg.bereikPad().isEmpty()) return false;
-        return bereikRol(m, subject, f, arg) == null;
     }
 
     private static IllegalStateException vouwWeigering(Expr.Functie f, String reden) {

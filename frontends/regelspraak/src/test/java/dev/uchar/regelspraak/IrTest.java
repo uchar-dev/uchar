@@ -83,7 +83,12 @@ class IrTest {
                     De prijs van een Reis moet berekend worden als de som van de prijs van een Reis.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
+        // a sum over the subject's own attribute has no spelling on the wire, so the resolver refuses the model;
+        // the structure is captured all the same
+        assertEquals(List.of("vouw 'de som van de prijs van een Reis' over een eigen attribuut van het onderwerp, dat "
+                        + "geen instanties telt: a single-argument fold with an elementType carries its range (sourceRole "
+                        + "or sourcePath) under every kind but total: the range is written, never derived"),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
         Expr waarde = m.resolvedRegels.get(0).waarde();
         Expr.Functie som = assertInstanceOf(Expr.Functie.class, waarde);
         assertEquals(Expr.FunctieKind.SOM, som.kind());

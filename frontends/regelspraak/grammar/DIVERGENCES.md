@@ -1062,10 +1062,19 @@ at all (a reference by type name points back to a subject of that type,
 A fold's range follows the same order: the count source by its written name
 and then by the pair, a set reading by the pair and then by the written name
 (whose role must declare the element type itself). A fold without a range is
-refused with an ERROR in the loader's sentence (`a single-argument fold with an
-elementType carries its range … : the range is written, never derived`), and
-under a total whose element is another type in WF-083's sentence; a total
-over the subject's own type without a range keeps this frontend's words.
+refused with an ERROR in the loader's sentence (`a single-argument fold with
+an elementType carries its range … : the range is written, never derived`),
+and under a total whose element is another type in WF-083's sentence; a total
+over the subject's own type without a range keeps this frontend's words. The
+other folds the wire cannot spell are refused the same way, each in the
+sentence for what the emitter would write: a step or chain written on the
+source ("het aantal liggers van zijn thuishaven", "het totaal van het kadegeld
+van zijn thuishaven") in WF-053's (`a path on a fold source is ill-formed …`),
+any fold but a total over the subject's own attribute ("de som van zijn
+romplengte") in the loader's, and a total over another type's attribute ("het
+totaal van het kadegeld van de Haven" on a Schuit), whose step a total without
+a range drops, in WF-083's. The first two ended in the emitter's exception;
+the third went to disk with `diagnostics: []` and the verifier refused it.
 
 A read whose binding reaches a to-many role in a slot that takes one value is
 refused with an ERROR too, in the verifier's WF-053 sentence (`hop 0 reaches
