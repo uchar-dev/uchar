@@ -307,11 +307,12 @@ public final class DefinitionResolver {
             // §13.3.6 a temporal attribute carries a tijdlijn ("voor elk jaar") — record its granularity so
             // the Phase-7 value model can later lower the periods; absent for an ordinary single-value attribute.
             Granulariteit g = granulariteitVan(a.tijdlijn());
-            vastStartpunt(a.tijdlijn());
             if (g != null) {
                 ot.attribuutGranulariteit.put(naam, g);
                 int aantal = aantalVan(a.tijdlijn());   // §13.3.6.7 the "5" in "voor elke 5 maanden"; 1 otherwise
                 if (aantal != 1) ot.attribuutTijdlijnAantal.put(naam, aantal);
+                String vast = vastStartpuntVan(a.tijdlijn(), g, aantal);
+                if (vast != null) ot.attribuutVastStartpunt.put(naam, vast);
                 // §13.3.6.9 the NAMED form: keep the tijdlijn name so §9.9 can route a variable
                 // startpunt to its anchor (the inline "voor elke maand" forms record none).
                 if (a.tijdlijn().ELKE() != null && a.tijdlijn().tijdlijnNaam() != null)
@@ -324,11 +325,12 @@ public final class DefinitionResolver {
             ot.kenmerkSoorten.put(naam, kenmerkSoortVan(m.kenmerkSpecificatie()));   // §3.5 drives the §8.1.8 predicate form
             TijdlijnContext kt = tijdlijnVan(m.kenmerkSpecificatie());
             Granulariteit gk = granulariteitVan(kt);
-            vastStartpunt(kt);
             if (gk != null) {
                 ot.kenmerkGranulariteit.put(naam, gk);
                 int aantal = aantalVan(kt);
                 if (aantal != 1) ot.kenmerkTijdlijnAantal.put(naam, aantal);
+                String vast = vastStartpuntVan(kt, gk, aantal);
+                if (vast != null) ot.kenmerkVastStartpunt.put(naam, vast);
             }
         }
         // koptekst carries no model information
@@ -596,8 +598,19 @@ public final class DefinitionResolver {
         String naam = src(ctx.parameterNaam());
         // §13.3.6/§13.3.8 a parameter may carry a tijdlijn ("voor elk jaar") -> its runtime value is a timeline.
         Granulariteit g = ctx.tijdlijn() != null ? granulariteitVan(ctx.tijdlijn()) : null;
-        vastStartpunt(ctx.tijdlijn());
-        model.parameters.put(naam, new Parameter(naam, datatypeVan(ctx.datatype(), ctx.domeinNaam()), g));
+        String vast = null;
+        if (g != null) {
+            int aantal = aantalVan(ctx.tijdlijn());
+            // IR-SPEC ch. 2.10: a parameter's facet has count 1 while multi-period grids are open, and the model's
+            // parameter has no count to write — refused in WF-005's words rather than written as one period
+            if (aantal != 1)
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "parameter '" + naam + "': " + "the timeline facet of parameter '" + naam + "' has count "
+                                + aantal + " > 1: a parameter's timeline is one period while multi-period grids are "
+                                + "open (RUNTIME-SEMANTICS ch. 3.12)", ctx.getStart().getLine()));
+            else vast = vastStartpuntVan(ctx.tijdlijn(), g, aantal);
+        }
+        model.parameters.put(naam, new Parameter(naam, datatypeVan(ctx.datatype(), ctx.domeinNaam()), g, vast));
     }
 
     // ---------------- §13.3.6 timelines ----------------
@@ -606,8 +619,8 @@ public final class DefinitionResolver {
         String naam = src(ctx.tijdlijnNaam());
         Granulariteit gran = granulariteitVanDefinitie(ctx);
         int aantal = aantalVanDefinitie(ctx);
-        vastStartpunt(ctx.vastStartpuntDatum(), ctx.vastStartpuntMaand(), ctx.vastStartpuntKwartaal(),
-                ctx.vastStartpuntJaar());
+        String vast = gran == null ? null : vastStartpunt(gran, aantal, ctx.vastStartpuntDatum(),
+                ctx.vastStartpuntMaand(), ctx.vastStartpuntKwartaal(), ctx.vastStartpuntJaar());
         // §13.3.6.10: a "voor elke <tijdlijn>" reference adopts the FIRST timeline of that (normalised) name via
         // findFirst. Warn only when an earlier same-name timeline declares a DIFFERENT periodicity (granularity
         // or count) — then the reference silently disagrees; an identical redeclaration is harmless.
@@ -618,45 +631,112 @@ public final class DefinitionResolver {
                     "tijdlijn '" + naam + "' is meermaals met verschillende periodiciteit gedefinieerd; een 'voor "
                             + "elke <naam>' verwijzing neemt die van de eerste (§13.3.6.10)",
                     ctx.tijdlijnNaam().getStart().getLine()));
-        model.tijdlijnen.add(new Tijdlijn(naam, variabel, gran, aantal));
+        model.tijdlijnen.add(new Tijdlijn(naam, variabel, gran, aantal, vast));
     }
 
-    /** §13.3.6.3–.7 the fixed startpunt of an inline tijdlijn attachment, if any (the named form carries
-     *  its startpunt in the definition, checked there). */
-    private void vastStartpunt(TijdlijnContext t) {
-        if (t == null) return;
+    /** §13.3.6.3–.7 the fixed start point of a tijdlijn attachment in its wire spelling (IR-SPEC ch. 2.8), or null
+     *  on the calendar grid. The inline forms write it here; the named form ("voor elke &lt;tijdlijn&gt;") adopts
+     *  the definition's with its granularity and count, by the same first-match rule. */
+    private String vastStartpuntVan(TijdlijnContext t, Granulariteit g, int aantal) {
         if (t.enkelvoudigePeriode() != null) {
             EnkelvoudigePeriodeContext e = t.enkelvoudigePeriode();
-            vastStartpunt(e.vastStartpuntDatum(), e.vastStartpuntMaand(), e.vastStartpuntKwartaal(),
+            return vastStartpunt(g, aantal, e.vastStartpuntDatum(), e.vastStartpuntMaand(), e.vastStartpuntKwartaal(),
                     e.vastStartpuntJaar());
         }
-        if (t.meervoudigePeriode() != null) vastStartpunt(t.meervoudigePeriode().vastStartpuntDatum(), null, null, null);
+        if (t.meervoudigePeriode() != null)
+            return vastStartpunt(g, aantal, t.meervoudigePeriode().vastStartpuntDatum(), null, null, null);
+        if (t.ELKE() != null && t.tijdlijnNaam() != null) {
+            String ref = normaliseerTijdlijnNaam(src(t.tijdlijnNaam()));
+            return model.tijdlijnen.stream().filter(tl -> normaliseerTijdlijnNaam(tl.naam()).equals(ref))
+                    .map(Tijdlijn::vastStartpunt).findFirst().orElse(null);
+        }
+        return null;
     }
 
-    /** Records a fixed startpunt the wire cannot carry in {@link RegelSpraakModel#vasteStartpunten}; at
-     *  most one of the four is present. Three start points add nothing to the anchorless tijdlijn and are
-     *  left off the wire without loss, unrecorded: day 1 of the month and day 1 of month 1 coincide with the
-     *  month and year buckets of RUNTIME-SEMANTICS ch. 3.2; day 1 of months 1, 4, 7 and 10 is the calendar
-     *  quarter, which the anchorless "voor elk kwartaal" already means (ch. 3.2 defines no quarter bucket,
-     *  so there is no grid to disagree with). A date form is never
-     *  the calendar default: the week has no calendar grid at all, and a multi-period grid is laid FROM the
-     *  date. Any spelling other than the literal "1" counts as off-calendar, which errs on the loud side. */
-    private void vastStartpunt(VastStartpuntDatumContext datum, VastStartpuntMaandContext maand,
-                               VastStartpuntKwartaalContext kwartaal, VastStartpuntJaarContext jaar) {
-        if (datum != null)
-            meldVastStartpunt("§13.3.6.3", datum);
-        if (maand != null && !"1".equals(maand.NUMBER().getText()))
-            meldVastStartpunt("§13.3.6.4", maand);
-        if (kwartaal != null && !("1".equals(kwartaal.NUMBER().getText())
-                && kwartaal.kwartaalGroep().NUMBER().stream().map(n -> n.getText()).toList()
-                        .equals(List.of("1", "4", "7", "10"))))
-            meldVastStartpunt("§13.3.6.5", kwartaal);
-        if (jaar != null && !("1".equals(jaar.NUMBER(0).getText()) && "1".equals(jaar.NUMBER(1).getText())))
-            meldVastStartpunt("§13.3.6.6", jaar);
+    /** The wire spelling of the fixed start point the source writes, at most one of the four present
+     *  (IR-SPEC ch. 2.8): a date on a week grid and on a grid of several units, the canonical day-month on a month,
+     *  quarter or year grid of one unit — so a date on such a grid ("elke 1 maanden startend op 15-3-2026") is
+     *  written as the day-month it lays. The calendar's own start point is null: day 1 of the month, day 1 of
+     *  months 1, 4, 7 and 10 and day 1 of month 1 are the timeline without one, and so is any date on a day grid of
+     *  one unit, whose walls are all day boundaries. A source that names no day is refused by name here and yields
+     *  null, so no document is written with it. */
+    private String vastStartpunt(Granulariteit g, int aantal, VastStartpuntDatumContext datum,
+                                 VastStartpuntMaandContext maand, VastStartpuntKwartaalContext kwartaal,
+                                 VastStartpuntJaarContext jaar) {
+        if (datum != null) {
+            java.time.LocalDate d = startdatum(datum);
+            if (d == null) return null;
+            if (aantal >= 2 || g == Granulariteit.WEEK) return d.toString();
+            if (g == Granulariteit.DAG) return null;
+            return kalenderLeeg(dev.uchar.regelspraak.kern.VastStartpunt.canoniek(g, d.getMonthValue(), d.getDayOfMonth()));
+        }
+        if (maand != null) {
+            Integer dag = geheel(maand.NUMBER());
+            if (dag == null || dag < 1 || dag > 31) return weiger("§13.3.6.4", maand, "noemt geen dag van de maand");
+            return kalenderLeeg(dev.uchar.regelspraak.kern.VastStartpunt.canoniek(g, 1, dag));
+        }
+        if (kwartaal != null) {
+            List<Integer> maanden = kwartaal.kwartaalGroep().NUMBER().stream().map(n -> geheel(n)).toList();
+            Integer eerste = maanden.get(0);
+            if (eerste == null || eerste < 1 || eerste > 3
+                    || !maanden.equals(List.of(eerste, eerste + 3, eerste + 6, eerste + 9)))
+                return weiger("§13.3.6.5", kwartaal, "noemt geen reeks kwartaalmaanden: die is 1, 4, 7 en 10, "
+                        + "2, 5, 8 en 11 of 3, 6, 9 en 12");
+            Integer dag = geheel(kwartaal.NUMBER());
+            if (dag == null || dag < 1 || dag > 31) return weiger("§13.3.6.5", kwartaal, "noemt geen dag van de maand");
+            return kalenderLeeg(dev.uchar.regelspraak.kern.VastStartpunt.canoniek(g, eerste, dag));
+        }
+        if (jaar != null) {
+            Integer dag = geheel(jaar.NUMBER(0)), m = geheel(jaar.NUMBER(1));
+            if (m == null || m < 1 || m > 12) return weiger("§13.3.6.6", jaar, "noemt geen maand");
+            String c = dag == null ? null : dev.uchar.regelspraak.kern.VastStartpunt.canoniek(g, m, dag);
+            if (c == null) return weiger("§13.3.6.6", jaar, "noemt een dag die maand " + m + " niet heeft");
+            return kalenderLeeg(c);
+        }
+        return null;
     }
 
-    private void meldVastStartpunt(String sectie, ParserRuleContext ctx) {
-        model.vasteStartpunten.add(new RegelSpraakModel.VastStartpunt(sectie, src(ctx), ctx.getStart().getLine()));
+    /** The calendar's own start point is written as none (IR-SPEC ch. 2.8). */
+    private static String kalenderLeeg(String spelling) {
+        return "--01-01".equals(spelling) ? null : spelling;
+    }
+
+    private static final java.util.regex.Pattern STARTDATUM =
+            java.util.regex.Pattern.compile("(?:dd\\. +)?(\\d{1,2})-(\\d{1,2})-(\\d{4})");
+
+    /** The day of a §13.3.6.3 "startend op &lt;datum&gt;", or null after refusing a source that names none: a periode
+     *  starts on a day, so a time of day has no place in it, and a bare number or an impossible date names no day. */
+    private java.time.LocalDate startdatum(VastStartpuntDatumContext datum) {
+        TerminalNode d = datum.datumWaarde().DATE();
+        java.util.regex.Matcher m = d == null ? null : STARTDATUM.matcher(d.getText());
+        if (m != null && !m.matches() && d.getText().contains(":"))
+            return weigerDatum(datum, "draagt een tijdstip, en een tijdvak begint op een dag");
+        if (m == null || !m.matches()) return weigerDatum(datum, "noemt geen dag van de kalender");
+        try {
+            return java.time.LocalDate.of(Integer.parseInt(m.group(3)), Integer.parseInt(m.group(2)),
+                    Integer.parseInt(m.group(1)));
+        } catch (java.time.DateTimeException geenDag) {
+            return weigerDatum(datum, "noemt geen dag van de kalender");
+        }
+    }
+
+    private java.time.LocalDate weigerDatum(VastStartpuntDatumContext datum, String reden) {
+        weiger("§13.3.6.3", datum, reden);
+        return null;
+    }
+
+    /** A source start point the wire cannot spell, refused by name with its section. */
+    private String weiger(String sectie, ParserRuleContext ctx, String reden) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                "tijdlijn: het vaste startpunt '" + src(ctx) + "' (" + sectie + ") " + reden,
+                ctx.getStart().getLine()));
+        return null;
+    }
+
+    /** A NUMBER token as a whole number, or null when it is none (a decimal or a fraction). */
+    private static Integer geheel(TerminalNode n) {
+        if (n == null || !n.getText().matches("\\d{1,9}")) return null;
+        return Integer.parseInt(n.getText());
     }
 
     /** §13.3.6 the {@link Granulariteit} of a tijdlijn ATTACHMENT on an attribute/kenmerk. The single-period

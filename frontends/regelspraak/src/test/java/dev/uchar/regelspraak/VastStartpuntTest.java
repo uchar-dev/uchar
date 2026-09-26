@@ -13,33 +13,21 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The fixed start point of a timeline (§13.3.6.3–.7) at the wire boundary.
+ * The fixed start point of a timeline (§13.3.6.3–.7) on the wire: {@code fixedStart} on a {@code Timeline} and on the
+ * timeline facet of an attribute, a characteristic or a parameter (IR-SPEC ch. 2.8).
  *
- * <p><b>Red first, measured 2026-09-22 on the commit before this card.</b> Every refused source below
- * emitted with exit 0 and {@code diagnostics: []}; the start point left no trace on the wire, so
- * "voor elk jaar startend op dag 15 van maand 10" emitted byte-identically to "voor elk jaar".
+ * <p><b>Measured 2026-09-26 on the commit before this.</b> Every source below that now emits was refused at emission
+ * with an ERROR naming its section, because the wire had no field for the start point, and an executor lays a
+ * timeline without one on the calendar grid.
  *
- * <p><b>Why a refusal and not a field.</b> The wire has no field for a fixed start point: a
- * {@code Timeline} carries name, {@code variableStart}, granularity and count; the attribute,
- * characteristic and parameter facets carry granularity and count; {@code StartPointDetermination} is
- * the VARIABLE-start anchor (IR-SPEC ch. 3.8) and holds no date. Both executors read an anchorless
- * timeline on the calendar grid (RUNTIME-SEMANTICS ch. 3.2), so a start point off that grid changes
- * the meaning: the period the author declared is refused as off-grid input by the reference
- * interpreter, and the calendar period it did not declare is accepted.
- *
- * <p><b>Why the model still resolves.</b> The model layer records granularity and count correctly;
- * only the wire cannot carry the start point. The refusal therefore sits at the emission boundary —
- * {@code Resolver --ir} and {@link IrEmitter#emit} — and {@link Resolver#resolve} stays error-free.
- *
- * <p><b>The lossless omission.</b> Day 1 of the month and day 1 of month 1 coincide with the month
- * and year buckets the executors use; day 1 of months 1, 4, 7 and 10 is the calendar quarter, which
- * the anchorless quarter timeline already means (no quarter bucket exists to disagree with). Leaving
- * these three off is not a loss. That omission is pinned byte for byte below.
+ * <p><b>The spelling.</b> A date on a week grid and on a grid of several units, the canonical day-month on a month,
+ * quarter or year grid of one unit: {@code mm} the earliest month of the year that has a wall on day {@code dd}
+ * itself. The calendar's own start point is written as none, so the three that coincide with it emit byte for byte
+ * the timeline written without one. A source that names no day is refused by name at resolution.
  */
 class VastStartpuntTest {
 
@@ -52,111 +40,113 @@ class VastStartpuntTest {
         return KOP + "    de waarde Bedrag " + tijdlijn + ";\n";
     }
 
-    private record Uitkomst(int rc, boolean geschreven, String stdout) {}
-
-    /** The real CLI path: resolve + emit into a temp file, stdout captured. */
-    private static Uitkomst irModus(String bron) throws Exception {
-        Path dir = Files.createTempDirectory("vaststartpunt");
-        Path rgs = dir.resolve("bron.rgs");
-        Path out = dir.resolve("ir.json");
-        Files.writeString(rgs, bron, StandardCharsets.UTF_8);
-        PrintStream oud = System.out;
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        int rc;
-        try {
-            System.setOut(new PrintStream(buf, true, StandardCharsets.UTF_8));
-            rc = Resolver.irModus(new java.util.ArrayList<>(List.of(out.toString(), rgs.toString())));
-        } finally {
-            System.setOut(oud);
-        }
-        return new Uitkomst(rc, Files.exists(out), buf.toString(StandardCharsets.UTF_8));
+    /** The emitted document without whitespace, as the other emission witnesses read it. */
+    private static String wire(String bron) {
+        RegelSpraakModel m = Resolver.resolve(bron);
+        assertTrue(m.isOk(), () -> "de bron lost foutloos op: " + m.diagnostics);
+        return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    /** The source must be refused by name on BOTH emission routes, and nowhere earlier. */
-    private static void weigert(String bron, String sectie, String fragment) throws Exception {
+    private static String facet(String granularity, int count, String vast) {
+        return "\"timeline\":{\"node\":\"TimelineFacet\",\"granularity\":\"" + granularity + "\",\"count\":" + count
+                + ",\"fixedStart\":\"" + vast + "\"";
+    }
+
+    private static void emitteert(String bron, String verwacht) {
+        String ir = wire(bron);
+        assertTrue(ir.contains(verwacht), () -> "verwacht " + verwacht + " in:\n" + ir);
+    }
+
+    /** A source that names no day is refused at resolution, by section and clause, and no document is written. */
+    private static void weigert(String bron, String sectie, String fragment) {
         RegelSpraakModel m = Resolver.resolve(bron);
-        assertTrue(m.isOk(), () -> "het model zelf lost op; alleen de wire weigert: " + m.errors());
-
-        Uitkomst u = irModus(bron);
-        assertEquals(1, u.rc(), () -> "--ir moet weigeren (exit 1), kreeg " + u.rc() + ":\n" + u.stdout());
-        assertFalse(u.geschreven(), "een geweigerd document wordt niet geschreven");
-        assertTrue(u.stdout().contains("ERROR") && u.stdout().contains(sectie) && u.stdout().contains(fragment),
-                () -> "de weigering noemt sectie " + sectie + " en '" + fragment + "':\n" + u.stdout());
-
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
-                "IrEmitter.emit mag het startpunt niet stil laten vallen");
-        assertTrue(e.getMessage().contains(sectie) && e.getMessage().contains(fragment),
-                () -> "de emitterweigering noemt de zin: " + e.getMessage());
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains(sectie) && d.message().contains(fragment)),
+                () -> "verwacht een ERROR met " + sectie + " en '" + fragment + "', kreeg: " + m.diagnostics);
+        assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m), "een geweigerde bron wordt niet geschreven");
     }
 
     // ---------------- the date form, §13.3.6.3 ----------------
 
-    @Test void week_startend_op_een_datum_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elke week startend op 5-1-2026"), "§13.3.6.3", "startend op 5-1-2026");
+    @Test void week_startend_op_een_datum() {
+        emitteert(attribuut("voor elke week startend op 5-1-2026"), facet("week", 1, "2026-01-05"));
     }
 
-    @Test void week_startend_op_een_datum_met_tijdcomponent_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elke week startend op 5-1-2026 12:00:00.000"), "§13.3.6.3",
-                "startend op 5-1-2026 12:00:00.000");
+    @Test void meervoudige_periode_startend_op_een_datum() {
+        emitteert(attribuut("voor elke 5 maanden startend op 1-4-2026"), facet("month", 5, "2026-04-01"));
     }
 
-    @Test void meervoudige_periode_startend_op_een_datum_wordt_geweigerd() throws Exception {
-        // §13.3.6.7 makes the date mandatory for a multi-period grid; the wire keeps the count (5) and
-        // drops the date the grid is laid from.
-        weigert(attribuut("voor elke 5 maanden startend op 1-4-2026"), "§13.3.6.3", "startend op 1-4-2026");
+    @Test void een_datum_op_een_raster_van_een_maand_wordt_zijn_dag_maand() {
+        // "elke 1 maanden" is a month grid of one unit, whose start point is the day of the month the date names
+        emitteert(attribuut("voor elke 1 maanden startend op 15-3-2026"), facet("month", 1, "--01-15"));
     }
 
-    // ---------------- the day-of forms off the calendar, §13.3.6.4–.6 ----------------
-
-    @Test void maand_startend_op_een_andere_dag_dan_1_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elke maand startend op dag 15 van de maand"), "§13.3.6.4",
-                "startend op dag 15 van de maand");
+    @Test void een_datum_met_een_tijdstip_wordt_geweigerd() {
+        weigert(attribuut("voor elke week startend op 5-1-2026 12:00:00.000"), "§13.3.6.3", "draagt een tijdstip");
     }
 
-    @Test void kwartaal_buiten_de_kalenderkwartalen_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elk kwartaal startend op dag 1 van maand 2, 5, 8 en 11"), "§13.3.6.5",
-                "startend op dag 1 van maand 2, 5, 8 en 11");
+    @Test void een_datum_die_niet_bestaat_wordt_geweigerd() {
+        weigert(attribuut("voor elke week startend op 30-2-2026"), "§13.3.6.3", "noemt geen dag van de kalender");
     }
 
-    @Test void kwartaalgroep_die_pas_op_een_later_element_afwijkt_wordt_geweigerd() throws Exception {
-        // not a valid source-language group, but the grammar admits it; the whole group is compared,
-        // so a deviation after the first element is caught too
+    // ---------------- the day-of forms, §13.3.6.4–.6 ----------------
+
+    @Test void maand_startend_op_een_dag() {
+        emitteert(attribuut("voor elke maand startend op dag 15 van de maand"), facet("month", 1, "--01-15"));
+        emitteert(attribuut("voor elke maand startend op dag 31 van de maand"), facet("month", 1, "--01-31"));
+        weigert(attribuut("voor elke maand startend op dag 32 van de maand"), "§13.3.6.4", "noemt geen dag van de maand");
+    }
+
+    @Test void kwartaal_startend_op_een_dag() {
+        emitteert(attribuut("voor elk kwartaal startend op dag 1 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--02-01"));
+        emitteert(attribuut("voor elk kwartaal startend op dag 10 van maand 1, 4, 7 en 10"), facet("quarter", 1, "--01-10"));
+        // day 31 is not in February: the earliest month of the cycle that has it is May
+        emitteert(attribuut("voor elk kwartaal startend op dag 31 van maand 2, 5, 8 en 11"), facet("quarter", 1, "--05-31"));
+    }
+
+    @Test void kwartaalgroep_die_geen_kwartaalreeks_is_wordt_geweigerd() {
+        // the grammar admits any four numbers; the source language admits three groups
         weigert(attribuut("voor elk kwartaal startend op dag 1 van maand 1, 5, 8 en 11"), "§13.3.6.5",
-                "startend op dag 1 van maand 1, 5, 8 en 11");
+                "noemt geen reeks kwartaalmaanden");
     }
 
-    @Test void kwartaal_op_een_andere_dag_dan_1_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elk kwartaal startend op dag 10 van maand 1, 4, 7 en 10"), "§13.3.6.5",
-                "startend op dag 10 van maand 1, 4, 7 en 10");
+    @Test void jaar_startend_op_een_dag_van_een_maand() {
+        emitteert(attribuut("voor elk jaar startend op dag 15 van maand 10"), facet("year", 1, "--10-15"));
+        emitteert(attribuut("voor elk jaar startend op dag 15 van maand 1"), facet("year", 1, "--01-15"));
+        emitteert(attribuut("voor elk jaar startend op dag 29 van maand 2"), facet("year", 1, "--02-29"));
+        weigert(attribuut("voor elk jaar startend op dag 30 van maand 2"), "§13.3.6.6", "noemt een dag die maand 2 niet heeft");
+        weigert(attribuut("voor elk jaar startend op dag 1 van maand 13"), "§13.3.6.6", "noemt geen maand");
     }
 
-    @Test void jaar_startend_buiten_1_januari_wordt_geweigerd() throws Exception {
-        weigert(attribuut("voor elk jaar startend op dag 15 van maand 10"), "§13.3.6.6",
-                "startend op dag 15 van maand 10");
-        // the DAY dimension on its own: month 1 is the calendar month, only the day deviates
-        weigert(attribuut("voor elk jaar startend op dag 15 van maand 1"), "§13.3.6.6",
-                "startend op dag 15 van maand 1");
+    // ---------------- the other positions ----------------
+
+    @Test void kenmerk_met_een_vast_startpunt() {
+        emitteert(KOP + "    is duurzaam kenmerk (bijvoeglijk) voor elke week startend op 5-1-2026;\n",
+                facet("week", 1, "2026-01-05"));
     }
 
-    // ---------------- the other attachment positions ----------------
-
-    @Test void kenmerk_met_een_vast_startpunt_wordt_geweigerd() throws Exception {
-        weigert(KOP + "    is duurzaam kenmerk (bijvoeglijk) voor elke week startend op 5-1-2026;\n",
-                "§13.3.6.3", "startend op 5-1-2026");
+    @Test void parameter_met_een_vast_startpunt() {
+        emitteert(KOP + "Parameter het weektarief : Numeriek (geheel getal) voor elke week startend op 5-1-2026\n",
+                facet("week", 1, "2026-01-05"));
     }
 
-    @Test void parameter_met_een_vast_startpunt_wordt_geweigerd() throws Exception {
-        weigert(KOP + "Parameter het weektarief : Numeriek (geheel getal) voor elke week startend op 5-1-2026\n",
-                "§13.3.6.3", "startend op 5-1-2026");
+    /** A parameter's facet has count 1 while multi-period grids are open, and the model's parameter has no count to
+     *  write: refused in WF-005's words rather than written as one period. Measured before this card: refused for its
+     *  start point only; through a named timeline the count was dropped without a word. */
+    @Test void parameter_over_meerdere_perioden_wordt_geweigerd() {
+        weigert(KOP + "Parameter het bloktarief : Numeriek (geheel getal) voor elke 5 maanden startend op 1-4-2026\n",
+                "parameter 'bloktarief'", "has count 5 > 1: a parameter's timeline is one period");
     }
 
-    @Test void benoemde_tijdlijn_met_een_vast_startpunt_wordt_geweigerd() throws Exception {
-        weigert("Tijdlijn de schoft heeft tijdvakken van een week startend op 5-1-2026;\n" + KOP
-                + "    de waarde Bedrag voor elke schoft;\n", "§13.3.6.3", "startend op 5-1-2026");
-        weigert("Tijdlijn het boekjaar heeft tijdvakken van een jaar startend op dag 1 van maand 7;\n" + KOP
-                + "    de waarde Bedrag voor elke boekjaar;\n", "§13.3.6.6", "startend op dag 1 van maand 7");
-        weigert("Tijdlijn het blok heeft tijdvakken van 5 maanden startend op 1-4-2026;\n" + KOP
-                + "    de waarde Bedrag voor elke blok;\n", "§13.3.6.3", "startend op 1-4-2026");
+    @Test void benoemde_tijdlijn_draagt_haar_startpunt_en_het_facet_neemt_het_over() {
+        String ir = wire("Tijdlijn het boekjaar heeft tijdvakken van een jaar startend op dag 1 van maand 7;\n" + KOP
+                + "    de waarde Bedrag voor elke boekjaar;\n");
+        assertTrue(ir.contains("\"node\":\"Timeline\",\"name\":\"hetboekjaar\",\"variableStart\":false,"
+                + "\"granularity\":\"year\",\"count\":1,\"fixedStart\":\"--07-01\"}"), ir);
+        assertTrue(ir.contains(facet("year", 1, "--07-01") + ",\"timelineName\":\"boekjaar\"}"), ir);
+        emitteert("Tijdlijn de schoft heeft tijdvakken van een week startend op 5-1-2026;\n" + KOP
+                + "    de waarde Bedrag voor elke schoft;\n", facet("week", 1, "2026-01-05") + ",\"timelineName\":\"schoft\"}");
+        emitteert("Tijdlijn het blok heeft tijdvakken van 5 maanden startend op 1-4-2026;\n" + KOP
+                + "    de waarde Bedrag voor elke blok;\n", facet("month", 5, "2026-04-01") + ",\"timelineName\":\"blok\"}");
     }
 
     // ---------------- the lossless omission: the calendar start point ----------------

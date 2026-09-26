@@ -49,16 +49,6 @@ public final class RegelSpraakModel {
     /** Resolved §9.9/§13.4.12 startpuntbepalingen — the anchor member per (objecttype, variable tijdlijn);
      *  the anchor WRITE itself is an ordinary entry in {@link #resolvedRegels}. */
     public final List<dev.uchar.regelspraak.ir.ResolvedStartpunt> resolvedStartpunten = new ArrayList<>();
-    /** §13.3.6.3–.7 the FIXED startpunten that deviate from the calendar period, in source order. The model
-     *  resolves them (granularity and count are right), but the wire has no field for the start point
-     *  and every executor lays an anchorless tijdlijn on the calendar grid — so the emission boundary
-     *  refuses a model that carries one ({@code IrEmitter.wireWeigeringen}). Three start points are not
-     *  recorded, because omitting them loses nothing: day 1 of the month and of month 1 (they coincide with the month and year
-     *  buckets) and day 1 of months 1, 4, 7 and 10 (the calendar quarter the anchorless quarter tijdlijn
-     *  already means; no quarter bucket exists). Not emitted itself. */
-    public final List<VastStartpunt> vasteStartpunten = new ArrayList<>();
-    /** One off-calendar fixed start point: the production's section, the source clause, its line. */
-    public record VastStartpunt(String sectie, String bron, int line) {}
     /** §9.10 Regelgroepen — a DOCUMENTED EXTENSION (see grammar/DIVERGENCES.md). Each carries its member
      *  RULE NAMES (the bare written names); members otherwise resolve exactly as ungrouped rules. Both back-ends
      *  prefix ONLY the engine-visible rule-name header with "<groep>: " — every data key stays the bare name. */
@@ -145,6 +135,19 @@ public final class RegelSpraakModel {
     public String startpuntAnkerLid(Objecttype ot, String attribuut) {
         if (!heeftVariabelStartpunt(ot, attribuut)) return null;
         return startpuntLid(ot, ot.attribuutTijdlijnNaam.get(attribuut));   // own, with the family above
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.2 the constant anchor a temporal doel on a FIXED start point buckets at: the date
+     *  its walls are computed from, or null on the calendar grid. The bucketing producers run on a month or year
+     *  doel of one unit only, and there the start point is a day-month (WF-115). */
+    public java.time.LocalDate vastStartpuntAnker(Objecttype ot, String attribuut) {
+        String vast = ot.vastStartpuntVan(attribuut);
+        if (vast == null) return null;
+        dev.uchar.regelspraak.kern.VastStartpunt.Lexeem l = dev.uchar.regelspraak.kern.VastStartpunt.lees(vast);
+        if (l == null)
+            throw new IllegalStateException("fixed start point '" + vast + "' of '" + attribuut + "' is no lexeme of "
+                    + "WF-115, which the loader refuses");
+        return dev.uchar.regelspraak.kern.VastStartpunt.anker(l);
     }
 
     /** §9.9 whether {@code lid} is the synthetic startpunt-anchor attribute of {@code objecttype} — the
@@ -783,8 +786,7 @@ public final class RegelSpraakModel {
          *  tijdsevenredig, gedurende). The VARIABLE startpunt has since been captured — a named
          *  tijdlijn records it in {@link Tijdlijn#variabelStartpunt} and §9.9's startpuntbepaling
          *  resolves its anchor ({@link #startpuntAnkerLid}). A FIXED startpunt ("voor elke 5 maanden
-         *  startend op …") has no place here or on the wire: off the calendar it is recorded in
-         *  {@link RegelSpraakModel#vasteStartpunten} and refused at emission. */
+         *  startend op …") is {@link #attribuutVastStartpunt}. */
         public final Map<String, Granulariteit> attribuutGranulariteit = new LinkedHashMap<>();
         /** §13.3.6.7 the period COUNT of a MULTI-period tijdlijn ("voor elke 5 maanden" -&gt; 5), keyed by the
          *  attribute naam — absent (count 1) for a single-period "voor elke maand" as the resolver records it; a
@@ -795,12 +797,19 @@ public final class RegelSpraakModel {
          *  attribute naam — absent for the inline forms ("voor elke maand"). Recorded so the §9.9 machinery
          *  can see whether that tijdlijn has a variabel startpunt and find its anchor. */
         public final Map<String, String> attribuutTijdlijnNaam = new LinkedHashMap<>();
+        /** §13.3.6.3–.7 the FIXED start point of an attribute's tijdlijn in its wire spelling (IR-SPEC ch. 2.8,
+         *  {@code fixedStart}), keyed by the attribute naam — absent on the calendar grid, which is also where
+         *  the calendar's own start point ("startend op dag 1 van maand 1") leaves it. The named form adopts the
+         *  definition's, as it adopts the granularity and the count. */
+        public final Map<String, String> attribuutVastStartpunt = new LinkedHashMap<>();
         public final List<String> kenmerken = new ArrayList<>();
         /** §13.3.6 the granularity of a temporal kenmerk's tijdlijn ("is duurzaam kenmerk voor elke dag"),
          *  keyed by its naam — the kenmerk analogue of {@link #attribuutGranulariteit}. */
         public final Map<String, Granulariteit> kenmerkGranulariteit = new LinkedHashMap<>();
         /** §13.3.6.7 the kenmerk analogue of {@link #attribuutTijdlijnAantal}. */
         public final Map<String, Integer> kenmerkTijdlijnAantal = new LinkedHashMap<>();
+        /** §13.3.6.3–.7 the kenmerk analogue of {@link #attribuutVastStartpunt}. */
+        public final Map<String, String> kenmerkVastStartpunt = new LinkedHashMap<>();
         /** §3.5 the soort of each kenmerk, keyed by its naam — drives the §8.1.8 predicate form: a
          *  BIJVOEGLIJK kenmerk is written "is &lt;k&gt;", a BEZITTELIJK one "heeft het &lt;k&gt;", a
          *  ZELFSTANDIG one "is een &lt;k&gt;" (so only a ZELFSTANDIG kenmerk binds the EEN-form). */
@@ -932,6 +941,12 @@ public final class RegelSpraakModel {
             return opKetenKaart(t -> t.attribuutTijdlijnAantal);
         }
 
+        /** §13.3.6.3–.7 the fixed start point of attribute {@code naam}'s tijdlijn in its wire spelling, or null
+         *  on the calendar grid — chain-closed like the granularity, since an inherited attribute brings its facet. */
+        public String vastStartpuntVan(String naam) {
+            return opKeten(t -> t.attribuutVastStartpunt, naam);
+        }
+
         // NOTE: attribuutTijdlijnNaam has NO chain accessor on purpose — see heeftVariabelStartpunt.
 
         /** §13.3.6 the tijdlijn granularity of kenmerk {@code naam} — the kenmerk twin of
@@ -990,8 +1005,8 @@ public final class RegelSpraakModel {
     /** §13.3.8 a declared parameter. {@code granulariteit} is its §13.3.6 tijdlijn ("kan jaarlijks wijzigen", written
      *  "voor elk jaar") when the parameter is tijdsafhankelijk — its runtime value is then a timeline (a
      *  {@code List<Segment>}) rather than a scalar; null for an ordinary scalar parameter. */
-    public record Parameter(String naam, Datatype datatype, Granulariteit granulariteit) {
-        public Parameter(String naam, Datatype datatype) { this(naam, datatype, null); }
+    public record Parameter(String naam, Datatype datatype, Granulariteit granulariteit, String vastStartpunt) {
+        public Parameter(String naam, Datatype datatype) { this(naam, datatype, null, null); }
     }
 
     public static final class Feittype {
@@ -1126,8 +1141,10 @@ public final class RegelSpraakModel {
 
     /** §13.3.6.10 a named timeline: its naam, its {@link Granulariteit} and period {@code aantal} (so a "voor
      *  elke &lt;naam&gt;" attribute reference adopts BOTH — "heeft tijdvakken van 5 maanden" is granularity MAAND,
-     *  count 5), and whether `variabelStartpunt` is bound by a §13.4.12 startpuntbepaling. */
-    public record Tijdlijn(String naam, boolean variabelStartpunt, Granulariteit granulariteit, int aantal) {}
+     *  count 5), whether `variabelStartpunt` is bound by a §13.4.12 startpuntbepaling, and its fixed start point
+     *  in the wire spelling (IR-SPEC ch. 2.8), null on the calendar grid or with a variable start. */
+    public record Tijdlijn(String naam, boolean variabelStartpunt, Granulariteit granulariteit, int aantal,
+                           String vastStartpunt) {}
 
     /** §13.3.7 a dimension and its ordered label values. {@code voorzetsel} is the §3.6 read preposition
      *  for the suffix form ("na het attribuut met voorzetsel <vz>": a cell reads "&lt;attribuut&gt; &lt;vz&gt;

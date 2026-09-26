@@ -84,18 +84,6 @@ import java.util.Map;
  */
 public final class IrEmitter {
 
-    /** What the model carries that the wire has no field for, as ERROR diagnostics — today only the
-     *  off-calendar fixed startpunt (§13.3.6.3–.7, {@link RegelSpraakModel#vasteStartpunten}). The model
-     *  resolves it correctly; dropping it here would lay the tijdlijn on the calendar grid the author did
-     *  not declare. {@code Resolver --ir} adds these to the diagnostics so it writes nothing, and
-     *  {@link #emit} refuses the same models, so no emission route loses the start point in silence. */
-    public static List<Diagnostic> wireWeigeringen(RegelSpraakModel m) {
-        return m.vasteStartpunten.stream().map(v -> new Diagnostic(RegelSpraakModel.Severity.ERROR,
-                "tijdlijn: het vaste startpunt '" + v.bron() + "' (" + v.sectie() + ") wijkt af van de "
-                        + "kalenderperiode en de wire heeft er geen veld voor — de zin wordt geweigerd in "
-                        + "plaats van het startpunt stil te laten vallen", v.line())).toList();
-    }
-
     /** The allocations the wire cannot carry, as WARNING diagnostics: one whose method the frontend could not decide
      *  (the model's placeholder for it). IR-SPEC ch. 3.2 gives an allocation one of three methods and nothing else,
      *  so it is left out of the document and this names it, which is the producer's account of what stayed unresolved
@@ -112,9 +100,6 @@ public final class IrEmitter {
 
     /** Serialise the resolved model to the IR JSON text (two-space indented, trailing newline). */
     public static String emit(RegelSpraakModel m) {
-        List<Diagnostic> weigeringen = wireWeigeringen(m);
-        if (!weigeringen.isEmpty())
-            throw new IllegalStateException("de wire kan dit model niet dragen: " + weigeringen);
         // WF-113 (a): an ERROR means the producer refused the document, so a model that carries one has no
         // document to write; checked here and not only in irModus, so no emission route bypasses it. The
         // message and line clauses are the verifier's too: a document carrying either would be refused there.
@@ -378,7 +363,7 @@ public final class IrEmitter {
             if (dimensies != null && !dimensies.isEmpty()) { w.key("dimensions"); stringList(dimensies); }
             if (ot.attribuutGranulariteit.containsKey(a))
                 timelineFacet(ot.attribuutGranulariteit.get(a), ot.attribuutTijdlijnAantal.get(a),
-                        ot.attribuutTijdlijnNaam.get(a));
+                        ot.attribuutVastStartpunt.get(a), ot.attribuutTijdlijnNaam.get(a));
             w.endObject();
         }
         w.endArray();
@@ -392,19 +377,22 @@ public final class IrEmitter {
             w.key("kind").value(Spelling.CHARACTERISTIC_KIND.spelling(
                     soort == null ? Objecttype.KenmerkSoort.ZELFSTANDIG : soort));
             if (ot.kenmerkGranulariteit.containsKey(k))
-                timelineFacet(ot.kenmerkGranulariteit.get(k), ot.kenmerkTijdlijnAantal.get(k), null);
+                timelineFacet(ot.kenmerkGranulariteit.get(k), ot.kenmerkTijdlijnAantal.get(k),
+                        ot.kenmerkVastStartpunt.get(k), null);
             w.endObject();
         }
         w.endArray();
         w.endObject();
     }
 
-    /** A facet exists exactly when the member has a granularity; a member without a count is single-period. */
-    private void timelineFacet(Granulariteit granulariteit, Integer aantal, String tijdlijnNaam) {
+    /** A facet exists exactly when the member has a granularity; a member without a count is single-period, and
+     *  one without a fixed start point lies on the calendar grid (IR-SPEC ch. 2.8). */
+    private void timelineFacet(Granulariteit granulariteit, Integer aantal, String vastStartpunt, String tijdlijnNaam) {
         w.key("timeline").beginObject();
         w.key("node").value("TimelineFacet");
         w.key("granularity").value(Spelling.GRANULARITY.spelling(granulariteit));
         w.key("count").value(aantal == null ? 1 : aantal);
+        if (vastStartpunt != null) w.key("fixedStart").value(vastStartpunt);
         if (tijdlijnNaam != null) w.key("timelineName").value(tijdlijnNaam);
         w.endObject();
     }
@@ -417,6 +405,8 @@ public final class IrEmitter {
         zijkaartPast(ot, "attribuutGranulariteit", ot.attribuutGranulariteit, attributen, true);
         zijkaartPast(ot, "attribuutTijdlijnAantal", ot.attribuutTijdlijnAantal, ot.attribuutGranulariteit.keySet(), true);
         zijkaartPast(ot, "attribuutTijdlijnNaam", ot.attribuutTijdlijnNaam, ot.attribuutGranulariteit.keySet(), true);
+        zijkaartPast(ot, "attribuutVastStartpunt", ot.attribuutVastStartpunt, ot.attribuutGranulariteit.keySet(), true);
+        zijkaartPast(ot, "kenmerkVastStartpunt", ot.kenmerkVastStartpunt, ot.kenmerkGranulariteit.keySet(), true);
         zijkaartPast(ot, "kenmerkSoorten", ot.kenmerkSoorten, kenmerken, false);
         zijkaartPast(ot, "kenmerkGranulariteit", ot.kenmerkGranulariteit, kenmerken, true);
         zijkaartPast(ot, "kenmerkTijdlijnAantal", ot.kenmerkTijdlijnAantal, ot.kenmerkGranulariteit.keySet(), true);
@@ -465,7 +455,7 @@ public final class IrEmitter {
         w.key("node").value("Parameter");
         w.key("name").value(p.naam());
         w.key("datatype"); datatype(p.datatype(), true);
-        if (p.granulariteit() != null) timelineFacet(p.granulariteit(), null, null);
+        if (p.granulariteit() != null) timelineFacet(p.granulariteit(), null, p.vastStartpunt(), null);
         w.endObject();
     }
 
@@ -657,6 +647,7 @@ public final class IrEmitter {
         w.key("granularity").value(t.granulariteit() == null ? null
                 : Spelling.GRANULARITY.spelling(t.granulariteit()));
         w.key("count").value(t.aantal());
+        if (t.vastStartpunt() != null) w.key("fixedStart").value(t.vastStartpunt());
         w.endObject();
     }
 
