@@ -1818,7 +1818,8 @@ division by 12, never a pre-rounded ×0,0833 reciprocal).
 ### 3.8 Day counting and day-kind durations
 
 **aantal dagen in (de maand / het jaar).** Buckets a condition's
-true-periods on the calendar grid and emits, per touched bucket, one
+true-periods on the target's grid — the calendar grid, or the grid a fixed
+start point lays (ch. 3.2) — and emits, per touched bucket, one
 segment `[start(B), next(B))` whose value is the true-day count in `B`
 (multiple true intervals in one bucket sum). Empty buckets emit nothing.
 The operator's stated bucket ("de maand"/"het jaar") must equal the

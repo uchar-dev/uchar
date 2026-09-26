@@ -61,7 +61,10 @@ faults with file/position context — never a silent fallback.
   channel reads sit strictly above their producers. A dependency cycle
   reaching ref/ is a fault, never divergence.
 - **Timelines** (ch. 3): `lib/timeline.ml` carries the algebra — read,
-  calendar and anchored buckets with the month-end clamp, cut-merge
+  calendar and anchored buckets with the month-end clamp, the grid a
+  member reads (the calendar's, or the one a fixed start point lays —
+  one function for the case loader, the `asOfDate` bucket and the day
+  count; a grid of several units and a variable start refused), cut-merge
   (period-coalescing), temporal summation (contributor-skipping), and
   the temporal total with clipping — tested against the ch. 3 worked
   examples verbatim. Evaluation crosses the timeline/scalar boundary
