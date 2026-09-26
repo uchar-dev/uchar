@@ -29,7 +29,7 @@ Sessions may propose diffs to these; only the maintainer merges them:
 - `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`,
   `spec/verifier/`
 - `corpus/golden/anchor/` (hand-written cases with absolute expected values)
-- `.github/` (CI configuration, CODEOWNERS)
+- `.github/` (CODEOWNERS; the workflow file, hand-triggered only)
 - `scripts/` (gate scripts), `WAY-OF-WORKING.md`, and this file
 
 Mechanism: `.github/CODEOWNERS` plus branch protection (note: on the free org
@@ -102,7 +102,18 @@ Within that claim, per item:
 ## Gate set
 
 Grows monotonically; nothing that entered may regress; a green subset is not
-green. Current gates:
+green.
+
+**Where the gates run (maintainer decision 2026-09-26).** The gate set runs
+LOCALLY, on the maintainer's machine, before every landing
+(`WAY-OF-WORKING.md` §6); a red gate blocks the landing. GitHub Actions is
+not used and not paid for: `.github/workflows/gates.yml` documents the order
+and the per-gate environment and is triggered by hand only
+(`workflow_dispatch`), so it never runs on a push. Wherever a gate below
+says "CI leg unconditional and blocking" (or, for gate 9, conditional on
+the runner), read that as the decision taken at the time about the
+workflow; what is enforced is the local run, and gate 9 there is the
+reviewer's duty on a machine that has catala. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
    `corpus/negatief`, `corpus/rood`, `spec/schema`, `spec/verifier`,

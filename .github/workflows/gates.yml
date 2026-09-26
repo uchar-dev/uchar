@@ -1,10 +1,11 @@
-# The uchar gate set, run on every change (WAY-OF-WORKING.md section 6;
-# the gate list lives in CLAUDE.md and grows monotonically).
+# The uchar gate set (WAY-OF-WORKING.md section 6; the gate list lives in
+# CLAUDE.md and grows monotonically). The gates run LOCALLY before every
+# landing; GitHub Actions is not used (maintainer decision 2026-09-26). This
+# file documents the order and the per-gate environment and runs by hand only.
 name: gates
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   self-contained:

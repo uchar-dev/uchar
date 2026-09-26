@@ -107,8 +107,10 @@ without access to the maintainer's machine or private repositories.
 - **Rights tripwire.** Corpus data must contain no TOKA material
   (`corpus/README.md`); the same script trips on it.
 
-Run `scripts/check-self-contained.sh` before every commit; once CI exists it
-runs on every change.
+Run `scripts/check-self-contained.sh` before every commit, and the full gate
+set before every landing — locally (maintainer decision 2026-09-26: no
+GitHub Actions; `.github/workflows/gates.yml` documents the order and runs
+by hand only).
 
 ## 7. Definition of done
 

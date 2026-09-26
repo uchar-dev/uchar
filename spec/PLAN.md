@@ -227,7 +227,8 @@ Three things live deliberately outside the monorepo:
   SPEC_REV pin, scheduled ahead of the frontend evolution —
   freeze-invert-evolve.)*
 - **The held-out corpus split** — a separate private repository (e.g.
-  `uchar-corpus-heldout`), pulled only by the CI acceptance job (§8).
+  `uchar-corpus-heldout`), pulled only by an acceptance job (§8). Planned;
+  not created as of 2026-09-26.
 - **The org profile** (`.github` repo) — the public landing page until the
   spec is worth publishing; then `uchar.dev` serves `spec/` via GitHub Pages,
   so the domain serves the product itself.
@@ -574,7 +575,7 @@ meaning lives, not how it is written down. The phases interleave on purpose:
 the ASP hand-translation runs during spec-writing, and the interpreter
 implements the default model before any engine does. Meaning thus moves in
 three auditable steps — code → executable spec → logic — each with a
-gatekeeper in CI.
+gatekeeper in the gate set.
 
 ## 8. Multi-session agentic development — the RL harness, minus the RL
 
@@ -631,17 +632,21 @@ harness itself against a session that quietly gutted it.
 **Gate-set policy.** Reward hacking requires no gradients: a coding agent
 told to "make the tests pass" will, some fraction of the time, special-case
 the corpus, weaken an assertion, or edit the verifier. The defenses are
-therefore policy, *mechanized*, not optimism. A held-out corpus split exists
-**in a separate private repository, pulled only by the CI acceptance job** —
-held-out material inside the working repo would be theater for a repo-reading
-agent — and acceptance is measured on it. The protected paths — the
+therefore policy, *mechanized*, not optimism. A held-out corpus split was
+planned **in a separate private repository, pulled only by an acceptance
+job** — held-out material inside the working repo would be theater for a
+repo-reading agent. It does NOT exist, and no acceptance is measured on one
+(recorded 2026-09-26, after an independent review found the earlier
+sentence untrue; if it comes, it comes as that separate repository). The protected paths — the
 authoritative list lives in `CLAUDE.md` (Protected paths), with
 `.github/CODEOWNERS` as its mechanical mirror — take proposals from
 sessions, never merges: enforced by CODEOWNERS plus branch protection once
 the repository is public; until then the mandate-and-review protocol of
 `WAY-OF-WORKING.md` carries it, and no separate CI check exists (recorded
-2026-09-10). The oracle and no-op checks run
-on every change, so a weakened harness fails loudly rather than silently. And
+2026-09-10). The gate set runs locally before every landing — GitHub Actions
+is not used (maintainer decision 2026-09-26: no paid compute; the workflow
+file is hand-triggered only, `CLAUDE.md` Gate set) — so a weakened harness
+fails loudly rather than silently, on the maintainer's machine. And
 because the agent is stateless, the repository is the state: `CLAUDE.md`
 carries the invariants and the protected-path list; every session ends by
 updating the issue it worked, and a scope change reaches this plan through
