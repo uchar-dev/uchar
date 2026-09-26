@@ -19,8 +19,8 @@ toolchain's own register, a file that does not exist in this repository. Since
 the fix round of 2026-09-23 the 24 in the grammar and the main sources point
 here (two in existing tests still name the old file), but the text they cited
 stayed behind. This register does not carry the sections
-`'§9.10 recursie / regelgroep'`, `'§Scenariotoetsen'`, `'negated membership'`
-and `"concatenatie as a standalone value"`, nor the untitled topics at the other
+`'§9.10 recursie / regelgroep'`, `'negated membership'` and
+`"concatenatie as a standalone value"`, nor the untitled topics at the other
 sites: the percentage forms and the percentage sign, the unit checks of the
 aggregations, the begrenzing bound, the period lowering, the "is gevuurd"
 predicate, the mixed date precision, the best-effort role plural, and the
@@ -1422,6 +1422,301 @@ the same way).
 
 ---
 
+## Scenariotoetsen — scenarios written in RegelSpraak, lowered to case files
+
+Origin: the scenario layer of the source toolchain, its resolver and its IR
+record brought into this frontend at the card `scenariolaag-in-uchar`
+(2026-09-26). v2.3.0 has no test chapter, so this is an additive extension,
+reachable only through the start rule `testDocument`: `regelSpraakDocument`
+is unchanged, so production parsing and the re-emission of every golden are
+untouched (gate 10), and a scenario block does not parse there
+(`ScenarioParseTest`).
+
+**A scenario is a case file written in RegelSpraak.** The lowering writes
+one case file of the format uchar-case-v0
+(`spec/schema/uchar-case-v0.schema.json`) per scenario, and the IR document
+the scenarios run against beside them. The replay of the case files is the
+runner: the executors replay them as they replay every other case (gates 5,
+6 and 12). Nothing in the case format or in an executor changes. What the
+source toolchain's runner added on top of the comparison — the fired rules,
+the coverage per rule, the marker status — is a report of the Drools
+backend's replay (`ScenarioResultaat`), not a form of this frontend.
+
+### Surface
+
+Two blocks, free among the definitions and rules of a test document.
+
+A **situation**: `Situatie <naam>`, optionally `gebaseerd op de situatie
+<naam>` once or more, then `:` and a situation block. A situation block
+holds, in any order, instances and parameter values:
+
+```
+een Jutter J
+- de naam is "Aukje"
+- het vondstgewicht is 1,5 t
+- de borgdagen is 4 van 01-01-2024 tot 01-02-2024
+- de vondsten zijn V1, V2 en V3
+- is borgplichtig van 01-01-2024 tot 15-01-2024
+- heeft strandrecht
+de parameter de vondstdrempel is 3
+de parameter het penningbedrag is 7 van 01-01-2024 tot 01-01-2025
+```
+
+An instance opens with `een <objecttype> <LABEL>` (one capitalised word)
+and carries bullets: an attribute value (`de|het <attribuut> is <waarde>`),
+a to-one role (`de|het <rol> is <LABEL>`), a to-many role (`de|het <rol>
+zijn <LABEL>, <LABEL> en <LABEL>`) and a characteristic (`is|heeft
+[een|de|het] <kenmerk>`). A parameter value has no bullet. An attribute,
+characteristic or parameter value may carry one period, `van <datum> tot
+<datum>`: from inclusive, to exclusive, the case format's segment.
+
+A **scenario**:
+
+```
+Scenario conflict
+toetst de regels rubriek van een aanspoelsel en weegplicht bij dubbele borging
+met peildatum 01-06-2026
+gebaseerd op de situatie havens met hun schuiten
+Gegeven is de volgende situatie:
+<situatieblok>
+Met als verwacht resultaat:
+<verwachtingen>
+```
+
+The header is the name, then optionally a scope (`toetst de regel <naam>`,
+`toetst de regels <naam>, <naam> en <naam>` or `toetst de regelgroep
+<naam>`), optionally `met peildatum <datum>`, and `gebaseerd op de situatie
+<naam>` any number of times; then optionally an inline situation, and the
+expectations. The name ends at the first header keyword. The expectations,
+one bullet each:
+
+| bullet | case expectation |
+|---|---|
+| `- de\|het <attribuut> van <LABEL> is <waarde>` | `attributeValue` |
+| `- de\|het <attribuut> van <LABEL> is leeg` | `attributeEmpty` |
+| `- de\|het <attribuut> van <LABEL> is <waarde> van <datum> tot <datum>` | one segment of an `attributeTimeline` |
+| `- de\|het <attribuut> van <LABEL> is altijd leeg` | `attributeTimeline` with no segment |
+| `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` |
+| `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` |
+| `- de gegevens zijn consistent` | `consistent` |
+| `- de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]` | `inconsistent` with its optional `rule` and `label` |
+
+The segment bullets of one label and attribute are one `attributeTimeline`,
+at the place of the first. The values are the literal forms of the language:
+a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
+vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
+`waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`.
+
+**No new token.** Every new form reuses the lexer as it stands, because a
+keyword token changes the lexing of every source that carries the word. A
+period is `VAN DATE TOT DATE`, bare date tokens only: a name word may be a
+number, so a date that may also be a `NUMBER` would let a characteristic's
+`van`-segment compete for `van 2024`. The empty timeline is `ALTIJD LEEG`.
+`volgens` is matched as a `LOWER_ID` by its text, on the one position after
+`inconsistent` (a source carries the word elsewhere as a name word). The
+rule of an inconsistency is a text literal because a conflict channel's
+name (`Jutter.vrijgesteld/0`) is no token run. `tot en met` is one token and
+is no period (`ScenarioParseTest`).
+
+### Resolution
+
+The non-scenario blocks go, in document order, through the one model
+pipeline of the production route (`Resolver.bouw`), so the scenario route
+builds the same model and, without a scope, emits the same IR document byte
+for byte (`ScenarioLoweringTest`, and the six corpus witnesses below). The
+scenario blocks then resolve against that model (`ScenarioResolver`):
+
+- **Situations** resolve independently of their order in the document. A
+  situation contributes its bases, each expanded in written order, then its
+  own block. A basis that names no situation, a name declared twice, and a
+  cycle of bases (`A` based on `B` based on `A`, or `A` on itself) are
+  refused.
+- **The merge**: a scenario's sources are its bases in written order, then
+  its inline situation. One label is one instance; a later assignment of the
+  same attribute, role or characteristic replaces the earlier one in place,
+  a timeline as a whole; a later parameter value replaces the earlier one in
+  place.
+- **Typing**: every value is typed against its declaration by the rule
+  pipeline's own assignment typing (`Typering.toekenning`), so a unit is
+  required where the declaration has one and a value may carry no more
+  decimals than its target. A convertible unit is restated exactly into the
+  declared unit. An enumeration value must be one of its domain's values,
+  compared without regard to case and written as declared.
+- **Roles** resolve as the case readers resolve a role key: the written name
+  names the other role of a fact type in which the instance's type fills a
+  role, by its declared name or its declared plural. The verb follows the
+  cardinality (`is` to-one, `zijn` to-many), and every label a role names
+  must stand in the merged situation with a type that fills the role.
+- **Characteristics**: the verb follows the kind (`heeft` for a possessive
+  one, `is` otherwise). A time-dependent characteristic is delivered as
+  periods only, as every case reader demands; a period belongs to a
+  time-dependent attribute, characteristic or parameter only. The periods of
+  one timeline stand in order and do not overlap.
+- **Two gates**, over the forms the scenario carries: a form with a validity
+  window, or one that reads the evaluation date, needs a peildatum; every
+  parameter a form reads needs a value in the merged situation. Measured
+  against the pinned corpus on 2026-09-26: none of the 73 cases whose
+  document reads a parameter leaves one without a value, and none of the 9
+  cases whose document carries a validity window lacks an `asOfDate`.
+- **One document, one IR document**: every scenario of a document must
+  carry the same forms, because one case directory has one `ir.json`.
+
+### Lowering
+
+`CaseEmitter` writes one case file per scenario with the emitter's own
+serialiser, so a case file and an IR document share one shape.
+
+- `asOfDate` is the peildatum, or null. The instances come in first-seen
+  order with their attributes, roles and characteristics in first-seen
+  order; `characteristicTimelines` is written when a time-dependent
+  characteristic holds somewhere, after `characteristics`. That is the
+  corpus's key order: the case schema lists the field before
+  `characteristics`, and all 51 instances in the corpus that carry the field
+  write it after (measured 2026-09-26).
+- A number is an exact lexeme in the declared unit. Without a restatement it
+  keeps its written form, a decimal its written precision (`2400,00` is
+  `2400.00`) and a fraction its fraction, reduced (`6/8` is `3/4`). A
+  restated value is a terminating decimal without trailing zeros (`1,5 t` is
+  `1500` kg), or else a reduced fraction (`1 voet` is `1/6` vadem). A
+  date-time carries its three millisecond digits, the IR literal's lexeme.
+- The file name is `case<n>-<slug>.json`: `n` the scenario's 1-based
+  position in the document, the slug its name with diacritics taken off,
+  lowercased, every run of characters other than `a-z` and `0-9` one `-`,
+  none at either end.
+- **The scope lowers to the IR document**, not to the case files: the
+  document keeps the declarations, the day-kind definitions, the start points
+  and the diagnostics whole, and of the named forms — rules, object and fact
+  creations, allocations, consistencies, uniquenesses and defaults groups —
+  the ones the scope names. A rule is named by its name without a version
+  suffix, a decision table by its name (all its rows), a defaults group by
+  the name of its base rule, a rule group by its name (its members). A rule
+  group keeps its carried members and disappears without one. Without a
+  scope the document is the production route's.
+
+The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
+or `make ir FILE="bron.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
+sources are read as one test document. A model with an ERROR writes neither
+the IR document nor a case file; each diagnostic names its file and the line
+in it.
+
+### Refusals
+
+Every form that does not fit the case format, or the one IR document, is an
+ERROR with a sentence and never a silent loss. Of the source toolchain's
+contract, four forms are refused here: a peildatum with a time (a case
+carries its evaluation date as a day); scenarios with different scopes in
+one document; a scope in a document with a start-point determination (the
+determination and the rule that writes its anchor belong together); and a
+scope that names an exception block or a member of an unordered block (it
+names the group by its base rule). Beside those, three value forms have no
+case form: a dimensioned attribute (a case value carries no dimension
+coordinates), a text value with an `«expressie»` (a case value is literal),
+and a period bound with a time.
+
+The extension's sentences are its own and Dutch: no reader refuses a case
+file for these defects, because a case file that carries one is never
+written. Where the typing of a value fails, the sentence is the rule
+pipeline's, after the value's position (`het attribuut '<a>': toekenning: a
+text value is assigned to a number target`). Each sentence carries the
+prefix `scenario: `, placeholders in angle brackets:
+
+- `de scenario's van één document lopen tegen één IR-document, maar het
+  scenario '<b>' toetst andere regels dan het scenario '<a>'; zet
+  scenario's met een andere scope in een eigen document`
+- `de situatie '<s>' is meer dan eens gedeclareerd`
+- `de situatie '<s>' is nergens in het document gedeclareerd`
+- `de situaties vormen een kring via 'gebaseerd op': '<a>' → '<b>' → '<a>'`
+- `de naam van het scenario '<n>' geeft geen bestandsnaam: zij draagt geen
+  letter of cijfer`
+- `het scenario '<n>' heeft geen situatie: het is nergens op gebaseerd en
+  draagt geen 'Gegeven is de volgende situatie:'`
+- `de peildatum '<d>' draagt een tijd, maar een casebestand draagt als
+  peildatum alleen een dag (asOfDate)`
+- `de peildatum '<d>' is geen geldige datum`
+- `een scope in een document met een startpuntbepaling wordt geweigerd: de
+  bepaling en de regel die haar anker schrijft horen bij elkaar, en een scope
+  die er één van laat vallen legt de tijdlijn op een ander raster`
+- `de regelgroep '<g>' uit de scope bestaat niet in het document`
+- `'<g>' uit de scope is een regelgroep; schrijf 'toetst de regelgroep <g>'`
+- `de regel '<r>' uit de scope is opgegaan in een defaultsgroep; de scope
+  noemt die groep bij de naam van haar basisregel`
+- `de regel '<r>' uit de scope bestaat niet in het document`
+- `de regel '<r>' heeft een geldigheidsvenster, maar het scenario '<n>' heeft
+  geen peildatum (voeg 'met peildatum <datum>' toe)`, and the same with
+  `leest de rekendatum`
+- `de regel '<r>' leest de parameter '<p>', die in de situatie van het
+  scenario '<n>' geen waarde heeft`
+- `het objecttype '<t>' is niet gedeclareerd`
+- `het label '<l>' botst met (het eerste woord van) de objecttypenaam '<t>'`
+- `het label '<l>' is eerder gedeclareerd als '<t>', hier als '<u>'`
+- `het objecttype '<t>' kent geen attribuut '<a>'`, `… geen kenmerk '<k>'`,
+  `… geen rol '<r>'`
+- `het attribuut '<a>' is gedimensioneerd, en een casebestand draagt geen
+  dimensiecoördinaten`
+- `het attribuut '<a>' krijgt in dit blok zowel perioden als een vaste
+  waarde`, and `… zowel een vaste waarde als perioden`; the same for a
+  parameter
+- `het attribuut '<a>' is niet tijdsafhankelijk; een periode ('van … tot …')
+  hoort bij een attribuut met een tijdlijn`; the same for a characteristic
+  and a parameter
+- `het kenmerk '<k>' is tijdsafhankelijk; een casebestand levert het als
+  perioden ('is <k> van <datum> tot <datum>'), niet als vaste waarde`
+- `het kenmerk '<k>' is bezittelijk; schrijf 'heeft <k>'`, and `… is niet
+  bezittelijk; schrijf 'is <k>'`
+- `de rol '<r>' vanaf het objecttype '<t>' is niet eenduidig: meer dan één
+  feittype kent haar`
+- `de rol '<r>' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de <r>
+  zijn …')`, and `… is een naar-één-rol; schrijf de 'is'-vorm ('de <r> is
+  …')`
+- `de rol '<r>' verwijst naar het label '<l>', dat nergens in de
+  samengestelde situatie gedeclareerd is`
+- `de rol '<r>' verwacht een <T>, maar het label '<l>' is een <U>`
+- `de parameter '<p>' is niet gedeclareerd`
+- `de periodegrens '<d>' draagt een tijd, maar een periode telt in hele
+  dagen`, and `de periodegrens '<d>' is geen geldige datum`
+- `de periode van <d> tot <d> is leeg of loopt terug`
+- `de periode van <d> tot <d> begint vóór het einde van de vorige (<d>); de
+  perioden van één tijdlijn staan in volgorde en overlappen niet`
+- `het label '<l>' in de verwachting is nergens in de situatie gedeclareerd`
+- `het attribuut '<a>' is niet tijdsafhankelijk; een tijdlijnverwachting
+  hoort bij een attribuut met een tijdlijn`
+- `de verwachting dat '<a>' van <l> altijd leeg is, spreekt de perioden
+  ervoor tegen`, and `de periode voor '<a>' van <l> spreekt de verwachting
+  tegen dat het attribuut altijd leeg is`
+- `de regel '<r>' van de inconsistentie bestaat niet in het document en is
+  geen conflictkanaal ('<Objecttype>.<attribuut of kenmerk>', eventueel met
+  '/<pad>')`
+- `de verwachting '<bron>' is syntactisch niet herkend`
+- after a value's position (`het attribuut '<a>'`, `de parameter '<p>'`,
+  `de verwachting voor '<a>'`): `de datum '<d>' is geen geldige datum`, `een
+  enumeratiewaarde ('<w>') past niet op een <type>`, `'<w>' is geen waarde van
+  de enumeratie <domein> (<waarden>)`, `de waarde '<bron>' is niet gelezen`,
+  `het getal '<g>' is niet gelezen`, `tussen de eenheden '<e>' en '<f>' is
+  geen exacte omrekening`, `de tekstwaarde draagt een «expressie», en een
+  waarde in een scenario is letterlijk`
+- and from the CLI: `het document draagt geen scenario, dus er valt geen
+  casebestand te schrijven`
+
+### Witnesses
+
+The frontend suite: `ScenarioParseTest` (the forms and the two fences),
+`ScenarioTypeGateTest` (one refusal per defect on its line, and the merge,
+the restatement, the role key and the timelines), `ScenarioMutatieTest`
+(a clean document and nine mutations of it, a cycle and a duplicate among
+them) and `ScenarioLoweringTest` (a case file written by hand from the
+schema, the file name, the scope and its IR document, the CLI). The corpus:
+six goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
+reproduces their pinned case files, and whose scenario route reproduces their
+`ir.json`, byte for byte — the handwritten expectations are the anchor —:
+`ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
+`jutterswet-nestkenmerk-rgs`, `jutterswet-dagentelling-rgs` (the timelines),
+`jutterswet-rubriektabel-rgs` (a scope over a decision table and a rule) and
+`jutterswet-dubbelverbinding` (a shared situation, roles written from both
+sides with a plural key, a peildatum). Together they carry every expectation
+kind of the case format.
+
+---
+
 ## Producer refusals without a reader sentence
 
 Where the verifier refuses the document a resolver refusal would have written,
@@ -1483,7 +1778,10 @@ target, a well-formed document. Refusals of the source text itself (syntax, the
 desugaring of decision tables and exception blocks, the dialect's fences — among
 them a member of an unordered block that is no kenmerktoekenning or
 gelijkstelling, or yields no rule at all — and forms this frontend does not
-lower) have no reader either, because no document carries them.
+lower) have no reader either, because no document carries them. The same holds
+for the refusals of the scenariotoetsen extension (its section above): no reader
+refuses a case file for them, because a case file that carries such a defect is
+never written.
 
 ---
 
