@@ -483,6 +483,7 @@ public final class DefinitionResolver {
         Eenheidstelsel stelsel = new Eenheidstelsel(src(ctx.eenheidsysteemNaam()));
         // pass 1: collect raw definitions keyed by primary abbreviation (or word)
         java.util.Map<String, EenheidRuw> ruw = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Integer> regels = new java.util.HashMap<>();
         // every abbreviation a declaration writes, under the name identity: {as written, the unit's primary}
         java.util.Map<String, String[]> geschreven = new java.util.HashMap<>();
         for (EenheidDefinitieContext u : ctx.eenheidDefinitie()) {
@@ -502,6 +503,7 @@ public final class DefinitionResolver {
             }
             ruw.put(primair, new EenheidRuw(afk, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
                     u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, exact, naar));
+            regels.put(primair, u.getStart().getLine());
         }
         // pass 2: resolve each unit's canonical + factor, then register every spelling
         java.util.Map<String, Eenheid> opgelost = new java.util.HashMap<>();
@@ -514,6 +516,19 @@ public final class DefinitionResolver {
             if (r.meervoud() != null) stelsel.aliassen.put(RegelSpraakModel.normaliseerTijdseenheid(r.meervoud()), e);
         }
         model.eenheidstelsels.put(stelsel.naam, stelsel);
+        // the wire writes a factor as a fraction of two integers from 1 to 2^62 - 1 (IR-SPEC ch. 2.5): a declared zero
+        // or negative factor, and one its chain of declarations grows past that bound, have no document. Before this
+        // check the first ended in the emitter's exception; each is refused in the loader's sentence now.
+        java.math.BigInteger grens = java.math.BigInteger.TWO.pow(62).subtract(java.math.BigInteger.ONE);
+        for (var en : stelsel.exacteFactoren.entrySet()) {
+            Eenheidstelsel.Factor f = en.getValue();
+            if (f.num().signum() > 0 && f.num().compareTo(grens) <= 0 && f.den().compareTo(grens) <= 0) continue;
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "eenheid '" + en.getKey() + "' van eenheidstelsel '" + stelsel.naam + "': a conversion factor is an "
+                            + "exact rational {num, den} whose two integers are at least 1 and at most "
+                            + "4611686018427387903 (2^62 - 1), got " + "{\"num\":" + f.num() + ",\"den\":" + f.den() + "}",
+                    regels.getOrDefault(en.getKey(), 0)));
+        }
     }
 
     /** Whether one of {@code afkortingen} — the abbreviations one unit declaration writes — was written before by an

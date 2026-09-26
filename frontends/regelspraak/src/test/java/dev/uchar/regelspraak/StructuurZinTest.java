@@ -464,6 +464,25 @@ class StructuurZinTest {
         assertEquals(List.of(zin, zin), fouten(regel("Een Schuit is gekeurd\n        indien hij gelijk is aan hij.")));
     }
 
+    // ---- the loader: a unit's conversion factor
+
+    private static String stelsel(String factor) {
+        return "Eenheidsysteem Gewicht\n    het kilogram (mv: kilogrammen) kg\n    de veer (mv: veren) vr = " + factor
+                + " kg\n\nObjecttype de Schuit (mv: Schuiten)\n    het gewicht Numeriek (getal) met eenheid kg;\n";
+    }
+
+    @Test void een_eenheidsfactor_buiten_de_grenzen_van_de_wire() {
+        // before: a factor 0 or below ended in IrEmitter's exception ("heeft de gedeclareerde factor 0/1"), and one
+        // past 2^62 - 1 went to disk for every loader to refuse
+        String zin = "eenheid 'vr' van eenheidstelsel 'Gewicht': a conversion factor is an exact rational {num, den} whose "
+                + "two integers are at least 1 and at most 4611686018427387903 (2^62 - 1), got ";
+        assertEquals(List.of(zin + "{\"num\":0,\"den\":1}"), fouten(stelsel("0")));
+        assertEquals(List.of(zin + "{\"num\":-2,\"den\":1}"), fouten(stelsel("-2")));
+        assertEquals(List.of(zin + "{\"num\":4611686018427387904,\"den\":1}"), fouten(stelsel("4611686018427387904")));
+        assertEquals(List.of(), fouten(stelsel("4611686018427387903")));
+        assertEquals(List.of(), fouten(stelsel("1/3")));
+    }
+
     // ---- WF-032 (and WF-023): the start point determination
 
     private static final String STARTPUNT = """

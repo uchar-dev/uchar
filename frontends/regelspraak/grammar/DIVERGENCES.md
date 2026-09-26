@@ -1872,7 +1872,9 @@ typing, fold-operand and value refusals, and the structural ones: a rule form, a
 group, a declaration, a day-kind definition and what its condition reads, a start
 point, a window's position and bounds, a count's shape, a set reading, a read
 whose name took in a word before 'van', a constant the wire has no node for
-("hij" written as a value, in WF-098's sentence); witnesses `EenheidZinTest`,
+("hij" written as a value, in WF-098's sentence), a unit's conversion factor
+outside the wire's bounds (zero, negative, or past 2^62 - 1 along its chain,
+in the loader's sentence); witnesses `EenheidZinTest`,
 `TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the
