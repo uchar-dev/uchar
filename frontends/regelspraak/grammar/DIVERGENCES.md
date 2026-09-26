@@ -1067,6 +1067,18 @@ elementType carries its range … : the range is written, never derived`), and
 under a total whose element is another type in WF-083's sentence; a total
 over the subject's own type without a range keeps this frontend's words.
 
+A read whose binding reaches a to-many role in a slot that takes one value is
+refused with an ERROR too, in the verifier's WF-053 sentence (`hop 0 reaches
+the to-many role … in a scalar slot — a to-many step needs an aggregation,
+never a silent first pick`), the one the set fence speaks for a set reading.
+Before, such a read went to disk with `diagnostics: []` and the verifier
+refused the document. A §13.4.7 fact creation's condition on the created
+relation's target ("… is een schuit van de Haven indien de romplengte van de
+schuit …") is such a read: the wire reads that condition from the anchor, so
+the target is reached over the to-many role. Where the target is named as its
+type, case 2 now binds its role, and the sentence ends in this refusal instead
+of the emitter's exception.
+
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
 each ended in an `IllegalStateException` of the emitter, and so did a count or

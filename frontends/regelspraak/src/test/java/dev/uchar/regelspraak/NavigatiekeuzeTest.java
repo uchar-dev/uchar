@@ -145,6 +145,40 @@ class NavigatiekeuzeTest {
                     """ + regel("de romplengte van zijn sleper")));
     }
 
+    // ---------------- a binding that reaches a to-many role ----------------
+
+    @Test void een_lezing_over_een_meervoudige_rol_weigert_in_de_zin_van_de_verifier() {
+        assertEquals(List.of("genavigeerde lezing 'de romplengte van de ligger' over een meervoudige rol: hop 0 reaches "
+                        + "the to-many role 'ligger' in a scalar slot — a to-many step needs an aggregation, never a "
+                        + "silent first pick"),
+                fouten(TYPEN + THUISLIGGING + """
+
+                    Regel kadegeld van een haven
+                        geldig altijd
+                            Het kadegeld van een Haven moet gesteld worden op de romplengte van de ligger.
+                    """));
+    }
+
+    @Test void de_voorwaarde_van_een_feitcreatie_op_het_doel_weigert() {
+        // the condition is read from the anchor, so "de schuit" — the role named as its type, which the pair of two
+        // relations no longer hides — reaches the to-many role; before the choice this ended in the emitter's exception
+        assertEquals(List.of("genavigeerde lezing 'de romplengte van de schuit' over een meervoudige rol: hop 0 reaches "
+                        + "the to-many role 'schuit' in a scalar slot — a to-many step needs an aggregation, never a "
+                        + "silent first pick"),
+                fouten(TYPEN + WINTERBERGING + """
+
+                    Feittype schuitligging
+                        de thuishaven Haven
+                        de schuit (mv: schuiten) Schuit
+                    Eén thuishaven telt meerdere schuiten
+
+                    Regel winterberging door de haven
+                        geldig altijd
+                            Een winterschuit van een Haven is een schuit van de Haven
+                            indien de romplengte van de schuit groter is dan 18.
+                    """));
+    }
+
     // ---------------- the fold's range ----------------
 
     @Test void een_vouw_over_twee_relaties_bindt_op_de_rolnaam_en_weigert_op_de_typenaam() {

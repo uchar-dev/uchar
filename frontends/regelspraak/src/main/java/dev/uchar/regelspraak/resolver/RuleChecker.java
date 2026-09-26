@@ -710,8 +710,10 @@ final class RuleChecker {
      * two tests are the emitter's own ({@link dev.uchar.regelspraak.emit.IrEmitter#ongebondenLezing},
      * {@link dev.uchar.regelspraak.emit.IrEmitter#ongebondenBereik}); the walk follows the emitter's traversal —
      * after the lift, so the defaults are covered — and each position's subject is the one the emitter writes it
-     * from. A set reading and a window bound are left out: the set fence and the window's own check refuse every
-     * one of those that navigates, so one defect keeps one refusal.
+     * from. A read whose binding reaches a to-many role in a slot that takes one value is refused here too, in
+     * WF-053's sentence for that hop: the emitter writes it, and the verifier refuses the document. A set reading
+     * and a window bound are left out: the set fence and the window's own check refuse every one of those that
+     * navigates, so one defect keeps one refusal.
      */
     private void keurNavigatiebindingen() {
         Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -749,10 +751,10 @@ final class RuleChecker {
         if (e == null) return;
         switch (e) {
             case Expr.AttribuutRef a -> {
-                if (!a.set() && dev.uchar.regelspraak.emit.IrEmitter.ongebondenLezing(model, subject, a)
-                        && gemeld.add(a))
-                    model.diagnostics.add(new Diagnostic(Severity.ERROR, ongebondenLezingFout(a, subject),
-                            a.bron().line()));
+                if (a.set() || !gemeld.add(a)) return;
+                String fout = dev.uchar.regelspraak.emit.IrEmitter.ongebondenLezing(model, subject, a)
+                        ? ongebondenLezingFout(a, subject) : meervoudigeStapFout(a, subject);
+                if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron().line()));
             }
             case Expr.Functie f -> {
                 boolean vouwbron = dev.uchar.regelspraak.emit.IrEmitter.isVouwbron(f);
@@ -842,6 +844,22 @@ final class RuleChecker {
                     + "which only a navigation reaches";
         return kop + ": zonder pad zou de wire haar lezen als een eigen attribuut van het onderwerp, en dat is niet "
                 + "wat er staat";
+    }
+
+    /** The refusal of a read whose path reaches a to-many role in a slot that takes one value, in the verifier's
+     *  WF-053 sentence, one per such hop; null where no hop is to-many. A §13.4.7 fact creation's condition on the
+     *  created relation's target is one: the wire reads that condition from the anchor, so the target is reached
+     *  over the to-many role. */
+    private String meervoudigeStapFout(Expr.AttribuutRef a, Objecttype subject) {
+        List<RegelSpraakModel.RolBindingRef> pad =
+                dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
+        List<String> zinnen = new ArrayList<>();
+        for (int i = 0; i < pad.size(); i++)
+            if (teVeel(pad.get(i)))
+                zinnen.add("hop " + i + " reaches the to-many role '" + pad.get(i).rol() + "' in a scalar slot "
+                        + "— a to-many step needs an aggregation, never a silent first pick");
+        return zinnen.isEmpty() ? null
+                : "genavigeerde lezing '" + a.bron() + "' over een meervoudige rol: " + String.join("; ", zinnen);
     }
 
     /** The refusal of a fold without a range: what did not bind, then the reader's sentence for the document the
