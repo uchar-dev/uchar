@@ -157,7 +157,7 @@ Frontendsuite: `ScenarioParseTest` 8, `ScenarioTypeGateTest` 35, `ScenarioMutati
 situatie en verwachting, onbekend attribuut in beide, onbekend label, dubbele situatie, kring `basis → vervolg →
 basis`, kring op zichzelf, onbekende basis), `ScenarioLoweringTest` 11 (met de hand uit het schema geschreven
 casebestand als anker) — alle op een eigen Jutterswet-model (`ScenarioFixture`), geen ©-fixture.
-Rood-eerst, gemeten met proefmutaties (logs `/tmp/golf/logs/scen/rood-*.log`): A weigeringen uit → 42/64 rood;
+Rood-eerst, gemeten met proefmutaties (logs (buiten de repo)): A weigeringen uit → 42/64 rood;
 B lowering stuk (scope niet gefilterd, schemavolgorde) → 3 rood; C basisgrammatica b88a8ccc → de 5 tests van
 nieuwe vormen rood; C2 hekmutatie (predicaat weg, `tot en met` toegelaten) → de 2 hektests rood; D semantiek (eerste
 wint, geen omrekening, altijd enkelvoudssleutel, geen tijdlijnvouw, parameterpoort dicht, geen declaraties) → 55
@@ -200,7 +200,7 @@ draagt per case status MARKER met reden (`anchor/jutterswet-erflijn`: `transpile
 distributie MARKER → 3, FAIL → 1, PASS → 0 kan afbeelden zoals het oude contract. Trace: altijd gevuld (waarde
 leeg, zoals bij de oude runner); het afdrukken bij FAIL is de CLI van de distributie.
 
-**U7 — klaar.** Gates die de kaart raakt, elk los (logs `/tmp/golf/logs/scen/gate-*.log`): gate 1 PASS (vóór elke
+**U7 — klaar.** Gates die de kaart raakt, elk los (logs (buiten de repo)): gate 1 PASS (vóór elke
 commit); gate 10 PASS — 828 tests (vloer 173), 93 rgs-goldens byte-gelijk (vloer 80); check-scenario PASS — 6
 goldens (vloer 6), 29 casebestanden (vloer 29) en hun `ir.json` byte-gelijk; gate 11 PASS — 29/29 in ref, clingo
 en Drools; gate 12 PASS — played 209 (pin 209), DRL-tak 179 (pin 179), JUnit 817 (vloer 239); gate 13 PASS — 41
@@ -288,6 +288,26 @@ the schema gate of those case files and gates 5, 6 and 12 their replay. CI leg u
 5. **Niet geport, met reden.** `ScenarioOrakelTest` (64 triples uit de oude executiesuites): in uchar zijn de
    gepinde casebestanden het orakel en gates 5/6/12 de replay. `ParametersetScenarioTest` en de `externeParameters`-
    omweg van de parameterpoort: parametersets zijn distributie (U6). De proefmutaties van de rood-eerst-meting zijn
-   niet als tests vastgelegd (logs in `/tmp/golf/logs/scen/`).
+   niet als tests vastgelegd (logs in (buiten de repo)).
 6. **`ScenarioResultaat` veranderde van vorm** (`positie` i.p.v. `line`, `DekkingSoort` zonder MARKER): de
    distributie leest het record in de nieuwe vorm.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens frontend (unie cfa643d0): EERST FIXEN. Gemeten: de regeneratie van de zes goldens herhaald (29 cases en 6
+ir.json byte-gelijk); een eigen scenario met elke verwachtingssoort en `gebaseerd op` (latere waarde vervangt de
+eerdere; ref, clingo en beide Drools-takken spelen het); een kring en een onbekende situatie worden geweigerd; wat
+niet in het caseformaat past weigert met zin; de grammatica raakt geen productiedocument (gate 10: 95 goldens
+byte-gelijk; de pariteitszone alleen geteld); de gate-mutanten (waarde, set, scenario weg, vloeren) alle rood;
+rood-eerst op 137 tests met acht mutaties. BLOKKEREND B1: de lowering toetste periodegrenzen niet aan het raster
+van de declaratie en schreef casebestanden die ref en clingo weigeren ("segment boundaries must sit on the declared
+granularity grid") — in de fixronde (branch fix/frontend): elke grens getoetst op granulariteit, aantal en vast
+startpunt, weigering met zin, getuigen per soort. Adviezen in de fixronde: de scope-kopie bewaakt (A1), de
+scope-getuige benoemd (A2), diagnoses van weggelaten vormen (A3), de casemodus schrijft pas na de emissie en ruimt
+op (A4), één regelnummer per melding (A5), geen tweede melding na een geweigerde peildatum (A6), tellingen in
+DIVERGENCES met de anchor-deelverzameling (A7), één getalnormalisatie (A9), velden zonder lezer weg (A10),
+dubbele helpers (A11), zeventien weigerzinnen zonder getuige (A12); A13 (het Drools-rapport stopte bij één
+RuntimeException) op branch fix/graaf; A18 het gatenummer wordt 16 (hoofdsessie). Datum-tijd (open 3): de
+grammatica eist in de bron altijd drie fractiecijfers, dus de lowering volgt de auteur; handgeschreven cases zonder
+fractie komen daarom niet byte-gelijk uit een scenario — vastgelegd in DIVERGENCES.
+Uitkomst fixronde (branch fix/frontend, 29 commits, gate 10 met 895 tests en 98 goldens byte-gelijk; nakomer fix/frontend2): B1 gefixt (periodegrenzen aan het raster via `kern/VastStartpunt.opWand`; kenmerkperioden blijven dag-precies, standaardantwoord); A1–A7, A9–A12 gefixt; A13 en het backenddeel van A10 op branch fix/graaf (het rapport faalt per case; `uitleg`, `metUitleg` en `Vuring.waarde` weg). Onderweg vier stille fouten gefixt: een herschaling die gedeclareerde breuken afrondde, twee dagsoorten met dezelfde spelling, de eenheid in "Bedrag met eenheid €" die nooit gelezen werd, een telkwantor over twee relaties. Open (featurevragen): een afwezige parameter heeft geen scenariovorm; casebestandsnamen buiten de slugregel.

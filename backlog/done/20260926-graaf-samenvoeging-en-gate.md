@@ -378,3 +378,22 @@ different graph per route on two goldens; the distribution adapts three call sit
 9. **`basisNaam`** stript een groepsvoorvoegsel ("groep: ") en een beslistabelachtervoegsel (" (n)"), conventies uit
    v0. Geen van de 553 regelvormen in `corpus/golden` draagt ze (gemeten); draagt een golden ze ooit, dan valt de
    specpoot luid, omdat de graaf dan samenvoegt wat de verifier scheidt.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens backend (unie cfa643d0 + samenvoegfix e6844fba): MERGEN, geen blokkade. Gemeten: de drie aanroepvormen van de
+distributie compileren met het navigatieantwoord; bron ≡ wire herhaald op zeven goldens en twee eigen documenten;
+op een ⊑-keten in beide richtingen tekenen graaf en verifier dezelfde twee afhankelijkheden; mutanten (rand weg,
+verouderde lijstregel, toets weg) maken de gate rood met naam; de verifiermodus laat de gewone uitvoer byte-gelijk
+over 818 documenten. Samenvoegfix e6844fba (hoofdsessie): de routesuite toetste nog `IrEmitter.wireWeigeringen`,
+die met het wireveld voor vaste startpunten verviel. Adviezen in de fixronde (branch fix/graaf): A5 volledig — de
+graaf noemde een lid INVOER als geen regel het schreef terwijl een defaultsgroep of creatie het wél schreef (28 leden
+in 21 goldens, waaronder `uitgesloten` in `jutterswet-uitsluiting-rgs`) en 155 verifierranden vielen buiten de
+vergelijking: alle schrijvers en lezers van ch. 5 in de graaf en de projectie verbreed; A6 (besluit hoofdsessie: ja)
+het navigatiepredicaat wordt een functie naar het bereikte type, zodat een genavigeerde check op een kenmerk met
+meer declaranten exact sleutelt; A3 de randenmodus citeert `/rules/prioritizedDefaults/<i>`; A4 de gate toont de
+namen van rode routegoldens; A7 een ⊑-ketengolden (branch fix/uitvoerders) zodat de specpoot de subtypesleutel ziet;
+A9 CI-job voor de gate (hoofdsessie, landing); A10 tellingen in dit Result verschoven door parallelle kaarten (231 van
+268 goldens vergeleken, 95 routegoldens); A12 acceptatie (b) geldt in aangepaste vorm: drie van de vier aanroepen
+van de distributie veranderen en `verbruikt` kreeg het model als parameter (afwijking van U1, aanvaard).
+Uitkomst fixronde (branch fix/graaf): A5 volledig — de graaf leest elke vorm van de regellaag (regels, object- en feitcreaties, verdelingen, consistenties, uniciteiten, defaultsgroepen als zijtafel) en de specpoot vergelijkt 116 afhankelijkheden uit 127 verifierranden waar het er 45 uit 49 waren; randen over populatie, relatie of kanaal worden per klasse geteld (79 op de vergeleken goldens); één bewust verschil met reden (objectcreatie niet polymorf, drie wrakboeking-goldens); A6 — `Navigatie` naar het bereikte type vervangt het predicaat, d2 gelijk; A3, A4, A1, A2, A11 gefixt; A7 — golden `jutterswet-erfketen` (fix/uitvoerders) laat de specpoot vallen op de houdertype-mutant. Vloeren bij de landing op de gemeten stand (234 goldens, 116 afhankelijkheden, 98 routegoldens, 23 toetsen). Open: populatie-, relatie- en kanaalknopen tekent de graaf niet (eigen kaart).

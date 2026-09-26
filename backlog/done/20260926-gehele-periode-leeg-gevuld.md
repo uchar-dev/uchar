@@ -220,7 +220,7 @@ zijn script (`74ceffd9`), elk weer PASS met de getallen hieronder:
 | 14 flogic | PASS — 150 checks, vloer 81; 2 goldens |
 
 Naamtabel-toets: `python3 spec/proposals/v1-naamtabel-toets.py` →
-`v1-naamtabel-toets: OK`, rc 0. Logs: `/tmp/golf/logs/periode/`.
+`v1-naamtabel-toets: OK`, rc 0. Logs: (buiten de repo).
 
 ### Zinnen letterlijk (geen regelnummerstaart)
 
@@ -335,3 +335,18 @@ verandert van omschrijving.
    maandgrid, de genavigeerde operand) niet. Een `-rgs`-tweeling met
    alleen die vormen zou dat doen; niet gemeten of de frontend ze
    byte-gelijk aan deze IR emitteert.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens uitvoerders (unie cfa643d0): EERST FIXEN (zie de rekenjaarkaart voor de twee samenvoegpunten). Gemeten voor
+deze kaart: een eigen document met een onafhankelijke lezing van ch. 3.9 (maand- en jaarattribuut, beide
+kwalificaties, leeg en gevuld, binnenste en buitenste ontkenning, operand via één hop): ref en clingo 217
+verwachtingen PASS, beide Drools-takken PLAYED; de tijdsafhankelijke parameter als operand geeft dezelfde zin in
+ref, clingo en de lader van beide takken; de vier verwijderde rode gevallen pinden in de basis alleen de opgeheven
+weigerzin (gate 8: 39 gevallen, 78 fragmenten, vloer 26); zes mutanten alle gevangen. De twee normvragen (ontkenning
+per dag; vacuüm waar) weegt de lens als juist, "vacuüm waar bij gevuld" verdient een bewuste bevestiging van de
+maintainer. Fixronde (branch fix/tijd): de keten van hops in Drools bij naam of uitgevoerd (A4); het expliciet lege
+segment telt overal als leeg, ook onder een gehele-periodevergelijking (A5, standaardantwoord); een -rgs-bron voor
+de golden (A6, branch fix/uitvoerders); de naad met de startpuntkaart — clingo's bucketkalender over een afgeleide
+tijdlijn op een vast raster (B4, branch fix/tijd).
+Uitkomst fixronde: A4 — beide Drools-takken voeren de leeg/gevuld-toets over een keten van to-one-hops uit (getuigen in drie suites, geen golden); A5 — een expliciet leeg segment is overal een gat, ook bij vergelijkingen, in de Drools-runtime én in ref (dat las ≠ op zo'n dag als voldaan), met een alinea en voorbeelden in RS ch. 3.9; A6 — rgs-tweeling `jutterswet-gehele-periode-leeg-rgs` met de vijf spelbare regels (de twee regels met `niet` vóór leeg/gevuld kent de grammatica niet; het handgeschreven origineel blijft de getuige daarvan); A3 (branch fix/uitvoerders) — rode case `rekenjaar-zonder-rekendatum`. Normvraag met standaardantwoord: onder de kwalificatie voldoet een lege dag niet aan ≠.

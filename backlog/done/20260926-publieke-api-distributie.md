@@ -125,7 +125,7 @@ that builds this repository as a git submodule" (de reponaam mag niet in een art
 
 Gemeten (U1 en U2 los): een sweep over elke golden met cases (exec en `--drl`, 262 goldens) en elke rode
 case (43) met de statusregel van de jar, basis tegen facade tegen U2:
-`/tmp/golf/logs/api/sweep.sh <jar> <uit>`; `diff sweep-base.tsv sweep-u1.tsv` en
+(buiten de repo) <jar> <uit>`; `diff sweep-base.tsv sweep-u1.tsv` en
 `diff sweep-base.tsv sweep-u2.tsv` leeg — 567 van 567 regels byte-gelijk, dus elke weigerzin ongewijzigd.
 Verdeling (beide gelijk): exec 209 PLAYED / 52 EXCLUDE / 1 FAIL; DRL 179 PLAYED / 81 EXCLUDE / 2 FAIL;
 rood 11 FAULT / 8 NOFAULT / 24 EXCLUDE.
@@ -160,7 +160,7 @@ Wat de facade naar buiten brengt (publieke signaturen, `javap -public`): `Path`,
 `List<Dekking>`, `KieBase`, `Map<String, Predicate<LocalDate>>`; via de gedocumenteerde weigeringen
 `IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`; via de publieke leden van de
 blootgestelde transpilers verder `org.drools.model.Model` en `Dekking.Verdict`. Logs:
-`/tmp/golf/logs/api/jdeps.txt`, `javap-public.txt`, `javap-transpilers.txt`.
+(buiten de repo), `javap-public.txt`, `javap-transpilers.txt`.
 
 **U5 — klaar-criteria.** Gate 12 speelt 209 (pin 209) en de DRL-tak 179 (pin 179); geen pin verschoof,
 `scripts/` is niet aangeraakt. De replay is de facade, dus geldt de tweede vorm van de getuige:
@@ -202,7 +202,7 @@ Ongewijzigd verhuisd naar de facade: `Rekenjaar.WEIGERING`, de twee zinnen over 
 zelfrelatie, `contract: …`, `transpiler <verdict>: <sleutel> — <reden>`, `drl: ch. 7 prioritizedDefaults
 — the DRL-text branch has no defaults lowering`, `drl-transpiler …`, `drl compile: …`.
 
-**Gates** (elk als losse aanroep, `eval $(opam env)` vooraf; logs in `/tmp/golf/logs/api/`):
+**Gates** (elk als losse aanroep, `eval $(opam env)` vooraf; logs in (buiten de repo)):
 - 1 `check-self-contained.sh`: PASS (ook vóór elke commit, met de nieuwe bestanden gestaged).
 - 8 `check-rood.sh`: PASS — 43 rode cases, vloer 26; Drools-been 11 fault-gepind, 32 niet-gedragen met
   reden; 86 gepinde fragmenten, geen bodemzin.
@@ -261,3 +261,16 @@ groen" is dus op deze tak voor vijf gemeten en voor negen niet.
    gebouwd, want de kaart legde de invoer vast. Standaardantwoord: eerst per scope via de facade.
 6. `IrLoader.load(root)` (alleen het model) blijft publiek; wie daarmee bouwt, moet nu lege zijtafels
    expliciet meegeven. Geen actie.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens backend (unie cfa643d0 + samenvoegfix e6844fba): MERGEN, geen blokkade. Gemeten: één prelude (buiten
+`DroolsBackend` roept geen hoofdcode een stap van de oude prelude aan); de facade geeft op zeven (tak, document)-paren
+dezelfde weigerzin als de replay; de replay-uitvoer van de basis-jar en de api-jar is byte-gelijk over het corpus
+(1134 regels, md5 gelijk); de zeven korte overloads compileren tegen de basis en geven zeven compilefouten tegen de
+unie; de getuige wordt rood als de facade de defaults weglaat. Adviezen A1 (`@throws` noemt het rekenjaar nog), A2
+(commentaar `CaseRunner.drlTak`), A11 (README "plays exactly what a consumer fires") zijn in de fixronde gefixt
+(branch fix/graaf); A8 (verwisselbare zijtafels: gate 12 vangt een verwisseling op beide takken, 22 en 20 goldens
+veranderen van uitkomst) blijft bewust zo — de facade is de enige ingang; A10 (tellingen in dit Result verschoven
+door parallelle kaarten: gate 12 speelt op de unie 212 en de DRL-tak 182, JUnit 828).
+Uitkomst fixronde (branch fix/graaf): A1, A2, A11 gefixt; A13 het scenariorapport faalt per case in plaats van te stoppen.

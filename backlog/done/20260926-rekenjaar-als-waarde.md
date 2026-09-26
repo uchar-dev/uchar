@@ -152,7 +152,7 @@ reden; 9 PASS, 241 checks, 12 goldens; 10 PASS, JUnit 764, 94
 rgs-goldens (+1); 11 PASS, 29/29/29; 12 PASS, played 210 (pin 210), DRL
 180 (pin 180), JUnit 815 (+1: vijf tests weg, zes erbij); 13 PASS, 41
 twists over 23 goldens, 106 replays, 22 DRL-spelers; 14 PASS, 150 checks,
-2 goldens. Logs: `/tmp/golf/logs/rekenjaar/`.
+2 goldens. Logs: (buiten de repo).
 
 ### Getwiste posities (Drools-getuige `RekenjaarWitnessTest`)
 
@@ -226,3 +226,16 @@ Geen normvraag open.
 7. Het acceptatiecommando van U2 (`git grep` op de weigerzin) is leeg
    buiten `backlog/`; twee afgesloten kaarten houden de tekst als
    geschiedenis.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens uitvoerders (unie cfa643d0): EERST FIXEN op vier punten, waarvan twee (de dubbele pinregels in gate 12 en de
+routesuite die de vervallen emitterweigering toetste) al de samenvoegfix e6844fba van de hoofdsessie waren. Gemeten
+voor deze kaart: regelwaarde, operand, vergelijking en de voorwaarde van een objectcreatie in vier uitvoerders gelijk
+op 2026-12-31 en 2027-01-01; zonder datum dezelfde zin in ref en clingo, Drools toont haar alleen in het rode pad;
+de mutant "jaar van de dag ervoor" overal gevangen (golden case2, ref-suite, clingo-suite, RekenjaarWitnessTest);
+consistentie-assertie en vouwfilter: ref, clingo en de DRL-tekst gelijk, de exec-tak weigert generiek. Fixronde
+(branch fix/uitvoerders): de rode case voor het rekenjaar zonder datum (A3), de WF-098-typearm met de juiste
+beschrijving per positie (A1), de derde plek die de exec-tak niet verlaagt — de justificatie van een default — als
+getuige (A2); registerteksten aangescherpt (A10).
+Uitkomst fixronde (branch fix/uitvoerders): A3 rode case `rekenjaar-zonder-rekendatum` (drie uitvoerders, één zin); A1 en de WF-098-typearm met twee negatieven (`wf098-rekenjaar-met-decimalen`, `wf098-rekendatum-met-tijd`; normvraag met standaardantwoord: het teken van `evaluationYear` is "unspecified"); A2 de justificatie van een default als derde exec-plek in `RekenjaarWitnessTest`; V1-WIREMIGRATIE bijgewerkt. Open: de Drools-replay zonder datum leest `evaluationDate` leeg en speelt (zustergedrag).

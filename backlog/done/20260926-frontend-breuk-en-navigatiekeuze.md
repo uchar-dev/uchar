@@ -37,7 +37,7 @@ toolchain via uchars gate-pad (emitter → lader) liepen (rapport
   aanwijst, ook als er meer relaties tussen die typen bestaan; een lezing
   op typenaam bindt alleen wanneer precies één relatie de typen verbindt.
   De bouwer toetst dit aan de RegelSpraak-specificatie (read-only, niet
-  citeren: `/Users/yeb/Developer/uwv/regelspraak-werkbank/toolchain/
+  citeren: (buiten de repo)
   specification/v2.3.0/`, §13.3 over rollen en relaties) en legt de
   gekozen lezing vast in `grammar/DIVERGENCES.md`.
 - U3 Blijft de binding dubbelzinnig, dan een ERROR-diagnose in de
@@ -73,7 +73,7 @@ deze kaart: de uitvoerders.
 #### Stand
 - Basis main `b88a8ccc`; claim `cf857c2e`; werkboom schoon (`git status --short` leeg;
   `lib/`, `gen/`, `out/`, `target/` en `_build/` zijn gitignored bouwproducten). Niets
-  gepusht of gemerged, geen kaartjes gemaakt. Logs: `/tmp/golf/logs/breuk/`.
+  gepusht of gemerged, geen kaartjes gemaakt. Logs: (buiten de repo).
 - Commits:
   1. `cf857c2e` claim.
   2. `b6c69eb7` frontend: een gemengde breuk gaat als rationaal de wire op.
@@ -253,9 +253,9 @@ deze kaart: de uitvoerders.
    literal uit de cijfers na de punt (`translate.ml`, `lexeme_decimals`) en faalt op elke
    rationale literal met een niet-gehele waarde: `TRANSLATION FAULT: value 3/2 does not fit 0
    decimals`. Gate 6 kent geen uitzonderingslijst en de uitvoerders vallen buiten de kaart.
-   Klaar buiten de repo: `/tmp/golf/results/breuk-golden/jutterswet-breukliteral/` (`bron.rgs`,
+   Klaar buiten de repo: (buiten de repo) (`bron.rgs`,
    `ir.json` via `make ir`, `case1-gevuld.json`, `case2-rand.json`, `NOTE.md`) en het
-   armvoorstel `/tmp/golf/results/breuk-clingo-rationaal.patch` (lees een rationaal op de
+   armvoorstel (buiten de repo) (lees een rationaal op de
    kleinste schaal die zijn waarde exact houdt). Met die arm, gemeten in een kladkopie: beide
    cases `clingo: PASS (7 expectations)`, backendsuite 1878 checks zonder fout, alle 709
    corpuscases door de gepatchte clingo zonder fout. Bij landing: `EXPECTED_PLAYED` 209 → 210 en
@@ -288,3 +288,20 @@ deze kaart: de uitvoerders.
    frontend leest het (al vóór deze kaart) als navigatie op het typepaar, en na deze kaart bij
    een onbeslist paar ook op de rol die de naam noemt. Standaardantwoord: de geschreven naam
    beslist, zoals bij een bepaald onderwerp.
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens frontend (unie cfa643d0): EERST FIXEN. Gemeten op eigen documenten: `1_1/2` → `3/2`, `-0_1/2` → `-1/2`,
+`2_0/5` → `2/1`, `10_10/4` → `25/2`, snippets houden de auteursspelling, verifier PASS; de verifier weigert `1_1/2`,
+`3/04`, `3/0`, `+3/2`, `3/-2`, `1,5` met de WF-081-zin en laat `-3/2`, `6/8`, `2/1`, `1.50`, `1/3` door; verifier,
+ref, clingo en de Drools-lader geven op `1_1/2` dezelfde zin; ref en beide Drools-takken spelen het document, clingo
+weigert elke niet-gehele rationale literal ("does not fit 0 decimals") — de golden `jutterswet-breukliteral` en
+de clingo-arm landen in de fixronde (branch fix/uitvoerders), samen met het onbegrensde getaltype (A8). De
+navigatiekeuze getoetst op een eigen model: twee relaties — rolnaam bindt, typenaam weigert met de WF-053-zin in
+vier lezers; één relatie — beide binden; geen relatie — weigert; de vier aangepaste tests pinnen de exacte
+ERROR-lijst en schakelen niets uit (8, 33, 16 tests, geen @Disabled). BLOKKEREND B2: een verdeling over twee
+relaties eindigde nog in de IllegalStateException van de emitter (connectingRole alleen uit het typepaar) — in de
+fixronde gebonden op de geschreven rol, anders ERROR, twee getuigen. Adviezen in de fixronde: §13.4.1 beschrijft
+het verschil marker/ERROR bij een setlezing op typemeervoud (A14); de weigering bij een tweestapsbereik noemt de
+geschreven stap (A15); WF-031/WF-034-producentgaten (A16).
+Uitkomst fixronde: B2 gefixt (de verbindende rol van een verdeling bindt op de geschreven rol, anders ERROR; twee getuigen); A14, A15, A16 gefixt; de golden `jutterswet-breukliteral` en de clingo-arm (rationale literal op de kleinste exacte schaal) geland op branch fix/uitvoerders, met het onbegrensde getal (A8: ref draagt elke exacte waarde; clingo houdt het heel en weigert bij naam). Zeven exceptions die een auteur kon uitlokken zijn weigeringen geworden; de nakomer (fix/frontend2) laat een begrensde uniciteit binden op de geschreven namen, met één melding, en weigert een naar-veel ouderrol in de WF-054-zin. Open: de algemene WF-034-weigering wacht op het vertrek van de pariteitszone; een ouder op typenaam bindt niet (featurevraag); "de vakpremie van zijn strandvak" (rol én type) wordt stil als regel op het type gelezen (normvraag); `1/3` blijft een benoemde weigering in clingo waar ref exact rekent.

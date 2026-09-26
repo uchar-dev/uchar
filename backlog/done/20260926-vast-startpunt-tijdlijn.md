@@ -184,7 +184,7 @@ van de maand` · `… (§13.3.6.5) noemt geen reeks kwartaalmaanden: die is 1, 4
 period while multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12)` (WF-005's zin; `LezerszinGrensTest`
 groen).
 
-### Gates (eindronde op `24f54f1e`, logs `/tmp/golf/logs/start/final-*.log`; basis `base-*.log`)
+### Gates (eindronde op `24f54f1e`, logs (buiten de repo); basis `base-*.log`)
 
 | gate | uitkomst | tellingen, basis → eind |
 |---|---|---|
@@ -265,3 +265,22 @@ andere keuze raakt ch. 3.9, waar de parallelle kaart `gehele-periode-leeg-gevuld
     kenmerk is zijn ware perioden); vastgelegd in de NOTE van de golden.
 12. Testbestanden van ref, clingo, de frontend en de Drools-backend zijn gewijzigd of toegevoegd; de kaart
     mandateert het (U3's worked examples, het herschrijven van de weigertest, de nieuwe getuigen).
+
+## Lens en fixronde (2026-09-26, hoofdsessie)
+
+Lens uitvoerders (unie cfa643d0): EERST FIXEN. Gemeten voor deze kaart: achttien spellings- en armproeven geven in
+verifier, ref, clingo en de Drools-lader dezelfde zin op dezelfde pointer (alleen bij meerdere bevindingen citeert
+Drools een andere eerste — de bekende, bewust open klasse); dagtellingen op `--10-01`, `--01-31` en `--02-29` over
+vijf cases (1890, 1999 vóór het ankerjaar, 2100, schrikkeldag, periodegrens) volgen de eigen rasterlezing van de
+lens in alle vier; negen bronvormen canoniek geëmitteerd en verifier-schoon; gate 9 en 14 groen; WF-115 botst met
+geen nummer. BLOKKEREND B3: Drools telde een periode van een vast raster tussen geklemde muren als nul eenheden
+waar ref en clingo één zeggen (ChronoUnit.between; bestond al bij een knip op het kalenderraster, nu bereikbaar
+zonder knip) — fixronde (branch fix/tijd): hele eenheden als de grootste k met van + k ≤ tot, een pinnende case.
+BLOKKEREND B4: clingo spande zijn emmers alleen over de eindpunten van de case-invoer, zodat een afgeleide tijdlijn
+op een vast raster onder de gehele-periodekwalificatie vacuüm slaagde — fixronde: de span verbreed met de periode
+van elk vast raster, een pinnende case. Adviezen in de fixronde: asOfDate-bucket op een week- of kwartaalraster
+overal beantwoord en RS ch. 3.2/3.12 consistent (A7), gelijke Drools-zinnen zonder v0-spelling (A8), namen (A14);
+open gelaten met reden: het datumlexeem van een weekraster is niet canoniek — twee datums leggen hetzelfde raster
+(A13, spec-besluit), en de frontend liet "voor elke 2 maanden" zonder startpunt stil vallen (A11, branch
+fix/frontend).
+Uitkomst fixronde (branch fix/tijd, alle zestien gates groen op de kop): B3 en B4 gefixt met pinnende cases 5–7 in `jutterswet-vast-startpunt` (de bestaande vier cases kregen een rekendatum; verwachtingen ongewijzigd); A7 (asOfDate-bucket op week- en kwartaalraster in clingo via ref's rasterfunctie; RS ch. 3.2 en 3.12 consistent), A8 (de Drools-caserunner en de pro-rata-omheining spreken ref's zinnen in L5-spelling, gepind in drie suites), A14 (`emit_bucket_calendar` heet `emit_grid_buckets`; `attribuut_tijdlijn_aantal` blijft: verifier-AST, catala en flogic). Open gelaten: A9 (bekende klasse, opnieuw gemeten: ref en clingo weigeren op de tijdlijnpointer, Drools op de facetpointer, zelfde zin), A13 (datumlexeem weekraster), de keten van hops zonder golden-case.
