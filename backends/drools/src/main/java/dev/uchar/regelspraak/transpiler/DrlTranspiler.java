@@ -1761,7 +1761,8 @@ public final class DrlTranspiler {
             // ch. 2.10: the doel is a REFERENCE position — the §4 restate target is the DECLARED attribute
             // datatype, never the doel node's repetition of it.
             temporeelTl = temporeelOngeankerd || vastRasterReden != null ? null
-                    : temporeleWaarde(acc, r.waarde(), subject, opNaam(td.objecttype().granulariteitLeden(), td.attribuut()), effType(td), anker0);
+                    : temporeleWaarde(acc, r.waarde(), subject, opNaam(td.objecttype().granulariteitLeden(), td.attribuut()), effType(td), anker0,
+                            ankerLid0 != null);
         }
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
         // boolean) is written the timeline of its voorwaarde's TRUE-periods: "Een object is duur gedurende de tijd dat
@@ -3475,14 +3476,17 @@ public final class DrlTranspiler {
                 : "java.time.LocalDate.of(" + a.getYear() + ", " + a.getMonthValue() + ", " + a.getDayOfMonth() + ")";
     }
 
-    private String temporeleWaarde(Acc acc, Expr w, Objecttype subject, RegelSpraakModel.Granulariteit gran, Datatype doelType, String anker) {
+    private String temporeleWaarde(Acc acc, Expr w, Objecttype subject, RegelSpraakModel.Granulariteit gran, Datatype doelType, String anker,
+                                   boolean variabelAnker) {
         // §5.8.2/§5.1.4 "de som van <temporeel attr> van alle <naar-veel-rol>" into a TEMPORAL doel: a PER-PERIOD
         // sommatie over the navigated SET, keeping the timeline (§5.1.4: only the §7.1 "totaal van" aggregation
         // collapses to a scalar; "som van" over temporal elements stays temporal). An accumulate COLLECTS each
         // element's List<Segment> timeline; rsTijdSomAlle folds them per merged-knip period with the §5.8.2 leeg rule
         // (skip empties, all-empty period -> leeg unless "of 0 als die er niet zijn"). Anchored (variable-startpunt)
         // doelen stay a marker (the per-object bucket interaction with a set fold is out of scope).
-        if (anker == null) {
+        // the per-period sum follows its elements' cuts and reads no grid, so only a VARIABLE anchor keeps it out —
+        // the constant anchor of a fixed start point does not (mirror exec)
+        if (!variabelAnker) {
             String somSet = tijdreeksSomAlleSet(acc, w, subject, gran, doelType);
             if (somSet != null) return somSet;
         }
