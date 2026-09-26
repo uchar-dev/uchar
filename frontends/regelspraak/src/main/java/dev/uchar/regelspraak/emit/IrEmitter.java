@@ -483,7 +483,10 @@ public final class IrEmitter {
                 throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.naam + "' kent de spelling '"
                         + en.getKey() + "' toe aan de eenheid '" + e.afkorting() + "', die het niet zo declareert; een "
                         + "spelling staat alleen op een gedeclareerde eenheid");
-            if (!en.getKey().equals(e.afkorting())) spellingen.get(e.afkorting()).add(en.getKey());
+            // a word the declaration also writes as an abbreviation ("de meter (mv: meters) m meter") is one spelling
+            // of one unit, listed once: nothing is dropped
+            List<String> sp = spellingen.get(e.afkorting());
+            if (!en.getKey().equals(e.afkorting()) && !sp.contains(en.getKey())) sp.add(en.getKey());
         }
         // one Unit per abbreviation under the name identity (WF-009): the model keys its units on the exact
         // spelling, so two declarations whose abbreviations differ in case alone are two units here and one name there

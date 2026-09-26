@@ -306,6 +306,20 @@ class IrEmitterTest {
         assertTrue(eigen.errors().isEmpty(), () -> "onverwachte fouten: " + eigen.errors());
     }
 
+    @Test void een_afkorting_die_ook_het_eenheidswoord_is_staat_eenmaal_bij_de_spellingen() {
+        // "de meter (mv: meters) m meter" writes 'meter' as a second abbreviation and as the unit's word: one spelling
+        // of one unit. Before: the emitter's exception ("draagt een spelling van 'm' tweemaal, als afkorting en als
+        // alias: [meter, meter, meters]").
+        String c = emitCompact("""
+            Eenheidsysteem Lengte
+                de meter (mv: meters) m meter
+            Objecttype de Schuit
+                de lengte Numeriek (getal) met eenheid m;
+            """);
+        assertTrue(c.contains("\"abbreviation\":\"m\",\"system\":\"Lengte\",\"canonical\":\"m\","
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"meter\",\"meters\"]}"), c);
+    }
+
     @Test void twee_afkortingen_die_een_naam_zijn_in_een_stelsel_worden_geweigerd() {
         // The emitter's own guard behind the resolver's refusal above: a model that keys two units of one system on
         // spellings the name identity joins (kg and KG) would put one name on the wire twice, which every reader
