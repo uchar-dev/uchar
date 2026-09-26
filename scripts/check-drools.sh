@@ -976,7 +976,15 @@ EXPECTED_CHANNEL=(
 # are right), and now an initialisatie's own write does not switch the guard off. It plays the four
 # cases, PLAYED 4, with ref's and clingo's values. The DRL-text branch keeps the transient values
 # (class (D) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=209
+# 209 -> 210 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new, from bron.rgs and
+# hand-computed — the context value evaluationYear as a rule value, as an arithmetic operand and as a
+# comparison operand on either side, in two sessions one day and one year apart (RUNTIME-SEMANTICS
+# ch. 8.2). Until this card the replay refused every document that carried the node before either
+# branch lowered it, in the sentence ref and clingo refused it with. That refusal is gone in all
+# three executors; both branches read the year from the session's evaluation date through the
+# runtime's rsRekenjaar. The exec branch plays both cases, PLAYED 2, with ref's and clingo's values.
+# EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=210
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1270,7 +1278,10 @@ DRL_CHANNEL=(
 # 178 -> 179 (2026-09-25, the ASP initialisation arm): jutterswet-voorwaardelijke-initialisatie, new.
 # This branch plays its four cases on the first run with no change of its own, PLAYED 4. Reason block
 # at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=179
+# 179 -> 180 (2026-09-26, card rekenjaar-als-waarde): jutterswet-rekenjaar, new. This branch lowers the
+# node as rsRekenjaar(rekendatum) and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED
+# above.
+EXPECTED_DRL_PLAYED=180
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a

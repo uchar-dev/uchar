@@ -1,0 +1,52 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-12-31",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": { "vondstjaar": { "number": "2026" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": { "vondstjaar": { "number": "2025" } },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": { "vondstjaar": { "number": "2027" } },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "meldjaar", "value": { "number": "2026" } },
+    { "kind": "attributeValue", "label": "V1", "attribute": "aantal verstreken penningjaren", "value": { "number": "0" } },
+    { "kind": "characteristicAbsent", "label": "V1", "characteristic": "laat gemeld" },
+    { "kind": "attributeValue", "label": "V2", "attribute": "meldjaar", "value": { "number": "2026" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "aantal verstreken penningjaren", "value": { "number": "1" } },
+    { "kind": "characteristicPresent", "label": "V2", "characteristic": "laat gemeld" },
+    { "kind": "attributeValue", "label": "V3", "attribute": "meldjaar", "value": { "number": "2026" } },
+    { "kind": "attributeEmpty", "label": "V3", "attribute": "aantal verstreken penningjaren" },
+    { "kind": "characteristicAbsent", "label": "V3", "characteristic": "laat gemeld" },
+    { "kind": "attributeValue", "label": "V4", "attribute": "meldjaar", "value": { "number": "2026" } },
+    { "kind": "attributeEmpty", "label": "V4", "attribute": "aantal verstreken penningjaren" },
+    { "kind": "characteristicAbsent", "label": "V4", "characteristic": "laat gemeld" },
+    { "kind": "consistent" }
+  ]
+}

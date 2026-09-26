@@ -1,0 +1,19 @@
+Objecttype de Vondst (mv: Vondsten)
+    het vondstjaar Numeriek (geheel getal);
+    het meldjaar Numeriek (geheel getal);
+    het aantal verstreken penningjaren Numeriek (geheel getal);
+    is laat gemeld kenmerk (bijvoeglijk);
+
+Regel meldjaar
+    geldig altijd
+        Het meldjaar van een Vondst moet gesteld worden op het Rekenjaar.
+
+Regel aantal verstreken penningjaren
+    geldig altijd
+        Het aantal verstreken penningjaren van een Vondst moet berekend worden als het Rekenjaar min zijn vondstjaar
+        indien zijn vondstjaar kleiner of gelijk is aan het Rekenjaar.
+
+Regel Kenmerktoekenning laat gemeld
+    geldig altijd
+        Een Vondst is laat gemeld
+        indien het Rekenjaar groter is dan zijn vondstjaar.
