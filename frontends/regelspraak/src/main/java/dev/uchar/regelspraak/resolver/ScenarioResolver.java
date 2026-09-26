@@ -309,7 +309,7 @@ public final class ScenarioResolver {
                     + "laat vallen legt de tijdlijn op een ander raster");
         if (scope instanceof ScopeEnkeleRegelContext s) {
             String naam = src(s.enkeleRegelReferentie());
-            return gescoped(ScopeSoort.ENKELE_REGEL, List.of(naam), vormenVan(naam, s.getStart().getLine()));
+            return gescoped(vormenVan(naam, s.getStart().getLine()));
         }
         if (scope instanceof ScopeMeerdereRegelsContext s) {
             List<String> namen = new ArrayList<>();
@@ -319,27 +319,27 @@ public final class ScenarioResolver {
                 namen.add(naam);
                 vormen.addAll(vormenVan(naam, ref.getStart().getLine()));
             }
-            return gescoped(ScopeSoort.MEERDERE_REGELS, namen, List.copyOf(vormen));
+            return gescoped(List.copyOf(vormen));
         }
         ScopeRegelgroepContext s = (ScopeRegelgroepContext) scope;
         String groep = src(s.enkeleRegelReferentie());
         var g = model.regelGroepen.stream().filter(rg -> norm(rg.naam()).equals(norm(groep))).findFirst().orElse(null);
         if (g == null) {
             fout(s.getStart().getLine(), "de regelgroep '" + groep + "' uit de scope bestaat niet in het document");
-            return gescoped(ScopeSoort.REGELGROEP, List.of(groep), List.of());
+            return gescoped(List.of());
         }
         LinkedHashSet<String> vormen = new LinkedHashSet<>();
         for (String lid : g.leden()) vormen.addAll(vormenVan(lid, s.getStart().getLine()));
-        return gescoped(ScopeSoort.REGELGROEP, List.of(groep), List.copyOf(vormen));
+        return gescoped(List.copyOf(vormen));
     }
 
     /** A scope over {@code vormen}, with the source lines of the blocks whose every form it leaves out. */
-    private Scope gescoped(ScopeSoort soort, List<String> regels, List<String> vormen) {
+    private Scope gescoped(List<String> vormen) {
         Set<String> gedragen = new java.util.HashSet<>();
         for (String v : vormen) gedragen.add(norm(v));
         List<Regelbereik> weggelaten = new ArrayList<>();
         for (Blok b : blokken()) weggelaten(b, gedragen, weggelaten);
-        return new Scope(soort, regels, vormen, List.copyOf(weggelaten));
+        return new Scope(vormen, List.copyOf(weggelaten));
     }
 
     /** A source block that yields named forms: a rule or a decision table (its forms carry its name, a table's rows
@@ -577,7 +577,7 @@ public final class ScenarioResolver {
                 return;
             }
             vast.add(norm(attr));
-            if (w != null) attributen.add(new AttribuutWaarde(attr, dt, w, null, line));
+            if (w != null) attributen.add(new AttribuutWaarde(attr, w, null, line));
             return;
         }
         if (ot.granulariteitVan(attr) == null) {
@@ -595,7 +595,7 @@ public final class ScenarioResolver {
         if (tl == null) {
             tl = new ArrayList<>();
             tijdlijnen.put(norm(attr), tl);
-            attributen.add(new AttribuutWaarde(attr, dt, null, tl, line));
+            attributen.add(new AttribuutWaarde(attr, null, tl, line));
         }
         if (volgtOp(tl.isEmpty() ? null : tl.get(tl.size() - 1).tot(), p, line)) tl.add(new Segment(p.van(), p.tot(), w));
     }
@@ -619,7 +619,7 @@ public final class ScenarioResolver {
                         + "('is " + kenmerk + " van <datum> tot <datum>'), niet als vaste waarde");
                 return;
             }
-            kenmerken.add(new KenmerkWaarde(kenmerk, bezittelijk, null, line));
+            kenmerken.add(new KenmerkWaarde(kenmerk, null, line));
             return;
         }
         if (!temporeel) {
@@ -633,7 +633,7 @@ public final class ScenarioResolver {
         if (lijst == null) {
             lijst = new ArrayList<>();
             perioden.put(norm(kenmerk), lijst);
-            kenmerken.add(new KenmerkWaarde(kenmerk, bezittelijk, lijst, line));
+            kenmerken.add(new KenmerkWaarde(kenmerk, lijst, line));
         }
         if (volgtOp(lijst.isEmpty() ? null : lijst.get(lijst.size() - 1).tot(), p, line)) lijst.add(p);
     }
@@ -715,7 +715,7 @@ public final class ScenarioResolver {
                 fout(line, "de parameter '" + p.naam() + "' krijgt in dit blok zowel perioden als een vaste waarde");
                 return null;
             }
-            return w == null ? null : new ParameterWaarde(p.naam(), p.datatype(), w, null, line);
+            return w == null ? null : new ParameterWaarde(p.naam(), w, null, line);
         }
         if (p.granulariteit() == null) {
             fout(line, "de parameter '" + p.naam() + "' is niet tijdsafhankelijk; een periode ('van … tot …') hoort "
@@ -734,7 +734,7 @@ public final class ScenarioResolver {
         boolean nieuw = tl == null;
         if (nieuw) { tl = new ArrayList<>(); tijdlijnen.put(norm(p.naam()), tl); }
         if (volgtOp(tl.isEmpty() ? null : tl.get(tl.size() - 1).tot(), per, line)) tl.add(new Segment(per.van(), per.tot(), w));
-        return nieuw ? new ParameterWaarde(p.naam(), p.datatype(), null, tl, line) : null;
+        return nieuw ? new ParameterWaarde(p.naam(), null, tl, line) : null;
     }
 
     // ---------------- periods ----------------
@@ -888,7 +888,7 @@ public final class ScenarioResolver {
                 String label = a.UPPER_ID().getText();
                 String attr = verwachtAttribuut(label, zonderLidwoord(src(a.verwachtingNaam())), situatie, line);
                 if (attr != null)
-                    uit.add(new Verwachting(VerwachtingSoort.ATTRIBUUT_LEEG, label, attr, null, null, null, null, line, src(a)));
+                    uit.add(new Verwachting(VerwachtingSoort.ATTRIBUUT_LEEG, label, attr, null, null, null, null, line));
             } else if (v instanceof VerwachtTijdlijnLeegContext a) {
                 String label = a.UPPER_ID().getText();
                 String attr = verwachtAttribuut(label, zonderLidwoord(src(a.verwachtingNaam())), situatie, line);
@@ -900,7 +900,7 @@ public final class ScenarioResolver {
                     continue;
                 }
                 Verwachting t = new Verwachting(VerwachtingSoort.ATTRIBUUT_TIJDLIJN, label, attr, null, null,
-                        new ArrayList<>(), null, line, src(a));
+                        new ArrayList<>(), null, line);
                 tijdlijnen.put(sleutel, t);
                 altijdLeeg.put(sleutel, true);
                 uit.add(t);
@@ -912,7 +912,7 @@ public final class ScenarioResolver {
                 Waarde w = leesEnTypeer(a.situatieWaarde(), dt, line, "de verwachting voor '" + attr + "'");
                 if (a.periode() == null) {
                     if (w != null)
-                        uit.add(new Verwachting(VerwachtingSoort.ATTRIBUUT_WAARDE, label, attr, null, w, null, null, line, src(a)));
+                        uit.add(new Verwachting(VerwachtingSoort.ATTRIBUUT_WAARDE, label, attr, null, w, null, null, line));
                     continue;
                 }
                 if (!temporeelAttribuut(label, attr, situatie, line)) continue;
@@ -929,7 +929,7 @@ public final class ScenarioResolver {
                 Verwachting t = tijdlijnen.get(sleutel);
                 if (t == null) {
                     t = new Verwachting(VerwachtingSoort.ATTRIBUUT_TIJDLIJN, label, attr, null, null, new ArrayList<>(),
-                            null, line, src(a));
+                            null, line);
                     tijdlijnen.put(sleutel, t);
                     uit.add(t);
                 }
@@ -937,11 +937,11 @@ public final class ScenarioResolver {
                 if (volgtOp(tl.isEmpty() ? null : tl.get(tl.size() - 1).tot(), p, line)) tl.add(new Segment(p.van(), p.tot(), w));
             } else if (v instanceof VerwachtKenmerkContext k) {
                 Verwachting r = verwachtKenmerk(k.UPPER_ID().getText(), zonderLidwoord(src(k.kaleNaam())), false,
-                        situatie, line, src(k));
+                        situatie, line);
                 if (r != null) uit.add(r);
             } else if (v instanceof VerwachtKenmerkHeeftContext k) {
                 Verwachting r = verwachtKenmerk(k.UPPER_ID().getText(), zonderLidwoord(src(k.kaleNaam())), true,
-                        situatie, line, src(k));
+                        situatie, line);
                 if (r != null) uit.add(r);
             } else if (v instanceof VerwachtInconsistentContext c) {
                 String regel = null, label = null;
@@ -962,9 +962,9 @@ public final class ScenarioResolver {
                     }
                 }
                 if (s == null || regel != null)
-                    uit.add(new Verwachting(VerwachtingSoort.INCONSISTENT, label, null, null, null, null, regel, line, src(c)));
+                    uit.add(new Verwachting(VerwachtingSoort.INCONSISTENT, label, null, null, null, null, regel, line));
             } else if (v instanceof VerwachtConsistentContext c) {
-                uit.add(new Verwachting(VerwachtingSoort.CONSISTENT, null, null, null, null, null, null, line, src(c)));
+                uit.add(new Verwachting(VerwachtingSoort.CONSISTENT, null, null, null, null, null, null, line));
             } else {
                 // error recovery leaves a bare VerwachtingContext; the syntax error is reported already
                 fout(line, "de verwachting '" + src(v) + "' is syntactisch niet herkend");
@@ -1001,8 +1001,7 @@ public final class ScenarioResolver {
         return false;
     }
 
-    private Verwachting verwachtKenmerk(String label, String geschreven, boolean heeft, Situatie situatie, int line,
-                                        String bron) {
+    private Verwachting verwachtKenmerk(String label, String geschreven, boolean heeft, Situatie situatie, int line) {
         // "geen <kenmerk>" and "niet <kenmerk>" are the absent form: the grammar keeps the word inside the kaleNaam
         String klein = geschreven.toLowerCase(java.util.Locale.ROOT);
         boolean afwezig = klein.startsWith("geen ") || klein.startsWith("niet ");
@@ -1020,7 +1019,7 @@ public final class ScenarioResolver {
         }
         if (!werkwoordPast(i.objecttype(), kenmerk, heeft, line)) return null;
         return new Verwachting(afwezig ? VerwachtingSoort.KENMERK_AFWEZIG : VerwachtingSoort.KENMERK_AANWEZIG,
-                label, null, kenmerk, null, null, null, line, bron);
+                label, null, kenmerk, null, null, null, line);
     }
 
     /** A rule an inconsistency may name: a named form of the model, or a conflict channel — a target form

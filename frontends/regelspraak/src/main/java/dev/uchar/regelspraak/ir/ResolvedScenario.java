@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.ir;
 
-import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 
 import java.time.LocalDate;
@@ -28,22 +27,18 @@ import java.util.List;
 public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Situatie situatie,
                                List<Verwachting> verwachtingen, int line) {
 
-    /** The rules a scenario tests. {@code regels} holds each name as written (a rule, a decision table, a
-     *  defaults group, or for {@link ScopeSoort#REGELGROEP} the one group); {@code vormen} holds the names of the
-     *  model forms the scope carries, as the model spells them — what the emitted IR keeps; {@code weggelaten} holds
-     *  the source lines of the blocks (a rule, a decision table, an extension block, a rule group) whose every form
-     *  the scope leaves out, so the IR document drops the diagnostics raised there. */
-    public record Scope(ScopeSoort soort, List<String> regels, List<String> vormen, List<Regelbereik> weggelaten) {
-        public Scope(ScopeSoort soort, List<String> regels, List<String> vormen) {
-            this(soort, regels, vormen, List.of());
-        }
+    /** The rules a scenario tests: {@code vormen} holds the names of the model forms the scope carries, as the model
+     *  spells them — what the emitted IR keeps; {@code weggelaten} holds the source lines of the blocks (a rule, a
+     *  decision table, an extension block, a rule group) whose every form the scope leaves out, so the IR document
+     *  drops the diagnostics raised there. */
+    public record Scope(List<String> vormen, List<Regelbereik> weggelaten) {
+        public Scope(List<String> vormen) { this(vormen, List.of()); }
     }
 
     /** The source lines {@code van} to {@code tot}, both inclusive. */
     public record Regelbereik(int van, int tot) {
         public boolean bevat(int regel) { return regel >= van && regel <= tot; }
     }
-    public enum ScopeSoort { ENKELE_REGEL, MEERDERE_REGELS, REGELGROEP }
 
     /** The merged situation: the instances by label, in first-seen order, and the parameter values (a later
      *  value replaces an earlier one in place). */
@@ -61,7 +56,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
 
     /** An attribute assignment under its declared name: a scalar {@code waarde}, or for a time-dependent
      *  attribute a {@code tijdlijn} of segments in written order. Exactly one of the two is non-null. */
-    public record AttribuutWaarde(String attribuut, Datatype type, Waarde waarde, List<Segment> tijdlijn, int line) {}
+    public record AttribuutWaarde(String attribuut, Waarde waarde, List<Segment> tijdlijn, int line) {}
 
     /** A role assignment: the key as the case file writes it (the declared role name, or its declared plural where
      *  the source wrote the plural), the declared type of the role it names, the labels it links, and whether the
@@ -70,11 +65,11 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
 
     /** A characteristic asserted on an instance under its declared name. {@code perioden} is null for a static
      *  characteristic and holds the periods in which a time-dependent one holds, in written order. */
-    public record KenmerkWaarde(String kenmerk, boolean bezittelijk, List<Periode> perioden, int line) {}
+    public record KenmerkWaarde(String kenmerk, List<Periode> perioden, int line) {}
 
     /** A parameter value under its declared name: a scalar {@code waarde} or, for a time-dependent parameter, a
      *  {@code tijdlijn}. Exactly one of the two is non-null. */
-    public record ParameterWaarde(String parameter, Datatype type, Waarde waarde, List<Segment> tijdlijn, int line) {}
+    public record ParameterWaarde(String parameter, Waarde waarde, List<Segment> tijdlijn, int line) {}
 
     /** One timeline segment, {@code van} inclusive and {@code tot} exclusive. */
     public record Segment(LocalDate van, LocalDate tot, Waarde waarde) {}
@@ -86,7 +81,7 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
      *  {@link VerwachtingSoort#ATTRIBUUT_TIJDLIJN} (empty when the whole timeline is expected empty); {@code regel}
      *  and {@code label} of an {@link VerwachtingSoort#INCONSISTENT} are its optional key. */
     public record Verwachting(VerwachtingSoort soort, String label, String attribuut, String kenmerk,
-                              Waarde verwachteWaarde, List<Segment> tijdlijn, String regel, int line, String bron) {}
+                              Waarde verwachteWaarde, List<Segment> tijdlijn, String regel, int line) {}
     public enum VerwachtingSoort {
         ATTRIBUUT_WAARDE,    // de <attr> van <LABEL> is <waarde>
         ATTRIBUUT_LEEG,      // de <attr> van <LABEL> is leeg

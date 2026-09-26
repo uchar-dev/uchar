@@ -489,7 +489,7 @@ class ScenarioLoweringTest {
         m.uniciteitUnies.forEach(x -> namen.add(x.naam()));
         m.feitCreaties.forEach(x -> namen.add(x.naam()));
         m.prioritizedDefaults.forEach(x -> namen.add(x.naam()));
-        ResolvedScenario.Scope alles = new ResolvedScenario.Scope(ResolvedScenario.ScopeSoort.MEERDERE_REGELS, namen, namen);
+        ResolvedScenario.Scope alles = new ResolvedScenario.Scope(namen);
         assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.metScope(m, alles)));
     }
 
