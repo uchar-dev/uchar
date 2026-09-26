@@ -7680,21 +7680,51 @@ let dep_forms ctx : dep_form list =
   regels @ verdelingen @ consistenties @ uniciteiten @ uniciteit_unies @ creaties
   @ feit_creaties @ defaults_groups
 
+(* The edges of the dependency graph over [forms] (ch. 5.1, 5.2), as
+   (producer, consumer, node, kind) over the forms' indices: one for every
+   node a consumer reads and a producer writes. They come in reading order
+   (consumer by consumer, each read in turn, its writers as the table
+   answers them) because WF-045 walks them in that order and names the
+   first cycle it meets, so the walk and the --dependency-edges report
+   below read one list and cannot drift apart. *)
+let dep_edges (forms : dep_form array) =
+  let writers = Hashtbl.create 16 in
+  Array.iteri (fun i f -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
+  List.concat_map
+    (fun (ci, f) ->
+      List.concat_map
+        (fun (node, kind) ->
+          List.map (fun pi -> (pi, ci, node, kind)) (Hashtbl.find_all writers node))
+        f.df_reads)
+    (List.mapi (fun ci f -> (ci, f)) (Array.to_list forms))
+
+(* The verifier's --dependency-edges report: every edge of the graph
+   WF-045 and WF-046 walk, one tab-separated line each, sorted and without
+   repeats. The fields are the kind (positive, strict or negative, ch. 5.2),
+   the producer's pointer and name, the node, and the consumer's pointer
+   and name. The node is the walk's own key (ch. 5.1), every name in it
+   normalised: attr:<type>:<attribute>, char:<type>:<characteristic>,
+   chan:<rule>, pop:<type> or rel:<fact type>. It is printed for a reader
+   that must agree with this graph, such as the Drools backend's rule graph
+   (scripts/check-graaf.sh). *)
+let dependency_edges (doc : document) =
+  let forms = Array.of_list (dep_forms { doc }) in
+  let kind = function Dep_pos -> "positive" | Dep_strict -> "strict" | Dep_neg -> "negative" in
+  List.sort_uniq compare
+    (List.map
+       (fun (pi, ci, node, k) ->
+         String.concat "\t"
+           [ kind k; forms.(pi).df_at; forms.(pi).df_name; node; forms.(ci).df_at; forms.(ci).df_name ])
+       (dep_edges forms))
+
 let wf045_046 ctx =
   let forms = Array.of_list (dep_forms ctx) in
   let nforms = Array.length forms in
-  let writers = Hashtbl.create 16 in
-  Array.iteri (fun i f -> List.iter (fun n -> Hashtbl.add writers n i) f.df_writes) forms;
   let succ = Array.make nforms [] in
-  Array.iteri
-    (fun ci f ->
-      List.iter
-        (fun (node, kind) ->
-          List.iter
-            (fun pi -> if not (List.mem (ci, kind) succ.(pi)) then succ.(pi) <- (ci, kind) :: succ.(pi))
-            (Hashtbl.find_all writers node))
-        f.df_reads)
-    forms;
+  List.iter
+    (fun (pi, ci, _, kind) ->
+      if not (List.mem (ci, kind) succ.(pi)) then succ.(pi) <- (ci, kind) :: succ.(pi))
+    (dep_edges forms);
   (* WF-045: the graph minus recursive-creation forms must be acyclic *)
   let skip i = forms.(i).df_recursive_creation in
   let color = Array.make nforms 0 in
