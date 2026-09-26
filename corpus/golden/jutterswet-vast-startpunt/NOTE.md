@@ -27,14 +27,27 @@ Jutterswet, whose penningjaar is the calendar year (art. 3b).
 - `maandtoelage`, `voor elke maand startend op dag 31 van de maand`: the same
   inline month grid as `maandwachtdagen`, supplied as a scalar case value;
   `maandtoelagesom`, a scalar.
-- Four rules: the day count "het aantal dagen in het jaar dat hij
+- `stormpremie` and `maandpremie`, scalars.
+- Six rules: the day count "het aantal dagen in het jaar dat hij
   wachtplichtig is" into `stormwachtdagen`, the same count "in de maand" into
   `maandwachtdagen` (ch. 3.8; each stated bucket equals its target's
   granularity, WF-058), "het totaal van zijn stormtoelage gedurende de tijd
   dat hij wachtplichtig is" into `toelagesom` (ch. 3.6), and "het totaal van
   zijn maandtoelage" into `maandtoelagesom`: the subject's own total over the
   asOfDate bucket, where a scalar case value is the value of the period of the
-  member's grid that holds the evaluation date (ch. 3.2, 3.6).
+  member's grid that holds the evaluation date (ch. 3.2, 3.6); and two
+  whole-period tests over the day counts (ch. 3.9): `stormpremie` is 50
+  "indien zijn stormwachtdagen gedurende het gehele jaar gevuld is", and
+  `maandpremie` is 20 "indien zijn maandwachtdagen gedurende de gehele maand
+  groter is dan 0".
+
+The qualifier folds over the calendar year or month it names, not over the
+grid of the tested member (ch. 3.2, 3.9). A day count on a fixed grid writes
+whole periods of that grid, so its first and last period each reach into a
+calendar bucket they cover only in part, and both tests fail on every
+timeline that holds a period: the storm years start on 1 October and the
+month grid on the 31st, never on the first day of a calendar bucket. They
+pass only vacuously, on a timeline without periods.
 
 Every case carries an evaluation date, because that total needs one: `ref`
 faults without it ("needs the evaluation date"). Cases 1 to 4 supply no scalar
@@ -92,6 +105,8 @@ the leap day; no `stormtoelage`.
 - `toelagesom`: the clip over no period → **0**.
 - `maandtoelagesom`: no `maandtoelage`, and the total of an absent member is
   **leeg** (ch. 3.6).
+- `stormpremie` **50** and `maandpremie` **20**: the day counts hold no period,
+  touch no bucket, and both tests pass vacuously.
 
 **case5-geklemde-maand** — evaluation date 2024-02-15; `maandtoelage` 10 as a
 scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
@@ -107,11 +122,30 @@ scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
 - `stormwachtdagen`: [2023-10-01, 2024-10-01) → **2**.
 - `toelagesom`: no `stormtoelage` under the clip → **0**.
 
+**case6-heel-kalenderjaar** — evaluation date 2025-06-15; J1 wachtplichtig on
+[2025-01-01, 2026-01-01), the calendar year 2025; nothing else.
+
+- `stormwachtdagen`: 1 January to 30 September 2025 in [2024-10-01, 2025-10-01)
+  → **273**; 1 October to 31 December in [2025-10-01, 2026-10-01) → **92**.
+- `maandwachtdagen`: thirteen periods, 30 + 28 + 31 + 30 + 31 + 30 + 31 + 31 +
+  30 + 31 + 30 + 31 + 1 = 365: [2024-12-31, 2025-01-31) holds 1–30 January →
+  30, [2025-01-31, 2025-02-28) holds 31 January and 1–27 February → 28, and
+  so on to [2025-12-31, 2026-01-31), which holds 31 December alone → 1.
+- `toelagesom` **0** (no `stormtoelage`); `maandtoelagesom` **leeg** (no
+  `maandtoelage`).
+- `stormpremie` **leeg**: the period [2024-10-01, 2025-10-01) touches the
+  calendar year 2024, which reads a value on 92 of its 366 days.
+- `maandpremie` **leeg**: the period [2024-12-31, 2025-01-31) touches December
+  2024, which reads a value (30) on 1 of its 31 days.
+
+The case's own dates all lie in 2025, while the two periods reach into 2024
+and 2026: the bucket of 2024 is one no case input touches.
+
 ## Executors
 
-`ref`, clingo and both Drools branches replay the five cases with these
+`ref`, clingo and both Drools branches replay the six cases with these
 values (measured 2026-09-26: `oracle: PASS` and `clingo: PASS` per case,
-`PLAYED 5` in the exec-model branch and in the DRL-text branch). `ref` lays the grid in one function
+`PLAYED 6` in the exec-model branch and in the DRL-text branch). `ref` lays the grid in one function
 (`Timeline.grid_bucket`), which the ASP backend's bucket calendar calls as
 well; the Drools branches hand the doel's constant anchor to the anchored
 producers a variable start uses, and the case runner lays a case timeline on
@@ -122,6 +156,14 @@ which weighs a span by the clamped month step: measured on the union
 `e6844fba`, `FAIL case5-geklemde-maand.json: attribuut maandtoelagesom:
 verwacht 10, werkelijk 0` in each; the runtime counted whole months by the
 duration's packed-month rule.
+
+Case 6 was red in the ASP backend before the same round, which laid the
+buckets of a whole-period fold between the case's own endpoints only:
+measured on the union `e6844fba`, `MISMATCH: J1.stormpremie = [50], expected
+leeg` and `MISMATCH: J1.maandpremie = [20], expected leeg`. The buckets of
+2024 and of December 2024 were missing, and the fold passed on them
+vacuously. The bucket span now reaches one period of every fixed grid
+around each endpoint.
 
 No case survives a no-op run: each expects a day count or a total the input
 does not carry (gate 7). No annotation of this document carries a unit, so the
@@ -138,6 +180,7 @@ describes calendar grids — and `ref` refuses every case at load, measured
     case3-schrikkelmaand.json    CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
     case4-geen-wacht.json        CASE ERROR: J1.stormtoelage.timeline[0]: segment boundaries must sit on the declared granularity grid
     case5-geklemde-maand.json    CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
+    case6-heel-kalenderjaar.json CASE ERROR: expected J1.stormwachtdagen.timeline[0]: segment boundaries must sit on the declared granularity grid
 
 Before this card the frontend refused `bron.rgs` at emission: the wire had no
 field for the start point, and a timeline written without it lies on the

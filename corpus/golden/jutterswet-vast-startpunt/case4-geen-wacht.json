@@ -52,6 +52,22 @@
       "attribute": "maandtoelagesom"
     },
     {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "stormpremie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "maandpremie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

@@ -93,6 +93,26 @@
               "decimals": 0,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "stormpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": [
@@ -308,6 +328,135 @@
               },
               "source": {
                 "snippet": "het totaal van zijn maandtoelage"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stormpremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stormpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De stormpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "50"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "stormwachtdagen",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormwachtdagen"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn stormwachtdagen gedurende het gehele jaar gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maandpremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De maandpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "maandwachtdagen",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn maandwachtdagen"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn maandwachtdagen gedurende de gehele maand groter is dan 0"
               }
             },
             "initialisation": false,

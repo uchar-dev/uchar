@@ -14572,6 +14572,81 @@ let () =
       ( "WF-035 mixed, pair slot: day date + sub-day unit", m, "plus", dag, duur ~u:"uur" "26",
         sub_day_unit_on_day_date ) ]
 
+(* RUNTIME-SEMANTICS ch. 3.2 and 3.9, the seam of the two: a day count into a
+   target on a fixed start point's grid writes whole periods of that grid, and
+   a period around an endpoint of the case reaches past it. Over 2025 the day
+   count on the --10-01 year grid writes [2024-10-01, 2025-10-01) and
+   [2025-10-01, 2026-10-01), which touch the calendar years 2024 and 2026; the
+   one on the --01-31 month grid writes [2024-12-31, 2025-01-31) and
+   [2025-12-31, 2026-01-31), which touch December 2024 and January 2026. The
+   whole-period fold over each fails on those partly covered buckets, in ref
+   as here. Measured 2026-09-26 before the bucket span reached them: the three
+   rules fired (301, 302 and 400) where ref leaves them leeg, because the
+   calendar laid only the buckets between the case's own endpoints and the
+   fold passed vacuously on the rest. Without a wachtplichtig period nothing is
+   written and all three pass vacuously, in both executors. *)
+let () =
+  let getal = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
+  let lid naam facet =
+    Printf.sprintf {|{"node":"Attribute","name":"%s","datatype":%s%s}|} naam getal
+      (match facet with
+      | Some (g, v) ->
+          Printf.sprintf {|,"timeline":{"node":"TimelineFacet","granularity":"%s","count":1,"fixedStart":"%s"}|} g v
+      | None -> "")
+  in
+  let doel naam = Printf.sprintf {|{"node":"AttributeReference","attribute":"%s","subjectType":"Jutter","source":{"snippet":"%s"}}|} naam naam in
+  let regel naam waarde voorwaarde =
+    Printf.sprintf
+      {|{"node":"Rule","name":"%s","versions":[{"validity":{"node":"Validity"},"target":%s,"value":%s%s,"initialisation":false,"presentation":"calculation"}]}|}
+      naam (doel naam) waarde
+      (match voorwaarde with Some c -> {|,"condition":|} ^ c | None -> "")
+  in
+  let telling g =
+    Printf.sprintf
+      {|{"node":"BuiltinCall","kind":"dayCount","arguments":[],"filter":{"node":"CharacteristicCheck","characteristic":"wachtplichtig","negated":false,"source":{"snippet":"hij wachtplichtig is"}},"granularity":"%s","type":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"},"source":{"snippet":"het aantal dagen dat hij wachtplichtig is"}}|}
+      g
+  in
+  let literal n = Printf.sprintf {|{"node":"Literal","value":{"number":"%d"},"type":%s,"source":{"snippet":"%d"}}|} n getal n in
+  let geheel g = Printf.sprintf {|"wholePeriod":{"node":"WholePeriod","granularity":"%s","negated":false}|} g in
+  let gevuld a g =
+    Printf.sprintf {|{"node":"Predicate","kind":"filled","operand":%s,"negated":false,"digits":0,%s,"source":{"snippet":"gevuld"}}|}
+      (doel a) (geheel g)
+  in
+  let groter a g =
+    Printf.sprintf {|{"node":"Comparison","op":"greater","left":%s,"right":%s,%s,"source":{"snippet":"groter"}}|}
+      (doel a) (literal 0) (geheel g)
+  in
+  let ir =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[%s],"characteristics":[{"node":"Characteristic","name":"wachtplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[%s],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      (String.concat ","
+         [ lid "okt" (Some ("year", "--10-01")); lid "m31" (Some ("month", "--01-31"));
+           lid "vol" None; lid "maandvol" None; lid "boven" None ])
+      (String.concat ","
+         [ regel "okt" (telling "year") None; regel "m31" (telling "month") None;
+           regel "vol" (literal 301) (Some (gevuld "okt" "year"));
+           regel "maandvol" (literal 302) (Some (gevuld "m31" "month"));
+           regel "boven" (literal 400) (Some (groter "okt" "year")) ])
+  in
+  let zaak ~wacht ~treffers =
+    let rij a =
+      match List.assoc_opt a treffers with
+      | Some n -> Printf.sprintf {|{"kind":"attributeValue","label":"J1","attribute":"%s","value":{"number":"%d"}}|} a n
+      | None -> Printf.sprintf {|{"kind":"attributeEmpty","label":"J1","attribute":"%s"}|} a
+    in
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{},"roles":{},"characteristics":[]%s}],"parameters":{}},"expected":[%s,{"kind":"consistent"}]}|}
+      (if wacht then {|,"characteristicTimelines":{"wachtplichtig":[{"from":"2025-01-01","to":"2026-01-01"}]}|} else "")
+      (String.concat "," (List.map rij [ "vol"; "maandvol"; "boven" ]))
+  in
+  let over_2025 = zaak ~wacht:true ~treffers:[] in
+  ref_matches ~name:"ch3.2/3.9 day count on a fixed grid over 2025, whole-period folds" ~ir ~case_text:over_2025;
+  clingo_matches ~name:"ch3.2/3.9 day count on a fixed grid over 2025, whole-period folds" ~ir
+    ~case_text:over_2025;
+  let zonder = zaak ~wacht:false ~treffers:[ ("vol", 301); ("maandvol", 302); ("boven", 400) ] in
+  ref_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:zonder;
+  clingo_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:zonder
+
 (* RUNTIME-SEMANTICS ch. 3.2: the pro-rata part onto a target on a fixed start
    point, or from a base on one, is fenced in ref's sentence; the calendar
    document beside them translates, so the fault is the fence's alone. ref's

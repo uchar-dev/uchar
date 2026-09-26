@@ -3298,6 +3298,37 @@ let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
   emit ctx "%s(%s) :- %s, not %s_l(%s), not %s_r(%s)." p subject base p subject p subject;
   [ "not " ^ Printf.sprintf "%s(%s)" p subject ]
 
+(* The span the buckets must cover: the case's endpoints [lo, hi), widened
+   by one period of every fixed start point's grid of one unit around each
+   end. A derived timeline on such a grid — the day count of ch. 3.8 into a
+   target that declares one — writes whole periods of it, and the period
+   around an endpoint reaches past that endpoint: over 2025 a day count on
+   the --10-01 year grid writes [2024-10-01, 2025-10-01), which touches
+   calendar year 2024. A whole-period fold (ch. 3.9) that finds no bucket
+   there passes vacuously, where ref folds the partly covered year and fails
+   (RUNTIME-SEMANTICS ch. 3.2). The calendar-grid producers need no widening:
+   they write whole calendar buckets around the endpoints, and a bucket of
+   the qualifier outside the span that such a segment reaches is covered
+   whole by the value that covers the span's own bucket in that segment, so
+   the fold's verdict does not change. *)
+let fixed_grid_span ctx (lo, hi) =
+  List.fold_left
+    (fun (lo, hi) (_, (ot : objecttype)) ->
+      List.fold_left
+        (fun (lo, hi) (a, g) ->
+          match g with
+          | None -> (lo, hi)
+          | Some _ -> (
+              match Uchar_ref.Timeline.attr_grid ctx.doc ot a with
+              | { Uchar_ref.Timeline.g_count = 1;
+                  g_start = Uchar_ref.Timeline.Vast_datum _ | Uchar_ref.Timeline.Vast_dag_maand _;
+                  _ } as gr ->
+                  ( min lo (fst (Uchar_ref.Timeline.grid_bucket gr lo)),
+                    max hi (snd (Uchar_ref.Timeline.grid_bucket gr (hi - 1))) )
+              | _ -> (lo, hi)))
+        (lo, hi) ot.attribuut_granulariteit)
+    (lo, hi) ctx.doc.objecttypen
+
 (* calendar as data: buckets over the case's endpoint span (shared by
    the ch. 3.7 pro-rata fold, the ch. 3.8 day count and — since
    2026-09-11 — the ch. 3.9 whole-period qualifier, which is why the two
@@ -3306,7 +3337,7 @@ let neq_helper ctx ~subject ~subject_ot (ll, tl) (rr, tr) : string list =
    periods of [grid]: the calendar's for the qualifier and the pro-rata,
    the target's own for the day count, whose fixed start point lays them
    (RUNTIME-SEMANTICS ch. 3.2) — ref's one grid function, so the two
-   executors cut at the same walls. *)
+   executors cut at the same walls. The span is [fixed_grid_span]'s. *)
 let emit_bucket_calendar ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
   let endpoints =
     Eval.SMap.fold
@@ -3336,7 +3367,7 @@ let emit_bucket_calendar ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
          "deliberately empty" and adds no atom. *)
       emit ctx "#defined %s_b/3." p
   | lo :: _ ->
-      let hi = List.fold_left max lo endpoints in
+      let lo, hi = fixed_grid_span ctx (lo, List.fold_left max lo endpoints) in
       let rec walk d n =
         if d < hi then begin
           if n > 46340 then fault "the bucket endpoint span exceeds the guarded range";
