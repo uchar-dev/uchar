@@ -140,6 +140,28 @@ class LeegNegatieWitnessTest {
         assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfEnLeeg, "JAAR", 8, null), "leeg: a half year of 4");
     }
 
+    /** The same for the comparisons (RUNTIME-SEMANTICS ch. 3.9, decided 2026-09-26): a leeg segment reads as a gap for
+     *  every test, so it touches no bucket and none of its days satisfies a comparison, the inequality included —
+     *  the chapter's worked examples, tested under the year grid ({@code toets} 2 is "groter dan", 5 "ongelijk aan").
+     *  No golden can carry the form: the case format has no leeg value, and only this backend writes a leeg segment
+     *  to a member (the temporal sum of ch. 3.5), which ref and the ASP backend do not write; ref's suite pins the
+     *  same fold on its own timeline ({@code WV-3.9-vgl-leeg-segment-*}). Before that date the comparisons counted the
+     *  segment's bucket as touched, so over the first timeline below "gevuld" held while "groter dan 40" and "ongelijk
+     *  aan 40" failed. */
+    @Test void een_leeg_segment_raakt_ook_voor_een_vergelijking_geen_emmer() {
+        BigDecimal veertig = new BigDecimal("40");
+        List<Object> tussen = List.of(new Seg("2025-01-01", "2026-01-01", "50"),
+                new Seg("2026-01-01", "2027-01-01", null), new Seg("2027-01-01", "2028-01-01", "50"));
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(tussen, "JAAR", 6, null), "gevuld: 2026 is not touched");
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(tussen, "JAAR", 2, veertig), "> 40: 2026 is not touched");
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(tussen, "JAAR", 5, veertig), "≠ 40: 2026 is not touched");
+        List<Object> halfEnLeeg = List.of(new Seg("2026-01-01", "2026-07-01", "50"),
+                new Seg("2026-07-01", "2027-01-01", null));
+        assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfEnLeeg, "JAAR", 5, veertig), "≠ 40: 181 of 365 days");
+        List<Object> alleenLeeg = List.of(new Seg("2026-01-01", "2027-01-01", null));
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(alleenLeeg, "JAAR", 2, veertig), "> 40: no bucket is touched");
+    }
+
     /** meldpremie's rule alone, its test set to {@code soort}/{@code negatie} under "gedurende het gehele jaar"
      *  (with the qualifier's own {@code niet}), over a month-granular lengte: S1 carries 8 over the whole of 2025,
      *  S3 carries 5 over its first half, S2 and S4 carry none. meldpremie is 40 on {@code treffers}, leeg on the

@@ -2457,6 +2457,18 @@ period is a day that does not satisfy the test: 50 on the first half of
 2026 and explicit leeg on the second reads **onwaar**, never a fault
 (ch. 1.2d — a comparison against leeg is false).
 
+An explicit leeg segment reads as a gap for every test, the comparisons
+included (ch. 3.1; decided 2026-09-26): it touches no bucket, and none of
+its days satisfies a test, the inequality included, although ch. 1.2d
+makes a scalar inequality against leeg true. Worked examples (absolute;
+`ref/` tests verbatim, tested under the year grid): 50 on 2025, explicit
+leeg on 2026 and 50 on 2027 → `> 40` **waar** and `≠ 40` **waar**, for
+2026 is not touched; 50 on the first half of 2026 and explicit leeg on the
+second → `≠ 40` **onwaar** (181 of 365 days); explicit leeg on 2026 alone
+→ `> 40` **waar**, no bucket touched. Only the Drools backend writes such
+a segment to a member (the temporal sum of ch. 3.5); a case input cannot
+carry one.
+
 When the temporal side stands on the RIGHT ("40 is kleiner dan zijn
 dagvergoeding gedurende het gehele jaar") the operator is **reversed**,
 never negated. On totally ordered filled values the two coincide; on a

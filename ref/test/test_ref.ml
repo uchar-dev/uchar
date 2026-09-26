@@ -6362,6 +6362,19 @@ let () =
      test — false, never a fault (ch. 3.9) *)
   check "WV-3.9-vgl-leeg-segment-faalt"
     (not (ev [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" leeg ]));
+  (* an EXPLICIT leeg segment reads as a gap (ch. 3.1) for a comparison too,
+     as for the leeg and gevuld tests: it touches no bucket, and a day under
+     it satisfies no test, the inequality included (ch. 3.9, decided
+     2026-09-26). Between two filled years it leaves only those years
+     touched; after a half year of 50 it leaves the second half unsatisfied
+     for "≠ 40" as a gap does; alone it touches nothing. *)
+  let tussen = [ seg "2025-01-01" "2026-01-01" (n "50"); seg "2026-01-01" "2027-01-01" leeg;
+                 seg "2027-01-01" "2028-01-01" (n "50") ] in
+  check "WV-3.9-vgl-leeg-segment-raakt-geen-emmer" (ev tussen);
+  check "WV-3.9-vgl-leeg-segment-raakt-geen-emmer-ongelijk" (ev ~op:Ongelijk tussen);
+  check "WV-3.9-vgl-leeg-segment-ongelijk-is-een-gat"
+    (not (ev ~op:Ongelijk [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" leeg ]));
+  check "WV-3.9-vgl-leeg-segment-alleen" (ev [ seg "2026-01-01" "2027-01-01" leeg ]);
   (* a non-time-dependent operand keeps WF-043's refusal *)
   expect_fault_msg "WV-3.9-vgl-niet-tijdsafhankelijk"
     (fun () ->

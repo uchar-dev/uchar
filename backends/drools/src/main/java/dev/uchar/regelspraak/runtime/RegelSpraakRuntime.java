@@ -1202,9 +1202,10 @@ public final class RegelSpraakRuntime {
 
     /** §8.2/§13.4.15.70 "gedurende de/het gehele &lt;periode&gt;": is the predicate {@code true at EVERY moment} of
      *  each calendar bucket (MAAND|JAAR) the timeline touches? Bucket the {@code List<Segment>} timeline by calendar
-     *  period (like {@link #rsAantalDagenIn}); a bucket is "touched" if any segment overlaps it, and PASSES only when
-     *  the per-segment check holds for the bucket's WHOLE calendar length (a gap, or a contrary/leeg segment, leaves
-     *  fewer satisfying days than the period has → fail). Returns the AND over all touched buckets — and {@code true}
+     *  period (like {@link #rsAantalDagenIn}); a bucket is "touched" if a segment overlaps it — for a value test only a
+     *  segment carrying a value, since a leeg segment reads as a gap (RUNTIME-SEMANTICS ch. 3.9) — and PASSES only
+     *  when the per-segment check holds for the bucket's WHOLE calendar length (a gap, a leeg segment or a contrary
+     *  segment leaves fewer satisfying days than the period has → fail). Returns the AND over all touched buckets — and {@code true}
      *  for an empty/leeg timeline (no period to violate; the caller's NIET-prefix complements). {@code toets}: 0..5 =
      *  KLEINER/KLEINER_OF_GELIJK/GROTER/GROTER_OF_GELIJK/GELIJK/ONGELIJK of {@code waarde} vs {@code grens} (a leeg
      *  waarde never satisfies), 6 = GEVULD (any non-leeg waarde), 7 = covered (a §8.2 kenmerk true-period — any
@@ -1218,10 +1219,10 @@ public final class RegelSpraakRuntime {
         for (Object o : tijdlijn) {
             LocalDate van = segVan(o), tot = segTot(o);
             if (van == null || tot == null || !van.isBefore(tot)) continue;
-            // RUNTIME-SEMANTICS ch. 3.9 reads the touched buckets of the gevuld test off read (ch. 3.1): a leeg segment
-            // reads as a gap and touches no bucket by itself. The comparison checks (0..5) still count it, a question
-            // ch. 3.9 leaves open for them.
-            if (toets == 6 && segWaarde(o) == null) continue;
+            // RUNTIME-SEMANTICS ch. 3.9 reads every value test off read (ch. 3.1): a leeg segment reads as a gap, so it
+            // touches no bucket and none of its days satisfies a test, the comparisons included (decided 2026-09-26).
+            // The kenmerk check (7) is exempt: a true-period segment carries no value at all.
+            if (toets != 7 && segWaarde(o) == null) continue;
             boolean ok = segmentVoldoet(toets, segWaarde(o), grens);
             LocalDate cursor = jaar ? van.withDayOfYear(1) : van.withDayOfMonth(1);
             while (cursor.isBefore(tot)) {

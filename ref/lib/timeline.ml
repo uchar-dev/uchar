@@ -281,14 +281,16 @@ let geheel_periode_kenmerk (g : Ir_v0.Ast.granulariteit) ~(negatie : bool)
    A gap day is covered by no segment, so it lands in neither fold and the
    bucket falls short of its calendar length: a partially covered bucket
    fails, exactly as the chapter says. A timeline with no segments at all
-   touches no bucket and passes vacuously. [pred] decides what a leeg
-   segment does — for a comparison ch. 1.2d makes it false, so a leeg day
-   fails the test without faulting.
+   touches no bucket and passes vacuously. An explicit leeg segment is a
+   gap as well (ch. 3.1, 3.9): it is dropped before either fold, so it
+   touches no bucket and none of its days satisfies [pred] — not even an
+   inequality, which ch. 1.2d makes true against leeg, because a gap day
+   is not a comparison of a value (decided 2026-09-26).
 
    The QUALIFIER's own negation ("niet gedurende …") is not here: it
    complements the folded result, which the caller does. *)
 let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.t -> bool) : bool =
-  let segs = normalise tl in
+  let segs = List.filter (fun s -> s.s_waarde <> Empty) (normalise tl) in
   let interval s = (s.s_van, s.s_tot) in
   let dagen (b : segment) =
     match b.s_waarde with
@@ -318,10 +320,9 @@ let geheel_periode_waarde (g : Ir_v0.Ast.granulariteit) ~(tl : t) (pred : Value.
    with the threshold days(B) for both, like every other test. The buckets
    are the ones the FILLED segments touch: ch. 3.1 makes an explicit leeg
    segment and a gap the same thing under [read], so a bucket only an
-   explicit leeg segment reaches is not touched, where
-   [geheel_periode_waarde] above would count it — the ASP backend cannot
-   write such a segment at all, so this is also where the two executors
-   agree. Every bucket touched this way holds at least one filled day, so
+   explicit leeg segment reaches is not touched, as in
+   [geheel_periode_waarde] above — the ASP backend cannot write such a
+   segment at all, so this is also where the two executors agree. Every bucket touched this way holds at least one filled day, so
    the leeg fold comes down to "no filled day anywhere" and the grid does
    not change its verdict; it is still computed per bucket, so the code
    reads as the formula does.
