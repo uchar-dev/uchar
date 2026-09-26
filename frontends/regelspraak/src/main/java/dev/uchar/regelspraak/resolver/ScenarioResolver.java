@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static dev.uchar.regelspraak.emit.CaseEmitter.basisNaam;
+import static dev.uchar.regelspraak.emit.CaseEmitter.norm;
+
 /**
  * The resolver of the scenariotoetsen extension (grammar/DIVERGENCES.md, "Scenariotoetsen"): a documented extension
  * reachable only through the {@code testDocument} start rule. It
@@ -149,7 +152,7 @@ public final class ScenarioResolver {
 
     /** The normalised names of the forms a scope carries; for no scope, every named form of the model. */
     private List<String> gedragen(Scope scope) {
-        if (scope != null) return scope.vormen().stream().map(ScenarioResolver::norm).toList();
+        if (scope != null) return scope.vormen().stream().map(dev.uchar.regelspraak.emit.CaseEmitter::norm).toList();
         List<String> alle = new ArrayList<>();
         for (Vorm v : vormen()) alle.add(norm(v.naam()));
         return alle;
@@ -1184,14 +1187,6 @@ public final class ScenarioResolver {
             if (naam.equalsIgnoreCase(label) || naam.split("\\s+")[0].equalsIgnoreCase(label)) return naam;
         return null;
     }
-
-    /** A resolved form name without its §13.4.2.3 version suffix ({@code "<naam> #k"}). */
-    private static String basisNaam(String naam) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(naam);
-        return m.matches() ? m.group(1) : naam;
-    }
-
-    static String norm(String s) { return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT); }
 
     private static String src(ParserRuleContext ctx) { return DefinitionResolver.src(ctx); }
 

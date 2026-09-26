@@ -210,10 +210,13 @@ public final class CaseEmitter {
         w.endObject();
     }
 
-    private static String basisNaam(String naam) {
+    /** A resolved form name without its §13.4.2.3 version suffix ({@code "<naam> #k"}): the name a scope names a
+     *  form by. The scenario resolver reads it here too. */
+    public static String basisNaam(String naam) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("(.*\\S) #[0-9]+").matcher(naam);
         return m.matches() ? m.group(1) : naam;
     }
 
-    private static String norm(String s) { return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT); }
+    /** A name as the scenario layer compares names: trimmed, its whitespace one space, lowercased. */
+    public static String norm(String s) { return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT); }
 }
