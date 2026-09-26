@@ -51,12 +51,10 @@ EXPECTED_MIN_TESTS=18         # 2026-09-26: measured 18 (the graph's unit tests 
 # --- the deliberate differences (reason-carrying; fails when stale) ------------------------------
 # One entry per projected dependency that only one of the two graphs draws:
 #     '<golden dir, relative to corpus/golden>|<graaf|verifier>|<producer>|<attr|char>|<member>|<consumer>|<reason>'
-# names normalised as in the report (lower case, collapsed whitespace, no version suffix). Two readings are
-# known to differ and are deliberate, neither exercised by a golden today (measured 2026-09-26): two sibling
-# subtypes sharing an inherited member, one writing and one reading it (the graph keys both on the declaring
-# type and draws the dependency, the verifier's comparability walk does not, ch. 5.1); and a navigated
-# characteristic check whose characteristic several types declare (the graph cannot see which relation the
-# hop walks and reads the characteristic of each declaring type, ProducentConsument.verreKenmerken).
+# names normalised as in the report (lower case, collapsed whitespace, no version suffix). One reading is
+# known to differ and is deliberate, exercised by no golden today (measured 2026-09-26): two sibling subtypes
+# sharing an inherited member, one writing and one reading it (the graph keys both on the declaring type and
+# draws the dependency, the verifier's comparability walk does not, ch. 5.1).
 VERSCHIL_BEWUST=(
 )
 

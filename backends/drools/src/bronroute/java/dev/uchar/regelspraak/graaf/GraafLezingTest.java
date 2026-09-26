@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.graaf;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static dev.uchar.regelspraak.graaf.TweeRoutes.kanten;
 import static dev.uchar.regelspraak.graaf.TweeRoutes.knoop;
@@ -55,28 +57,39 @@ class GraafLezingTest {
                 kanten(g).contains("hoogte · post -> uitkijkbonus van een wachter"), () -> route + ": " + kanten(g)));
     }
 
-    @Test void het_navigatiepredicaat_van_de_andere_route_leest_de_check_als_eigen_kenmerk() {
+    @Test void de_navigatie_van_de_andere_route_leest_de_check_als_eigen_kenmerk() {
         // Why the caller answers the navigation question: a wire model's records carry no hop (it rides beside the
         // model), so the bron route's answer, read on a wire model, takes every navigated check for the subject's
         // own kenmerk. The graph then draws a kenmerk of the Wachter nobody writes, and the Post's kenmerk nobody
         // reads.
         TweeRoutes.Tweeling t = TweeRoutes.lees(POSTEN);
-        RegelGraaf fout = RegelGraaf.bouw(t.wire().model(), k -> k.navigatie() != null);
+        RegelGraaf fout = RegelGraaf.bouw(t.wire().model(), ProducentConsument.bronNavigatie(t.wire().model()));
         assertEquals(RegelGraaf.NodeKind.INVOER, knoop(fout, "risicopost · wachter").kind());
         assertTrue(knoop(fout, "risicopost · post").eindOutput());
     }
 
-    @Test void een_genavigeerde_check_op_een_kenmerk_van_twee_declaranten_leest_beide() {
-        // The record does not name the type the hop reaches, only the kenmerk; with one declarant that is exact,
-        // with two the check counts as a read of each — more rather than less, as the chain key reports.
+    @Test void een_genavigeerde_check_op_een_kenmerk_van_twee_declaranten_leest_dat_van_het_bereikte_type() {
+        // Post and Kustvak each declare and write risicopost. The Wachter's check "zijn post is risicopost" reaches a
+        // Post, so it reads the Post's kenmerk and depends on the Post's writer alone, as IR-SPEC ch. 5 draws it; the
+        // Kustvak's kenmerk is written and read by nobody. Read as the kenmerk of every declarant, the check drew a
+        // dependency on the Kustvak's writer that the verifier does not have.
         String bron = POSTEN.replace("""
                 Feittype postbezetting""", """
                 Objecttype het Kustvak (mv: Kustvakken)
                     is risicopost kenmerk (bijvoeglijk);
-                Feittype postbezetting""");
+                    de golfhoogte Numeriek (geheel getal);
+                Feittype postbezetting""") + """
+                Regel risicovak bij golfhoogte
+                    geldig altijd
+                        Een Kustvak is risicopost indien de golfhoogte van het Kustvak groter is dan 3.
+                """;
         TweeRoutes.lees(bron).grafen().forEach((route, g) -> {
             assertTrue(kanten(g).contains("risicopost · post -> seingerechtigd bij risicopost"), () -> route + ": " + kanten(g));
-            assertTrue(kanten(g).contains("risicopost · kustvak -> seingerechtigd bij risicopost"), () -> route + ": " + kanten(g));
+            assertFalse(kanten(g).contains("risicopost · kustvak -> seingerechtigd bij risicopost"), () -> route + ": " + kanten(g));
+            assertTrue(knoop(g, "risicopost · kustvak").eindOutput(), route + ": het kenmerk van het kustvak leest niemand");
+            assertEquals(Set.of("risicopost bij hoogte"), g.afhankelijkheden().stream()
+                    .filter(a -> a.consument().equals("seingerechtigd bij risicopost"))
+                    .map(RegelGraaf.Afhankelijkheid::producent).collect(Collectors.toSet()), route);
         });
     }
 

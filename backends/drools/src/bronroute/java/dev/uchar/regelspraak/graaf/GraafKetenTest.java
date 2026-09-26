@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.graaf.ProducentConsument.Navigatie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import static dev.uchar.regelspraak.graaf.TweeRoutes.kanten;
 import static dev.uchar.regelspraak.graaf.TweeRoutes.knoop;
@@ -66,17 +65,17 @@ class GraafKetenTest {
 
     @Test void producent_en_consument_sleutelen_op_het_declarerende_type() {
         TweeRoutes.Tweeling t = TweeRoutes.lees(MODEL_KETEN + PRODUCENT_SUPER + CONSUMENT_SUB);
-        assertSleutel(t.bronModel(), "bron", k -> k.navigatie() != null);
-        assertSleutel(t.wire().model(), "wire", k -> t.wire().navigatieBindingen().containsKey(k));
+        assertSleutel(t.bronModel(), "bron", ProducentConsument.bronNavigatie(t.bronModel()));
+        assertSleutel(t.wire().model(), "wire", ProducentConsument.wireNavigatie(t.wire()));
     }
 
-    private static void assertSleutel(RegelSpraakModel m, String route, Predicate<Conditie.Kenmerk> nav) {
+    private static void assertSleutel(RegelSpraakModel m, String route, Navigatie nav) {
         assertTrue(ProducentConsument.producentIndex(m).containsKey(ERVAREN),
                 () -> route + ": producentsleutel " + ProducentConsument.producentIndex(m).keySet());
         ResolvedRegel consument = m.resolvedRegels.stream()
                 .filter(r -> ProducentConsument.basisNaam(r.naam()).equals("premie van een ervaren jutter"))
                 .findFirst().orElseThrow();
-        assertTrue(ProducentConsument.verbruikt(m, consument, nav).contains(ERVAREN),
+        assertTrue(ProducentConsument.verbruikt(consument, nav).contains(ERVAREN),
                 route + ": de consument op het subtype draagt dezelfde sleutel");
     }
 

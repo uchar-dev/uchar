@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.graaf;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
-import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.graaf.ProducentConsument.Navigatie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 
@@ -11,7 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * The regelgraaf: the bipartite dataflow graph regels ↔ gegevens extracted from a resolved
@@ -93,13 +92,13 @@ public final class RegelGraaf {
 
     /** Build the graph from a resolved model. Only value-writing rules and the elements they read/write appear;
      *  a data element is INVOER when no rule produces it and a produced element is marked eind-output when no
-     *  rule consumes it. {@code genavigeerd} tells a navigated kenmerk check from the subject's own (see
-     *  {@link ProducentConsument#verbruikt}). */
-    public static RegelGraaf bouw(RegelSpraakModel model, Predicate<Conditie.Kenmerk> genavigeerd) {
+     *  rule consumes it. {@code navigatie} is the route's answer to which type a navigated kenmerk check reaches
+     *  (see {@link Navigatie}). */
+    public static RegelGraaf bouw(RegelSpraakModel model, Navigatie navigatie) {
         Map<ElementSleutel, Set<String>> producenten = ProducentConsument.producentIndex(model);
         // Every element that is consumed by at least one rule, so we can tell producties zonder afnemer apart.
         Set<ElementSleutel> verbruikt = new LinkedHashSet<>();
-        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(model, r, genavigeerd));
+        for (ResolvedRegel r : model.resolvedRegels) verbruikt.addAll(ProducentConsument.verbruikt(r, navigatie));
 
         // Stable id allocation. Rule ids by base name; element ids by sleutel.
         Map<String, String> regelId = new LinkedHashMap<>();
@@ -143,7 +142,7 @@ public final class RegelGraaf {
         // 4. consumer edges: element -> rule that reads it.
         for (ResolvedRegel r : model.resolvedRegels) {
             String to = regelId.get(ProducentConsument.basisNaam(r.naam()));
-            for (ElementSleutel el : ProducentConsument.verbruikt(model, r, genavigeerd)) {
+            for (ElementSleutel el : ProducentConsument.verbruikt(r, navigatie)) {
                 String from = elemId.get(el);
                 if (from != null && to != null) edgeSet.add(new Edge(from, to));
             }

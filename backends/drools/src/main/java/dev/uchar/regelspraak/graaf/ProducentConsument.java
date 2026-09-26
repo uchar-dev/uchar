@@ -3,14 +3,15 @@ package dev.uchar.regelspraak.graaf;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * The pure-IR producer/consumer analysis over a resolved {@link RegelSpraakModel}: which rule WRITES which
@@ -94,6 +95,59 @@ public final class ProducentConsument {
         return uit;
     }
 
+    /**
+     * The object type a navigated kenmerk check reaches, as one route to a model records it. The check reads the
+     * kenmerk of the object its hop reaches (IR-SPEC ch. 4.5), and its record does not name that type: a model the
+     * loader rebuilt from the wire carries the hop beside the model, and a resolver's record names the role the
+     * hop walks. The analysis cannot tell which route built its input, so the caller answers with the route's own
+     * {@link #bronNavigatie} or {@link #wireNavigatie}; the answer of the other route reads every navigated check
+     * as the subject's own kenmerk.
+     */
+    @FunctionalInterface
+    public interface Navigatie {
+        /** The type {@code check}'s hop reaches from {@code onderwerp}, or null when the check does not navigate. */
+        RegelSpraakModel.Objecttype bereikt(Conditie.Kenmerk check, RegelSpraakModel.Objecttype onderwerp);
+    }
+
+    /** The answer of a resolver's model: the record names the role its hop walks, and the reached type is the
+     *  filler of the role of that name in a relation the subject takes part in, found as the emitter finds the
+     *  binding it writes for the hop. A navigated check whose role reaches no unique type fails loudly, as the
+     *  emitter refuses to write it. */
+    public static Navigatie bronNavigatie(RegelSpraakModel model) {
+        return (k, onderwerp) -> {
+            if (k.navigatie() == null) return null;
+            RegelSpraakModel.Objecttype bereikt = model.rolDoeltypeNaarSubject(onderwerp, k.navigatie());
+            if (bereikt == null)
+                throw new IllegalStateException("the characteristic check '" + k.kenmerk() + "' navigates by the role '"
+                        + k.navigatie() + "', which reaches no unique object type from "
+                        + (onderwerp == null ? "an unknown subject" : "'" + onderwerp.naam + "'"));
+            return bereikt;
+        };
+    }
+
+    /** The answer of a model the loader rebuilt: the hop rides beside the model ({@code navigatieBindingen}), and
+     *  its binding names the role the reached object plays, whose declared filler is the reached type. A binding
+     *  that names no declared role with a declared filler fails loudly; the verifier refuses such a document
+     *  (WF-053). */
+    public static Navigatie wireNavigatie(IrLoader.Loaded geladen) {
+        RegelSpraakModel model = geladen.model();
+        Map<Object, List<RegelSpraakModel.RolBindingRef>> hops = geladen.navigatieBindingen();
+        return (k, onderwerp) -> {
+            List<RegelSpraakModel.RolBindingRef> pad = hops.get(k);
+            if (pad == null || pad.isEmpty()) return null;
+            RegelSpraakModel.RolBindingRef hop = pad.get(pad.size() - 1);
+            for (RegelSpraakModel.Feittype ft : model.feittypen.values())
+                if (zelfdeNaam(ft.naam, hop.feittype()))
+                    for (RegelSpraakModel.Rol rol : ft.rollen)
+                        if (rol.naam() != null && zelfdeNaam(rol.naam(), hop.rol())) {
+                            RegelSpraakModel.Objecttype bereikt = model.objecttypeOpNaam(rol.objecttypeNaam());
+                            if (bereikt != null) return bereikt;
+                        }
+            throw new IllegalStateException("the characteristic check '" + k.kenmerk() + "' navigates by the role '"
+                    + hop.rol() + "' of '" + hop.feittype() + "', which names no declared role with a declared filler");
+        };
+    }
+
     /** The kenmerken/attributen a resolved rule CONSUMES: every kenmerk check and attribuut read in its
      *  voorwaarde and in its RHS {@code waarde}, at any depth — the conditions inside an expression included (an
      *  aggregation's filter, a branch of an instance-set union, the guard of an if-then-else), each with the
@@ -102,17 +156,11 @@ public final class ProducentConsument {
      *  read of attributes and characteristics, node kind by node kind, and each switch below is exhaustive, so a
      *  node kind the IR records gain later fails to compile here until someone decides what it reads.
      *
-     *  <p>Whether a kenmerk check navigates is {@code genavigeerd}'s answer, because the two routes to a model
-     *  record it in different places: a model the loader rebuilt from the wire carries the hop beside the model
-     *  (IR-SPEC ch. 4.5, the binding is the hop: {@code k -> geladen.navigatieBindingen().containsKey(k)}), and
-     *  a resolver's model on the record itself ({@code k -> k.navigatie() != null}). The analysis cannot tell
-     *  which route built its input, so the caller says it; a fixed guess would read every navigated check of
-     *  the other route as the subject's own. {@code model} answers what a navigated check reads (see
-     *  {@link #verreKenmerken}). */
-    public static Set<ElementSleutel> verbruikt(RegelSpraakModel model, ResolvedRegel r,
-                                                Predicate<Conditie.Kenmerk> genavigeerd) {
+     *  <p>A navigated kenmerk check reads the kenmerk of the type its hop reaches, which is {@code navigatie}'s
+     *  answer (see {@link Navigatie}). */
+    public static Set<ElementSleutel> verbruikt(ResolvedRegel r, Navigatie navigatie) {
         Set<ElementSleutel> uit = new LinkedHashSet<>();
-        Lezer lezer = new Lezer(model, genavigeerd, uit);
+        Lezer lezer = new Lezer(navigatie, uit);
         RegelSpraakModel.Objecttype subject = r.doel() instanceof Expr.AttribuutRef ref ? ref.objecttype() : null;
         lezer.conditie(r.voorwaarde(), subject);
         lezer.expr(r.waarde(), subject);
@@ -120,9 +168,9 @@ public final class ProducentConsument {
     }
 
     /** The one walk behind {@link #verbruikt}, over a condition or an expression with the subject a kenmerk check
-     *  without an owner of its own is evaluated against. Only a kenmerk check asks for the subject; an attribuut
-     *  read names its type itself. */
-    private record Lezer(RegelSpraakModel model, Predicate<Conditie.Kenmerk> genavigeerd, Set<ElementSleutel> uit) {
+     *  without an owner of its own is evaluated against, and from which a navigated check's hop starts. Only a
+     *  kenmerk check asks for the subject; an attribuut read names its type itself. */
+    private record Lezer(Navigatie navigatie, Set<ElementSleutel> uit) {
 
         void conditie(Conditie c, RegelSpraakModel.Objecttype subject) {
             if (c == null) return;
@@ -130,11 +178,13 @@ public final class ProducentConsument {
                 case Conditie.Vergelijking v -> { expr(v.links(), subject); expr(v.rechts(), subject); }
                 case Conditie.Predicaat p -> expr(p.operand(), subject);
                 case Conditie.Periode p -> { expr(p.vanaf(), subject); expr(p.tot(), subject); }
-                // A navigated check lives on the object its hop reaches, a type the record does not name (see
-                // verreKenmerken); any other check lives on its host, or on the subject when it names none.
+                // A navigated check lives on the object its hop reaches; any other check lives on its host, or on
+                // the subject when it names none.
                 case Conditie.Kenmerk k -> {
-                    if (genavigeerd.test(k)) uit.addAll(verreKenmerken(model, k.kenmerk()));
-                    else uit.add(elementVan(k.eigenaar() != null ? k.eigenaar() : subject, k.kenmerk(), true));
+                    RegelSpraakModel.Objecttype bereikt = navigatie.bereikt(k, subject);
+                    RegelSpraakModel.Objecttype drager =
+                            bereikt != null ? bereikt : k.eigenaar() != null ? k.eigenaar() : subject;
+                    uit.add(elementVan(drager, k.kenmerk(), true));
                 }
                 case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) conditie(d, subject); }
                 // IR-SPEC ch. 4.5: a quantifier fold's filter and matrix are evaluated with the ELEMENT as subject
@@ -197,26 +247,6 @@ public final class ProducentConsument {
                 && f.argumenten().get(0) instanceof Expr.AttribuutRef bron && bron.attribuut() != null
                 && f.elementObjecttype().attribuut(bron.attribuut()) == null
                 && f.elementObjecttype().kenmerkNaam(bron.attribuut()) == null;
-    }
-
-    /**
-     * The elements a NAVIGATED kenmerk check reads. The check reads the kenmerk of the object its hop reaches, and
-     * the record does not name that object's type: on the wire the hop rides beside the model, and a resolver's
-     * record names the role, not its filler. The key does not need the type, only the type that DECLARES the
-     * kenmerk (see {@link #elementVan}), and the reached type carries the kenmerk, so a type declaring a kenmerk of
-     * this name is on its chain. When exactly one type in the model declares it, that type is the key and the
-     * reading is exact. When several do, the check reads the kenmerk of each of them: the analysis cannot see which
-     * one the hop reaches, and it reports more rather than less, as the chain key does. When none does, the owner
-     * stays unknown ("").
-     */
-    private static Set<ElementSleutel> verreKenmerken(RegelSpraakModel model, String naam) {
-        Set<ElementSleutel> uit = new LinkedHashSet<>();
-        if (naam != null)
-            for (RegelSpraakModel.Objecttype t : model.objecttypen.values())
-                if (t.kenmerken.stream().anyMatch(k -> zelfdeNaam(k, naam)))
-                    uit.add(ElementSleutel.van(t.naam, naam, true));
-        if (uit.isEmpty()) uit.add(ElementSleutel.van("", naam, true));
-        return uit;
     }
 
     private static boolean zelfdeNaam(String a, String b) {

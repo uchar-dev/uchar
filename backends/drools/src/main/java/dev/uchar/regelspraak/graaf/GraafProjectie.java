@@ -41,7 +41,7 @@ public final class GraafProjectie {
                 System.out.println("weigering\t" + e.getMessage().replace('\n', ' '));
                 continue;
             }
-            RegelGraaf g = RegelGraaf.bouw(geladen.model(), k -> geladen.navigatieBindingen().containsKey(k));
+            RegelGraaf g = RegelGraaf.bouw(geladen.model(), ProducentConsument.wireNavigatie(geladen));
             TreeSet<String> regels = new TreeSet<>();
             for (RegelGraaf.Afhankelijkheid a : g.afhankelijkheden())
                 regels.add(String.join("\t", "rand", Namen.norm(a.producent()),

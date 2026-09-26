@@ -48,12 +48,12 @@ final class TweeRoutes {
 
     /** The bron route's navigation answer: the resolver writes the hop's role onto the record. */
     static RegelGraaf bouwBron(RegelSpraakModel m) {
-        return RegelGraaf.bouw(m, k -> k.navigatie() != null);
+        return RegelGraaf.bouw(m, ProducentConsument.bronNavigatie(m));
     }
 
     /** The wire route's navigation answer: the loader keeps the hop beside the model (IR-SPEC ch. 4.5). */
     static RegelGraaf bouwWire(IrLoader.Loaded w) {
-        return RegelGraaf.bouw(w.model(), k -> w.navigatieBindingen().containsKey(k));
+        return RegelGraaf.bouw(w.model(), ProducentConsument.wireNavigatie(w));
     }
 
     /** The graph's node by its human label. */
