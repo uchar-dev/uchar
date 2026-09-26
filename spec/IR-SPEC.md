@@ -614,6 +614,7 @@ boolean membership is core.
 |---|---|---|
 | `granularity` | Granularity | `day` \| `week` \| `month` \| `quarter` \| `year` |
 | `count` | integer ≥ 1 | periods per segment; 1 = single-period |
+| `fixedStart` | string? | the point the periods run from, as on a `Timeline` (ch. 2.8, WF-115); on a facet that names a timeline, that timeline's |
 | `timelineName` | string? | present iff declared via a named timeline |
 
 v0 values: `DAG` → `day`, `WEEK` → `week`, `MAAND` → `month`, `KWARTAAL` →
@@ -1713,6 +1714,7 @@ A named period grid.
 | `variableStart` | boolean | anchor is bound per object by a start-point determination (§9.9) |
 | `granularity` | Granularity | closed set of five |
 | `count` | integer ≥ 1 | periods per segment |
+| `fixedStart` | string? | the point the periods run from (below); absent = the calendar grid, or a variable start |
 
 v0 name: `Tijdlijn`. Granularity is one of `day`, `week`, `month`,
 `quarter`, `year` — deliberately no sub-day granularity (mirrored).
@@ -1726,6 +1728,34 @@ role-plural matching, ch. 2.6):** whether v1 keeps source-language
 morphology inside a core identity rule at all, or moves it to the frontend
 so the core sees only resolved names.
 
+**The fixed start point** (§13.3.6.3–.7). A timeline whose periods do not
+start where the calendar's do writes the point they start from in
+`fixedStart`, in one of two lexemes, told apart by their first character:
+
+- a **date** `yyyy-mm-dd`, WF-084's strict ISO lexeme (ch. 4.1), on a week
+  grid and on a grid of `count` ≥ 2 — the source writes "startend op
+  5-1-2026";
+- a **day-month** `--mm-dd`, the `gMonthDay` form of XML Schema (a date
+  without its year), on a month, quarter or year grid of `count` 1 — the
+  source writes "startend op dag 15 van de maand", "startend op dag 1 van
+  maand 2, 5, 8 en 11", "startend op dag 15 van maand 10". The periods start
+  on day `dd` of month `mm` and of every month one unit apart from it. The
+  spelling is canonical: `mm` is the earliest month of the year with a wall
+  on day `dd` itself, so a month grid writes `01`, a quarter grid the first
+  month of its cycle (`01`, `02` or `03`) unless day `dd` does not occur in
+  that month, and a year grid its one month; day 31 of months 2, 5, 8 and
+  11 is `--05-31`.
+
+Absent, the timeline lies on the calendar grid (`RUNTIME-SEMANTICS.md`
+ch. 3.2). The calendar's own start point is therefore never written: day 1
+of the month, day 1 of months 1, 4, 7 and 10 and day 1 of month 1 are the
+timeline without a `fixedStart`, and `--01-01` is refused (WF-115). The
+timeline facet of an attribute, a characteristic or a parameter carries the
+same field (ch. 2.2): the inline forms ("voor elk jaar startend op dag 15
+van maand 10") name no timeline, so their start point sits on the facet, and
+a facet that names a timeline adopts it with the granularity and the count.
+The grid a fixed start point lays is `RUNTIME-SEMANTICS.md` ch. 3.2.
+
 - **WF-015** All references to a timeline name MUST resolve (WF-003), and —
   with WF-001 — there is exactly one declaration per normalized name, so
   the v0 "first declaration wins" rule vanishes with the duplicate it
@@ -1735,16 +1765,43 @@ so the core sees only resolved names.
   rule layer, so the check is specified there — **OPEN** here, recorded so
   the model layer names the obligation. *v0 mirror note:* v0 discovers the
   missing anchor only at transpile time (marker/skip).
+- **WF-115** A `fixedStart` MUST fit its grid, wherever it is written — on a
+  `Timeline`, or on the timeline facet of an attribute, a characteristic or
+  a parameter. Three arms. **(a)** A `Timeline` with `variableStart: true`
+  carries none: its periods run from the anchor its start-point
+  determination binds per object (ch. 3.8), and a timeline has one start.
+  **(b)** Its lexeme is the one its grid takes: none on a day grid of
+  `count` 1, whose walls are all day boundaries; a date `yyyy-mm-dd` naming
+  a calendar day on a week grid and on a grid of `count` ≥ 2; on a month,
+  quarter or year grid of `count` 1 a day-month `--mm-dd` naming a day of a
+  leap year, spelt with the earliest month (above), and never `--01-01`.
+  **(c)** A facet that names a timeline carries that timeline's
+  `fixedStart`, or none when the timeline has none: adoption is total, as
+  WF-005 holds it for the granularity and the count. *v0 mirror note:* v0
+  resolved the fixed start point in its model, and the wire had no field
+  for it; the RegelSpraak frontend refused a start point off the calendar
+  grid at emission rather than drop it. **Delta (addition).**
 
 Worked example (facet adoption, becomes a `ref/` test): declaration
 "timeline `het penningjaar`, granularity year, count 1, fixed start" +
 attribute declared against timeline `penningjaar` → the attribute's facet
 is `{granularity: year, count: 1, timelineName: "penningjaar"}` (article
-stripped, adoption total per WF-005). "Fixed start" here means only
-`variableStart: false`: the wire carries no fixed start point, and a
-fixed-start timeline sits on the calendar grid (`RUNTIME-SEMANTICS.md`
-ch. 3.2, "Fixed starting points", for which start points that is and
-why a producer refuses the rest).
+stripped, adoption total per WF-005). "Fixed start" here is the calendar's:
+`variableStart: false` without a `fixedStart`, the timeline on the calendar
+grid.
+
+Worked example (the fixed start point; the declarations of
+`corpus/golden/jutterswet-vast-startpunt`): "Tijdlijn het stormjaar heeft
+tijdvakken van een jaar startend op dag 1 van maand 10" →
+`{name: "het stormjaar", variableStart: false, granularity: year, count: 1,
+fixedStart: "--10-01"}`, and an attribute declared "voor elke stormjaar" →
+its facet `{granularity: year, count: 1, fixedStart: "--10-01",
+timelineName: "stormjaar"}`; an attribute declared "voor elke maand
+startend op dag 31 van de maand" → `{granularity: month, count: 1,
+fixedStart: "--01-31"}`; a characteristic declared "voor elke week startend
+op 30-9-2024" → `{granularity: week, count: 1, fixedStart: "2024-09-30"}`.
+Spelt by the same rule, "voor elk kwartaal startend op dag 31 van maand 2,
+5, 8 en 11" is `--05-31`.
 
 ### 2.9 DayKind
 
@@ -8886,6 +8943,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-112 | time window never under `none` or a counting quantifier — as a Compound member at any depth, or in a QuantifierFold's filter or test (maintainer decision 2026-09-23): the window gates the RULE and no reading of a complemented or counted verdict is specified | gate 3 | `jutterswet-premievenster` (`borgpremie`: the window as an `all` member) | `wf112-periodevenster-tellende-kwantor` (the window under `none` — until 2026-09-23 the red witness, refused by all four executors) |
 | WF-113 | `diagnostics` is the producer's own account of what stayed unresolved in a document it did write (ch. 2; decision V2 (ii), 2026-09-19; landed M1 2026-09-23). (a) every entry carries severity `warning`, a `message` that is neither empty nor blank, and an integer `line` ≥ 0 (0 = the producer reports no source position: a hand-built document, or a frontend warning without a token); `error` and `info` are refused by name, and so is a null severity (the schema admits `warning` only; the verifier's loader admits the others so that this rule, not a load failure, gives the reason; v0 `WARNING`, `ERROR`, `INFO`). (b) every `Unresolved` node — the expression and the condition marker, at every expression and condition position — is accounted for: at least one diagnostic's `message` contains its `source.snippet` verbatim. The containment is literal, so a marker without a `source`, or whose snippet is blank, cannot be accounted for and is refused (blank counts as absent, the WF-107 precedent): a blank snippet would be contained in nearly every message, and a message about another marker would account for it. The schema requires `source` on an `Unresolved` and every executor refuses a marker without one at load; the verifier's loader admits it so that this rule gives the reason. An EMPTY snippet cannot be written: the schema requires one character at least, and every reader, the verifier included, refuses it at load under no WF number ("a source snippet is never empty: a node without source text carries no source", ch. 4). Until L5 the marker was `Onopgelost` and (b) read its `bron` string, refusing a null and an empty one here. (c) no consumer reads `diagnostics` for evaluation — stated, not fenced | gate 3 ((a) and (b); that `line` is an integer is the loader's check, that it is ≥ 0 is (a)'s; an empty snippet is the loader's refusal, under no WF number; (c) has no document to reject) | `jutterswet-kaletabel` (a `bron.rgs` golden whose frontend route writes one diagnostic of severity `warning`, for a decision table with only a header row; the positive witness of (a)); the first corpus carriers of (b) are the red documents `wf044-onopgelost-guard` and `wf044-onopgelost-reached`, verifier-gated and clean | `wf113-severity-error`, `wf113-severity-info`, `wf113-severity-null`, `wf113-lege-message`, `wf113-message-blanco`, `wf113-line-negatief` ((a), one per refused shape), `wf113-marker-zonder-verslag` ((b): an expression marker inside a condition, empty list), `wf113-verslag-noemt-marker-niet` ((b): a condition marker whose warning quotes the `source.snippet` with one letter recapitalised, so an any-diagnostic or case-insensitive reading frees it), `wf113-marker-bron-null` and `wf113-marker-bron-leeg` ((b): a marker without a `source`, resp. whose snippet is blank — a single space since L5, because an empty snippet can no longer be written —, beside a second marker whose warning would account for it under an absent-as-empty or a literal reading) |
 | WF-114 | a `Literal`'s value variant is the one its `type` names (ch. 4.1, landed at L4 2026-09-24, delta B22): `number` for a `Number` (a percentage included), `boolean` for a `Boolean`, `text` for a `Text`, `date` for a day-precision `Date`, `dateTime` for a millisecond-precision `Date`, `enumeration` for an `Enumeration`, `constructor` for a `SumType`; a list or struct type names no variant, and a literal whose `type` is null is WF-034's typeless value node, which this rule does not reach. The one crossing of variant and type: WF-081, WF-084 and WF-095 key on the variant. Every executor refuses the same literal at load with the verifier's sentence, so none reads a value its type does not name | gate 3 | every golden literal: 532 literals in 163 goldens, six of the seven variants (the `constructor` variant has no golden carrier; its one carrier is the negatief `wf036-gelijkheid-enumeratie-tegen-somtype`, whose rule reads the type) | `wf114-literaalvariant-tegen-type` (a `text` variant under a `Number`) + `wf114-datumvariant-tegen-precisie` (a `date` variant under a millisecond-precision `Date`) |
+| WF-115 | a `fixedStart` fits its grid (ch. 2.8), on a `Timeline` and on the timeline facet of an attribute, a characteristic or a parameter: **(a)** none on a `Timeline` with `variableStart: true`; **(b)** the lexeme the grid takes — none on a day grid of count 1, a date `yyyy-mm-dd` naming a calendar day on a week grid or a grid of count ≥ 2, on a month, quarter or year grid of count 1 a day-month `--mm-dd` naming a day of a leap year, spelt with the earliest month and never `--01-01`; **(c)** a facet that names a timeline carries that timeline's `fixedStart` (adoption total, as WF-005 for granularity and count) | gate 3 | `jutterswet-vast-startpunt` (a named year grid `--10-01` adopted by its facet, an inline month grid `--01-31`, an inline week grid `2024-09-30` on a characteristic) | `wf115-vast-startpunt-bij-variabel` (a) + `wf115-vast-startpunt-buiten-raster` (b) + `wf115-vast-startpunt-niet-overgenomen` (c) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

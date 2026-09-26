@@ -846,30 +846,73 @@ anchor that is *leeg at evaluation time* yields the empty timeline for
 every anchored producer, and the anchor rule's own §6.8 error surfaces on
 the §9.5 channel (v0 mirror: a companion rule raises it).
 
-**Fixed starting points** (§13.3.6.3–.7). The source language lets a
-timeline declare a fixed start point: a date for a week or multi-period
-grid, or a day (and months) for a month, quarter or year grid. The wire
-has **no field for it**: `Timeline` carries name, `variableStart`,
-granularity and count, and the start-point determination (`IR-SPEC.md`
-ch. 3.8) is the variable anchor only. Three start points add nothing to
-the timeline written without one, so they are omitted without loss: day 1
-of the month and day 1 of month 1 coincide with the month and year
-buckets above; day 1 of months 1, 4, 7 and 10 is the calendar quarter,
-which is what the anchorless quarter timeline already means — no quarter
-bucket is defined (above), so there is no grid for it to disagree with.
-Every other start point would change the grid. No wire document can
-express such a source, so the producer refuses it rather than dropping
-the start point: the RegelSpraak frontend refuses it at emission, by
-name, and writes nothing (witness: its suite's `VastStartpuntTest`,
-which also pins the lossless omission byte for byte). Worked example:
-"voor elk jaar startend op dag 15 van maand 10" declares the periods
-15 October – 15 October; emitted without the
-start point, the reference interpreter refuses a case input over that
-period as off-grid and accepts one over 1 January – 1 January, so the
-omission is not neutral — the source is refused instead. **OPEN:** a v1
-wire card either carries the fixed start point (the anchored bucket
-formula above serves it, with the anchor a constant) or keeps the
-refusal.
+**Fixed starting points** (§13.3.6.3–.7). A timeline may fix the point its
+periods start from (`IR-SPEC.md` ch. 2.8, `fixedStart`, WF-115), on its
+declaration or on a member's timeline facet. Its grid is the sequence of
+periods of `count` units from that point, and the same sequence back in
+time — periods exist before the start point as well as after it — with
+every wall computed directly from the start point, as from the variable
+anchor above:
+
+```
+date start A (yyyy-mm-dd):     [ A + k·count·unit,  A + (k+1)·count·unit )   for every integer k
+day-month start --mm-dd:       [ D + k·unit,        D + (k+1)·unit )         for every integer k
+```
+
+`unit` is one day, seven days, or one, three or twelve months, the month
+arithmetic clamping as in ch. 3.8; `D` is day `dd` of month `mm` in any year
+that has that day (a leap year for `--02-29`), and every such year lays the
+same walls. On a month grid the walls fall on day `dd` of every month, on a
+quarter grid on day `dd` of month `mm` and of every third month from it, on
+a year grid on day `dd` of month `mm`; a month shorter than `dd` takes its
+last day. A timeline without a `fixedStart` and without a variable start
+lies on the calendar grid above.
+
+The grid is read where the calendar grid was read, from the member's facet:
+the boundaries of a case-supplied timeline sit on its walls, a scalar case
+value is the value of the period that contains the evaluation date
+(ch. 3.6), and the day count of ch. 3.8 into a month or year target of
+`count` 1 buckets on the target's periods. The whole-period qualifier
+(ch. 3.9) does not read it: its buckets are the calendar month or year the
+qualifier names, whatever grid the tested member declares. Two things stay
+as they were. A multi-period grid (below) is defined by its date start and
+still carries no operation, a case input included. The pro-rata of ch. 3.7
+onto a fixed-start target or from a fixed-start base is fenced, as its
+anchored variant is: the base is constant across a bucket because its grid
+nests in the target's, and a start point off the calendar breaks that
+nesting, so every executor refuses the form loudly.
+
+Worked examples (absolute; `ref/` tests verbatim):
+
+- year grid `--10-01`: the period containing 2025-02-01 is
+  [2024-10-01, 2025-10-01), the one containing 2024-09-30 is
+  [2023-10-01, 2024-10-01);
+- month grid `--01-31`: walls 2024-01-31, 2024-02-29, 2024-03-31,
+  2024-04-30 — computed from the start point, the 31st returns in March;
+- quarter grid `--05-31`: walls 2024-02-29, 2024-05-31, 2024-08-31,
+  2024-11-30, 2025-02-28;
+- year grid `--02-29`: walls 2024-02-29, 2025-02-28, 2026-02-28,
+  2027-02-28, 2028-02-29;
+- week grid `2026-01-05`: the period containing 2026-01-04 is
+  [2025-12-29, 2026-01-05), the one containing 2026-01-05 is
+  [2026-01-05, 2026-01-12);
+- the day count "het aantal dagen in het jaar dat hij wachtplichtig is"
+  into a target on the `--10-01` year grid, the characteristic true on
+  [2024-09-28, 2024-10-03): **3** on [2023-10-01, 2024-10-01) and **2** on
+  [2024-10-01, 2025-10-01); on the calendar grid the same count is 5 on
+  [2024-01-01, 2025-01-01) (`corpus/golden/jutterswet-vast-startpunt`,
+  case 1);
+- "voor elk jaar startend op dag 15 van maand 10" declares the periods
+  15 October – 15 October, written `--10-15`: a case input over
+  [2024-10-15, 2025-10-15) sits on the grid, one over
+  [2025-01-01, 2026-01-01) is refused as off it.
+
+*v0 mirror note:* v0 resolved the fixed start point in its model and had
+no wire field for it. Until the wire carried one, the RegelSpraak frontend
+refused a start point off the calendar grid at emission rather than drop
+it, since the timeline written without it lies on the calendar grid, and
+omitted without loss only the three start points that are the calendar's.
+**Delta (addition).**
 
 ### 3.3 Reading a timeline — and the point-read gap
 
@@ -2928,7 +2971,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1. A parameter's facet is restricted to `count` = 1 since L3 (`IR-SPEC.md` ch. 2.10, WF-005), because no executor evaluates a parameter's count |
 | Bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision |
-| Fixed start point off the calendar grid (§13.3.6.3–.7) | no wire field; the RegelSpraak frontend refuses the source at emission by name (ch. 3.2); the calendar start point is omitted without loss; OPEN — a v1 wire card carries it or keeps the refusal |
+| Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
 | Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |

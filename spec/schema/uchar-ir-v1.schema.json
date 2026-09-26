@@ -2624,7 +2624,7 @@
       }
     },
     "TimelineFacet": {
-      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'timelineName' is present iff the attribute was declared via a named timeline; a Characteristic's facet is CharacteristicTimelineFacet, which has no such field.",
+      "description": "The time-dependence of one member (IR-SPEC ch. 2.2). 'granularity' is required and non-null, so a facet without a grid cannot be written. 'count' is always written (1 = single-period). That it is at least 1 is WF-005, a verifier check, so the schema admits any integer here. 'fixedStart' is the timeline's own field, by JSON pointer (IR-SPEC ch. 2.8): an inline declaration carries its start point here, and a facet that names a timeline carries that timeline's (WF-115). 'timelineName' is present iff the attribute was declared via a named timeline; a Characteristic's facet is CharacteristicTimelineFacet, which has no such field.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2648,13 +2648,16 @@
         "count": {
           "type": "integer"
         },
+        "fixedStart": {
+          "$ref": "#/$defs/Timeline/properties/fixedStart"
+        },
         "timelineName": {
           "type": "string"
         }
       }
     },
     "CharacteristicTimelineFacet": {
-      "description": "The TimelineFacet of a Characteristic (IR-SPEC ch. 2.2): the same node without 'timelineName'. v0 recorded no timeline name for a characteristic, so M1 keeps that position closed: an open one would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer, so each is defined once.",
+      "description": "The TimelineFacet of a Characteristic (IR-SPEC ch. 2.2): the same node without 'timelineName'. v0 recorded no timeline name for a characteristic, so M1 keeps that position closed: an open one would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer, so each is defined once, and 'fixedStart' is the timeline's (IR-SPEC ch. 2.8).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2671,11 +2674,14 @@
         },
         "count": {
           "$ref": "#/$defs/TimelineFacet/properties/count"
+        },
+        "fixedStart": {
+          "$ref": "#/$defs/Timeline/properties/fixedStart"
         }
       }
     },
     "ParameterTimelineFacet": {
-      "description": "The TimelineFacet of a Parameter (IR-SPEC ch. 2.10): the same node without 'timelineName', for the reason CharacteristicTimelineFacet states: no parameter records a timeline name, so an open position would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer.",
+      "description": "The TimelineFacet of a Parameter (IR-SPEC ch. 2.10): the same node without 'timelineName', for the reason CharacteristicTimelineFacet states: no parameter records a timeline name, so an open position would be a wire field no producer writes and no reader checks. 'granularity' and 'count' are the attribute facet's own field schemas, by JSON pointer, and 'fixedStart' is the timeline's (IR-SPEC ch. 2.8).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -2692,6 +2698,9 @@
         },
         "count": {
           "$ref": "#/$defs/TimelineFacet/properties/count"
+        },
+        "fixedStart": {
+          "$ref": "#/$defs/Timeline/properties/fixedStart"
         }
       }
     },
@@ -3045,6 +3054,10 @@
         },
         "count": {
           "type": "integer"
+        },
+        "fixedStart": {
+          "description": "The point the periods run from (IR-SPEC ch. 2.8): a date 'yyyy-mm-dd' on a week grid or a grid of count 2 or more, a day-month '--mm-dd' on a month, quarter or year grid of count 1; absent = the calendar grid, or a variable start. Written whole or not at all, never null. Which lexeme the grid takes, that it names a day of the calendar, the canonical month, the refusal of '--01-01', of a start on a variable-start timeline and of a facet that does not adopt its timeline's are WF-115, a verifier rule with its own witnesses, so the schema admits any string here, as it admits any integer as a count.",
+          "type": "string"
         }
       }
     },

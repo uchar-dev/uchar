@@ -44,7 +44,8 @@ Shape, in brief:
   `characteristics`) carries its members as `Attribute` nodes (`name`,
   `datatype`, `plural`?, `dimensions`?, `timeline`?) and `Characteristic` nodes
   (`name`, `kind`, `timeline`?), each with its own `TimelineFacet`
-  (`granularity`, `count`, and on an attribute `timelineName`?). The eight v0
+  (`granularity`, `count`, `fixedStart`?, and on an attribute `timelineName`?;
+  `fixedStart` is the `Timeline`'s own field, IR-SPEC ch. 2.8). The eight v0
   side-maps keyed by member name are gone, and with them the possibility of a
   facet without a member.
 - A `Domain` is `{ "node": "Domain", "name", "datatype" }` (next section).
@@ -598,7 +599,9 @@ Conventions, deliberate:
   carries exactly one label.
 - A temporal attribute or granular parameter may carry the **timeline
   variant**: day-precision segments (from inclusive, to exclusive),
-  ordered, non-overlapping, aligned to the declared granularity grid;
+  ordered, non-overlapping, aligned to the declared granularity grid —
+  the calendar grid, or the one a fixed start point lays (RUNTIME-SEMANTICS
+  ch. 3.2);
   absence between segments is a gap. The scalar convention (the
   asOfDate-bucket value serving the temporal total) coexists per
   attribute — an attribute carries one convention or the other, and the
