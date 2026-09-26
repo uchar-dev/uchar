@@ -213,12 +213,13 @@ class BronRolVouwWitnessTest {
         IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(
                 Files.readString(ir("anchor/jutterswet-wachtersketen"))));
         DrlTranspiler t = DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
-                l.bronPaden(), l.rolBindingen());
+                l.bronPaden(), l.rolBindingen(), l.navigatieBindingen());
         Dekking d = dekkingVan(t, "regel: opvolgerrang van een wachter");
         assertTrue(d.lowered(), "the self-typed fold lowers: " + d.verdict() + " — " + d.reden());
         // ...and WITHOUT the bindings it does not: the same model, the same branch, the binding withheld.
         Dekking zonder = dekkingVan(
-                DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden()),
+                DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
+                        java.util.Map.of(), l.navigatieBindingen()),
                 "regel: opvolgerrang van een wachter");
         assertTrue(!zonder.lowered() && zonder.reden().contains("aggregatie SOM"),
                 "withheld, the marker returns: " + zonder.verdict() + " — " + zonder.reden());

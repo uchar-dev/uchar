@@ -566,7 +566,8 @@ class HeelperiodeKwantorvouwWitnessTest {
         dev.uchar.regelspraak.loader.IrLoader.Loaded loaded =
                 dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
         return dev.uchar.regelspraak.transpiler.DrlTranspiler
-                .build(loaded.model(), loaded.lets()).drl();
+                .build(loaded.model(), loaded.lets(), loaded.prioritizedDefaults(), loaded.bronPaden(),
+                        loaded.rolBindingen(), loaded.navigatieBindingen()).drl();
     }
 
     // ---------------- an unlowerable shape SKIPS by name, never fires a wrong verdict ----------------

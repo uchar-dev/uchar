@@ -137,9 +137,10 @@ class GemengdeUnieRandWitnessTest {
 
     /** The dormant DRL back-end's rendering of one model. */
     private static String drl(Path ir) throws Exception {
-        return dev.uchar.regelspraak.transpiler.DrlTranspiler.transpile(
-                dev.uchar.regelspraak.loader.IrLoader.loadAll(
-                        JSON.readTree(Files.readString(ir))).model());
+        dev.uchar.regelspraak.loader.IrLoader.Loaded l =
+                dev.uchar.regelspraak.loader.IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
+        return dev.uchar.regelspraak.transpiler.DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(),
+                l.bronPaden(), l.rolBindingen(), l.navigatieBindingen()).drl();
     }
 
     /** Non-overlapping occurrences of a literal. */

@@ -186,51 +186,40 @@ public final class ExecModelTranspiler {
      *  {@code restatement} / {@code eenheidOf} is the defect this replaces. Null-safe (null in, null out). */
     private Datatype effType(Expr e) { return eff.van(e); }
 
-    /** Build the exec {@link Model} AND expose the skipped-construct reasons (for the differential harness to
-     *  decide a fixture is "not yet migrated" rather than a divergence). Fact beans resolve against
+    /** Build the exec {@link Model} and its coverage manifest from the model AND everything the loader carries
+     *  beside it ({@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
+     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, the ch. 4.10 Let
+     *  index, the ch. 4.3 fold-source paths and the ch. 4.1a navigation bindings. This is the only build, and
+     *  every side table is a required, non-null argument, because a model lowered without one still lowers: a
+     *  defaults family then fires nowhere and a navigated read is answered as the subject's own, and no marker
+     *  says so. A document that carries none of a table passes an empty one. Fact beans resolve against
      *  {@code beanLoader}; null routes to this transpiler's own loader. */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader) {
-        return build(m, beanLoader, List.of(), java.util.Map.of(), List.of(), java.util.Map.of());
-    }
-    /** The pre-WF-102 arity, kept for the callers that carry no path (every witness that builds a one-step model). */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets) {
-        return build(m, beanLoader, defaults, rolBindingen, lets, java.util.Map.of());
-    }
-    /** As {@link #build(RegelSpraakModel, ClassLoader)} but also consumes what the loader carries BESIDE the model
-     *  (see {@code IrLoader.Loaded}): the ch. 7 prioritized-defaults extension — each group lowers to one
-     *  reduce-rule, a port of ref's {@code run_defaults_group} — the symbolic role bindings, and the ch. 4.10 Let
-     *  index. An empty/null defaults list is the flat v0 case; an empty {@code rolBindingen} is the
-     *  by-pair-derivation-only case. */
-    public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-            Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
-            Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden) {
-        return build(m, beanLoader, defaults, rolBindingen, lets, bronPaden, java.util.Map.of());
-    }
-    /** As above, plus the ch. 4.1a navigation bindings ({@code IrLoader.Loaded.navigatieBindingen}) — the arity the
-     *  replay API builds with. */
     public static ExecModelTranspiler build(RegelSpraakModel m, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
             Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen, List<Expr.Let> lets,
             Map<Object, List<RegelSpraakModel.RolBindingRef>> bronPaden,
             Map<Object, List<RegelSpraakModel.RolBindingRef>> navigatieBindingen) {
+        java.util.Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
+        java.util.Objects.requireNonNull(rolBindingen, "side table 'rolBindingen' is null — pass an empty map for a document without one");
+        java.util.Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
+        java.util.Objects.requireNonNull(bronPaden, "side table 'bronPaden' is null — pass an empty map for a document without one");
+        java.util.Objects.requireNonNull(navigatieBindingen, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
         ExecModelTranspiler t = new ExecModelTranspiler(m, beanLoader);
-        t.prioritizedDefaults = defaults == null ? List.of() : defaults;
-        if (rolBindingen != null && !rolBindingen.isEmpty()) {
+        t.prioritizedDefaults = defaults;
+        if (!rolBindingen.isEmpty()) {
             // copied into an IdentityHashMap: the caller's map is identity-keyed, and a plain copy into a
             // value-keyed map would merge two structurally identical nodes into one binding.
             t.rolBindingen = new java.util.IdentityHashMap<>();
             t.rolBindingen.putAll(rolBindingen);
         }
-        if (bronPaden != null && !bronPaden.isEmpty()) {
+        if (!bronPaden.isEmpty()) {
             t.bronPaden = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
             t.bronPaden.putAll(bronPaden);
         }
-        if (navigatieBindingen != null && !navigatieBindingen.isEmpty()) {
+        if (!navigatieBindingen.isEmpty()) {
             t.navigatieBindingen = new java.util.IdentityHashMap<>();   // identity, for rolBindingen's reason
             t.navigatieBindingen.putAll(navigatieBindingen);
         }
-        t.eff = new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(
-                lets == null ? List.of() : lets);
+        t.eff = new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         t.strat = dev.uchar.regelspraak.transpiler.Stratificatie.bereken(m.resolvedRegels, t::genavigeerd);
         t.model0 = t.run();
         return t;

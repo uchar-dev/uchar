@@ -285,9 +285,10 @@ class MeerPeriodiekePoortWitnessTest {
     /** The DRL TEXT the classic branch emits for a document — no case, no fire; {@code ingreep} edits the loaded
      *  model first. */
     private static String drlTekst(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
-        RegelSpraakModel model = IrLoader.load(JSON.readTree(Files.readString(irPath)));
-        ingreep.accept(model);
-        return DrlTranspiler.build(model).drl();
+        IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
+        ingreep.accept(l.model());
+        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
+                l.navigatieBindingen()).drl();
     }
 
     /** The exec-model branch's coverage manifest for a document, as comparable text; {@code ingreep} edits the
@@ -301,7 +302,7 @@ class MeerPeriodiekePoortWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets());
+                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
             List<String> uit = new ArrayList<>();
             for (Dekking d : et.dekking()) uit.add(d.verdict() + " " + d.sleutel() + " — " + d.reden());
             return uit;

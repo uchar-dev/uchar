@@ -64,8 +64,8 @@ public final class DrlTranspiler {
      *  branch lowers the ch. 4.10 {@link Expr.Let} chain of a §11 variabelendeel, it hands the derivation the
      *  document's Let INDEX: a restatement deep inside a body asks a {@link Expr.BinderRef} for its unit with no
      *  route back up to its own binding, and only that index resolves it — without it the read falls back to its
-     *  own wire annotation, which is the repetition ch. 2.10 exists to not read. A caller that has no index
-     *  (a transpile-only witness) passes none and gets the pre-existing fallback. */
+     *  own wire annotation, which is the repetition ch. 2.10 exists to not read. A caller that passes an empty
+     *  index gets the pre-existing fallback. */
     private final dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid eff;
     /** §9.2: the salience derivation over the declared kenmerk graph, shared with ExecModelTranspiler. */
     /** Computed at {@link #run} start, once the navigation bindings the reads depend on are known. */
@@ -110,42 +110,8 @@ public final class DrlTranspiler {
             = new java.util.LinkedHashMap<>();
     private final Dagsoorten dagsoorten;
 
-    public DrlTranspiler(RegelSpraakModel model) { this(model, List.of()); }
-
-    /** @param lets the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}. */
-    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets) { this(model, lets, List.of()); }
-
-    /** @param lets     the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}.
-     *  @param defaults the ch. 7 prioritizedDefaults extension beside the model. This branch has no defaults
-     *      LOWERING and its caller refuses a defaults-carrying document at the door, so the list is empty on
-     *      every document that reaches emission — it is threaded anyway because the standing classification's
-     *      {@code other_writer} clause reads it, and a branch that silently passed an empty list would widen
-     *      its own standing domain the day this branch does gain the lowering. */
-    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
-            List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults) {
-        this(model, lets, defaults, java.util.Map.of());
-    }
-
-    /** @param bronPaden the ch. 4.3 / WF-102 fold-source RANGES ({@code IrLoader.Loaded.bronPaden}), per
-     *      {@link Expr.Functie} node, by IDENTITY. It is the ONE thing beside the model this branch cannot
-     *      re-derive: the by-pair search below answers for a type PAIR, and a path's intermediate types are its
-     *      own claim — so a branch that did not receive it would fold whatever DIRECT relation happens to connect
-     *      subject and element and answer differently from ref, clingo and its own sister branch. */
-    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
-            List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults,
-            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
-        this(model, lets, defaults, bronPaden, java.util.Map.of());
-    }
-
-    /** @param rolBindingen the wire's symbolic (feittype, rol) binding per IR node
-     *      ({@code IrLoader.Loaded.rolBindingen}), by IDENTITY — on an aggregation {@link Expr.Functie} the
-     *      ch. 4.3 {@code sourceRole}, naming the role the folded ELEMENT plays. Read as the LAST resort in
-     *      {@link #scope}, after the written element name and the by-pair search, so every join the model
-     *      already derives stays exactly as it was. Without it a fold whose argument is an ATTRIBUTE name
-     *      (SOM/MINIMUM/MAXIMUM/TOTAAL) has only the by-pair search, which is ambiguous by construction on a
-     *      repeated type pair — the marker this branch emitted there while the exec branch, which has taken
-     *      the binding since 2026-08-30, played. */
-    public DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
+    /** Only {@link #build} constructs one, so no instance exists without every side table; see there. */
+    private DrlTranspiler(RegelSpraakModel model, List<Expr.Let> lets,
             List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults,
             java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden,
             java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
@@ -153,21 +119,21 @@ public final class DrlTranspiler {
         this.eff = new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(lets);
         this.dagsoorten = new Dagsoorten(model);
         this.staande = dev.uchar.regelspraak.transpiler.kern.StaandeDoelen.van(model, defaults);
-        if (bronPaden != null && !bronPaden.isEmpty()) {
+        if (!bronPaden.isEmpty()) {
             this.bronPaden = new java.util.IdentityHashMap<>();   // identity: the nodes are value-equal records
             this.bronPaden.putAll(bronPaden);
         }
-        if (rolBindingen != null && !rolBindingen.isEmpty()) {
+        if (!rolBindingen.isEmpty()) {
             this.rolBindingen = new java.util.IdentityHashMap<>();   // identity, for bronPaden's reason
             this.rolBindingen.putAll(rolBindingen);
         }
     }
 
-    /** See the constructor parameter of the same name. Empty by default — every fold then carries the one-step
+    /** See the {@link #build} parameter of the same name. Empty by default — every fold then carries the one-step
      *  range and this branch behaves exactly as it did before WF-102. */
     private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden = java.util.Map.of();
 
-    /** See the constructor parameter of the same name ({@code IrLoader.Loaded.rolBindingen}). Empty by default. */
+    /** See the {@link #build} parameter of the same name ({@code IrLoader.Loaded.rolBindingen}). Empty by default. */
     private java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen = java.util.Map.of();
 
     /** IR-SPEC ch. 4.3, the set source: a fold whose single argument is read through a range — a one-step
@@ -179,46 +145,48 @@ public final class DrlTranspiler {
 
     /** IR-SPEC ch. 4.1a: the navigation bindings per AttribuutRef / Kenmerk node ({@code IrLoader.Loaded.navigatieBindingen}),
      *  by IDENTITY. Where a node carries one it decides the walk ({@link FactModelGenerator#navigatiewandeling}); a
-     *  bindingless node is the subject's own read. Set by the widest {@link #build}. */
+     *  bindingless node is the subject's own read. Set by {@link #build}. */
     private java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> navigatieBindingen = java.util.Map.of();
 
-    public static String transpile(RegelSpraakModel model) { return new DrlTranspiler(model).run(); }
-
-    /** As {@link #transpile} but also exposes the coverage manifest — one {@link Dekking} verdict per
-     *  construct, per soort in model-list order (comparable per soort with the exec back-end's). */
-    public static DrlTranspiler build(RegelSpraakModel model) { return build(model, List.of()); }
-
-    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets) {
-        return build(model, lets, List.of());
-    }
-
-    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
-            List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults) {
-        return build(model, lets, defaults, java.util.Map.of());
-    }
-
-    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
-            List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults,
-            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden) {
-        return build(model, lets, defaults, bronPaden, java.util.Map.of());
-    }
-
-    public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
-            List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults,
-            java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden,
-            java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen) {
-        return build(model, lets, defaults, bronPaden, rolBindingen, java.util.Map.of());
-    }
-
-    /** As above, plus the ch. 4.1a navigation bindings ({@code IrLoader.Loaded.navigatieBindingen}) — the arity the
-     *  replay API builds with. */
+    /** The DRL text and its coverage manifest — one {@link Dekking} verdict per construct, per soort in model-list
+     *  order (comparable per soort with the exec back-end's) — from the model AND everything the loader carries
+     *  beside it ({@code IrLoader.Loaded}). This is the only way in, and every side table is a required, non-null
+     *  argument, for the reason {@code ExecModelTranspiler.build} gives: a model lowered without one still lowers,
+     *  and no marker says so. A document that carries none of a table passes an empty one.
+     *
+     *  @param lets     the document's ch. 4.10 {@link Expr.Let} index ({@code IrLoader.Loaded.lets}) — see {@link #eff}.
+     *  @param defaults the ch. 7 prioritizedDefaults extension beside the model. This branch has no defaults
+     *      LOWERING and its caller refuses a defaults-carrying document at the door, so the list is empty on
+     *      every document that reaches emission — it is threaded anyway because the standing classification's
+     *      {@code other_writer} clause reads it, and a branch that silently passed an empty list would widen
+     *      its own standing domain the day this branch does gain the lowering.
+     *  @param bronPaden the ch. 4.3 / WF-102 fold-source RANGES ({@code IrLoader.Loaded.bronPaden}), per
+     *      {@link Expr.Functie} node, by IDENTITY. It is the ONE thing beside the model this branch cannot
+     *      re-derive: the by-pair search below answers for a type PAIR, and a path's intermediate types are its
+     *      own claim — so a branch that did not receive it would fold whatever DIRECT relation happens to connect
+     *      subject and element and answer differently from ref, clingo and its own sister branch.
+     *  @param rolBindingen the wire's symbolic (feittype, rol) binding per IR node
+     *      ({@code IrLoader.Loaded.rolBindingen}), by IDENTITY — on an aggregation {@link Expr.Functie} the
+     *      ch. 4.3 {@code sourceRole}, naming the role the folded ELEMENT plays. Read as the LAST resort in
+     *      {@link #scope}, after the written element name and the by-pair search, so every join the model
+     *      already derives stays exactly as it was. Without it a fold whose argument is an ATTRIBUTE name
+     *      (SOM/MINIMUM/MAXIMUM/TOTAAL) has only the by-pair search, which is ambiguous by construction on a
+     *      repeated type pair — the marker this branch emitted there while the exec branch, which has taken
+     *      the binding since 2026-08-30, played.
+     *  @param navigatieBindingen the ch. 4.1a navigation bindings ({@code IrLoader.Loaded.navigatieBindingen}) —
+     *      see the field of the same name. */
     public static DrlTranspiler build(RegelSpraakModel model, List<Expr.Let> lets,
             List<dev.uchar.regelspraak.ir.PrioritizedDefaults> defaults,
             java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> bronPaden,
             java.util.Map<Object, RegelSpraakModel.RolBindingRef> rolBindingen,
             java.util.Map<Object, java.util.List<RegelSpraakModel.RolBindingRef>> navigatieBindingen) {
+        java.util.Objects.requireNonNull(lets, "side table 'lets' is null — pass an empty list for a document without one");
+        java.util.Objects.requireNonNull(defaults, "side table 'defaults' is null — pass an empty list for a document without one");
+        java.util.Objects.requireNonNull(bronPaden, "side table 'bronPaden' is null — pass an empty map for a document without one");
+        java.util.Objects.requireNonNull(rolBindingen, "side table 'rolBindingen' is null — pass an empty map for a document without one");
+        java.util.Objects.requireNonNull(navigatieBindingen, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
         DrlTranspiler t = new DrlTranspiler(model, lets, defaults, bronPaden, rolBindingen);
-        if (navigatieBindingen != null && !navigatieBindingen.isEmpty()) {
+        if (!navigatieBindingen.isEmpty()) {
             t.navigatieBindingen = new java.util.IdentityHashMap<>();   // identity, for bronPaden's reason
             t.navigatieBindingen.putAll(navigatieBindingen);
         }

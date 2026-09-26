@@ -497,7 +497,9 @@ class EenheidsconflictWitnessTest {
     private static boolean lowertExec(JsonNode ir) { return vangExec(ir) == null; }
 
     private static String drl(JsonNode ir) {
-        return DrlTranspiler.transpile(IrLoader.loadAll(ir).model());
+        IrLoader.Loaded l = IrLoader.loadAll(ir);
+        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
+                l.navigatieBindingen()).drl();
     }
 
     private static void exec(JsonNode ir) {
@@ -507,7 +509,7 @@ class EenheidsconflictWitnessTest {
         Thread.currentThread().setContextClassLoader(cl);
         try {
             assertNotNull(ExecModelTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
-                    loaded.rolBindingen(), loaded.lets()));
+                    loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen()));
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
         }

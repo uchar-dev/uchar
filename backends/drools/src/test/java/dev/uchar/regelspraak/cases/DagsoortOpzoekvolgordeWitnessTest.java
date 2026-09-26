@@ -177,11 +177,12 @@ class DagsoortOpzoekvolgordeWitnessTest {
         }
     }
 
-    /** The emitted text, built exactly as {@code CaseRunner}'s DRL branch builds it (model plus the ch. 4.10
-     *  Let index), so what this asserts is the transpiler the branch actually runs. */
+    /** The emitted text, built exactly as {@code DroolsBackend}'s DRL branch builds it (the model plus every side
+     *  table the loader returns), so what this asserts is the transpiler the branch actually runs. */
     private static String drl(ObjectNode ir) {
         IrLoader.Loaded l = IrLoader.loadAll(ir);
-        return DrlTranspiler.build(l.model(), l.lets()).drl();
+        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
+                l.navigatieBindingen()).drl();
     }
 
     /** The first emitted line that mentions a date helper — the diagnostic a bare contains() cannot give. */

@@ -166,13 +166,14 @@ class DrlEenheidsplekWitnessTest {
         return CORPUS.relativize(ir.getParent()).toString();
     }
 
-    /** The emitted text, built exactly as {@code CaseRunner}'s DRL branch builds it — model AND the document's
-     *  ch. 4.10 Let index. The index is not decoration here: a {@link dev.uchar.regelspraak.ir.Expr.BinderRef}
+    /** The emitted text, built exactly as {@code DroolsBackend}'s DRL branch builds it — the model AND every side
+     *  table the loader returns, the document's ch. 4.10 Let index among them. The index is not decoration here: a {@link dev.uchar.regelspraak.ir.Expr.BinderRef}
      *  asked for its unit in isolation has no route back up to its binding, so without it the read falls back to
      *  its own wire annotation and this witness would measure a transpiler no branch uses. */
     private static String drl(JsonNode ir) {
         IrLoader.Loaded l = IrLoader.loadAll(ir);
-        return DrlTranspiler.build(l.model(), l.lets()).drl();
+        return DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(), l.rolBindingen(),
+                l.navigatieBindingen()).drl();
     }
 
     /** The first line that moved, as "honest | lying" — the diagnostic a bare inequality cannot give. */
