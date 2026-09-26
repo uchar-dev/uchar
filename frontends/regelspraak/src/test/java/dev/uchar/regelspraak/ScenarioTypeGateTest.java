@@ -265,6 +265,9 @@ class ScenarioTypeGateTest {
                 + "Met als verwacht resultaat:\n- J is bergingsbevoegd\n";
         fout(s, "met peildatum", "de peildatum '01-06-2025 10:00:00.000' draagt een tijd, maar een casebestand draagt "
                 + "als peildatum alleen een dag (asOfDate)");
+        // the one refusal: before, the gate that asks a window's rule for a peildatum added "heeft geen peildatum"
+        // beside it, where the scenario writes one
+        assertEquals(1, resolve(s).model().errors().size(), () -> resolve(s).model().errors().toString());
     }
 
     @Test void een_scenario_zonder_situatie() {

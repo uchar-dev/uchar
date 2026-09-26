@@ -227,7 +227,8 @@ public final class ScenarioResolver {
         Situatie situatie = voegSamen(bronnen);
         checkRolDoelen(situatie);
         Predicate<String> draagt = draagt(scope);
-        peildatumPoort(draagt, peildatum, naam, line);
+        // a written peildatum that was refused has its own ERROR, and the gate would call it missing
+        if (sc.scenarioPeildatum() == null) peildatumPoort(draagt, peildatum, naam, line);
         parameterPoort(draagt, situatie, naam, line);
         List<Verwachting> verwachtingen = resolveVerwachtingen(sc.verwachting(), situatie);
         return new ResolvedScenario(naam, scope, peildatum, situatie, verwachtingen, line);
