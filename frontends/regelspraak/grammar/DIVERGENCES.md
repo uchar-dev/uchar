@@ -1798,8 +1798,9 @@ kind of the case format.
 Where the verifier refuses the document a resolver refusal would have written,
 the message is the verifier's sentence after a Dutch context prefix (the unit,
 typing, fold-operand and value refusals, and the structural ones: a rule form, a
-group, a declaration, a day-kind definition, a start point, a window's position
-and bounds, a count's shape, a set reading; witnesses `EenheidZinTest`,
+group, a declaration, a day-kind definition and what its condition reads, a start
+point, a window's position and bounds, a count's shape, a set reading, a read
+whose name took in a word before 'van'; witnesses `EenheidZinTest`,
 `TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the
@@ -1879,3 +1880,21 @@ units are an ERROR in the same WF-099 sentence, and a base or bound that is no
 number is an ERROR in the verifier's WF-035 sentence (`clamp base is <kind>,
 must be numeric`). When the parity zone leaves the repository, the warning can
 become an ERROR like the other refusals the verifier shares.
+
+---
+
+## An undeclared attribute read — refused for one shape
+
+The name of a read runs over every inner `van`, so a phrase the language has no
+function for, "het maximum van de romplengte van de Schuit", reads an attribute
+`maximum van de romplengte` of Schuit. The verifier refuses such a read (WF-034:
+`'maximum van de romplengte' is neither an attribute nor a characteristic of
+'Schuit'`). The resolver refuses it in that sentence where the name is no member
+of the type it is read on and the part behind one of its `van`s is a declared
+attribute of that type, or the written plural of one: the name then took in a
+word before `van` (`StructuurZinTest`, at every position the emitter writes a
+read at). A read of any other undeclared name is written, for the verifier to
+refuse, because the casus of the parity zone reads names that only its replay
+slices declare, and an ERROR would stop its emission; a WARNING would change its
+pinned document. When the parity zone leaves the repository, the refusal can
+cover every undeclared read.

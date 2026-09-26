@@ -271,6 +271,189 @@ class StructuurZinTest {
         assertEquals(List.of(), m.diagnostics);
     }
 
+    // ---- WF-031: a day kind reads the day, never derived state
+
+    private static final String VUURTOREN = """
+        Objecttype de Vuurtoren (mv: Vuurtorens)
+            het peil Numeriek (niet-negatief geheel getal);
+
+        Parameter de springdrempel : Numeriek (geheel getal);
+
+        Dagsoort de springtijdag (mv: springtijdagen);
+
+        """;
+
+    private static final String ZUIVER = " — a day-kind condition references only dates, date-components, "
+            + "easterSunday, literals, parameters and other day kinds, never derived object state (an attribute or "
+            + "characteristic read)";
+    private static final String SESSIE = " — a day kind classifies a bare date at stratum 0 (ch. 5.4), so its "
+            + "predicate is a function of THE DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a "
+            + "session value is refused";
+    private static final String DAGKOP = "dagsoortdefinitie 'springtijdag' (regel 'Dagsoortdefinitie springtijdag'): ";
+
+    private static String dagsoort(String voorwaarde) {
+        return VUURTOREN + "Regel Dagsoortdefinitie springtijdag\n    geldig altijd\n        Een dag is een springtijdag\n"
+                + "        indien " + voorwaarde + ".\n";
+    }
+
+    @Test void een_dagsoortdefinitie_die_een_attribuut_leest() {
+        // before: the document went to disk with no diagnostic, and the verifier refused it in this sentence
+        assertEquals(List.of(DAGKOP + "day-kind condition reads attribute 'peil'" + ZUIVER),
+                fouten(dagsoort("het peil van de Vuurtoren groter is dan 2")));
+    }
+
+    @Test void een_dagsoortdefinitie_die_een_sessiewaarde_leest() {
+        assertEquals(List.of(DAGKOP + "day-kind condition reads the session value 'evaluationDate'" + SESSIE),
+                fouten(dagsoort("de dag later is dan de Rekendatum")));
+        assertEquals(List.of(DAGKOP + "day-kind condition reads the session value 'evaluationYear'" + SESSIE),
+                fouten(dagsoort("het jaar uit de dag gelijk is aan het Rekenjaar")));
+    }
+
+    @Test void een_dagsoortdefinitie_die_de_staat_van_een_regel_leest() {
+        assertEquals(List.of(DAGKOP + "day-kind condition reads rule-version state 'peilregel'" + ZUIVER),
+                fouten(VUURTOREN + """
+                    Regel peilregel
+                        geldig altijd
+                            Het peil van een Vuurtoren moet berekend worden als 3.
+
+                    Regel Dagsoortdefinitie springtijdag
+                        geldig altijd
+                            Een dag is een springtijdag
+                            indien regelversie peilregel is gevuurd.
+                    """));
+    }
+
+    @Test void een_samengestelde_dagsoortvoorwaarde_weigert_elke_lezing_op_haar_regel() {
+        RegelSpraakModel m = Resolver.resolve(VUURTOREN + """
+                Regel Dagsoortdefinitie springtijdag
+                    geldig altijd
+                        Een dag is een springtijdag
+                        indien er aan alle volgende voorwaarden wordt voldaan:
+                        - de dag uit de dag is gelijk aan 1
+                        - het peil van de Vuurtoren is groter dan 2
+                        - de dag is later dan de Rekendatum.
+                """);
+        assertEquals(List.of("ERROR (line 13): " + DAGKOP + "day-kind condition reads attribute 'peil'" + ZUIVER,
+                        "ERROR (line 14): " + DAGKOP + "day-kind condition reads the session value 'evaluationDate'"
+                                + SESSIE),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::toString).toList());
+    }
+
+    @Test void een_dagsoortdefinitie_over_de_dag_en_een_parameter_blijft_schoon() {
+        assertEquals(List.of(), Resolver.resolve(dagsoort("de maand uit de dag groter is dan de springdrempel"))
+                .diagnostics);
+    }
+
+    // ---- WF-034: a read whose name took in a word before 'van'
+
+    private static final String HAVENS = """
+        Objecttype de Haven (mv: Havens)
+            het kadegeld Numeriek (niet-negatief geheel getal);
+
+        Objecttype de Schuit (mv: Schuiten)
+            de ligprijs Numeriek (niet-negatief geheel getal);
+            de romplengte (mv: romplengten) Numeriek (niet-negatief geheel getal);
+            de datum van keuring Datum in dagen;
+            is gekeurd kenmerk (bijvoeglijk);
+
+        Feittype thuisligging
+            de thuishaven Haven
+            de ligger (mv: liggers) Schuit
+        Eén thuishaven telt meerdere liggers
+
+        """;
+
+    private static final String OPGESLOKT = "lezing 'het maximum van de romplengte van de Schuit', waarin 'maximum van' "
+            + "vóór het attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor a "
+            + "characteristic of 'Schuit'";
+
+    private static String regel(String zin) {
+        return HAVENS + "Regel p\n    geldig altijd\n        " + zin + "\n";
+    }
+
+    @Test void een_lezing_waarvan_de_naam_een_woord_voor_van_opnam() {
+        // before: a read of an attribute 'maximum van de romplengte' went to disk with no diagnostic, and the
+        // verifier refused the document in the sentence after the colon
+        assertEquals(List.of(OPGESLOKT), fouten(regel("De ligprijs van een Schuit moet berekend worden als het "
+                + "maximum van de romplengte van de Schuit.")));
+        assertEquals(List.of(OPGESLOKT), fouten(regel("De ligprijs van een Schuit moet berekend worden als 3\n"
+                + "        indien het maximum van de romplengte van de Schuit groter is dan 2.")));
+        assertEquals(List.of(OPGESLOKT), fouten(regel("Een Schuit is gekeurd\n"
+                + "        indien het maximum van de romplengte van de Schuit groter is dan 2.")));
+        assertEquals(List.of("lezing 'Het maximum van de romplengte van een Schuit', waarin 'maximum van' vóór het "
+                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengte' is neither an attribute nor "
+                        + "a characteristic of 'Schuit'"),
+                fouten(regel("Het maximum van de romplengte van een Schuit moet groter zijn dan 2.")));
+    }
+
+    @Test void een_opgeslokte_naam_over_een_meervoud_of_een_navigatie() {
+        assertEquals(List.of("lezing 'het maximum van de romplengten van de Schuit', waarin 'maximum van' vóór het "
+                        + "attribuut 'romplengte' één naam werd: 'maximum van de romplengten' is neither an attribute "
+                        + "nor a characteristic of 'Schuit'"),
+                fouten(regel("De ligprijs van een Schuit moet berekend worden als het maximum van de romplengten van "
+                        + "de Schuit.")));
+        assertEquals(List.of("lezing 'het maximum van het kadegeld van zijn thuishaven', waarin 'maximum van' vóór het "
+                        + "attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is neither an attribute nor a "
+                        + "characteristic of 'Haven'"),
+                fouten(regel("De ligprijs van een Schuit moet berekend worden als het maximum van het kadegeld van "
+                        + "zijn thuishaven.")));
+    }
+
+    /** The read at each position the emitter writes one at: exactly that one ERROR, from the walk after the lift. A
+     *  day kind that reads it draws the day-kind refusal beside it, as the verifier reports both. */
+    @Test void elke_schrijfpositie_van_een_opgeslokte_naam_eindigt_in_een_diagnose() {
+        String schuit = "het maximum van de romplengte van de Schuit", haven = "het maximum van het kadegeld van de Haven";
+        List<String[]> vormen = List.of(
+                new String[]{"Schuit", "De ligprijs van een Schuit moet gesteld worden op " + schuit + "."},
+                new String[]{"Schuit", "De ligprijs van een Schuit moet gesteld worden op 1\nindien " + schuit
+                        + " groter is dan 2."},
+                new String[]{"Haven", "Het kadegeld van een Haven moet groter zijn dan " + haven + "."},
+                new String[]{"Haven", "Een Haven heeft een ligger met romplengte gelijk aan " + haven + "."},
+                new String[]{"Haven", "Een Haven heeft een ligger met romplengte gelijk aan 3\nindien " + haven
+                        + " groter is dan 2."},
+                new String[]{"Haven", "Een winterschuit van een Haven is een ligger van de Haven\nindien " + haven
+                        + " groter is dan 2."},
+                new String[]{"Schuit", "Een Schuit is gekeurd\nindien " + schuit + " groter is dan 2."},
+                new String[]{"Schuit", "Een Haven is veilig\nindien de romplengte van alle liggers van de Haven groter "
+                        + "is dan " + schuit + "."});
+        for (String[] vorm : vormen) {
+            String bron = HAVENS + WINTERBERGING + "Regel p\n    geldig altijd\n" + vorm[1].indent(8);
+            assertEquals(List.of(opgeslokt(vorm[0])), fouten(bron), () -> "positie:\n" + vorm[1]);
+        }
+        // an exception is lifted into the defaults, and its condition is walked there
+        assertEquals(List.of(opgeslokt("Schuit")), fouten(HAVENS + """
+            Regel ligprijs van een schuit
+                geldig altijd
+                    De ligprijs van een Schuit moet gesteld worden op 5.
+
+            Uitzondering op ligprijs van een schuit: dure ligprijs
+                geldig altijd
+                    De ligprijs van een Schuit moet gesteld worden op 9
+                    indien het maximum van de romplengte van de Schuit groter is dan 2.
+            """));
+    }
+
+    private static final String WINTERBERGING = """
+        Feittype winterberging
+            de winterhaven Haven
+            de winterschuit (mv: winterschuiten) Schuit
+        Eén winterhaven telt meerdere winterschuiten
+
+        """;
+
+    private static String opgeslokt(String type) {
+        return type.equals("Schuit") ? OPGESLOKT : "lezing 'het maximum van het kadegeld van de Haven', waarin 'maximum "
+                + "van' vóór het attribuut 'kadegeld' één naam werd: 'maximum van het kadegeld' is neither an attribute "
+                + "nor a characteristic of 'Haven'";
+    }
+
+    @Test void een_gedeclareerde_naam_met_van_en_de_maximale_waarde_blijven_schoon() {
+        assertEquals(List.of(), fouten(regel("Een Schuit is gekeurd\n"
+                + "        indien de datum van keuring van de Schuit later is dan 01-01-2026.")));
+        assertEquals(List.of(), fouten(regel("De ligprijs van een Schuit moet berekend worden als de maximale waarde "
+                + "van de romplengte van de Schuit en 3.")));
+    }
+
     // ---- WF-032 (and WF-023): the start point determination
 
     private static final String STARTPUNT = """

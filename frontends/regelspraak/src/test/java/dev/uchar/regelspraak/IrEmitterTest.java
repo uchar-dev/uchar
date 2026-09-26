@@ -1396,7 +1396,8 @@ class IrEmitterTest {
 
     @Test void de_gebonden_dag_en_de_contextwaarden_hebben_elk_hun_knoop() {
         // IR-SPEC ch. 4.1: the bound day of a day-kind definition is a node of its own without a name; the session
-        // values are a ContextValue under their name.
+        // values are a ContextValue under their name. A day kind reads no session value (WF-031), so the evaluation
+        // date is read by a rule.
         String c = emitCompact("""
             Dagsoort de werkdag (mv: werkdagen)
             Objecttype de Vondst
@@ -1404,7 +1405,10 @@ class IrEmitterTest {
                 het meldjaar Numeriek (geheel getal);
             Regel werkdag
                 geldig altijd
-                    Een dag is een werkdag indien de dag gelijk is aan de Rekendatum.
+                    Een dag is een werkdag indien de dag uit de dag gelijk is aan 1.
+            Regel meldatum
+                geldig altijd
+                    De meldatum van een Vondst moet gesteld worden op de Rekendatum.
             Regel meldjaar
                 geldig altijd
                     Het meldjaar van een Vondst moet gesteld worden op het Rekenjaar.

@@ -112,6 +112,7 @@ final class RuleChecker {
         keurKringverwijzingenNaOpgave();
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
         keurNavigatiebindingen();   // a read or a fold the emitter could write only with a binding none supplies
+        keurOpgeslokteNamen();      // a read whose name took in a word before 'van' and a declared attribute
     }
 
     /**
@@ -736,6 +737,71 @@ final class RuleChecker {
         for (var pd : model.prioritizedDefaults)
             navigatiebindingDefaults(pd.defaults(), model.objecttypen.get(pd.onderwerp()), gemeld);
     }
+
+    /**
+     * WF-034, producer side, for one shape of read: a name that took in a word before 'van'. The name of a read runs
+     * over every inner 'van', so "het maximum van de romplengte van de Schuit" — no function of the language — became a
+     * read of an attribute 'maximum van de romplengte' of Schuit, went to disk with {@code diagnostics: []}, and the
+     * verifier refused the document. Refused here, in the verifier's sentence, where the name the emitter writes is no
+     * member of the type it is read on and its part behind a 'van' is a declared attribute of that type. An undeclared
+     * name of any other shape is left to the verifier: the casus of the parity zone reads such names, which only its
+     * replay slices declare, and an ERROR would stop its emission (grammar/DIVERGENCES.md, "Producer refusals
+     * without a reader sentence"). A set reading is the set fence's to refuse; the walk reaches every other written
+     * read, window bounds and fold sources included, after the lift, so the defaults are covered.
+     */
+    private void keurOpgeslokteNamen() {
+        Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        java.util.function.Predicate<Expr> vang = x -> {
+            if (x instanceof Expr.AttribuutRef a && !a.set() && gemeld.add(a)) {
+                String fout = opgeslokteNaamFout(a);
+                if (fout != null)
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron() == null ? 0 : a.bron().line()));
+            }
+            return false;
+        };
+        for (ResolvedRegel r : model.resolvedRegels) {
+            Expr.bevat(r.waarde(), vang);
+            Conditie.bevatOperand(r.voorwaarde(), vang);
+        }
+        for (var d : model.resolvedDagsoorten) Conditie.bevatOperand(d.voorwaarde(), vang);
+        for (var oc : model.objectCreaties) {
+            for (var t : oc.toekenningen()) Expr.bevat(t.waarde(), vang);
+            Conditie.bevatOperand(oc.voorwaarde(), vang);
+        }
+        for (var v : model.verdelingen) Conditie.bevatOperand(v.voorwaarde(), vang);
+        for (var c : model.consistenties) Conditie.bevatOperand(c.assertie(), vang);
+        for (var fc : model.feitCreaties) Conditie.bevatOperand(fc.voorwaarde(), vang);
+        for (var pd : model.prioritizedDefaults) opgeslokteNamenDefaults(pd.defaults(), vang);
+    }
+
+    private static void opgeslokteNamenDefaults(List<Default> defaults, java.util.function.Predicate<Expr> vang) {
+        if (defaults == null) return;
+        for (Default d : defaults) {
+            Conditie.bevatOperand(d.voorwaarde(), vang);
+            Expr.bevat(d.consequentie(), vang);
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden()) opgeslokteNamenDefaults(g.defaults(), vang);
+        }
+    }
+
+    /** The refusal of {@link #keurOpgeslokteNamen} for {@code a}, or null where its name is not of that shape: the
+     *  first 'van' behind which a declared attribute (or its written plural) of the read's type stands. */
+    private static String opgeslokteNaamFout(Expr.AttribuutRef a) {
+        Objecttype ot = a.objecttype();
+        String naam = a.attribuut();
+        if (ot == null || naam == null || !(a.type() instanceof Datatype.Onbekend) || ot.heeftLid(naam)) return null;
+        java.util.regex.Matcher m = VAN.matcher(naam);
+        while (m.find()) {
+            String attribuut = MeervoudMatcher.vindAttribuut(ot, stripArtikel(naam.substring(m.end())));
+            if (attribuut != null)
+                return "lezing '" + a.bron() + "', waarin '" + naam.substring(0, m.start()) + " van' vóór het "
+                        + "attribuut '" + attribuut + "' één naam werd: '" + naam
+                        + "' is neither an attribute nor a characteristic of '" + ot.naam + "'";
+        }
+        return null;
+    }
+
+    private static final java.util.regex.Pattern VAN = java.util.regex.Pattern.compile("\\s+van\\s+");
 
     /** A carrier's conjuncts repeat under its exceptions as the very same nodes, so {@code gemeld} keeps one
      *  refusal per node. */
@@ -2781,6 +2847,7 @@ final class RuleChecker {
                 model.resolvedDagsoorten.stream().filter(eerder -> eerder.naam().equalsIgnoreCase(dag)).findFirst()
                         .ifPresent(eerder -> model.diagnostics.add(new Diagnostic(Severity.ERROR, kop
                                 + "more than one definition for day kind '" + eerder.naam() + "'", rd.getStart().getLine())));
+                dagsoortZuiverheid(voorwaarde, kop, rd.getStart().getLine());
                 model.resolvedDagsoorten.add(new dev.uchar.regelspraak.ir.ResolvedDagsoort(dag, voorwaarde, geldigheid));
             }
         } else if (rd.startpuntBepaling() != null) {
@@ -2791,6 +2858,85 @@ final class RuleChecker {
             model.diagnostics.add(new Diagnostic(Severity.WARNING,
                     "resultaatdeel 'resultaatdeel' wordt nog niet naar IR/DRL omgezet (regel '" + naam + "')",
                     rd.getStart().getLine()));
+        }
+    }
+
+    /** WF-031's purity clause, producer side: a day kind classifies a bare day before the rule graph runs, with no
+     *  fact base, so its condition reads dates, date components, easterSunday, literals, parameters and other day
+     *  kinds only. Before this check a condition that read an attribute, a session value or a rule's state went to
+     *  disk with {@code diagnostics: []}, and the verifier refused the document. The walk and the words are the
+     *  verifier's own scan of a day-kind condition: one ERROR per derived read, in walk order, at the line of the read,
+     *  and no descent below a read it refuses. */
+    private void dagsoortZuiverheid(Conditie voorwaarde, String kop, int regel) {
+        dagsoortConditie(voorwaarde, (zin, bron) -> model.diagnostics.add(new Diagnostic(Severity.ERROR, kop + zin,
+                bron != null && bron.line() > 0 ? bron.line() : regel)));
+    }
+
+    private static String dagsoortOnzuiver(String soort, String naam) {
+        return String.format("day-kind condition reads %s '%s' — a day-kind condition references only dates, "
+                + "date-components, easterSunday, literals, parameters and other day kinds, never derived object "
+                + "state (an attribute or characteristic read)", soort, naam == null ? "?" : naam);
+    }
+
+    private static void dagsoortExpr(Expr e, java.util.function.BiConsumer<String, Bron> meld) {
+        if (e == null) return;
+        switch (e) {
+            case Expr.AttribuutRef a -> meld.accept(dagsoortOnzuiver("attribute", a.attribuut()), a.bron());
+            // the bound day is the day itself; a session value is one value for every day of a session
+            case Expr.Constante c -> {
+                if (c.naam() != null && dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.rijen().containsKey(c.naam()))
+                    meld.accept(String.format("day-kind condition reads the session value '%s' — a day kind "
+                            + "classifies a bare date at stratum 0 (ch. 5.4), so its predicate is a function of THE "
+                            + "DAY alone; the bound day (BoundDay) is admitted, a ContextValue naming a session value "
+                            + "is refused", dev.uchar.regelspraak.ir.Spelling.CONTEXT_VALUE_NAME.spelling(c.naam())),
+                            c.bron());
+            }
+            case Expr.DimensieCel dc -> dagsoortExpr(dc.attribuut(), meld);
+            case Expr.Binair b -> { dagsoortExpr(b.links(), meld); dagsoortExpr(b.rechts(), meld); }
+            case Expr.Afgerond a -> dagsoortExpr(a.basis(), meld);
+            case Expr.Begrensd b -> {
+                dagsoortExpr(b.basis(), meld); dagsoortExpr(b.minimum(), meld); dagsoortExpr(b.maximum(), meld);
+            }
+            case Expr.TekstReeks t -> t.delen().forEach(d -> {
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) dagsoortExpr(i.expr(), meld);
+            });
+            case Expr.Functie f -> {
+                f.argumenten().forEach(x -> dagsoortExpr(x, meld));
+                dagsoortExpr(f.leegwaarde(), meld);
+                dagsoortConditie(f.filter(), meld);
+            }
+            case Expr.IfThenElse k -> {
+                dagsoortConditie(k.conditie(), meld); dagsoortExpr(k.dan(), meld); dagsoortExpr(k.anders(), meld);
+            }
+            case Expr.Let l -> { dagsoortExpr(l.value(), meld); dagsoortExpr(l.body(), meld); }
+            case Expr.InstanceSetUnion u -> u.takken().forEach(t -> {
+                meld.accept(dagsoortOnzuiver("instance population",
+                        t.elementType() == null ? null : t.elementType().naam), u.bron());
+                dagsoortConditie(t.filter(), meld);
+            });
+            case Expr.Literal ignored -> { }
+            case Expr.ParameterRef ignored -> { }
+            case Expr.VariabeleRef ignored -> { }
+            case Expr.BinderRef ignored -> { }
+            case Expr.Onopgelost ignored -> { }
+        }
+    }
+
+    private static void dagsoortConditie(Conditie c, java.util.function.BiConsumer<String, Bron> meld) {
+        if (c == null) return;
+        switch (c) {
+            case Conditie.Vergelijking v -> { dagsoortExpr(v.links(), meld); dagsoortExpr(v.rechts(), meld); }
+            case Conditie.Predicaat p -> dagsoortExpr(p.operand(), meld);
+            case Conditie.Periode p -> { dagsoortExpr(p.vanaf(), meld); dagsoortExpr(p.tot(), meld); }
+            case Conditie.Samengesteld s -> s.onderdelen().forEach(o -> dagsoortConditie(o, meld));
+            case Conditie.Kenmerk k -> meld.accept(dagsoortOnzuiver("characteristic", k.kenmerk()), k.bron());
+            case Conditie.Rollidmaatschap r -> meld.accept(dagsoortOnzuiver("role membership", r.rol()), r.bron());
+            case Conditie.VerreRollidmaatschap r ->
+                    meld.accept(dagsoortOnzuiver("role membership", r.backref()), r.bron());
+            case Conditie.Regelversie r -> meld.accept(dagsoortOnzuiver("rule-version state", r.regel()), r.bron());
+            case Conditie.Kwantorvouw k -> meld.accept(dagsoortOnzuiver("instance quantification",
+                    k.elementObjecttype() == null ? null : k.elementObjecttype().naam), k.bron());
+            case Conditie.Onopgelost ignored -> { }
         }
     }
 
