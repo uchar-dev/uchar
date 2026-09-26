@@ -1,0 +1,36 @@
+Scenario zeewier
+toetst de regels rubriek van een aanspoelsel en weegplicht bij dubbele borging
+Gegeven is de volgende situatie:
+een Aanspoelsel A1
+- de soort is "zeewier"
+- de stuks is 12
+- is gekeurd
+- is geborgen
+Met als verwacht resultaat:
+- de rubriek van A1 is "organisch"
+- A1 is weegplichtig
+- de gegevens zijn consistent
+
+Scenario drijfhout
+toetst de regels rubriek van een aanspoelsel en weegplicht bij dubbele borging
+Gegeven is de volgende situatie:
+een Aanspoelsel A1
+- de soort is "drijfhout"
+- de stuks is 4
+- is gekeurd
+Met als verwacht resultaat:
+- de rubriek van A1 is "overig"
+- A1 is niet weegplichtig
+- de gegevens zijn consistent
+
+Scenario wrakhout grens
+toetst de regels rubriek van een aanspoelsel en weegplicht bij dubbele borging
+Gegeven is de volgende situatie:
+een Aanspoelsel A1
+- de soort is "wrakhout"
+- de stuks is 10
+- is geborgen
+Met als verwacht resultaat:
+- de rubriek van A1 is "organisch"
+- A1 is weegplichtig
+- de gegevens zijn consistent

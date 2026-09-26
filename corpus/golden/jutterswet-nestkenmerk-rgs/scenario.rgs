@@ -1,0 +1,42 @@
+Scenario y wint
+Gegeven is de volgende situatie:
+een Jutter M
+- is nx
+- is ny
+Met als verwacht resultaat:
+- M is niet vrijgesteld
+- de gegevens zijn consistent
+
+Scenario conflict
+Gegeven is de volgende situatie:
+een Jutter M
+- is nx
+- is ny
+- is nz
+Met als verwacht resultaat:
+- M is niet vrijgesteld
+- de gegevens zijn inconsistent volgens "Jutter.vrijgesteld/0" voor M
+
+Scenario terugval
+Gegeven is de volgende situatie:
+een Jutter M
+- is nx
+Met als verwacht resultaat:
+- M is vrijgesteld
+- de gegevens zijn consistent
+
+Scenario nz zonder nx
+Gegeven is de volgende situatie:
+een Jutter M
+- is nz
+een Jutter N
+- is nx
+- is nz
+een Jutter O
+- is ny
+- is nz
+Met als verwacht resultaat:
+- M is niet vrijgesteld
+- N is vrijgesteld
+- O is niet vrijgesteld
+- de gegevens zijn consistent

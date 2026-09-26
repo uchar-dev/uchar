@@ -1,0 +1,37 @@
+Scenario voorbeeld
+Gegeven is de volgende situatie:
+een Jutter J1
+- is borgplichtig van 01-01-2024 tot 02-01-2024
+- is borgplichtig van 10-01-2024 tot 14-02-2024
+Met als verwacht resultaat:
+- de borgdagen van J1 is 23 van 01-01-2024 tot 01-02-2024
+- de borgdagen van J1 is 13 van 01-02-2024 tot 01-03-2024
+- de jaardagen van J1 is 36 van 01-01-2024 tot 01-01-2025
+- de gegevens zijn consistent
+
+Scenario jaargrens
+Gegeven is de volgende situatie:
+een Jutter J1
+- is borgplichtig van 30-12-2024 tot 03-01-2025
+Met als verwacht resultaat:
+- de borgdagen van J1 is 2 van 01-12-2024 tot 01-01-2025
+- de borgdagen van J1 is 2 van 01-01-2025 tot 01-02-2025
+- de jaardagen van J1 is 2 van 01-01-2024 tot 01-01-2025
+- de jaardagen van J1 is 2 van 01-01-2025 tot 01-01-2026
+- de gegevens zijn consistent
+
+Scenario leeg
+Gegeven is de volgende situatie:
+een Jutter J1
+Met als verwacht resultaat:
+- de borgdagen van J1 is altijd leeg
+- de jaardagen van J1 is altijd leeg
+- de gegevens zijn consistent
+
+Scenario input blijft
+Gegeven is de volgende situatie:
+een Jutter J1
+- de borgdagen is 99 van 01-03-2024 tot 01-04-2024
+Met als verwacht resultaat:
+- de borgdagen van J1 is 99 van 01-03-2024 tot 01-04-2024
+- de gegevens zijn consistent

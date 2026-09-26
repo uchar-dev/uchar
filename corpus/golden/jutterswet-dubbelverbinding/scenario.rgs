@@ -1,0 +1,157 @@
+Situatie havens met hun schuiten:
+een Haven H1
+- het kadegeld is 40
+- het vlaggenschip is S1
+- is veilig
+een Haven H2
+- het kadegeld is 25
+- is veilig
+een Haven H3
+- het kadegeld is 50
+een Schuit S1
+- de romplengte is 12
+- de thuishaven is H1
+- is gekeurd
+een Schuit S2
+- de romplengte is 7
+- de thuishaven is H1
+een Schuit S3
+- de romplengte is 9
+- de thuishaven is H2
+- is gekeurd
+een Schuit S4
+- de romplengte is 5
+- de thuishaven is H3
+- is gekeurd
+
+Scenario binnen venster
+met peildatum 01-06-2026
+gebaseerd op de situatie havens met hun schuiten
+Met als verwacht resultaat:
+- het liggertal van H1 is 2
+- het liggertal van H2 is 1
+- het liggertal van H3 is 1
+- het wintertal van H1 is 2
+- het wintertal van H2 is 1
+- het wintertal van H3 is 0
+- het keurtal van H1 is 2
+- het keurtal van H2 is 0
+- het keurtal van H3 is 0
+- de ligprijs van S1 is 40
+- de ligprijs van S2 is leeg
+- de ligprijs van S3 is 25
+- de ligprijs van S4 is leeg
+- de vlagprijs van S1 is 40
+- de vlagprijs van S2 is leeg
+- de vlagprijs van S3 is leeg
+- de vlagprijs van S4 is leeg
+- de vlaglengte van H1 is 12
+- de vlaglengte van H2 is leeg
+- de vlaglengte van H3 is leeg
+- de gegevens zijn consistent
+
+Scenario voor venster
+met peildatum 01-02-2026
+gebaseerd op de situatie havens met hun schuiten
+Met als verwacht resultaat:
+- het liggertal van H1 is 2
+- het liggertal van H2 is 1
+- het liggertal van H3 is 1
+- het wintertal van H1 is 0
+- het wintertal van H2 is 0
+- het wintertal van H3 is 0
+- het keurtal van H1 is 0
+- het keurtal van H2 is 0
+- het keurtal van H3 is 0
+- de ligprijs van S1 is leeg
+- de ligprijs van S2 is leeg
+- de ligprijs van S3 is leeg
+- de ligprijs van S4 is leeg
+- de vlagprijs van S1 is 40
+- de vlagprijs van S2 is leeg
+- de vlagprijs van S3 is leeg
+- de vlagprijs van S4 is leeg
+- de vlaglengte van H1 is 12
+- de vlaglengte van H2 is leeg
+- de vlaglengte van H3 is leeg
+- de gegevens zijn consistent
+
+Scenario andere zijde geschreven
+met peildatum 01-06-2026
+Gegeven is de volgende situatie:
+een Haven H1
+- het kadegeld is 40
+- de liggers zijn S1 en S2
+- is veilig
+een Haven H2
+- het kadegeld is 25
+- de liggers zijn S3
+- is veilig
+een Haven H3
+- het kadegeld is 50
+- de liggers zijn S4
+een Schuit S1
+- de romplengte is 12
+- de vlaghaven is H1
+- is gekeurd
+een Schuit S2
+- de romplengte is 7
+een Schuit S3
+- de romplengte is 9
+- is gekeurd
+een Schuit S4
+- de romplengte is 5
+- is gekeurd
+Met als verwacht resultaat:
+- het liggertal van H1 is 2
+- het liggertal van H2 is 1
+- het liggertal van H3 is 1
+- het wintertal van H1 is 2
+- het wintertal van H2 is 1
+- het wintertal van H3 is 0
+- het keurtal van H1 is 2
+- het keurtal van H2 is 0
+- het keurtal van H3 is 0
+- de ligprijs van S1 is 40
+- de ligprijs van S2 is leeg
+- de ligprijs van S3 is 25
+- de ligprijs van S4 is leeg
+- de vlagprijs van S1 is 40
+- de vlagprijs van S2 is leeg
+- de vlagprijs van S3 is leeg
+- de vlagprijs van S4 is leeg
+- de vlaglengte van H1 is 12
+- de vlaglengte van H2 is leeg
+- de vlaglengte van H3 is leeg
+- de gegevens zijn consistent
+
+Scenario twee rollen een schuit
+met peildatum 01-06-2026
+Gegeven is de volgende situatie:
+een Haven H1
+- het kadegeld is 40
+een Haven H2
+- het kadegeld is 35
+een Schuit S1
+- de romplengte is 12
+- de thuishaven is H1
+- is gekeurd
+een Schuit S2
+- de romplengte is 7
+- de thuishaven is H1
+- de winterhaven is H2
+- is gekeurd
+Met als verwacht resultaat:
+- het liggertal van H1 is 2
+- het liggertal van H2 is 0
+- het wintertal van H1 is 0
+- het wintertal van H2 is 1
+- het keurtal van H1 is 0
+- het keurtal van H2 is 1
+- de ligprijs van S1 is leeg
+- de ligprijs van S2 is 35
+- de vlagprijs van S1 is leeg
+- de vlagprijs van S2 is leeg
+- de vlaglengte van H1 is leeg
+- de vlaglengte van H2 is leeg
+- de gegevens zijn consistent

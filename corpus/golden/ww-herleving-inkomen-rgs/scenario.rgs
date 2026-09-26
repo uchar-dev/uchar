@@ -1,0 +1,170 @@
+Scenario herleving
+Gegeven is de volgende situatie:
+een Werknemer W1
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 0,00
+- de eindigingsdatum is 01-05-2025
+- de vervaldatum is 01-09-2025
+- de maxdatum is 30-11-2026
+- is werkloos
+- is omstandigheid vervallen
+Met als verwacht resultaat:
+- W1 heeft recht op uitkering
+- de inkomensgrens van W1 is 2100,00
+- de verstreken periode van W1 is 123 dagen
+- de nieuwe maxdatum van W1 is 02-04-2027
+- de gegevens zijn consistent
+
+Scenario geen eindiging
+Gegeven is de volgende situatie:
+een Werknemer W2
+- het maandloon is 2400,00
+- het maandinkomen is 1800,00
+- het nieuw maandloon is 0,00
+- de maxdatum is 30-11-2026
+- is werkloos
+Met als verwacht resultaat:
+- W2 heeft recht op uitkering
+- de inkomensgrens van W2 is 2100,00
+- de verstreken periode van W2 is leeg
+- de nieuwe maxdatum van W2 is 30-11-2026
+- de gegevens zijn consistent
+
+Scenario blokkade
+Gegeven is de volgende situatie:
+een Werknemer W3
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 2300,00
+- de eindigingsdatum is 01-03-2024
+- de vervaldatum is 01-06-2024
+- de maxdatum is 15-10-2025
+- is werkloos
+- is omstandigheid vervallen
+- is nieuw recht ontstaan
+Met als verwacht resultaat:
+- W3 heeft geen recht op uitkering
+- de inkomensgrens van W3 is 2100,00
+- de verstreken periode van W3 is 92 dagen
+- de nieuwe maxdatum van W3 is 15-01-2026
+- de gegevens zijn consistent
+
+Scenario einde
+Gegeven is de volgende situatie:
+een Werknemer W4
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 0,00
+- de eindigingsdatum is 01-02-2026
+- de maxdatum is 31-08-2026
+- is werkloos
+Met als verwacht resultaat:
+- W4 heeft geen recht op uitkering
+- de inkomensgrens van W4 is 2100,00
+- de verstreken periode van W4 is leeg
+- de nieuwe maxdatum van W4 is 31-08-2026
+- de gegevens zijn consistent
+
+Scenario geen eindiging wel nieuw recht
+Gegeven is de volgende situatie:
+een Werknemer W5
+- het maandloon is 2400,00
+- het maandinkomen is 1800,00
+- het nieuw maandloon is 2300,00
+- de maxdatum is 30-11-2026
+- is werkloos
+- is nieuw recht ontstaan
+Met als verwacht resultaat:
+- W5 heeft recht op uitkering
+- de inkomensgrens van W5 is 2100,00
+- de verstreken periode van W5 is leeg
+- de nieuwe maxdatum van W5 is 30-11-2026
+- de gegevens zijn consistent
+
+Scenario niet werkloos wel vervallen
+Gegeven is de volgende situatie:
+een Werknemer W6
+- het maandloon is 2400,00
+- het maandinkomen is 1800,00
+- het nieuw maandloon is 0,00
+- de vervaldatum is 01-09-2025
+- de maxdatum is 30-11-2026
+- is omstandigheid vervallen
+Met als verwacht resultaat:
+- W6 heeft geen recht op uitkering
+- de inkomensgrens van W6 is 2100,00
+- de verstreken periode van W6 is leeg
+- de nieuwe maxdatum van W6 is 30-11-2026
+- de gegevens zijn consistent
+
+Scenario invoer staat tegen blokkade
+Gegeven is de volgende situatie:
+een Werknemer W7
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 2300,00
+- de eindigingsdatum is 01-03-2024
+- de vervaldatum is 01-06-2024
+- de maxdatum is 15-10-2025
+- is werkloos
+- is omstandigheid vervallen
+- is nieuw recht ontstaan
+- heeft recht op uitkering
+Met als verwacht resultaat:
+- W7 heeft recht op uitkering
+- de gegevens zijn consistent
+
+Scenario niet werkloos boven grens vervallen
+Gegeven is de volgende situatie:
+een Werknemer W8
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 0,00
+- de eindigingsdatum is 01-05-2025
+- de vervaldatum is 01-09-2025
+- de maxdatum is 30-11-2026
+- is omstandigheid vervallen
+Met als verwacht resultaat:
+- W8 heeft geen recht op uitkering
+- de inkomensgrens van W8 is 2100,00
+- de verstreken periode van W8 is 123 dagen
+- de nieuwe maxdatum van W8 is 02-04-2027
+- de gegevens zijn consistent
+
+Scenario geen eindiging wel vervallen en nieuw recht
+Gegeven is de volgende situatie:
+een Werknemer W9
+- het maandloon is 2400,00
+- het maandinkomen is 1800,00
+- het nieuw maandloon is 2300,00
+- de vervaldatum is 01-09-2025
+- de maxdatum is 30-11-2026
+- is werkloos
+- is omstandigheid vervallen
+- is nieuw recht ontstaan
+Met als verwacht resultaat:
+- W9 heeft recht op uitkering
+- de inkomensgrens van W9 is 2100,00
+- de verstreken periode van W9 is leeg
+- de nieuwe maxdatum van W9 is 30-11-2026
+- de gegevens zijn consistent
+
+Scenario nieuw recht onder grens
+Gegeven is de volgende situatie:
+een Werknemer W10
+- het maandloon is 2400,00
+- het maandinkomen is 2500,00
+- het nieuw maandloon is 2000,00
+- de eindigingsdatum is 01-03-2024
+- de vervaldatum is 01-06-2024
+- de maxdatum is 15-10-2025
+- is werkloos
+- is omstandigheid vervallen
+- is nieuw recht ontstaan
+Met als verwacht resultaat:
+- W10 heeft recht op uitkering
+- de inkomensgrens van W10 is 2100,00
+- de verstreken periode van W10 is 92 dagen
+- de nieuwe maxdatum van W10 is 15-01-2026
+- de gegevens zijn consistent

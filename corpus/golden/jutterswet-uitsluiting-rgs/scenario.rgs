@@ -1,0 +1,37 @@
+Scenario geweigerd
+Gegeven is de volgende situatie:
+een Jutter M
+- is vergunning geweigerd
+Met als verwacht resultaat:
+- M is uitgesloten
+- M is niet penninggerechtigd
+- de gegevens zijn consistent
+
+Scenario herroepen
+Gegeven is de volgende situatie:
+een Jutter M
+- is vergunning geweigerd
+- is weigering herroepen
+Met als verwacht resultaat:
+- M is niet uitgesloten
+- M is penninggerechtigd
+- de gegevens zijn consistent
+
+Scenario vervallen
+Gegeven is de volgende situatie:
+een Jutter M
+- is vergunning geweigerd
+- is weigering herroepen
+- is herroeping vervallen
+Met als verwacht resultaat:
+- M is uitgesloten
+- M is niet penninggerechtigd
+- de gegevens zijn consistent
+
+Scenario kaal
+Gegeven is de volgende situatie:
+een Jutter M
+Met als verwacht resultaat:
+- M is niet uitgesloten
+- M is penninggerechtigd
+- de gegevens zijn consistent
