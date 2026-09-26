@@ -750,6 +750,22 @@ public final class IrEmitter {
         return vast;
     }
 
+    private static final java.util.regex.Pattern GEMENGDE_BREUK = java.util.regex.Pattern.compile("-?\\d+_\\d+/\\d+");
+
+    /** The number lexeme the wire carries for a literal's written number (IR-SPEC ch. 4.1): an exact decimal with a
+     *  point, or a rational a/b whose sign stands on the numerator. The frontend keeps what the author wrote, so the
+     *  decimal comma becomes a point here, and a §13.2.5 mixed fraction ("1_1/2", "-0_1/2") becomes its reduced
+     *  rational ("3/2", "-1/2"): the verifier, ref, clingo and the Drools loader read no mixed form, and a document
+     *  carrying one was refused by every reader. The author's spelling stays in the source snippet. The resolver
+     *  names this lexeme in its sign refusal, so both read it here. */
+    public static String getalLexeem(String waarde) {
+        if (!GEMENGDE_BREUK.matcher(waarde).matches()) return waarde.replace(',', '.');
+        BigDecimal[] r = dev.uchar.regelspraak.model.Rationaal.van(waarde);
+        java.math.BigInteger teller = r[0].toBigIntegerExact(), noemer = r[1].toBigIntegerExact();
+        java.math.BigInteger deler = teller.gcd(noemer);
+        return teller.divide(deler) + "/" + noemer.divide(deler);
+    }
+
     /** IR-SPEC ch. 4.1: the value variant of a literal, chosen by its type — a number (a percentage included), a
      *  boolean, a text, a date of day and of millisecond precision, an enumeration label. The frontend has no sum
      *  type, so it never writes the constructor variant. Without a type there is no variant to choose, and a boolean
@@ -809,8 +825,7 @@ public final class IrEmitter {
                 w.key(variant);
                 switch (variant) {
                     case "boolean" -> w.value(l.waarde().equals("waar"));
-                    // the frontend keeps the decimal comma the author wrote; the wire's number is written with a point
-                    case "number" -> w.value(l.waarde().replace(',', '.'));
+                    case "number" -> w.value(getalLexeem(l.waarde()));
                     default -> w.value(l.waarde());
                 }
                 w.endObject();

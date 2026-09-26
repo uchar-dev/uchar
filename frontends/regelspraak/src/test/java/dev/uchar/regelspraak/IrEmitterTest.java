@@ -349,6 +349,54 @@ class IrEmitterTest {
                 () -> "het %-teken mag niet in het literal-lexeme zitten:\n" + c);
     }
 
+    @Test void gemengde_breuk_wordt_het_gereduceerde_rationaal() {
+        // IR-SPEC ch. 4.1: a number lexeme is an exact decimal or a rational a/b with the sign on the numerator; no
+        // reader takes the §13.2.5 mixed form, so the emitter writes its reduced rational and the source keeps the
+        // author's spelling. A proper fraction is already a wire rational and goes out as written.
+        String src = """
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (niet-negatief geheel getal);
+                het strandgeld Numeriek (niet-negatief getal met 2 decimalen);
+                de gemeentekorting Numeriek (getal met 2 decimalen);
+                het havendeel Numeriek (niet-negatief getal met 2 decimalen);
+                het gemeentedeel Numeriek (niet-negatief getal met 2 decimalen);
+            Regel strandgeld
+                geldig altijd
+                    Het strandgeld van een Vondst moet berekend worden als zijn gewicht maal 1_1/2.
+            Regel gemeentekorting
+                geldig altijd
+                    De gemeentekorting van een Vondst moet berekend worden als zijn gewicht maal -0_1/2.
+            Regel havendeel
+                geldig altijd
+                    Het havendeel van een Vondst moet berekend worden als zijn gewicht maal 1_2/4.
+            Regel gemeentedeel
+                geldig altijd
+                    Het gemeentedeel van een Vondst moet berekend worden als zijn gewicht maal 3/4.
+            """;
+        String c = emitCompact(src);
+        for (String[] paar : new String[][]{{"1_1/2", "3/2"}, {"-0_1/2", "-1/2"}, {"1_2/4", "3/2"}, {"3/4", "3/4"}}) {
+            assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"" + paar[1] + "\"},"),
+                    () -> "'" + paar[0] + "' hoort als het rationaal '" + paar[1] + "' op de wire te staan:\n" + c);
+            assertTrue(c.contains("\"source\":{\"snippet\":\"" + paar[0] + "\"}"),
+                    () -> "de bron houdt de spelling '" + paar[0] + "':\n" + c);
+        }
+        assertFalse(c.matches("(?s).*\"number\":\"[^\"]*_.*"), () -> "geen gemengde breuk als getallexeem:\n" + c);
+    }
+
+    @Test void de_tekenweigering_noemt_het_lexeem_van_de_wire() {
+        // the resolver names the literal the emitter writes, so a mixed fraction is named in its wire form
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                het strandgeld Numeriek (niet-negatief getal met 2 decimalen);
+            Regel strandgeld
+                geldig altijd
+                    Het strandgeld van een Vondst moet gesteld worden op -0_1/2.
+            """);
+        assertTrue(m.errors().stream().anyMatch(d -> d.message().equals("teken-beperking: negative literal '-1/2' is "
+                        + "written into a target under a non-negative sign restriction")),
+                () -> "de weigering noemt het rationaal van de wire: " + m.diagnostics);
+    }
+
     @Test void datum_literal_lexeme_is_iso_snippet_in_bron() {
         // uchar WF-084 (IR-SPEC ch. 4.1): a date literal's value is the BARE ISO lexeme the uchar
         // executors parse (yyyy-mm-dd), NOT the Dutch day-first source snippet ("31-01-2024"). The

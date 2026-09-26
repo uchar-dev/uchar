@@ -3481,7 +3481,7 @@ final class RuleChecker {
         if (!(waarde instanceof Expr.Literal lit) || lit.type() == null || !lit.type().isNumeriek()) return;
         java.math.BigDecimal v = Literalen.getal(lit);
         if (v == null) return;
-        String w = lit.waarde().replace(',', '.');   // the lexeme IrEmitter writes
+        String w = dev.uchar.regelspraak.emit.IrEmitter.getalLexeem(lit.waarde());   // the lexeme IrEmitter writes
         String zin = switch (n.teken()) {
             case NIET_NEGATIEF -> v.signum() < 0 ? "negative literal '" + w + "'" : null;
             case POSITIEF      -> v.signum() > 0 ? null : "literal '" + w + "'";
