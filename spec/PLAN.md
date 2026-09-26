@@ -946,6 +946,22 @@ scope's forms — the default reading is the service's (a scope selects
 rule-layer forms and carries the document-level declarations), to be taken
 up when the scenario layer next moves.
 
+**The workbench moved (2026-09-26, the same evening):** the UWV workbench
+now carries the distribution as its `toolchain` submodule and calls it
+only through `bin/regelspraak`; the old repository `yhavinga/regelspraak-java`
+is archived. Measured on the UWV rule sets, which their authors rewrite
+anyway: one set resolves and its service smoke passes, but 15 of its 36
+scenarios fail, all for one reason a read-only diagnosis pinned — the
+scope filter of the scenario layer (above, and `DIVERGENCES.md`), where
+the old runner fired the whole document; no rule computes differently
+(with every scope completed, 36 of 36 pass in both). A second set fails
+on the unit-typing decision (17b/17c), a third on a nested collection
+step in a fold source the frontend does not carry (dialect §13.4.17).
+Recorded, not opened: the scenario route lacks the scope-completeness
+check the distribution's service performs (a scope that misses a rule
+supplying a read value fails without a word where the service refuses to
+start), and the nested collection step in a fold source.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
