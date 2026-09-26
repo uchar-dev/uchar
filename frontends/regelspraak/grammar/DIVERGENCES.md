@@ -1700,7 +1700,8 @@ The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
 or `make ir FILE="bron.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
 sources are read as one test document. A model with an ERROR writes neither
 the IR document nor a case file; each diagnostic names its file and the line
-in it. Every file is decided before one is written, and a map that already
+in it (`ERROR (<file>:<line>): …`), and no line of the chain of files. Every
+file is decided before one is written, and a map that already
 holds a case file this document does not write is refused (it is not
 cleaned): a case left beside the new ones would be replayed against an IR
 document it was not written for. A case file the run writes itself is

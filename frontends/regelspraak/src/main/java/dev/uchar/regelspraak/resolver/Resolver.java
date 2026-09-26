@@ -237,17 +237,20 @@ public final class Resolver {
                     + "geen casebestand te schrijven", 0));
         RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
                 : dev.uchar.regelspraak.emit.CaseEmitter.metScope(m, b.scenarios().get(0).scope());
-        // one chain of files, one line count: each diagnostic names the file and the line in it as well
-        java.util.function.Function<Diagnostic, String> plaats = d -> {
+        // one chain of files, one line count: each diagnostic names the file and the line in that file, and only
+        // those — the line in the chain means nothing to the author
+        java.util.function.Function<Diagnostic, String> melding = d -> {
+            if (d.line() <= 0) return "  " + d.severity() + ": " + d.message();
             int i = eersteRegels.size() - 1;
             while (i > 0 && eersteRegels.get(i) > d.line()) i--;
-            return d.line() <= 0 ? "" : " [" + bestanden.get(i) + ":" + (d.line() - eersteRegels.get(i) + 1) + "]";
+            return "  " + d.severity() + " (" + bestanden.get(i) + ":" + (d.line() - eersteRegels.get(i) + 1) + "): "
+                    + d.message();
         };
         if (!m.isOk()) {
-            m.diagnostics.forEach(d -> System.out.println("  " + d + plaats.apply(d)));
+            m.diagnostics.forEach(d -> System.out.println(melding.apply(d)));
             return 1;
         }
-        m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println("  " + d + plaats.apply(d)));
+        m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println(melding.apply(d)));
         dev.uchar.regelspraak.emit.IrEmitter.ongeschrevenVerdelingen(irModel)
                 .forEach(d -> System.err.println("  " + d));
         // Everything is decided before anything is written: the IR document and every case file as text, and the

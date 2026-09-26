@@ -602,8 +602,10 @@ class ScenarioLoweringTest {
                 "met peildatum 15-03-2024 12:00:00.000"));
         Uitvoer u = cli(d.resolve("ir.json"), d.resolve("cases"), bron, scen);
         assertEquals(1, u.code());
-        assertTrue(u.tekst().contains("de peildatum '15-03-2024 12:00:00.000' draagt een tijd")
-                && u.tekst().contains("scenario.rgs:2]"), u.tekst());
+        // one line number, the one in the file: before, the line in the chain of files came first ("(line 64)")
+        assertTrue(u.tekst().contains("  ERROR (" + scen + ":2): scenario: de peildatum '15-03-2024 12:00:00.000' "
+                + "draagt een tijd"), u.tekst());
+        assertFalse(u.tekst().contains("(line "), u.tekst());
         assertFalse(Files.exists(d.resolve("ir.json")), "een weigering schrijft geen IR-document");
         assertEquals(List.of(), bestanden(d.resolve("cases")), "een weigering schrijft geen casebestand");
     }
