@@ -61,6 +61,29 @@ public final class RegelSpraakModel {
     public final List<dev.uchar.regelspraak.ir.PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
+    /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
+     *  document of the scenario lowering starts from it and drops only the forms its scope does not carry. The copy
+     *  walks the public collection fields by reflection, so a collection the model gains later is copied without a
+     *  second edit: a field-by-field copy left such a collection empty in every scoped document, with no test to
+     *  notice. */
+    @SuppressWarnings("unchecked")
+    public RegelSpraakModel kopie() {
+        RegelSpraakModel k = new RegelSpraakModel();
+        for (java.lang.reflect.Field f : RegelSpraakModel.class.getFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+            try {
+                Object van = f.get(this), naar = f.get(k);
+                if (van instanceof List<?> l) ((List<Object>) naar).addAll(l);
+                else if (van instanceof Map<?, ?> mp) ((Map<Object, Object>) naar).putAll(mp);
+                else throw new IllegalStateException("RegelSpraakModel.kopie: het veld '" + f.getName()
+                        + "' is geen lijst of kaart en heeft geen kopieerregel");
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("RegelSpraakModel.kopie: het veld '" + f.getName() + "'", e);
+            }
+        }
+        return k;
+    }
+
     /** §9.10 the group a rule belongs to, given an EMITTED rule name — which is the bare member name, optionally
      *  with a §13.4.2.3 version suffix ("<naam> #k") or a back-end-derived qualifier ("<naam> (onverdeelde rest)").
      *  Matches the LONGEST group member name that is a prefix of {@code geëmitteerdeNaam} at a token boundary (end,

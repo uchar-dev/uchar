@@ -3,6 +3,7 @@ package dev.uchar.regelspraak;
 import dev.uchar.regelspraak.emit.CaseEmitter;
 import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
@@ -325,6 +326,171 @@ class ScenarioLoweringTest {
         ResolvedScenario s = enig(goed);
         assertEquals(IrEmitter.emit(Resolver.resolve(dialect)), IrEmitter.emit(CaseEmitter.metScope(goed.model(), s.scope())),
                 "de basisregel draagt de hele defaultsgroep");
+    }
+
+    // ---------------- the scoped document is a copy of the whole model ----------------
+
+    /** A document that fills every collection of the model: each wire section, a WARNING among the diagnostics. */
+    private static final String RIJK = """
+        Eenheidsysteem Munt
+            de euro (mv: euros) EUR €
+
+        Domein Vondstklasse is van het type Enumeratie
+            'drijfgoed'
+            'wrakgoed'
+
+        Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+            1. voorjaar
+            2. najaar
+
+        Tijdlijn het wachtjaar heeft tijdvakken van een jaar met variabel startpunt;
+
+        Dagsoort de havendag (mv: havendagen);
+
+        Parameter de vondstdrempel : Numeriek (geheel getal)
+
+        Objecttype de Haven (mv: Havens)
+            de naam Tekst;
+            de opbrengst Numeriek (geheel getal) met eenheid €;
+            de onverdeelde rest Numeriek (geheel getal) met eenheid €;
+            de vangst Numeriek (geheel getal);
+            is veilig kenmerk (bijvoeglijk);
+
+        Objecttype de Schuit (mv: Schuiten)
+            de naam Tekst;
+            het nummer Numeriek (geheel getal);
+            het aandeel Numeriek (geheel getal) met eenheid €;
+            de vondstklasse Vondstklasse;
+            de seizoensvangst Numeriek (geheel getal) gedimensioneerd met seizoen;
+            de aanvangsdatum Datum in dagen;
+            de wachtdagen Numeriek (geheel getal) voor elke wachtjaar;
+            de romplengte Numeriek (geheel getal);
+            is gekeurd kenmerk (bijvoeglijk);
+            is gemeld kenmerk (bijvoeglijk);
+
+        Feittype thuisligging
+            de thuishaven Haven
+            de ligger (mv: liggers) Schuit
+        Eén thuishaven telt meerdere liggers
+
+        Feittype winterberging
+            de winterhaven Haven
+            de winterschuit (mv: winterschuiten) Schuit
+        Eén winterhaven telt meerdere winterschuiten
+
+        Regel Dagsoortdefinitie havendag
+            geldig altijd
+                Een dag is een havendag
+                indien de dag uit de dag gelijk is aan 1.
+
+        Regel startpunt wachtjaar
+            geldig altijd
+                Het startpunt van het wachtjaar voor een Schuit wordt bepaald door zijn aanvangsdatum.
+
+        Regel romplengte
+            geldig altijd
+                De romplengte van een Schuit moet gesteld worden op de vondstdrempel.
+
+        Regel keuring
+            geldig altijd
+                Een Schuit is gekeurd
+                indien zijn romplengte groter is dan 3.
+
+        Uitzondering op keuring: geen keuring
+            geldig altijd
+                Een Schuit is niet gekeurd
+                indien zijn nummer groter is dan 9.
+
+        Regelgroep meldingen
+        Regel melding
+            geldig altijd
+                Een Schuit is gemeld
+                indien zijn nummer groter is dan 1.
+
+        Regel nieuwe ligger
+            geldig altijd
+                Een Haven heeft een ligger met romplengte gelijk aan 3
+                indien de Haven veilig is.
+
+        Regel winterligging
+            geldig altijd
+                Een winterschuit van een Haven is een ligger van de Haven
+                indien de Haven veilig is.
+
+        Regel verdeel de opbrengst
+            geldig altijd
+                De opbrengst van een Haven wordt verdeeld over de aandelen van alle liggers van de Haven, waarbij wordt verdeeld:
+                - in gelijke delen,
+                - afgerond op 0 decimalen naar beneden.
+                Als onverdeelde rest blijft de onverdeelde rest van de Haven over.
+
+        Regel nummer positief
+            geldig altijd
+                Het nummer van een Schuit moet groter zijn dan 0.
+
+        Regel nummers uniek
+            geldig altijd
+                De nummers van alle Schuiten moeten uniek zijn.
+
+        Regel namen uniek
+            geldig altijd
+                De namen van alle Havens verenigd met de namen van alle Schuiten moeten uniek zijn.
+
+        Regel vangst
+            geldig altijd
+                De vangst van een Haven moet gesteld worden op de som van het maximum van de romplengte van alle liggers van de Haven.
+        """;
+
+    @SuppressWarnings("unchecked")
+    private static List<java.lang.reflect.Field> verzamelingen() {
+        List<java.lang.reflect.Field> uit = new ArrayList<>();
+        for (java.lang.reflect.Field f : RegelSpraakModel.class.getFields())
+            if (!java.lang.reflect.Modifier.isStatic(f.getModifiers())) uit.add(f);
+        return uit;
+    }
+
+    private static boolean leeg(Object v) {
+        return v instanceof java.util.Collection<?> c ? c.isEmpty() : ((java.util.Map<?, ?>) v).isEmpty();
+    }
+
+    /** Every element of every collection reaches the copy the scoped document starts from. Before: a copy field by
+     *  field, from which a mutant could leave eight declaration collections out with every test green. */
+    @SuppressWarnings("unchecked")
+    @Test void de_kopie_draagt_elke_verzameling_van_het_model() throws IllegalAccessException {
+        RegelSpraakModel m = new RegelSpraakModel();
+        Object merk = new Object();
+        for (java.lang.reflect.Field f : verzamelingen()) {
+            if (f.get(m) instanceof List<?> l) ((List<Object>) l).add(merk);
+            else ((java.util.Map<Object, Object>) f.get(m)).put(merk, merk);
+        }
+        RegelSpraakModel k = m.kopie();
+        for (java.lang.reflect.Field f : verzamelingen()) {
+            Object v = f.get(k);
+            assertTrue(v instanceof List<?> l ? l.contains(merk) : ((java.util.Map<?, ?>) v).containsKey(merk),
+                    () -> "de kopie mist het veld '" + f.getName() + "'");
+        }
+        assertTrue(verzamelingen().size() >= 22, "het model telt minder verzamelingen dan gemeten (22)");
+    }
+
+    /** A scope that names every form of a model that fills every collection leaves the production document, byte for
+     *  byte. The model carries a start point determination, which the scenario route refuses beside a scope, so the
+     *  scope is built here from the model's own form names. */
+    @Test void een_scope_die_alles_noemt_is_het_productiedocument() throws IllegalAccessException {
+        RegelSpraakModel m = Resolver.resolve(RIJK);
+        assertTrue(m.errors().isEmpty(), () -> "het rijke document hoort schoon te resolven: " + m.errors());
+        for (java.lang.reflect.Field f : verzamelingen())
+            assertFalse(leeg(f.get(m)), () -> "het rijke document vult '" + f.getName() + "' niet");
+        List<String> namen = new ArrayList<>();
+        m.resolvedRegels.forEach(r -> namen.add(r.naam()));
+        m.objectCreaties.forEach(x -> namen.add(x.naam()));
+        m.verdelingen.forEach(x -> namen.add(x.naam()));
+        m.consistenties.forEach(x -> namen.add(x.naam()));
+        m.uniciteiten.forEach(x -> namen.add(x.naam()));
+        m.uniciteitUnies.forEach(x -> namen.add(x.naam()));
+        m.feitCreaties.forEach(x -> namen.add(x.naam()));
+        m.prioritizedDefaults.forEach(x -> namen.add(x.naam()));
+        ResolvedScenario.Scope alles = new ResolvedScenario.Scope(ResolvedScenario.ScopeSoort.MEERDERE_REGELS, namen, namen);
+        assertEquals(IrEmitter.emit(m), IrEmitter.emit(CaseEmitter.metScope(m, alles)));
     }
 
     // ---------------- the CLI ----------------

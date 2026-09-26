@@ -40,40 +40,28 @@ public final class CaseEmitter {
         return zonderTekens.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
     }
 
-    /** The model the IR document is emitted from: {@code m} itself without a scope, and with one a copy that keeps
-     *  the declarations, the day-kind definitions, the start points and the diagnostics whole and every named form
-     *  the scope carries. A rule group keeps its carried members and is dropped when none is left. */
+    /** The model the IR document is emitted from: {@code m} itself without a scope, and with one a copy of the whole
+     *  model ({@link RegelSpraakModel#kopie}) from which every named form the scope does not carry is dropped. A rule
+     *  group keeps its carried members and is dropped when none is left. */
     public static RegelSpraakModel metScope(RegelSpraakModel m, Scope scope) {
         if (scope == null) return m;
         Set<String> namen = new HashSet<>();
         for (String v : scope.vormen()) namen.add(norm(v));
         Predicate<String> draagt = naam -> namen.contains(norm(basisNaam(naam)));
-        RegelSpraakModel k = new RegelSpraakModel();
-        k.objecttypen.putAll(m.objecttypen);
-        k.domeinen.putAll(m.domeinen);
-        k.parameters.putAll(m.parameters);
-        k.eenheidstelsels.putAll(m.eenheidstelsels);
-        k.feittypen.putAll(m.feittypen);
-        k.dagsoorten.addAll(m.dagsoorten);
-        k.dagsoortPerEenheid.putAll(m.dagsoortPerEenheid);
-        k.tijdlijnen.addAll(m.tijdlijnen);
-        k.dimensies.putAll(m.dimensies);
-        k.regels.addAll(m.regels);
-        m.resolvedRegels.stream().filter(r -> draagt.test(r.naam())).forEach(k.resolvedRegels::add);
-        k.resolvedDagsoorten.addAll(m.resolvedDagsoorten);
-        m.objectCreaties.stream().filter(x -> draagt.test(x.naam())).forEach(k.objectCreaties::add);
-        m.verdelingen.stream().filter(x -> draagt.test(x.naam())).forEach(k.verdelingen::add);
-        m.consistenties.stream().filter(x -> draagt.test(x.naam())).forEach(k.consistenties::add);
-        m.uniciteiten.stream().filter(x -> draagt.test(x.naam())).forEach(k.uniciteiten::add);
-        m.uniciteitUnies.stream().filter(x -> draagt.test(x.naam())).forEach(k.uniciteitUnies::add);
-        m.feitCreaties.stream().filter(x -> draagt.test(x.naam())).forEach(k.feitCreaties::add);
-        k.resolvedStartpunten.addAll(m.resolvedStartpunten);
+        RegelSpraakModel k = m.kopie();
+        k.resolvedRegels.removeIf(r -> !draagt.test(r.naam()));
+        k.objectCreaties.removeIf(x -> !draagt.test(x.naam()));
+        k.verdelingen.removeIf(x -> !draagt.test(x.naam()));
+        k.consistenties.removeIf(x -> !draagt.test(x.naam()));
+        k.uniciteiten.removeIf(x -> !draagt.test(x.naam()));
+        k.uniciteitUnies.removeIf(x -> !draagt.test(x.naam()));
+        k.feitCreaties.removeIf(x -> !draagt.test(x.naam()));
+        k.prioritizedDefaults.removeIf(x -> !draagt.test(x.naam()));
+        k.regelGroepen.clear();
         for (ResolvedRegelGroep g : m.regelGroepen) {
             List<String> leden = g.leden().stream().filter(draagt).toList();
             if (!leden.isEmpty()) k.regelGroepen.add(new ResolvedRegelGroep(g.naam(), g.recursief(), leden, g.bron(), g.line()));
         }
-        m.prioritizedDefaults.stream().filter(x -> draagt.test(x.naam())).forEach(k.prioritizedDefaults::add);
-        k.diagnostics.addAll(m.diagnostics);
         return k;
     }
 
