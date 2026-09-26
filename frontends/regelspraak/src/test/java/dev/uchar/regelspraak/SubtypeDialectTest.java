@@ -6,6 +6,8 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -894,7 +896,7 @@ class SubtypeDialectTest {
         // upper-bound filler test would wave that through (Wrakrecht ⊑ Strandrecht) and the fold would go
         // out bound to a relation the sentence never named: verifier-clean, and quietly folding the wrong
         // set. The binding therefore demands the role declare the element type ITSELF, and where it does
-        // not there is no range to write — so the emitter refuses the model, which is the outcome to want.
+        // not there is no range to write — so the resolver refuses the model, which is the outcome to want.
         String src = """
             Objecttype het Strandrecht (mv: Strandrechten)
                 de uitkering Numeriek (niet-negatief getal met 2 decimalen);
@@ -920,9 +922,12 @@ class SubtypeDialectTest {
                     Het uitkeringstotaal van een Kustgemeente moet berekend worden als de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 als die er niet zijn.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m),
+        assertEquals(List.of("vouw 'de som van de uitkering van alle geborgen wrakrechten van de Kustgemeente of 0,00 "
+                        + "als die er niet zijn' zonder bereik (2 relaties verbinden Kustgemeente met Wrakrecht, en 'alle "
+                        + "geborgen wrakrechten van de Kustgemeente' noemt geen rol die er precies één aanwijst): a "
+                        + "single-argument fold with an elementType carries its range (sourceRole or sourcePath) under "
+                        + "every kind but total: the range is written, never derived"),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList(),
                 "de vouwbron mag niet binden op een relatie die de zin niet noemt — stil de verkeerde verzameling");
-        assertTrue(e.getMessage().contains("geen unieke relatie van Kustgemeente naar Wrakrecht"), e::getMessage);
     }
 }

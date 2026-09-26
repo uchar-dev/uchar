@@ -1022,6 +1022,61 @@ the verifier line, recorded in the card. Witness: `DimensieDoelTest`.
 
 ---
 
+## §13.4.1 A navigated read binds its written role
+
+Not a dialect extension and not inert on every document: the reading this
+frontend takes where v2.3.0 leaves the choice open, and a narrowing where it
+defines nothing. A fact type declares each role by a name of its own beside
+the filler type's name (§13.3.9), so a role may carry its type's name and one
+role name may occur in two fact types. v2.3.0 lets a subject reference name an
+object type or a role (§13.4.1), and a role navigates the fact type it belongs
+to (§5.5.5); it does not say which reading wins for a noun that is both, and
+it gives a read that names another object type than the rule's no navigation
+at all (a reference by type name points back to a subject of that type,
+§5.5.3). The frontend reads it this way (maintainer decision 2026-09-26):
+
+1. A written role name binds the one relation in which a role of that name,
+   reachable from the subject, is filled by the type read — however many
+   relations join the two types. This was already so.
+2. A noun that is the other type's name and also the declared name or
+   declared plural of a role binds that role when the type pair alone does
+   not decide, as a written role does: "het kadegeld van de haven" on a
+   Schuit, where one of two relations between Schuit and Haven names its
+   Haven role `haven`. Until 2026-09-26 the type reading won, the pair was
+   ambiguous, and the emitter ended in an exception.
+3. A type name that names no such role binds by the type pair, and only where
+   exactly one relation joins the two types. That derivation is a convenience
+   of this frontend; v2.3.0 has no such navigation.
+4. Every other navigated read is refused with an ERROR
+   (`RuleChecker.keurNavigatiebindingen`, over what the emitter writes, from
+   the subject it writes each read from). Where the read names another type
+   than the subject's, the refusal is the verifier's WF-053 sentence for the
+   document without a path (`an attribute reference without a path is the
+   subject's own read, …`); where it names the subject's own type — a written
+   role that two relations of a self-relation carry — or has no subject, that
+   document is the subject's own read, which no reader refuses, and the
+   refusal keeps this frontend's words. The Dutch part before the sentence
+   says what did not bind: no relation, a reciprocal one, several of which the
+   written name picks none, or a written role or chain.
+
+A fold's range follows the same order: the count source by its written name
+and then by the pair, a set reading by the pair and then by the written name
+(whose role must declare the element type itself). A fold without a range is
+refused with an ERROR in the loader's sentence (`a single-argument fold with an
+elementType carries its range … : the range is written, never derived`), and
+under a total whose element is another type in WF-083's sentence; a total
+over the subject's own type without a range keeps this frontend's words.
+
+Measured before the change (2026-09-26): with two relations between Schuit and
+Haven, a read by type name, a read with no relation, and the noun of case 2
+each ended in an `IllegalStateException` of the emitter, and so did a count or
+a sum over the type's plural with two relations or none. Now case 2 binds and
+the others end in the ERROR; every rgs golden and every source of the parity
+zone re-emits unchanged (gates 10 and 11), since each read that binds now threw
+before. Witnesses: `NavigatiekeuzeTest`, `TelbereikTest`, `SubtypeDialectTest`.
+
+---
+
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
 
 Unlike the three sections above this is **not** a dialect extension and it is
@@ -1760,7 +1815,11 @@ recursive group whose only creation member is a relation creation, which §9.10
 does not count as the recursion's carrier and the verifier admits (ch. 5.5);
 overlapping versions of a day-kind definition, which WF-021 does not compare (a
 second definition of one day kind and a bounded window are WF-031's, refused
-beside the overlap in its sentences); a window bound that navigates where no
+beside the overlap in its sentences); a navigated read that binds nothing where
+it names the subject's own type or has no subject, and a total over the
+subject's own type without a range, since the document without the path or
+the range is the subject's own read (§13.4.1 above); a window bound that
+navigates where no
 path is derivable — a read of another object type, a sub- or supertype of the
 subject included, that no fact type reaches, or a written navigation without a
 derivable path — since the emitter then writes no navigation: it refuses the

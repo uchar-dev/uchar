@@ -111,6 +111,7 @@ final class RuleChecker {
         // §7 a read of a generated member closes a cycle only once the writers have moved to 'berekende X'
         keurKringverwijzingenNaOpgave();
         keurVensterposities(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
+        keurNavigatiebindingen();   // a read or a fold the emitter could write only with a binding none supplies
     }
 
     /**
@@ -697,6 +698,179 @@ final class RuleChecker {
     private static boolean teltOfOntkent(Conditie.Kwantor k) {
         return k == Conditie.Kwantor.GEEN || k == Conditie.Kwantor.TEN_MINSTE
                 || k == Conditie.Kwantor.TEN_HOOGSTE || k == Conditie.Kwantor.PRECIES;
+    }
+
+    /**
+     * A navigated read or a fold's range that no binding supplies (IR-SPEC ch. 4.1a, ch. 4.3). The emitter writes a
+     * path or a range only where one relation is derivable — by the written role or chain; else by the one relation
+     * between the two types, or, where the pair has several, by the role the written noun names — and refuses the
+     * model otherwise: written without it, the read would be the subject's own and the fold would have no range
+     * (grammar/DIVERGENCES.md, "§13.4.1 A navigated read binds its written role"). This walk finds those positions
+     * first and refuses them with an ERROR, so a model this resolver built never reaches the emitter's refusal. The
+     * two tests are the emitter's own ({@link dev.uchar.regelspraak.emit.IrEmitter#ongebondenLezing},
+     * {@link dev.uchar.regelspraak.emit.IrEmitter#ongebondenBereik}); the walk follows the emitter's traversal —
+     * after the lift, so the defaults are covered — and each position's subject is the one the emitter writes it
+     * from. A set reading and a window bound are left out: the set fence and the window's own check refuse every
+     * one of those that navigates, so one defect keeps one refusal.
+     */
+    private void keurNavigatiebindingen() {
+        Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (ResolvedRegel r : model.resolvedRegels) {
+            Objecttype s = r.doel() instanceof Expr.AttribuutRef d ? d.objecttype() : null;
+            navigatiebinding(r.waarde(), s, gemeld);
+            navigatiebinding(r.voorwaarde(), s, gemeld);
+        }
+        for (var d : model.resolvedDagsoorten) navigatiebinding(d.voorwaarde(), null, gemeld);
+        for (var oc : model.objectCreaties) {
+            for (var t : oc.toekenningen()) navigatiebinding(t.waarde(), oc.subject(), gemeld);
+            navigatiebinding(oc.voorwaarde(), oc.subject(), gemeld);
+        }
+        for (var v : model.verdelingen)
+            if (v.methode() != ResolvedVerdeling.Methode.COMPLEX) navigatiebinding(v.voorwaarde(), v.bronType(), gemeld);
+        for (var c : model.consistenties) navigatiebinding(c.assertie(), c.subject(), gemeld);
+        for (var fc : model.feitCreaties) navigatiebinding(fc.voorwaarde(), fc.anker(), gemeld);
+        for (var pd : model.prioritizedDefaults)
+            navigatiebindingDefaults(pd.defaults(), model.objecttypen.get(pd.onderwerp()), gemeld);
+    }
+
+    /** A carrier's conjuncts repeat under its exceptions as the very same nodes, so {@code gemeld} keeps one
+     *  refusal per node. */
+    private void navigatiebindingDefaults(List<Default> defaults, Objecttype subject, Set<Object> gemeld) {
+        if (defaults == null) return;
+        for (Default d : defaults) {
+            navigatiebinding(d.voorwaarde(), subject, gemeld);
+            navigatiebinding(d.consequentie(), subject, gemeld);
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden()) navigatiebindingDefaults(g.defaults(), subject, gemeld);
+        }
+    }
+
+    private void navigatiebinding(Expr e, Objecttype subject, Set<Object> gemeld) {
+        if (e == null) return;
+        switch (e) {
+            case Expr.AttribuutRef a -> {
+                if (!a.set() && dev.uchar.regelspraak.emit.IrEmitter.ongebondenLezing(model, subject, a)
+                        && gemeld.add(a))
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, ongebondenLezingFout(a, subject),
+                            a.bron().line()));
+            }
+            case Expr.Functie f -> {
+                boolean vouwbron = dev.uchar.regelspraak.emit.IrEmitter.isVouwbron(f);
+                if (dev.uchar.regelspraak.emit.IrEmitter.ongebondenBereik(model, subject, f) && gemeld.add(f))
+                    model.diagnostics.add(new Diagnostic(Severity.ERROR, ongebondenBereikFout(f, subject),
+                            f.bron().line()));
+                // a fold's source is read through its range, never as a read of its own
+                for (int i = vouwbron ? 1 : 0; i < f.argumenten().size(); i++)
+                    navigatiebinding(f.argumenten().get(i), subject, gemeld);
+                navigatiebinding(f.leegwaarde(), subject, gemeld);
+                // the filter reads each contributor; a dimension fold has none and reads the subject's labels
+                Objecttype element = f.dimensieSelectie() == null ? f.elementObjecttype() : null;
+                navigatiebinding(f.filter(), element != null ? element : subject, gemeld);
+            }
+            case Expr.Binair b -> {
+                navigatiebinding(b.links(), subject, gemeld);
+                navigatiebinding(b.rechts(), subject, gemeld);
+            }
+            case Expr.Afgerond a -> navigatiebinding(a.basis(), subject, gemeld);
+            case Expr.Begrensd b -> {
+                navigatiebinding(b.basis(), subject, gemeld);
+                navigatiebinding(b.minimum(), subject, gemeld);
+                navigatiebinding(b.maximum(), subject, gemeld);
+            }
+            case Expr.TekstReeks t -> {
+                for (Expr.TekstReeks.Deel d : t.delen())
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) navigatiebinding(i.expr(), subject, gemeld);
+            }
+            case Expr.DimensieCel c -> navigatiebinding(c.attribuut(), subject, gemeld);
+            case Expr.Let l -> {
+                navigatiebinding(l.value(), subject, gemeld);
+                navigatiebinding(l.body(), subject, gemeld);
+            }
+            case Expr.InstanceSetUnion u -> u.takken().forEach(t ->
+                    navigatiebinding(t.filter(), t.elementType() != null ? t.elementType() : subject, gemeld));
+            // the emitter writes no conditional expression at all (IR-SPEC ch. 4.10), so nothing is read below it
+            case Expr.IfThenElse ignored -> { }
+            case Expr.Literal ignored -> { }
+            case Expr.ParameterRef ignored -> { }
+            case Expr.VariabeleRef ignored -> { }
+            case Expr.BinderRef ignored -> { }
+            case Expr.Constante ignored -> { }
+            case Expr.Onopgelost ignored -> { }
+        }
+    }
+
+    private void navigatiebinding(Conditie c, Objecttype subject, Set<Object> gemeld) {
+        if (c == null) return;
+        switch (c) {
+            case Conditie.Vergelijking v -> {
+                navigatiebinding(v.links(), subject, gemeld);
+                navigatiebinding(v.rechts(), subject, gemeld);
+            }
+            case Conditie.Predicaat p -> navigatiebinding(p.operand(), subject, gemeld);
+            case Conditie.Samengesteld s -> s.onderdelen().forEach(o -> navigatiebinding(o, subject, gemeld));
+            // the filter and the test read each contributor
+            case Conditie.Kwantorvouw k -> {
+                Objecttype element = k.elementObjecttype() != null ? k.elementObjecttype() : subject;
+                navigatiebinding(k.filter(), element, gemeld);
+                navigatiebinding(k.toets(), element, gemeld);
+            }
+            case Conditie.Periode ignored -> { }       // every bound that navigates is the window check's refusal
+            case Conditie.Kenmerk ignored -> { }
+            case Conditie.Rollidmaatschap ignored -> { }
+            case Conditie.VerreRollidmaatschap ignored -> { }
+            case Conditie.Regelversie ignored -> { }
+            case Conditie.Onopgelost ignored -> { }
+        }
+    }
+
+    /** The refusal of a read without a binding: what did not bind, then the verifier's WF-053 sentence for the
+     *  document the emitter would write without the path — a read that names another type than the subject's.
+     *  Where the read names the subject's own type, or there is no subject, that document is the subject's own
+     *  read, which no reader refuses, and the refusal keeps this frontend's words. */
+    private String ongebondenLezingFout(Expr.AttribuutRef a, Objecttype subject) {
+        String van = subject == null ? "zonder onderwerp" : "vanaf " + subject.naam;
+        String reden;
+        if (a.navigatiePad() != null && !a.navigatiePad().isEmpty())
+            reden = "de geschreven keten is " + van + " niet stap voor stap te binden";
+        else if (a.navigatieRol() != null)
+            reden = "de geschreven rol '" + a.navigatieRol() + "' wijst " + van + " niet precies één relatie aan";
+        else reden = paarReden(subject, a.objecttype(), a.onderwerpBron());
+        String kop = "genavigeerde lezing '" + a.bron() + "' zonder binding (" + reden + ")";
+        if (subject != null && a.objecttype() != null && a.objecttype() != subject)
+            return kop + ": an attribute reference without a path is the subject's own read, so its subjectType is "
+                    + "the subject type '" + subject.naam + "' — '" + a.objecttype().naam + "' names another type, "
+                    + "which only a navigation reaches";
+        return kop + ": zonder pad zou de wire haar lezen als een eigen attribuut van het onderwerp, en dat is niet "
+                + "wat er staat";
+    }
+
+    /** The refusal of a fold without a range: what did not bind, then the reader's sentence for the document the
+     *  emitter would write without the range — the loader's under every kind but total, WF-083's under a total
+     *  whose element type is not the subject's. A total over the subject's own type without a range is the
+     *  subject's own total, which no reader refuses, and the refusal keeps this frontend's words. */
+    private String ongebondenBereikFout(Expr.Functie f, Objecttype subject) {
+        Expr.AttribuutRef bron = (Expr.AttribuutRef) f.argumenten().get(0);
+        String geschreven = bron.type() instanceof Datatype.Onbekend ? bron.attribuut() : bron.onderwerpBron();
+        String kop = "vouw '" + f.bron() + "' zonder bereik (" + paarReden(subject, f.elementObjecttype(), geschreven)
+                + ")";
+        if (f.kind() != Expr.FunctieKind.TOTAAL)
+            return kop + ": a single-argument fold with an elementType carries its range (sourceRole or sourcePath) "
+                    + "under every kind but total: the range is written, never derived";
+        if (f.elementObjecttype() != subject)
+            return kop + ": the elementType '" + f.elementObjecttype().naam + "' of a total without a range is not "
+                    + "the fold subject '" + subject.naam + "': without a range the fold is the subject's own read, "
+                    + "so its elementType must name the subject type";
+        return kop + ": zonder bereik zou de wire haar lezen als het totaal van een eigen attribuut van het onderwerp";
+    }
+
+    /** Why the type pair gave no relation: none joins the two types, the one that does is reciprocal (the
+     *  two-role binding does not take it), or several do and the written name names none of their roles alone. */
+    private String paarReden(Objecttype subject, Objecttype doel, String geschreven) {
+        int n = model.verbindendeRolAantal(subject, doel);
+        if (n == 0) return "geen relatie verbindt " + subject.naam + " met " + doel.naam;
+        if (n == 1) return "de enige relatie tussen " + subject.naam + " en " + doel.naam + " is wederkerig";
+        return n + " relaties verbinden " + subject.naam + " met " + doel.naam + ", en '" + geschreven
+                + "' noemt geen rol die er precies één aanwijst";
     }
 
     private void vensterFout(Conditie.Kwantor k, int drempel, Bron bron, String plaats) {

@@ -6,6 +6,8 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -27,7 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *     subject to the element type, and because the source under AANTAL names the role it counts (WF-047) it
  *     writes that role's declared name in the source's {@code attribute}; the written spelling stays in
  *     its {@code source} snippet. Where the pair is not unique — two fact types, or none — there is no range to write and
- *     the model is refused: the frontend never guesses a relation, and a fold without one has no spelling.
+ *     the resolver refuses the model with an ERROR, in the loader's sentence for a fold without its range: the
+ *     frontend never guesses a relation, and a fold without one has no spelling.
  * </ol>
  *
  * <p>The accepting case is {@code corpus/golden/jutterswet-muntpeiling}, which plays the same sentence through
@@ -166,12 +169,12 @@ class TelbereikTest {
     @Test
     void de_meerduidige_telling_gokt_geen_relatie() {
         RegelSpraakModel m = Resolver.resolve(MEERDUIDIG_MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.Functie f
                         && f.elementObjecttype() != null && f.elementObjecttype().naam.equals("Munt"),
                 () -> "het elementtype blijft gebonden; de meerduidigheid zit in de RELATIE");
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("geen unieke relatie van Jutter naar Munt"), e::getMessage);
+        assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (2 relaties verbinden Jutter met "
+                        + "Munt, en 'Munten' noemt geen rol die er precies één aanwijst): " + ZONDER_BEREIK),
+                fouten(m));
     }
 
     // ---------------- the boundaries of the lookup ----------------
@@ -218,19 +221,26 @@ class TelbereikTest {
     }
 
     /** The ZERO-candidate flank of the same derivation. Two fact types make the type pair ambiguous; NONE
-     *  makes it empty, and the frontend's answer is identical in both: the element type binds, no relation
+     *  makes it empty, and the frontend's answer is the same in both: the element type binds, no relation
      *  is invented, and the model is refused. What this witness holds is the frontend's half — that an
      *  unconnected pair produces a resolved fold (not a marker, not a silence) and then no document. */
     @Test
     void een_onverbonden_typepaar_levert_dezelfde_weigering() {
         RegelSpraakModel m = Resolver.resolve(ONVERBONDEN_MODEL + TYPEMEERVOUD_REGEL);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
         assertTrue(m.resolvedRegels.get(0).waarde() instanceof Expr.Functie f
                         && f.kind() == Expr.FunctieKind.AANTAL
                         && f.elementObjecttype() != null && f.elementObjecttype().naam.equals("Munt"),
                 () -> "het elementtype bindt ook zonder verbindend feittype, en de telling is opgelost");
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> IrEmitter.emit(m));
-        assertTrue(e.getMessage().contains("geen unieke relatie van Jutter naar Munt"), e::getMessage);
+        assertEquals(List.of("vouw 'het aantal Munten van de Jutter' zonder bereik (geen relatie verbindt Jutter met "
+                + "Munt): " + ZONDER_BEREIK), fouten(m));
+    }
+
+    /** The loader's sentence for the document the emitter would write without the range. */
+    private static final String ZONDER_BEREIK = "a single-argument fold with an elementType carries its range "
+            + "(sourceRole or sourcePath) under every kind but total: the range is written, never derived";
+
+    private static List<String> fouten(RegelSpraakModel m) {
+        return m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList();
     }
 
     /** The raw emission, keys spelled as the wire spells them — whitespace is NOT stripped, because

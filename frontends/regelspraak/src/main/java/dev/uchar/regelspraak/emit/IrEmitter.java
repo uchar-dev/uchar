@@ -1600,12 +1600,12 @@ public final class IrEmitter {
      * total over the subject's own timeline); a fold of another kind over it has no spelling.
      */
     private Vouwbereik vouwbereik(Expr.Functie f) {
-        if (f.elementObjecttype() == null || f.argumenten().size() != 1
-                || !(f.argumenten().get(0) instanceof Expr.AttribuutRef arg)) return null;
+        if (!isVouwbron(f)) return null;
+        Expr.AttribuutRef arg = (Expr.AttribuutRef) f.argumenten().get(0);
         boolean telbron = arg.type() instanceof Datatype.Onbekend;
         if (arg.navigatiePad() != null && !arg.navigatiePad().isEmpty())
             throw vouwWeigering(f, "haar bron draagt een geschreven pad; de relatie van een vouwbron is het bereik");
-        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(huidigSubject, arg.navigatieRol())))
+        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(m, huidigSubject, arg.navigatieRol())))
             throw vouwWeigering(f, "haar bron draagt de geschreven stap '" + arg.navigatieRol()
                     + "', en alleen een telbron die het onderwerp zelf aanduidt mag er een dragen");
         if (!telbron && !arg.set()) {
@@ -1617,19 +1617,48 @@ public final class IrEmitter {
         List<RegelSpraakModel.RolBindingRef> stappen = arg.set() && arg.bereikPad() != null ? arg.bereikPad() : List.of();
         if (!stappen.isEmpty())
             return new Vouwbereik(null, stappen, telbronNaam(f, arg, stappen.get(stappen.size() - 1)));
-        RegelSpraakModel.RolBindingRef rb;
-        if (telbron) {
-            rb = m.elementRolBinding(huidigSubject, arg.attribuut());
-            if (rb == null) rb = m.verbindendeRolBinding(huidigSubject, f.elementObjecttype());
-        } else {
-            // the by-pair-then-written-name search lives in the model: the §8.2 quantifier fold's range is
-            // derived at resolve time and must classify a written range exactly as this does
-            rb = m.vouwbronBinding(huidigSubject, f.elementObjecttype(), arg.onderwerpBron());
-        }
+        RegelSpraakModel.RolBindingRef rb = bereikRol(m, huidigSubject, f, arg);
         if (rb == null)
             throw vouwWeigering(f, "geen unieke relatie van " + huidigSubject.naam + " naar "
                     + f.elementObjecttype().naam + " draagt haar bereik");
         return new Vouwbereik(rb, List.of(), telbronNaam(f, arg, rb));
+    }
+
+    /** The one-step range of an instance fold whose source {@code arg} denotes instances: for the count source the
+     *  written name and then the type pair, for a set reading the type pair and then the written name. Null where
+     *  neither yields one relation. */
+    private static RegelSpraakModel.RolBindingRef bereikRol(RegelSpraakModel m, Objecttype subject, Expr.Functie f,
+                                                            Expr.AttribuutRef arg) {
+        if (arg.type() instanceof Datatype.Onbekend) {
+            RegelSpraakModel.RolBindingRef rb = m.elementRolBinding(subject, arg.attribuut());
+            return rb != null ? rb : m.verbindendeRolBinding(subject, f.elementObjecttype());
+        }
+        // the by-pair-then-written-name search lives in the model: the §8.2 quantifier fold's range is
+        // derived at resolve time and must classify a written range exactly as this does
+        return m.vouwbronBinding(subject, f.elementObjecttype(), arg.onderwerpBron());
+    }
+
+    /** Whether {@code f} is an instance fold over one source, whose single argument the wire reads through the
+     *  fold's range and never as a read of its own (IR-SPEC ch. 4.3) — the fold {@link #vouwbereik} spells. */
+    public static boolean isVouwbron(Expr.Functie f) {
+        return soortFamilie(f.kind()) == Spelling.AGGREGATION_KIND && f.dimensieSelectie() == null
+                && f.elementObjecttype() != null && f.argumenten().size() == 1
+                && f.argumenten().get(0) instanceof Expr.AttribuutRef;
+    }
+
+    /** Whether {@link #vouwbereik} reaches the range derivation for {@code f}, written from {@code subject}, and
+     *  finds no relation: its one refusal that is about the binding and not about the fold's shape. The resolver
+     *  asks it of every fold the emitter will write and refuses such a model itself, with an ERROR. A fold the
+     *  emitter refuses on its shape answers false here; that refusal stays the emitter's. */
+    public static boolean ongebondenBereik(RegelSpraakModel m, Objecttype subject, Expr.Functie f) {
+        if (m == null || subject == null || !isVouwbron(f)) return false;
+        Expr.AttribuutRef arg = (Expr.AttribuutRef) f.argumenten().get(0);
+        boolean telbron = arg.type() instanceof Datatype.Onbekend;
+        if (arg.navigatiePad() != null && !arg.navigatiePad().isEmpty()) return false;
+        if (arg.navigatieRol() != null && !(telbron && zelfaanduidend(m, subject, arg.navigatieRol()))) return false;
+        if (!telbron && !arg.set()) return false;
+        if (arg.set() && arg.bereikPad() != null && !arg.bereikPad().isEmpty()) return false;
+        return bereikRol(m, subject, f, arg) == null;
     }
 
     private static IllegalStateException vouwWeigering(Expr.Functie f, String reden) {
@@ -1693,6 +1722,9 @@ public final class IrEmitter {
         }
         if (a.objecttype() != subject) {                                     // by-pair (off-subject type)
             RegelSpraakModel.RolBindingRef b = m.verbindendeRolBinding(subject, a.objecttype());
+            // the pair does not decide, and the written noun is a type name that is also a role name: the role it
+            // names decides, as a written role does (§13.4.1); a type name alone binds by the one relation only
+            if (b == null) b = m.benoemdeRolBinding(subject, a.objecttype(), a.onderwerpBron());
             return b == null ? List.of() : List.of(b);
         }
         return List.of();                                                    // own attribute — not navigated
@@ -1715,22 +1747,32 @@ public final class IrEmitter {
      * written role that reaches no far role from the subject and that the subject's type itself plays.
      */
     private void eigenLezing(Expr.AttribuutRef a) {
-        boolean pad = a.navigatiePad() != null && !a.navigatiePad().isEmpty();
-        boolean geschreven = a.navigatieRol() != null || pad;
-        boolean vreemdType = huidigSubject != null && a.objecttype() != null && a.objecttype() != huidigSubject;
-        if (!geschreven && !vreemdType) return;
-        if (!pad && a.navigatieRol() != null && huidigSubject != null && a.objecttype() == huidigSubject
-                && m.rolTreffersNaarSubject(huidigSubject, a.navigatieRol()) == 0
-                && zelfaanduidend(huidigSubject, a.navigatieRol())) return;
+        if (!ongebondenLezing(m, huidigSubject, a)) return;
         throw new IllegalStateException("IrEmitter: de lezing '" + a.bron().snippet() + "' van "
                 + naamVan(a.objecttype()) + " vanaf " + (huidigSubject == null ? "geen onderwerp" : huidigSubject.naam)
                 + " navigeert, en de resolver vond daarvoor geen unieke binding");
     }
 
+    /** Whether {@code a}, read from {@code subject} outside a fold source, is a read this emitter refuses: it
+     *  navigates — by a written role or chain, or by naming another type than the subject's — and no binding is
+     *  derivable ({@link #navigatieBindingen}), outside the zero-hop self-reference of {@link #eigenLezing}. The
+     *  resolver asks the same question of every read the emitter will write, so a model it built never reaches
+     *  this refusal: it refuses such a model itself, with an ERROR. */
+    public static boolean ongebondenLezing(RegelSpraakModel m, Objecttype subject, Expr.AttribuutRef a) {
+        if (!navigatieBindingen(m, subject, a).isEmpty()) return false;
+        boolean pad = a.navigatiePad() != null && !a.navigatiePad().isEmpty();
+        boolean geschreven = a.navigatieRol() != null || pad;
+        boolean vreemdType = subject != null && a.objecttype() != null && a.objecttype() != subject;
+        if (!geschreven && !vreemdType) return false;
+        return pad || a.navigatieRol() == null || subject == null || a.objecttype() != subject
+                || m.rolTreffersNaarSubject(subject, a.navigatieRol()) != 0
+                || !zelfaanduidend(m, subject, a.navigatieRol());
+    }
+
     /** Whether the type {@code subject} itself plays a role that {@code naam} denotes (declared name or
      *  declared plural, under the verifier's name identity) — the self-denotation of WF-053's ch. 4.1a
      *  reading, on the declared filler type exactly. */
-    private boolean zelfaanduidend(Objecttype subject, String naam) {
+    private static boolean zelfaanduidend(RegelSpraakModel m, Objecttype subject, String naam) {
         if (m == null || subject == null || naam == null) return false;
         for (Feittype ft : m.feittypen.values())
             for (Rol r : ft.rollen)

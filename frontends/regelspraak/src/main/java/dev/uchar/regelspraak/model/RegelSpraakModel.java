@@ -243,6 +243,8 @@ public final class RegelSpraakModel {
      * it is the DECLARED name or plural of a role {@code nieuwType} fills in a fact type that also relates
      * {@code subject} — one such role, never a guessed plural. Null where the candidate names none or several: the
      * back-link is then the type-pair derivation of RUNTIME-SEMANTICS ch. 5.5, as it was before a role was written.
+     * The emitter asks the same of a navigated read whose noun names the other type and whose type pair decides
+     * nothing: a noun that is also a role name binds that role (grammar/DIVERGENCES.md, §13.4.1).
      */
     public RolBindingRef benoemdeRolBinding(Objecttype subject, Objecttype nieuwType, String naam) {
         if (subject == null || nieuwType == null) return null;
@@ -308,6 +310,17 @@ public final class RegelSpraakModel {
                     n++;
                 }
         return n == 1 ? gevonden : null;
+    }
+
+    /** How many roles of {@code doelwit} are reachable from {@code houder} — the count {@link #verbindendeRol}
+     *  collapses into null at zero and at several; a refusal names it. */
+    public int verbindendeRolAantal(Objecttype houder, Objecttype doelwit) {
+        if (houder == null || doelwit == null) return 0;
+        int n = 0;
+        for (Feittype ft : feittypen.values())
+            for (Rol doel : ft.rollen)
+                if (rolHeeftObjecttype(doel, doelwit) && feittypeRelateert(ft, doel, houder)) n++;
+        return n;
     }
 
     /**
