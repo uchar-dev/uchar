@@ -1,0 +1,161 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "stormtoelage": {
+            "timeline": [
+              {
+                "from": "2024-10-01",
+                "to": "2025-10-01",
+                "value": {
+                  "number": "120"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2024-10-01",
+              "to": "2025-10-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormwachtdagen",
+      "timeline": [
+        {
+          "from": "2024-10-01",
+          "to": "2025-10-01",
+          "value": {
+            "number": "365"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "maandwachtdagen",
+      "timeline": [
+        {
+          "from": "2024-09-30",
+          "to": "2024-10-31",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2024-10-31",
+          "to": "2024-11-30",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2024-11-30",
+          "to": "2024-12-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2024-12-31",
+          "to": "2025-01-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2025-01-31",
+          "to": "2025-02-28",
+          "value": {
+            "number": "28"
+          }
+        },
+        {
+          "from": "2025-02-28",
+          "to": "2025-03-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2025-03-31",
+          "to": "2025-04-30",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-04-30",
+          "to": "2025-05-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2025-05-31",
+          "to": "2025-06-30",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-06-30",
+          "to": "2025-07-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2025-07-31",
+          "to": "2025-08-31",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2025-08-31",
+          "to": "2025-09-30",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-09-30",
+          "to": "2025-10-31",
+          "value": {
+            "number": "1"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "toelagesom",
+      "value": {
+        "number": "120"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -34,6 +34,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.RolBindingRef;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Tijdlijn;
 import dev.uchar.regelspraak.kern.Tijdrekening;
+import dev.uchar.regelspraak.kern.VastStartpunt;
 import dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 
@@ -344,6 +345,7 @@ public final class IrLoader {
             eenmaal(m.dimensies, p + "/name", d.naam(), d);
         });
         lijst(model, "/model", "timelines", (p, n) -> m.tijdlijnen.add(tijdlijn(n)));
+        weigerOvername();
         lijst(model, "/model", "dayKinds", this::dayKind);
 
         // IR-SPEC ch. 3, Versioning: each list holds named forms, and every version is one record, named as the
@@ -877,12 +879,20 @@ public final class IrLoader {
             if (a.has("timeline")) {
                 String tp = ap + "/timeline";
                 JsonNode tl = a.get("timeline");
-                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("timelineName"));
-                ot.attribuutGranulariteit.put(lid, enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
-                        tekst(tl, tp, "granularity"), tp + "/granularity"));
-                ot.attribuutTijdlijnAantal.put(lid, geheel(tl, tp, "count", "TimelineFacet.count"));
+                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"),
+                        List.of("fixedStart", "timelineName"));
+                Granulariteit gran = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
+                        tekst(tl, tp, "granularity"), tp + "/granularity");
+                ot.attribuutGranulariteit.put(lid, gran);
+                int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
+                ot.attribuutTijdlijnAantal.put(lid, aantal);
+                String vast = vastStartpunt(tl, tp, gran, aantal);
+                if (vast != null) ot.attribuutVastStartpunt.put(lid, vast);
                 String tijdlijnNaam = optTekst(tl, tp, "timelineName");
-                if (tijdlijnNaam != null) ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
+                if (tijdlijnNaam != null) {
+                    ot.attribuutTijdlijnNaam.put(lid, tijdlijnNaam);
+                    overnames.add(new Overname(tp + "/timelineName", tijdlijnNaam, vast));
+                }
             }
         });
         lijst(n, pad, "characteristics", (cp, c) -> {
@@ -897,10 +907,14 @@ public final class IrLoader {
             if (c.has("timeline")) {
                 String tp = cp + "/timeline";
                 JsonNode tl = c.get("timeline");
-                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
-                ot.kenmerkGranulariteit.put(lid, enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
-                        tekst(tl, tp, "granularity"), tp + "/granularity"));
-                ot.kenmerkTijdlijnAantal.put(lid, geheel(tl, tp, "count", "TimelineFacet.count"));
+                velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
+                Granulariteit gran = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
+                        tekst(tl, tp, "granularity"), tp + "/granularity");
+                ot.kenmerkGranulariteit.put(lid, gran);
+                int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
+                ot.kenmerkTijdlijnAantal.put(lid, aantal);
+                String vast = vastStartpunt(tl, tp, gran, aantal);
+                if (vast != null) ot.kenmerkVastStartpunt.put(lid, vast);
             }
         });
         return ot;
@@ -956,10 +970,11 @@ public final class IrLoader {
         if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + kort(dt));
         Datatype datatype = datatype(dt, pad + "/datatype", true);
         Granulariteit granulariteit = null;
+        String vast = null;
         if (n.has("timeline")) {
             String tp = pad + "/timeline";
             JsonNode tl = n.get("timeline");
-            velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of());
+            velden(tl, tp, "TimelineFacet", List.of("node", "granularity", "count"), List.of("fixedStart"));
             granulariteit = enumWaarde(Spelling.GRANULARITY, "TimelineFacet.granularity",
                     tekst(tl, tp, "granularity"), tp + "/granularity");
             int aantal = geheel(tl, tp, "count", "TimelineFacet.count");
@@ -970,8 +985,9 @@ public final class IrLoader {
                 throw new Documentfout(tp + "/count", "the timeline facet of parameter '" + naam + "' has count "
                         + aantal + " > 1: a parameter's timeline is one period while multi-period grids are open"
                         + " (RUNTIME-SEMANTICS ch. 3.12)");
+            vast = vastStartpunt(tl, tp, granulariteit, aantal);
         }
-        return new Parameter(naam, datatype, granulariteit);
+        return new Parameter(naam, datatype, granulariteit, vast);
     }
 
     /** IR-SPEC ch. 2.5: a unit system and its units, one Unit per abbreviation under the name identity of ch. 2.1
@@ -1084,15 +1100,52 @@ public final class IrLoader {
                 text(n, "preposition"), stringList(n.get("labels")));
     }
 
-    /** IR-SPEC ch. 2.8: a named timeline. Its granularity is the one field of the family that admits a null. */
+    /** IR-SPEC ch. 2.8: a named timeline. Its granularity is the one field of the family that admits a null. Its
+     *  fixed start point is refused in the verifier's WF-115 sentences: on a variable start (a), off its grid (b). */
     private Tijdlijn tijdlijn(JsonNode n) {
         String p = padVan(n);
-        velden(n, p, "Timeline", List.of("node", "name", "variableStart", "granularity", "count"), List.of());
+        velden(n, p, "Timeline", List.of("node", "name", "variableStart", "granularity", "count"), List.of("fixedStart"));
         Granulariteit granulariteit = n.get("granularity").isNull()
                 && Spelling.GRANULARITY.laatNullToe("Timeline.granularity") ? null
                 : enumWaarde(Spelling.GRANULARITY, "Timeline.granularity", tekst(n, p, "granularity"),
                         p + "/granularity");
-        return new Tijdlijn(text(n, "name"), bool(n, "variableStart"), granulariteit, intOf(n, "count"));
+        String naam = text(n, "name");
+        boolean variabel = bool(n, "variableStart");
+        int aantal = intOf(n, "count");
+        String vast = optTekst(n, p, "fixedStart");
+        if (vast != null && variabel)
+            throw new Documentfout(p + "/fixedStart", VastStartpunt.weigeringVariabel(naam == null ? "" : naam, vast));
+        if (vast != null && granulariteit != null) {
+            String weigering = VastStartpunt.weigering(granulariteit, aantal, vast);
+            if (weigering != null) throw new Documentfout(p + "/fixedStart", weigering);
+        }
+        return new Tijdlijn(naam, variabel, granulariteit, aantal, vast);
+    }
+
+    /** A facet's fixed start point, refused in the verifier's WF-115 (b) sentence when it does not fit the facet's
+     *  grid; null when the facet carries none. */
+    private static String vastStartpunt(JsonNode facet, String tp, Granulariteit gran, int aantal) {
+        String vast = optTekst(facet, tp, "fixedStart");
+        if (vast == null) return null;
+        String weigering = VastStartpunt.weigering(gran, aantal, vast);
+        if (weigering != null) throw new Documentfout(tp + "/fixedStart", weigering);
+        return vast;
+    }
+
+    /** An attribute facet that names a timeline, kept until the timelines are read: WF-115 (c) crosses its fixed
+     *  start point with the declaration's. */
+    private record Overname(String pad, String tijdlijn, String vast) {}
+
+    private final List<Overname> overnames = new ArrayList<>();
+
+    /** WF-115 (c), in the verifier's sentence and at its pointer: a facet that names a timeline carries that
+     *  timeline's fixed start point, or none when it has none. A name that resolves to no timeline is WF-003's. */
+    private void weigerOvername() {
+        for (Overname o : overnames) {
+            Tijdlijn tl = m.tijdlijnOpNaam(o.tijdlijn());
+            if (tl != null && !java.util.Objects.equals(o.vast(), tl.vastStartpunt()))
+                throw new Documentfout(o.pad(), VastStartpunt.weigeringOvername(o.vast(), o.tijdlijn(), tl.vastStartpunt()));
+        }
     }
 
     // --- Datatype ----------------------------------------------------------

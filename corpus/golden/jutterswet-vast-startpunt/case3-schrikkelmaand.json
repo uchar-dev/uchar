@@ -1,0 +1,72 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2024-02-27",
+              "to": "2024-03-02"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormwachtdagen",
+      "timeline": [
+        {
+          "from": "2023-10-01",
+          "to": "2024-10-01",
+          "value": {
+            "number": "4"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "maandwachtdagen",
+      "timeline": [
+        {
+          "from": "2024-01-31",
+          "to": "2024-02-29",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2024-02-29",
+          "to": "2024-03-31",
+          "value": {
+            "number": "2"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "toelagesom",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

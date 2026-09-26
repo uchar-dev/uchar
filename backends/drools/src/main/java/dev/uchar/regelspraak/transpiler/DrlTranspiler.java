@@ -1752,14 +1752,15 @@ public final class DrlTranspiler {
         acc.letVoorspel = null;
         // §5.1.4 lower a temporal-doel timeline value BEFORE the acc.clausules flush (temporeleWaarde may register a
         // collectList accumulate for a §5.8.2 to-many sommatie, which must be emitted after $subject binds).
-        String temporeelTl = null; boolean temporeelOngeankerd = false;
+        String temporeelTl = null; boolean temporeelOngeankerd = false; String vastRasterReden = null;
         if (temporeelDoel && r.doel() instanceof Expr.AttribuutRef td) {
             String ankerLid0 = model.startpuntAnkerLid(td.objecttype(), td.attribuut());
             temporeelOngeankerd = ankerLid0 == null && model.heeftVariabelStartpunt(td.objecttype(), td.attribuut());
-            String anker0 = ankerLid0 == null ? null : SUBJECT + "." + getter(ankerLid0) + "()";
+            String anker0 = ankerLid0 == null ? vastAnker(td) : SUBJECT + "." + getter(ankerLid0) + "()";
+            vastRasterReden = Tijdlijnen.proRataVastRaster(td.objecttype(), td.attribuut(), r.waarde());
             // ch. 2.10: the doel is a REFERENCE position — the §4 restate target is the DECLARED attribute
             // datatype, never the doel node's repetition of it.
-            temporeelTl = temporeelOngeankerd ? null
+            temporeelTl = temporeelOngeankerd || vastRasterReden != null ? null
                     : temporeleWaarde(acc, r.waarde(), subject, opNaam(td.objecttype().granulariteitLeden(), td.attribuut()), effType(td), anker0);
         }
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
@@ -1867,7 +1868,7 @@ public final class DrlTranspiler {
             // timeline has no periodization at all -> honest marker, never silently calendar-bucketed.
             String ankerLid = model.startpuntAnkerLid(a.objecttype(), a.attribuut());
             boolean ongeankerd = temporeelOngeankerd;
-            String anker = ankerLid == null ? null : SUBJECT + "." + getter(ankerLid) + "()";
+            String anker = ankerLid == null ? vastAnker(a) : SUBJECT + "." + getter(ankerLid) + "()";
             String tl = temporeelTl;   // pre-lowered above (before the acc.clausules flush) so a collectList accumulate emits
             // RUNTIME-SEMANTICS ch. 7.8, the TIMELINE arm: on a STANDING temporal target (the shared
             // classification) an EMPTY fold result is the temporal leeg, decides nothing, and must write
@@ -1900,6 +1901,7 @@ public final class DrlTranspiler {
             } else {
                 rule.dan("    modify(" + SUBJECT + ") {\n        " + setter(a.attribuut()) + "( "
                         + (tl != null ? tl : todo(ongeankerd ? "tijdlijn met variabel startpunt zonder startpuntbepaling (§9.9)"
+                                                             : vastRasterReden != null ? vastRasterReden
                                                              : "temporele toekenning", r.waarde().bron())) + " )\n    }\n");
             }
         } else if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
@@ -3464,6 +3466,15 @@ public final class DrlTranspiler {
      *  requires the expression's "in <maand|jaar>" to match the doel's tijdlijn, §7.2). Only a positive
      *  single-period subject temporal-kenmerk condition lowers; a negated/comparison/compound/navigated condition
      *  left the filter unset in the resolver -> null here. */
+    /** RUNTIME-SEMANTICS ch. 3.2: the constant anchor of a doel on a FIXED start point, as a DRL expression, or null on
+     *  the calendar grid — the date its walls are computed from, which the anchored producers take as a variable
+     *  start's per-object anchor. */
+    private String vastAnker(Expr.AttribuutRef doel) {
+        java.time.LocalDate a = ongenavigeerd(doel) ? model.vastStartpuntAnker(doel.objecttype(), doel.attribuut()) : null;
+        return a == null ? null
+                : "java.time.LocalDate.of(" + a.getYear() + ", " + a.getMonthValue() + ", " + a.getDayOfMonth() + ")";
+    }
+
     private String temporeleWaarde(Acc acc, Expr w, Objecttype subject, RegelSpraakModel.Granulariteit gran, Datatype doelType, String anker) {
         // §5.8.2/§5.1.4 "de som van <temporeel attr> van alle <naar-veel-rol>" into a TEMPORAL doel: a PER-PERIOD
         // sommatie over the navigated SET, keeping the timeline (§5.1.4: only the §7.1 "totaal van" aggregation

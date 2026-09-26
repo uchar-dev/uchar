@@ -542,8 +542,15 @@ public final class ExecModelTranspiler {
                 }
             }
             final String ankerLid = startpuntAnker;
-            java.util.function.Function<Object, Object> ankerReader =
-                    ankerLid == null ? null : s -> RegelSpraakRuntime.get(s, ankerLid);
+            String vastReden = Tijdlijnen.proRataVastRaster(doel.objecttype(), doel.attribuut(), r.waarde());
+            if (vastReden != null) return skip("regel (" + vastReden + "): " + r.naam());
+            // RUNTIME-SEMANTICS ch. 3.2: a doel on a FIXED start point buckets at the constant anchor its walls are
+            // computed from, through the same anchored producers a variable start uses
+            final java.time.LocalDate vastAnker = ankerLid == null && ongenavigeerd(doel)
+                    ? model.vastStartpuntAnker(doel.objecttype(), doel.attribuut()) : null;
+            java.util.function.Function<Object, Object> ankerReader = ankerLid != null
+                    ? s -> RegelSpraakRuntime.get(s, ankerLid)
+                    : vastAnker != null ? s -> vastAnker : null;
             TemporeleWaarde tw = temporeleWaarde(r.waarde(), doel.objecttype(), doelGran, effType(doel), ankerReader);
             // the sharpened §13.3.9 reason where the set fold's join refused (navReden), else the honest scope note —
             // the same distinction the scalar arms above and below make, extended here because the temporal set

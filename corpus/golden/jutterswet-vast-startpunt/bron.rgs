@@ -1,0 +1,20 @@
+Tijdlijn het stormjaar heeft tijdvakken van een jaar startend op dag 1 van maand 10;
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke week startend op 30-9-2024;
+    de stormwachtdagen Numeriek (niet-negatief geheel getal) voor elke stormjaar;
+    de maandwachtdagen Numeriek (niet-negatief geheel getal) voor elke maand startend op dag 31 van de maand;
+    de stormtoelage Numeriek (geheel getal) voor elke stormjaar;
+    de toelagesom Numeriek (geheel getal);
+
+Regel stormwachtdagen van een jutter
+    geldig altijd
+        De stormwachtdagen van een Jutter moet berekend worden als het aantal dagen in het jaar dat hij wachtplichtig is.
+
+Regel maandwachtdagen van een jutter
+    geldig altijd
+        De maandwachtdagen van een Jutter moet berekend worden als het aantal dagen in de maand dat hij wachtplichtig is.
+
+Regel toelagesom van een jutter
+    geldig altijd
+        De toelagesom van een Jutter moet gesteld worden op (het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is).

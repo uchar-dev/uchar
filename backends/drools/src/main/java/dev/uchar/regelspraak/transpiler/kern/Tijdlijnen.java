@@ -1,5 +1,8 @@
 package dev.uchar.regelspraak.transpiler.kern;
 
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+
 import java.util.Map;
 
 /**
@@ -45,5 +48,22 @@ public final class Tijdlijnen {
     public static boolean meerPeriodiek(Map<String, Integer> tijdlijnAantal, String lid) {
         Integer aantal = Namen.opNaam(tijdlijnAantal, lid);
         return aantal != null && aantal > 1;
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.2: why a pro-rata part onto {@code doel} of {@code subject} is not carried when its
+     *  target or its base lies on the grid of a fixed start point, or null. The base is constant across a bucket
+     *  because its grid nests in the target's, and a start point off the calendar breaks that nesting; {@code ref}
+     *  and the ASP backend refuse the form, so both branches do as well. */
+    public static String proRataVastRaster(RegelSpraakModel.Objecttype subject, String doel, Expr waarde) {
+        if (!(waarde instanceof Expr.Functie f) || f.kind() != Expr.FunctieKind.TIJDSEVENREDIG_DEEL) return null;
+        boolean vast = subject != null && subject.vastStartpuntVan(doel) != null;
+        for (Expr basis : f.argumenten()) {
+            if (basis instanceof Expr.AttribuutRef ba && ba.objecttype() != null
+                    && ba.objecttype().vastStartpuntVan(ba.attribuut()) != null) vast = true;
+            if (basis instanceof Expr.ParameterRef bp && bp.parameter() != null
+                    && bp.parameter().vastStartpunt() != null) vast = true;
+        }
+        return vast ? "pro-rata op of vanaf een raster dat niet op de kalender ligt (vast startpunt) is omheind "
+                + "— RUNTIME-SEMANTICS ch. 3.2" : null;
     }
 }
