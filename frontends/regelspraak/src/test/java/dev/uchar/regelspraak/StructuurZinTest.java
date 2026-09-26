@@ -53,6 +53,30 @@ class StructuurZinTest {
                     """));
     }
 
+    @Test void een_doel_dat_attribuut_en_kenmerk_is() {
+        // before: IrEmitter's exception ("… noemt op 'Schuit' zowel een attribuut als een kenmerk")
+        String model = """
+            Objecttype de Schuit (mv: Schuiten)
+                de gekeurd Tekst;
+                is gekeurd kenmerk (bijvoeglijk);
+                het nummer Numeriek (geheel getal);
+
+            """;
+        String zin = "target 'gekeurd' names both an attribute and a characteristic of 'Schuit': which member a rule "
+                + "writes decides its kind, and this name decides nothing";
+        assertEquals(List.of("regeldoel 'De gekeurd van een Schuit': " + zin), fouten(model + """
+                Regel p
+                    geldig altijd
+                        De gekeurd van een Schuit moet gesteld worden op "ja".
+                """));
+        assertEquals(List.of("regeldoel 'Een Schuit is gekeurd': " + zin), fouten(model + """
+                Regel p
+                    geldig altijd
+                        Een Schuit is gekeurd
+                        indien zijn nummer groter is dan 3.
+                """));
+    }
+
     // ---- WF-050: the single writer of a defaults target
 
     private static final String PREMIE = """

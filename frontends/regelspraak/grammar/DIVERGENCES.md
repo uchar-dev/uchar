@@ -1876,7 +1876,8 @@ whose name took in a word before 'van', a constant the wire has no node for
 outside the wire's bounds (zero, negative, or past 2^62 - 1 along its chain,
 in the loader's sentence), a role check whose written role names no relation
 from the subject or several (in the loader's sentence for the check without
-its binding, `missing field 'factType'`); witnesses `EenheidZinTest`,
+its binding, `missing field 'factType'`), a rule target whose name is both an
+attribute and a characteristic of its type (WF-022); witnesses `EenheidZinTest`,
 `TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the

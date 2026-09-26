@@ -543,6 +543,16 @@ final class RuleChecker {
             if (!(r.doel() instanceof Expr.AttribuutRef a)) continue;
             int line = a.bron() == null ? 0 : a.bron().line();
             String geschreven = a.bron() == null ? a.attribuut() : a.bron().snippet();
+            // a name that is both an attribute and a characteristic of the subject decides no member, and so no rule
+            // kind; before this check a rule on it ended in the emitter's exception
+            if (a.objecttype() != null && a.attribuut() != null && a.objecttype().attribuut(a.attribuut()) != null
+                    && a.objecttype().kenmerkNaam(a.attribuut()) != null) {
+                geweigerdeDoelen.add(r);
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "regeldoel '" + geschreven + "': target '"
+                        + a.attribuut() + "' names both an attribute and a characteristic of '" + a.objecttype().naam
+                        + "': which member a rule writes decides its kind, and this name decides nothing", line));
+                continue;
+            }
             String fout = null;
             if (a.objecttype() == null)
                 fout = "het onderwerp '" + a.onderwerpBron() + "' lost niet op tot een objecttype: een regel schrijft "
