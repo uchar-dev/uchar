@@ -14572,6 +14572,57 @@ let () =
       ( "WF-035 mixed, pair slot: day date + sub-day unit", m, "plus", dag, duur ~u:"uur" "26",
         sub_day_unit_on_day_date ) ]
 
+(* RUNTIME-SEMANTICS ch. 3.2: the pro-rata part onto a target on a fixed start
+   point, or from a base on one, is fenced in ref's sentence; the calendar
+   document beside them translates, so the fault is the fence's alone. ref's
+   suite holds the same three documents (WV-3.2-vast-prorata-kalender, -doel
+   and -basis). And a fixed start point that does not fit its grid is refused
+   at load, in the verifier's WF-115 sentence, by the loader this backend
+   shares with ref. *)
+let () =
+  let facet gran vast =
+    Printf.sprintf {|{"node":"TimelineFacet","granularity":"%s","count":1%s}|} gran
+      (match vast with Some v -> Printf.sprintf {|,"fixedStart":"%s"|} v | None -> "")
+  in
+  let doc ~doel ~basis =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"timeline":%s},{"node":"Attribute","name":"borgdeel","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"timeline":%s}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"month","type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      (facet "year" basis) (facet "month" doel)
+  in
+  let zaak van tot =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"borgtarief":{"timeline":[{"from":"%s","to":"%s","value":{"number":"12"}}]}},"roles":{},"characteristics":[],"characteristicTimelines":{"borgplichtig":[{"from":"2024-02-01","to":"2024-03-01"}]}}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+      van tot
+  in
+  let vertaal ir case_text =
+    let irf = write_temp ".ir.json" ir and casef = write_temp ".case.json" case_text in
+    let doc = Ir_v0.Loader.load_file irf in
+    let case = Uchar_ref.Case.load_file doc casef in
+    Sys.remove irf;
+    Sys.remove casef;
+    translate doc case
+  in
+  (match vertaal (doc ~doel:None ~basis:None) (zaak "2024-01-01" "2025-01-01") with
+  | (_ : string) -> check "ch3.2 pro-rata on the calendar grid translates" true
+  | exception Uchar_ref.Value.Fault m -> check ("ch3.2 pro-rata on the calendar grid (" ^ m ^ ")") false);
+  let omheind = "pro-rata onto or from a grid that does not lie on the calendar is fenced" in
+  faults_with ~name:"ch3.2 pro-rata onto a target on a fixed start point"
+    ~ir:(doc ~doel:(Some "--01-15") ~basis:None) ~case_text:(zaak "2024-01-01" "2025-01-01")
+    ~needle:omheind;
+  faults_with ~name:"ch3.2 pro-rata from a base on a fixed start point"
+    ~ir:(doc ~doel:None ~basis:(Some "--10-01")) ~case_text:(zaak "2023-10-01" "2024-10-01")
+    ~needle:omheind;
+  (* WF-115 at load: the facet of borgdeel spelt a date on a month grid of one
+     unit, and a start point on a variable-start timeline *)
+  refused_at_load ~name:"WF-115 (b) at load"
+    ~ir:(doc ~doel:(Some "2024-01-15") ~basis:None)
+    ~needle:
+      "fixed start point '2024-01-15' does not fit a month grid of count 1: a month, quarter or \
+       year grid of one unit starts on a day-month";
+  refused_at_load ~name:"WF-115 (b) at load, the calendar's own start point"
+    ~ir:(doc ~doel:(Some "--01-01") ~basis:None)
+    ~needle:"it lays the calendar's own grid, which is written without a fixedStart"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

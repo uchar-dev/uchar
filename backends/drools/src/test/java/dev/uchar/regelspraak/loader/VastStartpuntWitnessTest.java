@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +47,49 @@ class VastStartpuntWitnessTest {
         assertEquals(LocalDate.of(2000, 10, 1), m.vastStartpuntAnker(jutter, "stormwachtdagen"));
         assertEquals(LocalDate.of(2000, 1, 31), m.vastStartpuntAnker(jutter, "maandwachtdagen"));
         assertNull(m.vastStartpuntAnker(jutter, "toelagesom"));
+    }
+
+    /** The pro-rata document ref's and clingo's suites hold (WV-3.2-vast-prorata), with the target's and the base's
+     *  fixed start point as parameters. */
+    private static JsonNode proRata(String doel, String basis) throws Exception {
+        String facet = "{\"node\":\"TimelineFacet\",\"granularity\":\"%s\",\"count\":1%s}";
+        String tarief = String.format(facet, "year", basis == null ? "" : ",\"fixedStart\":\"" + basis + "\"");
+        String deel = String.format(facet, "month", doel == null ? "" : ",\"fixedStart\":\"" + doel + "\"");
+        return JSON.readTree("{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[{\"node\":\"ObjectType\","
+                + "\"name\":\"Jutter\",\"animate\":true,\"plural\":\"Jutters\",\"attributes\":[{\"node\":\"Attribute\","
+                + "\"name\":\"borgtarief\",\"datatype\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
+                + "\"sign\":\"unspecified\"},\"timeline\":" + tarief + "},{\"node\":\"Attribute\",\"name\":\"borgdeel\","
+                + "\"datatype\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"},"
+                + "\"timeline\":" + deel + "}],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"borgplichtig\","
+                + "\"kind\":\"adjectival\",\"timeline\":{\"node\":\"TimelineFacet\",\"granularity\":\"month\",\"count\":1}}]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
+                + "\"dayKinds\":[]},\"rules\":{\"rules\":[{\"node\":\"Rule\",\"name\":\"borgdeel van een jutter\","
+                + "\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":{\"node\":\"AttributeReference\","
+                + "\"attribute\":\"borgdeel\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"Het borgdeel van een "
+                + "Jutter\"}},\"value\":{\"node\":\"BuiltinCall\",\"kind\":\"timeProportionalPart\",\"arguments\":"
+                + "[{\"node\":\"AttributeReference\",\"attribute\":\"borgtarief\",\"subjectType\":\"Jutter\","
+                + "\"source\":{\"snippet\":\"zijn borgtarief\"}}],\"filter\":{\"node\":\"CharacteristicCheck\","
+                + "\"characteristic\":\"borgplichtig\",\"negated\":false,\"source\":{\"snippet\":\"gedurende de tijd "
+                + "dat hij borgplichtig is\"}},\"granularity\":\"month\",\"type\":{\"node\":\"Number\",\"whole\":false,"
+                + "\"decimals\":2,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"het tijdsevenredig deel per maand "
+                + "van zijn borgtarief gedurende de tijd dat hij borgplichtig is\"}},\"initialisation\":false,"
+                + "\"presentation\":\"calculation\"}]}],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],"
+                + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[]},\"diagnostics\":[]}");
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.2: both branches ask this predicate before lowering a pro-rata part, and skip the rule
+     *  with its reason when the target or the base lies on a fixed start point's grid, as ref and clingo refuse it;
+     *  on the calendar grid it answers null and the rule lowers as before. */
+    @Test void pro_rata_over_een_vast_startpunt_is_omheind() throws Exception {
+        for (String[] geval : new String[][]{{null, null}, {"--01-15", null}, {null, "--10-01"}}) {
+            RegelSpraakModel m = IrLoader.load(proRata(geval[0], geval[1]));
+            var regel = m.resolvedRegels.get(0);
+            String reden = Tijdlijnen.proRataVastRaster(m.objecttypen.get("Jutter"), "borgdeel", regel.waarde());
+            if (geval[0] == null && geval[1] == null) assertNull(reden, "het kalenderraster is niet omheind");
+            else assertTrue(reden != null && reden.contains("RUNTIME-SEMANTICS ch. 3.2"),
+                    "omheind bij doel " + geval[0] + " en basis " + geval[1] + ": " + reden);
+        }
     }
 
     private static void weigert(String getuige, String plek, String zin) throws Exception {

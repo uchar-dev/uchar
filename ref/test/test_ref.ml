@@ -1784,6 +1784,57 @@ let () =
     | exception Case.Error m -> substring m "a multi-period grid, which carries no operation"
     | _ -> false)
 
+(* WV-3.2-vast-prorata: the pro-rata part onto a target on a fixed start
+   point, or from a base on one, is fenced (RUNTIME-SEMANTICS ch. 3.2): the
+   base is constant across a bucket because its grid nests in the target's,
+   and a start point off the calendar breaks that nesting. The calendar
+   document beside them evaluates, so the fault is the fence's alone. The ASP
+   backend's suite holds the same three documents. *)
+let () =
+  let facet gran vast =
+    Printf.sprintf {|{"node":"TimelineFacet","granularity":"%s","count":1%s}|} gran
+      (match vast with Some v -> Printf.sprintf {|,"fixedStart":"%s"|} v | None -> "")
+  in
+  let doc ~doel ~basis =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"timeline":%s},{"node":"Attribute","name":"borgdeel","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"timeline":%s}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"month","type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      (facet "year" basis) (facet "month" doel)
+  in
+  let zaak van tot =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"borgtarief":{"timeline":[{"from":"%s","to":"%s","value":{"number":"12"}}]}},"roles":{},"characteristics":[],"characteristicTimelines":{"borgplichtig":[{"from":"2024-02-01","to":"2024-03-01"}]}}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+      van tot
+  in
+  let schrijf suffix tekst =
+    let f = Filename.temp_file "ref-vast" suffix in
+    let oc = open_out f in
+    output_string oc tekst;
+    close_out oc;
+    f
+  in
+  let evalueer ir case_text () =
+    let irf = schrijf ".ir.json" ir and casef = schrijf ".case.json" case_text in
+    Fun.protect
+      ~finally:(fun () -> Sys.remove irf; Sys.remove casef)
+      (fun () ->
+        let doc = Ir_v0.Loader.load_file irf in
+        let c = Case.load_file doc casef in
+        ignore
+          (Eval.evaluate
+             { Eval.doc; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+             c.world))
+  in
+  let omheind = "pro-rata onto or from a grid that does not lie on the calendar is fenced" in
+  check "WV-3.2-vast-prorata-kalender"
+    (match evalueer (doc ~doel:None ~basis:None) (zaak "2024-01-01" "2025-01-01") () with
+    | () -> true
+    | exception Value.Fault _ -> false);
+  expect_fault_msg "WV-3.2-vast-prorata-doel"
+    (evalueer (doc ~doel:(Some "--01-15") ~basis:None) (zaak "2024-01-01" "2025-01-01")) omheind;
+  expect_fault_msg "WV-3.2-vast-prorata-basis"
+    (evalueer (doc ~doel:None ~basis:(Some "--10-01")) (zaak "2023-10-01" "2024-10-01")) omheind
+
 (* WF-115's sentences, which this interpreter's loader speaks when it refuses a
    fixed start point ([Loader.reader]): one per reason of arm (b), and arms (a)
    and (c). The golden and the three negatief witnesses pin the verifier's
