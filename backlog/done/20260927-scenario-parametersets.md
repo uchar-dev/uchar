@@ -246,3 +246,29 @@ instead of its JSON file (a card there)."
 9. `frontends/regelspraak/grammar/DIVERGENCES.md` noemt in de sectie Scenariotoetsen al vóór deze kaart
    de werkbank van de externe regelsets bij naam ("move of the … workbench (2026-09-26)"), in een
    artefactzone; gate 1 vangt dat niet. Niet aangeraakt.
+
+## Keuring (2026-09-27, hoofdsessie)
+
+Geland als unie met de kaartloze fix `fix/aggregatie-meervoud` (de melding
+van een keten zonder sourcePath; twee commits gerebased op de kaartbranch). De
+pin-ophoging in `scripts/check-drools.sh` (215→216, 185→186) en de vloeren van
+`scripts/check-scenario.sh` (7/31) zijn aanvaard: een gelijkheidspin vraagt dat
+bij een nieuwe gespeelde golden. U3 is gesloten door verklaring, niet door een
+nieuwe vorm (zie PLAN §9). Alle zestien gates op de unie:
+
+- gate 1 (check-self-contained.sh) rc=0: check-self-contained: PASS
+- gate 2 (check-ir-schema.sh) rc=0: check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 504 shape self-test row(s); 311 file(s) vali
+- gate 3 (check-verifier.sh) rc=0: check-verifier: PASS (311 golden clean; 486 negatief rejected for their declared rule, floor 350; 329 on their
+- gate 4 (check-case-schema.sh) rc=0: check-case-schema: PASS (schema valid; 92 pattern self-test row(s); 770 case file(s) validate)
+- gate 5 (check-oracle.sh) rc=0: check-oracle: PASS (ref suite 1152 worked examples, floor 489; 730 cases replayed exactly, floor 427; NOT repl
+- gate 6 (check-clingo.sh) rc=0: check-clingo: PASS (backend suite 1988 checks, floor 83; 730 cases replay exactly through clingo — ref = cling
+- gate 7 (check-noop.sh) rc=0: check-noop: PASS (686 cases refute a do-nothing executor; 44 pinned survivors pin defeasible standing)
+- gate 8 (check-rood.sh) rc=0: check-rood: PASS (40 red cases fault observably in ref and clingo, floor 26; 80 pinned fragments cite none of 
+- gate 9 (check-catala.sh) rc=0: check-catala: PASS — frontend suite green (241 checks, floor 201); 12 catala golden(s) regenerate byte-identic
+- gate 10 (check-regelspraak.sh) rc=0: check-regelspraak: PASS — JUnit suite green (934 tests, floor 173); 99 rgs golden(s) re-emit byte-identically 
+- gate 11 (check-toka-parity.sh) rc=0:     Drools excludes by form:
+- gate 12 (check-drools.sh) rc=0:   JUnit 840 tests, floor 239  (the backend's own suite, green with a non-zero count)
+- gate 13 (check-reftype-derivation.sh) rc=0:   corpus-wide accounting: 83 unit-bearing annotations = 45 twistable + 38 exempt (the annotation IS the source
+- gate 14 (check-flogic.sh) rc=0: check-flogic: PASS — frontend suite green (150 checks, floor 81); 2 flogic golden(s) re-emit byte-identically 
+- gate 15 (check-graaf.sh) rc=0: check-graaf: PASS
+- gate 16 (check-scenario.sh) rc=0: check-scenario: PASS — 7 scenario golden(s) (floor 7) regenerate 31 case file(s) (floor 31) and their ir.json 
