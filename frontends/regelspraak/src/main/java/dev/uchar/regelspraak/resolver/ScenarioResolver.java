@@ -899,6 +899,8 @@ public final class ScenarioResolver {
     private Periode leesPeriode(PeriodeContext p) {
         int line = p.getStart().getLine();
         LocalDate[] grenzen = new LocalDate[2];
+        // error recovery can leave a period without its second date; the syntax error names it already
+        if (p.DATE(1) == null) return null;
         for (int i = 0; i < 2; i++) {
             String tekst = p.DATE(i).getText().replaceAll("\\s+", " ").trim();
             if (ExpressieBouwer.bronDatumTijd(tekst) != null) {

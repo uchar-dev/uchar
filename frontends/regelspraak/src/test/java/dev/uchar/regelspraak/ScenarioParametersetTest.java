@@ -329,6 +329,18 @@ class ScenarioParametersetTest {
                 "is 275 van", "de parameter 'penningbedrag' krijgt in dit blok zowel een vaste waarde als perioden");
     }
 
+    /** A period the parse left without its second date has its syntax error and nothing else — in a set, and in the
+     *  situation row of a timeline parameter, which reads its period through the same method. */
+    @Test void een_onvolledige_periode_is_alleen_een_syntaxfout() {
+        for (String tekst : List.of("Parameterset p:\nde parameter de vondstdrempel is 3 van 01-01-2025\n",
+                "Situatie s:\nde parameter het penningbedrag is 7 van 01-01-2024\n")) {
+            ScenarioBundel b = resolve(tekst);
+            assertFalse(b.isOk());
+            assertTrue(b.model().errors().stream().allMatch(d -> d.message().startsWith("syntaxfout: ")),
+                    () -> b.model().errors().toString());
+        }
+    }
+
     @Test void een_ongekozen_set_wordt_toch_gecontroleerd() {
         fout("Parameterset ongebruikt:\nde parameter de getijdendrempel is 4\n", "getijdendrempel",
                 "de parameter 'de getijdendrempel' is niet gedeclareerd");
