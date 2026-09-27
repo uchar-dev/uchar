@@ -1,0 +1,47 @@
+Vocabulaire handboek (taal: nl)
+Vocabulaire cgm (standaard) (taal: nl)
+
+Domein Vondstsoort is van het type Enumeratie
+    'wrakhout' (handboek: hout van een wrak) (cgm: WRAKHOUT)
+    'barnsteen' (handboek: amber) (cgm: BARNSTEEN)
+    'flessenpost' (handboek: bericht in een fles) (cgm: FLESSENPOST)
+
+Parameter het premietarief (handboek: premie per kilogram) (cgm: PREMIE_TARIEF) : Numeriek (geheel getal)
+
+Objecttype de Jutter (mv: Jutters) (bezield) (handboek: strandjutter) (cgm: JUTTER)
+    de naam (handboek: naam) (cgm: NAAM) Tekst;
+    het vondstbedrag (handboek: totale premie) (cgm: VONDST_BEDRAG) Numeriek (getal met 2 decimalen);
+    het aantal waardevolle vondsten (handboek: aantal vondsten van waarde) (cgm: AANTAL_WAARDEVOL) Numeriek (niet-negatief geheel getal);
+    is premiewaardig (handboek: komt in aanmerking voor premie) (cgm: PREMIE_WAARDIG) kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten) (handboek: aangespoeld voorwerp) (cgm: VONDST)
+    de soort (handboek: soort vondst) (cgm: VONDST_SOORT) Vondstsoort;
+    het gewicht (handboek: gewicht in kilogram) (cgm: GEWICHT) Numeriek (getal met 2 decimalen);
+    de premie (handboek: premie voor de vondst) (cgm: PREMIE) Numeriek (getal met 2 decimalen);
+    is waardevol (handboek: van waarde) (cgm: WAARDEVOL) kenmerk (bijvoeglijk);
+
+Feittype vondstaanmelding (handboek: aanmelding van een vondst) (cgm: VONDST_AANMELDING)
+    de aanmelder (handboek: melder) (cgm: AANMELDER) Jutter
+    de vondst (mv: vondsten) (handboek: gemelde vondst) (cgm: GEMELDE_VONDST) Vondst
+Eén aanmelder heeft meerdere vondsten
+
+Regelgroep premieberekening (handboek: berekening van de premie) (cgm: PREMIEBEREKENING)
+Regel premie van een vondst (handboek: premie per vondst) (cgm: R_PREMIE_VONDST)
+    geldig altijd
+        De premie van een Vondst moet berekend worden als zijn gewicht maal het premietarief.
+
+Regel vondstbedrag van een jutter (handboek: premie per strandjutter) (cgm: R_VONDSTBEDRAG)
+    geldig altijd
+        Het vondstbedrag van een Jutter moet berekend worden als de som van de premie van alle vondsten van de Jutter of 0 als die er niet zijn.
+
+Regel waardevolle vondst (handboek: vondst van waarde) (cgm: R_WAARDEVOL)
+    geldig altijd
+        Een Vondst is waardevol indien zijn soort gelijk is aan 'barnsteen'.
+
+Regel aantal waardevolle vondsten (handboek: telling van de waardevolle vondsten) (cgm: R_AANTAL_WAARDEVOL)
+    geldig altijd
+        Het aantal waardevolle vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die waardevol zijn.
+
+Regel premiewaardigheid (handboek: toets op premie) (cgm: R_PREMIEWAARDIG)
+    geldig altijd
+        Een Jutter is premiewaardig indien zijn vondstbedrag groter is dan 10.

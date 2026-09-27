@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J4", "objectType": "Jutter",
+        "attributes": { "naam": { "text": "Dirk" } },
+        "roles": { "vondsten": ["V4", "V5"] }, "characteristics": [] },
+      { "label": "J5", "objectType": "Jutter",
+        "attributes": { "naam": { "text": "Eva" } },
+        "roles": { "vondsten": ["V6"] }, "characteristics": [] },
+      { "label": "V4", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "barnsteen" }, "gewicht": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V5", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "barnsteen" }, "gewicht": { "number": "1.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V6", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "flessenpost" }, "gewicht": { "number": "2.50" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "premietarief": { "number": "5" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V4", "attribute": "premie", "value": { "number": "5.00" } },
+    { "kind": "attributeValue", "label": "V5", "attribute": "premie", "value": { "number": "5.00" } },
+    { "kind": "attributeValue", "label": "V6", "attribute": "premie", "value": { "number": "12.50" } },
+    { "kind": "characteristicPresent", "label": "V4", "characteristic": "waardevol" },
+    { "kind": "characteristicPresent", "label": "V5", "characteristic": "waardevol" },
+    { "kind": "characteristicAbsent", "label": "V6", "characteristic": "waardevol" },
+    { "kind": "attributeValue", "label": "J4", "attribute": "vondstbedrag", "value": { "number": "10.00" } },
+    { "kind": "attributeValue", "label": "J5", "attribute": "vondstbedrag", "value": { "number": "12.50" } },
+    { "kind": "attributeValue", "label": "J4", "attribute": "aantal waardevolle vondsten", "value": { "number": "2" } },
+    { "kind": "attributeValue", "label": "J5", "attribute": "aantal waardevolle vondsten", "value": { "number": "0" } },
+    { "kind": "characteristicAbsent", "label": "J4", "characteristic": "premiewaardig" },
+    { "kind": "characteristicPresent", "label": "J5", "characteristic": "premiewaardig" },
+    { "kind": "consistent" }
+  ]
+}

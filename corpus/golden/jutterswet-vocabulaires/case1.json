@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "naam": { "text": "Aukje" } },
+        "roles": { "vondsten": ["V1", "V2"] }, "characteristics": [] },
+      { "label": "J2", "objectType": "Jutter",
+        "attributes": { "naam": { "text": "Bram" } },
+        "roles": { "vondsten": ["V3"] }, "characteristics": [] },
+      { "label": "J3", "objectType": "Jutter",
+        "attributes": { "naam": { "text": "Cor" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "barnsteen" }, "gewicht": { "number": "3.00" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "wrakhout" }, "gewicht": { "number": "1.20" } },
+        "roles": {}, "characteristics": [] },
+      { "label": "V3", "objectType": "Vondst",
+        "attributes": { "soort": { "enumeration": "flessenpost" }, "gewicht": { "number": "0.40" } },
+        "roles": {}, "characteristics": [] }
+    ],
+    "parameters": { "premietarief": { "number": "3" } }
+  },
+  "expected": [
+    { "kind": "attributeValue", "label": "V1", "attribute": "premie", "value": { "number": "9.00" } },
+    { "kind": "attributeValue", "label": "V2", "attribute": "premie", "value": { "number": "3.60" } },
+    { "kind": "attributeValue", "label": "V3", "attribute": "premie", "value": { "number": "1.20" } },
+    { "kind": "characteristicPresent", "label": "V1", "characteristic": "waardevol" },
+    { "kind": "characteristicAbsent", "label": "V2", "characteristic": "waardevol" },
+    { "kind": "characteristicAbsent", "label": "V3", "characteristic": "waardevol" },
+    { "kind": "attributeValue", "label": "J1", "attribute": "vondstbedrag", "value": { "number": "12.60" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "vondstbedrag", "value": { "number": "1.20" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "vondstbedrag", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J1", "attribute": "aantal waardevolle vondsten", "value": { "number": "1" } },
+    { "kind": "attributeValue", "label": "J2", "attribute": "aantal waardevolle vondsten", "value": { "number": "0" } },
+    { "kind": "attributeValue", "label": "J3", "attribute": "aantal waardevolle vondsten", "value": { "number": "0" } },
+    { "kind": "characteristicPresent", "label": "J1", "characteristic": "premiewaardig" },
+    { "kind": "characteristicAbsent", "label": "J2", "characteristic": "premiewaardig" },
+    { "kind": "characteristicAbsent", "label": "J3", "characteristic": "premiewaardig" },
+    { "kind": "consistent" }
+  ]
+}
