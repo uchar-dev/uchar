@@ -1029,7 +1029,12 @@ EXPECTED_CHANNEL=(
 # differ in their scalar parameters alone. No source file of this backend changed: both branches play the
 # two cases on the first run, PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by
 # one as well.
-EXPECTED_PLAYED=216
+# 216 -> 217 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new, from bron.rgs and
+# hand-computed — two named vocabularies with a designation on every designatable kind (IR-SPEC ch. 2.12),
+# over rules that compute a premium, a sum, a count and a threshold. This backend's loader reads the side
+# table into the model and no transpiler reads it: both branches play the two cases on the first run,
+# PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=217
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1350,7 +1355,9 @@ DRL_CHANNEL=(
 # three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
 # 185 -> 186 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new. This branch plays its
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=186
+# 186 -> 187 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new. This branch plays its
+# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=187
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
