@@ -960,7 +960,13 @@ step in a fold source the frontend does not carry (dialect §13.4.17).
 Recorded, not opened: the scenario route lacks the scope-completeness
 check the distribution's service performs (a scope that misses a rule
 supplying a read value fails without a word where the service refuses to
-start), and the nested collection step in a fold source.
+start), and the nested collection step in a fold source. A read-only comparison with the nluwv fork's eleven
+own commits (2026-09-27, `research/nluwv-fork-dekking-2026-09-27`) found
+its behaviour carried here or deliberately different on every point but
+one: a nested aggregation whose step uses a role plural the source does
+not declare plays in the fork and is a marker here, and the frontend's
+warning for it names a cause WF-102 has since removed — recorded, not
+opened.
 
 ## 10. Rough effort
 
