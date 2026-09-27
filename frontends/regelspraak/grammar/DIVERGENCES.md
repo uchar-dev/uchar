@@ -1804,10 +1804,10 @@ serialiser, so a case file and an IR document share one shape.
   none at either end.
 - **The scope lowers to the IR document** — a change of meaning against the
   old toolchain's scenario runner, which fired the whole document and used
-  the scope only for coverage and for the marker and parameter gates; at the
-  move of the UWV workbench (2026-09-26) 15 of its 36 scenarios read values
-  that rules outside their scope derived, and failed here for that reason
-  alone — not to the case files: the
+  the scope only for coverage and for the marker and parameter gates; when an
+  external rule set moved onto this layer (2026-09-26), 15 of its 36
+  scenarios read values that rules outside their scope derived, and failed
+  here for that reason alone — not to the case files: the
   document keeps the declarations, the day-kind definitions and the start
   points whole, and of the named forms — rules, object and fact creations,
   allocations, consistencies, uniquenesses and defaults groups — the ones the

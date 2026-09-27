@@ -375,8 +375,9 @@ reviewer's duty on a machine that has catala. Current gates:
     the production route's IR document, with one the forms the scope
     carries; the handwritten expectations are the anchor, never the
     lowering. An empty scenario-golden set is a failure; floors
-    `EXPECTED_MIN_SCENARIO_GOLDENS=6` and
-    `EXPECTED_MIN_SCENARIO_CASES=29` (measured 2026-09-26). Gate 4 stays
+    `EXPECTED_MIN_SCENARIO_GOLDENS=7` and
+    `EXPECTED_MIN_SCENARIO_CASES=31` (measured 2026-09-27, card
+    `scenario-parametersets`). Gate 4 stays
     the schema gate of those case files and gates 5, 6 and 12 their
     replay. CI leg unconditional and blocking (jar-only, like gate 10).
 

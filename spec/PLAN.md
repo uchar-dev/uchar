@@ -895,7 +895,7 @@ and clingo fault; the graph draws no population, relation or channel nodes
 (counted per class in gate 15) and keys sister subtypes where the verifier's
 walk does not; a week grid's fixed start date is not canonical (two dates lay
 the same grid); the general refusal of an undeclared read waits for the
-parity zone to leave; a scenario has no surface for an absent parameter;
+parity zone to leave;
 handwritten case files whose names or date-times do not follow the lowering's
 spelling cannot be regenerated from a scenario; the loader cites a different
 first finding than the verifier on doubly ill-formed documents. Norm
@@ -965,8 +965,35 @@ own commits (2026-09-27, `research/nluwv-fork-dekking-2026-09-27`) found
 its behaviour carried here or deliberately different on every point but
 one: a nested aggregation whose step uses a role plural the source does
 not declare plays in the fork and is a marker here, and the frontend's
-warning for it names a cause WF-102 has since removed — recorded, not
-opened.
+warning for it named a cause WF-102 had since removed. Since the card-less fix
+`fix/aggregatie-meervoud` (2026-09-27, landed with `scenario-parametersets`)
+that warning names the step that does not bind and why, with the way out
+`(mv: …)`, and an unknown to-one step beside a direct relation no longer
+drops out silently; a path step still binds no undeclared plural (IR-SPEC
+ch. 2.6), while the one-step range accepts one through the type pair —
+recorded, not opened. Also recorded from the distribution's fix of the same
+day: the case input of `CaseRunner` refuses a subtype instance on a to-one
+role as not carried, because it compares the bean field's Java type with
+the instance's type instead of the role's declared type (a to-many role
+takes it); the distribution mirrors that.
+
+**Parameter sets in the scenario document (2026-09-27, card
+`scenario-parametersets`):** the scenario route has its parameter sets back,
+spec-first: a `Parameterset` block with jaargangen, chosen per scenario with
+`met parameterset` and resolved on the peildatum
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, Scenariotoetsen; golden
+`jutterswet-jaarvaststelling`, gate 16 floors 7 goldens and 31 cases; gate 12
+plays 216 and 186). The open point "a scenario has no surface for an absent
+parameter" is closed without a new form: the one pinned case leaves out a
+list parameter, a datatype RegelSpraak does not declare, and a scalar
+parameter that is read and left out faults in ref and clingo
+(RUNTIME-SEMANTICS ch. 5.7; red case `aanvoergeld-parameter-ongebonden`), so
+the parameter gate refuses what the executors would. Open for the
+distribution: its service reads the set from the same document instead of
+its JSON file (a card there). Recorded: the frontend's phrase tokens force no
+word boundary (`met parametersets` reads as the token plus `s`, as `de
+parameters` already did), and the head order is fixed (`met parameterset`
+after `met peildatum`).
 
 ## 10. Rough effort
 
