@@ -770,19 +770,23 @@ final class ExpressieBouwer {
      * behavioural, so a refused fold must leave a WELL-FORMED document that faults observably (WF-044) in
      * every executor — the red-zone shape, not an ill-formed one.
      *
-     * <p>(a) A NESTED set step ("… van alle X van alle Y van de Z"). Since WF-102 the uchar wire carries a
-     * written multi-step range as {@code sourcePath} (IR-SPEC ch. 4.3) where {@link #bereikPad} binds it off
-     * the chain, and such a chain returns before this route (the first check below). A chain it declines
-     * has the one-step spelling alone, one {@code elementType} plus one {@code sourceRole}, and the emitter's
-     * derivation ranges from the RULE SUBJECT to the innermost element type — so the outer step disappears
-     * without a trace and the fold runs over the wrong set. Where no relation joins subject and element that
-     * was caught downstream (WF-048, until L2; since then the emitter refuses a fold it cannot bind); where
-     * one happens to exist it is verifier-CLEAN and silently wrong, which is the shape this refusal exists for.
+     * <p>(a) A written CHAIN that does not become a path: a NESTED set step ("… van alle X van alle Y van
+     * de Z"), or any chain of three segments or more ("… van alle X van de Y van de Z" too) that the walk
+     * declines. Since WF-102 the uchar wire carries a written multi-step range as {@code sourcePath} (IR-SPEC
+     * ch. 4.3) where {@link #bereikPad} binds it off the chain, and such a chain returns before this route (the
+     * first check below). A chain it declines has the one-step spelling alone, one {@code elementType} plus one
+     * {@code sourceRole}, and the emitter's derivation ranges from the RULE SUBJECT to the innermost element
+     * type — so the written steps disappear without a trace and the fold runs over the wrong set. Where no
+     * relation joins subject and element that was caught downstream (WF-048, until L2; since then the emitter
+     * refuses a fold it cannot bind); where one happens to exist it is verifier-CLEAN and silently wrong,
+     * which is the shape this refusal exists for. The WARNING names where the walk stopped
+     * ({@link #wandelBereik}): the step that binds no role and why, an anchor that is not the subject, or a
+     * landing on another type than the element type.
      *
-     * <p>(b) An intermediate TO-ONE step ("… van alle X van de Y van de Z"), the same loss along a third
-     * route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is not the subject
-     * drops its step just as silently — and here the written element name may legitimately name the
-     * subject-side role, so (c) does not see it either. The anchor must therefore NAME the subject's own
+     * <p>(b) An ANCHOR that is not the subject under a one-step range ("… van alle X van de Y"), the same
+     * loss along a third route: the fold source names one relation FROM THE RULE SUBJECT, so an anchor that is
+     * not the subject drops its step just as silently — and here the written element name may legitimately
+     * name the subject-side role, so (c) does not see it either. The anchor must therefore NAME the subject's own
      * object type, literally. An anchor that resolves to no object type at all (a role name, "alle vondsten
      * van de aanmelder") is left alone: resolving a role anchor is the wire question, not this refusal.
      *
@@ -795,20 +799,28 @@ final class ExpressieBouwer {
      */
     private Expr keurVouwbron(FunctieAanroepContext f, Expr.AttribuutRef bron, Datatype type) {
         // WF-102 (2026-09-11): a range the resolver RESOLVED is carried on the wire, so there is nothing
-        // left to refuse. Routes (a) and (b) below exist because a stacked range had no wire form; where
-        // one is bound they would refuse an expressible sentence, and (c) has nothing to contradict — a
-        // bound path makes no by-pair guess. The refusals stay for every chain that declines to resolve.
+        // left to refuse. Routes (a) and (b) below exist because a written range without a path would lose
+        // its steps; where one is bound they would refuse an expressible sentence, and (c) has nothing to
+        // contradict — a bound path makes no by-pair guess. The refusals stay for every chain that declines.
         if (bron.bereikPad() != null && !bron.bereikPad().isEmpty()) return null;
         OnderwerpContext o = vouwBronOnderwerp(f);
         if (o == null) return null;
-        OnderwerpContext genest = genesteSetStap(o);
-        if (genest != null) {
+        // (a): a written chain the walk declined, and every nested set step. The refusal names where the chain
+        // stopped: the step that binds no role and why, an anchor that is not the subject, a landing on another
+        // type. The ground this route gave before WF-102, that a fold source carries one relation, no longer
+        // holds. A nested chain the walk does not decide has no anchor it can read: fewer than three segments,
+        // or a last segment that is no name.
+        Bereikwandeling wandeling = wandelBereik(o, bron.objecttype());
+        if (wandeling.weigering() != null || genesteSetStap(o) != null) {
+            String reden = wandeling.weigering() != null ? wandeling.weigering()
+                    : "'" + src(o) + "' begint niet bij het regelonderwerp"
+                            + (huidigSubject == null ? "" : " " + huidigSubject.naam);
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
-                    "geneste verzamelingsstap in een vouwbron: '" + src(o) + "' stapelt de verzameling '"
-                            + src(genest) + "' onder een tweede verzameling, en een vouwbron draagt precies "
-                            + "één relatie (IR-SPEC ch. 4.3: één elementType plus één sourceRole) — de "
-                            + "buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
-                            + "(§13.4.17) — '" + bron(f) + "'", f.getStart().getLine()));
+                    "keten zonder sourcePath in een vouwbron: " + reden + " — een sourcePath loopt van het "
+                            + "regelonderwerp naar de elementen en bindt elke stap aan precies één rol (IR-SPEC "
+                            + "ch. 4.3/WF-102), dus de aggregatie blijft onopgelost (§13.4.17)"
+                            + (wandeling.uitweg() == null ? "" : "; " + wandeling.uitweg()) + " — '" + bron(f) + "'",
+                    f.getStart().getLine()));
             return new Expr.Onopgelost(type, bron(f), null);
         }
         // The emitter derives a sourceRole only for a navigation-free member fold over a resolved element type
@@ -2467,33 +2479,101 @@ final class ExpressieBouwer {
      * itself fills a role of that name ("van de aanmelder", read on the Jutter who IS the aanmelder).
      */
     private java.util.List<RegelSpraakModel.RolBindingRef> bereikPad(OnderwerpContext onderwerp, Objecttype elem) {
-        if (onderwerp == null || elem == null || huidigSubject == null || !isSetOnderwerp(onderwerp))
-            return java.util.List.of();
+        return wandelBereik(onderwerp, elem).pad();
+    }
+
+    /** What the walk of a written fold-source range found: the path, or, where it walked a chain of three segments
+     *  or more and declined it, why — a clause about the written source ({@code weigering}) — and the way out a
+     *  declaration gives where there is one ({@code uitweg}). Both are null for every shape the walk does not
+     *  decide, the one-step range among them. */
+    private record Bereikwandeling(java.util.List<RegelSpraakModel.RolBindingRef> pad, String weigering,
+                                   String uitweg) {
+        static final Bereikwandeling GEEN = new Bereikwandeling(java.util.List.of(), null, null);
+        static Bereikwandeling geweigerd(String weigering, String uitweg) {
+            return new Bereikwandeling(java.util.List.of(), weigering, uitweg);
+        }
+    }
+
+    /** The walk behind {@link #bereikPad}, with the reason where it declines. One walk for both, so that the path
+     *  the emitter writes and the refusal {@link #keurVouwbron} words cannot disagree about one written chain. */
+    private Bereikwandeling wandelBereik(OnderwerpContext onderwerp, Objecttype elem) {
+        // An element type that did not resolve is no reason to stop before the steps: the walk then names the step
+        // that does not bind, and the landing check below declines what binds, so the path stays empty either way.
+        if (onderwerp == null || huidigSubject == null || !isSetOnderwerp(onderwerp))
+            return Bereikwandeling.GEEN;
         // The written segments, outside-in. Two shapes produce them, and both are walked: a nested
         // set onderwerp is its own parse node, while an inner TO-ONE step is swallowed by the greedy
         // kaleNaam (§13.4.1, the same split the navigatiePad block above performs).
         java.util.List<String> segmenten = new java.util.ArrayList<>();
         for (OnderwerpContext rest = onderwerp; rest != null; rest = rest.onderwerp()) {
             String kn = rest.kaleNaam() != null ? src(rest.kaleNaam()) : primaireNaam(rest);
-            if (kn == null) return java.util.List.of();
+            if (kn == null) return Bereikwandeling.GEEN;
             for (String deel : kn.split("\\s+van\\s+")) segmenten.add(stripArtikel(deel).trim());
         }
         // Two hops plus an anchor is the shortest thing this field exists for; anything shorter is the
         // one-step range and keeps its own spelling.
-        if (segmenten.size() < 3) return java.util.List.of();
-        if (!ankertHetOnderwerp(segmenten.get(segmenten.size() - 1))) return java.util.List.of();
+        if (segmenten.size() < 3) return Bereikwandeling.GEEN;
+        String anker = segmenten.get(segmenten.size() - 1);
+        if (!ankertHetOnderwerp(anker))
+            return Bereikwandeling.geweigerd("'" + src(onderwerp) + "' begint bij '" + anker
+                    + "' en niet bij het regelonderwerp " + huidigSubject.naam, null);
         java.util.List<RegelSpraakModel.RolBindingRef> pad = new java.util.ArrayList<>();
         Objecttype houder = huidigSubject;
         for (int i = segmenten.size() - 2; i >= 0; i--) {
             RegelSpraakModel.BereikHop hop = model.bereikHop(houder, segmenten.get(i));
-            if (hop == null) return java.util.List.of();
+            if (hop == null) return stapWeigering(onderwerp, houder, segmenten.get(i));
             pad.add(hop.binding());
             houder = hop.doel();
         }
         // The walk must land where the head noun already bound the element type: a mismatch means the head
         // resolved against a different fact type than the walk did, and binding it anyway would fold a set
         // the sentence does not name.
-        return houder == elem ? java.util.List.copyOf(pad) : java.util.List.of();
+        if (houder != elem)
+            return Bereikwandeling.geweigerd("'" + src(onderwerp) + "' komt via haar stappen uit bij " + houder.naam
+                    + ", maar de geschreven elementnaam " + (elem == null ? "noemt geen objecttype"
+                            : "is gelezen als " + elem.naam), null);
+        return new Bereikwandeling(java.util.List.copyOf(pad), null, null);
+    }
+
+    /** Why the written step {@code stap} binds no role from {@code houder}: the classes of
+     *  {@link RegelSpraakModel#stapKandidaten}, so the words follow the search that declined the step. A plural the
+     *  model does not declare binds no step, also where the one-step range accepts it: the uchar wire has no
+     *  best-effort plural (IR-SPEC ch. 2.6, decided 2026-08-25), and a path step has no type-pair derivation to fall
+     *  back on (WF-102). Only that cause has a way out a declaration gives, so only it carries one. */
+    private Bereikwandeling stapWeigering(OnderwerpContext onderwerp, Objecttype houder, String stap) {
+        RegelSpraakModel.StapKandidaten k = model.stapKandidaten(houder, stap);
+        String kop = "in '" + src(onderwerp) + "' bindt de stap '" + stap + "' vanaf " + houder.naam + " geen rol: ";
+        if (k.gedeclareerd().size() > 1)
+            return Bereikwandeling.geweigerd(kop + "'" + stap + "' noemt er meer dan één ("
+                    + rollen(k.gedeclareerd(), "") + ")", null);
+        if (k.gedeclareerd().size() == 1)
+            return Bereikwandeling.geweigerd(kop + rollen(k.gedeclareerd(), "") + " wordt gevuld door '"
+                    + k.gedeclareerd().get(0).rol().objecttypeNaam() + "', en dat is geen gedeclareerd objecttype",
+                    null);
+        if (!k.afgeleid().isEmpty())
+            return Bereikwandeling.geweigerd(kop + "'" + stap + "' is geen gedeclareerde naam of gedeclareerd "
+                    + "meervoud, alleen het afgeleide meervoud (+s/+en) van " + rollen(k.afgeleid(), "")
+                    + ", en een afgeleid meervoud bindt geen stap",
+                    k.afgeleid().size() == 1
+                            ? "declareer het meervoud op de rol: '" + k.afgeleid().get(0).rol().naam() + " (mv: " + stap
+                                    + ")'"
+                            : "declareer het meervoud op de rol die bedoeld is: '(mv: " + stap + ")'");
+        if (!k.wederkerig().isEmpty())
+            return Bereikwandeling.geweigerd(kop + "'" + stap + "' noemt " + rollen(k.wederkerig(), "wederkerige ")
+                    + ", en over een wederkerig feittype schrijft deze frontend geen stap", null);
+        return Bereikwandeling.geweigerd(kop + "geen rol die vanaf " + houder.naam + " te bereiken is, heet '" + stap
+                + "' of declareert dat als meervoud", null);
+    }
+
+    /** The candidates a step refusal names, each once: "de rol 'x' van het feittype 'f'", or "de rollen 'x' van het
+     *  feittype 'f' en 'y' van het feittype 'g'". */
+    private static String rollen(java.util.List<RegelSpraakModel.StapKandidaat> kandidaten, String soort) {
+        java.util.List<String> delen = kandidaten.stream().distinct()
+                .map(k -> "'" + k.rol().naam() + "' van het " + soort + "feittype '" + k.feittype().naam + "'")
+                .toList();
+        return delen.size() == 1 ? "de rol " + delen.get(0)
+                : "de rollen " + String.join(", ", delen.subList(0, delen.size() - 1)) + " en "
+                        + delen.get(delen.size() - 1);
     }
 
     /** Whether the written anchor segment denotes the RULE SUBJECT — literally by object-type name, or

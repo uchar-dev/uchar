@@ -126,7 +126,7 @@ class MarkerVerslagTest {
 
     @Test void vouwbron_geneste_verzamelingsstap() {
         geschreven(GenesteVouwbronTest.MODEL_A + GenesteVouwbronTest.GEMENGDE_KETENREGEL,
-                "geneste verzamelingsstap in een vouwbron");
+                GenesteVouwbronTest.KETEN_KOP);
     }
 
     @Test void vouwbron_tussenstap() {

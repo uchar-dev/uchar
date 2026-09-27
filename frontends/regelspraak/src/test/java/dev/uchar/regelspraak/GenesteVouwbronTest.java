@@ -44,6 +44,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * the card's A, B and F. The refusals are not gone: they hold for every chain that declines (an
  * unresolvable step, an anchor that is not the subject, a walk that lands elsewhere), and each route keeps
  * a witness. Shape (3) is untouched — it is a one-step form with no range to state.
+ *
+ * <p><b>Updated 2026-09-27, the words of that refusal.</b> Until then a declining nested chain was refused with
+ * the pre-WF-102 ground ("een vouwbron draagt precies één relatie … de buitenste stap zou spoorloos
+ * wegvallen"), whatever made it decline, and a declining chain with a to-one step got the anchor sentences of
+ * route (b), the emitter's ERROR, or nothing at all. Now every chain of three segments or more that the walk
+ * declines, and every nested set step, gets one WARNING that names where the walk stopped: the step that binds
+ * no role and why, an anchor that is not the subject, or a landing on another type. The witnesses below hold
+ * each cause to its literal sentence. The walk binds no plural the model does not declare (IR-SPEC ch. 2.6,
+ * decided 2026-08-25), so the way out that sentence names is the declaration.
  */
 class GenesteVouwbronTest {
 
@@ -247,11 +256,21 @@ class GenesteVouwbronTest {
                 Het laagste vondstgewicht van een Jutter moet berekend worden als de minimale waarde van het inhoudsgewicht van alle ingepakte kisten van alle geborgen vondsten van alle gevoerde boten van de Jutter.
         """;
 
-    static final String NEST_MELDING =
-            "geneste verzamelingsstap in een vouwbron: 'alle geborgen vondsten van alle gevoerde boten van de "
-            + "Jutter' stapelt de verzameling 'alle gevoerde boten van de Jutter' onder een tweede verzameling, "
-            + "en een vouwbron draagt precies één relatie (IR-SPEC ch. 4.3: één elementType plus één "
-            + "sourceRole) — de buitenste stap zou spoorloos wegvallen, dus de aggregatie blijft onopgelost "
+    /** The refusal of a declining chain, whole: a nested aggregation whose step is spelled in a plural the model
+     *  does not declare. */
+    static final String AFGELEID_MEERVOUD_MELDING =
+            "keten zonder sourcePath in een vouwbron: in 'alle geborgen vondsten van alle sloepen van de Jutter' "
+            + "bindt de stap 'sloepen' vanaf Jutter geen rol: 'sloepen' is geen gedeclareerde naam of gedeclareerd "
+            + "meervoud, alleen het afgeleide meervoud (+s/+en) van de rol 'sloep' van het feittype 'bemanning', en "
+            + "een afgeleid meervoud bindt geen stap — een sourcePath loopt van het regelonderwerp naar de elementen "
+            + "en bindt elke stap aan precies één rol (IR-SPEC ch. 4.3/WF-102), dus de aggregatie blijft onopgelost "
+            + "(§13.4.17); declareer het meervoud op de rol: 'sloep (mv: sloepen)' — 'de minimale waarde van het "
+            + "gewicht van alle geborgen vondsten van alle sloepen van de Jutter'";
+
+    /** The head and the tail of that refusal, for the witnesses of the other causes. */
+    static final String KETEN_KOP = "keten zonder sourcePath in een vouwbron: ";
+    static final String KETEN_STAART = " — een sourcePath loopt van het regelonderwerp naar de elementen en bindt "
+            + "elke stap aan precies één rol (IR-SPEC ch. 4.3/WF-102), dus de aggregatie blijft onopgelost "
             + "(§13.4.17)";
 
     static final String TUSSENSTAP_MELDING =
@@ -270,7 +289,7 @@ class GenesteVouwbronTest {
     private static List<Diagnostic> vouwbronDiagnoses(String bron) {
         RegelSpraakModel m = Resolver.resolve(bron);
         return m.diagnostics.stream()
-                .filter(d -> d.message().startsWith("geneste verzamelingsstap in een vouwbron")
+                .filter(d -> d.message().startsWith(KETEN_KOP)
                         || d.message().startsWith("tussenstap in een vouwbron")
                         || d.message().startsWith("rolanker in een vouwbron")
                         || d.message().startsWith("vouwbron bindt niet op de geschreven naam"))
@@ -319,13 +338,15 @@ class GenesteVouwbronTest {
     }
 
     /** The nested set step is not always the FIRST step of the written chain: the greedy kaleNaam decides
-     *  where the chain splits, so the walk must run the whole van-chain. */
+     *  where the chain splits, so the walk must run the whole van-chain. It binds 'gevoerde boten' from the
+     *  Jutter and stops at 'bergende boot', the Boot's own role in berging and none reached from it. */
     @Test
     void een_gemengde_keten_met_een_toone_stap_wordt_ook_benoemd() {
         List<Diagnostic> ds = vouwbronDiagnoses(MODEL_B + GEMENGDE_KETENREGEL);
         assertEquals(1, ds.size(), () -> "verwacht één vouwbron-diagnose, kreeg " + ds);
-        assertTrue(ds.get(0).message().contains("'alle gevoerde boten van de Jutter' onder een tweede verzameling"),
-                () -> "de melding moet de geneste stap noemen: " + ds.get(0).message());
+        assertTrue(ds.get(0).message().contains("bindt de stap 'bergende boot' vanaf Boot geen rol: geen rol die "
+                        + "vanaf Boot te bereiken is, heet 'bergende boot'"),
+                () -> "de melding moet de stap noemen waar de wandeling stopt: " + ds.get(0).message());
     }
 
     /** A chain that DECLINES still produces the marker, and the refusal machinery is therefore alive: the
@@ -336,6 +357,240 @@ class GenesteVouwbronTest {
         assertFalse(json.contains("\"sourcePath\""), "een onoplosbare keten mag geen half pad op de wire zetten");
         assertFalse(json.contains("\"sourceRole\""), "een geneste keten mag geen sourceRole op de wire zetten");
         assertFalse(json.contains("\"kind\": \"minimum\""), "de vouw mag niet geëmitteerd worden");
+        assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
+    }
+
+    // ---------------- (a) the chain that declines: where the walk stops ----------------
+
+    /** The chain of {@link #MODEL} with two roles whose plural is regular and not declared. */
+    static final String MEERVOUDLOOS_MODEL = """
+        Eenheidsysteem Gewicht
+            het kilogram (mv: kilogrammen) kg
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het laagste vondstgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Objecttype de Boot (mv: Boten)
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Feittype bemanning
+            de schipper Jutter
+            de sloep Boot
+        Eén schipper heeft meerdere sloepen
+
+        Feittype berging
+            de bergende boot Boot
+            de geborgen vondst Vondst
+        Eén bergende boot heeft meerdere geborgen vondsten
+        """;
+
+    /** The same model with both plurals declared: the way out the refusal names, taken. */
+    static final String SLOEPMODEL = MEERVOUDLOOS_MODEL
+            .replace("de sloep Boot", "de sloep (mv: sloepen) Boot")
+            .replace("de geborgen vondst Vondst", "de geborgen vondst (mv: geborgen vondsten) Vondst");
+
+    /** Two roles named 'geborgen vondst' in two fact types with different fillers: the written element name is read
+     *  as the first declared, Wrak, while the walk from the Boot reaches the other, Vondst. */
+    static final String LANDINGMODEL = """
+        Eenheidsysteem Gewicht
+            het kilogram (mv: kilogrammen) kg
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het laagste vondstgewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Objecttype de Kotter (mv: Kotters)
+
+        Objecttype het Wrak (mv: Wrakken)
+            het gewicht Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Objecttype de Boot (mv: Boten)
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht (mv: gewichten) Numeriek (getal met 2 decimalen) met eenheid kg;
+
+        Feittype wrakberging
+            de bergende kotter Kotter
+            de geborgen vondst (mv: geborgen vondsten) Wrak
+        Eén bergende kotter heeft meerdere geborgen vondsten
+
+        Feittype bemanning
+            de schipper Jutter
+            de sloep (mv: sloepen) Boot
+        Eén schipper heeft meerdere sloepen
+
+        Feittype berging
+            de bergende boot Boot
+            de geborgen vondst (mv: geborgen vondsten) Vondst
+        Eén bergende boot heeft meerdere geborgen vondsten
+        """;
+
+    /** A rule on the Jutter that folds the gewicht over {@code bron}. */
+    private static String regel(String bron) {
+        return "\n\nRegel laagste vondstgewicht\n    geldig altijd\n        Het laagste vondstgewicht van een Jutter "
+                + "moet berekend worden als de minimale waarde van het gewicht van " + bron + ".\n";
+    }
+
+    /** The one refusal the chain gets, whole. */
+    private static void enigeMelding(String bron, String melding) {
+        List<Diagnostic> ds = vouwbronDiagnoses(bron);
+        assertEquals(1, ds.size(), () -> "verwacht één vouwbron-diagnose, kreeg " + ds);
+        assertEquals(melding, ds.get(0).message());
+    }
+
+    /** A step spelled in a plural the model does not declare: the walk binds a declared name or plural only. The
+     *  one-step range over the same spelling binds by the type pair, which a path step does not have (WF-102). */
+    @Test
+    void een_stap_in_een_ongedeclareerd_meervoud_wordt_benoemd_met_de_uitweg() {
+        enigeMelding(MEERVOUDLOOS_MODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                AFGELEID_MEERVOUD_MELDING);
+        String json = ir(MEERVOUDLOOS_MODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"));
+        assertFalse(json.contains("\"sourcePath\""), "een onoplosbare keten mag geen half pad op de wire zetten");
+        assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
+    }
+
+    /** Each step is judged on its own: with the first plural declared, the walk binds 'sloepen' and names the second
+     *  step, from the Boot it reached. */
+    @Test
+    void de_melding_noemt_de_stap_waar_de_wandeling_stopt() {
+        enigeMelding(MEERVOUDLOOS_MODEL.replace("de sloep Boot", "de sloep (mv: sloepen) Boot")
+                        + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'geborgen "
+                        + "vondsten' vanaf Boot geen rol: 'geborgen vondsten' is geen gedeclareerde naam of "
+                        + "gedeclareerd meervoud, alleen het afgeleide meervoud (+s/+en) van de rol 'geborgen vondst' "
+                        + "van het feittype 'berging', en een afgeleid meervoud bindt geen stap" + KETEN_STAART
+                        + "; declareer het meervoud op de rol: 'geborgen vondst (mv: geborgen vondsten)' — 'de "
+                        + "minimale waarde van het gewicht van alle geborgen vondsten van alle sloepen van de Jutter'");
+    }
+
+    /** The way out works: with both plurals declared the same sentence is a two-step path. */
+    @Test
+    void met_beide_meervouden_gedeclareerd_wordt_dezelfde_zin_een_bronpad() {
+        String bron = SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter");
+        assertEquals(List.of(), vouwbronDiagnoses(bron));
+        assertBronPad(ir(bron), "bemanning", "sloep", "berging", "geborgen vondst");
+    }
+
+    /** A chain with a to-ONE step and the same undeclared plural. Until 2026-09-27 this got route (b)'s sentence,
+     *  that the set is anchored on the role 'sloep', which denotes another instance; the walk says what stopped it. */
+    @Test
+    void een_toone_keten_met_een_ongedeclareerd_meervoud_noemt_de_stap() {
+        enigeMelding(MEERVOUDLOOS_MODEL + regel("alle geborgen vondsten van de sloep van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van de sloep van de Jutter' bindt de stap 'geborgen vondsten' "
+                        + "vanaf Boot geen rol: 'geborgen vondsten' is geen gedeclareerde naam of gedeclareerd "
+                        + "meervoud, alleen het afgeleide meervoud (+s/+en) van de rol 'geborgen vondst' van het "
+                        + "feittype 'berging', en een afgeleid meervoud bindt geen stap" + KETEN_STAART
+                        + "; declareer het meervoud op de rol: 'geborgen vondst (mv: geborgen vondsten)' — 'de "
+                        + "minimale waarde van het gewicht van alle geborgen vondsten van de sloep van de Jutter'");
+    }
+
+    /** A step that names more than one role reachable from where it starts. */
+    @Test
+    void een_stap_die_meer_dan_een_rol_noemt_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL + """
+
+                Feittype verhuur
+                    de verhuurder Jutter
+                    de sloep (mv: sloepen) Boot
+                Eén verhuurder heeft meerdere sloepen
+                """ + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'sloepen' vanaf "
+                        + "Jutter geen rol: 'sloepen' noemt er meer dan één (de rollen 'sloep' van het feittype "
+                        + "'bemanning' en 'sloep' van het feittype 'verhuur')" + KETEN_STAART + " — 'de minimale "
+                        + "waarde van het gewicht van alle geborgen vondsten van alle sloepen van de Jutter'");
+    }
+
+    /** A step that names no role reachable from where it starts. */
+    @Test
+    void een_stap_die_geen_rol_noemt_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL + regel("alle geborgen vondsten van alle kotters van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van alle kotters van de Jutter' bindt de stap 'kotters' vanaf "
+                        + "Jutter geen rol: geen rol die vanaf Jutter te bereiken is, heet 'kotters' of declareert dat "
+                        + "als meervoud" + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle geborgen "
+                        + "vondsten van alle kotters van de Jutter'");
+    }
+
+    /** A step over a reciprocal fact type, whose single role this frontend does not write as a step. */
+    @Test
+    void een_stap_over_een_wederkerig_feittype_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL + """
+
+                Wederkerig feittype strandmaatschap
+                    de strandmaat (mv: strandmaten) Jutter
+                Eén strandmaat heeft één strandmaat
+                """ + regel("alle geborgen vondsten van alle sloepen van alle strandmaten van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van alle sloepen van alle strandmaten van de Jutter' bindt de "
+                        + "stap 'strandmaten' vanaf Jutter geen rol: 'strandmaten' noemt de rol 'strandmaat' van het "
+                        + "wederkerige feittype 'strandmaatschap', en over een wederkerig feittype schrijft deze "
+                        + "frontend geen stap" + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle "
+                        + "geborgen vondsten van alle sloepen van alle strandmaten van de Jutter'");
+    }
+
+    /** A step whose one role is filled by a type the model does not declare. */
+    @Test
+    void een_stap_naar_een_ongedeclareerd_type_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL.replace("de sloep (mv: sloepen) Boot", "de sloep (mv: sloepen) Schuit")
+                        + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                KETEN_KOP + "in 'alle geborgen vondsten van alle sloepen van de Jutter' bindt de stap 'sloepen' vanaf "
+                        + "Jutter geen rol: de rol 'sloep' van het feittype 'bemanning' wordt gevuld door 'Schuit', en "
+                        + "dat is geen gedeclareerd objecttype" + KETEN_STAART + " — 'de minimale waarde van het "
+                        + "gewicht van alle geborgen vondsten van alle sloepen van de Jutter'");
+    }
+
+    /** A chain whose anchor is not the rule subject. */
+    @Test
+    void een_keten_met_een_ander_anker_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen van de Boot"),
+                KETEN_KOP + "'alle geborgen vondsten van alle sloepen van de Boot' begint bij 'Boot' en niet bij het "
+                        + "regelonderwerp Jutter" + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle "
+                        + "geborgen vondsten van alle sloepen van de Boot'");
+    }
+
+    /** A nested chain without an anchor: two segments, so the walk has nothing to start from. */
+    @Test
+    void een_geneste_keten_zonder_anker_wordt_benoemd() {
+        enigeMelding(SLOEPMODEL + regel("alle geborgen vondsten van alle sloepen"),
+                KETEN_KOP + "'alle geborgen vondsten van alle sloepen' begint niet bij het regelonderwerp Jutter"
+                        + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle geborgen vondsten van alle "
+                        + "sloepen'");
+    }
+
+    /** An element name that names nothing, under an anchor that IS the subject: the Jutter fills 'aanmelder'. The walk
+     *  runs its steps before it compares the element type, so it names the step instead of claiming that the chain
+     *  starts elsewhere. */
+    @Test
+    void een_onbekende_elementnaam_wordt_als_stap_benoemd() {
+        enigeMelding(MODEL_B + regel("alle kisten van alle gevoerde boten van de aanmelder"),
+                KETEN_KOP + "in 'alle kisten van alle gevoerde boten van de aanmelder' bindt de stap 'kisten' vanaf "
+                        + "Boot geen rol: geen rol die vanaf Boot te bereiken is, heet 'kisten' of declareert dat als "
+                        + "meervoud" + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle kisten van "
+                        + "alle gevoerde boten van de aanmelder'");
+    }
+
+    /** A walk that lands on another type than the one the written element name was read as. */
+    @Test
+    void een_keten_die_elders_uitkomt_wordt_benoemd() {
+        enigeMelding(LANDINGMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
+                KETEN_KOP + "'alle geborgen vondsten van alle sloepen van de Jutter' komt via haar stappen uit bij "
+                        + "Vondst, maar de geschreven elementnaam is gelezen als Wrak" + KETEN_STAART + " — 'de "
+                        + "minimale waarde van het gewicht van alle geborgen vondsten van alle sloepen van de Jutter'");
+    }
+
+    /** An unknown to-ONE step beside a direct Jutter–Vondst relation. Measured on main 4db70391: route (b) left the
+     *  unknown anchor alone, (c) found the written name naming the one relation, and the emitter wrote a one-step
+     *  fold over 'aangemelde vondst' with {@code diagnostics: []}, the step 'van de kotter' gone. The walk now
+     *  names that step, and the fold is the marker. */
+    @Test
+    void een_onbekende_toone_stap_valt_niet_meer_stil_weg() {
+        String bron = MODEL_B + regel("alle aangemelde vondsten van de kotter van de Jutter");
+        enigeMelding(bron,
+                KETEN_KOP + "in 'alle aangemelde vondsten van de kotter van de Jutter' bindt de stap 'kotter' vanaf "
+                        + "Jutter geen rol: geen rol die vanaf Jutter te bereiken is, heet 'kotter' of declareert dat "
+                        + "als meervoud" + KETEN_STAART + " — 'de minimale waarde van het gewicht van alle "
+                        + "aangemelde vondsten van de kotter van de Jutter'");
+        String json = ir(bron);
+        assertFalse(json.contains("\"sourceRole\""), "de wire mag de geschreven stap niet laten vallen");
         assertTrue(json.contains("\"node\": \"Unresolved\""), "de vouw moet een zichtbare markering worden");
     }
 
@@ -512,8 +767,7 @@ class GenesteVouwbronTest {
     void de_emissie_draagt_de_diagnose_op_de_wire() {
         String json = ir(MODEL_B + GEMENGDE_KETENREGEL);
         assertTrue(json.contains("\"severity\": \"warning\""), "de diagnose hoort op de wire");
-        assertTrue(json.contains("geneste verzamelingsstap in een vouwbron"),
-                "de wire moet de reden dragen, niet alleen een niveau");
+        assertTrue(json.contains(KETEN_KOP.strip()), "de wire moet de reden dragen, niet alleen een niveau");
     }
 
     /** The emitted {@code sourcePath}, step by step and in order: the pairs are given subject-outwards, and

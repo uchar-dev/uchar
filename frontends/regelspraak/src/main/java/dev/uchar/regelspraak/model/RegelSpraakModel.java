@@ -690,6 +690,34 @@ public final class RegelSpraakModel {
         return null;
     }
 
+    /** A role a written step of a fold-source range names from a holder, with the fact type it belongs to. */
+    public record StapKandidaat(Feittype feittype, Rol rol) {}
+
+    /** The roles a written step of a fold-source range names from {@code houder}, split by why {@link #bereikHop}
+     *  takes them or not. {@code gedeclareerd}: by a DECLARED name (singular or declared plural) in a two-role fact
+     *  type, one entry for each binding {@link #elementBinding} counts, so the step binds exactly when there is one
+     *  and its filler is a declared object type. {@code afgeleid}: by the best-effort plural alone, which binds no
+     *  step. {@code wederkerig}: in a reciprocal fact type, whose single role gives no two-role step. It exists for
+     *  the refusal that names the step and its cause, so the words follow the search that declined the step. */
+    public record StapKandidaten(List<StapKandidaat> gedeclareerd, List<StapKandidaat> afgeleid,
+                                 List<StapKandidaat> wederkerig) {}
+
+    public StapKandidaten stapKandidaten(Objecttype houder, String geschrevenElement) {
+        List<StapKandidaat> gedeclareerd = new ArrayList<>(), afgeleid = new ArrayList<>(),
+                wederkerig = new ArrayList<>();
+        if (houder != null && geschrevenElement != null)
+            for (Feittype ft : feittypen.values())
+                for (Rol r : ft.rollen) {
+                    if (!rolMatcht(r, geschrevenElement) || !feittypeRelateert(ft, r, houder)) continue;
+                    StapKandidaat k = new StapKandidaat(ft, r);
+                    if (ft.wederkerig) wederkerig.add(k);
+                    else if (!rolMatchtExact(r, geschrevenElement)) afgeleid.add(k);
+                    else for (Rol h : ft.rollen)
+                        if (h != r && rolHeeftObjecttype(h, houder)) gedeclareerd.add(k);
+                }
+        return new StapKandidaten(gedeclareerd, afgeleid, wederkerig);
+    }
+
     /** How many roles named {@code geschrevenRol} are reachable FROM {@code subject} as a far role — the
      *  count behind {@link #rolDoeltypeNaarSubject}, which collapses zero and several into null. The
      *  ch. 4.1a resolution ORDER needs the count and not the winner: far-role resolution comes FIRST, and
