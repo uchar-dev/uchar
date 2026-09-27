@@ -414,3 +414,53 @@ openervorm `(<woord>:` 60 keer, alle in `//`-commentaar.
 - `d625d817` DIVERGENCES: de tokens van de vocabulaire-extensie precies geteld
 - `39e2be76` Frontendtoets: een benaming die de naam van een ander type spelt
 - (deze Result-commit)
+
+## Keuring (hoofdsessie, 2026-09-27)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch (`/tmp/vocab/logs/run1`): groen. Gemeten daar: gate 3 501 negatief,
+344 met `expect.txt`, 605 pointers; gate 10 950 toetsen, 100 rgs-goldens
+byte-gelijk; gate 12 speelt 217 en 187 (gelijkheidspinnen één omhoog, eigen
+commit); gate 13 eenheidstwist 41/23 ongewijzigd en het vocabulairebeen 1
+golden, 46 gestript, 46 verwisseld, 36 geroteerd, 18 replays gelijk; gate
+16 7/31; naamtabel-toets rc 0.
+
+Gelezen: de IR-SPEC-sectie 2.12 met de vijf WF-regels en hun rijen in de
+index; het schema (zijtafel als extensievelden, `designations` laatste
+veld, `valueDesignations` naast `values`, sleutelvolgorde canoniek); de
+verifier (`Loader.vocabulaires` naast het document, arm per oorzaak, elke
+getuige met één regel geweigerd en een pointer die resolveert); de golden
+met handberekende pinnen en het randgeval op precies 10; de vijftien
+negatieve getuigen met `expect.txt` zonder pointer; het gate-13-been (drie
+kopieën verifier-schoon, rood gezien onder een mutant van de gedeelde
+lader); de frontendweigeringen uit echte uitvoer; de inertie over 638
+bronnen; de tripwires (geen pariteitszone-naam, geen U-nummers, geen
+regelnummerstaart in artefacten).
+
+Tijdens de bouw kwamen drie besluiten van de maintainer (Yeb, via de
+hoofdsessie) die de betreffende zinnen van U1 vervangen: er is geen soort
+(code/term) en dus geen tekenpatroon — elke benaming is tekst, spaties
+inbegrepen; de kopregel schrijft `(standaard)` en `(taal: <code>)` elk in
+eigen haakjes; de benamingen sluiten de naamgroep, na `(mv: …)` en
+`(bezield)`. Het Result beschrijft de verwerking.
+
+De drie normvragen zijn beantwoord met het standaardantwoord van de bouwer,
+hier bevestigd als maintainersbesluit: WF-120 verantwoordt een overbodige
+benaming met een diagnostic die haar letterlijk bevat (het patroon van
+WF-113 (b), zwakte geregistreerd); `vocabularies` staat op de documentwortel
+na `format`, omdat de tafel model- en regellaag spant; een defaultsgroep
+draagt benamingen als benoemde vorm. Aanvaard buiten het "mag raken":
+`spec/proposals/v1-naamtabel.json` (de naamtabeltoets eist de rijen) en
+één aanvulling in `ScenarioLoweringTest` (de toets eist elke verzameling
+van het model gevuld).
+
+Open, vastgelegd in PLAN §9 en niet als kaart: een standaardvocabulaire
+gaat niet samen met declaraties die de frontend zelf schrijft (rijen van
+een beslistabel, leden van de opgavemarkering, een startpuntanker) — de
+volledigheidsregel weigert zo'n document met een zin die dat zegt; een
+vocabulaire zonder `(standaard)` heeft die grens niet. Verder: de
+scenarioroute met vocabulaires heeft geen eigen getuige; `benoemd` en
+`benoembaar()` rekenen lineair per aanroep. Registerwerk in de commit na
+de landing: CONSTRUCTS rij 41, PLAN §9, CLAUDE.md gate 13. Daarna de
+pin-bump naar de distributie en de werkbank; de dienstkaart
+`dienst-per-vocabulaire` volgt op Yebs sein.
