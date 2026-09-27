@@ -56,7 +56,12 @@ public final class Resolver {
         model.diagnostics.addAll(syntax);
         if (!syntax.isEmpty()) kopvormHints(tokens, model);
 
+        // the vocabulary side table (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): read after the
+        // declarations, judged once the rule check has written every form
+        Benamingen benamingen = new Benamingen(model);
+        benamingen.lees(doc);
         new RuleChecker(model, tokens).check(doc);
+        benamingen.keur();
         meldOnopgelost(model);
         return model;
     }

@@ -60,6 +60,16 @@ BIJVOEGLIJK : '(bijvoeglijk)' ; // §13.3.2.3
 // sources inside and outside this repository is MEASURED, see DIVERGENCES.md §7.
 MAG_OPGEGEVEN_WORDEN : '(mag' WSP 'opgegeven' WSP 'worden)' ;
 MV_START    : '(mv:'          ; // §13.2.29 naamwoord plural opener
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): the opener of a designation
+// '(<vocabulaire>: <benaming>)', and in a vocabulary head of its '(taal: <code>)'. A WHOLE token up to its colon, as
+// MV_START is: a parenthesis directly followed by a word and a colon, which no declaration or rule of the language
+// writes, so it reserves no word and changes no existing reading. MV_START is listed first and wins the tie on '(mv:',
+// so a vocabulary cannot be named 'mv'. The text up to the closing parenthesis is ONE token of BENAMING_MODE (below),
+// so a designation is free text: keywords, digits and punctuation in it are never lexed. Inertness on the sources
+// inside and outside this repository is MEASURED, see DIVERGENCES.md.
+BENAMING_START : '(' LETTER ( LETTER | DIGIT | '_' | '-' | '\'' )* ':' -> pushMode(BENAMING_MODE) ;
+// the default marker of a vocabulary head, a whole token with its parentheses as BEZIELD is
+STANDAARD   : '(standaard)'   ;
 
 // --- datum/datumtijd constructors (precede the bare 'datum'/'de' words) ---
 DATUMTIJD_MET : 'de' WSP 'datumtijd' WSP 'met' ; // §13.4.17.36
@@ -278,6 +288,9 @@ EENHEIDSYSTEEM : 'Eenheidsysteem' ;
 PARAMETER      : 'Parameter'      ;
 FEITTYPE       : 'Feittype'       ;
 DAGSOORT       : 'Dagsoort'       ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): the vocabulary declaration. A
+// keyword before UPPER_ID, as 'Dagsoort' is; the word occurs in no source of the measured collections.
+VOCABULAIRE    : 'Vocabulaire'    ;
 TIJDLIJN       : 'Tijdlijn'       ;
 // REGELGROEP is a DOCUMENTED EXTENSION (v2.3.0 §9.10 is prose-only; see grammar/DIVERGENCES.md).
 // Listed BEFORE REGEL so maximal-munch prefers the longer 'Regelgroep' keyword over 'Regel' + a name word.
@@ -505,6 +518,17 @@ STRING_END    : '"' -> popMode ;
 // the line) outruns TABEL_EINDE (the bare break), so blank lines between rows are
 // tolerated; when no pipe row follows, only TABEL_EINDE matches.
 // ============================================================================
+// ============================================================================
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): the text of a designation,
+// entered from BENAMING_START. Everything up to the closing parenthesis on the same line is one token, which the
+// resolver trims; the closing parenthesis returns to DEFAULT_MODE. A line end before it also returns, as its own
+// token, so that an annotation left open is refused by name instead of swallowing the next line.
+// ============================================================================
+mode BENAMING_MODE;
+BENAMING_TEKST : ~[)\r\n]+ ;
+BENAMING_EINDE : ')' -> popMode ;
+BENAMING_ONAF  : [\r\n] -> popMode ;
+
 mode TABEL_MODE;
 TABEL_RIJ_VERVOLG : ('\r'? '\n')+ [ \t]* '|' ~[\r\n]* -> type(TABEL_RIJ) ; // next data/separator row
 TABEL_EINDE       : ('\r'? '\n')+                     -> popMode, skip ;   // table over -> back to DEFAULT_MODE

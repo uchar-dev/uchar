@@ -379,8 +379,8 @@ public final class DefinitionResolver {
     }
 
     private Datatype enumeratie(String domein, EnumeratieSpecificatieContext ctx) {
-        List<String> waarden = ctx.ENUM_LITERAL().stream()
-                .map(t -> unquote(t.getText())).toList();
+        List<String> waarden = ctx.enumeratieWaarde().stream()
+                .map(w -> unquote(w.ENUM_LITERAL().getText())).toList();
         return new Datatype.Enumeratie(domein, waarden);
     }
 

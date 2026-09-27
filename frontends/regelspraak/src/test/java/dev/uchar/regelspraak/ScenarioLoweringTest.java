@@ -332,6 +332,8 @@ class ScenarioLoweringTest {
 
     /** A document that fills every collection of the model: each wire section, a WARNING among the diagnostics. */
     private static final String RIJK = """
+        Vocabulaire handboek
+
         Eenheidsysteem Munt
             de euro (mv: euros) EUR €
 
@@ -349,7 +351,7 @@ class ScenarioLoweringTest {
 
         Parameter de vondstdrempel : Numeriek (geheel getal)
 
-        Objecttype de Haven (mv: Havens)
+        Objecttype de Haven (mv: Havens) (handboek: aanlegplaats)
             de naam Tekst;
             de opbrengst Numeriek (geheel getal) met eenheid €;
             de onverdeelde rest Numeriek (geheel getal) met eenheid €;

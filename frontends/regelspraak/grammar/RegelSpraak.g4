@@ -62,8 +62,12 @@ regelSpraakDocument
 // production: a chain position above a BASE rule only, with its own condition only (grammar/DIVERGENCES.md §4).
 // The carrier name runs up to the ':' (it never contains one); the block's own name is a regelNaam (up to
 // 'geldig'), so the body's regelVersie+ is reached exactly as a §13.4.2 regel is.
-uitzonderingRegel     : ( UITZONDERING_OP | AFWIJKING_VAN ) uitzonderingBasisNaam COLON regelNaam regelVersie+ ;
-uitzonderingBasisNaam : ~( COLON | GELDIG | GELDIG_CAP )+ ; // carrier name, bounded by the ':'
+// A designation annotation after the block's own name is admitted so that the resolver refuses it by name: the block
+// becomes a default of its base rule's group, and a default carries no name on the wire (grammar/DIVERGENCES.md,
+// "Vocabulaires en benamingen"). The carrier name stops at an annotation opener too, so one written there is a syntax
+// error at its own place rather than part of a name.
+uitzonderingRegel     : ( UITZONDERING_OP | AFWIJKING_VAN ) uitzonderingBasisNaam COLON regelNaam benaming* regelVersie+ ;
+uitzonderingBasisNaam : ~( COLON | GELDIG | GELDIG_CAP | BENAMING_START )+ ; // carrier name, bounded by the ':'
 
 // Unordered group: 'Uitzonderingen ongeordend:' scopes CONSECUTIVE ordinary regels that write ONE shared
 // target (the §9.5 surface). Without a carrier the resolver builds sibling declared-unordered defaults groups (one
@@ -86,7 +90,7 @@ uitzonderingGroep     : UITZONDERINGEN ONGEORDEND ( OP uitzonderingBasisNaam )? 
 // stands directly after a group's last member or whose base rule is a member (grammar/DIVERGENCES.md §4,
 // "Interaction with Regelgroep"): the group exists only to mark recursion, and without the refusal it ended
 // there in silence.
-regelGroep : REGELGROEP kaleNaam ( IS RECURSIEF )? groepLid+ ;
+regelGroep : REGELGROEP kaleNaam benaming* ( IS RECURSIEF )? groepLid+ ; // benaming: grammar/DIVERGENCES.md, "Vocabulaires en benamingen"
 groepLid   : regel | beslistabel ;
 
 // ====================================================================
@@ -302,7 +306,23 @@ definitie
     | dagsoortDefinition
     | tijdlijnDefinitie
     | dimensieDefinition
+    | vocabulaireDefinition
     ;
+
+// ====================================================================
+// uchar DIALECT EXTENSION — named vocabularies and designations (grammar/DIVERGENCES.md, "Vocabulaires en
+// benamingen"; IR-SPEC ch. 2.12). Purely ADDITIVE: a new definition and an optional annotation at the end of the name
+// group of the declarations a vocabulary can name. Their opening tokens occur in no official document, so such a
+// document parses exactly as before and emits an IR without vocabularies.
+// ====================================================================
+// 'Vocabulaire <naam>' with, each in its own parentheses and in free order, the optional '(standaard)' and
+// '(taal: <code>)'. The language is a benaming-shaped annotation whose word is 'taal'; the resolver reads it, and
+// refuses any other word and a repeated property by name.
+vocabulaireDefinition : VOCABULAIRE vocabulaireNaam ( STANDAARD | benaming )* SEMICOLON? ;
+vocabulaireNaam       : LOWER_ID | UPPER_ID ;
+// '(<vocabulaire>: <benaming>)': the opener carries the vocabulary's name, the text is one token up to the closing
+// parenthesis. An annotation left open at the end of its line is admitted so that the resolver refuses it by name.
+benaming : BENAMING_START BENAMING_TEKST? ( BENAMING_EINDE | BENAMING_ONAF ) ;
 
 // ====================================================================
 // Name building blocks (§13.2.8/.29/.30)
@@ -353,9 +373,9 @@ lidwoord          : DE | HET | EEN ; // §13.2.9
 // ====================================================================
 // §13.3.1 Objecttypen
 // ====================================================================
-objectTypeDefinition // §13.3.1.1 (+ the uchar 'is een' dialect extension, see below)
+objectTypeDefinition // §13.3.1.1 (+ the uchar 'is een' and vocabulary dialect extensions, see below)
     : OBJECTTYPE bepaaldLidwoord? objectTypeNaam objectTypeSupertype*
-      ( MV_START meervoudsvorm RPAREN )? BEZIELD?
+      ( MV_START meervoudsvorm RPAREN )? BEZIELD? benaming*
       objectTypeMember*
     ;
 
@@ -398,8 +418,8 @@ koptekst : KOPTEKST ; // §13.3.1.5 — the whole '--- heading' line is one toke
 // The opgave marker (uchar DIALECT EXTENSION, grammar/DIVERGENCES.md §7) is admitted here only so that the resolver
 // can refuse it on a kenmerk with a message of its own instead of a bare syntax error.
 kenmerkSpecificatie
-    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? KENMERK BIJVOEGLIJK? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?   # bijvoeglijkKenmerk
-    | bepaaldLidwoord? lowerNaam KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?       # naamwoordKenmerk
+    : IS lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* KENMERK BIJVOEGLIJK? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?   # bijvoeglijkKenmerk
+    | bepaaldLidwoord? lowerNaam benaming* KENMERK ( BEZITTELIJK | BIJVOEGLIJK )? tijdlijn? MAG_OPGEGEVEN_WORDEN? SEMICOLON?       # naamwoordKenmerk
     ;
 
 // §13.3.2.5 Attribuut. The 'met eenheid' clause lives inside the numeric datatypes
@@ -411,7 +431,7 @@ kenmerkSpecificatie
 // after the optional timeline and before the optional ';', so every clause of the production keeps its place. The
 // resolver lowers it to an opgave above the attribute's computation.
 attribuutSpecificatie
-    : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
+    : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
       MAG_OPGEGEVEN_WORDEN?
@@ -447,8 +467,9 @@ domeinDefinition // §13.3.4.1
     : DOMEIN domeinNaam IS_VAN_HET_TYPE ( datatype | enumeratieSpecificatie ) SEMICOLON?
     ;
 enumeratieSpecificatie // §13.3.4.2 — each value is a self-delimiting quoted literal
-    : ENUMERATIE ENUM_LITERAL+
+    : ENUMERATIE enumeratieWaarde+
     ;
+enumeratieWaarde : ENUM_LITERAL benaming* ; // benaming: grammar/DIVERGENCES.md, "Vocabulaires en benamingen"
 
 // ====================================================================
 // §13.3.5 Eenheden
@@ -551,7 +572,7 @@ dimensieWaardeWoord
 // §13.3.8 Parameters
 // ====================================================================
 parameterDefinition // §13.3.8.1 — name bounded by ':'; article optional (spec examples omit it)
-    : PARAMETER bepaaldLidwoord? parameterNaam COLON ( datatype | domeinNaam ) tijdlijn? SEMICOLON?
+    : PARAMETER bepaaldLidwoord? parameterNaam benaming* COLON ( datatype | domeinNaam ) tijdlijn? SEMICOLON?
     ;
 parameterNaam : vrijeNaam ; // §13.3.8.3
 
@@ -559,8 +580,8 @@ parameterNaam : vrijeNaam ; // §13.3.8.3
 // §13.3.9 Feittypen
 // ====================================================================
 feitTypeDefinition
-    : FEITTYPE feitTypeNaam rolSpecificatie rolSpecificatie feitTypeCardinaliteit SEMICOLON?      // §13.3.9.1
-    | WEDERKERIG_FEITTYPE feitTypeNaam rolSpecificatie feitTypeCardinaliteit SEMICOLON?           // §13.3.9.2
+    : FEITTYPE feitTypeNaam benaming* rolSpecificatie rolSpecificatie feitTypeCardinaliteit SEMICOLON?      // §13.3.9.1
+    | WEDERKERIG_FEITTYPE feitTypeNaam benaming* rolSpecificatie feitTypeCardinaliteit SEMICOLON?           // §13.3.9.2
     ;
 feitTypeNaam : feitTypeNaamWoord+ ; // §13.3.9.3 — excludes DE/HET so it stops at the role article
 feitTypeNaamWoord
@@ -568,7 +589,7 @@ feitTypeNaamWoord
     ;
 // §13.3.9.1: '<lidwoord>? <rolnaam> <objecttypenaam>'. Capitalisation splits role
 // (lowercase) from objecttype (capitalised) — see header note on naming.
-rolSpecificatie : bepaaldLidwoord? rolNaam ( MV_START meervoudsvorm RPAREN )? objectTypeNaam ;
+rolSpecificatie : bepaaldLidwoord? rolNaam ( MV_START meervoudsvorm RPAREN )? benaming* objectTypeNaam ;
 rolNaam         : lowerNaam ; // §13.3.9.4
 
 // §13.3.9.1/.2 cardinality line: '(één <rol> | meerdere <mvrol>) <relatiebeschrijving>
@@ -662,12 +683,14 @@ referentie // §13.4.17.41-44
 // ====================================================================
 // §13.4.2 RegelSpraak-regel
 // ====================================================================
-regel       : REGEL regelNaam regelVersie+ ;        // §13.4.2.1
+regel       : REGEL regelNaam benaming* regelVersie+ ; // §13.4.2.1 (+ benaming: grammar/DIVERGENCES.md, "Vocabulaires en benamingen")
 // A regelnaam is free <karakterreeks>: it routinely embeds keywords and even
 // multi-word phrase tokens ("... geen dagtaak is", "verdeling punten in
 // gelijke delen", "... vertrek min reserveringstermijn"). It is exactly the run
 // of tokens up to the 'geldig' that opens the first versie.
-regelNaam   : ~GELDIG+ ;                             // §13.4.2.2
+// The run also stops at a designation's opener, a token no rule name contains (grammar/DIVERGENCES.md, "Vocabulaires
+// en benamingen").
+regelNaam   : ~( GELDIG | BENAMING_START )+ ;         // §13.4.2.2
 regelVersie : versie regelSpraakRegel ;             // §13.4.2.3
 versie      : ( GELDIG | GELDIG_CAP ) versieGeldigheid ; // §13.4.2.4 (either case; see lexer note)
 versieGeldigheid                                     // §13.4.2.5
@@ -690,11 +713,13 @@ variabeleNaam      : vrijeNaam ;                                               /
 // the grid and desugars each data row to an ordinary regel (BeslistabelDesugar),
 // so both back-ends get the rows for free. The table is optional — a header-only
 // shell (the pre-body corpus) still parses and the resolver warns it is empty.
-beslistabel : BESLISTABEL beslistabelNaam versie? TABEL_RIJ* ;
+// A designation annotation after the name is admitted so that the resolver refuses it by name: a table stands for the
+// rules of its rows (grammar/DIVERGENCES.md, "Vocabulaires en benamingen").
+beslistabel : BESLISTABEL beslistabelNaam benaming* versie? TABEL_RIJ* ;
 // The name must NOT greedily swallow the "geldig <versie>" (mirrors regelNaam's ~GELDIG+
 // exclusion) NOR the pipe-table — without excluding GELDIG, "geldig vanaf 2018" is eaten
 // into the name (the keyword 'altijd' happened to stop it, 'vanaf'/<jaar> do not).
-beslistabelNaam : ~( GELDIG | TABEL_RIJ )+ ;
+beslistabelNaam : ~( GELDIG | TABEL_RIJ | BENAMING_START )+ ;
 
 // ====================================================================
 // §13.4.3 Resultaatdeel

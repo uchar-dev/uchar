@@ -163,6 +163,20 @@ public final class IrEmitter {
         this.m = m;
         w.beginObject();
         w.key("format").value("uchar-ir-v1");
+        // IR-SPEC ch. 2.12: the vocabulary side table, an extension list written only when the document declares a
+        // vocabulary, so a document without one emits exactly what it emitted before
+        if (!m.vocabulaires.isEmpty()) {
+            w.key("vocabularies").beginArray();
+            for (RegelSpraakModel.Vocabulaire v : m.vocabulaires) {
+                w.beginObject();
+                w.key("node").value("Vocabulary");
+                w.key("name").value(v.naam());
+                w.key("default").value(v.standaard());
+                if (v.taal() != null) w.key("language").value(v.taal());
+                w.endObject();
+            }
+            w.endArray();
+        }
 
         w.key("model").beginObject();
 
@@ -298,6 +312,7 @@ public final class IrEmitter {
         if (p.ongeordend()) w.key("unordered").value(true);         // only on a declared-unordered group member
         bronrecord(p.bron());
         w.key("validity"); geldigheid(p.geldigheid());
+        designations(RegelSpraakModel.Benoembaar.vorm(p.naam()));
         w.endObject();
         huidigSubject = vorigSubject;
     }
@@ -364,6 +379,7 @@ public final class IrEmitter {
             if (ot.attribuutGranulariteit.containsKey(a))
                 timelineFacet(ot.attribuutGranulariteit.get(a), ot.attribuutTijdlijnAantal.get(a),
                         ot.attribuutVastStartpunt.get(a), ot.attribuutTijdlijnNaam.get(a));
+            designations(RegelSpraakModel.Benoembaar.attribuut(ot.naam, a));
             w.endObject();
         }
         w.endArray();
@@ -379,9 +395,11 @@ public final class IrEmitter {
             if (ot.kenmerkGranulariteit.containsKey(k))
                 timelineFacet(ot.kenmerkGranulariteit.get(k), ot.kenmerkTijdlijnAantal.get(k),
                         ot.kenmerkVastStartpunt.get(k), null);
+            designations(RegelSpraakModel.Benoembaar.kenmerk(ot.naam, k));
             w.endObject();
         }
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.objecttype(ot.naam));
         w.endObject();
     }
 
@@ -438,6 +456,7 @@ public final class IrEmitter {
             w.beginObject();
             w.key("node").value("Enumeration");
             w.key("values"); stringList(e.waarden());
+            valueDesignations(naam, e.waarden());
             w.endObject();
         } else {
             datatype(dt, true);
@@ -456,6 +475,7 @@ public final class IrEmitter {
         w.key("name").value(p.naam());
         w.key("datatype"); datatype(p.datatype(), true);
         if (p.granulariteit() != null) timelineFacet(p.granulariteit(), null, p.vastStartpunt(), null);
+        designations(RegelSpraakModel.Benoembaar.parameter(p.naam()));
         w.endObject();
     }
 
@@ -617,18 +637,20 @@ public final class IrEmitter {
         w.key("name").value(ft.naam);
         w.key("reciprocal").value(ft.wederkerig);
         w.key("roles").beginArray();
-        for (Rol r : ft.rollen) rol(r);
+        for (Rol r : ft.rollen) rol(ft, r);
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.feittype(ft.naam));
         w.endObject();
     }
 
-    private void rol(Rol r) {
+    private void rol(Feittype ft, Rol r) {
         w.beginObject();
         w.key("node").value("Role");
         w.key("name").value(r.naam());
         w.key("objectType").value(r.objecttypeNaam());
         if (r.meervoud() != null) w.key("plural").value(r.meervoud());
         w.key("many").value(r.meervoudig());
+        designations(RegelSpraakModel.Benoembaar.rol(ft.naam, r.naam()));
         w.endObject();
     }
 
@@ -1346,6 +1368,7 @@ public final class IrEmitter {
         w.endArray();
         List<String> bronnen = annotaties(vorm.versies().get(0));
         if (!bronnen.isEmpty()) { w.key("statuteAnnotations"); stringList(bronnen); }
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1420,6 +1443,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedObjectCreatie oc : vorm.versies()) objectCreationVersion(oc);
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1453,6 +1477,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedVerdeling v : vorm.versies()) allocationVersion(v);
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1498,6 +1523,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedConsistentie c : vorm.versies()) consistencyVersion(c);
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1538,6 +1564,7 @@ public final class IrEmitter {
             w.endObject();
         }
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1561,6 +1588,7 @@ public final class IrEmitter {
             w.endObject();
         }
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -1959,6 +1987,7 @@ public final class IrEmitter {
         w.key("versions").beginArray();
         for (ResolvedFeitCreatie fc : vorm.versies()) factCreationVersion(fc);
         w.endArray();
+        designations(RegelSpraakModel.Benoembaar.vorm(vorm.naam()));
         w.endObject();
     }
 
@@ -2013,7 +2042,60 @@ public final class IrEmitter {
         w.key("recursive").value(g.recursief());
         w.key("members"); stringList(g.leden());
         bronrecord(g.bron().snippet(), g.line());
+        designations(RegelSpraakModel.Benoembaar.regelgroep(g.naam()));
         w.endObject();
+    }
+
+    // --- the vocabulary side table (IR-SPEC ch. 2.12) --------------------------------------------------
+
+    /** The designations of {@code element}, sorted by the declaration order of their vocabularies: the last field of
+     *  its node, written whole or not at all. */
+    private void designations(RegelSpraakModel.Benoembaar element) {
+        List<RegelSpraakModel.Benaming> lijst = gesorteerd(m.benamingen.get(element));
+        if (lijst.isEmpty()) return;
+        w.key("designations").beginArray();
+        for (RegelSpraakModel.Benaming b : lijst) {
+            w.beginObject();
+            w.key("vocabulary").value(b.vocabulaire());
+            w.key("designation").value(b.tekst());
+            w.endObject();
+        }
+        w.endArray();
+    }
+
+    /** The designations of an enumeration's values, beside its value list: value by value in the declared order, each
+     *  value's designations sorted as {@link #designations} sorts them. */
+    private void valueDesignations(String domein, List<String> waarden) {
+        List<String[]> regels = new java.util.ArrayList<>();
+        for (String waarde : waarden)
+            for (RegelSpraakModel.Benaming b : gesorteerd(m.benamingen.get(
+                    RegelSpraakModel.Benoembaar.enumeratiewaarde(domein, waarde))))
+                regels.add(new String[]{waarde, b.vocabulaire(), b.tekst()});
+        if (regels.isEmpty()) return;
+        w.key("valueDesignations").beginArray();
+        for (String[] r : regels) {
+            w.beginObject();
+            w.key("value").value(r[0]);
+            w.key("vocabulary").value(r[1]);
+            w.key("designation").value(r[2]);
+            w.endObject();
+        }
+        w.endArray();
+    }
+
+    /** A declaration's designations in the declaration order of their vocabularies (maintainer decision 2026-09-27); a
+     *  designation whose vocabulary the model does not declare has no place in that order and no document, since the
+     *  resolver refuses it (WF-117). */
+    private List<RegelSpraakModel.Benaming> gesorteerd(List<RegelSpraakModel.Benaming> lijst) {
+        if (lijst == null || lijst.isEmpty()) return List.of();
+        List<RegelSpraakModel.Benaming> uit = new java.util.ArrayList<>(lijst);
+        uit.sort(java.util.Comparator.comparingInt(b -> {
+            for (int i = 0; i < m.vocabulaires.size(); i++)
+                if (m.vocabulaires.get(i).naam().equalsIgnoreCase(b.vocabulaire())) return i;
+            throw new IllegalStateException("IrEmitter: de benaming '" + b.tekst() + "' noemt het vocabulaire '"
+                    + b.vocabulaire() + "', dat het model niet declareert (WF-117)");
+        }));
+        return uit;
     }
 
     private void diagnostic(Diagnostic d) {

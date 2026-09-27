@@ -59,6 +59,14 @@ public final class RegelSpraakModel {
      *  the extension, so the emitter omits the {@code prioritizedDefaults} key there (the v0-mirror
      *  byte-identity of all flat goldens). */
     public final List<dev.uchar.regelspraak.ir.PrioritizedDefaults> prioritizedDefaults = new ArrayList<>();
+    /** IR-SPEC ch. 2.12 the named vocabularies, in declaration order: with {@link #benamingen} a side table without
+     *  semantics, which no transpiler reads. The frontend fills both from the dialect's 'Vocabulaire' blocks and
+     *  annotations (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"), the Drools IR loader from the wire; a
+     *  document without vocabularies leaves both empty, and the emitter then writes neither. Read them through
+     *  {@link #benaming}, {@link #effectieveNaam} and {@link #benoemd}. */
+    public final List<Vocabulaire> vocabulaires = new ArrayList<>();
+    /** IR-SPEC ch. 2.12 the designations of every declaration that carries one, each list in written order. */
+    public final Map<Benoembaar, List<Benaming>> benamingen = new LinkedHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
 
     /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
@@ -1244,6 +1252,150 @@ public final class RegelSpraakModel {
         for (Dimensie d : dimensies.values())
             if (d.naamMeervoud() != null && d.naamMeervoud().equalsIgnoreCase(meervoud)) return d;
         return null;
+    }
+
+    // --- the vocabulary side table (IR-SPEC ch. 2.12) -----------------------------------------------------
+
+    /** A named vocabulary: its name, whether it is the default one, and its language code (null: none declared). A
+     *  vocabulary has no kind: every designation is text (maintainer decision 2026-09-27). */
+    public record Vocabulaire(String naam, boolean standaard, String taal) {}
+
+    /** One designation: the vocabulary it is written in, and its text. */
+    public record Benaming(String vocabulaire, String tekst) {}
+
+    /** A declaration a vocabulary can name (IR-SPEC ch. 2.12): its kind, the declaration that scopes it where the kind
+     *  is scoped — the object type of an attribute or a characteristic (the one that DECLARES it), the fact type of a
+     *  role, the domain of an enumeration value; null otherwise — and its canonical name, each as declared. A named
+     *  form ({@link Soort#VORM}) is named by its form name, without a version suffix, whatever list it stands in. */
+    public record Benoembaar(Soort soort, String eigenaar, String naam) {
+        public enum Soort { OBJECTTYPE, ATTRIBUUT, KENMERK, FEITTYPE, ROL, ENUMERATIEWAARDE, PARAMETER, VORM, REGELGROEP }
+
+        public static Benoembaar objecttype(String naam) { return new Benoembaar(Soort.OBJECTTYPE, null, naam); }
+        public static Benoembaar attribuut(String objecttype, String naam) { return new Benoembaar(Soort.ATTRIBUUT, objecttype, naam); }
+        public static Benoembaar kenmerk(String objecttype, String naam) { return new Benoembaar(Soort.KENMERK, objecttype, naam); }
+        public static Benoembaar feittype(String naam) { return new Benoembaar(Soort.FEITTYPE, null, naam); }
+        public static Benoembaar rol(String feittype, String naam) { return new Benoembaar(Soort.ROL, feittype, naam); }
+        public static Benoembaar enumeratiewaarde(String domein, String waarde) { return new Benoembaar(Soort.ENUMERATIEWAARDE, domein, waarde); }
+        public static Benoembaar parameter(String naam) { return new Benoembaar(Soort.PARAMETER, null, naam); }
+        public static Benoembaar vorm(String naam) { return new Benoembaar(Soort.VORM, null, naam); }
+        public static Benoembaar regelgroep(String naam) { return new Benoembaar(Soort.REGELGROEP, null, naam); }
+    }
+
+    /** The version suffix a model entry of a form with several versions carries ({@code "<naam> #<i>"}). */
+    private static final java.util.regex.Pattern VERSIE = java.util.regex.Pattern.compile("([\\s\\S]*) #[0-9]+");
+
+    /** The form name of a model entry: its name without a version suffix. */
+    public static String vormnaam(String naam) {
+        if (naam == null) return null;
+        java.util.regex.Matcher m = VERSIE.matcher(naam);
+        return m.matches() ? m.group(1) : naam;
+    }
+
+    /** The vocabulary named {@code naam}, compared case-insensitively (IR-SPEC ch. 2.1), or null. */
+    public Vocabulaire vocabulaire(String naam) {
+        if (naam == null) return null;
+        for (Vocabulaire v : vocabulaires) if (v.naam().equalsIgnoreCase(naam)) return v;
+        return null;
+    }
+
+    /** The designation of {@code element} in the vocabulary {@code vocabulaire} (its name compared case-insensitively),
+     *  or empty when the declaration carries none there. The element is matched on its kind and case-insensitively on
+     *  its owner and name, the name identity of IR-SPEC ch. 2.1. */
+    public java.util.Optional<String> benaming(String vocabulaire, Benoembaar element) {
+        if (vocabulaire == null || element == null) return java.util.Optional.empty();
+        for (var e : benamingen.entrySet()) {
+            if (!zelfde(e.getKey(), element)) continue;
+            for (Benaming b : e.getValue())
+                if (b.vocabulaire().equalsIgnoreCase(vocabulaire)) return java.util.Optional.of(b.tekst());
+        }
+        return java.util.Optional.empty();
+    }
+
+    /** The effective name of {@code element} in {@code vocabulaire}: its designation there, and its canonical name where
+     *  it carries none (IR-SPEC ch. 2.12). */
+    public String effectieveNaam(String vocabulaire, Benoembaar element) {
+        return benaming(vocabulaire, element).orElse(element.naam());
+    }
+
+    /** The reverse of {@link #effectieveNaam}: the declaration of kind {@code soort} whose effective name in
+     *  {@code vocabulaire} is {@code naam}, compared case-insensitively, within {@code eigenaar} where the kind is scoped
+     *  — for an attribute or a characteristic along the supertype chain of that object type, so an inherited member is
+     *  found from its subtype; null {@code eigenaar} for the other kinds. Empty when no declaration has that effective
+     *  name, or when two have (WF-118 refuses the second on the wire, so a verifier-clean document answers uniquely);
+     *  the vocabulary need not name every declaration. */
+    public java.util.Optional<Benoembaar> benoemd(String vocabulaire, Benoembaar.Soort soort, String eigenaar,
+                                                  String naam) {
+        if (vocabulaire == null || soort == null || naam == null) return java.util.Optional.empty();
+        List<String> eigenaars = new ArrayList<>();
+        if (soort == Benoembaar.Soort.ATTRIBUUT || soort == Benoembaar.Soort.KENMERK) {
+            Objecttype ot = eigenaar == null ? null : objecttypeOpNaam(eigenaar);
+            if (ot == null) return java.util.Optional.empty();
+            for (Objecttype t : ot.keten()) eigenaars.add(t.naam);
+        } else if (eigenaar != null) {
+            eigenaars.add(eigenaar);
+        }
+        Benoembaar gevonden = null;
+        for (Benoembaar b : benoembaar()) {
+            if (b.soort() != soort) continue;
+            if (b.eigenaar() == null ? !eigenaars.isEmpty()
+                    : eigenaars.stream().noneMatch(e -> e.equalsIgnoreCase(b.eigenaar()))) continue;
+            if (!effectieveNaam(vocabulaire, b).equalsIgnoreCase(naam)) continue;
+            if (gevonden != null) return java.util.Optional.empty();
+            gevonden = b;
+        }
+        return java.util.Optional.ofNullable(gevonden);
+    }
+
+    /** Every declaration of this model a vocabulary can name, in the order the wire writes them: the object types, each
+     *  with its own attributes and characteristics; the fact types, each with its roles; the parameters; the values of
+     *  every enumeration domain; the named forms — rules, object creations, allocations (the ones the wire writes),
+     *  consistencies, uniquenesses, fact creations, defaults groups — each once, by its form name; the rule groups. */
+    public List<Benoembaar> benoembaar() {
+        List<Benoembaar> uit = new ArrayList<>();
+        for (Objecttype ot : objecttypen.values()) {
+            uit.add(Benoembaar.objecttype(ot.naam));
+            for (String a : ot.attributen.keySet()) uit.add(Benoembaar.attribuut(ot.naam, a));
+            for (String k : ot.kenmerken) uit.add(Benoembaar.kenmerk(ot.naam, k));
+        }
+        for (Feittype ft : feittypen.values()) {
+            uit.add(Benoembaar.feittype(ft.naam));
+            for (Rol r : ft.rollen) uit.add(Benoembaar.rol(ft.naam, r.naam()));
+        }
+        for (Parameter p : parameters.values()) uit.add(Benoembaar.parameter(p.naam()));
+        for (var d : domeinen.entrySet())
+            if (d.getValue() instanceof Datatype.Enumeratie e)
+                for (String w : e.waarden()) uit.add(Benoembaar.enumeratiewaarde(d.getKey(), w));
+        java.util.Set<String> vormen = new java.util.LinkedHashSet<>();
+        for (var r : resolvedRegels) vormen.add(vormnaam(r.naam()));
+        java.util.Set<String> lijst = new java.util.LinkedHashSet<>();
+        List<java.util.Set<String>> lijsten = new ArrayList<>();
+        lijsten.add(vormen);
+        java.util.function.Consumer<List<String>> neem = namen -> {
+            java.util.Set<String> l = new java.util.LinkedHashSet<>();
+            for (String n : namen) l.add(vormnaam(n));
+            lijsten.add(l);
+        };
+        neem.accept(objectCreaties.stream().map(dev.uchar.regelspraak.ir.ResolvedObjectCreatie::naam).toList());
+        neem.accept(verdelingen.stream()
+                .filter(v -> v.methode() != dev.uchar.regelspraak.ir.ResolvedVerdeling.Methode.COMPLEX)
+                .map(dev.uchar.regelspraak.ir.ResolvedVerdeling::naam).toList());
+        neem.accept(consistenties.stream().map(dev.uchar.regelspraak.ir.ResolvedConsistentie::naam).toList());
+        List<String> uniek = new ArrayList<>(uniciteiten.stream().map(dev.uchar.regelspraak.ir.ResolvedUniciteit::naam).toList());
+        uniek.addAll(uniciteitUnies.stream().map(dev.uchar.regelspraak.ir.ResolvedUniciteitUnie::naam).toList());
+        neem.accept(uniek);
+        neem.accept(feitCreaties.stream().map(dev.uchar.regelspraak.ir.ResolvedFeitCreatie::naam).toList());
+        neem.accept(prioritizedDefaults.stream().map(dev.uchar.regelspraak.ir.PrioritizedDefaults::naam).toList());
+        for (java.util.Set<String> l : lijsten)
+            for (String n : l) if (n != null) uit.add(Benoembaar.vorm(n));
+        for (var g : regelGroepen) if (g.naam() != null) uit.add(Benoembaar.regelgroep(g.naam()));
+        return uit;
+    }
+
+    /** Whether two elements name one declaration: the same kind, and owner and name equal under the name identity. */
+    private static boolean zelfde(Benoembaar a, Benoembaar b) {
+        return a.soort() == b.soort() && a.naam().equalsIgnoreCase(b.naam())
+                && (a.eigenaar() == null ? b.eigenaar() == null
+                    : b.eigenaar() != null && a.eigenaar().equalsIgnoreCase(b.eigenaar()));
     }
 
     /** A rule shell (name + the parse subtree); type-checking annotates diagnostics. */
