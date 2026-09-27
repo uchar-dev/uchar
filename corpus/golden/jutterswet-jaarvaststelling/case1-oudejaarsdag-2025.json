@@ -1,0 +1,107 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-12-31",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "13"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vondstdrempel": {
+        "number": "12"
+      },
+      "penningbedrag": {
+        "number": "250"
+      },
+      "fondspercentage": {
+        "number": "10"
+      },
+      "uitbetaaldag": {
+        "date": "2025-12-12"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "uitkering",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "afdrachtpercentage",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "betaaldatum",
+      "value": {
+        "date": "2025-12-12"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "uitkering",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "afdrachtpercentage",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "betaaldatum",
+      "value": {
+        "date": "2025-12-12"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

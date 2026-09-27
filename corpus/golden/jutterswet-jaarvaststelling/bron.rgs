@@ -1,0 +1,36 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is penninggerechtigd kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+    de uitkering Numeriek (niet-negatief geheel getal) met eenheid €;
+    het afdrachtpercentage Percentage (geheel getal);
+    de betaaldatum Datum in dagen;
+
+Parameter de vondstdrempel : Numeriek (geheel getal)
+Parameter het penningbedrag : Numeriek (niet-negatief geheel getal) met eenheid €
+Parameter het fondspercentage : Percentage (geheel getal)
+Parameter de uitbetaaldag : Datum in dagen
+
+// Bron: art. 3
+Regel penningrecht bij drempel
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
+
+// Bron: art. 8
+Regel uitkering van de penning
+    geldig altijd
+        De uitkering van een Jutter moet gesteld worden op het penningbedrag
+        indien hij penninggerechtigd is.
+
+Regel afdracht aan het eilandfonds
+    geldig altijd
+        Het afdrachtpercentage van een Jutter moet gesteld worden op het fondspercentage
+        indien hij penninggerechtigd is.
+
+Regel betaaldatum van de penning
+    geldig altijd
+        De betaaldatum van een Jutter moet gesteld worden op de uitbetaaldag
+        indien hij penninggerechtigd is.

@@ -1,0 +1,349 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkering",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afdrachtpercentage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "%",
+                "canonical": "%",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              },
+              "presentation": "percentage"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "betaaldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "vondstdrempel",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "penningbedrag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "nonNegative",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "fondspercentage",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "uitbetaaldag",
+        "datatype": {
+          "node": "Date",
+          "precision": "day"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "penningrecht bij drempel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "vondstdrempel",
+                "source": {
+                  "snippet": "de vondstdrempel"
+                }
+              },
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uitkering van de penning",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uitkering",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De uitkering van een Jutter"
+              }
+            },
+            "value": {
+              "node": "ParameterReference",
+              "parameter": "penningbedrag",
+              "source": {
+                "snippet": "het penningbedrag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij penninggerechtigd is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 8"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afdracht aan het eilandfonds",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afdrachtpercentage",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het afdrachtpercentage van een Jutter"
+              }
+            },
+            "value": {
+              "node": "ParameterReference",
+              "parameter": "fondspercentage",
+              "source": {
+                "snippet": "het fondspercentage"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij penninggerechtigd is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "betaaldatum van de penning",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "betaaldatum",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De betaaldatum van een Jutter"
+              }
+            },
+            "value": {
+              "node": "ParameterReference",
+              "parameter": "uitbetaaldag",
+              "source": {
+                "snippet": "de uitbetaaldag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij penninggerechtigd is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

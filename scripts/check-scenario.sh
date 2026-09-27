@@ -32,8 +32,8 @@ fail() { echo "check-scenario: FAIL — $*" >&2; exit 1; }
 # quietly regenerates fewer cases — while growth needs no bump. A deliberate removal lowers the floor
 # in the same commit. Accepted weakness, recorded rather than hidden: a count that stays equal while
 # its content shifted passes; the per-file comparison is what covers that direction.
-EXPECTED_MIN_SCENARIO_GOLDENS=6   # 2026-09-26: measured 6 (corpus/golden/*/scenario.rgs)
-EXPECTED_MIN_SCENARIO_CASES=29    # 2026-09-26: measured 29 case files regenerated over those 6
+EXPECTED_MIN_SCENARIO_GOLDENS=7   # 2026-09-27: measured 7 (corpus/golden/*/scenario.rgs; 6 on 2026-09-26, +1 the parameter set)
+EXPECTED_MIN_SCENARIO_CASES=31    # 2026-09-27: measured 31 case files regenerated over those 7 (29 on 2026-09-26)
 
 command -v java  >/dev/null 2>&1 || fail "java not found (the frontend needs JDK 21+)"
 command -v javac >/dev/null 2>&1 || fail "javac not found (the frontend needs JDK 21+, not a bare JRE)"

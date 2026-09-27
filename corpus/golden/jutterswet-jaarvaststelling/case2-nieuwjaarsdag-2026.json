@@ -1,0 +1,98 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-01-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "13"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vondstdrempel": {
+        "number": "14"
+      },
+      "penningbedrag": {
+        "number": "275"
+      },
+      "fondspercentage": {
+        "number": "8"
+      },
+      "uitbetaaldag": {
+        "date": "2026-12-11"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "afdrachtpercentage"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "betaaldatum"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "uitkering",
+      "value": {
+        "number": "275"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "afdrachtpercentage",
+      "value": {
+        "number": "8"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "betaaldatum",
+      "value": {
+        "date": "2026-12-11"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

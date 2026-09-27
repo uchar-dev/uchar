@@ -1,0 +1,45 @@
+Parameterset jaarlijkse vaststelling:
+de parameter de vondstdrempel is 12 van 01-01-2025 tot 01-01-2026
+de parameter het penningbedrag is 250 € van 01-01-2025 tot 01-01-2026
+de parameter het fondspercentage is 10 % van 01-01-2025 tot 01-01-2026
+de parameter de uitbetaaldag is 12-12-2025 van 01-01-2025 tot 01-01-2026
+de parameter de vondstdrempel is 14 van 01-01-2026 tot 01-01-2027
+de parameter het penningbedrag is 275 € van 01-01-2026 tot 01-01-2027
+de parameter het fondspercentage is 8 % van 01-01-2026 tot 01-01-2027
+de parameter de uitbetaaldag is 11-12-2026 van 01-01-2026 tot 01-01-2027
+
+Situatie twee jutters:
+een Jutter J1
+- het aantal aangemelde vondsten is 13
+een Jutter J2
+- het aantal aangemelde vondsten is 15
+
+Scenario oudejaarsdag 2025
+met peildatum 31-12-2025
+met parameterset jaarlijkse vaststelling
+gebaseerd op de situatie twee jutters
+Met als verwacht resultaat:
+- J1 is penninggerechtigd
+- de uitkering van J1 is 250 €
+- het afdrachtpercentage van J1 is 10 %
+- de betaaldatum van J1 is 12-12-2025
+- J2 is penninggerechtigd
+- de uitkering van J2 is 250 €
+- het afdrachtpercentage van J2 is 10 %
+- de betaaldatum van J2 is 12-12-2025
+- de gegevens zijn consistent
+
+Scenario nieuwjaarsdag 2026
+met peildatum 01-01-2026
+met parameterset jaarlijkse vaststelling
+gebaseerd op de situatie twee jutters
+Met als verwacht resultaat:
+- J1 is niet penninggerechtigd
+- de uitkering van J1 is leeg
+- het afdrachtpercentage van J1 is leeg
+- de betaaldatum van J1 is leeg
+- J2 is penninggerechtigd
+- de uitkering van J2 is 275 €
+- het afdrachtpercentage van J2 is 8 %
+- de betaaldatum van J2 is 11-12-2026
+- de gegevens zijn consistent
