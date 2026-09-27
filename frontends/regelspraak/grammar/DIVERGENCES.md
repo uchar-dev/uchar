@@ -1550,6 +1550,230 @@ the same way).
 
 ---
 
+## Vocabulaires en benamingen — named vocabularies and designations
+
+Origin: the card `vocabulaires-benamingen` (maintainer decision 2026-09-27,
+three decisions on the surface the same day, below). The uchar IR carries a
+vocabulary side table (`spec/IR-SPEC.md` ch. 2.12): `vocabularies` on the
+document and `designations` on the declarations a vocabulary can name — an
+object type, an attribute, a characteristic, a fact type, a role, an
+enumeration value (in `valueDesignations` beside its list), a parameter, a
+named form and a rule group — each a name of that declaration in another
+vocabulary: a term of a handbook, a field name of a data model. The table
+carries no semantics. Official RegelSpraak v2.3.0 has no way to write one,
+and a flat document can only carry such names in comments; this extension
+gives the dialect the source channel.
+
+### Surface syntax (additive; a new definition and one optional element in existing productions)
+
+```
+Vocabulaire handboek (taal: nl)
+Vocabulaire cgm (standaard) (taal: nl)
+
+Objecttype de Jutter (mv: Jutters) (bezield) (handboek: strandjutter) (cgm: JUTTER)
+    het vondstbedrag (handboek: totale premie) (cgm: VONDST_BEDRAG) Numeriek (getal met 2 decimalen);
+    is premiewaardig (handboek: komt in aanmerking voor premie) (cgm: PREMIE_WAARDIG) kenmerk (bijvoeglijk);
+```
+
+The head `Vocabulaire <naam>` is a definition beside the unit systems and
+the day kinds. The name is one word. Each property stands in its own
+parentheses, as `(mv: …)` does, in free order and each at most once: the
+optional `(standaard)`, which makes the vocabulary the default, and the
+optional `(taal: <code>)`, whose code goes to `language` as written;
+`Vocabulaire handboek` without either is complete (maintainer decision
+2026-09-27). A vocabulary has no kind: every designation is text, whether
+the vocabulary serves a handbook or a data contract, and whether its
+designations can serve as identifiers is the question of the consumer that
+speaks it (maintainer decision 2026-09-27).
+
+A designation is the annotation `(<vocabulaire>: <benaming>)`: free text
+between the colon and the closing parenthesis, trimmed at both ends, with
+spaces inside, and without a parenthesis. It stands at the very END of a
+declaration's name group, in one fixed position the grammar holds as it
+holds the mutual order of `(mv: …)` and `(bezield)` (maintainer decision
+2026-09-27): on an object type behind `(mv: …)` and `(bezield)`; on an
+attribute behind the name and its plural, before the datatype; on a
+characteristic behind the name (and plural), before `kenmerk`; on a role
+behind the role name and its plural, before the object type; on a fact type,
+a parameter (before the colon), an enumeration value (behind its literal), a
+rule and a rule group directly behind the name. The vocabularies of one
+declaration's annotations stand in any order; the emitter writes a
+declaration's `designations` in the declaration order of the vocabularies.
+
+Four new tokens. `VOCABULAIRE` (`Vocabulaire`) is a keyword before
+`UPPER_ID`, as `Dagsoort` is. `STANDAARD` is the whole token `(standaard)`,
+as `BEZIELD` is. `BENAMING_START` is the opener `(<woord>:` up to its colon:
+a parenthesis directly followed by a word — a letter, then letters, digits,
+`_`, `-` or `'`, the characters of a name word — and a colon. `MV_START`
+stands before it in the lexer and wins the tie on `(mv:`, so a vocabulary
+cannot be named `mv`. The opener pushes a lexer mode in which everything up
+to the closing parenthesis on the same line is ONE token,
+`BENAMING_TEKST`: keywords, numbers, quotes and punctuation in a designation
+are never lexed, so a designation cannot change the reading of what follows
+it. A line end before the closing parenthesis ends the mode as a token of its
+own, so an annotation left open is refused by name instead of swallowing the
+next line. The language annotation `(taal: nl)` of a vocabulary head is the
+same token shape, read by the resolver. The rule-name run (`regelNaam`) and
+the decision-table name run stop at the opener, so an annotation written
+there is not taken into a name.
+
+### Inertness — measured, not assumed
+
+Counted on 2026-09-27 over 638 distinct RegelSpraak sources (by content):
+the rgs goldens and scenario files of this corpus, the sources of the
+repository's temporary parity zone, the rule collections and toolchain
+examples outside this repository. `Vocabulaire` occurs in none of them, and
+`(standaard)` in none. The opener shape `(<woord>:` other than `(mv:`
+occurs 60 times, all inside `//` line comments, where the lexer never
+reaches it (a comment is one token of the hidden channel). In the six
+markdown documents of the v2.3.0 specification set `Vocabulaire` and
+`(standaard)` occur nowhere, and the opener shape 11 times, all in prose.
+
+The method of §6: every one of the 638 documents went through the frontend
+built at the commit before this card and at the commit that brought it, and
+the emitted IR, the diagnostics and the exit status were compared. Zero
+reinterpretations: 193 emit an IR, byte for byte the same, and 445 carry an
+ERROR (fragments and scenario files among them, which are no
+`regelSpraakDocument`), with the same diagnostics but for one TEXT change:
+the ANTLR "expecting {…}" set of a syntax-error message names the new
+tokens — `'Vocabulaire'` in 294 messages, `BENAMING_START` in 4. Normalising
+exactly those two leaves no residual difference. Gates 10 and 11 hold the
+same on their documents: the 99 older rgs goldens and the parity zone's
+casus re-emit unchanged.
+
+### Lowering (resolver)
+
+The resolver (`Benamingen`) reads the side table in two passes. After the
+declarations it reads every vocabulary head, then every annotation of every
+designatable declaration, and adds each designation to the model's side
+table (`RegelSpraakModel.vocabulaires`, `.benamingen`) under the declaration
+— its kind, its owner where the kind is scoped, and its model name. After
+the rule check, when the model holds every form the emitter writes, it
+judges what needs the whole model: a rule's designation needs a named form of
+that rule on the wire; the default vocabulary names every designatable
+declaration; the effective names are unique per scope; a redundant
+designation is warned. A designation never resolves: no rule reads the side
+table, so a rule that writes a designation where it means a declaration is
+refused as any undeclared name is — as a target by WF-022's refusal
+("regeldoel 'De totale premie van een Jutter': 'totale premie' is geen
+gedeclareerd attribuut van Jutter (WF-022, IR-SPEC ch. 3.1)"), in a read as
+an unresolved name that stays a marker with its warning — and a designation
+that spells the canonical name of another declaration reads that other one
+(witnesses: `VocabulaireDialectTest`).
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+Every refusal is an ERROR on the line of the head or the annotation (a
+declaration's line for the checks of the second pass) in a sentence of its
+own, placeholders in angle brackets (witnesses: `VocabulaireDialectTest`,
+every sentence on its line):
+
+- `vocabulaire 'mv': die naam is gereserveerd, want '(mv:' opent de
+  meervoudsvorm van een naam, en een benaming in dit vocabulaire zou als
+  meervoud gelezen worden`
+- `vocabulaire '<v>' is al gedeclareerd als '<eerder>'; de namen van de
+  vocabulaires zijn uniek, hoofdletterongevoelig (WF-116)`
+- `vocabulaire '<v>' draagt '(standaard)' twee keer`, and the same for
+  `'(taal: …)'`
+- `vocabulaire '<v>': '(<woord>: …)' is geen eigenschap van een vocabulaire;
+  een vocabulairekop kent '(standaard)' en '(taal: <code>)'` — among them the
+  `(soort: …)` of the card's first design, which the maintainer's decision
+  withdrew
+- `vocabulaire '<v>': de taalcode '<code>' is leeg of bevat witruimte; een
+  taalcode is één woord (WF-116)`
+- `de vocabulaires '<a>' en '<b>' zijn allebei het standaardvocabulaire; een
+  document heeft er hooguit één (WF-116)`
+- `de annotatie '(<v>: <tekst>' bij <declaratie> is niet op haar regel
+  gesloten; een benaming staat tussen haakjes op één regel`
+- `de benaming van <declaratie> in het vocabulaire '<v>' is leeg; een
+  benaming is tekst tussen de dubbele punt en het sluithaakje (WF-117)`
+- `de benaming '<b>' van <declaratie> in het vocabulaire '<v>' bevat een
+  haakje; een benaming is tekst zonder haakjes, want het sluithaakje sluit de
+  annotatie (WF-117)`
+- `de benaming '<b>' van <declaratie> noemt het vocabulaire '<v>', dat het
+  document niet declareert ('Vocabulaire <v>', WF-117)`
+- `<Declaratie> draagt twee benamingen in het vocabulaire '<v>', '<a>' en
+  '<b>'; een declaratie heeft hooguit één benaming per vocabulaire (WF-117)`
+- `beslistabel '<t>' draagt een benaming, en een beslistabel heeft er geen:
+  zij staat voor de regels van haar rijen, die hun namen van de frontend
+  krijgen; schrijf de benaming op een regel`
+- `het blok '<n>' draagt een benaming, en een uitzonderings- of
+  afwijkingsblok heeft er geen: het wordt een default in de groep van zijn
+  basisregel, en een default heeft geen naam op de wire; schrijf de benaming
+  op de basisregel`
+- `de regel '<r>' draagt een benaming, maar wordt op de wire geen benoemde
+  vorm (een regel, creatie, verdeling, consistentie, uniciteit of
+  defaultsgroep): een dagsoortdefinitie en een startpuntbepaling hebben geen
+  naam, en een verdeling zonder methode wordt niet geschreven; zonder vorm
+  heeft de benaming geen plaats`
+- `<Declaratie> draagt geen benaming in het standaardvocabulaire '<v>', dat
+  elke declaratie noemt (WF-119)`, with `; de frontend schreef deze
+  declaratie zelf, zonder plaats voor een annotatie` where the declaration is
+  one the frontend wrote (a row of a decision table, a member a marker
+  generates)
+- `<Declaratie a> en <declaratie b> hebben in het vocabulaire '<v>' dezelfde
+  effectieve naam '<n>'; binnen hun reikwijdte is die uniek,
+  hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord
+  heeft (WF-118)` — in the scopes of the canonical names: the object types,
+  the fact types, the parameters, the named forms and the rule groups each on
+  their own, the attributes and the characteristics of an object type with
+  the ones it inherits (reported at the subtype's own member), the roles of a
+  fact type, the values of a domain
+
+<declaratie> is `het objecttype '<T>'`, `het attribuut '<a>' van '<T>'`,
+`het kenmerk '<k>' van '<T>'`, `het feittype '<F>'`, `de rol '<r>' van
+'<F>'`, `de enumeratiewaarde '<w>' van '<D>'`, `de parameter '<p>'`, `de
+regel '<r>'` or `de regelgroep '<g>'`. A designation in a code-like
+spelling and one with spaces are refused alike or not at all: there is no
+kind to hold them to.
+
+And a WARNING, which leaves the document on disk: `de benaming '<b>' van
+<declaratie> in het vocabulaire '<v>' spelt haar canonieke naam en is
+overbodig: de effectieve naam is dezelfde zonder haar (WF-120)` — for a
+designation, in a vocabulary that is not the default, byte for byte the
+declaration's own name. It quotes the designation, which is how the written
+document accounts for it (WF-120); in the default vocabulary such a
+designation is required and never warned, and one that differs in case is
+the vocabulary's spelling.
+
+### Emission
+
+`vocabularies` stands after `format`, one `Vocabulary` node per head in
+declaration order (`name`, `default`, and `language` when written); every
+designatable node writes its `designations` as its LAST field, and an
+enumeration's declaration its `valueDesignations` after `values`, value by
+value. Each is written only where there is something to write, so a
+document without the extension emits exactly what it emitted before, which
+is the measurement above stated as a property (`VocabulaireDialectTest`
+holds it on the golden's source with its annotations taken out, and gate 10
+on the corpus).
+
+### Scope / limitations of this card
+
+- The nine kinds of the card and no others. A domain, a unit system, a
+  dimension, a timeline, a day kind and a decision table carry no
+  designation; an annotation on one of the first five is a syntax error, on a
+  table and on an exception block a named refusal.
+- A default vocabulary names every declaration, also the ones the frontend
+  writes itself: the rules of a decision table's rows, the members and forms
+  the opgave marker generates (§7), a start point's anchor. Those have no
+  place for an annotation, so a document with a default vocabulary cannot use
+  those constructs; the refusal says so. A vocabulary without `(standaard)`
+  has no such limit.
+- Not built, and deliberately: a service or an explanation per vocabulary, a
+  status per designation (preferred, deprecated), a vocabulary per language
+  beside another, an output that strips the annotations from a source, and
+  designations in the case format, which names declarations by their
+  canonical names only.
+- Witnesses: the golden `jutterswet-vocabulaires` (both vocabularies on every
+  kind; ref, clingo and both Drools branches replay its two cases, and gate
+  13's vocabulary leg replays them stripped, exchanged and rotated), the
+  frontend's `VocabulaireDialectTest` and the Drools backend's
+  `VocabulaireWitnessTest` (the model's reading entry: `benaming`,
+  `effectieveNaam`, `benoemd`).
+
+---
+
 ## Scenariotoetsen — scenarios written in RegelSpraak, lowered to case files
 
 Origin: the scenario layer of the source toolchain, its resolver and its IR

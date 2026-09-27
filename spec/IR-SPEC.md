@@ -2175,7 +2175,7 @@ a colon: those two limits are the rules below.
   comparison (ch. 2.1), since a designation names its vocabulary by name;
   (c) at most one vocabulary MUST carry `default: true`; (d) a present
   `language` MUST be a code: not empty and free of whitespace. What a code
-  denotes is not checked.
+  denotes is not checked (maintainer decision 2026-09-27).
 - **WF-117** Every designation: (a) MUST name a declared vocabulary, under
   case-insensitive comparison; (b) a declaration MUST carry at most one
   designation per vocabulary, for an enumeration value counted over the
