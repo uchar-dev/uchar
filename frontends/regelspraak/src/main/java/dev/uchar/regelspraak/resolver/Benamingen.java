@@ -301,10 +301,13 @@ final class Benamingen {
                 boolean da = model.benaming(v.naam(), a).isPresent(), db = model.benaming(v.naam(), b).isPresent();
                 String na = model.effectieveNaam(v.naam(), a), nb = model.effectieveNaam(v.naam(), b);
                 if (!(da || db) || !na.equalsIgnoreCase(nb)) continue;
+                // at the later declaration, and in a chain scope at the type's own member, where the collision
+                // arises: an inherited member was declared before the subtype that takes it in
+                Benoembaar plaats = eigen.isEmpty() || eigen.contains(b) ? b : a;
                 fout(hoofd(beschrijving(a)) + " en " + beschrijving(b) + " hebben in het vocabulaire '" + v.naam()
                         + "' dezelfde effectieve naam '" + nb + "'; binnen hun reikwijdte is die uniek, "
                         + "hoofdletterongevoelig, zodat de weg terug naar de declaratie één antwoord heeft (WF-118)",
-                        regels.getOrDefault(b, 0));
+                        regels.getOrDefault(plaats, 0));
             }
     }
 
