@@ -192,6 +192,27 @@ class VocabulaireDialectTest {
                 () -> m.diagnostics.toString());
     }
 
+    /** The designation 'gewicht' of the attribute 'toeslag' of Jutter spells the canonical name of an attribute of
+     *  ANOTHER type, Vondst: a Jutter rule that writes 'gewicht' names nothing on Jutter and gets the existing refusal of
+     *  an undeclared name, the designation resolving neither to 'toeslag' nor, across the scope, to Vondst's attribute. */
+    @Test void een_benaming_die_de_naam_van_een_ander_type_spelt_lost_niet_op() {
+        String bron = """
+            Vocabulaire handboek
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de toeslag (handboek: gewicht) Numeriek (geheel getal);
+
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (geheel getal);
+
+            Regel gewicht
+                geldig altijd
+                    Het gewicht van een Jutter moet berekend worden als 5.
+            """;
+        fout(bron, "Het gewicht van een Jutter", "regeldoel 'Het gewicht van een Jutter': 'gewicht' is geen "
+                + "gedeclareerd attribuut van Jutter (WF-022, IR-SPEC ch. 3.1)");
+    }
+
     /** The designation 'tegoed' of the attribute 'toeslag' spells the canonical name of the attribute 'tegoed': a read of
      *  'tegoed' reads that attribute, never the one the designation belongs to. */
     @Test void een_benaming_die_een_andere_naam_spelt_leest_die_andere() {
