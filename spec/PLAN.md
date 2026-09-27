@@ -236,7 +236,7 @@ Three things live deliberately outside the monorepo:
 ## 6. Phases
 
 Phases overlap deliberately where noted; each has an exit criterion that
-lands in the CI gate set.
+lands in the gate set.
 
 ### Phase 0 — Foundation (weeks, not months)
 
