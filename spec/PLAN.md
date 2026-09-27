@@ -133,7 +133,7 @@ pretend.
 **Meaning moves out of code in three steps.** From `RegelSpraakRuntime`
 (shared Java, hence shared bugs possible) → to IR-SPEC plus a reference
 interpreter (an executable specification) → to an ASP translation (a
-model-theoretic anchor). Each step gets a gatekeeper in the CI gate set.
+model-theoretic anchor). Each step gets a gatekeeper in the gate set.
 
 **Dialect and core are separated (MLIR lesson).** RegelSpraak-specific
 richness — Dutch names, the §9.10 rule-group extension, CNL-flavoured
