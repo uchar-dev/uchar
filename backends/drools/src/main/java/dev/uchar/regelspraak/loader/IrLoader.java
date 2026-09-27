@@ -302,7 +302,8 @@ public final class IrLoader {
         // non-string format is a defect of this one
         String format = tekst(root, "", "format");
         if (!"uchar-ir-v1".equals(format)) throw new Refusal("format", format);
-        velden(root, "", null, ROOT, List.of());
+        velden(root, "", null, ROOT, List.of("vocabularies"));
+        vocabulaires(root);
         JsonNode model = sectie(root, "", "model");
         JsonNode rules = sectie(root, "", "rules");
         velden(model, "/model", null, MODEL, List.of("functionDefs"));
@@ -368,7 +369,8 @@ public final class IrLoader {
         });
         weigerGeerfdAnker();   // the §9.9 family: asked here, where BOTH the tijdlijnen and the determinations are read
         lijst(rules, "/rules", "ruleGroups", (p, n) -> {
-            velden(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source"));
+            velden(n, p, "RuleGroup", List.of("node", "name", "recursive", "members"), List.of("source", "designations"));
+            if (text(n, "name") != null) benamingen(n, p, RegelSpraakModel.Benoembaar.regelgroep(text(n, "name")));
             m.regelGroepen.add(new ResolvedRegelGroep(
                     text(n, "name"), bool(n, "recursive"), stringList(n.get("members")), bron(n), bronregel(n)));
         });
@@ -697,11 +699,69 @@ public final class IrLoader {
         return s.length() > 60 ? s.substring(0, 60) + "…" : s;
     }
 
+    // --- the vocabulary side table (IR-SPEC ch. 2.12) ----------------------
+
+    /** The root list {@code vocabularies} into the model. A side table without semantics: read as strictly as every
+     *  node here, in the shared loader's sentences, and never read for evaluation; what a vocabulary or a designation
+     *  says is the verifier's (WF-116 to WF-120), so nothing here refuses it. */
+    private void vocabulaires(JsonNode root) {
+        for (JsonNode v : extLijst(root, "", "vocabularies", "a document's vocabularies")) {
+            String p = padVan(v);
+            velden(v, p, "Vocabulary", List.of("node", "name", "default"), List.of("language"));
+            m.vocabulaires.add(new RegelSpraakModel.Vocabulaire(tekst(v, p, "name"), waarheid(v, p, "default"),
+                    optTekst(v, p, "language")));
+        }
+    }
+
+    /** The designations of the declaration {@code n} at {@code pad}, into the model's side table under {@code element}
+     *  (a list that is absent carries none; a present one holds at least one). */
+    private void benamingen(JsonNode n, String pad, RegelSpraakModel.Benoembaar element) {
+        List<RegelSpraakModel.Benaming> lijst = new ArrayList<>();
+        for (JsonNode b : extLijst(n, pad, "designations", "a declaration's designations")) {
+            String p = padVan(b);
+            velden(b, p, null, List.of("vocabulary", "designation"), List.of());
+            lijst.add(new RegelSpraakModel.Benaming(tekst(b, p, "vocabulary"), tekst(b, p, "designation")));
+        }
+        if (!lijst.isEmpty()) m.benamingen.computeIfAbsent(element, k -> new ArrayList<>()).addAll(lijst);
+    }
+
+    /** An enumeration's {@code valueDesignations}: each entry to the first value its {@code value} names under the name
+     *  identity; an entry that names none (WF-117's) keeps the value as written, which names no declaration. */
+    private void waardeBenamingen(JsonNode dt, String pad, String domein, List<String> waarden) {
+        for (JsonNode e : extLijst(dt, pad, "valueDesignations", "an enumeration's value designations")) {
+            String p = padVan(e);
+            velden(e, p, null, List.of("value", "vocabulary", "designation"), List.of());
+            String waarde = tekst(e, p, "value");
+            String gedeclareerd = waarden.stream().filter(w -> Namen.norm(w).equals(Namen.norm(waarde)))
+                    .findFirst().orElse(waarde);
+            m.benamingen.computeIfAbsent(RegelSpraakModel.Benoembaar.enumeratiewaarde(domein, gedeclareerd),
+                    k -> new ArrayList<>()).add(new RegelSpraakModel.Benaming(tekst(e, p, "vocabulary"),
+                    tekst(e, p, "designation")));
+        }
+    }
+
+    /** A list the side table writes whole or not at all, in the shared loader's sentence for an empty one. */
+    private List<JsonNode> extLijst(JsonNode ouder, String pad, String veld, String wat) {
+        JsonNode a = ouder.get(veld);
+        if (a == null) return List.of();
+        String p = pad + "/" + veld;
+        if (!a.isArray()) throw new Documentfout(p, "expected an array, got " + kort(a));
+        if (a.isEmpty()) throw new Documentfout(p, wat + " are at least one, or the field is absent");
+        List<JsonNode> uit = new ArrayList<>();
+        for (int i = 0; i < a.size(); i++) {
+            if (!a.get(i).isObject()) throw new Documentfout(p + "/" + i, "expected a JSON object, got " + kort(a.get(i)));
+            uit.add(a.get(i));
+        }
+        return uit;
+    }
+
     // --- prioritized-defaults extension (ch. 7) ----------------------------
 
     private PrioritizedDefaults prioritizedDefaults(JsonNode n) {
         velden(n, padVan(n), "PrioritizedDefaults", List.of("node", "name", "subject", "defaults", "validity"),
-                List.of("characteristic", "attribute", "unordered", "source"));
+                List.of("characteristic", "attribute", "unordered", "source", "designations"));
+        if (text(n, "name") != null)
+            benamingen(n, padVan(n), RegelSpraakModel.Benoembaar.vorm(text(n, "name")));
         String onderwerp = text(n, "subject");
         String kenmerk = text(n, "characteristic");
         String attribuut = text(n, "attribute");
@@ -857,15 +917,18 @@ public final class IrLoader {
      *  (ch. 2.2: untagged = nominal). */
     private Objecttype objecttype(String pad, JsonNode n) {
         velden(n, pad, "ObjectType", List.of("node", "name", "animate", "attributes", "characteristics"),
-                List.of("supertype", "plural"));
+                List.of("supertype", "plural", "designations"));
         Objecttype ot = new Objecttype(naam(n, pad, "name"));
+        benamingen(n, pad, RegelSpraakModel.Benoembaar.objecttype(ot.naam));
         ot.bezield = waarheid(n, pad, "animate");
         ot.meervoud = optTekst(n, pad, "plural");
         supertypeNaam.put(ot, optTekst(n, pad, "supertype"));   // resolved after every declaration is read
         supertypePad.put(ot, pad + "/supertype");
         lijst(n, pad, "attributes", (ap, a) -> {
-            velden(a, ap, "Attribute", List.of("node", "name", "datatype"), List.of("plural", "dimensions", "timeline"));
+            velden(a, ap, "Attribute", List.of("node", "name", "datatype"),
+                    List.of("plural", "dimensions", "timeline", "designations"));
             String lid = naam(a, ap, "name");
+            benamingen(a, ap, RegelSpraakModel.Benoembaar.attribuut(ot.naam, lid));
             String eerder = botsing(ot.attributen.keySet(), lid);
             if (eerder != null) throw new Documentfout(ap + "/name", dubbel(lid, eerder));
             // null is admitted here and refused by the verifier under WF-059, which names it
@@ -896,8 +959,9 @@ public final class IrLoader {
             }
         });
         lijst(n, pad, "characteristics", (cp, c) -> {
-            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline"));
+            velden(c, cp, "Characteristic", List.of("node", "name", "kind"), List.of("timeline", "designations"));
             String lid = naam(c, cp, "name");
+            benamingen(c, cp, RegelSpraakModel.Benoembaar.kenmerk(ot.naam, lid));
             // WF-002: read leniently, a second declaration's kind replaced the first one's and its timeline did not
             String eerder = botsing(ot.kenmerken, lid);
             if (eerder != null) throw new Documentfout(cp + "/name", dubbel(lid, eerder));
@@ -930,11 +994,15 @@ public final class IrLoader {
         if (!dt.isObject()) throw new Documentfout(dp, "expected a datatype object, got " + kort(dt));
         String soort = datatypeSoort(dt, dp);
         List<String> sleutels = DOMEINDATATYPE.get(soort);
-        if (sleutels != null) velden(dt, dp, soort, sleutels, List.of());
+        // the values' designations stand beside their list, at this declaration position only (IR-SPEC ch. 2.12)
+        if (sleutels != null)
+            velden(dt, dp, soort, sleutels, soort.equals("Enumeration") ? List.of("valueDesignations") : List.of());
         if (soort.equals("Enumeration")) {
             if (!dt.get("values").isArray())
                 throw new Documentfout(dp + "/values", "expected an array, got " + kort(dt.get("values")));
-            return new Datatype.Enumeratie(naam, stringList(dt.get("values")));
+            List<String> waarden = stringList(dt.get("values"));
+            waardeBenamingen(dt, dp, naam, waarden);
+            return new Datatype.Enumeratie(naam, waarden);
         }
         return datatype(dt, dp, true);
     }
@@ -964,8 +1032,9 @@ public final class IrLoader {
      *  multi-period grids are open (RUNTIME-SEMANTICS ch. 3.12), so another count is no document (WF-005), refused in
      *  the verifier's words. The model's parameter holds the granularity. */
     private Parameter parameter(String pad, JsonNode n) {
-        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline"));
+        velden(n, pad, "Parameter", List.of("node", "name", "datatype"), List.of("timeline", "designations"));
         String naam = naam(n, pad, "name");
+        benamingen(n, pad, RegelSpraakModel.Benoembaar.parameter(naam));
         JsonNode dt = n.get("datatype");
         if (!dt.isObject()) throw new Documentfout(pad + "/datatype", "expected a datatype object, got " + kort(dt));
         Datatype datatype = datatype(dt, pad + "/datatype", true);
@@ -1081,13 +1150,16 @@ public final class IrLoader {
     /** IR-SPEC ch. 2.6: a fact type and its roles. A role's plural is written whole or not at all: absent is the
      *  record's null. */
     private Feittype feittype(String pad, JsonNode n) {
-        velden(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of());
+        velden(n, pad, "FactType", List.of("node", "name", "reciprocal", "roles"), List.of("designations"));
         Feittype ft = new Feittype(naam(n, pad, "name"));
         ft.wederkerig = bool(n, "reciprocal");
+        benamingen(n, pad, RegelSpraakModel.Benoembaar.feittype(ft.naam));
         elementen(n, "roles", r -> {
-            velden(r, padVan(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural"));
+            velden(r, padVan(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "designations"));
             ft.rollen.add(new RegelSpraakModel.Rol(
                     text(r, "name"), text(r, "objectType"), text(r, "plural"), bool(r, "many")));
+            if (text(r, "name") != null)
+                benamingen(r, padVan(r), RegelSpraakModel.Benoembaar.rol(ft.naam, text(r, "name")));
         });
         return ft;
     }
@@ -2127,11 +2199,14 @@ public final class IrLoader {
      * and digits: it would read as a version of another form. A form carries at least one version.
      */
     private List<Versie> vorm(JsonNode n, String pad, String knoop, List<String> optioneel) {
-        velden(n, pad, knoop, List.of("node", "name", "versions"), optioneel);
+        List<String> opt = new ArrayList<>(optioneel);
+        opt.add("designations");   // a named form's names in the vocabularies (IR-SPEC ch. 2.12), on the form
+        velden(n, pad, knoop, List.of("node", "name", "versions"), opt);
         JsonNode nm = n.get("name");
         if (!nm.isNull() && !nm.isTextual())
             throw new Documentfout(pad + "/name", "expected a string or null, got " + kort(nm));
         String naam = nm.isNull() ? null : nm.asText();
+        if (naam != null) benamingen(n, pad, RegelSpraakModel.Benoembaar.vorm(naam));
         if (naam != null && VERSIENAAM.matcher(naam).matches()) throw new Documentfout(pad + "/name", VORMNAAM);
         String vp = pad + "/versions";
         JsonNode vs = n.get("versions");
