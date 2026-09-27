@@ -187,6 +187,39 @@
 #     given a twist class or an exception with its reason. NB the ASP translator already reads
 #     Fold's and Match's own type for its integer SCALE (value_scale, ASP-TRANSLATION.md S2/S4) —
 #     that is the reading the clamp will surface first.
+#
+# --- the vocabulary leg (IR-SPEC ch. 2.12) ---------------------------------------------------
+# The same indifference question for the vocabulary side table: `vocabularies` on the document and
+# `designations` / `valueDesignations` on the declarations carry no semantics, so no executor may give
+# another answer when they change. Every golden that declares a vocabulary and has case files is
+# replayed three more times, each against the golden's own untouched outcome, with the executors and
+# the comparison of the unit legs above (ref and clingo exit 0; the two Drools branches print their
+# own untouched status line):
+#   - STRIPPED: every vocabulary and every designation taken out — the document an executor that reads
+#     nothing of the side table sees anyway;
+#   - EXCHANGED: the names of the vocabularies rotated one place (two vocabularies change places), in
+#     the declarations and in every designation that names them alike. Each set of designations keeps
+#     its vocabulary's default mark and language under the other name, so the document stays
+#     verifier-clean — a rotation of the designations ALONE would put the default's designations under
+#     a vocabulary that may not name every declaration (WF-119). This is the minimal twist, and it is
+#     blind to an executor that reads the side table through a vocabulary's role (the default one)
+#     rather than its name; the third twist is not;
+#   - ROTATED: within each vocabulary and each scope of WF-118 (the kinds without an owner each on
+#     their own, the own attributes and the own characteristics of an object type, the roles of a fact
+#     type, the values of a domain), the designations move one declaration on, among the declarations
+#     that carry one. The multiset of effective names of every scope is unchanged, so WF-118 and WF-119
+#     still hold; a rotation that would give a declaration its own canonical name in a vocabulary that is
+#     not the default (a redundancy WF-120 wants accounted for) tries the next offset, and a scope with
+#     no such offset stays as it is and is not counted. An executor that resolved a name through a
+#     designation would now reach another declaration.
+# Measured 2026-09-27 on jutterswet-vocabulaires: the three twisted copies are verifier-clean, and
+# ref, clingo and both Drools branches reproduce the untouched outcome on each. Measured by mutation the
+# same day — the shared OCaml loader made to take an attribute's first designation for its name, an
+# executor that reads the side table — the leg goes red on the exchanged and the rotated copies in ref
+# and clingo (8 failures over the two cases); the stripped copy stays green, as it must, since it has
+# nothing to read (and gates 5 and 6 are red on the untouched golden under that mutant). Unlike the unit twist,
+# a divergence here has no survivor list: no reading of the side table is a legitimate one, so every
+# divergence fails. A golden without vocabularies is not probed; no golden with them is a failure.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
 
@@ -271,13 +304,14 @@ fi
 JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Drools backend jar — the drools-jar line above says why)' >&2; exit 1; }
 
 TWISTER=$(mktemp) || exit 2
+VTWISTER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
 CASES=$(mktemp) || exit 2
 ONGEDEKT=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 RAKERS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
 DRLRAKERS=$(mktemp) || exit 2  # "<golden>" per DRL-baseline entry whose baseline is ACTUALLY off
-trap 'rm -rf "$TWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS" "$DRLRAKERS"' EXIT
+trap 'rm -rf "$TWISTER" "$VTWISTER" "$WORK" "$LIST" "$CASES" "$ONGEDEKT" "$RAKERS" "$DRLRAKERS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -550,6 +584,140 @@ for klasse in telling["ongedekt"]:
     print("onbekend %s %s" % (naam, klasse))
 PY
 
+cat > "$VTWISTER" <<'PY'
+import json, os, sys
+
+# The three copies of the vocabulary leg (see the script header). Numbers keep their lexemes: the
+# copies differ from the golden in the side table and in nothing else.
+
+
+class RuweNum:
+    __slots__ = ("raw",)
+
+    def __init__(self, s):
+        self.raw = s
+
+
+def schrijf(o, pad):
+    def stuk(o):
+        if isinstance(o, RuweNum):
+            return o.raw
+        if isinstance(o, dict):
+            return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + stuk(v) for k, v in o.items()) + "}"
+        if isinstance(o, list):
+            return "[" + ",".join(stuk(v) for v in o) + "]"
+        return json.dumps(o, ensure_ascii=False)
+    with open(pad, "w", encoding="utf-8") as fh:
+        fh.write(stuk(o))
+
+
+def lees(pad):
+    with open(pad, encoding="utf-8") as fh:
+        return json.load(fh, parse_int=RuweNum, parse_float=RuweNum)
+
+
+def dragers(doc):
+    """Every node that may carry designations, with its WF-118 scope and its canonical name."""
+    uit = []
+    m, r = doc["model"], doc["rules"]
+    for ot in m.get("objectTypes", []):
+        uit.append((("objectTypes",), ot.get("name"), ot))
+        for a in ot.get("attributes", []):
+            uit.append((("attributes", ot.get("name")), a.get("name"), a))
+        for c in ot.get("characteristics", []):
+            uit.append((("characteristics", ot.get("name")), c.get("name"), c))
+    for ft in m.get("factTypes", []):
+        uit.append((("factTypes",), ft.get("name"), ft))
+        for rol in ft.get("roles", []):
+            uit.append((("roles", ft.get("name")), rol.get("name"), rol))
+    for p in m.get("parameters", []):
+        uit.append((("parameters",), p.get("name"), p))
+    for lijst in ("rules", "objectCreations", "allocations", "consistencies", "uniquenesses",
+                  "factCreations", "prioritizedDefaults"):
+        for f in r.get(lijst, []):
+            uit.append((("forms",), f.get("name"), f))
+    for g in r.get("ruleGroups", []):
+        uit.append((("ruleGroups",), g.get("name"), g))
+    return uit
+
+
+def waardeTabellen(doc):
+    """The enumeration declarations that carry value designations, by domain."""
+    for d in doc["model"].get("domains", []):
+        dt = d.get("datatype") or {}
+        if dt.get("node") == "Enumeration" and "valueDesignations" in dt:
+            yield d.get("name"), dt
+
+
+bron, doel = sys.argv[1], sys.argv[2]
+if not (lees(bron).get("vocabularies") or []):
+    print("0 0 0 0")
+    sys.exit(0)
+os.makedirs(doel, exist_ok=True)
+
+# STRIPPED
+kaal = lees(bron)
+del kaal["vocabularies"]
+gestript = 0
+for _, _, n in dragers(kaal):
+    gestript += len(n.pop("designations", []))
+for _, dt in waardeTabellen(kaal):
+    gestript += len(dt.pop("valueDesignations"))
+schrijf(kaal, os.path.join(doel, "gestript.json"))
+
+# EXCHANGED: vocabulary i takes the name of vocabulary i+1, in the declarations and the designations
+wissel = lees(bron)
+namen = [v["name"] for v in wissel["vocabularies"]]
+nieuw = {n.lower(): namen[(i + 1) % len(namen)] for i, n in enumerate(namen)}
+verwisseld = 0
+for v in wissel["vocabularies"]:
+    v["name"] = nieuw[v["name"].lower()]
+for _, _, n in dragers(wissel):
+    for b in n.get("designations", []):
+        b["vocabulary"] = nieuw.get(b["vocabulary"].lower(), b["vocabulary"])
+        verwisseld += 1
+for _, dt in waardeTabellen(wissel):
+    for b in dt["valueDesignations"]:
+        b["vocabulary"] = nieuw.get(b["vocabulary"].lower(), b["vocabulary"])
+        verwisseld += 1
+schrijf(wissel, os.path.join(doel, "verwisseld.json"))
+
+# ROTATED: per vocabulary and scope, the designations one declaration on
+rot = lees(bron)
+standaard = {v["name"].lower() for v in rot["vocabularies"] if v.get("default")}
+geroteerd = 0
+
+
+def roteer(voc, plekken):
+    """plekken: (canonical name, designation record) of one scope and vocabulary, in document order.
+       The first offset that gives no declaration its own canonical name outside the default wins."""
+    global geroteerd
+    if len(plekken) < 2:
+        return
+    teksten = [b["designation"] for _, b in plekken]
+    for k in range(1, len(plekken)):
+        verschoven = teksten[-k:] + teksten[:-k]
+        if voc in standaard or all(t != c for (c, _), t in zip(plekken, verschoven)):
+            for (_, b), t in zip(plekken, verschoven):
+                if b["designation"] != t:
+                    b["designation"] = t
+                    geroteerd += 1
+            return
+
+
+scopes = {}
+for scope, canon, n in dragers(rot):
+    for b in n.get("designations", []):
+        scopes.setdefault((b["vocabulary"].lower(), scope), []).append((canon, b))
+for dom, dt in waardeTabellen(rot):
+    for b in dt["valueDesignations"]:
+        scopes.setdefault((b["vocabulary"].lower(), ("values", dom)), []).append((b["value"], b))
+for (voc, _), plekken in scopes.items():
+    roteer(voc, plekken)
+schrijf(rot, os.path.join(doel, "geroteerd.json"))
+print("1 %d %d %d" % (gestript, verwisseld, geroteerd))
+PY
+
 # Is <golden> x <executor> a pinned survivor? Read LINE by line, never word by word: a
 # reason carries spaces, so splitting $SURVIVORS on whitespace would shred every entry the
 # moment the list stops being empty.
@@ -595,6 +763,15 @@ EXPECTED_MIN_DRL_PLAYED=20  # 2026-09-24: measured 20 goldens PLAYED by the DRL-
                             # leg could lose seven PLAYED goldens without this gate failing. The
                             # growth from 13 to 20 came with the goldens and lowerings that landed
                             # between the two dates; 20 is the count measured now, not a target
+
+# The vocabulary leg's floors (see the script header), measured 2026-09-27 at the card that brought the
+# side table, on its one golden jutterswet-vocabulaires: a golden count, so a leg that stops finding
+# the goldens it probes fails above zero, and the designations the stripped and the rotated copies
+# move, so a twister that quietly moves nothing fails too (an exchange moves every designation, so its
+# count is the stripped one and needs no floor of its own).
+EXPECTED_MIN_VOCABULAIRE_GOLDENS=1     # 2026-09-27: measured 1 golden with vocabularies and case files
+EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46   # 2026-09-27: measured 46 designations stripped (23 declarations x 2 vocabularies)
+EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36  # 2026-09-27: measured 36 designations rotated to another declaration
 
 status=0
 n_goldens=0
@@ -703,6 +880,74 @@ while IFS= read -r ir; do
     fi
 done < "$LIST"
 
+# --- the vocabulary leg (see the script header) ---------------------------------------------------
+n_vgoldens=0
+n_vgestript=0
+n_vverwisseld=0
+n_vgeroteerd=0
+n_vreplays=0
+while IFS= read -r ir; do
+    dir=$(dirname "$ir")
+    naam=${dir#corpus/golden/}
+    vdir="$WORK/vocabulaire/$naam"
+    kop=$(python3 "$VTWISTER" "$ir" "$vdir") || { echo "FAIL: the vocabulary twister could not read $ir" >&2; exit 2; }
+    set -- $kop
+    [ "$1" -eq 1 ] || continue                 # no vocabulary: nothing to probe here
+    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+    [ -s "$CASES" ] || continue                # no case file: not replayable
+    n_vgoldens=$((n_vgoldens + 1))
+    n_vgestript=$((n_vgestript + $2))
+    n_vverwisseld=$((n_vverwisseld + $3))
+    n_vgeroteerd=$((n_vgeroteerd + $4))
+    set --
+    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+    basis=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+    dbasis=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+    for variant in gestript verwisseld geroteerd; do
+        vir="$vdir/$variant.json"
+        while IFS= read -r case; do
+            n_vreplays=$((n_vreplays + 2))
+            if ! rapport=$("$RUNNER_REF" "$vir" "$case" 2>&1); then
+                printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$rapport" >&2
+                status=1
+            fi
+            if ! rapport=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
+                printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$rapport" >&2
+                status=1
+            fi
+        done < "$CASES"
+        n_vreplays=$((n_vreplays + 2))
+        v=$(java -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
+        if [ "$v" != "$basis" ]; then
+            printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
+                "$naam" "$variant" "$basis" "$variant" "$v" >&2
+            status=1
+        fi
+        dv=$(java -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
+        if [ "$dv" != "$dbasis" ]; then
+            printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
+                "$naam" "$variant" "$dbasis" "$variant" "$dv" >&2
+            status=1
+        fi
+    done
+done < "$LIST"
+if [ "$n_vgoldens" -eq 0 ]; then
+    echo 'FAIL: no golden declares a vocabulary — the vocabulary leg probed nothing (an empty set is never green)' >&2
+    exit 1
+fi
+if [ "$n_vgoldens" -lt "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" ]; then
+    echo "FAIL: the vocabulary leg probed $n_vgoldens golden(s), but EXPECTED_MIN_VOCABULAIRE_GOLDENS pins at least $EXPECTED_MIN_VOCABULAIRE_GOLDENS — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+if [ "$n_vgestript" -lt "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" ]; then
+    echo "FAIL: the vocabulary leg stripped $n_vgestript designation(s), but EXPECTED_MIN_VOCABULAIRE_GESTRIPT pins at least $EXPECTED_MIN_VOCABULAIRE_GESTRIPT — the leg shrank (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+if [ "$n_vgeroteerd" -lt "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" ]; then
+    echo "FAIL: the vocabulary leg rotated $n_vgeroteerd designation(s), but EXPECTED_MIN_VOCABULAIRE_GEROTEERD pins at least $EXPECTED_MIN_VOCABULAIRE_GEROTEERD — the rotation moves less than it did (a deliberate removal lowers the floor in the same commit)" >&2
+    exit 1
+fi
+
 # The survivor list, BOTH halves (the check-noop pattern): an entry whose golden is gone is stale,
 # and so is an entry that no longer diverges — it then admits an exception nothing needs any more,
 # which is exactly how a list stops describing the system it pins.
@@ -801,6 +1046,9 @@ if [ "$status" -eq 0 ]; then
     printf 'check-reftype-derivation: PASS (%s unit annotations twisted over %s goldens, floor %s; %s executor replays reproduce the untouched outcome, %s of them PLAYED by the DRL-text branch, floor %s; %s pinned survivors)\n' \
         "$n_twists" "$n_goldens" "$EXPECTED_MIN_TWISTS" "$n_gecontroleerd" "$n_drl" \
         "$EXPECTED_MIN_DRL_PLAYED" "$n_survivors"
+    printf '  vocabulary leg: %s golden(s) with vocabularies, floor %s; %s designations stripped (floor %s), %s exchanged, %s rotated (floor %s); %s executor replays reproduce the untouched outcome\n' \
+        "$n_vgoldens" "$EXPECTED_MIN_VOCABULAIRE_GOLDENS" "$n_vgestript" "$EXPECTED_MIN_VOCABULAIRE_GESTRIPT" \
+        "$n_vverwisseld" "$n_vgeroteerd" "$EXPECTED_MIN_VOCABULAIRE_GEROTEERD" "$n_vreplays"
     printf '  corpus-wide accounting: %s unit-bearing annotations = %s twistable + %s exempt (the annotation IS the source) + %s without a convertible sister + %s at a §2.10 fourth-class branch (v0 derives no result unit) + %s outside the twist table\n' \
         "$n_eenheid" "$((n_eenheid - n_vrijgesteld - n_zonderzusje - n_ongedekt))" \
         "$n_vrijgesteld" "$n_zonderzusje" "$n_vierde" "$n_onbekend"
