@@ -116,6 +116,20 @@ class ScenarioParametersetTest {
         assertEquals(List.of("MET", "LOWER_ID"), tokens("met parameters"));
     }
 
+    /** Why the header is a token: an expectation that ends in a characteristic name ends in a run that takes an
+     *  UPPER_ID, and a number written without a unit takes one as its unit, so a header word that lexed as an UPPER_ID
+     *  would be read into either. */
+    @Test void een_setkop_na_een_kenmerknaam_of_een_getal_zonder_eenheid_opent_een_nieuw_blok() {
+        String bron = "Situatie zwaar:\neen Jutter J\n- het vondstgewicht is 12,00 kg\n"
+                + "Parameterset reeks noord:\nde parameter de vondstdrempel is 3\n"
+                + "Parameterset reeks zuid:\nde parameter de vondstdrempel is 4\n"
+                + "Scenario strandrecht\nmet peildatum 01-06-2025\nmet parameterset reeks noord\n"
+                + "gebaseerd op de situatie zwaar\nMet als verwacht resultaat:\n- J heeft strandrecht\n"
+                + "Parameterset reeks oost:\nde parameter de vondstdrempel is 5\n";
+        assertEquals(0, syntaxfouten(bron, RegelSpraak::testDocument));
+        assertEquals(List.of("vondstdrempel=3"), parameters(enig(resolve(bron))));
+    }
+
     @Test void de_keuze_beeindigt_de_scenarionaam_en_de_naam_van_een_enkele_regel() {
         ResolvedScenario s = enig(resolve(JAREN + scenario("oudejaar met een staart",
                 "toetst de regel bonus bij drempel\nmet peildatum 31-12-2025\nmet parameterset jaren\n",

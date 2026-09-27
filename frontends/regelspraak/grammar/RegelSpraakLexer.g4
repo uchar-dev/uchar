@@ -179,11 +179,12 @@ MET_ALS_VERWACHT_RESULTAAT : 'Met' WSP 'als' WSP 'verwacht' WSP 'resultaat:' ; /
 MET_PEILDATUM        : 'met' WSP 'peildatum'  ; // §4.2 rekendatum-global voor het scenario
 // The parameter set adds two tokens where the rest of the extension reuses the lexer: a block
 // header must end the block before it, and a header clause must end the name run before it, and
-// no existing token does either — an UPPER_ID is a name word in kaleNaamWoord, naamWoordAny and
-// eenheidAfkorting, so a bare 'Parameterset' after a verwachting or a unit value would be
-// swallowed, and 'met' + LOWER_ID runs on inside scenarioNaam and enkeleRegelReferentie. Neither
-// the capitalised word nor the phrase occurs in any source of the repository outside the
-// scenario documents that write them (grammar/DIVERGENCES.md, Scenariotoetsen).
+// no existing token does either — an UPPER_ID is a name word in kaleNaamWoord and naamWoordAny and
+// a unit in eenheidAfkorting, so a bare 'Parameterset' would be read into the name that ends a
+// verwachting, or as the unit of a number written without one, and 'met' + LOWER_ID runs on
+// inside scenarioNaam and enkeleRegelReferentie. Neither the capitalised word nor the phrase
+// occurs in any source of the repository outside the scenario documents that write them
+// (grammar/DIVERGENCES.md, Scenariotoetsen).
 MET_PARAMETERSET     : 'met' WSP 'parameterset' ; // de keuze van een parameterset in de scenariokop
 DE_GEGEVENS_ZIJN     : 'de' WSP 'gegevens' WSP 'zijn' ; // consistentie-verwachting opener
 DE_PARAMETER         : 'de' WSP 'parameter'   ; // ongebullette parameterwaarde in een situatieblok

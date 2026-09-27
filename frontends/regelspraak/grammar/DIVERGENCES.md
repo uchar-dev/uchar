@@ -1674,9 +1674,12 @@ token run. `tot en met` is one token and is no period
 `PARAMETERSET` (`Parameterset`) and `MET_PARAMETERSET` (`met
 parameterset`, one whole-phrase token like `MET_PEILDATUM`). A block header
 must end the block before it, and a header clause must end the name run
-before it; an `UPPER_ID` is a name word in `kaleNaamWoord`, `naamWoordAny`
-and `eenheidAfkorting`, so a bare `Parameterset` after an expectation or a
-value with a unit would be read as part of it, and `met` followed by a
+before it; an `UPPER_ID` is a name word in `kaleNaamWoord` and
+`naamWoordAny` and a unit in `eenheidAfkorting`, so a bare `Parameterset`
+would be read into the characteristic name that ends an expectation, or as
+the unit of a number written without one (measured with another
+capitalised word in that place: `strandrecht Jaarset tarieven` became one
+name, `3 Jaarset` a number with a unit), and `met` followed by a
 `LOWER_ID` runs on inside the scenario name and the single-rule scope.
 Measured on 2026-09-27, before the parameter set's own witnesses: the word
 `parameterset`, in any capitalisation, occurred in none of the 104
