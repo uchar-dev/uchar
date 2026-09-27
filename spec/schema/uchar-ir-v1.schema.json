@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://uchar.dev/schema/uchar-ir-v1.schema.json",
   "title": "uchar-ir-v1",
-  "description": "Structural schema for the 'uchar-ir-v1' format in its L5 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L5): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3), its RULE AND EXPRESSION LAYER in the v1 forms (L4), and its SOURCE TEXTS in the source record and its NAMES in the spelling of IR-SPEC (L5). The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries one list per rule-form kind, in the order of IR-SPEC ch. 2 (Rules), the single-source and union uniqueness forms in the one list 'uniquenesses'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every source text is in the source record (B26): the optional field 'source' (sourceReference: a non-empty 'snippet', and 'line' where a consistency version or a rule group has one) stands where the v0 field 'bron' stood, on every node that carried one, and is required on an Unresolved marker; a node without source text carries none. Every node, field and enum value carries its IR-SPEC name (B6, B10), the enum values in the spelling of IR-SPEC's Conventions (English, lowerCamel), and a field IR-SPEC names optional is absent rather than null on the renamed nodes; the one exception is the rule-status check, which keeps its v0 node Regelversie with its fields regel and inconsistent until its v1 form lands (B25). Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node no landing restructured keeps the order its v0 emitter wrote, less the keys L2 removed, with its keys renamed in place. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and a QuantifierFold, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RoleBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional exceptions field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
+  "description": "Structural schema for the 'uchar-ir-v1' format in its L5 shape (spec/proposals/V1-WIREMIGRATIE.md, section 7, landings L1 to L5): the former 'regelspraak-ir-v0' dump of the reference frontend's fully resolved model with its CONTAINER restructured (L1), its REFERENCE LAYER reduced to the symbolic form (L2), its TYPE SYSTEM in the v1 nodes (L3), its RULE AND EXPRESSION LAYER in the v1 forms (L4), and its SOURCE TEXTS in the source record and its NAMES in the spelling of IR-SPEC (L5). The root nests {format, model, rules, diagnostics} (decision V3 (b)): 'model' is the declaration set of IR-SPEC ch. 2, as lists in declaration order (WF-019), with no map keys; 'rules' carries one list per rule-form kind, in the order of IR-SPEC ch. 2 (Rules), the single-source and union uniqueness forms in the one list 'uniquenesses'; 'diagnostics' is the producer's own account (WF-113). An ObjectType carries its members as Attribute and Characteristic nodes with their own facets (TimelineFacet), and a Domain wraps a name and a datatype that carries no self-name at the declaration position (domainDatatype). A reference carries only its symbolic form (L2): the five reference classes carry no type annotation, because the declaration is the one source; an attribute reference names its navigation by role bindings alone; the range of an instance fold, a quantifier fold and an allocation is written, never derived; one RoleMembership node names the fact type and the role the subject fills; a fact creation and a scoped uniqueness carry their symbolic fields alone; and the datatype union has no member for an unknown type (B16). The type system is the v1 one (L3): a number is a Number, and a percentage a Number with the unit '%' that carries the presentation tag 'percentage' at a declaration (B14); a date is one Date node with its precision (B15); a unit is a Unit whose conversion factor is an exact rational {num, den} (B17 (i)) and whose declaration carries its spellings; a unit system is a list of units; a day kind is a DayKind node with its plural; and a parameter carries the attribute's timeline facet without a timeline name (B18). The rule and expression layer is the v1 one (L4): each of the six named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness) is {node, name, versions}, its version records carrying no node discriminator (B19); a rule version carries the 'initialisation' flag and, on a computing version, the dialect tag 'presentation', and whether it writes an attribute or a characteristic is its target's declaration (B20); a uniqueness names its sources, one or more (B27); a fact creation reaches its target along a 'path' of role bindings; an aggregation and a builtin call are two nodes, each with its own fields (B21); a literal carries a typed value in the variants of the case format, a decimal point where the source wrote a comma (B22); and the bound day of a day-kind definition and the two session values are BoundDay and ContextValue (B23). Every source text is in the source record (B26): the optional field 'source' (sourceReference: a non-empty 'snippet', and 'line' where a consistency version or a rule group has one) stands where the v0 field 'bron' stood, on every node that carried one, and is required on an Unresolved marker; a node without source text carries none. Every node, field and enum value carries its IR-SPEC name (B6, B10), the enum values in the spelling of IR-SPEC's Conventions (English, lowerCamel), and a field IR-SPEC names optional is absent rather than null on the renamed nodes; the one exception is the rule-status check, which keeps its v0 node Regelversie with its fields regel and inconsistent until its v1 form lands (B25). The optional list 'vocabularies' after 'format' declares the named vocabularies of IR-SPEC ch. 2.12, and the optional field 'designations' on the designatable declarations, and 'valueDesignations' on an enumeration's declaration, carry the designations: a side table without semantics, read structurally by every reader and for evaluation by none, whose content rules are the verifier's (WF-116 to WF-120); each of the two fields stands last on its node. Canonical key order is the 'properties' order of this schema: the migration script and every emitter write exactly that order, and every node no landing restructured keeps the order its v0 emitter wrote, less the keys L2 removed, with its keys renamed in place. Every object is closed (additionalProperties:false) and lists every always-emitted key as required; node subtypes are discriminated on the 'node' field. Exception, by the decided wire-entry discipline (IR-SPEC, Method): extension fields carrying v1 deltas (connectingRole on an object creation, the fold ranges sourceRole and sourcePath on an Aggregation and a QuantifierFold, and statuteAnnotations — of each range pair the second is the multi-step fold-source range of IR-SPEC ch. 4.3 / WF-102, two or more RoleBindings subject-outwards and mutually exclusive with the first, which is the one-step spelling of the same field; and statuteAnnotations carries the statute annotations on a Rule, when present a non-empty list of non-empty strings and absent otherwise) are optional where L2 makes none of them required (the allocation's connectingRole and the range of a fold and of a quantifier fold, under the conditions stated on those nodes), the datatype union admits the extension nodes SumType (the payload-carrying variant family, CONSTRUCTS row 36), ListType (the sequence type, CONSTRUCTS row 10) and StructType (the record datatype, spec/proposals/PHASE5C-TUTORIAL.md §2), the expr union admits the extension nodes TemporalRead, Construct, Match, BinderRef, StructLiteral, FieldAccess, the row-10 fold family (ListLiteral, Lambda, IfThenElse, Invoke, Fold, MapList, FilterList, ListLength) and the value-level binding Let (spec/proposals/PHASE5C-TUTORIAL.md §6), and the optional lists functionDefs (under 'model') and prioritizedDefaults (under 'rules') carry the named-logic and prioritized-defaults extensions, and a Default carries the optional exceptions field — its nested exception groups (RUNTIME-SEMANTICS ch. 7.9) — the v0 emitter produces none of them EXCEPT Let and BinderRef, which the RegelSpraak frontend has emitted for a §13.4.2.10 variabelendeel since the let-lowering card (2026-09-01); when present they are all written whole, never null. Wire epoch v0.10 (the rename epoch, 2026-08-29): the prioritized-defaults spellings (prioritizedDefaults/Default/ExceptionGroup and the defaults list) are the only valid ones; a file in the pre-rename spelling (see the formerly notes, IR-SPEC ch. 6.1 and RUNTIME-SEMANTICS ch. 7.1) fails loudly against the closed objects. Section citations (e.g. §13.3.3) point into the source language spec by number only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,6 +14,14 @@
   "properties": {
     "format": {
       "const": "uchar-ir-v1"
+    },
+    "vocabularies": {
+      "description": "Extension list (IR-SPEC ch. 2.12): the named vocabularies the designations of this document are written in. Optional, written whole or not at all: absent when the document declares none, and when present at least one. Like every designation, a side table without semantics: every reader reads it structurally, and none reads it for evaluation.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Vocabulary"
+      }
     },
     "model": {
       "description": "The model layer: the declaration set of IR-SPEC ch. 2. The six former v0 registries are lists in declaration order, each entry carrying its name on its node (there is no map key); the timelines were a list in v0 already; the day kinds are a list of DayKind nodes, each carrying its own spellings (L3). functionDefs is an extension list: optional, written whole or not at all.",
@@ -442,7 +450,7 @@
       ]
     },
     "DomainEnumeration": {
-      "description": "Enumeration at the declaration position of a Domain: the 'domain' self-name is absent (see domainDatatype); 'values' is the reference form's own field schema.",
+      "description": "Enumeration at the declaration position of a Domain: the 'domain' self-name is absent (see domainDatatype); 'values' is the reference form's own field schema. 'valueDesignations' is the extension field of IR-SPEC ch. 2.12, the designations of the values, written whole or not at all and only here: an enumeration value is a bare string on the wire, so its designations stand beside the list it is declared in, and a use site, which repeats the values, carries none.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -455,6 +463,13 @@
         },
         "values": {
           "$ref": "#/$defs/Enumeration/properties/values"
+        },
+        "valueDesignations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ValueDesignation"
+          }
         }
       }
     },
@@ -2551,6 +2566,9 @@
           "items": {
             "$ref": "#/$defs/Characteristic"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -2592,6 +2610,9 @@
         },
         "timeline": {
           "$ref": "#/$defs/TimelineFacet"
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -2620,6 +2641,9 @@
         },
         "timeline": {
           "$ref": "#/$defs/CharacteristicTimelineFacet"
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -2746,6 +2770,9 @@
         },
         "timeline": {
           "$ref": "#/$defs/ParameterTimelineFacet"
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -2797,6 +2824,9 @@
           "items": {
             "$ref": "#/$defs/Role"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -2930,6 +2960,9 @@
               "type": "null"
             }
           ]
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "Extension node (v1, Phase 4): the prioritized-defaults group — defaults in descending priority; the highest default that decides wins. Characteristic target: decision (true = attribute, false = do-not-attribute); attribute target: consequence (a leeg-evaluating consequence falls through); the initialisation default (lowest) is justified iff the target is empty in the input."
@@ -2984,6 +3017,9 @@
         },
         "many": {
           "type": "boolean"
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -3119,6 +3155,9 @@
             "minLength": 1
           },
           "description": "Extension field (IR-SPEC ch. 3.1): the statute annotations written above the rule header, on the form, one list for all its versions. When present a non-empty list of non-empty strings, absent otherwise; that no entry carries leading or trailing whitespace is WF-082's."
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "A rule (IR-SPEC ch. 3.1): one name, its versions in declaration order (delta B19)."
@@ -3264,6 +3303,9 @@
           "items": {
             "$ref": "#/$defs/ObjectCreationVersion"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "An object creation (IR-SPEC ch. 3.3): one name, its versions in declaration order (delta B19)."
@@ -3330,6 +3372,9 @@
           "items": {
             "$ref": "#/$defs/AllocationVersion"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "An allocation (IR-SPEC ch. 3.2): one name, its versions in declaration order (delta B19)."
@@ -3431,6 +3476,9 @@
           "items": {
             "$ref": "#/$defs/ConsistencyVersion"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "A consistency rule (IR-SPEC ch. 3.5): one name, its versions in declaration order (delta B19)."
@@ -3483,6 +3531,9 @@
           "items": {
             "$ref": "#/$defs/UniquenessVersion"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "A uniqueness rule (IR-SPEC ch. 3.6): one name, its versions in declaration order (delta B19); one construct for the single-type and the union form (delta B27)."
@@ -3578,6 +3629,9 @@
           "items": {
             "$ref": "#/$defs/FactCreationVersion"
           }
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       },
       "description": "A fact creation (IR-SPEC ch. 3.4): one name, its versions in declaration order (delta B19)."
@@ -3692,6 +3746,9 @@
         },
         "source": {
           "$ref": "#/$defs/sourceReference"
+        },
+        "designations": {
+          "$ref": "#/$defs/designations"
         }
       }
     },
@@ -3719,6 +3776,83 @@
         },
         "line": {
           "type": "integer"
+        }
+      }
+    },
+    "Vocabulary": {
+      "description": "A named vocabulary (IR-SPEC ch. 2.12): the set of designations, at most one per declaration, that a consumer can speak instead of the declared names. 'name' is what every Designation names it by; 'default' marks the vocabulary that names every designatable declaration, at most one per document (WF-116, WF-119); 'language' is a language tag, absent when none is declared; 'kind' decides the form of its designations, a code or a term (WF-117). What a name and a language tag may spell is the verifier's (WF-116): the schema carries no pattern. Key order is this 'properties' order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "name",
+        "default",
+        "kind"
+      ],
+      "properties": {
+        "node": {
+          "const": "Vocabulary"
+        },
+        "name": {
+          "type": "string"
+        },
+        "default": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "code",
+            "term"
+          ]
+        }
+      }
+    },
+    "designations": {
+      "description": "Extension field (IR-SPEC ch. 2.12): the designations of one declaration, at most one per vocabulary (WF-117). Written whole or not at all: absent when the declaration carries none, and when present at least one. It stands last on every node that carries it — ObjectType, Attribute, Characteristic, FactType, Role, Parameter, the named forms (Rule, Allocation, ObjectCreation, FactCreation, Consistency, Uniqueness, PrioritizedDefaults) and RuleGroup — and an enumeration value's stand in its domain's 'valueDesignations'. A side table without semantics: every reader reads it structurally, and none reads it for evaluation.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Designation"
+      }
+    },
+    "Designation": {
+      "description": "One designation (IR-SPEC ch. 2.12): the name of the declaration that carries it in the vocabulary 'vocabulary', which names a declared Vocabulary. What a designation may spell, by its vocabulary's kind, is the verifier's (WF-117), and so is the uniqueness of the effective names in a vocabulary (WF-118): the schema cannot cross a designation with the vocabulary it names. Key order is this 'properties' order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vocabulary",
+        "designation"
+      ],
+      "properties": {
+        "vocabulary": {
+          "type": "string"
+        },
+        "designation": {
+          "type": "string"
+        }
+      }
+    },
+    "ValueDesignation": {
+      "description": "One designation of an enumeration value (IR-SPEC ch. 2.12): 'value' names one of the values of the Enumeration it stands beside (WF-117), 'vocabulary' and 'designation' as on a Designation. Key order is this 'properties' order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "vocabulary",
+        "designation"
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "vocabulary": {
+          "type": "string"
+        },
+        "designation": {
+          "type": "string"
         }
       }
     }
