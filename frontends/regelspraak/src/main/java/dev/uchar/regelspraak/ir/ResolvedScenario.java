@@ -19,7 +19,8 @@ import java.util.List;
  * @param naam          the scenario name as written, whitespace collapsed
  * @param scope         the rules the scenario tests, or null when the header names none (the whole document)
  * @param peildatum     the evaluation date, or null when the header sets none (a time-free case)
- * @param situatie      the merged situation: the based-on situations in written order, then the inline one
+ * @param situatie      the merged situation: the based-on situations in written order, then the inline one; its
+ *                      parameter values open with those of the chosen parameter set on the peildatum
  * @param verwachtingen the expectations in written order; the segment bullets of one timeline are one entry, at
  *                      the position of its first bullet
  * @param line          the 1-based source line of the {@code Scenario} header
@@ -41,7 +42,9 @@ public record ResolvedScenario(String naam, Scope scope, LocalDate peildatum, Si
     }
 
     /** The merged situation: the instances by label, in first-seen order, and the parameter values (a later
-     *  value replaces an earlier one in place). */
+     *  value replaces an earlier one in place), preceded by the values the chosen parameter set gives on the
+     *  peildatum — per parameter its jaargang, or its whole timeline. No parameter stands in both parts: the
+     *  resolver refuses one the set and the situation both give. */
     public record Situatie(List<Instantie> instanties, List<ParameterWaarde> parameters) {
         /** The instance carrying label {@code label}, or null. */
         public Instantie instantie(String label) {

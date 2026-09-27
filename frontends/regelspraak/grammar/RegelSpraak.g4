@@ -101,7 +101,7 @@ groepLid   : regel | beslistabel ;
 // ====================================================================
 testDocument
     : ( definitie | regelGroep | uitzonderingGroep | uitzonderingRegel | regel | beslistabel
-      | situatieDefinitie | scenario )* EOF
+      | situatieDefinitie | parametersetDefinitie | scenario )* EOF
     ;
 
 // A herbruikbare situatie: `Situatie <naam>:` header, then a situatieblok. The name
@@ -113,19 +113,27 @@ testDocument
 situatieDefinitie : SITUATIE situatieNaam scenarioBasis* COLON situatieBlok ;
 situatieNaam      : vrijeNaam ; // free name up to the ':' (or a basis)
 
-// A scenario: header (name + optional scope + optional peildatum + optional gebaseerd-op),
+// A parameter set: `Parameterset <naam>:`, then the parameter rows of a situation block and
+// nothing else. Several rows of one parameter without granularity are its jaargangen, and the
+// peildatum of the scenario that chooses the set picks one; the rows of a parameter with a
+// timeline are its segments, as in a situation (grammar/DIVERGENCES.md, Scenariotoetsen).
+parametersetDefinitie : PARAMETERSET parametersetNaam COLON parameterWaarde+ ;
+parametersetNaam      : vrijeNaam ; // free name up to the ':' (or, in a scenario header, the next header clause)
+
+// A scenario: header (name + optional scope + optional peildatum + optional parameter set
+// + optional gebaseerd-op),
 // then an optional inline situatiesectie, then the (mandatory) verwachtingsectie.
 // The scenarionaam is the token run up to the first header keyword. The scope is
 // optional: without one the scenario tests the whole document, and with one the
 // emitted IR carries only the rules it names (grammar/DIVERGENCES.md, Scenariotoetsen).
 scenario
     : SCENARIO scenarioNaam scenarioScope?
-      scenarioPeildatum? scenarioBasis*
+      scenarioPeildatum? scenarioParameterset? scenarioBasis*
       inlineSituatie?
       MET_ALS_VERWACHT_RESULTAAT verwachting+
     ;
 scenarioNaam // free name up to the first header keyword
-    : ~( TOETST_DE_REGEL | TOETST_DE_REGELS | TOETST_DE_REGELGROEP | MET_PEILDATUM
+    : ~( TOETST_DE_REGEL | TOETST_DE_REGELS | TOETST_DE_REGELGROEP | MET_PEILDATUM | MET_PARAMETERSET
        | GEBASEERD_OP_DE_SITUATIE | GEGEVEN_IS_DE_VOLGENDE_SITUATIE | MET_ALS_VERWACHT_RESULTAAT )+
     ;
 
@@ -136,7 +144,7 @@ scenarioScope
     ;
 // A rule/group name in a scope LIST ('toetst de regels a, b en c'): a free token run
 // bounded by the list separators (',' , 'en') and by the header keywords that can
-// follow the scope (peildatum / gebaseerd-op / the verwachtingsectie opener). A
+// follow the scope (peildatum / parameter set / gebaseerd-op / the verwachtingsectie opener). A
 // regelnaam containing a bare ' en ' or ',' is not expressible in the LIST form — a
 // documented limitation, consistent with the existing EN-splitting in §13.4 names.
 regelReferentie : regelReferentieWoord+ ;
@@ -151,8 +159,9 @@ regelReferentieWoord
     ;
 // A rule/group name in the SINGLE-rule scope ('toetst de regel <naam>' / 'toetst de
 // regelgroep <naam>'). There is no list here, so the name is a FREE token run bounded
-// only by the four dedicated header tokens that can follow the scope (MET_PEILDATUM /
-// GEBASEERD_OP_DE_SITUATIE / GEGEVEN_IS_DE_VOLGENDE_SITUATIE / MET_ALS_VERWACHT_RESULTAAT) —
+// only by the five dedicated header tokens that can follow the scope (MET_PEILDATUM /
+// MET_PARAMETERSET / GEBASEERD_OP_DE_SITUATIE / GEGEVEN_IS_DE_VOLGENDE_SITUATIE /
+// MET_ALS_VERWACHT_RESULTAAT) —
 // the verwachtingsectie opener is mandatory, so the run always terminates. Unlike the
 // LIST form (regelReferentie above, which is bounded by the ',' / 'en' separators), the
 // single-rule name may therefore contain a bare ' en ', ',', or any multi-word keyword
@@ -161,9 +170,11 @@ regelReferentieWoord
 // embeds such words. The resolver reconstructs the name from the token text and matches
 // it against the model's rule names (normalised). See grammar/DIVERGENCES.md, Scenariotoetsen.
 enkeleRegelReferentie
-    : ~( MET_PEILDATUM | GEBASEERD_OP_DE_SITUATIE | GEGEVEN_IS_DE_VOLGENDE_SITUATIE | MET_ALS_VERWACHT_RESULTAAT )+ ;
+    : ~( MET_PEILDATUM | MET_PARAMETERSET | GEBASEERD_OP_DE_SITUATIE | GEGEVEN_IS_DE_VOLGENDE_SITUATIE
+       | MET_ALS_VERWACHT_RESULTAAT )+ ;
 
 scenarioPeildatum : MET_PEILDATUM datumWaarde ;                         // §4.2 rekendatum-global
+scenarioParameterset : MET_PARAMETERSET parametersetNaam ;             // at most one set per scenario
 scenarioBasis     : GEBASEERD_OP_DE_SITUATIE situatieNaam ;             // herhaalbaar
 inlineSituatie    : GEGEVEN_IS_DE_VOLGENDE_SITUATIE situatieBlok ;      // optionele inline situatiesectie
 

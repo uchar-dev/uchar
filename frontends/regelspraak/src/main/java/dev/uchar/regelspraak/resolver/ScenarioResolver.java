@@ -47,8 +47,9 @@ import static dev.uchar.regelspraak.emit.CaseEmitter.norm;
  *   <li>hands the non-scenario blocks, in document order, to the one model pipeline of {@link Resolver#bouw} as a
  *       document of their own, so the model — and the IR emitted from it — is the one the production route
  *       builds for the same blocks;</li>
- *   <li>resolves the {@code Situatie} and {@code Scenario} blocks into {@link ResolvedScenario}s, typing every value
- *       against its declaration and normalising it to what a case file of the format uchar-case-v0 carries.</li>
+ *   <li>resolves the {@code Situatie}, {@code Parameterset} and {@code Scenario} blocks into {@link ResolvedScenario}s,
+ *       typing every value against its declaration and normalising it to what a case file of the format
+ *       uchar-case-v0 carries; of a parameter set, a scenario takes the jaargang its peildatum falls in.</li>
  * </ol>
  * Every defect is an ERROR with its source line in the model's diagnostics; the lowering writes nothing for a model
  * that carries one. The sentences are the extension's own and Dutch: no reader refuses a case file for these defects,
@@ -70,6 +71,8 @@ public final class ScenarioResolver {
     private final Map<String, BlokResultaat> eigenBlokken = new HashMap<>();
     /** Each situation's blocks in merge order (its bases expanded, then its own block), computed once. */
     private final Map<String, List<BlokResultaat>> uitgevouwen = new HashMap<>();
+    /** Parameter sets by normalised name, the first declaration of a name, each validated once. */
+    private final Map<String, SetResultaat> parametersets = new LinkedHashMap<>();
 
     private ScenarioResolver(RegelSpraakModel model, TestDocumentContext test) {
         this.model = model;
@@ -111,8 +114,8 @@ public final class ScenarioResolver {
                         || kind instanceof UitzonderingGroepContext || kind instanceof UitzonderingRegelContext
                         || kind instanceof RegelContext || kind instanceof BeslistabelContext)
                     prod.addAnyChild((ParserRuleContext) kind);
-                else if (kind instanceof ParserRuleContext blok
-                        && !(blok instanceof SituatieDefinitieContext) && !(blok instanceof ScenarioContext))
+                else if (kind instanceof ParserRuleContext blok && !(blok instanceof SituatieDefinitieContext)
+                        && !(blok instanceof ParametersetDefinitieContext) && !(blok instanceof ScenarioContext))
                     throw new IllegalStateException("testDocument draagt een blok dat deze route niet kent: "
                             + blok.getClass().getSimpleName() + " op regel " + blok.getStart().getLine());
             }
@@ -123,8 +126,11 @@ public final class ScenarioResolver {
 
     private List<ResolvedScenario> resolveScenarios() {
         List<ParseTree> kinderen = test.children == null ? List.of() : test.children;
-        for (ParseTree kind : kinderen)
+        for (ParseTree kind : kinderen) {
             if (kind instanceof SituatieDefinitieContext sd) registreerSituatie(sd);
+            // validated used or not, so a defect in a set never hides behind disuse
+            if (kind instanceof ParametersetDefinitieContext pd) registreerParameterset(pd);
+        }
         // every situation is expanded, used or not, so a cycle or an unknown basis never hides behind disuse
         for (String naam : situaties.keySet()) vouwUit(naam, List.of());
         List<ResolvedScenario> uit = new ArrayList<>();
@@ -213,6 +219,14 @@ public final class ScenarioResolver {
             fout(line, "de naam van het scenario '" + naam + "' geeft geen bestandsnaam: zij draagt geen letter of cijfer");
         Scope scope = sc.scenarioScope() == null ? null : resolveScope(sc.scenarioScope());
         LocalDate peildatum = sc.scenarioPeildatum() == null ? null : leesPeildatum(sc.scenarioPeildatum());
+        SetResultaat set = null;
+        int setRegel = line;
+        if (sc.scenarioParameterset() != null) {
+            setRegel = sc.scenarioParameterset().getStart().getLine();
+            String geschreven = src(sc.scenarioParameterset().parametersetNaam());
+            set = parametersets.get(norm(geschreven));
+            if (set == null) fout(setRegel, "de parameterset '" + geschreven + "' is nergens in het document gedeclareerd");
+        }
 
         List<BlokResultaat> bronnen = new ArrayList<>();
         for (ScenarioBasisContext basis : sc.scenarioBasis()) {
@@ -229,10 +243,12 @@ public final class ScenarioResolver {
 
         Situatie situatie = voegSamen(bronnen);
         checkRolDoelen(situatie);
+        if (set != null) situatie = metParameterset(situatie, set, peildatum, sc.scenarioPeildatum() != null, naam, setRegel);
         Predicate<String> draagt = draagt(scope);
         // a written peildatum that was refused has its own ERROR, and the gate would call it missing
         if (sc.scenarioPeildatum() == null) peildatumPoort(draagt, peildatum, naam, line);
-        parameterPoort(draagt, situatie, naam, line);
+        // a named set the document lacks has its ERROR, and what it would have given cannot be said
+        if (sc.scenarioParameterset() == null || set != null) parameterPoort(draagt, situatie, set, naam, line);
         List<Verwachting> verwachtingen = resolveVerwachtingen(sc.verwachting(), situatie);
         return new ResolvedScenario(naam, scope, peildatum, situatie, verwachtingen, line);
     }
@@ -486,10 +502,14 @@ public final class ScenarioResolver {
         }
     }
 
-    /** Every parameter a carried form reads must have a value in the merged situation. */
-    private void parameterPoort(Predicate<String> draagt, Situatie situatie, String scenario, int line) {
+    /** Every parameter a carried form reads must have a value in the merged situation or in the chosen set. */
+    private void parameterPoort(Predicate<String> draagt, Situatie situatie, SetResultaat set, String scenario, int line) {
         Set<String> gezet = new java.util.HashSet<>();
         for (ParameterWaarde p : situatie.parameters()) gezet.add(norm(p.parameter()));
+        // a parameter of the set whose jaargang the peildatum could not choose has its own ERROR already
+        if (set != null) gezet.addAll(set.parameters().keySet());
+        String waar = "in de situatie van het scenario '" + scenario + "'"
+                + (set == null ? "" : " en in de parameterset '" + set.naam() + "'");
         Set<String> gemeld = new java.util.HashSet<>();
         for (Vorm v : vormen()) {
             if (!draagt.test(v.naam())) continue;
@@ -499,8 +519,8 @@ public final class ScenarioResolver {
             v.condities().forEach(c -> Conditie.bevatOperand(c, vang));
             for (String p : gelezen)
                 if (!gezet.contains(norm(p)) && gemeld.add(norm(p)))
-                    fout(line, "de regel '" + v.naam() + "' leest de parameter '" + p + "', die in de situatie van het "
-                            + "scenario '" + scenario + "' geen waarde heeft");
+                    fout(line, "de regel '" + v.naam() + "' leest de parameter '" + p + "', die " + waar
+                            + " geen waarde heeft");
         }
     }
 
@@ -738,6 +758,140 @@ public final class ScenarioResolver {
         if (nieuw) { tl = new ArrayList<>(); tijdlijnen.put(norm(p.naam()), tl); }
         if (volgtOp(tl.isEmpty() ? null : tl.get(tl.size() - 1).tot(), per, line)) tl.add(new Segment(per.van(), per.tot(), w));
         return nieuw ? new ParameterWaarde(p.naam(), null, tl, line) : null;
+    }
+
+    // ---------------- parameter sets ----------------
+
+    /** One validated parameter set: its name as declared and, per parameter (keyed by its normalised name, in the
+     *  order of its first row), its rows; {@code onvolledig} holds the normalised names of the parameters one of
+     *  whose rows was refused, whose jaargang a peildatum therefore cannot be said to miss. */
+    private record SetResultaat(String naam, Map<String, SetParameter> parameters, Set<String> onvolledig) {}
+
+    /** The rows of one parameter of a set: its jaargangen, or for a parameter with a timeline the segments of that
+     *  timeline; exactly one of the two is non-null. A timeline parameter given one row without a period has one
+     *  jaargang, its value on every date. */
+    private record SetParameter(String parameter, List<Jaargang> jaargangen, List<Segment> tijdlijn, int line) {}
+
+    /** One jaargang, {@code van} inclusive and {@code tot} exclusive, the period of a situation's segment; both
+     *  null for a row without a period, which holds on every date. */
+    private record Jaargang(LocalDate van, LocalDate tot, Waarde waarde, int line) {
+        boolean bevat(LocalDate d) { return van == null || !d.isBefore(van) && d.isBefore(tot); }
+        boolean overlapt(Jaargang j) { return van == null || j.van == null || van.isBefore(j.tot) && j.van.isBefore(tot); }
+        String toon() { return van == null ? "zonder periode" : "van " + van + " tot " + tot; }
+    }
+
+    private void registreerParameterset(ParametersetDefinitieContext pd) {
+        String geschreven = src(pd.parametersetNaam());
+        SetResultaat set = valideerSet(geschreven, pd.parameterWaarde());   // a duplicate's rows are still checked
+        if (parametersets.containsKey(norm(geschreven))) {
+            fout(pd.getStart().getLine(), "de parameterset '" + geschreven + "' is meer dan eens gedeclareerd");
+            return;
+        }
+        parametersets.put(norm(geschreven), set);
+    }
+
+    /** The rows of set {@code setNaam}, each value typed against its declaration as a situation types it. The rows
+     *  of a parameter without granularity are jaargangen, of which no two may share a day, because the peildatum
+     *  of a scenario must choose exactly one; the rows of a parameter with a timeline are held to the rules of a
+     *  situation's timeline — periods in order, apart, on the declared grid, and not beside a fixed value. */
+    private SetResultaat valideerSet(String setNaam, List<ParameterWaardeContext> regels) {
+        Map<String, SetParameter> parameters = new LinkedHashMap<>();
+        Set<String> onvolledig = new java.util.HashSet<>();
+        for (ParameterWaardeContext pw : regels) {
+            String geschreven = src(pw.parameterNaam());
+            Parameter p = parameterOpNaam(zonderLidwoord(geschreven));
+            if (p == null) fout(pw.getStart().getLine(), "de parameter '" + geschreven + "' is niet gedeclareerd");
+            else if (!setRegel(setNaam, pw, p, parameters)) onvolledig.add(norm(p.naam()));
+        }
+        return new SetResultaat(setNaam, parameters, onvolledig);
+    }
+
+    /** Whether row {@code pw} of parameter {@code p} is accepted into {@code parameters}; a refused row has its
+     *  ERROR. */
+    private boolean setRegel(String setNaam, ParameterWaardeContext pw, Parameter p, Map<String, SetParameter> parameters) {
+        int line = pw.getStart().getLine();
+        String wat = "de parameter '" + p.naam() + "'";
+        Waarde w = leesEnTypeer(pw.situatieWaarde(), p.datatype(), line, wat);
+        Periode per = pw.periode() == null ? null : leesPeriode(pw.periode());
+        if (pw.periode() != null && per == null) return false;
+        boolean segment = p.granulariteit() != null && per != null;
+        SetParameter sp = parameters.get(norm(p.naam()));
+        if (sp == null) {
+            sp = new SetParameter(p.naam(), segment ? null : new ArrayList<>(), segment ? new ArrayList<>() : null, line);
+            parameters.put(norm(p.naam()), sp);
+        } else if ((sp.tijdlijn() != null) != segment) {
+            fout(line, wat + " krijgt in dit blok " + (segment ? "zowel een vaste waarde als perioden"
+                    : "zowel perioden als een vaste waarde"));
+            return false;
+        }
+        if (w == null) return false;
+        if (segment) {
+            if (!opRaster(per, p.granulariteit(), 1, p.vastStartpunt(), false, wat, line)) return false;
+            List<Segment> tl = sp.tijdlijn();
+            if (!volgtOp(tl.isEmpty() ? null : tl.get(tl.size() - 1).tot(), per, line)) return false;
+            tl.add(new Segment(per.van(), per.tot(), w));
+            return true;
+        }
+        Jaargang nieuw = new Jaargang(per == null ? null : per.van(), per == null ? null : per.tot(), w, line);
+        Jaargang botsing = sp.jaargangen().stream().filter(j -> j.overlapt(nieuw)).findFirst().orElse(null);
+        if (botsing != null) {
+            fout(line, "de parameterset '" + setNaam + "' geeft de parameter '" + p.naam() + "' twee jaargangen die "
+                    + "elkaar overlappen (" + botsing.toon() + " en " + nieuw.toon() + "); de peildatum van een scenario "
+                    + "kiest precies één jaargang");
+            return false;
+        }
+        sp.jaargangen().add(nieuw);
+        return true;
+    }
+
+    /** The situation of a scenario that chooses {@code set}, with the set's values before its own: per parameter
+     *  of the set the jaargang whose period holds the peildatum, or the whole timeline, which a case file carries
+     *  as it stands. A parameter the situation gives a value as well is refused rather than one of the two winning,
+     *  and so is a jaargang the peildatum cannot choose. A parameter's absence from both stays the parameter gate's
+     *  refusal. */
+    private Situatie metParameterset(Situatie situatie, SetResultaat set, LocalDate peildatum, boolean peildatumGeschreven,
+                                     String scenario, int line) {
+        Set<String> inSituatie = new java.util.HashSet<>();
+        for (ParameterWaarde p : situatie.parameters()) inSituatie.add(norm(p.parameter()));
+        List<ParameterWaarde> uit = new ArrayList<>();
+        boolean zonderPeildatumGemeld = false;
+        for (SetParameter sp : set.parameters().values()) {
+            if (inSituatie.contains(norm(sp.parameter()))) {
+                fout(line, "de parameter '" + sp.parameter() + "' krijgt een waarde uit de parameterset '" + set.naam()
+                        + "' en uit de situatie van het scenario '" + scenario + "'; een parameter krijgt zijn waarde "
+                        + "uit één van beide");
+                continue;
+            }
+            // a refused row has its ERROR, and a peildatum that misses the rest would be a second one
+            if (set.onvolledig().contains(norm(sp.parameter()))) continue;
+            if (sp.tijdlijn() != null) {
+                uit.add(new ParameterWaarde(sp.parameter(), null, sp.tijdlijn(), sp.line()));
+                continue;
+            }
+            List<Jaargang> jaargangen = sp.jaargangen();
+            Jaargang gekozen = null;
+            if (jaargangen.size() == 1 && jaargangen.get(0).van() == null) gekozen = jaargangen.get(0);
+            else if (peildatum == null) {
+                // a written peildatum that was refused has its own ERROR; one sentence names the defect for all
+                if (!peildatumGeschreven && !zonderPeildatumGemeld)
+                    fout(line, "de parameter '" + sp.parameter() + "' heeft in de parameterset '" + set.naam()
+                            + "' jaargangen, maar het scenario '" + scenario + "' heeft geen peildatum die er één kiest "
+                            + "(voeg 'met peildatum <datum>' toe)");
+                zonderPeildatumGemeld = true;
+                continue;
+            } else {
+                for (Jaargang j : jaargangen) if (j.bevat(peildatum)) { gekozen = j; break; }
+                if (gekozen == null) {
+                    fout(line, "de parameterset '" + set.naam() + "' heeft voor de parameter '" + sp.parameter()
+                            + "' geen jaargang die de peildatum " + peildatum + " van het scenario '" + scenario
+                            + "' bevat");
+                    continue;
+                }
+            }
+            uit.add(new ParameterWaarde(sp.parameter(), gekozen.waarde(), null, gekozen.line()));
+        }
+        uit.addAll(situatie.parameters());
+        return new Situatie(situatie.instanties(), uit);
     }
 
     // ---------------- periods ----------------
