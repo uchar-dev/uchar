@@ -9950,6 +9950,302 @@ let wf115_bevindingen (doc : document) : (string * string) list =
 
 let wf115 ctx = List.map (fun (at, r) -> v "WF-115" at r) (wf115_bevindingen ctx.doc)
 
+(* --- WF-116 to WF-120: the vocabulary side table (IR-SPEC ch. 2.12) ----- *)
+
+(* The table is read by [Loader.vocabulaires] and handed in beside the
+   document, which does not keep it (Ast): [all] runs without it, and the
+   verifier runs both. Every pointer here is a pointer into the document as
+   written, so no path is mapped. *)
+
+(* The whitespace [String.trim] strips: space, tab, line feed, carriage
+   return and form feed. *)
+let is_wit c = c = ' ' || c = '\t' || c = '\n' || c = '\r' || c = '\012'
+
+(* A word, as a vocabulary's name is one (ch. 2.12): not empty, and free of
+   whitespace, parentheses and the colon, so that the dialect's annotation
+   (<vocabulary>: <designation>) can write it. *)
+let is_woord s =
+  s <> "" && not (String.exists (fun c -> is_wit c || c = '(' || c = ')' || c = ':') s)
+
+(* A language code, which is not checked beyond its form: not empty, and free
+   of whitespace. *)
+let is_taalcode s = s <> "" && not (String.exists is_wit s)
+
+(* A designation's text: not empty, and no whitespace at either end. *)
+let is_getrimd s = s <> "" && String.trim s = s
+
+let heeft_haakje s = String.exists (fun c -> c = '(' || c = ')') s
+
+let beschrijving (b : benoembaar) =
+  let eig = Option.value ~default:"" b.bn_eigenaar in
+  match b.bn_soort with
+  | Bn_objecttype -> Printf.sprintf "the object type '%s'" b.bn_naam
+  | Bn_attribuut -> Printf.sprintf "the attribute '%s' of '%s'" b.bn_naam eig
+  | Bn_kenmerk -> Printf.sprintf "the characteristic '%s' of '%s'" b.bn_naam eig
+  | Bn_feittype -> Printf.sprintf "the fact type '%s'" b.bn_naam
+  | Bn_rol -> Printf.sprintf "the role '%s' of '%s'" b.bn_naam eig
+  | Bn_enumeratiewaarde -> Printf.sprintf "the value '%s' of '%s'" b.bn_naam eig
+  | Bn_parameter -> Printf.sprintf "the parameter '%s'" b.bn_naam
+  | Bn_vorm -> Printf.sprintf "the form '%s'" b.bn_naam
+  | Bn_regelgroep -> Printf.sprintf "the rule group '%s'" b.bn_naam
+
+(* WF-116: the vocabulary declarations. *)
+let wf116 (t : vocabulaire_tafel) : violation list =
+  let v at reason = { wf = "WF-116"; at; reason } in
+  let naam =
+    List.filter_map
+      (fun (x : vocabulaire) ->
+        if is_woord x.voc_naam then None
+        else
+          Some
+            (v (x.voc_at ^ "/name")
+               (Printf.sprintf
+                  "vocabulary name '%s' is not a word: it is empty, or carries whitespace, a \
+                   parenthesis or a colon"
+                  x.voc_naam)))
+      t.vt_vocabulaires
+  in
+  let dubbel =
+    List.map
+      (fun (eerste, tweede, at) ->
+        v (at ^ "/name")
+          (Printf.sprintf "vocabularies '%s' and '%s' collide case-insensitively" eerste tweede))
+      (dups_by norm (List.map (fun (x : vocabulaire) -> (x.voc_naam, x.voc_at)) t.vt_vocabulaires))
+  in
+  let standaard =
+    match List.filter (fun (x : vocabulaire) -> x.voc_standaard) t.vt_vocabulaires with
+    | eerste :: rest ->
+        List.map
+          (fun (x : vocabulaire) ->
+            v (x.voc_at ^ "/default")
+              (Printf.sprintf
+                 "vocabularies '%s' and '%s' are both the default: a document has at most one default \
+                  vocabulary"
+                 eerste.voc_naam x.voc_naam))
+          rest
+    | [] -> []
+  in
+  let taal =
+    List.filter_map
+      (fun (x : vocabulaire) ->
+        match x.voc_taal with
+        | Some l when not (is_taalcode l) ->
+            Some
+              (v (x.voc_at ^ "/language")
+                 (Printf.sprintf "language '%s' of vocabulary '%s' is not a code: it is empty or carries \
+                                  whitespace"
+                    l x.voc_naam))
+        | _ -> None)
+      t.vt_vocabulaires
+  in
+  naam @ dubbel @ standaard @ taal
+
+let vocabulaire_van (t : vocabulaire_tafel) naam =
+  List.find_opt (fun (x : vocabulaire) -> norm x.voc_naam = norm naam) t.vt_vocabulaires
+
+(* WF-117: every designation. A designation is text in every vocabulary
+   (maintainer decision 2026-09-27): its form is asked whatever vocabulary it
+   names. *)
+let wf117 (t : vocabulaire_tafel) : violation list =
+  let v at reason = { wf = "WF-117"; at; reason } in
+  let per_element (b : benoembaar) =
+    let rec loop gezien = function
+      | [] -> []
+      | (x : benaming) :: rest ->
+          let d = x.ben_tekst in
+          let onbekend =
+            match vocabulaire_van t x.ben_vocabulaire with
+            | None ->
+                [ v (x.ben_at ^ "/vocabulary")
+                    (Printf.sprintf
+                       "designation '%s' names the vocabulary '%s', which the document does not declare"
+                       d x.ben_vocabulaire) ]
+            | Some _ -> []
+          in
+          let tweede =
+            match
+              List.find_opt (fun (y : benaming) -> norm y.ben_vocabulaire = norm x.ben_vocabulaire) gezien
+            with
+            | Some eerder ->
+                [ v x.ben_at
+                    (Printf.sprintf "a second designation in the vocabulary '%s' on %s: '%s' and '%s'"
+                       x.ben_vocabulaire (beschrijving b) eerder.ben_tekst d) ]
+            | None -> []
+          in
+          let vorm =
+            (if is_getrimd d then []
+             else
+               [ v (x.ben_at ^ "/designation")
+                   (Printf.sprintf
+                      "designation '%s' in the vocabulary '%s' is empty or not trimmed: a designation is \
+                       text without whitespace at either end"
+                      d x.ben_vocabulaire) ])
+            @
+            if heeft_haakje d then
+              [ v (x.ben_at ^ "/designation")
+                  (Printf.sprintf
+                     "designation '%s' in the vocabulary '%s' carries a parenthesis, which the source form \
+                      (<vocabulary>: <designation>) cannot write"
+                     d x.ben_vocabulaire) ]
+            else []
+          in
+          onbekend @ tweede @ vorm @ loop (gezien @ [ x ]) rest
+    in
+    loop [] b.bn_benamingen
+  in
+  List.concat_map per_element t.vt_benoembaar
+  @ List.map
+      (fun (domein, w, at) ->
+        v at (Printf.sprintf "a value designation names '%s', which the enumeration '%s' does not declare"
+                w domein))
+      t.vt_losse_waarden
+
+(* The designation of [b] in the declared vocabulary [voc], if it carries one. *)
+let benaming_in (voc : vocabulaire) (b : benoembaar) =
+  List.find_opt (fun (x : benaming) -> norm x.ben_vocabulaire = norm voc.voc_naam) b.bn_benamingen
+
+(* The effective name of [b] in [voc]: its designation there, or its canonical
+   name; the flag says whether it is a designation. *)
+let effectief voc b =
+  match benaming_in voc b with Some x -> (x.ben_tekst, true) | None -> (b.bn_naam, false)
+
+(* The supertype chain of an object type, itself first, cycle-safe (WF-104
+   reports a cycle; this walk only stops at it). *)
+let keten (doc : document) naam =
+  let rec loop acc n =
+    if List.exists (fun m -> norm m = norm n) acc then List.rev acc
+    else
+      match find_ci doc.objecttypen n with
+      | Some ot -> (
+          match ot.ot_supertype with Some s -> loop (n :: acc) s | None -> List.rev (n :: acc))
+      | None -> List.rev (n :: acc)
+  in
+  loop [] naam
+
+(* WF-118: within each vocabulary the effective names of one scope are unique
+   (ci). A collision of two canonical names is another rule's and is not
+   repeated. Each colliding pair is reported once: in a chain scope at the
+   type the later member of the pair is declared on or inherited by first,
+   which is the type whose own members take part in it. *)
+let wf118 (doc : document) (t : vocabulaire_tafel) : violation list =
+  let v at reason = { wf = "WF-118"; at; reason } in
+  let meervoud = function
+    | Bn_objecttype -> "object types" | Bn_attribuut -> "attributes"
+    | Bn_kenmerk -> "characteristics" | Bn_feittype -> "fact types" | Bn_rol -> "roles"
+    | Bn_enumeratiewaarde -> "values" | Bn_parameter -> "parameters" | Bn_vorm -> "forms"
+    | Bn_regelgroep -> "rule groups"
+  in
+  let van soort = List.filter (fun (b : benoembaar) -> b.bn_soort = soort) t.vt_benoembaar in
+  let eigenaar_is n (b : benoembaar) = match b.bn_eigenaar with Some e -> norm e = norm n | None -> false in
+  (* the pairs of [leden] that collide in [voc], each once; [telt] says which
+     pairs this scope reports *)
+  let botsingen voc ~scope ~telt leden =
+    let effs = List.map (fun b -> (b, effectief voc b)) leden in
+    let rec paren = function
+      | [] -> []
+      | (a, (na, da)) :: rest ->
+          List.filter_map
+            (fun (b, (nb, db)) ->
+              if norm na = norm nb && (da || db) && telt a b then
+                Some
+                  (v b.bn_at
+                     (Printf.sprintf "%s '%s' and '%s'%s share the effective name '%s' in the vocabulary '%s'"
+                        (meervoud a.bn_soort) a.bn_naam b.bn_naam scope nb voc.voc_naam))
+              else None)
+            rest
+          @ paren rest
+    in
+    paren effs
+  in
+  List.concat_map
+    (fun (voc : vocabulaire) ->
+      let globaal =
+        List.concat_map
+          (fun s -> botsingen voc ~scope:"" ~telt:(fun _ _ -> true) (van s))
+          [ Bn_objecttype; Bn_feittype; Bn_parameter; Bn_vorm; Bn_regelgroep ]
+      in
+      let per_eigenaar soort eigenaars scope_van =
+        List.concat_map
+          (fun e ->
+            botsingen voc ~scope:(scope_van e) ~telt:(fun _ _ -> true)
+              (List.filter (eigenaar_is e) (van soort)))
+          eigenaars
+      in
+      let feittypen = List.map (fun (b : benoembaar) -> b.bn_naam) (van Bn_feittype) in
+      let domeinen =
+        List.sort_uniq compare
+          (List.filter_map (fun (b : benoembaar) -> b.bn_eigenaar) (van Bn_enumeratiewaarde))
+      in
+      let rollen = per_eigenaar Bn_rol feittypen (Printf.sprintf " of the fact type '%s'") in
+      let waarden = per_eigenaar Bn_enumeratiewaarde domeinen (Printf.sprintf " of the enumeration '%s'") in
+      let leden soort =
+        List.concat_map
+          (fun (ot : benoembaar) ->
+            let k = keten doc ot.bn_naam in
+            let eigen = List.filter (eigenaar_is ot.bn_naam) (van soort) in
+            let geerfd =
+              List.concat_map (fun n -> List.filter (eigenaar_is n) (van soort)) (List.tl k)
+            in
+            botsingen voc
+              ~scope:(Printf.sprintf " of the object type '%s'" ot.bn_naam)
+              ~telt:(fun a b -> List.memq a eigen || List.memq b eigen)
+              (eigen @ geerfd))
+          (van Bn_objecttype)
+      in
+      globaal @ leden Bn_attribuut @ leden Bn_kenmerk @ rollen @ waarden)
+    t.vt_vocabulaires
+
+(* WF-119: the default vocabulary names every designatable declaration. *)
+let wf119 (t : vocabulaire_tafel) : violation list =
+  List.concat_map
+    (fun (voc : vocabulaire) ->
+      if not voc.voc_standaard then []
+      else
+        List.filter_map
+          (fun (b : benoembaar) ->
+            match benaming_in voc b with
+            | Some _ -> None
+            | None ->
+                Some
+                  { wf = "WF-119"; at = b.bn_at;
+                    reason =
+                      Printf.sprintf "%s carries no designation in the default vocabulary '%s'"
+                        (beschrijving b) voc.voc_naam })
+          t.vt_benoembaar)
+    t.vt_vocabulaires
+
+(* WF-120: a redundant designation, in a vocabulary that is not the default
+   and byte-equal to its declaration's canonical name, is accounted for by a
+   diagnostic whose message contains it, as WF-113 (b) accounts for a marker. *)
+let wf120 (doc : document) (t : vocabulaire_tafel) : violation list =
+  let gemeld d =
+    List.exists
+      (fun (x : diagnostic) ->
+        match x.message with Some m -> contains_verbatim ~hay:m ~needle:d | None -> false)
+      doc.diagnostics
+  in
+  List.concat_map
+    (fun (b : benoembaar) ->
+      List.filter_map
+        (fun (x : benaming) ->
+          match vocabulaire_van t x.ben_vocabulaire with
+          | Some voc when (not voc.voc_standaard) && x.ben_tekst = b.bn_naam && not (gemeld x.ben_tekst) ->
+              Some
+                { wf = "WF-120"; at = x.ben_at ^ "/designation";
+                  reason =
+                    Printf.sprintf
+                      "designation '%s' in the vocabulary '%s' spells the canonical name of %s, and no \
+                       diagnostic accounts for it: a redundant designation is admitted with a warning \
+                       whose message contains it"
+                      x.ben_tekst voc.voc_naam (beschrijving b) }
+          | _ -> None)
+        b.bn_benamingen)
+    t.vt_benoembaar
+
+(* The vocabulary rules, beside [all]: the verifier runs both. *)
+let vocabulaires (doc : document) (t : vocabulaire_tafel) : violation list =
+  wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t
+
 let all (doc : document) : violation list =
   let ctx = { doc } in
   List.map (fun x -> { x with at = m1_named doc x.at })

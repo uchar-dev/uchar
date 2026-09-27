@@ -764,6 +764,63 @@ type function_def = {
   fd_bron : string option;
 }
 
+(* --- the vocabulary side table (IR-SPEC ch. 2.12) ---------------------- *)
+
+(* The named vocabularies and the designations of a document: a side table
+   without semantics. It is not a field of [document], and on purpose: the
+   document record is built whole by every producer of this library (the
+   Catala and F-logic frontends among them), and no reader but the verifier
+   keeps the table. [Loader.vocabulaires] reads it from the JSON the
+   document is read from, structurally for every reader ([Loader.document]
+   calls it) and for its content in the verifier alone (WF-116 to WF-120,
+   [Checks.vocabulaires]). *)
+type vocabulaire = {
+  voc_naam : string;
+  voc_standaard : bool;
+  voc_taal : string option;
+  voc_at : string; (* the pointer of the Vocabulary node *)
+}
+
+(* The kinds of declaration a vocabulary can name. [Bn_vorm] is a named form:
+   the six forms of ch. 3 and a defaults group, WF-020's one namespace. *)
+type benoembaar_soort =
+  | Bn_objecttype
+  | Bn_attribuut
+  | Bn_kenmerk
+  | Bn_feittype
+  | Bn_rol
+  | Bn_enumeratiewaarde
+  | Bn_parameter
+  | Bn_vorm
+  | Bn_regelgroep
+
+(* One designation: its vocabulary and its text as written, and the pointer
+   of its record (an entry of `designations`, or of `valueDesignations` for
+   an enumeration value). *)
+type benaming = { ben_vocabulaire : string; ben_tekst : string; ben_at : string }
+
+(* A designatable declaration: its kind, the declaration that scopes it (the
+   object type of an attribute or a characteristic, the fact type of a role,
+   the domain of an enumeration value; [None] for the other kinds), its
+   canonical name, the pointer of its node (of the value in its list, for an
+   enumeration value), and its designations in document order. *)
+type benoembaar = {
+  bn_soort : benoembaar_soort;
+  bn_eigenaar : string option;
+  bn_naam : string;
+  bn_at : string;
+  bn_benamingen : benaming list;
+}
+
+type vocabulaire_tafel = {
+  vt_vocabulaires : vocabulaire list;
+  vt_benoembaar : benoembaar list; (* every designatable declaration, document order *)
+  vt_losse_waarden : (string * string * string) list;
+      (* an entry of `valueDesignations` whose value is none of its
+         enumeration's values: the domain, the value as written, and the
+         pointer of the entry's `value` *)
+}
+
 (* The M1 root nests [model] (the declaration set) and [rules]; this record
    keeps them flat, and [format] is checked by the loader and not kept. *)
 type document = {

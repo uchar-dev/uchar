@@ -3780,14 +3780,13 @@
       }
     },
     "Vocabulary": {
-      "description": "A named vocabulary (IR-SPEC ch. 2.12): the set of designations, at most one per declaration, that a consumer can speak instead of the declared names. 'name' is what every Designation names it by; 'default' marks the vocabulary that names every designatable declaration, at most one per document (WF-116, WF-119); 'language' is a language tag, absent when none is declared; 'kind' decides the form of its designations, a code or a term (WF-117). What a name and a language tag may spell is the verifier's (WF-116): the schema carries no pattern. Key order is this 'properties' order.",
+      "description": "A named vocabulary (IR-SPEC ch. 2.12): the set of designations, at most one per declaration, that a consumer can speak instead of the declared names. 'name' is what every Designation names it by; 'default' marks the vocabulary that names every designatable declaration, at most one per document (WF-116, WF-119); 'language' is a language code, absent when none is declared. A vocabulary has no kind: every designation is text (maintainer decision 2026-09-27), and whether a vocabulary's designations can serve as identifiers is its consumer's question. What a name and a language code may spell is the verifier's (WF-116): the schema carries no pattern. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "node",
         "name",
-        "default",
-        "kind"
+        "default"
       ],
       "properties": {
         "node": {
@@ -3801,12 +3800,6 @@
         },
         "language": {
           "type": "string"
-        },
-        "kind": {
-          "enum": [
-            "code",
-            "term"
-          ]
         }
       }
     },
@@ -3819,7 +3812,7 @@
       }
     },
     "Designation": {
-      "description": "One designation (IR-SPEC ch. 2.12): the name of the declaration that carries it in the vocabulary 'vocabulary', which names a declared Vocabulary. What a designation may spell, by its vocabulary's kind, is the verifier's (WF-117), and so is the uniqueness of the effective names in a vocabulary (WF-118): the schema cannot cross a designation with the vocabulary it names. Key order is this 'properties' order.",
+      "description": "One designation (IR-SPEC ch. 2.12): the name of the declaration that carries it in the vocabulary 'vocabulary', which names a declared Vocabulary. A designation is text — not empty, trimmed, without a parenthesis — and that, like the uniqueness of the effective names in a vocabulary (WF-118), is the verifier's (WF-117): the schema cannot cross a designation with the vocabulary it names. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [

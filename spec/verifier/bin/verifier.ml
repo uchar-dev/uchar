@@ -2,9 +2,12 @@ let () =
   match Sys.argv with
   | [| _; file |] -> (
       try
-        (* the verifier loads what its rules judge (Loader.reader) *)
-        let doc = Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier file in
-        match Ir_v0.Checks.all doc with
+        (* the verifier loads what its rules judge (Loader.reader), and the
+           vocabulary side table beside the document, which does not keep it *)
+        let j = Yojson.Safe.from_file file in
+        let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier j in
+        let tafel = Ir_v0.Loader.vocabulaires j in
+        match Ir_v0.Checks.all doc @ Ir_v0.Checks.vocabulaires doc tafel with
         | [] ->
             print_endline "verifier: PASS"
         | violations ->

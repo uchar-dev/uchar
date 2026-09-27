@@ -2092,11 +2092,11 @@ and invoked by name; design `spec/proposals/PHASE5B-KERNEL.md` §3).
 A declaration has one **canonical name**: its declared name (ch. 2.1), the
 name every rule is written in and every reference resolves. A **vocabulary**
 is a named set of **designations**: the name of a declaration in that
-vocabulary — a code in a data contract, a term in a handbook — at most one
-per declaration. The vocabularies of a document and their designations are
-a **side table without semantics**, `layer: core`, and every field of it is
-an **extension field** under the § Method's discipline: optional, never
-null, written whole or not at all, absent on a document that declares no
+vocabulary — a term of a handbook, a field name of a data model — at most one
+per declaration. The vocabularies of a document and their designations are a
+**side table without semantics**, `layer: core`, and every field of it is an
+**extension field** under the § Method's discipline: optional, never null,
+written whole or not at all, absent on a document that declares no
 vocabulary.
 
 The document declares its vocabularies in `vocabularies`, after `format`
@@ -2104,10 +2104,15 @@ The document declares its vocabularies in `vocabularies`, after `format`
 
 | Field | Type | Meaning |
 |---|---|---|
-| `name` | string | the name every designation names it by; a code (below, WF-116) |
+| `name` | string | the name every designation names it by (WF-116) |
 | `default` | boolean | whether this is the default vocabulary, which names every designatable declaration (WF-119); at most one per document (WF-116) |
-| `language` | string? | a language tag (WF-116); absent = none declared. It describes the vocabulary and never identifies it |
-| `kind` | `code` \| `term` | the form of its designations (WF-117): a `code` is an identifier, a `term` is text |
+| `language` | string? | a language code (WF-116); absent = none declared. It describes the vocabulary and never identifies it |
+
+A vocabulary has no kind. Every designation is **text**: not empty, trimmed
+at both ends, spaces inside admitted, and free of parentheses (maintainer
+decision 2026-09-27). Whether the designations of a vocabulary can serve as
+identifiers — as field names in a data contract, say — is a question of the
+consumer that speaks it, not a rule of this format.
 
 A declaration writes its designations in `designations`, the last field of
 its node: an ObjectType, an Attribute, a Characteristic (ch. 2.2), a FactType
@@ -2129,6 +2134,8 @@ field, one entry per value and vocabulary, each the record `value`,
 carries no designations. Nothing else carries one: a domain, a unit system
 or a unit, a dimension or its labels, a timeline, a day kind, a day-kind
 definition and a start-point determination have no designation on this wire.
+A producer writes the designations of one declaration in the order the
+vocabularies are declared in; the order carries no meaning.
 
 **No semantics.** A designation never resolves. Every reference in the rule
 and expression layers names a declaration by its canonical name; a name that
@@ -2146,39 +2153,36 @@ effective name in a vocabulary to the declaration — is what a consumer that
 speaks the vocabulary needs, and WF-118 makes it a function per scope, for
 every vocabulary, complete or not. Worked example: in the golden
 `jutterswet-vocabulaires`, the attribute `vondstbedrag` of `Jutter` carries
-the designation `vondstBedrag` in the code vocabulary `cgm` and `totale
-premie` in the term vocabulary `handboek`; its effective names are those
-two, and in `cgm` the name `vondstBedrag` of `Jutter` goes back to
-`vondstbedrag`. The attribute `naam` of `Jutter` carries `naam` in `handboek`
-— its canonical name, so a redundant designation (WF-120) — and `naam` in
-`cgm`, where the default vocabulary requires one (WF-119).
+the designation `totale premie` in the vocabulary `handboek` and
+`VONDST_BEDRAG` in the vocabulary `cgm`; its effective names are those two,
+and in `cgm` the name `VONDST_BEDRAG` of `Jutter` goes back to
+`vondstbedrag`. The attribute `naam` of `Jutter` carries `naam` in
+`handboek` — its canonical name, so a redundant designation (WF-120) — and
+`NAAM` in `cgm`, the default vocabulary, where every declaration carries one
+(WF-119).
 
-**The two forms.** A **code** is a letter, then letters, digits and
-underscores (ASCII, `[A-Za-z][A-Za-z0-9_]*`): valid as an OpenAPI operation
-id and component name, as a JSON object key that needs no escaping, and as an
-identifier in the common generated clients. A **term** is collapsed text: not
-empty, no control character (U+0000 to U+001F, U+007F), no space at either
-end and no two spaces in a row, and no parenthesis — the RegelSpraak dialect
-writes a designation between parentheses (`frontends/regelspraak/grammar/DIVERGENCES.md`,
-"Vocabulaires en benamingen"), so a term that carries one could not be
-written in the source it comes from. A vocabulary's own name is a code.
+The RegelSpraak dialect writes a vocabulary as `Vocabulaire <name>` with an
+optional `(standaard)` and `(taal: <code>)`, and a designation as an
+annotation `(<vocabulary>: <designation>)` at the end of a declaration's name
+group (`frontends/regelspraak/grammar/DIVERGENCES.md`, "Vocabulaires en
+benamingen"). A designation that carried a parenthesis could not be written
+there, and neither could a vocabulary name with whitespace, a parenthesis or
+a colon: those two limits are the rules below.
 
-- **WF-116** The vocabulary declarations: (a) a vocabulary's `name` MUST be
-  a code; (b) the names of the vocabularies MUST be unique under
-  case-insensitive comparison (ch. 2.1), since a designation names its
-  vocabulary by name; (c) at most one vocabulary MUST carry `default: true`;
-  (d) a present `language` MUST be a language tag in the shape of RFC 5646
-  §2.1: two or three letters, then subtags of one to eight letters or digits,
-  each after a hyphen (`nl`, `nl-NL`).
+- **WF-116** The vocabulary declarations: (a) a vocabulary's `name` MUST
+  be a word — not empty, and free of whitespace, parentheses and the colon;
+  (b) the names of the vocabularies MUST be unique under case-insensitive
+  comparison (ch. 2.1), since a designation names its vocabulary by name;
+  (c) at most one vocabulary MUST carry `default: true`; (d) a present
+  `language` MUST be a code: not empty and free of whitespace. What a code
+  denotes is not checked.
 - **WF-117** Every designation: (a) MUST name a declared vocabulary, under
   case-insensitive comparison; (b) a declaration MUST carry at most one
   designation per vocabulary, for an enumeration value counted over the
-  entries of `valueDesignations` that name it; (c) in a `code` vocabulary a
-  designation MUST be a code; (d) in a `term` vocabulary it MUST be collapsed
-  text; (e) and carry no parenthesis; (f) an entry of `valueDesignations`
-  MUST name a value of its enumeration, compared case-insensitively as WF-088
-  compares values. Arms (c) to (e) are not asked of a designation whose
-  vocabulary (a) does not resolve.
+  entries of `valueDesignations` that name it; (c) MUST NOT be empty, and
+  MUST NOT begin or end with whitespace; (d) MUST NOT carry a parenthesis;
+  (e) an entry of `valueDesignations` MUST name a value of its enumeration,
+  compared case-insensitively as WF-088 compares values.
 - **WF-118** Within each vocabulary the effective names of the declarations
   of one scope MUST be unique under case-insensitive comparison. The scopes
   are those of the canonical names: the object types, the fact types, the
@@ -9121,8 +9125,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-113 | `diagnostics` is the producer's own account of what stayed unresolved in a document it did write (ch. 2; decision V2 (ii), 2026-09-19; landed M1 2026-09-23). (a) every entry carries severity `warning`, a `message` that is neither empty nor blank, and an integer `line` ≥ 0 (0 = the producer reports no source position: a hand-built document, or a frontend warning without a token); `error` and `info` are refused by name, and so is a null severity (the schema admits `warning` only; the verifier's loader admits the others so that this rule, not a load failure, gives the reason; v0 `WARNING`, `ERROR`, `INFO`). (b) every `Unresolved` node — the expression and the condition marker, at every expression and condition position — is accounted for: at least one diagnostic's `message` contains its `source.snippet` verbatim. The containment is literal, so a marker without a `source`, or whose snippet is blank, cannot be accounted for and is refused (blank counts as absent, the WF-107 precedent): a blank snippet would be contained in nearly every message, and a message about another marker would account for it. The schema requires `source` on an `Unresolved` and every executor refuses a marker without one at load; the verifier's loader admits it so that this rule gives the reason. An EMPTY snippet cannot be written: the schema requires one character at least, and every reader, the verifier included, refuses it at load under no WF number ("a source snippet is never empty: a node without source text carries no source", ch. 4). Until L5 the marker was `Onopgelost` and (b) read its `bron` string, refusing a null and an empty one here. (c) no consumer reads `diagnostics` for evaluation — stated, not fenced | gate 3 ((a) and (b); that `line` is an integer is the loader's check, that it is ≥ 0 is (a)'s; an empty snippet is the loader's refusal, under no WF number; (c) has no document to reject) | `jutterswet-kaletabel` (a `bron.rgs` golden whose frontend route writes one diagnostic of severity `warning`, for a decision table with only a header row; the positive witness of (a)); the first corpus carriers of (b) are the red documents `wf044-onopgelost-guard` and `wf044-onopgelost-reached`, verifier-gated and clean | `wf113-severity-error`, `wf113-severity-info`, `wf113-severity-null`, `wf113-lege-message`, `wf113-message-blanco`, `wf113-line-negatief` ((a), one per refused shape), `wf113-marker-zonder-verslag` ((b): an expression marker inside a condition, empty list), `wf113-verslag-noemt-marker-niet` ((b): a condition marker whose warning quotes the `source.snippet` with one letter recapitalised, so an any-diagnostic or case-insensitive reading frees it), `wf113-marker-bron-null` and `wf113-marker-bron-leeg` ((b): a marker without a `source`, resp. whose snippet is blank — a single space since L5, because an empty snippet can no longer be written —, beside a second marker whose warning would account for it under an absent-as-empty or a literal reading) |
 | WF-114 | a `Literal`'s value variant is the one its `type` names (ch. 4.1, landed at L4 2026-09-24, delta B22): `number` for a `Number` (a percentage included), `boolean` for a `Boolean`, `text` for a `Text`, `date` for a day-precision `Date`, `dateTime` for a millisecond-precision `Date`, `enumeration` for an `Enumeration`, `constructor` for a `SumType`; a list or struct type names no variant, and a literal whose `type` is null is WF-034's typeless value node, which this rule does not reach. The one crossing of variant and type: WF-081, WF-084 and WF-095 key on the variant. Every executor refuses the same literal at load with the verifier's sentence, so none reads a value its type does not name | gate 3 | every golden literal: 532 literals in 163 goldens, six of the seven variants (the `constructor` variant has no golden carrier; its one carrier is the negatief `wf036-gelijkheid-enumeratie-tegen-somtype`, whose rule reads the type) | `wf114-literaalvariant-tegen-type` (a `text` variant under a `Number`) + `wf114-datumvariant-tegen-precisie` (a `date` variant under a millisecond-precision `Date`) |
 | WF-115 | a `fixedStart` fits its grid (ch. 2.8), on a `Timeline` and on the timeline facet of an attribute, a characteristic or a parameter: **(a)** none on a `Timeline` with `variableStart: true`; **(b)** the lexeme the grid takes — none on a day grid of count 1, a date `yyyy-mm-dd` naming a calendar day on a week grid or a grid of count ≥ 2, on a month, quarter or year grid of count 1 a day-month `--mm-dd` naming a day of a leap year, spelt with the earliest month and never `--01-01`; **(c)** a facet that names a timeline carries that timeline's `fixedStart` (adoption total, as WF-005 for granularity and count) | gate 3 | `jutterswet-vast-startpunt` (a named year grid `--10-01` adopted by its facet, an inline month grid `--01-31`, an inline week grid `2024-09-30` on a characteristic) | `wf115-vast-startpunt-bij-variabel` (a) + `wf115-vast-startpunt-buiten-raster` (b) + `wf115-vast-startpunt-niet-overgenomen` (c) |
-| WF-116 | the vocabulary declarations (ch. 2.12): **(a)** a vocabulary's name is a code — a letter, then letters, digits and underscores; **(b)** vocabulary names are unique (ci); **(c)** at most one vocabulary is the default; **(d)** a present `language` is a language tag in the shape of RFC 5646 §2.1 | gate 3 | `jutterswet-vocabulaires` (`handboek`, a term vocabulary with a language, and `cgm`, the default code vocabulary) | `wf116-vocabulairenaam-geen-code` (a) + `wf116-dubbel-vocabulaire` (b) + `wf116-twee-standaardvocabulaires` (c) + `wf116-taal-geen-taallabel` (d) |
-| WF-117 | every designation (ch. 2.12): **(a)** names a declared vocabulary (ci); **(b)** at most one per vocabulary on one declaration, an enumeration value's counted over the entries of `valueDesignations` that name it; **(c)** in a code vocabulary a code; **(d)** in a term vocabulary collapsed text — not empty, no control character, no space at either end and none doubled; **(e)** and no parenthesis; **(f)** an entry of `valueDesignations` names a value of its enumeration (ci). Arms (c) to (e) wait for (a) | gate 3 | `jutterswet-vocabulaires` (a designation on every designatable kind, the enumeration values included) | `wf117-onbekend-vocabulaire` (a) + `wf117-twee-benamingen-een-vocabulaire` (b) + `wf117-code-geen-code` (c) + `wf117-term-niet-samengevouwen` (d) + `wf117-term-met-haakje` (e) + `wf117-waardebenaming-onbekende-waarde` (f) |
+| WF-116 | the vocabulary declarations (ch. 2.12): **(a)** a vocabulary's name is a word — not empty, free of whitespace, parentheses and the colon; **(b)** vocabulary names are unique (ci); **(c)** at most one vocabulary is the default; **(d)** a present `language` is a code — not empty, free of whitespace | gate 3 | `jutterswet-vocabulaires` (`handboek` with a language, and `cgm`, the default, with one) | `wf116-vocabulairenaam-geen-woord` (a) + `wf116-dubbel-vocabulaire` (b) + `wf116-twee-standaardvocabulaires` (c) + `wf116-taal-met-witruimte` (d) |
+| WF-117 | every designation (ch. 2.12): **(a)** names a declared vocabulary (ci); **(b)** at most one per vocabulary on one declaration, an enumeration value's counted over the entries of `valueDesignations` that name it; **(c)** not empty and trimmed at both ends; **(d)** no parenthesis; **(e)** an entry of `valueDesignations` names a value of its enumeration (ci). A designation is text in every vocabulary: there is no vocabulary kind (maintainer decision 2026-09-27) | gate 3 | `jutterswet-vocabulaires` (a designation on every designatable kind, the enumeration values included) | `wf117-onbekend-vocabulaire` (a) + `wf117-twee-benamingen-een-vocabulaire` (b) + `wf117-benaming-niet-getrimd` (c) + `wf117-benaming-met-haakje` (d) + `wf117-waardebenaming-onbekende-waarde` (e) |
 | WF-118 | the effective names of one scope are unique per vocabulary (ci) — the designation where there is one, else the canonical name — so that the way back from a name in a vocabulary to the declaration is a function (ch. 2.12). The scopes are the canonical ones: **(a)** the object types, the fact types, the parameters, the named forms (WF-020) and the rule groups, each on its own; **(b)** the attributes of an object type with the ones it inherits, and likewise its characteristics; **(c)** the roles of a fact type; **(d)** the values of an enumeration domain. A collision of two canonical names is WF-001's, WF-002's, WF-020's or WF-105's | gate 3 | `jutterswet-vocabulaires` | `wf118-effectieve-naam-objecttypen` (a) + `wf118-effectieve-naam-attributen` (b) + `wf118-effectieve-naam-rollen` (c) + `wf118-effectieve-naam-waarden` (d) |
 | WF-119 | the default vocabulary is complete (ch. 2.12): every object type, attribute, characteristic, fact type, role, parameter, named form and rule group, and every value of every enumeration domain, carries a designation in it | gate 3 | `jutterswet-vocabulaires` (every declaration named in `cgm`) | `wf119-standaardvocabulaire-onvolledig` |
 | WF-120 | a redundant designation — in a vocabulary that is not the default, spelling its declaration's canonical name byte for byte — is admitted with a warning: some diagnostic's `message` contains it verbatim (ch. 2.12), the accounting of WF-113 (b) and its weakness | gate 3 | `jutterswet-vocabulaires` (the `handboek` designation `naam` of the attribute `naam`, and the frontend's warning that quotes it) | `wf120-overbodige-benaming-zonder-melding` |

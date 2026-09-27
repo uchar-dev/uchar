@@ -359,7 +359,9 @@ let domain_datatype name path j : datatype =
   let f key = field path kvs key in
   match node_kind path kvs with
   | "Enumeration" ->
-      check_keys path kvs [ "node"; "values" ];
+      (* the designations of the values stand here and only here (IR-SPEC
+         ch. 2.12); [vocabulaires] reads them *)
+      check_keys path kvs ~ext:[ "valueDesignations" ] [ "node"; "values" ];
       Enumeratie { domein = Some name; waarden = str_opt_list (path / "values") (f "values") }
   | "SumType" ->
       check_keys path kvs [ "node"; "constructors" ];
@@ -1058,7 +1060,7 @@ let timeline_facet ~named path j =
 let objecttype path j : string * objecttype =
   let kvs = obj path j in
   expect_node path kvs "ObjectType";
-  check_keys path kvs ~ext:[ "supertype"; "plural" ]
+  check_keys path kvs ~ext:[ "supertype"; "plural"; "designations" ]
     [ "node"; "name"; "animate"; "attributes"; "characteristics" ];
   let f name = field path kvs name in
   let name = str (path / "name") (f "name") in
@@ -1068,7 +1070,8 @@ let objecttype path j : string * objecttype =
         let ap = path / "attributes" / string_of_int i in
         let akvs = obj ap a in
         expect_node ap akvs "Attribute";
-        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline" ] [ "node"; "name"; "datatype" ];
+        check_keys ap akvs ~ext:[ "plural"; "dimensions"; "timeline"; "designations" ]
+          [ "node"; "name"; "datatype" ];
         ( str (ap / "name") (field ap akvs "name"),
           opt (ap / "datatype") datatype (field ap akvs "datatype"),
           ext_field ap akvs "plural" str,
@@ -1083,7 +1086,7 @@ let objecttype path j : string * objecttype =
         let cp = path / "characteristics" / string_of_int i in
         let ckvs = obj cp c in
         expect_node cp ckvs "Characteristic";
-        check_keys cp ckvs ~ext:[ "timeline" ] [ "node"; "name"; "kind" ];
+        check_keys cp ckvs ~ext:[ "timeline"; "designations" ] [ "node"; "name"; "kind" ];
         ( str (cp / "name") (field cp ckvs "name"),
           enum Spelling.characteristic_kind (cp / "kind") (field cp ckvs "kind"),
           ext_field cp ckvs "timeline" (timeline_facet ~named:false) ))
@@ -1142,7 +1145,7 @@ let named path (decode : string -> json -> 'a) (naam : 'a -> string option) j : 
 let parameter path j : string * parameter =
   let kvs = obj path j in
   expect_node path kvs "Parameter";
-  check_keys path kvs ~ext:[ "timeline" ] [ "node"; "name"; "datatype" ];
+  check_keys path kvs ~ext:[ "timeline"; "designations" ] [ "node"; "name"; "datatype" ];
   let name = str (path / "name") (field path kvs "name") in
   let facet = ext_field path kvs "timeline" (timeline_facet ~named:false) in
   ( name,
@@ -1178,7 +1181,7 @@ let dagsoort path j : dagsoort =
 let rol path j : rol =
   let kvs = obj path j in
   expect_node path kvs "Role";
-  check_keys path kvs ~ext:[ "plural" ] [ "node"; "name"; "objectType"; "many" ];
+  check_keys path kvs ~ext:[ "plural"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
   {
     rol_naam = str_opt (path / "name") (field path kvs "name");
     rol_objecttype_naam = str_opt (path / "objectType") (field path kvs "objectType");
@@ -1189,7 +1192,7 @@ let rol path j : rol =
 let feittype path j : feittype =
   let kvs = obj path j in
   expect_node path kvs "FactType";
-  check_keys path kvs [ "node"; "name"; "reciprocal"; "roles" ];
+  check_keys path kvs ~ext:[ "designations" ] [ "node"; "name"; "reciprocal"; "roles" ];
   {
     ft_naam = str_opt (path / "name") (field path kvs "name");
     wederkerig = bool_ (path / "reciprocal") (field path kvs "reciprocal");
@@ -1255,7 +1258,9 @@ let versioned_name name =
 let named_form ~node ?(ext = []) path j =
   let kvs = obj path j in
   expect_node path kvs node;
-  check_keys path kvs ~ext [ "node"; "name"; "versions" ];
+  (* the form's designations (IR-SPEC ch. 2.12) stand on the form, as its
+     name does; [vocabulaires] reads them *)
+  check_keys path kvs ~ext:("designations" :: ext) [ "node"; "name"; "versions" ];
   let name =
     match str_opt (path / "name") (field path kvs "name") with
     | Some n when versioned_name n ->
@@ -1553,7 +1558,7 @@ let resolved_startpunt path j : resolved_startpunt =
 let resolved_regel_groep path j : resolved_regel_groep =
   let kvs = obj path j in
   expect_node path kvs "RuleGroup";
-  check_keys path kvs ~ext:[ "source" ] [ "node"; "name"; "recursive"; "members" ];
+  check_keys path kvs ~ext:[ "source"; "designations" ] [ "node"; "name"; "recursive"; "members" ];
   let f name = field path kvs name in
   let bron, line = source_with_line path kvs in
   {
@@ -1632,7 +1637,7 @@ and exception_group path j : exception_group =
 let prioritized_defaults path j : prioritized_defaults =
   let kvs = obj path j in
   expect_node path kvs "PrioritizedDefaults";
-  check_keys path kvs ~ext:[ "characteristic"; "attribute"; "unordered"; "source" ]
+  check_keys path kvs ~ext:[ "characteristic"; "attribute"; "unordered"; "source"; "designations" ]
     [ "node"; "name"; "subject"; "defaults"; "validity" ];
   let f name = field path kvs name in
   {
@@ -1688,6 +1693,175 @@ let presentatie_annotaties (j : json) : string list =
     | _ -> acc
   in
   List.rev (walk ~annot:false "" [] j)
+
+(* --- the vocabulary side table (IR-SPEC ch. 2.12) ------------------------ *)
+
+(* A Vocabulary node of the root list. *)
+let vocabulaire path j : vocabulaire =
+  let kvs = obj path j in
+  expect_node path kvs "Vocabulary";
+  check_keys path kvs ~ext:[ "language" ] [ "node"; "name"; "default" ];
+  {
+    voc_naam = str (path / "name") (field path kvs "name");
+    voc_standaard = bool_ (path / "default") (field path kvs "default");
+    voc_taal = ext_field path kvs "language" str;
+    voc_at = path;
+  }
+
+(* A list the side table writes whole or not at all: absent is none, and a
+   present list holds at least one entry. *)
+let ext_lijst path kvs key what (decode : string -> json -> 'a) : 'a list =
+  match List.assoc_opt key kvs with
+  | None -> []
+  | Some j -> (
+      let lp = path / key in
+      match list_ lp j with
+      | [] -> fail lp (what ^ " are at least one, or the field is absent")
+      | xs -> List.mapi (fun i x -> decode (lp / string_of_int i) x) xs)
+
+(* The designations of the declaration at [path], whose members are [kvs]. *)
+let benamingen path kvs : benaming list =
+  ext_lijst path kvs "designations" "a declaration's designations" (fun bp x ->
+      let bkvs = obj bp x in
+      check_keys bp bkvs [ "vocabulary"; "designation" ];
+      {
+        ben_vocabulaire = str (bp / "vocabulary") (field bp bkvs "vocabulary");
+        ben_tekst = str (bp / "designation") (field bp bkvs "designation");
+        ben_at = bp;
+      })
+
+(* The vocabulary side table, read from the document as written: the
+   vocabularies of the root list, and every designatable declaration with
+   its designations, those without any included (WF-119 asks after them). It
+   is read as strictly as every node here — a closed record, a string where
+   the schema has one, no empty list — and what a
+   designation says is never refused here: that is the verifier's (WF-116 to
+   WF-120). An executor calls this for the structure alone ([document]) and
+   reads nothing of it for evaluation. A declaration without a name, which
+   WF-107 or the model list's own refusal names, carries no designation this
+   table can hold, and is left out of it. An enumeration value's
+   designations stand in `valueDesignations` beside its list: each entry is
+   attached to the first value its `value` names under the name identity of
+   ch. 2.1, and an entry that names none is kept apart for WF-117 (f). *)
+let vocabulaires (j : json) : vocabulaire_tafel =
+  let kvs = obj "" j in
+  let vocs = ext_lijst "" kvs "vocabularies" "a document's vocabularies" vocabulaire in
+  let model = obj "/model" (field "" kvs "model") in
+  let rules = obj "/rules" (field "" kvs "rules") in
+  let items p pkvs key =
+    match List.assoc_opt key pkvs with
+    | None -> []
+    | Some x -> List.mapi (fun i y -> (p / key / string_of_int i, y)) (list_ (p / key) x)
+  in
+  let element soort eigenaar naam at ekvs =
+    match naam with
+    | None -> []
+    | Some n ->
+        [ { bn_soort = soort; bn_eigenaar = eigenaar; bn_naam = n; bn_at = at;
+            bn_benamingen = benamingen at ekvs } ]
+  in
+  let naam_van p ekvs = str_opt (p / "name") (field p ekvs "name") in
+  let objecttypen =
+    List.concat_map
+      (fun (p, x) ->
+        let okvs = obj p x in
+        let naam = naam_van p okvs in
+        let leden soort key =
+          List.concat_map
+            (fun (lp, l) -> let lkvs = obj lp l in element soort naam (naam_van lp lkvs) lp lkvs)
+            (items p okvs key)
+        in
+        element Bn_objecttype None naam p okvs
+        @ leden Bn_attribuut "attributes" @ leden Bn_kenmerk "characteristics")
+      (items "/model" model "objectTypes")
+  in
+  let feittypen =
+    List.concat_map
+      (fun (p, x) ->
+        let fkvs = obj p x in
+        let naam = naam_van p fkvs in
+        element Bn_feittype None naam p fkvs
+        @ List.concat_map
+            (fun (rp, r) -> let rkvs = obj rp r in element Bn_rol naam (naam_van rp rkvs) rp rkvs)
+            (items p fkvs "roles"))
+      (items "/model" model "factTypes")
+  in
+  let parameters =
+    List.concat_map
+      (fun (p, x) -> let pkvs = obj p x in element Bn_parameter None (naam_van p pkvs) p pkvs)
+      (items "/model" model "parameters")
+  in
+  let losse = ref [] in
+  let waarden =
+    List.concat_map
+      (fun (p, x) ->
+        let dkvs = obj p x in
+        let domein = str (p / "name") (field p dkvs "name") in
+        let dp = p / "datatype" in
+        let dtkvs = obj dp (field p dkvs "datatype") in
+        match List.assoc_opt "node" dtkvs with
+        | Some (`String "Enumeration") ->
+            let waarden = str_opt_list (dp / "values") (field dp dtkvs "values") in
+            let entries =
+              ext_lijst dp dtkvs "valueDesignations" "an enumeration's value designations"
+                (fun ep e ->
+                  let ekvs = obj ep e in
+                  check_keys ep ekvs [ "value"; "vocabulary"; "designation" ];
+                  ( str (ep / "value") (field ep ekvs "value"),
+                    {
+                      ben_vocabulaire = str (ep / "vocabulary") (field ep ekvs "vocabulary");
+                      ben_tekst = str (ep / "designation") (field ep ekvs "designation");
+                      ben_at = ep;
+                    } ))
+            in
+            (* each entry to the first value it names *)
+            let eerste w =
+              let rec zoek i = function
+                | [] -> None
+                | Some v :: _ when Checks.norm v = Checks.norm w -> Some i
+                | _ :: rest -> zoek (i + 1) rest
+              in
+              zoek 0 waarden
+            in
+            List.iter
+              (fun (w, b) ->
+                if eerste w = None then losse := (domein, w, b.ben_at / "value") :: !losse)
+              entries;
+            List.concat
+              (List.mapi
+                 (fun i v ->
+                   match v with
+                   | None -> []
+                   | Some v ->
+                       [ { bn_soort = Bn_enumeratiewaarde; bn_eigenaar = Some domein; bn_naam = v;
+                           bn_at = dp / "values" / string_of_int i;
+                           bn_benamingen =
+                             List.filter_map
+                               (fun (w, b) -> if eerste w = Some i then Some b else None)
+                               entries } ])
+                 waarden)
+        | _ -> [])
+      (items "/model" model "domains")
+  in
+  let vormen =
+    List.concat_map
+      (fun key ->
+        List.concat_map
+          (fun (p, x) -> let vkvs = obj p x in element Bn_vorm None (naam_van p vkvs) p vkvs)
+          (items "/rules" rules key))
+      [ "rules"; "objectCreations"; "allocations"; "consistencies"; "uniquenesses"; "factCreations";
+        "prioritizedDefaults" ]
+  in
+  let groepen =
+    List.concat_map
+      (fun (p, x) -> let gkvs = obj p x in element Bn_regelgroep None (naam_van p gkvs) p gkvs)
+      (items "/rules" rules "ruleGroups")
+  in
+  {
+    vt_vocabulaires = vocs;
+    vt_benoembaar = objecttypen @ feittypen @ parameters @ waarden @ vormen @ groepen;
+    vt_losse_waarden = List.rev !losse;
+  }
 
 (* Who loads the document. Two defects on the wire are a verifier rule's,
    because the schema cannot cross them: a literal whose value variant is
@@ -1783,7 +1957,7 @@ let executor_refusals (j : json) =
 let document ?(reader = Executor) (j : json) : document =
   let path = "" in
   let kvs = obj path j in
-  check_keys path kvs [ "format"; "model"; "rules"; "diagnostics" ];
+  check_keys path kvs ~ext:[ "vocabularies" ] [ "format"; "model"; "rules"; "diagnostics" ];
   (match str (path / "format") (field path kvs "format") with
   | "uchar-ir-v1" -> ()
   | s -> fail (path / "format") ("unknown format \"" ^ s ^ "\""));
@@ -1836,6 +2010,9 @@ let document ?(reader = Executor) (j : json) : document =
       presentatie_annotaties = presentatie_annotaties j;
     }
   in
+  (* the side table is read structurally by every reader, and for its
+     content by none here (IR-SPEC ch. 2.12) *)
+  ignore (vocabulaires j);
   (match reader with
   | Executor -> (
       executor_refusals j;
