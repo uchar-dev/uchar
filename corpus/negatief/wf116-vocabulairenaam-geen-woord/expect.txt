@@ -1,0 +1,1 @@
+is not a word: it is empty, or carries whitespace, a parenthesis or a colon

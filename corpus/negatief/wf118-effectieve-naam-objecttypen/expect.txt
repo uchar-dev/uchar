@@ -1,0 +1,1 @@
+object types 'Jutter' and 'Vondst' share the effective name

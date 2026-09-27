@@ -1,0 +1,1 @@
+is empty or not trimmed: a designation is text without whitespace at either end

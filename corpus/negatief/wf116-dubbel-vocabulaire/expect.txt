@@ -1,0 +1,1 @@
+vocabularies 'handboek' and 'Handboek' collide case-insensitively

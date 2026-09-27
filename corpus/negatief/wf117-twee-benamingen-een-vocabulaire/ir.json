@@ -1,0 +1,735 @@
+{
+  "format": "uchar-ir-v1",
+  "vocabularies": [
+    {
+      "node": "Vocabulary",
+      "name": "handboek",
+      "default": false,
+      "language": "nl"
+    },
+    {
+      "node": "Vocabulary",
+      "name": "cgm",
+      "default": true,
+      "language": "nl"
+    }
+  ],
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "naam",
+            "datatype": {
+              "node": "Text"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "naam"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "NAAM"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "totale premie"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "VONDST_BEDRAG"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal waardevolle vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "aantal vondsten van waarde"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "AANTAL_WAARDEVOL"
+              }
+            ]
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "premiewaardig",
+            "kind": "adjectival",
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "komt in aanmerking voor premie"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "PREMIE_WAARDIG"
+              }
+            ]
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "strandjutter"
+          },
+          {
+            "vocabulary": "handboek",
+            "designation": "jutter op het strand"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "JUTTER"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "soort",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Vondstsoort",
+              "values": [
+                "wrakhout",
+                "barnsteen",
+                "flessenpost"
+              ]
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "soort vondst"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "VONDST_SOORT"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "gewicht in kilogram"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "GEWICHT"
+              }
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "premie voor de vondst"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "PREMIE"
+              }
+            ]
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "waardevol",
+            "kind": "adjectival",
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "van waarde"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "WAARDEVOL"
+              }
+            ]
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "aangespoeld voorwerp"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "VONDST"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstaanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false,
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "melder"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "AANMELDER"
+              }
+            ]
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true,
+            "designations": [
+              {
+                "vocabulary": "handboek",
+                "designation": "gemelde vondst"
+              },
+              {
+                "vocabulary": "cgm",
+                "designation": "GEMELDE_VONDST"
+              }
+            ]
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "aanmelding van een vondst"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "VONDST_AANMELDING"
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "premietarief",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        },
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "premie per kilogram"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "PREMIE_TARIEF"
+          }
+        ]
+      }
+    ],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Vondstsoort",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "wrakhout",
+            "barnsteen",
+            "flessenpost"
+          ],
+          "valueDesignations": [
+            {
+              "value": "wrakhout",
+              "vocabulary": "handboek",
+              "designation": "hout van een wrak"
+            },
+            {
+              "value": "wrakhout",
+              "vocabulary": "cgm",
+              "designation": "WRAKHOUT"
+            },
+            {
+              "value": "barnsteen",
+              "vocabulary": "handboek",
+              "designation": "amber"
+            },
+            {
+              "value": "barnsteen",
+              "vocabulary": "cgm",
+              "designation": "BARNSTEEN"
+            },
+            {
+              "value": "flessenpost",
+              "vocabulary": "handboek",
+              "designation": "bericht in een fles"
+            },
+            {
+              "value": "flessenpost",
+              "vocabulary": "cgm",
+              "designation": "FLESSENPOST"
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "premie van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De premie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "premietarief",
+                "source": {
+                  "snippet": "het premietarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewicht maal het premietarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "premie per vondst"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "R_PREMIE_VONDST"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vondstbedrag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstbedrag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vondstbedrag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "premie",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de premie van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de premie van alle vondsten van de Jutter of 0 als die er niet zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "premie per strandjutter"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "R_VONDSTBEDRAG"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "waardevolle vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "waardevol",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is waardevol"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "soort",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn soort"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "enumeration": "barnsteen"
+                },
+                "type": {
+                  "node": "Enumeration",
+                  "domain": "Vondstsoort",
+                  "values": [
+                    "wrakhout",
+                    "barnsteen",
+                    "flessenpost"
+                  ]
+                },
+                "source": {
+                  "snippet": "'barnsteen'"
+                }
+              },
+              "source": {
+                "snippet": "zijn soort gelijk is aan 'barnsteen'"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "vondst van waarde"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "R_WAARDEVOL"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal waardevolle vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal waardevolle vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal waardevolle vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die waardevol zijn"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "waardevol",
+                "negated": false,
+                "source": {
+                  "snippet": "waardevol zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstaanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die waardevol zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "telling van de waardevolle vondsten"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "R_AANTAL_WAARDEVOL"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premiewaardigheid",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premiewaardig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is premiewaardig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstbedrag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstbedrag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "zijn vondstbedrag groter is dan 10"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "toets op premie"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "R_PREMIEWAARDIG"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
+      {
+        "node": "RuleGroup",
+        "name": "premieberekening",
+        "recursive": false,
+        "members": [
+          "premie van een vondst",
+          "vondstbedrag van een jutter",
+          "waardevolle vondst",
+          "aantal waardevolle vondsten",
+          "premiewaardigheid"
+        ],
+        "source": {
+          "snippet": "premieberekening",
+          "line": 28
+        },
+        "designations": [
+          {
+            "vocabulary": "handboek",
+            "designation": "berekening van de premie"
+          },
+          {
+            "vocabulary": "cgm",
+            "designation": "PREMIEBEREKENING"
+          }
+        ]
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "node": "Diagnostic",
+      "severity": "warning",
+      "message": "de benaming 'naam' van het attribuut 'naam' van 'Jutter' in het vocabulaire 'handboek' spelt haar canonieke naam en is overbodig: de effectieve naam is dezelfde zonder haar (WF-120)",
+      "line": 12
+    }
+  ]
+}
