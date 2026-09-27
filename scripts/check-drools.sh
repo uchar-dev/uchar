@@ -1022,7 +1022,14 @@ EXPECTED_CHANNEL=(
 # rules with the inner negation stay hand-written in the original. Its emission equals those five rules of the
 # original, so gate 10 now holds the form. No source file of this backend changed: both branches play the three
 # cases, PLAYED 3, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=215
+# 215 -> 216 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new, from bron.rgs and
+# scenario.rgs — the corpus witness of the frontend's parameter set: one set with two jaargangen of four
+# parameters without granularity (a whole-number threshold, a euro amount, a percentage and a date), chosen
+# by two scenarios whose peildatum lies one day apart and in different jaargangen, so the two case files
+# differ in their scalar parameters alone. No source file of this backend changed: both branches play the
+# two cases on the first run, PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by
+# one as well.
+EXPECTED_PLAYED=216
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1341,7 +1348,9 @@ DRL_CHANNEL=(
 # no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 184 -> 185 (2026-09-26, the same fix round): jutterswet-gehele-periode-leeg-rgs, new. This branch plays its
 # three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=185
+# 185 -> 186 (2026-09-27, card scenario-parametersets): jutterswet-jaarvaststelling, new. This branch plays its
+# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=186
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
