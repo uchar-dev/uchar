@@ -1558,7 +1558,11 @@ record brought into this frontend at the card `scenariolaag-in-uchar`
 reachable only through the start rule `testDocument`: `regelSpraakDocument`
 is unchanged, so production parsing and the re-emission of every golden are
 untouched (gate 10), and a scenario block does not parse there
-(`ScenarioParseTest`).
+(`ScenarioParseTest`), nor does a parameter set (`ScenarioParametersetTest`).
+The parameter set came at the card `scenario-parametersets` (2026-09-27):
+the source toolchain read parameter sets from a JSON file beside a scenario
+or a service descriptor, and here a set is a block of the scenario
+document.
 
 **A scenario is a case file written in RegelSpraak.** The lowering writes
 one case file of the format uchar-case-v0
@@ -1572,7 +1576,7 @@ backend's replay (`ScenarioResultaat`), not a form of this frontend.
 
 ### Surface
 
-Two blocks, free among the definitions and rules of a test document.
+Three blocks, free among the definitions and rules of a test document.
 
 A **situation**: `Situatie <naam>`, optionally `gebaseerd op de situatie
 <naam>` once or more, then `:` and a situation block. A situation block
@@ -1598,6 +1602,26 @@ zijn <LABEL>, <LABEL> en <LABEL>`) and a characteristic (`is|heeft
 characteristic or parameter value may carry one period, `van <datum> tot
 <datum>`: from inclusive, to exclusive, the case format's segment.
 
+A **parameter set**: `Parameterset <naam>:`, then one or more parameter
+rows in the form of a situation block and nothing else:
+
+```
+Parameterset jaarlijkse vaststelling:
+de parameter de vondstdrempel is 12 van 01-01-2025 tot 01-01-2026
+de parameter het penningbedrag is 250 € van 01-01-2025 tot 01-01-2026
+de parameter de vondstdrempel is 14 van 01-01-2026 tot 01-01-2027
+de parameter het penningbedrag is 275 € van 01-01-2026 tot 01-01-2027
+```
+
+The rows of a parameter without granularity are its **jaargangen**: each
+holds its value in its period, from inclusive to exclusive, and a row
+without a period holds on every date. The rows of a parameter with a
+timeline are the segments of that timeline, as in a situation. A scenario
+chooses one set in its header. The block depends on nothing but the
+declarations: no situation and no scenario enters it, so a reader that
+knows the declarations can read a set without the scenarios of the
+document.
+
 A **scenario**:
 
 ```
@@ -1613,10 +1637,10 @@ Met als verwacht resultaat:
 
 The header is the name, then optionally a scope (`toetst de regel <naam>`,
 `toetst de regels <naam>, <naam> en <naam>` or `toetst de regelgroep
-<naam>`), optionally `met peildatum <datum>`, and `gebaseerd op de situatie
-<naam>` any number of times; then optionally an inline situation, and the
-expectations. The name ends at the first header keyword. The expectations,
-one bullet each:
+<naam>`), optionally `met peildatum <datum>`, optionally `met parameterset
+<naam>`, and `gebaseerd op de situatie <naam>` any number of times, in that
+order; then optionally an inline situation, and the expectations. The name
+ends at the first header keyword. The expectations, one bullet each:
 
 | bullet | case expectation |
 |---|---|
@@ -1635,16 +1659,30 @@ a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
 vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
 `waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`.
 
-**No new token.** Every new form reuses the lexer as it stands, because a
-keyword token changes the lexing of every source that carries the word. A
-period is `VAN DATE TOT DATE`, bare date tokens only: a name word may be a
-number, so a date that may also be a `NUMBER` would let a characteristic's
-`van`-segment compete for `van 2024`. The empty timeline is `ALTIJD LEEG`.
-`volgens` is matched as a `LOWER_ID` by its text, on the one position after
-`inconsistent` (a source carries the word elsewhere as a name word). The
-rule of an inconsistency is a text literal because a conflict channel's
-name (`Jutter.vrijgesteld/0`) is no token run. `tot en met` is one token and
-is no period (`ScenarioParseTest`).
+**Two new tokens, for the parameter set only.** The other forms this
+repository added to the scenario layer reuse the lexer as it stands,
+because a keyword token changes the lexing of every source that carries the
+word. A period is `VAN DATE TOT DATE`, bare date
+tokens only: a name word may be a number, so a date that may also be a
+`NUMBER` would let a characteristic's `van`-segment compete for `van 2024`.
+The empty timeline is `ALTIJD LEEG`. `volgens` is matched as a `LOWER_ID`
+by its text, on the one position after `inconsistent` (a source carries the
+word elsewhere as a name word). The rule of an inconsistency is a text
+literal because a conflict channel's name (`Jutter.vrijgesteld/0`) is no
+token run. `tot en met` is one token and is no period
+(`ScenarioParseTest`). The parameter set takes two tokens:
+`PARAMETERSET` (`Parameterset`) and `MET_PARAMETERSET` (`met
+parameterset`, one whole-phrase token like `MET_PEILDATUM`). A block header
+must end the block before it, and a header clause must end the name run
+before it; an `UPPER_ID` is a name word in `kaleNaamWoord`, `naamWoordAny`
+and `eenheidAfkorting`, so a bare `Parameterset` after an expectation or a
+value with a unit would be read as part of it, and `met` followed by a
+`LOWER_ID` runs on inside the scenario name and the single-rule scope.
+Measured on 2026-09-27, before the parameter set's own witnesses: the word
+`parameterset`, in any capitalisation, occurred in none of the 104
+RegelSpraak sources of this repository outside the parity zone;
+`Parametersets` stays an `UPPER_ID` and `met parameters`
+stays `MET` `LOWER_ID` (`ScenarioParametersetTest`).
 
 ### Resolution
 
@@ -1664,6 +1702,19 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   same attribute, role or characteristic replaces the earlier one in place,
   a timeline as a whole; a later parameter value replaces the earlier one in
   place.
+- **Parameter sets** are validated whether a scenario chooses them or not,
+  each row typed as a situation's parameter value is. The jaargangen of one
+  parameter share no day, in whatever order they are written; a row without
+  a period shares every day, so it stands alone. The rows of a parameter
+  with a timeline follow the timeline rules below. A scenario takes from the
+  set it chooses every parameter the set carries: of a parameter with
+  jaargangen the one whose period holds the peildatum — exactly one, and no
+  peildatum or none that holds it is refused, for every parameter of the
+  set whether or not a form reads it, as the case file carries them all —
+  and of a parameter with a timeline the whole timeline; whether it covers
+  the peildatum is the executors' session-start check where the document
+  reads it at that date (RUNTIME-SEMANTICS ch. 8.4). A parameter that both the
+  set and the merged situation give a value is refused: neither wins.
 - **Typing**: every value is typed against its declaration by the rule
   pipeline's own assignment typing (`Typering.toekenning`), so a unit is
   required where the declaration has one and a value may carry no more
@@ -1693,7 +1744,8 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   grid; the readers and the anchors do not).
 - **Two gates**, over the forms the scenario carries: a form with a validity
   window, or one that reads the evaluation date, needs a peildatum; every
-  parameter a form reads needs a value in the merged situation. Measured
+  parameter a form reads needs a value in the merged situation or in the
+  chosen parameter set. Measured
   against the pinned corpus on 2026-09-26, `corpus/golden` with its anchor
   subset: none of the 12 cases whose document carries a validity window
   lacks an `asOfDate`, and of the 86 cases whose document reads a parameter
@@ -1701,7 +1753,13 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   That one, `anchor/jutterswet-staffelvergoeding/case3-afwezig.json`, leaves
   the parameter out on purpose and pins the empty result: a scenario document
   cannot write it, since the gate refuses the absent value and the surface has
-  no form for one.
+  no form for one. No form is needed (measured 2026-09-27): the parameter left out
+  there is a list, a datatype RegelSpraak does not declare, and a scalar
+  parameter that is read and left out faults in `ref` and clingo — binding is
+  fail-fast (RUNTIME-SEMANTICS ch. 5.7), as the red case
+  `aanvoergeld-parameter-ongebonden` pins — so the gate refuses what those
+  executors would refuse, and a parameter set, which gives each parameter it
+  carries a value, does not change that.
 - **One document, one IR document**: every scenario of a document must
   carry the same forms, because one case directory has one `ir.json`.
 
@@ -1717,6 +1775,12 @@ serialiser, so a case file and an IR document share one shape.
   corpus's key order: the case schema lists the field before
   `characteristics`, and all 51 instances in the corpus that carry the field
   write it after (measured 2026-09-26).
+- The parameters are those the chosen set gives on the peildatum, in the
+  order of each parameter's first row in the set, then the situation's own.
+  The resolver has chosen the jaargangen, so the case file carries one value
+  per parameter without a timeline, and the IR does not change: a parameter
+  without granularity has one value on the wire, and which one is a question
+  of the case file, not of the document.
 - A number is an exact lexeme in the declared unit. Without a restatement it
   is the lexeme the emitter writes for the written number, one normalisation
   for a case file and an IR document: a decimal keeps its written precision
@@ -1840,6 +1904,24 @@ prefix `scenario: `, placeholders in angle brackets:
   samengestelde situatie gedeclareerd is`
 - `de rol '<r>' verwacht een <T>, maar het label '<l>' is een <U>`
 - `de parameter '<p>' is niet gedeclareerd`
+- `de parameterset '<s>' is meer dan eens gedeclareerd`, and `de
+  parameterset '<s>' is nergens in het document gedeclareerd` (the parameter
+  gate then stays silent for that scenario: what the set would have given
+  cannot be said)
+- `de parameterset '<s>' geeft de parameter '<p>' twee jaargangen die
+  elkaar overlappen (<van <d> tot <d> | zonder periode> en <…>); de
+  peildatum van een scenario kiest precies één jaargang`
+- `de parameterset '<s>' heeft voor de parameter '<p>' geen jaargang die de
+  peildatum <d> van het scenario '<n>' bevat`, once per parameter
+- `de parameter '<p>' heeft in de parameterset '<s>' jaargangen, maar het
+  scenario '<n>' heeft geen peildatum die er één kiest (voeg 'met peildatum
+  <datum>' toe)`, once per scenario
+- `de parameter '<p>' krijgt een waarde uit de parameterset '<s>' en uit de
+  situatie van het scenario '<n>'; een parameter krijgt zijn waarde uit één
+  van beide`
+- the parameter gate of a scenario that chooses a set: `de regel '<r>' leest
+  de parameter '<p>', die in de situatie van het scenario '<n>' en in de
+  parameterset '<s>' geen waarde heeft`
 - `de periodegrens '<d>' draagt een tijd, maar een periode telt in hele
   dagen`, and `de periodegrens '<d>' is geen geldige datum`
 - `de periode van <d> tot <d> is leeg of loopt terug`
@@ -1881,9 +1963,12 @@ The frontend suite: `ScenarioParseTest` (the forms and the two fences),
 `ScenarioTypeGateTest` (one refusal per defect on its line, and the merge,
 the restatement, the role key and the timelines), `ScenarioMutatieTest`
 (a clean document and nine mutations of it, a cycle and a duplicate among
-them) and `ScenarioLoweringTest` (a case file written by hand from the
-schema, the file name, the scope and its IR document, the CLI). The corpus:
-six goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
+them), `ScenarioLoweringTest` (a case file written by hand from the
+schema, the file name, the scope and its IR document, the CLI) and
+`ScenarioParametersetTest` (the two tokens, a case file with a jaargang and
+a whole timeline written by hand, the exclusive end, and each refusal of
+the parameter set on its line). The corpus:
+seven goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
 reproduces their pinned case files, and whose scenario route reproduces their
 `ir.json`, byte for byte — the handwritten expectations are the anchor —:
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
@@ -1893,8 +1978,10 @@ names every form of its document: a scope that leaves a form out writes an IR
 document no golden pins, so the leaving out, the dropped diagnostics among it,
 is witnessed by `ScenarioLoweringTest` alone) and
 `jutterswet-dubbelverbinding` (a shared situation, roles written from both
-sides with a plural key, a peildatum). Together they carry every expectation
-kind of the case format.
+sides with a plural key, a peildatum) and `jutterswet-jaarvaststelling` (a
+parameter set with two jaargangen of a threshold, an amount, a percentage
+and a date, chosen by two scenarios one day apart). Together they carry
+every expectation kind of the case format.
 
 ---
 
