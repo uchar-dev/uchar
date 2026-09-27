@@ -1600,7 +1600,8 @@ rule and a rule group directly behind the name. The vocabularies of one
 declaration's annotations stand in any order; the emitter writes a
 declaration's `designations` in the declaration order of the vocabularies.
 
-Four new tokens. `VOCABULAIRE` (`Vocabulaire`) is a keyword before
+Three new tokens in the default mode and three in a mode of their own.
+`VOCABULAIRE` (`Vocabulaire`) is a keyword before
 `UPPER_ID`, as `Dagsoort` is. `STANDAARD` is the whole token `(standaard)`,
 as `BEZIELD` is. `BENAMING_START` is the opener `(<woord>:` up to its colon:
 a parenthesis directly followed by a word — a letter, then letters, digits,
@@ -1610,9 +1611,9 @@ cannot be named `mv`. The opener pushes a lexer mode in which everything up
 to the closing parenthesis on the same line is ONE token,
 `BENAMING_TEKST`: keywords, numbers, quotes and punctuation in a designation
 are never lexed, so a designation cannot change the reading of what follows
-it. A line end before the closing parenthesis ends the mode as a token of its
-own, so an annotation left open is refused by name instead of swallowing the
-next line. The language annotation `(taal: nl)` of a vocabulary head is the
+it. The closing parenthesis, `BENAMING_EINDE`, returns to the default mode,
+and so does a line end before it, `BENAMING_ONAF`, a token of its own, so an
+annotation left open is refused by name instead of swallowing the next line. The language annotation `(taal: nl)` of a vocabulary head is the
 same token shape, read by the resolver. The rule-name run (`regelNaam`) and
 the decision-table name run stop at the opener, so an annotation written
 there is not taken into a name.
