@@ -319,7 +319,18 @@ reviewer's duty on a machine that has catala. Current gates:
     unit-bearing annotation appears at a node/operator class outside the
     twist table (the §2.10 fourth-class witness arriving), and a
     reason-carrying survivor list fails when stale (the check-noop
-    pattern). An empty twist set is a failure, never silently green. CI
+    pattern). An empty twist set is a failure, never silently green.
+    Since 2026-09-27 (card `vocabulaires-benamingen`) the gate carries a
+    VOCABULARY leg beside the unit twist: every golden with `vocabularies`
+    and case files is replayed with the side table STRIPPED, with the
+    vocabularies EXCHANGED and with the designations ROTATED within each
+    scope of WF-118, and ref, clingo and both Drools branches must
+    reproduce the untouched outcome (IR-SPEC ch. 2.12: the table carries
+    no semantics, so no reading of it is legitimate and there is no
+    survivor list); floors `EXPECTED_MIN_VOCABULAIRE_GOLDENS=1`,
+    `EXPECTED_MIN_VOCABULAIRE_GESTRIPT=46` and
+    `EXPECTED_MIN_VOCABULAIRE_GEROTEERD=36` (measured 2026-09-27); a golden
+    without vocabularies is not probed. CI
     leg unconditional and blocking.
 
 14. `scripts/check-flogic.sh` — the F-logic frontend (`frontends/flogic`,
