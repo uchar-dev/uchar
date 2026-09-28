@@ -1,0 +1,146 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "meldingsdatum": {
+            "date": "2026-03-10"
+          },
+          "herstelde meldingsdatum": {
+            "date": "2026-04-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-04-01"
+          },
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-04-20"
+          },
+          "gewicht": {
+            "number": "6"
+          },
+          "weegfactor": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "meldtermijngrens": {
+        "date": "2026-04-01"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "erkende meldingsdatum",
+      "value": {
+        "date": "2026-04-15"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "aanmelddatum",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "controledatum",
+      "value": {
+        "date": "2026-04-15"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "tijdig aangemeld"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "meldingsgewicht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "ongemeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "aanmelddatum",
+      "value": {
+        "date": "2026-04-20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V4",
+      "attribute": "controledatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "tijdig aangemeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "meldingsgewicht",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V4",
+      "characteristic": "ongemeld"
+    },
+    {
+      "kind": "inconsistent"
+    }
+  ]
+}

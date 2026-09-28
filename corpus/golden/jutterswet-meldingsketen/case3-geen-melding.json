@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "5"
+          },
+          "weegfactor": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "meldtermijngrens": {
+        "date": "2026-04-01"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "erkende meldingsdatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "aanmelddatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "controledatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V5",
+      "characteristic": "tijdig aangemeld"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "meldingsgewicht"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V5",
+      "characteristic": "ongemeld"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+Scenario erkende melding
+Gegeven is de volgende situatie:
+een Jutter J1
+- de meldingsdatum is 10-03-2026
+een Vondst V1
+- de vinder is J1
+- de vinddag is 01-03-2026
+- het gewicht is 12
+- de weegfactor is 4
+een Vondst V2
+- de vinddag is 05-03-2026
+- het gewicht is 8
+- de weegfactor is 2
+de parameter de meldtermijngrens is 01-04-2026
+Met als verwacht resultaat:
+- de erkende meldingsdatum van J1 is 10-03-2026
+- J1 is erkend
+- de aanmelddatum van V1 is 01-03-2026
+- de controledatum van V1 is 15-03-2026
+- V1 is tijdig aangemeld
+- het meldingsgewicht van V1 is 3,00
+- V1 is niet ongemeld
+- de aanmelddatum van V2 is leeg
+- de controledatum van V2 is leeg
+- V2 is niet tijdig aangemeld
+- het meldingsgewicht van V2 is leeg
+- V2 is niet ongemeld
+- de gegevens zijn consistent
+
+Scenario herstelde melding
+Gegeven is de volgende situatie:
+een Jutter J2
+- de meldingsdatum is 10-03-2026
+- de herstelde meldingsdatum is 15-04-2026
+een Vondst V3
+- de vinder is J2
+- de vinddag is 01-04-2026
+- het gewicht is 9
+een Vondst V4
+- de vinder is J2
+- de vinddag is 20-04-2026
+- het gewicht is 6
+- de weegfactor is 3
+de parameter de meldtermijngrens is 01-04-2026
+Met als verwacht resultaat:
+- de erkende meldingsdatum van J2 is 15-04-2026
+- J2 is erkend
+- de aanmelddatum van V3 is 01-04-2026
+- de controledatum van V3 is 15-04-2026
+- V3 is niet tijdig aangemeld
+- het meldingsgewicht van V3 is leeg
+- V3 is niet ongemeld
+- de aanmelddatum van V4 is 20-04-2026
+- de controledatum van V4 is leeg
+- V4 is niet tijdig aangemeld
+- het meldingsgewicht van V4 is 2,00
+- V4 is niet ongemeld
+- de gegevens zijn inconsistent
+
+Scenario geen melding
+Gegeven is de volgende situatie:
+een Jutter J3
+een Vondst V5
+- de vinder is J3
+- de vinddag is 01-03-2026
+- het gewicht is 5
+- de weegfactor is 5
+de parameter de meldtermijngrens is 01-04-2026
+Met als verwacht resultaat:
+- de erkende meldingsdatum van J3 is leeg
+- J3 is niet erkend
+- de aanmelddatum van V5 is leeg
+- de controledatum van V5 is leeg
+- V5 is niet tijdig aangemeld
+- het meldingsgewicht van V5 is leeg
+- V5 is ongemeld
+- de gegevens zijn consistent

@@ -1,0 +1,636 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "herstelde meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "erkende meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "erkend",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanmelddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "controledatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weegfactor",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingsgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "tijdig aangemeld",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ongemeld",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondstmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "meldtermijngrens",
+        "datatype": {
+          "node": "Date",
+          "precision": "day"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "aanmelddatum van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanmelddatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De aanmelddatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de vinddag van de Vondst"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "erkende meldingsdatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de erkende meldingsdatum van de vinder van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vondstmelding",
+                    "role": "vinder"
+                  }
+                ]
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "de erkende meldingsdatum van de vinder van de Vondst gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "controledatum van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "controledatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De controledatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de vinddag van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "14"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "14 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de vinddag van de Vondst plus 14 dagen"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van de Vondst"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het gewicht van de Vondst is groter dan 0"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "later",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "erkende meldingsdatum",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "de erkende meldingsdatum van de vinder van de Vondst"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "vondstmelding",
+                        "role": "vinder"
+                      }
+                    ]
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "vinddag",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de vinddag van de Vondst"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de erkende meldingsdatum van de vinder van de Vondst is later dan de vinddag van de Vondst"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - het gewicht van de Vondst is groter dan 0 - de erkende meldingsdatum van de vinder van de Vondst is later dan de vinddag van de Vondst."
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tijdige aanmelding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "tijdig aangemeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is tijdig aangemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "earlier",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "erkende meldingsdatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de erkende meldingsdatum van de vinder van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vondstmelding",
+                    "role": "vinder"
+                  }
+                ]
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "meldtermijngrens",
+                "source": {
+                  "snippet": "de meldtermijngrens"
+                }
+              },
+              "source": {
+                "snippet": "de erkende meldingsdatum van de vinder van de Vondst eerder is dan de meldtermijngrens"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldingsgewicht van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldingsgewicht",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het meldingsgewicht van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "het gewicht van de Vondst"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "weegfactor",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de weegfactor van de Vondst"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het gewicht van de Vondst gedeeld door de weegfactor van de Vondst"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": false,
+              "source": {
+                "snippet": "zijn vinder erkend is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "vondstmelding",
+                "role": "vinder"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ongemelde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ongemeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is ongemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": true,
+              "source": {
+                "snippet": "zijn vinder niet erkend is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "vondstmelding",
+                "role": "vinder"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "erkenning van de melder",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "erkend",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is erkend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "erkende meldingsdatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de erkende meldingsdatum van de Jutter"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "de erkende meldingsdatum van de Jutter gevuld is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "erkende meldingsdatum",
+        "subject": "Jutter",
+        "attribute": "erkende meldingsdatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "herstelde meldingsdatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de herstelde meldingsdatum van de Jutter"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "de herstelde meldingsdatum van de Jutter gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "herstelde meldingsdatum",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "de herstelde meldingsdatum van de Jutter"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "meldingsdatum",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "de meldingsdatum van de Jutter"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}
