@@ -35,8 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * same-named role toward another type already holds", a second role the document does not have; a subtype declared
  * before its supertype typed the field {@code Melding.vondst} as {@code Scheepswrak}, so even a plain {@code Vondst}
  * no longer fitted it; and the reciprocal role on {@code Vondst} was typed {@code Wrakvondst} for the same reason and
- * refused as "shares its name with a declared member". ref and clingo play every document here with the values the
- * rows pin.
+ * refused as "shares its name with a declared member". The case input's refusal named a second role wherever the
+ * cause was not a member of the same name, also where an attribute held the property under another spelling. ref and
+ * clingo play the documents of rows 1 to 8 with the values those rows pin; rows 9 and 10 pin this backend's refusal
+ * sentences.
  *
  * <p>Every model is the golden or an in-memory variant of it, except the fence of row 5 and the sentence of row 9,
  * which twist or read the red case {@code ambiguous-case-role-key}; the corpus is untouched.
@@ -272,6 +274,20 @@ class SubtypeRolvullerWitnessTest {
         assertFalse(r.detail().contains("same-named role toward another type"), r.detail());
     }
 
+    /** The same reader where a declared MEMBER holds the property under another spelling: the attribute
+     *  {@code gerapporteerde-vondst} and the role {@code gerapporteerde vondst} fall on one bean property, which the
+     *  attribute keeps (attribute &gt; characteristic &gt; reference). The names differ, so the member test by name
+     *  misses it, and the sentence blamed a second role that does not exist. The twist drops the one rule that reads
+     *  over the role, which the transpiler would refuse first; case 3 of the golden then writes the role. */
+    @Test void de_case_lezer_noemt_het_lid_dat_de_eigenschap_houdt() throws Exception {
+        ObjectNode ir = golden();
+        IrPad.addAttribute(IrPad.objectType(ir, "Rapport"), "gerapporteerde-vondst", JSON.readTree(GEHEEL));
+        ArrayNode regels = IrPad.rulesLijst(ir, "rules");
+        regels.remove(indexVan(regels, IrPad.vorm(ir, "rules", "rapportwaarde van een rapport")));
+        BeideTakken.geweigerd(schrijf(ir), geval(CASES.get(2)), "whose bean property Rapport.gerapporteerdeVondst"
+                + " belongs to the attribute 'gerapporteerde-vondst' of Rapport", "een rol op de eigenschap van een lid");
+    }
+
     // ---------------- helpers ----------------
 
     private static ObjectNode golden() throws Exception {
@@ -294,6 +310,11 @@ class SubtypeRolvullerWitnessTest {
 
     private static String veldklasse(Object bean, String getter) throws Exception {
         return bean.getClass().getMethod(getter).getReturnType().getSimpleName();
+    }
+
+    private static int indexVan(ArrayNode lijst, JsonNode lid) {
+        for (int i = 0; i < lijst.size(); i++) if (lijst.get(i) == lid) return i;
+        throw new AssertionError("niet in de lijst: " + lid.path("name").asText());
     }
 
     private static String namen(ArrayNode typen) {
