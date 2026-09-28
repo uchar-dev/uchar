@@ -1,0 +1,69 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is zinkend kenmerk (bijvoeglijk);
+    is berooid kenmerk (bijvoeglijk);
+    is drijvend kenmerk (bijvoeglijk);
+    is vlot kenmerk (bijvoeglijk);
+    is meldplichtig kenmerk (bijvoeglijk);
+    is onvermogend kenmerk (bijvoeglijk);
+    is vrijgegeven kenmerk (bijvoeglijk);
+    is duikplichtig kenmerk (bijvoeglijk);
+    is keurplichtig kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het drijfvermogen kenmerk (bezittelijk);
+    is waardevol kenmerk (bijvoeglijk);
+    het recht op berging kenmerk (bezittelijk);
+    is gekeurd kenmerk (bijvoeglijk);
+    is dubbel gekeurd kenmerk (bijvoeglijk);
+
+Feittype vinder van vondst
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel zinkende jutter
+    geldig altijd
+        Een Jutter is zinkend
+        indien alle vondsten van de Jutter geen drijfvermogen hebben.
+
+Regel berooide jutter
+    geldig altijd
+        Een Jutter is berooid
+        indien alle vondsten van de Jutter niet waardevol zijn.
+
+Regel drijvende jutter
+    geldig altijd
+        Een Jutter is drijvend
+        indien geen van de vondsten van de Jutter geen drijfvermogen heeft.
+
+Regel vlotte jutter
+    geldig altijd
+        Een Jutter is vlot
+        indien ten minste één van de vondsten van de Jutter drijfvermogen heeft.
+
+Regel meldplichtige jutter
+    geldig altijd
+        Een Jutter is meldplichtig
+        indien ten minste één van de vondsten van de Jutter geen recht op berging heeft.
+
+Regel onvermogende jutter
+    geldig altijd
+        Een Jutter is onvermogend
+        indien geen van de vondsten van de Jutter waardevol is.
+
+Regel vrijgegeven jutter
+    geldig altijd
+        Een Jutter is vrijgegeven
+        indien alle vondsten van de vinder dubbel gekeurd zijn.
+
+Regel duikplichtige jutter
+    geldig altijd
+        Een Jutter is duikplichtig
+        indien hij aan alle volgende voorwaarden voldoet:
+        - alle vondsten van de Jutter geen drijfvermogen hebben
+        - ten minste één van de vondsten van de Jutter waardevol is.
+
+Regel keurplichtige jutter
+    geldig altijd
+        Een Jutter is keurplichtig
+        indien ten minste één van de vondsten van de Jutter niet gekeurd is.

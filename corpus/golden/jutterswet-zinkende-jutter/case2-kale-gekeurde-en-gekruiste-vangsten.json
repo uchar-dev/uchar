@@ -1,0 +1,314 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V5",
+            "V6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V7",
+            "V8"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V9",
+            "V10"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J7",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V11",
+            "V12"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V9",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "waardevol",
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V10",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "drijfvermogen",
+          "recht op berging"
+        ]
+      },
+      {
+        "label": "V11",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "waardevol",
+          "gekeurd",
+          "dubbel gekeurd"
+        ]
+      },
+      {
+        "label": "V12",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "zinkend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "berooid"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "drijvend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "vlot"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "meldplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "onvermogend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "vrijgegeven"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "duikplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "keurplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J5",
+      "characteristic": "zinkend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J5",
+      "characteristic": "berooid"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "drijvend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "vlot"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J5",
+      "characteristic": "meldplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J5",
+      "characteristic": "onvermogend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "vrijgegeven"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "duikplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "keurplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "zinkend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "berooid"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "drijvend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J6",
+      "characteristic": "vlot"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J6",
+      "characteristic": "meldplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "onvermogend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "vrijgegeven"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "duikplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J6",
+      "characteristic": "keurplichtig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J7",
+      "characteristic": "zinkend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "berooid"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "drijvend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "vlot"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J7",
+      "characteristic": "meldplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "onvermogend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "vrijgegeven"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J7",
+      "characteristic": "duikplichtig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J7",
+      "characteristic": "keurplichtig"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

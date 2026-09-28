@@ -1,0 +1,648 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zinkend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "berooid",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "drijvend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vlot",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "meldplichtig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "onvermogend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "vrijgegeven",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "duikplichtig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "keurplichtig",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "drijfvermogen",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "waardevol",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "recht op berging",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "dubbel gekeurd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinder van vondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "zinkende jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zinkend",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is zinkend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "drijfvermogen",
+                "negated": true,
+                "source": {
+                  "snippet": "alle vondsten van de Jutter geen drijfvermogen hebben"
+                }
+              },
+              "source": {
+                "snippet": "alle vondsten van de Jutter geen drijfvermogen hebben"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "berooide jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berooid",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is berooid"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "waardevol",
+                "negated": true,
+                "source": {
+                  "snippet": "alle vondsten van de Jutter niet waardevol zijn"
+                }
+              },
+              "source": {
+                "snippet": "alle vondsten van de Jutter niet waardevol zijn"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "drijvende jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "drijvend",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is drijvend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "drijfvermogen",
+                "negated": true,
+                "source": {
+                  "snippet": "geen van de vondsten van de Jutter geen drijfvermogen heeft"
+                }
+              },
+              "source": {
+                "snippet": "geen van de vondsten van de Jutter geen drijfvermogen heeft"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vlotte jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vlot",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is vlot"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "drijfvermogen",
+                "negated": false,
+                "source": {
+                  "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter drijfvermogen heeft"
+                }
+              },
+              "source": {
+                "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter drijfvermogen heeft"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldplichtige jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldplichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is meldplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "recht op berging",
+                "negated": true,
+                "source": {
+                  "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter geen recht op berging heeft"
+                }
+              },
+              "source": {
+                "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter geen recht op berging heeft"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "onvermogende jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "onvermogend",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is onvermogend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "waardevol",
+                "negated": false,
+                "source": {
+                  "snippet": "geen van de vondsten van de Jutter waardevol is"
+                }
+              },
+              "source": {
+                "snippet": "geen van de vondsten van de Jutter waardevol is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vrijgegeven jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vrijgegeven",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is vrijgegeven"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "dubbel gekeurd",
+                "negated": false,
+                "source": {
+                  "snippet": "alle vondsten van de vinder dubbel gekeurd zijn"
+                }
+              },
+              "source": {
+                "snippet": "alle vondsten van de vinder dubbel gekeurd zijn"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "duikplichtige jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "duikplichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is duikplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "drijfvermogen",
+                    "negated": true,
+                    "source": {
+                      "snippet": "alle vondsten van de Jutter geen drijfvermogen hebben"
+                    }
+                  },
+                  "source": {
+                    "snippet": "alle vondsten van de Jutter geen drijfvermogen hebben"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinder van vondst",
+                    "role": "vondst"
+                  }
+                },
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "waardevol",
+                    "negated": false,
+                    "source": {
+                      "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter waardevol is"
+                    }
+                  },
+                  "source": {
+                    "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter waardevol is"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinder van vondst",
+                    "role": "vondst"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - alle vondsten van de Jutter geen drijfvermogen hebben - ten minste \u00e9\u00e9n van de vondsten van de Jutter waardevol is."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurplichtige jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurplichtig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is keurplichtig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "gekeurd",
+                "negated": true,
+                "source": {
+                  "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter niet gekeurd is"
+                }
+              },
+              "source": {
+                "snippet": "ten minste \u00e9\u00e9n van de vondsten van de Jutter niet gekeurd is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinder van vondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

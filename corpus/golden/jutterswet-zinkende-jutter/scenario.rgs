@@ -1,0 +1,122 @@
+Scenario lege, volle en halve vangsten
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+- de vondsten zijn V1 en V2
+een Jutter J3
+- de vondsten zijn V3 en V4
+een Vondst V1
+- heeft drijfvermogen
+- is waardevol
+- heeft recht op berging
+- is gekeurd
+- is dubbel gekeurd
+een Vondst V2
+- heeft drijfvermogen
+- is waardevol
+- heeft recht op berging
+- is gekeurd
+- is dubbel gekeurd
+een Vondst V3
+- heeft drijfvermogen
+- is waardevol
+- heeft recht op berging
+- is gekeurd
+- is dubbel gekeurd
+een Vondst V4
+Met als verwacht resultaat:
+- J1 is zinkend
+- J1 is berooid
+- J1 is drijvend
+- J1 is niet vlot
+- J1 is niet meldplichtig
+- J1 is onvermogend
+- J1 is vrijgegeven
+- J1 is niet duikplichtig
+- J1 is niet keurplichtig
+- J2 is niet zinkend
+- J2 is niet berooid
+- J2 is drijvend
+- J2 is vlot
+- J2 is niet meldplichtig
+- J2 is niet onvermogend
+- J2 is vrijgegeven
+- J2 is niet duikplichtig
+- J2 is niet keurplichtig
+- J3 is niet zinkend
+- J3 is niet berooid
+- J3 is niet drijvend
+- J3 is vlot
+- J3 is meldplichtig
+- J3 is niet onvermogend
+- J3 is niet vrijgegeven
+- J3 is niet duikplichtig
+- J3 is keurplichtig
+- de gegevens zijn consistent
+
+Scenario kale, gekeurde en gekruiste vangsten
+Gegeven is de volgende situatie:
+een Jutter J4
+- de vondsten zijn V5 en V6
+een Jutter J5
+- de vondsten zijn V7 en V8
+een Jutter J6
+- de vondsten zijn V9 en V10
+een Jutter J7
+- de vondsten zijn V11 en V12
+een Vondst V5
+een Vondst V6
+een Vondst V7
+- is gekeurd
+een Vondst V8
+- is gekeurd
+een Vondst V9
+- is waardevol
+- is gekeurd
+een Vondst V10
+- heeft drijfvermogen
+- heeft recht op berging
+een Vondst V11
+- is waardevol
+- is gekeurd
+- is dubbel gekeurd
+een Vondst V12
+- is gekeurd
+Met als verwacht resultaat:
+- J4 is zinkend
+- J4 is berooid
+- J4 is niet drijvend
+- J4 is niet vlot
+- J4 is meldplichtig
+- J4 is onvermogend
+- J4 is niet vrijgegeven
+- J4 is niet duikplichtig
+- J4 is keurplichtig
+- J5 is zinkend
+- J5 is berooid
+- J5 is niet drijvend
+- J5 is niet vlot
+- J5 is meldplichtig
+- J5 is onvermogend
+- J5 is niet vrijgegeven
+- J5 is niet duikplichtig
+- J5 is niet keurplichtig
+- J6 is niet zinkend
+- J6 is niet berooid
+- J6 is niet drijvend
+- J6 is vlot
+- J6 is meldplichtig
+- J6 is niet onvermogend
+- J6 is niet vrijgegeven
+- J6 is niet duikplichtig
+- J6 is keurplichtig
+- J7 is zinkend
+- J7 is niet berooid
+- J7 is niet drijvend
+- J7 is niet vlot
+- J7 is meldplichtig
+- J7 is niet onvermogend
+- J7 is niet vrijgegeven
+- J7 is duikplichtig
+- J7 is niet keurplichtig
+- de gegevens zijn consistent
