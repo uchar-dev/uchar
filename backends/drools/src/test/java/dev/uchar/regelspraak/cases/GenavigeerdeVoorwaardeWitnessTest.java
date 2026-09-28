@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A voorwaarde that reads, through a to-one role, a value of the reached object that another rule DERIVES. The
@@ -28,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * afwezig}; and the anchor {@code kenmerk rustwacht: verwacht afwezig, werkelijk aanwezig} in both its cases. The
  * division row and the marker row stay red with the host rule alone repaired: their companions repeat the host's
  * voorwaarde and need the same test. The row without a relation is a flank: green before and after, it holds the
- * null alternative of the far-side join.
+ * null alternative of the far-side join. The row over a displaced role field pins the refusal the far-side join of
+ * a characteristic check gives where the bean carries no reference field.
  */
 class GenavigeerdeVoorwaardeWitnessTest {
 
@@ -173,6 +177,39 @@ class GenavigeerdeVoorwaardeWitnessTest {
                 + "\"parameters\":{}},\"expected\":[" + waarde("S", "afgeleide aanwijzing", "2026-02-01") + ", "
                 + waarde("J", "meldingaantal", null, "1") + "]}";
         assertNull(speel(ir, zaak), "de feitcreatie onder de voorwaarde op de afgeleide aanwijzing");
+    }
+
+    @Test void een_genavigeerde_kenmerkcheck_over_een_verdrongen_rolveld_weigert() throws Exception {
+        // synth-navigatiepremie with a Werf characteristic 'bedrijvig', a Schuit ATTRIBUTE named 'werf', which takes
+        // the bean property the role 'werf' would have (FactModelGenerator.leden: attribute > characteristic >
+        // reference), and the one rule "De toeslag van een Schuit moet gesteld worden op de lengte van de Schuit
+        // indien zijn werf bedrijvig is". The far-side join of the check asks for the role's field and finds the
+        // attribute's, so the rule is refused by name, as every other reader of that field is (RolveldlezerWitnessTest,
+        // OpslagrichtingWitnessTest). Measured 2026-09-28: ref and clingo answer toeslag leeg; on the jar of the claim
+        // the check read the attribute as the relation, an unclassified fault at fire once it is filled
+        // (ERROR ConstraintEvaluationException).
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
+                Path.of("..", "..", "corpus", "golden", "synth-navigatiepremie", "ir.json")));
+        IrPad.objectType(ir, "Werf").putArray("characteristics").addObject()
+                .put("node", "Characteristic").put("name", "bedrijvig").put("kind", "adjectival");
+        IrPad.addAttribute(IrPad.objectType(ir, "Schuit"), "werf", JSON.readTree(GEHEEL));
+        ObjectNode toeslag = IrPad.vorm(ir, "rules", "toeslag van een schuit");
+        IrPad.rules(ir).putArray("rules").add(toeslag);
+        ObjectNode versie = IrPad.versie(ir, "rules", "toeslag van een schuit");
+        versie.set("value", JSON.readTree(eigen("lengte", "Schuit")));
+        versie.set("condition", JSON.readTree("{\"node\":\"CharacteristicCheck\",\"characteristic\":\"bedrijvig\","
+                + "\"negated\":false,\"source\":{\"snippet\":\"zijn werf bedrijvig is\"},\"navigation\":{\"node\":"
+                + "\"RoleBinding\",\"factType\":\"ligplaats\",\"role\":\"werf\"}}"));
+        String zaak = "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
+                + "{\"label\":\"W1\",\"objectType\":\"Werf\",\"attributes\":{\"tarief\":{\"number\":\"312\"}},\"roles\":{},"
+                + "\"characteristics\":[\"bedrijvig\"]},"
+                + "{\"label\":\"S1\",\"objectType\":\"Schuit\",\"attributes\":{" + getal("lengte", "8") + ", "
+                + getal("werf", "5") + "},\"roles\":{},\"characteristics\":[]}],\"parameters\":{}},"
+                + "\"expected\":[" + leegVerwacht("S1", "toeslag") + "]}";
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir.toString(), zaak));
+        assertTrue(e.getMessage().contains("genavigeerde kenmerkcheck"), e.getMessage());
+        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"),
+                e.getMessage());
     }
 
     @Test void het_anker_kustwacht_speelt() throws Exception {
