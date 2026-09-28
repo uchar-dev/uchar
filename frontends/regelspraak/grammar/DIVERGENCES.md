@@ -1165,6 +1165,50 @@ before. Witnesses: `NavigatiekeuzeTest`, `TelbereikTest`, `SubtypeDialectTest`.
 
 ---
 
+## §13.4.15.45 A characteristic check under a quantifier reads its name whole
+
+Not a dialect extension and not a narrowing: the reading of a sanctioned
+sentence that this frontend had wrong. In "alle vondsten van de Jutter geen
+drijfvermogen hebben" the name of the member phrase's anchor runs on over every
+name word, so the anchor reads "Jutter geen" and the operator keeps
+"drijfvermogen" alone; in "… geen recht op berging hebben" the anchor takes
+"geen recht op". The quantifier fold read the operator's name and gave back a
+trailing `niet` only, so the negation of a possessive characteristic (Tabel 16's
+`heeft geen`), and `geen` before any other kind, went out as the affirmed check,
+and a multi-word name was cut to its last word: `dubbel gekeurd` bound the
+characteristic `gekeurd` where the element declares both, and `recht op berging`
+bound nothing and stayed a marker. Measured 2026-09-29 over 88 forms — the three
+quantifiers `alle`, `geen van de` and `ten minste één van de` over a possessive
+and an adjectival characteristic, affirmed and negated with `niet` and `geen`,
+with both verbs of Tabel 16; multi-word names; the anchor written as the role
+name and with `een`; the bullets; a negation in and after a subselection; the
+role checks; four spellings of an existential — 27 reached disk with
+`diagnostics: []` and were answered wrongly by ref and clingo alike, and by both
+Drools branches wherever these play the form (24 of the 27; the other 3 are
+bullets under `ten minste één van de volgende voorwaarden`, which both branches
+refuse), among them every `geen` under a quantifier. The anchor names
+the rule subject, so the frontend now reads the words after the name the anchor
+writes it with (a type name along the subject's chain, or the declared name or
+plural of the role the subject fills in the fold's relation, the longest that
+opens the anchor) as the front of the predicate, and binds the whole name as the
+unquantified check does: the written name first, then a leading `niet` or
+`geen` as the negation, with the same Tabel 16 register warning. An anchor
+written otherwise gives back only a trailing `niet` or `geen`. Now 79 of the 88
+forms are answered as written by ref and clingo, and by both Drools branches but
+for the 12 bullets under `ten minste één van de volgende voorwaarden`, which they
+refuse as before; the other 9 are refused loudly by the frontend: a negation
+inside a `die/dat` subselection (an ERROR: the subselection binds nothing), a
+role check of the element (a marker with its WARNING), and the existential
+spellings (`er een vondst van de Jutter is die …`, `hij een vondst heeft die
+…`), which do not parse. Of the 164 sources of the corpus and the parity zone only
+`jutterswet-schouwploeg` writes a characteristic check under a quantifier, with
+the anchor tails "" and `niet`; all 178 documents (every source alone, every
+scenario document with its source, the casus of the parity zone) emit the same
+IR, diagnostics, case files and exit code before and after. Witnesses:
+`OntkendeKwantorTest`, the golden `jutterswet-zinkende-jutter`.
+
+---
+
 ## §13.4.17.47 The count's operand list — an ACCEPTING superset, fenced in the resolver
 
 Unlike the three sections above this is **not** a dialect extension and it is
