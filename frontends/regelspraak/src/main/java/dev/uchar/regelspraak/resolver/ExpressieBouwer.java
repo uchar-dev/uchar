@@ -2734,6 +2734,48 @@ final class ExpressieBouwer {
                     + "zou een andere verzameling toetsen dan de zin noemt");
     }
 
+    /**
+     * The words the parse of a quantified member phrase took from the predicate after it. The anchor's name
+     * runs on over every name word, so in "alle vondsten van de Jutter geen recht op berging hebben" it reads
+     * "Jutter geen recht op" and the operator keeps "berging" alone: the negation and the leading words of a
+     * multi-word characteristic stand in the anchor. The anchor names the rule subject, so the words after
+     * the name it is written with are the ones the parse took. {@code namen} are the names it may be written
+     * with; the longest that opens the anchor wins.
+     *
+     * <p>Empty when the anchor is exactly such a name. Null when the anchor is no plain "de|het|een
+     * &lt;naam&gt;" (a subselection, a possessive, a further step) or opens with none of the names: the
+     * split is then not read here.
+     */
+    String ankerStaart(ExpressieContext e, List<String> namen) {
+        PrimaireExpressieContext p = e instanceof PrimaireExprContext pe ? pe.primaireExpressie() : null;
+        AttribuutVanOnderwerpContext a = p == null ? null : p.attribuutVanOnderwerp();
+        KaleNaamContext anker = a == null ? null : ankerNaam(a.onderwerp());
+        if (anker == null) return null;
+        String tekst = src(anker);
+        String gekozen = null;
+        for (String n : namen) {
+            if (n == null || n.isBlank()) continue;
+            String naam = n.trim().replaceAll("\\s+", " ");
+            boolean opent = tekst.equalsIgnoreCase(naam) || tekst.regionMatches(true, 0, naam + " ", 0, naam.length() + 1);
+            if (opent && (gekozen == null || naam.length() > gekozen.length())) gekozen = naam;
+        }
+        return gekozen == null ? null : tekst.substring(gekozen.length()).trim();
+    }
+
+    /** The name of a plain anchor: "de &lt;naam&gt;" as a quantification without a further step, "de|het
+     *  &lt;naam&gt;" as a reference without a rangtelwoord, or "een &lt;naam&gt;". Null for any other shape. */
+    private static KaleNaamContext ankerNaam(OnderwerpContext o) {
+        if (o == null) return null;
+        if (o.kwantificatie() != null)
+            return o.kwantificatie().getChildCount() == 1 && o.kwantificatie().DE() != null && o.onderwerp() == null
+                    ? o.kaleNaam() : null;
+        OnderwerpKetenContext k = o.onderwerpKeten();
+        if (k == null) return null;
+        if (k.onderwerpVerwijzing() != null)
+            return k.onderwerpVerwijzing().rangtelwoord() == null ? k.onderwerpVerwijzing().kaleNaam() : null;
+        return k.universeelOnderwerp() != null ? k.universeelOnderwerp().kaleNaam() : null;
+    }
+
     /** Whether {@code naam} is a DECLARED plural — an objecttype's "(mv: …)" or a feittype role's. It is
      *  what tells a bare "de &lt;leden&gt; van de &lt;X&gt;" written as a SET from an ordinary to-one
      *  navigation ("de reis van de passagier"), so only the former hears that a quantifier fold declined.

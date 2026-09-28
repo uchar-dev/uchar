@@ -4842,11 +4842,16 @@ final class RuleChecker {
                     bron);
             return null;
         }
-        Conditie toets = elementKenmerk(g.element(), naamCtx, metEen, heeftWerkwoord,
-                absorbedNegator(lhs), bron);
+        // The anchor names the rule subject, and what the parse took after that name belongs to the predicate:
+        // a negation, and the leading words of a multi-word name. From an anchor ankerStaart cannot read, only a
+        // trailing negation word is taken back.
+        String staart = bouwer.ankerStaart(lhsCtx, ankernamen(bouwer.subject(), bronRol));
+        if (staart == null) staart = geabsorbeerdeOntkenning(lhs);
+        String naam = (staart.isEmpty() ? "" : staart + " ") + stripArtikel(src(naamCtx));
+        Conditie toets = elementKenmerk(g.element(), naam, metEen, heeftWerkwoord, bron);
         if (toets == null) {
             meldVouwWeigering(g.onderwerpBron(),
-                    "'" + stripArtikel(src(naamCtx)) + "' is geen kenmerk van " + g.element().naam
+                    "'" + naam.replaceFirst("^(?i)(niet|geen)\\s+", "") + "' is geen kenmerk van " + g.element().naam
                     + " — een §8.1.7-rolcontrole van het element is een andere gekwantificeerde vraag, en een "
                     + "kenmerk van het regelonderwerp op het element lezen zou iets anders beantwoorden dan de "
                     + "zin vraagt (§8.1.7/§8.1.8)", bron);
@@ -4870,6 +4875,33 @@ final class RuleChecker {
                 toets, bronRol, List.of(), bron);
     }
 
+    /** The names the anchor of a quantified member phrase may call the rule subject by: the type names along
+     *  its chain, and the declared name and plural of each role of the fold's relation that the subject's
+     *  chain fills. {@link ExpressieBouwer#ankerStaart} splits the anchor after the longest of them. */
+    private List<String> ankernamen(Objecttype subject, RegelSpraakModel.RolBindingRef bereik) {
+        List<String> namen = new ArrayList<>();
+        List<Objecttype> keten = subject.keten();
+        for (Objecttype t : keten) namen.add(t.naam);
+        RegelSpraakModel.Feittype ft = model.feittypen.get(bereik.feittype());
+        if (ft != null)
+            for (RegelSpraakModel.Rol r : ft.rollen)
+                if (keten.contains(model.objecttypeOpNaam(r.objecttypeNaam()))) {
+                    namen.add(r.naam());
+                    if (r.meervoud() != null) namen.add(r.meervoud());
+                }
+        return namen;
+    }
+
+    /** The negation word a quantified member phrase took into an anchor that {@link ExpressieBouwer#ankerStaart}
+     *  does not read: "niet" as {@link #absorbedNegator} reads it, or "geen" read the same way; empty when the
+     *  operand ends in neither. */
+    private static String geabsorbeerdeOntkenning(Expr lhs) {
+        if (absorbedNegator(lhs)) return "niet";
+        return lhs instanceof Expr.AttribuutRef a && a.bron() != null
+                && a.bron().snippet().stripTrailing().toLowerCase().endsWith(" geen")
+                && !a.attribuut().toLowerCase().endsWith("geen") ? "geen" : "";
+    }
+
     /** One decline of the membership fold, said out loud: which member phrase, on which axis, and what
      *  the sentence gets instead. Raised only where the phrase IS a quantified member phrase — a sentence
      *  that writes no quantifier gets no word about folds — and always a WARNING: the caller's marker is
@@ -4886,14 +4918,12 @@ final class RuleChecker {
      *  verb lint all apply unchanged. Null when the name is no kenmerk of the element (a §8.1.7 rolcheck
      *  among them), which keeps the caller's marker rather than inventing a membership.
      *
-     *  <p>{@code geabsorbeerd} is a §8.1.8.1 "niet" the greedy onderwerp parse pulled INTO the member
-     *  phrase ("geen van de wachten van de Schouwploeg NIET gediplomeerd is" leaves the anchor's kaleNaam
-     *  reading "Schouwploeg niet" and the operator's the bare kenmerk). It is put back where it was
-     *  written — in front of the kenmerk name — so the ordinary verbatim-first de-negation handles it and
-     *  a kenmerk literally named "niet …" still binds positively. */
-    private Conditie elementKenmerk(Objecttype elem, KaleNaamContext naamCtx, boolean metEen,
-                                    boolean heeftWerkwoord, boolean geabsorbeerd, Bron bron) {
-        String naam = (geabsorbeerd ? "niet " : "") + stripArtikel(src(naamCtx));
+     *  <p>{@code naam} is the name as written: the caller has put back in front of the operator's name what
+     *  the greedy onderwerp parse pulled INTO the member phrase ("geen van de wachten van de Schouwploeg NIET
+     *  gediplomeerd is" leaves the anchor's kaleNaam reading "Schouwploeg niet" and the operator's the bare
+     *  kenmerk), so the ordinary verbatim-first de-negation handles a "niet" or "geen" there and a kenmerk
+     *  literally named "niet …" or "geen …" still binds positively. */
+    private Conditie elementKenmerk(Objecttype elem, String naam, boolean metEen, boolean heeftWerkwoord, Bron bron) {
         if (metEen)
             return heeftWerkwoord ? bezittelijkKenmerk(elem, naam, bron) : zelfstandigKenmerk(elem, naam, bron);
         Conditie kc = kenmerkConditie(elem, naam, null, heeftWerkwoord, bron);
