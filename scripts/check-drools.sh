@@ -13,7 +13,8 @@
 #      (a loader Refusal on a v1 node/section, a transpiler MARKER/SKIP, a contract violation, a
 #      temporal/dimensioned/rational/list/struct input, an OBJECTCREATIE (§13.4.6) whose back-link
 #      the bean model cannot hold, a WEDERKERIG self-relation (§13.3.9.2), an attributeTimeline
-#      read-back). The reason is printed; these self-document per form. A form that lowers but
+#      read-back, two declarations on one Java name of the bean model). The reason is printed; these
+#      self-document per form. A form that lowers but
 #      faults / yields the wrong value at fire is not carried and lands HERE, not in channel 2.
 #   2. VALUE-DIVERGENCE exclusions — a golden that loads, lowers, fires WITHOUT faulting, and
 #      produces a WRONG VALUE (a FAIL: verwacht X, werkelijk Y). The exec-model (the production
@@ -221,13 +222,14 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: AANTAL over a to-one element role whose sister role is plural — one shared bean field; a CONSERVATIVE refusal since 2026-09-10, its old ground withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
   "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
-  "anchor/jutterswet-toelagegronden|EXCLUDE|transpiler SKIP: the kenmerk target shares its name with an attribute — the bean carries one field per name (v0 bean-model limit, not a defaults divergence)"
+  "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
   "anchor/jutterswet-vindersloon|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-aanspraakherziening|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-afdrachtstapel|EXCLUDE|transpiler SKIP: regel 'overbelast bij gezamenlijke afdracht' — voorwaarde buiten Phase-B scope. The exec-model branch's numeric comparison arms admit an operand typed as a NUMBER only (getalachtigVergelijkbaar, and the literal arm's isNumeriek), and both sides here are percentages: the sum or difference of two percentage attributes, which the loader reads as a percentage since L3, compared with a percentage literal. The literal alone already kept the arms shut on the L2 base (the L3 lens measured the same EXCLUDE there on a document of this shape). The DRL-text branch plays the golden with ref's and clingo's values (PLAYED 1). Measured 2026-09-24 (card l3-typesysteem, fix round): a gap of this branch and not a semantic difference, so the golden's pins are a ref = clingo = DRL-text triple"
   "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
+  "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
   "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: the day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand — it compiles a voorwaarde ONCE into the KieBase while parameter values arrive per case as session globals, so a parameter-bound day kind has no compiled predicate and the reaching rule is skipped (waarde buiten scope). Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
@@ -247,6 +249,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
+  "jutterswet-premiespelling|EXCLUDE|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
@@ -1057,25 +1060,24 @@ EXPECTED_PLAYED=219
 # tokens the runner's --drl entry prints verbatim, so what is pinned IS what is measured; the fourth
 # is the sweep's own. The branch's FIFTH token, PLAYED, is deliberately not listable — it is the
 # default and pinning it would exempt a golden instead of holding it.
-#   EXCLUDE  printed — a per-form refusal: a loader Refusal, a DrlTranspiler MARKER, or the branch's
-#            own ch. 7 defaults refusal
+#   EXCLUDE  printed — a per-form refusal: a loader Refusal, a DrlTranspiler MARKER, the branch's
+#            own ch. 7 defaults refusal, or the bean name collision both branches share
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-two of the eighty-seven
-# entries carry one of three class reasons, and a per-golden retelling of the same sentence would be
+# Why the reasons are grouped rather than written one by one: eighty-four of the eighty-nine
+# entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 35 lines, and since the objectcreatie repair below the ONLY
+  # (A) ch. 7 prioritizedDefaults — 34 lines, and since the objectcreatie repair below the ONLY
   # remaining reason of size for this count sitting 31 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 34 of the 35 lines refuse on that one
-  # sentence; the 35th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. 33 of those 34 ARE that asymmetry — the exec branch plays
-  # them. anchor/jutterswet-toelagegronden is NOT, and is named here so the class is not read as 34
-  # exec-only players: the exec branch refuses it too, on a different sentence (its kenmerk target
-  # shares its name with an attribute, a v0 bean-model limit), so it contributes nothing to the gap.
+  # toolchain does not have, and DrlTranspiler never did. 33 of the 34 lines refuse on that one
+  # sentence; the 34th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. All 33 ARE that asymmetry — the exec branch plays them.
+  # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
+  # refused too; both branches now refuse it on the bean name collision of class (F).
   # The 31 is 35 exec-only players — those 33, jutterswet-vouwrand of class (C) and
   # jutterswet-initialisatievolgorde of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
@@ -1107,13 +1109,15 @@ DRL_CHANNEL=(
   # jutterswet-jaarvaststelling, jutterswet-vocabulaires and jutterswet-premierecht play in both
   # branches and moved neither the gap nor a class head (218 - 188); jutterswet-opgave-datum joins the
   # class, 34 -> 35 lines and 30 -> 31 (218 -> 219 at EXPECTED_PLAYED), and the five class heads (A 35,
-  # B 37, C 10, D 2, E 3 = 87 lines) were counted against the list.
+  # B 37, C 10, D 2, E 3 = 87 lines) were counted against the list. Recounted again the same day (the
+  # bean name collision): anchor/jutterswet-toelagegronden leaves the class for class (F), 35 -> 34
+  # lines, and the two new goldens of (F) move neither played count, so the gap stays 31 (219 - 188);
+  # the six class heads (A 34, B 37, C 10, D 2, E 3, F 3 = 89 lines) were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestuitzondering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-strandrechtketen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
-  "anchor/jutterswet-toelagegronden|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-uitsluiting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-vondstwaardering|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/ww-herleving-inkomen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1240,6 +1244,15 @@ DRL_CHANNEL=(
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file"
+  # (F) Bean name collisions — 3, SHARED with the exec branch and refused before either branch lowers
+  # the document: two declarations fall on one Java name of the bean model, an object type on a fact
+  # class another type already has, or a member the document uses on a bean property another member
+  # carries. The sentence is the exec branch's word for word, and each line names an EXPECTED_CHANNEL
+  # entry above. jutterswet-halfstokspelling and jutterswet-premiespelling are new goldens refused in
+  # both branches, so neither played count moves.
+  "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property; a defaults group writes the characteristic. Until 2026-09-28 this branch refused it on its defaults sentence, class (A)"
+  "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' falls on the bean property Sein.halfStok of the attribute 'half-stok'; a rule writes it"
+  "jutterswet-premiespelling|EXCLUDE|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class"
 )
 # The count that closes the direction a played-by-default list cannot see: a NEW golden that plays in
 # THIS branch. An equality, for the reason EXPECTED_PLAYED is one.
