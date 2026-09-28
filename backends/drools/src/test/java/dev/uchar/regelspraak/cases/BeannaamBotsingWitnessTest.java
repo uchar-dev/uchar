@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * case-insensitively, not as Java identifiers, and WF-002 lets an attribute and a characteristic share even the
  * same name), so every model below is verifier-clean where the square applies.
  *
- * <p>Measured before this class existed, on the jar built from the claim commit: two object types on one class
+ * <p>Measured on the backend as it stood before these refusals: two object types on one class
  * crashed the bean compile ({@code cyclic inheritance}) or broke the bean contract (a getter of the first type
  * missing on the class of the second), and with identical members built and answered for both types at once;
  * two members on one property either crashed at fire, failed the DRL compile for the whole document, or wrote
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * belongs to another declaration is refused where the document uses it — at build when a form of the rule layer
  * reads or writes it, and when a case sets or reads it — naming both declarations and the property. A member
  * whose property another declaration took and that nothing uses stays out of the way: a document with such a
- * member plays (the TOKA casus carries one, and gate 11 replays it).
+ * member plays, as it did before.
  *
  * <p>Every model is an in-memory variant of a corpus golden; the corpus is untouched.
  */
@@ -58,7 +58,7 @@ class BeannaamBotsingWitnessTest {
     // ---------------- 1. two declarations on one fact class ----------------
 
     @Test void twee_objecttypen_met_is_een_op_een_klasse_worden_benoemd_geweigerd() throws Exception {
-        // the shape the werkbank met: a type written as one word, declared first, and its subtype as three
+        // the shape first reported: a type written as one word, declared first, and its subtype as three
         // words; the subtype's class then extends itself ("cyclic inheritance")
         ObjectNode ir = ir(PREMIERECHT);
         ObjectNode ouder = objecttype(ir, "RechtOpPremie", null);
@@ -122,7 +122,7 @@ class BeannaamBotsingWitnessTest {
     // ---------------- 2. a used member without a field of its own ----------------
 
     @Test void attribuut_en_kenmerk_met_dezelfde_naam_worden_benoemd_geweigerd() throws Exception {
-        // the shape of the card: WF-002 lets an attribute and a characteristic share a name, and the golden's
+        // the reported shape: WF-002 lets an attribute and a characteristic share a name, and the golden's
         // rules read the characteristic 'toegekend'. No rule may WRITE a name that is both (WF-022, the loader
         // refuses it as the verifier does), so the rule that attributes it goes and a case supplies it.
         ObjectNode ir = ir(PREMIERECHT);
@@ -213,7 +213,7 @@ class BeannaamBotsingWitnessTest {
     @Test void een_ongebruikt_lid_zonder_eigen_veld_laat_het_document_spelen() throws Exception {
         // a characteristic 'vondstgewicht' beside the attribute of that name, read and written by nothing: the
         // property carries the attribute and nobody asks after the characteristic, so the golden's two cases play
-        // with its own values in both branches — the shape of the TOKA casus, which gate 11 replays
+        // with its own values in both branches
         ObjectNode ir = ir(PREMIERECHT);
         ((ArrayNode) IrPad.objectType(ir, "Recht op premie").get("characteristics")).add(JSON.readTree(
                 "{\"node\":\"Characteristic\",\"name\":\"vondstgewicht\",\"kind\":\"adjectival\"}"));
