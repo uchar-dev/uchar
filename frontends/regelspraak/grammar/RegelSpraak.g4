@@ -362,9 +362,20 @@ naamWoordAny : naamWoordLower | UPPER_ID | EEN | VANAF | ZIJN ;
 vrijeNaam : naamWoordAny+ ;
 
 // Capitalised name (objecttype / domein), per the capitalisation convention.
-objectTypeNaam : UPPER_ID ( UPPER_ID | LOWER_ID )* ;
+// An object-type name also carries, after its first capitalised word, the prepositions rule text already reads
+// in a name (kaleNaamWoord): 'Recht op premie', 'Vondst bij eb', 'Premie tot en met eb'. The production stands
+// in the head, the extension head, the 'is een' clause, the role filler and the scenario instance, and the words
+// hold in all five. 'van', the articles and every other keyword stay out: 'van' is the navigation separator of
+// rule text, so a type name carrying it would not read back there, and a hyphen joins such a word to its
+// neighbour ('Vondst-van-eb'). A member without an article that opens with a preposition on the head's own line
+// is now read into the name (the loop is greedy); the resolver refuses a member that begins on the line where the
+// head ended, so that reading is loud (grammar/DIVERGENCES.md, "Namen in declaratiekoppen").
+objectTypeNaam : UPPER_ID ( UPPER_ID | LOWER_ID | OP | BIJ | IN | VOOR | OVER | TOT | TOT_EN_MET | PER | MET )* ;
 domeinNaam     : UPPER_ID ( UPPER_ID | LOWER_ID )* ;
-meervoudsvorm  : ( UPPER_ID | LOWER_ID ) ( UPPER_ID | LOWER_ID )* ;
+// A plural runs up to its closing parenthesis, so it takes every word rule text reads in a name: '(mv: Rechten op
+// premie)', '(mv: rechten op premie)'. The parenthesis bounds it, so no reading of what follows changes
+// (grammar/DIVERGENCES.md, "Namen in declaratiekoppen").
+meervoudsvorm  : kaleNaamWoord+ ;
 
 bepaaldLidwoord   : DE | HET ; // §13.2.10
 onbepaaldLidwoord : EEN ;      // §13.2.11
@@ -583,9 +594,26 @@ feitTypeDefinition
     : FEITTYPE feitTypeNaam benaming* rolSpecificatie rolSpecificatie feitTypeCardinaliteit SEMICOLON?      // §13.3.9.1
     | WEDERKERIG_FEITTYPE feitTypeNaam benaming* rolSpecificatie feitTypeCardinaliteit SEMICOLON?           // §13.3.9.2
     ;
-feitTypeNaam : feitTypeNaamWoord+ ; // §13.3.9.3 — excludes DE/HET so it stops at the role article
+// §13.3.9.3: a fact-type name runs up to its first role. It takes every one-word token, the verbs included
+// ('jutter heeft premierecht', 'vondst is aangemeld'), and 'tot en met', the one phrase every other name admits.
+// Fact-type names never occur in rule text, so no reading there bounds the set. Out of it, each for its reason:
+// DE and HET open the role line; EEN_TELWOORD and MEERDERE open the cardinality line; the keywords that open a
+// block (Objecttype, Domein, Dimensie, Eenheidsysteem, Parameter, Feittype, Dagsoort, Vocabulaire, Tijdlijn,
+// Regelgroep, Uitzonderingen, Regel, Beslistabel, Situatie, Parameterset, Scenario) stay out so a fact type
+// without roles still fails at the next block instead of taking its keyword into the name; the phrase tokens and
+// the signs are no words (grammar/DIVERGENCES.md, "Namen in declaratiekoppen").
+feitTypeNaam : feitTypeNaamWoord+ ;
 feitTypeNaamWoord
-    : LOWER_ID | UPPER_ID | VAN | OP | IN | VOOR | OVER | BIJ | TOT | PER | MET | EN | OF | NUMBER
+    : LOWER_ID | UPPER_ID | NUMBER | TOT_EN_MET
+    | VAN | VANAF | OP | IN | VOOR | OVER | BIJ | TOT | TM | PER | MET | UIT | EN | OF | ER | DAT | DIE | ELKE | NIET
+    | ALS | EEN | AL | ALLE | PRECIES | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD | AANTAL_WORD
+    | HEEFT | HEBBEN | IS | ZIJN | MOET | MOETEN | VOLDOET | VOLDOEN | GELDIG | GELDIG_CAP | ALTIJD | INDIEN
+    | RECURSIEF | ONGEORDEND | KENMERK | HIJ | REGELVERSIE | REKENDATUM | REKENJAAR
+    | GELIJK | ONGELIJK | GROTER | KLEINER | LATER | EERDER | LEEG | GEVULD | GEVUURD | CONSISTENT | INCONSISTENT
+    | UNIEK | DAN | AAN | WAAR | ONWAAR | PLUS | MIN | MAAL | REKENKUNDIG | DECIMALEN | CIJFERS
+    | GETAL | NEGATIEF | POSITIEF | NIET_NEGATIEF | NUMERIEK | PERCENTAGE | TEKST | BOOLEAN | ENUMERATIE
+    | DAG | WEEK | MAAND | KWARTAAL | JAAR | UUR | MINUUT | SECONDE | MILLISECONDE | PERIODE | HELE
+    | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN | AFNEMENDE | TOENEMENDE | EERSTGENOEMDE | LAATSTGENOEMDE
     ;
 // §13.3.9.1: '<lidwoord>? <rolnaam> <objecttypenaam>'. Capitalisation splits role
 // (lowercase) from objecttype (capitalised) — see header note on naming.
