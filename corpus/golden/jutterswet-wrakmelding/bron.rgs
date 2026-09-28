@@ -1,0 +1,78 @@
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    het meldingental Numeriek (geheel getal);
+    het rapportcijfer Numeriek (geheel getal);
+
+Objecttype de Wrakvondst is een Vondst (mv: Wrakvondsten)
+    het aantal meldingen Numeriek (geheel getal);
+    de meldsom Numeriek (geheel getal);
+    het meldgeld Numeriek (geheel getal);
+    de meldrest Numeriek (geheel getal);
+    het wrakcijfer Numeriek (geheel getal);
+    is veelgemeld kenmerk (bijvoeglijk);
+    is gemeld kenmerk (bijvoeglijk);
+
+Objecttype het Scheepswrak is een Wrakvondst (mv: Scheepswrakken)
+    de diepte Numeriek (geheel getal);
+
+Objecttype de Melding (mv: Meldingen)
+    de ernst Numeriek (geheel getal);
+    de gemelde waarde Numeriek (geheel getal);
+    het meldaandeel (mv: meldaandelen) Numeriek (geheel getal);
+
+Objecttype het Rapport (mv: Rapporten)
+    het cijfer Numeriek (geheel getal);
+    de rapportwaarde Numeriek (geheel getal);
+
+Feittype vondst heeft melding
+    de vondst Vondst
+    de melding (mv: meldingen) Melding
+Eén vondst heeft meerdere meldingen
+
+Feittype vondst heeft rapport
+    de gerapporteerde vondst Vondst
+    het rapport Rapport
+Eén gerapporteerde vondst heeft één rapport
+
+Regel gemelde waarde van een melding
+    geldig altijd
+        De gemelde waarde van een Melding moet gesteld worden op de waarde van de vondst van de Melding.
+
+Regel aantal meldingen van een wrakvondst
+    geldig altijd
+        Het aantal meldingen van een Wrakvondst moet berekend worden als het aantal meldingen van de Wrakvondst.
+
+Regel meldingental van een vondst
+    geldig altijd
+        Het meldingental van een Vondst moet berekend worden als het aantal meldingen van de Vondst.
+
+Regel meldsom van een wrakvondst
+    geldig altijd
+        De meldsom van een Wrakvondst moet berekend worden als de som van de ernst van alle meldingen van de Wrakvondst.
+
+Regel veelgemeld bij ernst
+    geldig altijd
+        Een Wrakvondst is veelgemeld indien de ernst van ten minste 2 van de meldingen van de Wrakvondst groter is dan 3.
+
+Regel gemeld als vondst
+    geldig altijd
+        Een Wrakvondst is gemeld indien hij een vondst is.
+
+Regel verdeel het meldgeld
+    geldig altijd
+        Het meldgeld van een Wrakvondst wordt verdeeld over de meldaandelen van alle meldingen van de Wrakvondst, waarbij wordt verdeeld:
+        - in gelijke delen,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de meldrest van de Wrakvondst over.
+
+Regel rapportwaarde van een rapport
+    geldig altijd
+        De rapportwaarde van een Rapport moet gesteld worden op de waarde van de gerapporteerde vondst van het Rapport.
+
+Regel wrakcijfer van een wrakvondst
+    geldig altijd
+        Het wrakcijfer van een Wrakvondst moet gesteld worden op het cijfer van het rapport van de Wrakvondst.
+
+Regel rapportcijfer van een vondst
+    geldig altijd
+        Het rapportcijfer van een Vondst moet gesteld worden op het cijfer van het rapport van de Vondst.

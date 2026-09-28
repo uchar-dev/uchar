@@ -1,0 +1,129 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S",
+        "objectType": "Scheepswrak",
+        "attributes": {
+          "waarde": {
+            "number": "9"
+          },
+          "meldgeld": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "N1",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "S"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "N2",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "S"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "N1",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "N2",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "aantal meldingen",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "meldingental",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "meldsom",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S",
+      "characteristic": "veelgemeld"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S",
+      "characteristic": "gemeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "N1",
+      "attribute": "meldaandeel",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "N2",
+      "attribute": "meldaandeel",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "meldrest",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}

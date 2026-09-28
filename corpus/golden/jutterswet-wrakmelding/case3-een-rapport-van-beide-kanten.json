@@ -1,0 +1,153 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "waarde": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R",
+        "objectType": "Rapport",
+        "attributes": {
+          "cijfer": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "gerapporteerde vondst": [
+            "W"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "rapport": [
+            "Q"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "Q",
+        "objectType": "Rapport",
+        "attributes": {
+          "cijfer": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S",
+        "objectType": "Scheepswrak",
+        "attributes": {
+          "waarde": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "rapport": [
+            "P"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P",
+        "objectType": "Rapport",
+        "attributes": {
+          "cijfer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "R",
+      "attribute": "rapportwaarde",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "wrakcijfer",
+      "value": {
+        "number": "8"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "rapportcijfer",
+      "value": {
+        "number": "8"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "Q",
+      "attribute": "rapportwaarde",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "rapportcijfer",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P",
+      "attribute": "rapportwaarde",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "wrakcijfer",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "rapportcijfer",
+      "value": {
+        "number": "2"
+      }
+    }
+  ]
+}

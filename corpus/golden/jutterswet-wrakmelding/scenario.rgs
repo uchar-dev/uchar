@@ -1,0 +1,94 @@
+Scenario een wrakvondst in de rol van de vondst
+Gegeven is de volgende situatie:
+een Vondst V
+- de waarde is 2
+een Wrakvondst W
+- de waarde is 5
+- het meldgeld is 10
+een Wrakvondst X
+- de waarde is 7
+- het meldgeld is 4
+een Melding M1
+- de vondst is W
+- de ernst is 4
+een Melding M2
+- de vondst is W
+- de ernst is 5
+een Melding M3
+- de vondst is W
+- de ernst is 1
+een Melding M4
+- de vondst is V
+- de ernst is 6
+Met als verwacht resultaat:
+- de gemelde waarde van M1 is 5
+- de gemelde waarde van M2 is 5
+- de gemelde waarde van M3 is 5
+- de gemelde waarde van M4 is 2
+- het aantal meldingen van W is 3
+- het aantal meldingen van X is 0
+- het meldingental van V is 1
+- het meldingental van W is 3
+- het meldingental van X is 0
+- de meldsom van W is 10
+- de meldsom van X is leeg
+- W is veelgemeld
+- X is niet veelgemeld
+- W is gemeld
+- X is niet gemeld
+- het meldaandeel van M1 is 3
+- het meldaandeel van M2 is 3
+- het meldaandeel van M3 is 3
+- het meldaandeel van M4 is leeg
+- de meldrest van W is 1
+- de meldrest van X is leeg
+
+Scenario een scheepswrak twee niveaus onder de vuller
+Gegeven is de volgende situatie:
+een Scheepswrak S
+- de waarde is 9
+- het meldgeld is 7
+een Melding N1
+- de vondst is S
+- de ernst is 2
+een Melding N2
+- de vondst is S
+- de ernst is 8
+Met als verwacht resultaat:
+- de gemelde waarde van N1 is 9
+- de gemelde waarde van N2 is 9
+- het aantal meldingen van S is 2
+- het meldingental van S is 2
+- de meldsom van S is 10
+- S is niet veelgemeld
+- S is gemeld
+- het meldaandeel van N1 is 3
+- het meldaandeel van N2 is 3
+- de meldrest van S is 1
+
+Scenario een rapport van beide kanten
+Gegeven is de volgende situatie:
+een Wrakvondst W
+- de waarde is 6
+een Rapport R
+- het cijfer is 8
+- de gerapporteerde vondst is W
+een Vondst V
+- de waarde is 3
+- het rapport is Q
+een Rapport Q
+- het cijfer is 4
+een Scheepswrak S
+- de waarde is 1
+- het rapport is P
+een Rapport P
+- het cijfer is 2
+Met als verwacht resultaat:
+- de rapportwaarde van R is 6
+- het wrakcijfer van W is 8
+- het rapportcijfer van W is 8
+- de rapportwaarde van Q is 3
+- het rapportcijfer van V is 4
+- de rapportwaarde van P is 1
+- het wrakcijfer van S is 2
+- het rapportcijfer van S is 2

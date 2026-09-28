@@ -1,0 +1,702 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingental",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rapportcijfer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakvondst",
+        "supertype": "Vondst",
+        "animate": false,
+        "plural": "Wrakvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal meldingen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldgeld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldrest",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wrakcijfer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "veelgemeld",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gemeld",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Scheepswrak",
+        "supertype": "Wrakvondst",
+        "animate": false,
+        "plural": "Scheepswrakken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "diepte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ernst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gemelde waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldaandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "meldaandelen"
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Rapport",
+        "animate": false,
+        "plural": "Rapporten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "cijfer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rapportwaarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vondst heeft melding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "plural": "meldingen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vondst heeft rapport",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gerapporteerde vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "rapport",
+            "objectType": "Rapport",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "gemelde waarde van een melding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gemelde waarde",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "De gemelde waarde van een Melding"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de waarde van de vondst van de Melding"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vondst heeft melding",
+                  "role": "vondst"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal meldingen van een wrakvondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal meldingen",
+              "subjectType": "Wrakvondst",
+              "source": {
+                "snippet": "Het aantal meldingen van een Wrakvondst"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldingen",
+                  "subjectType": "Wrakvondst",
+                  "source": {
+                    "snippet": "meldingen van de Wrakvondst"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondst heeft melding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal meldingen van de Wrakvondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldingental van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldingental",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het meldingental van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldingen",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "meldingen van de Vondst"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondst heeft melding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal meldingen van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldsom van een wrakvondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldsom",
+              "subjectType": "Wrakvondst",
+              "source": {
+                "snippet": "De meldsom van een Wrakvondst"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ernst",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "de ernst van alle meldingen van de Wrakvondst"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondst heeft melding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de ernst van alle meldingen van de Wrakvondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "veelgemeld bij ernst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "veelgemeld",
+              "subjectType": "Wrakvondst",
+              "source": {
+                "snippet": "Een Wrakvondst is veelgemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "elementType": "Melding",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ernst",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "de ernst van ten minste 2 van de meldingen van de Wrakvondst"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "3"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "3"
+                  }
+                },
+                "source": {
+                  "snippet": "de ernst van ten minste 2 van de meldingen van de Wrakvondst groter is dan 3"
+                }
+              },
+              "source": {
+                "snippet": "de ernst van ten minste 2 van de meldingen van de Wrakvondst groter is dan 3"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondst heeft melding",
+                "role": "melding"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gemeld als vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gemeld",
+              "subjectType": "Wrakvondst",
+              "source": {
+                "snippet": "Een Wrakvondst is gemeld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "vondst heeft melding",
+              "role": "vondst",
+              "negated": false,
+              "source": {
+                "snippet": "hij een vondst is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rapportwaarde van een rapport",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rapportwaarde",
+              "subjectType": "Rapport",
+              "source": {
+                "snippet": "De rapportwaarde van een Rapport"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de waarde van de gerapporteerde vondst van het Rapport"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vondst heeft rapport",
+                  "role": "gerapporteerde vondst"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wrakcijfer van een wrakvondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wrakcijfer",
+              "subjectType": "Wrakvondst",
+              "source": {
+                "snippet": "Het wrakcijfer van een Wrakvondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "cijfer",
+              "subjectType": "Rapport",
+              "source": {
+                "snippet": "het cijfer van het rapport van de Wrakvondst"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vondst heeft rapport",
+                  "role": "rapport"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rapportcijfer van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rapportcijfer",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het rapportcijfer van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "cijfer",
+              "subjectType": "Rapport",
+              "source": {
+                "snippet": "het cijfer van het rapport van de Vondst"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vondst heeft rapport",
+                  "role": "rapport"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
+      {
+        "node": "Allocation",
+        "name": "verdeel het meldgeld",
+        "versions": [
+          {
+            "sourceType": "Wrakvondst",
+            "sourceAttribute": "meldgeld",
+            "targetType": "Melding",
+            "targetAttribute": "meldaandeel",
+            "method": "equalShares",
+            "roundingDecimals": 0,
+            "remainderAttribute": "meldrest",
+            "descending": false,
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "vondst heeft melding",
+              "role": "melding"
+            }
+          }
+        ]
+      }
+    ],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

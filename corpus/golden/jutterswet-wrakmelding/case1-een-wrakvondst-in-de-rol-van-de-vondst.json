@@ -1,0 +1,257 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "waarde": {
+            "number": "5"
+          },
+          "meldgeld": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "X",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "waarde": {
+            "number": "7"
+          },
+          "meldgeld": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "W"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M2",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "W"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M3",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "W"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M4",
+        "objectType": "Melding",
+        "attributes": {
+          "ernst": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M4",
+      "attribute": "gemelde waarde",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "aantal meldingen",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "X",
+      "attribute": "aantal meldingen",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "meldingental",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "meldingental",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "X",
+      "attribute": "meldingental",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "meldsom",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "X",
+      "attribute": "meldsom"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W",
+      "characteristic": "veelgemeld"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "X",
+      "characteristic": "veelgemeld"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W",
+      "characteristic": "gemeld"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "X",
+      "characteristic": "gemeld"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "meldaandeel",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M2",
+      "attribute": "meldaandeel",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M3",
+      "attribute": "meldaandeel",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "M4",
+      "attribute": "meldaandeel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W",
+      "attribute": "meldrest",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "X",
+      "attribute": "meldrest"
+    }
+  ]
+}
