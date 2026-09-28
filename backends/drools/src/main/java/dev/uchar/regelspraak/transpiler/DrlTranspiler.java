@@ -1457,11 +1457,11 @@ public final class DrlTranspiler {
         String backRef = backRol != null && !backVeel ? backRol : null;
         String fwdRef = fwdRol != null && !fwdVeel ? fwdRol : null;
         if (backRef != null && !FactModelGenerator.heeftReferentieVeld(model, nieuw, backRef, subject)) {
-            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(nieuw, backRef, subject));
+            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(model, nieuw, backRef, subject));
             return;
         }
         if (fwdRef != null && !FactModelGenerator.heeftReferentieVeld(model, subject, fwdRef, nieuw)) {
-            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(subject, fwdRef, nieuw));
+            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(model, subject, fwdRef, nieuw));
             return;
         }
         // No writable end: the mint would be reachable from nothing. The three causes are named apart, in the
@@ -2544,7 +2544,7 @@ public final class DrlTranspiler {
      *  carrying the reason into the manifest. */
     private boolean navVeld(String lezer, Objecttype ot, String rol, Objecttype doel) {
         if (FactModelGenerator.heeftReferentieVeld(model, ot, rol, doel)) return true;
-        navReden = lezer + ": " + FactModelGenerator.geenReferentieveldReden(ot, rol, doel)
+        navReden = lezer + ": " + FactModelGenerator.geenReferentieveldReden(model, ot, rol, doel)
                 + " (§13.3.9 opslagrichting)";
         return false;
     }

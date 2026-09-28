@@ -436,14 +436,25 @@ public final class FactModelGenerator {
      * feitcreatie's three positions — do NOT, and a to-many role is exactly the shape they meet: measured on a
      * verifier-clean, ref-clean model the verdeling's join over a to-many recipient role died at first fire.
      * Naming it "enkelvoudig" there would assert of the document the very thing that is false about it.
+     *
+     * <p>A third cause is named apart since 2026-09-28: the property EXISTS and another declaration holds it — a
+     * member under another spelling ({@code Namen.ident} is not injective) or the field of another role, the shape
+     * two same-named roles in two fact types give when one filler is a subtype of the other. "The bean model
+     * derives no reference field" is true there and names no cause, so the sentence names the holder.
      */
-    public static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
-        return ot.heeftLid(rol)
-                ? "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
-                  + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
-                  + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld"
-                : "het beanmodel leidt voor de rol '" + rol + "' op " + ot.naam
-                  + " geen referentieveld naar " + doel.naam + " af";
+    public static String geenReferentieveldReden(RegelSpraakModel model, Objecttype ot, String rol, Objecttype doel) {
+        if (ot.heeftLid(rol))
+            return "de rol '" + rol + "' op " + ot.naam + " deelt haar naam met een gedeclareerd lid — het beanveld"
+                    + " draagt dat attribuut/kenmerk en niet de referentie (leden(): attribuut > kenmerk >"
+                    + " referentie), dus de koppeling naar " + doel.naam + " heeft geen veld";
+        Kandidaat veld = veld(model, ot, Namen.ident(rol, false));
+        Herkomst houder = veld == null ? null : veld.herkomst();
+        if (houder != null && !houder.equals(rolHerkomst(model, ot, doel, rol)))
+            return "de rol '" + rol + "' op " + ot.naam + " heeft geen eigen referentieveld naar " + doel.naam
+                    + ": de beaneigenschap " + Namen.ident(ot.naam, true) + "." + veld.lid().eigenschap()
+                    + " draagt " + houder.beschrijving();
+        return "het beanmodel leidt voor de rol '" + rol + "' op " + ot.naam + " geen referentieveld naar " + doel.naam
+                + " af";
     }
 
     /**
@@ -461,7 +472,7 @@ public final class FactModelGenerator {
      * branch fell back to the generic reading. Callers still prefix their own reader name.
      */
     public static String geenJoinveldReden(RegelSpraakModel model, Objecttype drager, String rol, Objecttype doel) {
-        if (!model.naarVeelRol(drager, doel, rol)) return geenReferentieveldReden(drager, rol, doel);
+        if (!model.naarVeelRol(drager, doel, rol)) return geenReferentieveldReden(model, drager, rol, doel);
         // The far end is where a to-many role's storage lives. Whether it HAS a field there is a second
         // question, and the answer decides how much this sentence may claim: "both sides to-many" is the
         // erflijn shape, where neither bean can hold the relation, and asserting it where the far side does
@@ -472,9 +483,14 @@ public final class FactModelGenerator {
         Objecttype ver = model.objecttypeOpNaam(doel.naam);
         String zuster = model.verbindendeRolViaElementnaam(drager, rol);
         boolean overzijdeDraagt = zuster != null && ver != null && heeftReferentieVeld(model, ver, zuster, drager);
-        return "de rol '" + rol + "' op " + drager.naam + " is meervoudig, dus haar opslag is het veld aan de"
-                + " overzijde" + (overzijdeDraagt ? "" : ", en ook daar leidt het beanmodel er geen af"
-                                                        + " (beide zijden meervoudig)");
+        String zin = "de rol '" + rol + "' op " + drager.naam + " is meervoudig, dus haar opslag is het veld aan de"
+                + " overzijde";
+        if (overzijdeDraagt) return zin;
+        // A TO-ONE sister whose field is missing is no cardinality defect: its field was taken, by a member or by
+        // another role, and saying "both sides to-many" there names a cause the document does not have.
+        if (zuster != null && ver != null && !model.naarVeelRol(ver, drager, zuster))
+            return zin + ", en dat veld ontbreekt: " + geenReferentieveldReden(model, ver, zuster, drager);
+        return zin + ", en ook daar leidt het beanmodel er geen af (beide zijden meervoudig)";
     }
 
     /**

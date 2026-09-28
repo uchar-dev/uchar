@@ -941,8 +941,8 @@ public final class ExecModelTranspiler {
      *  fields). The sentence itself lives beside the derivation it explains
      *  ({@link dev.uchar.regelspraak.schema.FactModelGenerator#geenReferentieveldReden}), so this branch
      *  and the DRL-text branch cannot drift into two wordings for one limit. */
-    private static String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
-        return dev.uchar.regelspraak.schema.FactModelGenerator.geenReferentieveldReden(ot, rol, doel);
+    private String geenReferentieveldReden(Objecttype ot, String rol, Objecttype doel) {
+        return dev.uchar.regelspraak.schema.FactModelGenerator.geenReferentieveldReden(model, ot, rol, doel);
     }
 
     /** Why the last {@link #aggregatie} call returned null, when the cause is a §13.3.9 bean-MODEL limit rather

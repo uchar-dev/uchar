@@ -37,11 +37,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * no longer fitted it; and the reciprocal role on {@code Vondst} was typed {@code Wrakvondst} for the same reason and
  * refused as "shares its name with a declared member". The case input's refusal named a second role wherever the
  * cause was not a member of the same name, also where an attribute held the property under another spelling. ref and
- * clingo play the documents of rows 1 to 8 with the values those rows pin; rows 9 and 10 pin this backend's refusal
+ * clingo play the documents of rows 1 to 8 with the values those rows pin; rows 9 to 11 pin this backend's refusal
  * sentences.
  *
  * <p>Every model is the golden or an in-memory variant of it, except the fence of row 5 and the sentence of row 9,
- * which twist or read the red case {@code ambiguous-case-role-key}; the corpus is untouched.
+ * which twist or read the red case {@code ambiguous-case-role-key}; the corpus is untouched. Row 11 pins the
+ * cardinality sentence of a to-many step on a document without subtypes, the same sentence family.
  */
 class SubtypeRolvullerWitnessTest {
 
@@ -120,8 +121,10 @@ class SubtypeRolvullerWitnessTest {
      *  roles named {@code ligger} accept a {@code Vlot}, and the rule reads over {@code vlotligging}. The bean of
      *  {@code Schuit} holds ONE field {@code ligger}, of the class {@code Ponton}, and it is {@code pontonligging}'s;
      *  {@code Vlot} fits its class, and it is still refused, because reading it would answer a {@code vlotligging} read
-     *  from {@code pontonligging}'s storage. Green before and after the change: it fences the change, it is not
-     *  red-first. ref and clingo play the document (the case writes no link, so the read is leeg). */
+     *  from {@code pontonligging}'s storage. The refusal itself held before and after the change, so it fences the
+     *  change; its sentence is new: it said "het beanmodel leidt voor de rol 'ligger' op Schuit geen referentieveld
+     *  naar Vlot af", true and without a cause, and now names the role that holds the field. ref and clingo play the
+     *  document (the case writes no link, so the read is leeg). */
     @Test void een_veld_van_een_andere_rol_neemt_geen_subtype_aan() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ROLSLEUTEL.resolve("ir.json")));
         IrPad.objectType(ir, "Vlot").put("supertype", "Ponton");
@@ -137,7 +140,9 @@ class SubtypeRolvullerWitnessTest {
                   "input": { "instances": [ { "label": "S1", "objectType": "Schuit", "attributes": {}, "roles": {},
                                               "characteristics": [] } ], "parameters": {} },
                   "expected": [ { "kind": "attributeEmpty", "label": "S1", "attribute": "ligdiepte" } ] }
-                """), "geen referentieveld naar Vlot", "het veld van pontonligging leest geen vlotligging");
+                """), "de rol 'ligger' op Schuit heeft geen eigen referentieveld naar Vlot: de beaneigenschap"
+                + " Schuit.ligger draagt de rol 'ligger' (feittype 'pontonligging')",
+                "het veld van pontonligging leest geen vlotligging, en de zin noemt wie het veld houdt");
     }
 
     // ---------------- 6-8. the reciprocal role and the two creations, on the golden's model ----------------
@@ -286,6 +291,56 @@ class SubtypeRolvullerWitnessTest {
         regels.remove(indexVan(regels, IrPad.vorm(ir, "rules", "rapportwaarde van een rapport")));
         BeideTakken.geweigerd(schrijf(ir), geval(CASES.get(2)), "whose bean property Rapport.gerapporteerdeVondst"
                 + " belongs to the attribute 'gerapporteerde-vondst' of Rapport", "een rol op de eigenschap van een lid");
+    }
+
+    /** The cardinality sentence of a to-many step, on a document without subtypes: a WF-102 path from {@code Vondst}
+     *  over its meldingen, whose storage is the field {@code Melding.vondst} at the far end, while the attribute
+     *  {@code vondst} of {@code Melding} holds that property. The sentence said "(beide zijden meervoudig)" there,
+     *  and the role {@code vondst} is to-one; the same sentence came out of the path from the subtype before the
+     *  change, whose far field did exist. Twisted from the golden: its rules make way for the one path. */
+    @Test void een_pad_over_een_verdrongen_zusterveld_noemt_het_lid() throws Exception {
+        ObjectNode ir = golden();
+        IrPad.addAttribute(IrPad.objectType(ir, "Melding"), "vondst", JSON.readTree(GEHEEL));
+        IrPad.addAttribute(IrPad.objectType(ir, "Vondst"), "bijlagengewicht", JSON.readTree(GEHEEL));
+        IrPad.modelLijst(ir, "objectTypes").add(JSON.readTree("""
+                {"node":"ObjectType","name":"Bijlage","animate":false,"plural":"Bijlagen",
+                 "attributes":[{"node":"Attribute","name":"gewicht","datatype":%s}],"characteristics":[]}"""
+                .formatted(GEHEEL)));
+        IrPad.modelLijst(ir, "factTypes").add(JSON.readTree("""
+                {"node":"FactType","name":"melding heeft bijlage","reciprocal":false,
+                 "roles":[{"node":"Role","name":"gemelde melding","objectType":"Melding","many":false},
+                          {"node":"Role","name":"bijlage","objectType":"Bijlage","plural":"bijlagen","many":true}]}"""));
+        IrPad.rulesLijst(ir, "allocations").removeAll();
+        ArrayNode regels = IrPad.rulesLijst(ir, "rules");
+        regels.removeAll();
+        regels.add(JSON.readTree("""
+                {"node":"Rule","name":"bijlagengewicht van een vondst","versions":[{"validity":{"node":"Validity"},
+                 "target":{"node":"AttributeReference","attribute":"bijlagengewicht","subjectType":"Vondst",
+                           "source":{"snippet":"Het bijlagengewicht van een Vondst"}},
+                 "value":{"node":"Aggregation","kind":"sum","arguments":[{"node":"AttributeReference",
+                            "attribute":"gewicht","subjectType":"Bijlage",
+                            "source":{"snippet":"het gewicht van alle bijlagen van alle meldingen van de Vondst"}}],
+                          "elementType":"Bijlage",
+                          "sourcePath":[{"node":"RoleBinding","factType":"vondst heeft melding","role":"melding"},
+                                        {"node":"RoleBinding","factType":"melding heeft bijlage","role":"bijlage"}],
+                          "type":%s,
+                          "source":{"snippet":"de som van het gewicht van alle bijlagen van alle meldingen van de Vondst"}},
+                 "initialisation":false,"presentation":"calculation"}]}""".formatted(GEHEEL)));
+        Path pad = schrijf(ir);
+        JsonNode c = JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "V", "objectType": "Vondst", "attributes": {}, "roles": {},
+                                              "characteristics": [] } ], "parameters": {} },
+                  "expected": [ { "kind": "attributeEmpty", "label": "V", "attribute": "bijlagengewicht" } ] }
+                """);
+        BeideTakken.geweigerd(pad, c, "de rol 'melding' op Vondst is meervoudig, dus haar opslag is het veld aan de"
+                + " overzijde, en dat veld ontbreekt: de rol 'vondst' op Melding deelt haar naam met een gedeclareerd"
+                + " lid", "de zusterrol is enkelvoudig; haar veld is door een lid genomen");
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.speelCase(pad, c, viaDrl));
+            assertFalse(e.getMessage().contains("beide zijden meervoudig"), e.getMessage());
+        }
     }
 
     // ---------------- helpers ----------------
