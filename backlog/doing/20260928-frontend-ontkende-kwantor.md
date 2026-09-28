@@ -65,13 +65,14 @@ exec-tak speelt), kaartverplaatsing. Niet: `backends/`, `ref/`, `spec/`.
 
 ## Result (2026-09-29, bouwer)
 
-Branch `card/frontend-ontkende-kwantor`, zes commits op `08f55ce9` plus
-deze Result-commit. De kaart blijft in `backlog/doing/`; de hoofdsessie
-landt.
+Branch `card/frontend-ontkende-kwantor`, sinds de rebase zes commits op
+main `26ca6b0b` plus twee Result-commits (zie "Rebase op main" onderaan;
+gebouwd en gemeten op `08f55ce9`, waarvan het frontend gelijk is aan dat van
+`26ca6b0b`). De kaart blijft in `backlog/doing/`; de hoofdsessie landt.
 
 ### Oorzaak
 
-De boom van de reproductie (parse van het frontend op `ef4efc76`):
+De boom van de reproductie (parse van het frontend op `08f55ce9`):
 
     expressie: attribuutVanOnderwerp
       kwantificatie ALLE 'alle'; attribuutMetLidwoord 'vondsten'; VAN
@@ -93,7 +94,7 @@ onge-kwantificeerde controle (`subjectKop`) en de genavigeerde controle
 (`navigatieStaart`) zetten de opgeslokte woorden al terug; alleen de
 kwantorvouw niet.
 
-### Fix (`f5f9157d`)
+### Fix (`8d14c1b2`)
 
 - `ExpressieBouwer.ankerStaart(expressie, namen)` (met `ankerNaam`): van
   een gewoon anker (`de <naam>` als kwantificatie zonder verdere stap,
@@ -131,7 +132,8 @@ worktree (`--ir --cases`) levert IR en zes cases; `ref`
 (`_build/default/ref/bin/runner.exe`), clingo
 (`_build/default/backends/clingo/bin/clingo_runner.exe`) en de
 Drools-jar van deze worktree (exec-tak en `--drl`) spelen ze. Voor =
-frontend op `ef4efc76` (code van `08f55ce9`), na = `f5f9157d`. De kolom
+frontend van `08f55ce9` (gelijk aan dat van main `26ca6b0b`), na = dat van
+`8d14c1b2` (voor de rebase `f5f9157d`, dezelfde code). De kolom
 "negated" is het veld van de kenmerk- of rolcontrole in de matrix van de
 vouw; ref en clingo tellen de cases die precies de handgerekende
 verwachting geven.
@@ -303,7 +305,7 @@ een kenmerk `geen wrakhout` dat zichzelf bindt; de vragende bullet; de
 ontkende rolcontrole van het element (blijft een marker, weigerzin noemt
 `'lading'`).
 
-Rood-eerst op de code van `ef4efc76` (echte uitvoer, JUnit console):
+Rood-eerst op de code van `08f55ce9` (echte uitvoer, JUnit console):
 
     elke_kwantor_elk_soort_elke_ontkenning_elk_werkwoord() ✘ alle vondsten van de Jutter geen drijfvermogen hebben ==> expected: <all: drijfvermogen ontkend> but was: <all: drijfvermogen bevestigd>
     een_meerwoordige_naam_wordt_heel_gelezen() ✘ alle vondsten van de Jutter geen recht op berging hebben ==> expected: <all: recht op berging ontkend> but was: <Unresolved>
@@ -358,17 +360,18 @@ met het gate-12-voorstel in de werkboom):
     clingo: PASS (37 expectations)
     admit: ADMITTED corpus/golden/jutterswet-zinkende-jutter (2 case(s); verifier-clean, ref = clingo, no-op refuted, gates green)
 
-Voor de fix (frontend op `ef4efc76`, zelfde bron): twee WARNINGs op regel
+Voor de fix (frontend van `08f55ce9`, zelfde bron): twee WARNINGs op regel
 47 (de meldplicht wordt een marker) en elke uitvoerder faalt op de marker;
 zonder die regel `diagnostics: []` en in ref en clingo 3 en 9 missers
 (`J2 carries characteristic "zinkend", expected absent`, `J5 carries
 characteristic "vrijgegeven", expected absent`, `J7 lacks characteristic
 "duikplichtig"`, …), exec `FAIL` op beide cases.
 
-Gate-12-voorstel (`bd2effe8`): de golden speelt in beide takken, dus
-`EXPECTED_PLAYED` 220 -> 221 en `EXPECTED_DRL_PLAYED` 189 -> 190, elk met
+Gate-12-voorstel (`354935d9`): de golden speelt in beide takken, dus
+`EXPECTED_PLAYED` 222 -> 223 en `EXPECTED_DRL_PLAYED` 189 -> 190, elk met
 een geschiedenisregel; geen kanaallijst verandert (het verschil tussen de
-takken blijft 31).
+takken blijft 33, 223 - 190). Voor de rebase stond het voorstel op 220 ->
+221 en 189 -> 190 (verschil 31); zie "Rebase op main".
 
 ### (d) Inertie (methode DIVERGENCES §6)
 
@@ -385,7 +388,9 @@ Uitkomst: twee zinnen, beide in `jutterswet-schouwploeg/bron.rgs`:
 Staarten "" en `niet`; nul bronnen met `geen` of een meerwoordige naam in
 het anker, dus nul bronnen met de ontkende bezittelijke vorm.
 
-IR en exitcode vóór (`ef4efc76`) en na (`f5f9157d`) van 178 documenten:
+IR en exitcode vóór (frontend van `08f55ce9`) en na (van `8d14c1b2`) van
+178 documenten op de basis `08f55ce9` (op main `26ca6b0b` herhaald: zie
+"Rebase op main"):
 elke bron afzonderlijk via `--ir` (164), elke golden met `scenario.rgs`
 via `--ir --cases` met zijn bron (12, met casebestanden), en de casus van
 de pariteitszone (alle 47 fragmenten samen, en de 45 van gate 11 zonder de
@@ -398,8 +403,9 @@ met beide holdouts).
 
 ### Gates
 
-Alle zestien op `256bca07` (werkboom schoon), in de volgorde van
-`.github/workflows/gates.yml`; de scripts met `#!/usr/bin/env bash`
+Voor de rebase: alle zestien op `256bca07` (basis `08f55ce9`, werkboom
+schoon); de run op de rebased kop staat onder "Rebase op main". In de
+volgorde van `.github/workflows/gates.yml`; de scripts met `#!/usr/bin/env bash`
 (catala, regelspraak, toka-parity, drools, flogic, graaf, scenario) en
 reftype-derivation onder bash, de rest onder sh, alles na `eval $(opam
 env)`; voor gate 11 `mvn -q -B -f backends/drools/pom.xml package`
@@ -433,7 +439,8 @@ PASS-regels letterlijk:
     check-graaf: PASS
     check-scenario: PASS — 13 scenario golden(s) (floor 7) regenerate 49 case file(s) (floor 31) and their ir.json byte-identically
 
-Tegen de basisrun op `ef4efc76` (ook zestien keer rc=0): +1 golden in
+Tegen de basisrun op de claimcommit (code van `08f55ce9`, ook zestien keer
+rc=0): +1 golden in
 gates 2, 3, 10, 15 en 16, +2 cases in gates 4, 5, 6 en 7 (748 -> 750;
 noop 704 -> 706), JUnit frontend 990 -> 999, gate 12 played 220 -> 221 en
 DRL 189 -> 190, scenario 12 -> 13 goldens en 47 -> 49 cases. Verder geen
@@ -441,14 +448,18 @@ getal veranderd.
 
 ### Commits
 
-    ef4efc76 claim: kaart frontend-ontkende-kwantor naar doing
-    f5f9157d kwantorvouw leest de woorden terug die het anker opslokte
-    21b44cd7 getuigen: de ontkende en meerwoordige kenmerkvouw onder een kwantor
-    37764ff5 golden jutterswet-zinkende-jutter: kenmerkcontroles onder een kwantor
-    bd2effe8 voorstel gate 12: jutterswet-zinkende-jutter speelt in beide takken
-    256bca07 DIVERGENCES: de kenmerkcontrole onder een kwantor leest haar naam heel
+Op main `26ca6b0b` (na de rebase):
 
-plus de commit met dit Result. Gewijzigd buiten `backlog/`:
+    1f22570d claim: kaart frontend-ontkende-kwantor naar doing
+    8d14c1b2 kwantorvouw leest de woorden terug die het anker opslokte
+    c8a15f1d getuigen: de ontkende en meerwoordige kenmerkvouw onder een kwantor
+    8bd835dd golden jutterswet-zinkende-jutter: kenmerkcontroles onder een kwantor
+    354935d9 voorstel gate 12: jutterswet-zinkende-jutter speelt in beide takken
+    6ccae26d DIVERGENCES: de kenmerkcontrole onder een kwantor leest haar naam heel
+    91ec6d11 Result van de kaart frontend-ontkende-kwantor
+
+plus de commit met de rebase-aanvulling van dit Result. Gewijzigd buiten
+`backlog/`:
 `frontends/regelspraak/src/main/…/resolver/{ExpressieBouwer,RuleChecker}.java`,
 `frontends/regelspraak/src/test/…/OntkendeKwantorTest.java` (nieuw),
 `frontends/regelspraak/grammar/DIVERGENCES.md`,
@@ -482,7 +493,7 @@ plus de commit met dit Result. Gewijzigd buiten `backlog/`:
 4. **DIVERGENCES had geen sectie over de kwantorvouw.** De "ene alinea
    bij de kwantorvouw" staat als eigen kop `§13.4.15.45 A characteristic
    check under a quantifier reads its name whole` met één alinea, direct na
-   §13.4.1, waar de kwantorvouw haar bereik bindt (`256bca07`).
+   §13.4.1, waar de kwantorvouw haar bereik bindt (`6ccae26d`).
 5. **Een nieuwe WARNING waar het register niet past.** Nu `geen` onder een
    kwantor als ontkenning wordt gelezen, geeft `keurNegatieSoort` bij
    `… geen drijfvermogen zijn` en `… geen waardevol hebben` de
@@ -519,6 +530,92 @@ plus de commit met dit Result. Gewijzigd buiten `backlog/`:
    grammaticacommentaren wijzen (`RegelSpraakLexer.g4`, `RegelSpraak.g4`;
    de inleiding van DIVERGENCES noemt haar als ontbrekend). §13.4.15.45
    dekt alleen het gekwantificeerde geval.
-6. De pinnen van gate 12 (221 en 190) zijn een voorstel; de parallelle
-   Drools-kaart verzet dezelfde pinnen en de hoofdsessie telt ze op bij het
-   landen. Geen CONSTRUCTS- of PLAN-rij: de wire verandert niet.
+6. De pinnen van gate 12 (223 en 190) zijn een voorstel, bij de rebase
+   opgeteld bij die van de gelande kaart
+   drools-exec-voorwaarde-genavigeerde-afleiding (222 en 189). Geen CONSTRUCTS- of PLAN-rij: de wire verandert
+   niet.
+
+### Rebase op main `26ca6b0b` (2026-09-29)
+
+Op verzoek van de hoofdsessie: `git rebase main` in de worktree. Main stond
+op `26ca6b0b`, de landing van de kaart
+drools-exec-voorwaarde-genavigeerde-afleiding (backend, spec,
+`scripts/check-drools.sh` en de nieuwe golden `jutterswet-meldingsketen`;
+geen bestand onder `frontends/`). Eén conflict, in `scripts/check-drools.sh`
+bij het gate-12-voorstel, opgelost door op te tellen:
+
+- `EXPECTED_PLAYED`: 222 op main, +1 -> **223**; mijn redenblok als
+  "222 -> 223" direct na dat van meldingsketen ("220 -> 222").
+- `EXPECTED_DRL_PLAYED`: 189 op main (door hun kaart niet verzet), +1 ->
+  **190**; mijn regel "189 -> 190" na "188 -> 189".
+- Beide kanaalwijzigingen van main blijven staan: kustwacht uit
+  `EXCLUDE_KNOWN` en `EXPECTED_CHANNEL`, meldingsketen in klasse (A) van
+  `DRL_CHANNEL`. Het verschil tussen de takken blijft 33 (223 - 190); geen
+  klassekop verandert. De boodschap van het voorstel noemt nu 222 -> 223 en
+  het verschil 33.
+
+`git range-diff 08f55ce9..4bab3537 26ca6b0b..91ec6d11`: zes van de zeven
+commits inhoudelijk gelijk (`=`), alleen het gate-12-voorstel verschilt
+(pin en boodschap). Frontend, golden en kaart zijn byte-gelijk aan de kop
+van voor de rebase (`git diff 4bab3537 91ec6d11` over die paden leeg).
+
+| voor de rebase | na de rebase | commit |
+|---|---|---|
+| `ef4efc76` | `1f22570d` | claim |
+| `f5f9157d` | `8d14c1b2` | fix |
+| `21b44cd7` | `c8a15f1d` | getuigen |
+| `37764ff5` | `8bd835dd` | golden |
+| `bd2effe8` | `354935d9` | voorstel gate 12 (pinnen opgeteld) |
+| `256bca07` | `6ccae26d` | DIVERGENCES |
+| `4bab3537` | `91ec6d11` | Result |
+
+Census en inertie opnieuw op de rebased boom: 168 bronnen (vier meer: bron
+en scenario van meldingsketen en van zinkende-jutter). Een gekwantificeerde
+kenmerkcontrole schrijven alleen `jutterswet-schouwploeg` (2, staarten ""
+en `niet`, als voorheen) en de nieuwe golden zelf (10); meldingsketen geen.
+Over 184 documenten (168 bronnen los, 14 scenariodocumenten met hun bron,
+de casus twee keer) verschillen vóór en na alleen de twee documenten van
+`jutterswet-zinkende-jutter` (bron los, en bron met scenario: `ir.json` en
+de twee WARNINGs van de marker, zoals haar NOTE beschrijft); de 181 andere,
+meldingsketen inbegrepen, zijn byte-gelijk in IR, casebestanden,
+diagnostiek en exitcode.
+
+Gates op de rebased kop `91ec6d11` (werkboom schoon), alle zestien rc=0,
+zelfde volgorde en interpreters als hierboven, `mvn package` rc=0. De
+PASS-regels letterlijk:
+
+    check-self-contained: PASS
+    check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 504 shape self-test row(s); 319 file(s) validate and round-trip, floor 192; 41875 object(s) in 820 document(s) in the schema's key order, 1 in no subschema)
+    check-case-schema: PASS (schema valid; 92 pattern self-test row(s); 793 case file(s) validate)
+    check-verifier: PASS (319 golden clean; 501 negatief rejected for their declared rule, floor 350; 344 on their declared arm (expect.txt), floor 260; 605 cited pointers resolve in their documents, floor 547)
+    check-oracle: PASS (ref suite 1152 worked examples, floor 489; 753 cases replayed exactly, floor 427; NOT replayed, no case file yet: corpus/golden/jutterswet-seizoenvondst corpus/golden/jutterswet-seizoenvouw corpus/golden/jutterswet-vormenkabinet)
+    (dune build @ref/runtest: rc=0, geen uitvoer)
+    check-clingo: PASS (backend suite 1988 checks, floor 83; 753 cases replay exactly through clingo — ref = clingo over the corpus)
+    check-noop: PASS (709 cases refute a do-nothing executor; 44 pinned survivors pin defeasible standing)
+    check-rood: PASS (40 red cases fault observably in ref and clingo, floor 26; 80 pinned fragments cite none of the 36 listed bottom sentences)
+    check-catala: PASS — frontend suite green (241 checks, floor 201); 12 catala golden(s) regenerate byte-identically (floor 12)
+    check-regelspraak: PASS — JUnit suite green (999 tests, floor 173); 107 rgs golden(s) re-emit byte-identically (floor 80)
+    check-toka-parity: PASS
+      re-emission: 1 casus dump(s), 45 .rgs re-emitted byte-identical, floor 45 (holdouts: toka-23-regel-bevestigingstijdstip-vlucht.rgs toka-45-regel-belasting-op-basis-van-afstand.rgs); TOKA suite 27 tests, floor 27
+      differential replay: 29 toka cases (floor 29) through ref, clingo, Drools (slices under toka/cases/), ZERO silent divergences
+    check-drools: PASS
+      played 223  (loaded off the wire, wholly lowered, matched the pinned ref≡clingo expectations)
+      auto-excluded 54  (per-form refusals: loader / transpiler marker / contract / unsupported input)
+      value-divergence 0  (listed with reason — the exec-model differs from ref/clingo)
+      channel floor 57 non-PLAYED goldens pinned by name; played matches the pinned 223
+      DRL-text branch played 190  (its OWN count — the narrower branch, not the square; pin 190)
+      DRL-text floor 90 non-PLAYED goldens pinned by name; sweep cost 141s wall clock
+      JUnit 881 tests, floor 239  (the backend's own suite, green with a non-zero count)
+    check-reftype-derivation: PASS (41 unit annotations twisted over 23 goldens, floor 38; 106 executor replays reproduce the untouched outcome, 22 of them PLAYED by the DRL-text branch, floor 20; 0 pinned survivors)
+    check-flogic: PASS — frontend suite green (150 checks, floor 81); 2 flogic golden(s) re-emit byte-identically (floor 1)
+    check-graaf: spec leg — 243 of 280 goldens compared, 137 dependencies equal to the verifier's ch. 5 edges (floors 234 / 116), 3 listed difference(s)
+    check-graaf: route leg — the graph of the wire equals the graph of the source on all 107 goldens with a bron.rgs (floor 98); 23 unit tests green (floor 23)
+    check-graaf: PASS
+    check-scenario: PASS — 14 scenario golden(s) (floor 7) regenerate 52 case file(s) (floor 31) and their ir.json byte-identically
+
+Tegen de run van voor de rebase: meldingsketen komt erbij in gates 2, 3,
+10, 15 en 16 (goldens +1, cases 750 -> 753, casebestanden 790 -> 793, noop
+706 -> 709, scenario 13 -> 14 goldens en 49 -> 52 cases); gate 12 played
+223 en DRL 190 (de opgetelde pinnen), value-divergence 0 en kanaalvloer 58
+-> 57 (kustwacht speelt), DRL-vloer 89 -> 90 (meldingsketen in klasse (A)),
+backend-JUnit 873 -> 881 (de getuige van main).
