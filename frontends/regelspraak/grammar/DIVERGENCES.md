@@ -1775,6 +1775,205 @@ on the corpus).
 
 ---
 
+## Namen in declaratiekoppen — the names of a declaration head, and no silent re-reading
+
+Not a dialect extension, and not a reconstruction of a defective source
+production: a choice of this frontend, recorded here with the part of it the
+card `namen-in-declaratiekoppen` (2026-09-28) lifted. The lexer skips every
+line end and tab (`RegelSpraakLexer.g4`, header note 1), and the parser builds
+a name word by word from single-word tokens, with the capital letter as the
+boundary between a name and a type (header note 2). v2.3.0 bounds these names
+otherwise: by a line end after an object-type head and after every member
+(§13.3.1.1), by a tab between an attribute's name and its type (§13.3.2.5),
+by a line end after a fact type's name and a tab between a role's name and its
+object type (§13.3.9.1); §13.1.8 names the line end and the tab as control
+characters of the syntax. The specification knows no capital-letter rule for
+names, and its examples show fact-type names with prepositions (§3.11, §9.3,
+§9.4), an object type spelled with changing capitals (§9.3 against §9.4) and an
+attribute name that runs on over the next line (§3.9).
+
+The consequence was a name cut short at the first word its production did not
+take, and the rest read as a declaration of its own — for an object type with
+a preposition and without a plural, and for a member whose name held a
+capitalised word, without any diagnostic: `Objecttype de Vondst bij eb`
+declared the type `Vondst` with one attribute `bij eb de waarde`. Rule text
+already read prepositions and capitalised words in a name, case-insensitively;
+the limit sat in the heads.
+
+### Surface syntax (three productions widened; no new token)
+
+The word sets per position, since this card:
+
+| position | production | words |
+|---|---|---|
+| object-type name — head, extension head, `is een` clause, role filler, scenario instance | `objectTypeNaam` | a capitalised word, then capitalised and lowercase words and the prepositions rule text reads in a name: `op`, `bij`, `in`, `voor`, `over`, `tot`, `tot en met`, `per`, `met` — `Recht op premie`, `Vondst bij eb` |
+| plural `(mv: …)` — object type, attribute, characteristic, role, day kind, unit | `meervoudsvorm` | every word of `kaleNaamWoord`, the words rule text reads in a name, up to the closing parenthesis — `(mv: rechten op premie)` |
+| fact-type name | `feitTypeNaam` | every one-word token and `tot en met`, the verbs `heeft`, `hebben`, `is` and `zijn` among them — `jutter heeft premierecht` |
+| attribute, characteristic and role name | `lowerNaam` | unchanged: lowercase-led, no capitalised word, no `en` |
+| domain name | `domeinNaam` | unchanged: a capitalised word, then capitalised and lowercase words |
+
+Out of the object-type name stay `van`, the articles and every other keyword.
+`van` is the navigation separator of rule text, so a type name that carried it
+would not read back there; a hyphen joins it to its neighbour
+(`Vondst-van-eb`), or a capital makes it a name word (`Van`). Out of the
+fact-type name stay, each for its reason: `de` and `het`, which open the role
+line; `één` and `meerdere`, which open the cardinality line; the sixteen
+keywords that open a block (`Objecttype`, `Domein`, `Dimensie`,
+`Eenheidsysteem`, `Parameter`, `Feittype`, `Dagsoort`, `Vocabulaire`,
+`Tijdlijn`, `Regelgroep`, `Uitzonderingen`, `Regel`, `Beslistabel`, `Situatie`,
+`Parameterset`, `Scenario`), so a fact type without roles fails at the next
+block instead of taking its keyword into its name; and the phrase tokens and
+the signs, which are no words. A fact-type name occurs in no rule text, so no
+reading there bounds the set.
+
+A plural is bounded by its parenthesis, so its words change no reading of what
+follows. The object-type name is followed by members, roles and labels, and one
+reading does change: a member without an article that opens with one of the
+nine prepositions on the head's own line is now read into the name, where it
+was read as a member, because the loop is greedy. The resolver's line check
+(below) refuses what that leaves on the head's line, so the shift is loud.
+
+### Inertness — measured, not assumed
+
+Counted on 2026-09-28 over 643 distinct RegelSpraak sources (by content), in
+six collections: the 107 sources this corpus held before the card (100
+`bron.rgs` and 7 `scenario.rgs`), the 47 sources of the repository's temporary
+parity zone, 59 sources of the distribution that consumes this repository, and
+outside it 201 sources of a rule workbench, 36 of an operational rule
+collection and 193 of the reference toolchain's corpus. Read as text (comments and literals left out),
+none of the 322 object-type heads carries a lowercase preposition or keyword in
+its name or text behind its name group on the head line, none of the five
+without a plural is followed by a member without an article, none of the 361
+role lines lacks its article, none of the 184 fact-type heads carries an article
+or a word outside the old name set, none of the 1748 member lines carries two
+`;`, and all 448 plurals close on their own line.
+
+The method of §6: each of the 643 went through the frontend built at the
+commit before this card and at the card's head, through the production route
+and, for the 217 that write a scenario, the scenario route as well; the exit
+status, the diagnostics and the emitted IR and case files were compared.
+No exit status changed. Of the 192 documents that emit an IR, 178 emit it byte
+for byte the same, and 14 emit the same model and rules while their diagnostics
+list gains a WARNING of the new checks: 13 are one file of a model that
+declares its object types in another file, and get the filler WARNING (four
+slices of the parity zone, four examples of the reference toolchain's corpus,
+four rule files of the workbench and one of the operational collection); one
+carries an attribute whose name holds `als`, and gets the readability WARNING.
+The 446 documents that carry an ERROR (fragments and scenario files among them,
+which are no `regelSpraakDocument`) keep their diagnostics, 444 to the letter;
+in the other 2 the ANTLR "expecting {…}" set of one syntax error names the new
+name words (two negative snippets of the reference toolchain whose fact type
+lacks its cardinality line), and normalising exactly that leaves no difference.
+The 5 emitter refusals are the same, and the scenario route writes the same 12
+case files. The line check fires on none of the 643. Gates 10, 11 and 16 hold
+the same inside the repository: the 100 rgs goldens, the parity zone's casus
+and the 31 case files of the 7 scenario goldens re-emit unchanged.
+
+What bounds an unmeasured document is the line check: a document the widened
+names read differently has a member or a role on the line where the head
+ended, and that is an ERROR on that line, never a different model.
+
+### Lowering (resolver)
+
+Nothing is lowered: the names go into the model as written, as every name
+does. The resolver adds three checks, all on the declarations
+(`DefinitionResolver`), and leaves a definition the parser had to recover
+inside alone: its boundaries are the recovery's, and its syntax error is the
+diagnostic to act on.
+
+- **The line check.** A member (an attribute or a characteristic) or a role
+  that begins on the line where the head, the previous member or the previous
+  role ended, is an ERROR on that line. The lines of the tokens decide, never
+  their capitals. A member that runs on over the next line begins on a line of
+  its own and stays admitted (the §3.9 example); so does a member without an
+  article on the line after the head. A heading (`---`) runs to the end of its
+  line, so nothing begins after it there.
+- **The filler check** (WF-003). A role's filler is a declared object type,
+  compared without regard to case, and checked once every declaration is read,
+  so a type declared after the fact type binds. Until this card only the
+  verifier refused an undeclared filler, and a check without the verifier wrote
+  the document.
+- **The readability check.** A declared attribute, characteristic or role name
+  is lexed again on its own and parsed as the `kaleNaam` of rule text, up to its
+  end. Where that fails, a WARNING names the word: `als` is no word of a name
+  in rule text, and `van` separates two parts of one, so it neither opens nor
+  closes a name and never stands twice in a row.
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+Each on the line of the declaration it names (witnesses: `DeclaratiekopNaamTest`,
+every sentence whole, on its line):
+
+- ERROR, the line check: `<drager>: <lid> begint met '<woord>' op de regel
+  waar <vorige> eindigt, direct na '<token>'; een lid begint op een eigen
+  regel` — for a role `een rol begint op een eigen regel`. `<drager>` is
+  `objecttype '<T>'` or `feittype '<F>'`; `<lid>` is `het attribuut '<a>'`,
+  `het kenmerk '<k>'` or `de rol '<r>'`; `<vorige>` is `de kop`, `het vorige
+  lid '<naam>'` or `de vorige rol '<naam>'`. Where the previous declaration
+  ends on a name and the word is a keyword, the sentence goes on with ` — hoort
+  '<woord>' bij de naam, verbind het dan met een koppelteken aan het woord
+  ervoor ('<token>-<woord>')`; where the previous member is a characteristic
+  that ends on `kenmerk`, with ` — hoort 'kenmerk' bij de naam, verbind het dan
+  met een koppelteken aan het woord erna ('kenmerk-<woord>')`.
+- ERROR, the filler check, where the document shows the misreading: `feittype
+  '<F>': de rol '<r>' heeft als objecttype '<V>', en dat is nergens als
+  objecttype gedeclareerd — WF-003: de vuller van een rol is een gedeclareerd
+  objecttype; '<T>' is dat wel: een rolnaam eindigt bij het eerste woord met een
+  hoofdletter, dus '<rest>' is als deel van het objecttype gelezen` — a shorter
+  tail `<T>` of the filler is a declared object type — and `…, en dat is een
+  <soort>, geen objecttype — WF-003: …` where the document declares the name as
+  a domain, a parameter, a fact type, a dimension, a unit system or a day kind.
+- WARNING, the filler check, where the document declares the name nowhere:
+  the same sentence without the tail, ending in `; staat het in een ander
+  bestand van het model, lees de bestanden dan samen`. One file of a model that
+  declares its object types in another file reads so on its own, and resolves
+  once the files are read as one; the collections outside this repository are
+  split per kind of declaration, and the parity zone's own tests resolve such a
+  slice without an error. The verifier still refuses the file emitted on its
+  own under WF-003.
+- WARNING, the readability check: `<drager>: regeltekst leest <lid> niet als
+  één naam, want '<woord>' is daar geen woord van een naam; verbind het met een
+  koppelteken aan een buurwoord ('<voorbeeld>')`, the example being the name with
+  the word joined to its neighbour. A WARNING and no ERROR: the declaration is
+  well-formed, and a document that never reads the name in a rule is sound.
+
+The guess the resolver already made about a role name that swallowed an article
+of the fact type's name (`de rolnaam '<r>' bevat een lidwoord (de/het) na een
+zelfstandig woord …`, a WARNING) stays beside the line check: that check names
+the line and the word, the guess names the likely cause, and the guess alone
+sees a swallow that runs on over the next line.
+
+### Emission
+
+Nothing about emission is new. A document that parsed before emits the same
+model and rules; a WARNING of the new checks goes into the IR's diagnostics
+list, as every WARNING does.
+
+### Scope / limitations of this card
+
+- An attribute, characteristic or role name still ends at its first
+  capitalised word, which is read as its type or filler (maintainer decision
+  2026-09-28: a later card without new syntax; until then, write the word in
+  lowercase). The line check makes the misreading loud where the rest stays
+  on the line; the filler check where the rest names a declared type.
+- A keyword in a name still ends it, in the head and in rule text alike; a
+  hyphen joins the keyword to its neighbour, and the hyphenated word reads in
+  both (`premie-en-toeslag`, `kenmerk-strand`).
+- A lowercase `van` stays out of an object-type name (maintainer decision
+  2026-09-28): a hyphen works, or a capital. The canonical data model's names
+  that carry it are designations in a vocabulary (the section above) and ask
+  for no such name.
+- Domain names keep their word set; names in quotes, a lexer mode for heads
+  and rule text lexed with the declared names as tokens are not built.
+- Witnesses: the golden `jutterswet-premierecht` (the object type `Recht op
+  premie`, the role plural `rechten op premie` and the fact type `jutter heeft
+  premierecht`, over rules that compute a premium, a sum, a filtered count and
+  a threshold; its scenario document writes `een Recht op premie R1`; ref,
+  clingo and both Drools branches replay its two cases) and the frontend's
+  `DeclaratiekopNaamTest`.
+
+---
+
 ## Scenariotoetsen — scenarios written in RegelSpraak, lowered to case files
 
 Origin: the scenario layer of the source toolchain, its resolver and its IR
