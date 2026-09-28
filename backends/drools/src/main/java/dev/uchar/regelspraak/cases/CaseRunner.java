@@ -688,14 +688,33 @@ public final class CaseRunner {
      *  wederkerig twin of this limit is refused in {@link DroolsBackend} for the whole model. */
     private void naamdelingsPoort(Objecttype drager, String rol, Objecttype doel, String geschreven) {
         if (FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel)) return;
-        // The displacing name is not always a declared member: two same-named roles toward different types
-        // (corpus/rood/ambiguous-case-role-key) contend for one field too, and blaming a member there names a
-        // cause the document does not have.
-        String oorzaak = drager.heeftLid(rol) ? "which shares its name with a declared member"
-                : "whose field a same-named role toward another type already holds";
+        // The cause is read off what holds the property, never assumed. Until 2026-09-28 every cause other than a
+        // declared member was reported as a second role, and the commonest one was no second role at all: a target
+        // of a SUBTYPE of the role's filler, which the field of the filler's class takes (IR-SPEC ch. 2.6) and which
+        // the type gate then refused by equality. Two same-named roles toward different types
+        // (corpus/rood/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
+        FactModelGenerator.Herkomst houder = FactModelGenerator.veldHerkomst(model, drager, rol);
+        String veld = Namen.ident(drager.naam, true) + "." + Namen.ident(rol, false);
+        String oorzaak;
+        if (drager.heeftLid(rol)) oorzaak = "which shares its name with a declared member";
+        else if (houder == null) oorzaak = "for which the bean model derives no field";
+        else if (houder.soort() != FactModelGenerator.Herkomst.Soort.ROL)
+            oorzaak = "whose bean property " + veld + " belongs to " + beschreven(houder);
+        else if (!houder.equals(FactModelGenerator.rolHerkomst(model, drager, doel, rol)))
+            oorzaak = "whose field " + veld + " another role already holds, " + beschreven(houder);
+        else oorzaak = "whose field " + veld + " cannot hold a " + doel.naam;
         throw new Excluded("role '" + geschreven + "' resolves to the to-one role '" + rol + "' on " + drager.naam
                 + ", " + oorzaak + " — the bean cannot carry the reference field "
                 + "(name-sharing bean limit: attribute > characteristic > reference)");
+    }
+
+    /** A declaration in the words of this reader's refusals. */
+    private static String beschreven(FactModelGenerator.Herkomst h) {
+        return switch (h.soort()) {
+            case ATTRIBUUT -> "the attribute '" + h.naam() + "' of " + h.bron();
+            case KENMERK -> "the characteristic '" + h.naam() + "' of " + h.bron();
+            case ROL -> "the role '" + h.naam() + "'" + (h.bron() == null ? "" : " of fact type '" + h.bron() + "'");
+        };
     }
 
     /** One to-one role write, WF-013-guarded: a second, DIFFERENT filler on the same to-one field is a case
@@ -706,7 +725,19 @@ public final class CaseRunner {
         if (huidig != null && huidig != doel)
             throw new IllegalArgumentException("to-one rol '" + rol + "' krijgt een tweede, ander doel — "
                     + "ref weigert die case bij het laden (WF-013)");
-        roep(drager, Namen.setter(rol), doel.getClass(), doel);
+        roep(drager, Namen.setter(rol), veldklasse(drager, rol), doel);
+    }
+
+    /** The class of the reference field {@code rol} on {@code drager}'s bean, read off its getter: the class of the
+     *  role's declared filler. The setter is looked up by that class and not by the target's own, because a target
+     *  of a subtype of the filler (IR-SPEC ch. 2.6) has a class of its own that no setter names. */
+    private static Class<?> veldklasse(Object drager, String rol) {
+        try {
+            return drager.getClass().getMethod(Namen.getter(rol)).getReturnType();
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException("geen getter " + Namen.getter(rol) + " op "
+                    + drager.getClass().getSimpleName(), e);
+        }
     }
 
     /** §13.3.9.2 mirrored: ONE reciprocal entry holds in BOTH directions, so every self-pair leg the case wrote
@@ -739,7 +770,11 @@ public final class CaseRunner {
      *  </ul> */
     private void spiegelWederkerigeRollen() {
         for (Object bean : labelNaarBean.values()) {
-            String rol = FactModelGenerator.zelfpaarRol(model, objecttypeVanBean(bean));
+            // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
+            // asked of the bean's own type alone, such a leg went unmirrored and the partner read an empty relation
+            String rol = null;
+            for (Objecttype t : objecttypeVanBean(bean).keten())
+                if ((rol = FactModelGenerator.zelfpaarRol(model, t)) != null) break;
             if (rol == null) continue;
             Object partner = lees(bean, Namen.getter(rol));
             if (partner == null) continue;
@@ -748,7 +783,7 @@ public final class CaseRunner {
             if (terug != null)
                 throw new IllegalArgumentException("wederkerige rol '" + rol + "': het doel is al verbonden met "
                         + "een ander — de omgekeerde poot botst (WF-013 to-one)");
-            roep(partner, Namen.setter(rol), bean.getClass(), bean);
+            roep(partner, Namen.setter(rol), veldklasse(partner, rol), bean);
         }
     }
 

@@ -77,6 +77,13 @@ public final class FactModelGenerator {
 
     private static List<Lid> alleLeden(RegelSpraakModel model, Objecttype ot) {
         List<Lid> uit = new ArrayList<>();
+        for (Kandidaat k : gededupliceerd(model, ot)) uit.add(k.lid());
+        return uit;
+    }
+
+    /** The candidates of {@link #kandidaten} that keep their property on the bean of {@code ot}, with their origin. */
+    private static List<Kandidaat> gededupliceerd(RegelSpraakModel model, Objecttype ot) {
+        List<Kandidaat> uit = new ArrayList<>();
         java.util.Set<String> gezien = new java.util.HashSet<>();   // ONE bean property per name: an attribute,
         // kenmerk and to-one role may legally share a name (a single name can be declared as both a kenmerk
         // and a Boolean attribute); the bean can carry only one field, and the runtime property resolution
@@ -84,8 +91,19 @@ public final class FactModelGenerator {
         // What lost the property has no field of its own: verdringingen() names it, and the backend refuses
         // every use of it by name.
         for (Kandidaat k : kandidaten(model, ot))
-            if (gezien.add(k.lid().eigenschap())) uit.add(k.lid());
+            if (gezien.add(k.lid().eigenschap())) uit.add(k);
         return uit;
+    }
+
+    /** The member the bean of {@code ot} carries under {@code eigenschap}, its own or an inherited one, with the
+     *  declaration it stands for; null when no bean of the chain has that property. The root-most type of the
+     *  chain that derives the property declares the field: {@link #leden} leaves it to that ancestor's bean. */
+    private static Kandidaat veld(RegelSpraakModel model, Objecttype ot, String eigenschap) {
+        List<Objecttype> keten = ot.keten();
+        for (int i = keten.size() - 1; i >= 0; i--)
+            for (Kandidaat k : gededupliceerd(model, keten.get(i)))
+                if (k.lid().eigenschap().equals(eigenschap)) return k;
+        return null;
     }
 
     /** Every bean member the model implies for {@code ot}, with its origin, in the order the dedup of
@@ -132,11 +150,19 @@ public final class FactModelGenerator {
         // The by-pair authority itself is UNCHANGED and stays ambiguous: a consumer that has no written or
         // symbolic role still finds a repeated pair unresolvable (RUNTIME-SEMANTICS ch. 5.5), and this
         // derivation is what makes the field EXIST for the consumers that do have one.
+        //
+        // The field's TYPE is the role's declared filler, not the doelwit this loop reaches it from. The loop
+        // reaches one role once per subtype of its filler (IR-SPEC ch. 2.6: the filler is an upper bound), and
+        // the dedup keeps the first; typed after the doelwit, the first-DECLARED of those types decided the
+        // field's class, so a subtype declared before its supertype narrowed the field and an instance of the
+        // supertype no longer fitted it. The filler's class takes every instance the role takes, since each
+        // subtype's bean extends it.
         for (Objecttype doelwit : model.objecttypen.values()) {
             if (doelwit == ot) continue;
             for (String rol : model.verbindendeRollen(ot, doelwit)) {
                 if (model.naarVeelRol(ot, doelwit, rol)) continue;
-                uit.add(new Kandidaat(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false),
+                uit.add(new Kandidaat(new Lid(Namen.ident(rol, false),
+                        Namen.ident(vullertype(model, ot, doelwit, rol).naam, true), false),
                         rolHerkomst(model, ot, doelwit, rol)));
             }
         }
@@ -154,19 +180,34 @@ public final class FactModelGenerator {
 
     /** The declaration of the role {@code rol} that a field on {@code houder} toward {@code doelwit} stands for:
      *  the role of that name that {@code doelwit} may fill, in a fact type that relates {@code houder} — the search
-     *  {@code verbindendeRollen} admits a role by, which leaves exactly one. */
-    private static Herkomst rolHerkomst(RegelSpraakModel model, Objecttype houder, Objecttype doelwit, String rol) {
-        String feittype = null;
-        int n = 0;
+     *  {@code verbindendeRollen} admits a role by, which leaves exactly one. Public for the case reader, which tells
+     *  the field of this very role apart from a field another role took. */
+    public static Herkomst rolHerkomst(RegelSpraakModel model, Objecttype houder, Objecttype doelwit, String rol) {
+        List<Map.Entry<Feittype, Rol>> rollen = rollenNaar(model, houder, doelwit, rol);
+        return new Herkomst(Herkomst.Soort.ROL, rol, rollen.size() == 1 ? rollen.get(0).getKey().naam : null);
+    }
+
+    /** The declared filler of the role {@code rol} that {@code doelwit} fills from {@code houder}: the type the
+     *  reference field holds. {@code doelwit} itself where the role resolves to no single declaration or its filler to
+     *  no declared type — the fall-back {@link #vult} keeps for a filler the model does not declare. */
+    private static Objecttype vullertype(RegelSpraakModel model, Objecttype houder, Objecttype doelwit, String rol) {
+        List<Map.Entry<Feittype, Rol>> rollen = rollenNaar(model, houder, doelwit, rol);
+        Objecttype vuller = rollen.size() == 1 ? model.objecttypeOpNaam(rollen.get(0).getValue().objecttypeNaam()) : null;
+        return vuller != null ? vuller : doelwit;
+    }
+
+    /** The roles named {@code rol} that {@code doelwit} may fill in a fact type relating {@code houder}, each with
+     *  its fact type — the one search behind {@link #rolHerkomst} and {@link #vullertype}. */
+    private static List<Map.Entry<Feittype, Rol>> rollenNaar(RegelSpraakModel model, Objecttype houder,
+            Objecttype doelwit, String rol) {
+        List<Map.Entry<Feittype, Rol>> uit = new ArrayList<>();
         for (Feittype ft : model.feittypen.values())
             for (Rol r : ft.rollen)
                 if (rol.equalsIgnoreCase(r.naam()) && vult(model, r, doelwit)
                         && (ft.wederkerig ? vult(model, r, houder)
-                                          : ft.rollen.stream().anyMatch(h -> h != r && vult(model, h, houder)))) {
-                    feittype = ft.naam;
-                    n++;
-                }
-        return new Herkomst(Herkomst.Soort.ROL, rol, n == 1 ? feittype : null);
+                                          : ft.rollen.stream().anyMatch(h -> h != r && vult(model, h, houder))))
+                    uit.add(Map.entry(ft, r));
+        return uit;
     }
 
     /** Whether {@code ot} may fill {@code r}: it is the role's filler or a subtype of it. */
@@ -344,16 +385,37 @@ public final class FactModelGenerator {
      * {@code boolean}. A name-only test therefore reads "field present" and sends a FACT into it, which is an
      * unclassified ERROR at fire ({@code ClassCastException} on the creation arm, "kon setter set&lt;X&gt;(…) niet
      * aanroepen" on the case-input arm — lens 2, 2026-08-30), where the honest outcome is a loud per-form refusal.
+     *
+     * <p>The type test is ASSIGNABILITY, not equality. A role's declared filler is an upper bound (IR-SPEC ch. 2.6),
+     * the field is of the filler's class ({@link #vullertype}) and a subtype's bean extends it, so the field of a role
+     * filled by {@code Vondst} holds a {@code Wrakvondst}. Asked as equality, every reader and writer of that link
+     * refused a document ref and clingo play: the case input, the navigation, the fold and quantifier joins, the
+     * allocation's recipient join, the far-side role check and the object and fact creations. A strict ancestor's class is accepted only for the
+     * field of the very role declaration that {@code ot}, {@code rol} and {@code doel} resolve to: a field of the same
+     * name that ANOTHER role took keeps refusing, even when {@code doel} fits its class, since writing through it
+     * would join one relation through another's storage.
      */
     public static boolean heeftReferentieVeld(RegelSpraakModel model, Objecttype ot, String rol, Objecttype doel) {
         if (model == null || ot == null || rol == null || doel == null) return false;
-        String eigenschap = Namen.ident(rol, false), type = Namen.ident(doel.naam, true);
         // the bean CARRIES a field it inherits: `leden` is own-members-only since the generated
         // subtype bean extends its supertype's, so the question is asked over the whole chain
-        for (Objecttype t : ot.keten())
-            if (leden(model, t).stream().anyMatch(l -> l.eigenschap().equals(eigenschap) && l.javaType().equals(type)))
-                return true;
-        return false;
+        Kandidaat veld = veld(model, ot, Namen.ident(rol, false));
+        if (veld == null) return false;
+        String type = veld.lid().javaType();
+        if (type.equals(Namen.ident(doel.naam, true))) return true;
+        boolean voorouder = false;
+        for (Objecttype a : doel.keten()) voorouder |= a != doel && type.equals(Namen.ident(a.naam, true));
+        Herkomst herkomst = veld.herkomst();
+        return voorouder && herkomst.soort() == Herkomst.Soort.ROL && herkomst.bron() != null
+                && herkomst.equals(rolHerkomst(model, ot, doel, rol));
+    }
+
+    /** The declaration whose member the bean of {@code ot} carries under the property of {@code rol}, its own or an
+     *  inherited one; null when no bean of the chain has that property. Where {@link #heeftReferentieVeld} refuses a
+     *  role, this names what holds the property instead, so a refusal can state the cause rather than guess it. */
+    public static Herkomst veldHerkomst(RegelSpraakModel model, Objecttype ot, String rol) {
+        Kandidaat veld = model == null || ot == null || rol == null ? null : veld(model, ot, Namen.ident(rol, false));
+        return veld == null ? null : veld.herkomst();
     }
 
     /**
