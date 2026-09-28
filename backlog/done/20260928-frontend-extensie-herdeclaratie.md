@@ -270,3 +270,31 @@ niet.
 - `b8f2d609` RuleChecker: de Tabel 16-waarschuwing staat op de regel van de zin
 - `c5259acd` DIVERGENCES: een extensie herhaalt een lid alleen letterlijk
 - de commit van dit Result
+
+## Keuring (hoofdsessie, 2026-09-28)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `cd6a995d` (logs `/tmp/v2/uchar-gates3/`): groen; gate 10 990
+toetsen, 104 rgs-goldens byte-gelijk; de overige tellingen gelijk aan de
+landing van de kaart drools-beannaamruimte-botsing dezelfde dag.
+
+Gelezen: de herhalingscontrole in `DefinitionResolver` (letterlijke
+herhaling toegelaten, elk ander verschil een ERROR die beide regels noemt,
+een rolregel in een extensie geweigerd met de regel van de rol, WF-105
+langs de erflijn met beide regels), de aanpassingen in `Benamingen` en
+`RuleChecker` die de opgave-markering via een herhaling laten werken (E2),
+de Tabel 16-waarschuwing op de regel van de zin (E3), de twintig plus één
+getuigen, de inertiemeting (175 eenheden, 136 exit 0 vóór en na) en de
+DIVERGENCES-tekst. Eén afwijking van de kaart aanvaard met de gemeten
+grond: de letterlijke herhaling zonder markering blijft stil toegelaten,
+omdat de pariteitscasus er drie schrijft en een strenge variant gate 11
+rood maakt; zij verandert het model niet. De rol-lezing (rollen en leden
+gescheiden naamruimten, IR-SPEC ch. 2.6) is de juiste.
+
+Bijvangst van de bouwer, als kaart geschreven door de hoofdsessie met een
+eigen reproductie en een scenario dat het foute antwoord toont:
+`backlog/new/20260928-frontend-ontkende-kwantor.md`. Open, niet als kaart:
+een lid dat twee keer in één kop staat vervangt nog stil; ketenregels in
+meldingen bij meerdere bestanden; `ongedefinieerd domein` op regel 0.
+Pin-bump naar de distributie en de werkbank samen met de twee
+Drools-kaarten van dezelfde dag.
