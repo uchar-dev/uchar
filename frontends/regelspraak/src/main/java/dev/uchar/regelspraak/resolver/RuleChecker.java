@@ -62,6 +62,9 @@ final class RuleChecker {
      *  {@link #beslistabellen}. A table has no rule form of its own — its rows are the rules — so a reader that
      *  asks which rules a table stands for asks here. */
     private final Map<BeslistabelContext, List<String>> rijRegels = new java.util.IdentityHashMap<>();
+    /** The line of the decision table whose rows are being resolved, 0 outside them: a row is parsed in a stream of its
+     *  own, so a warning about a condition in a row stands at the table. */
+    private int rijTabelregel;
     /** The rules whose target {@link #keurRegeldoelen} refused. The defaults lowering skips their families: its
      *  own checks would judge a target the author did not write (a navigation swallowed into a name) and add a
      *  second, misleading refusal beside the true one. */
@@ -2641,6 +2644,7 @@ final class RuleChecker {
             // off the table in the main stream, or they are lost.
             List<String> tabelAnnotaties = bronAnnotaties(b);
             List<String> dubbel = new ArrayList<>();
+            rijTabelregel = line;
             for (String regelSrc : BeslistabelDesugar.desugar(naam, geldig, headers, data, waarschuw)) {
                 RegelContext rc = parseRegel(regelSrc, line);
                 if (rc == null) continue;
@@ -2649,6 +2653,7 @@ final class RuleChecker {
                 else rijen.add(rijNaam);
                 regelVersies(rijNaam, rc.regelVersie(), tabelAnnotaties, rc.getStart().getLine());
             }
+            rijTabelregel = 0;
             // A row's rule is named after the table and the row's number (its first cell), so rows without a
             // number, or with the same one, share a name: two rule forms of one name, which the verifier refuses
             // in the rules array (WF-020), one sentence per name
@@ -5047,12 +5052,15 @@ final class RuleChecker {
      *  Surface it as a WARNING — a writing-form lint, never a wrong gate (the lowering is unchanged). Only a de-negated
      *  kenmerk (negatie=true) is checked; the positive form's verb-keying is the EEN-form split's job. */
     private void keurNegatieSoort(Objecttype houder, Conditie kc, boolean heeftWerkwoord) {
-        keurNegatieSoort(houder, kc, heeftWerkwoord, 0);
+        // a condition's warning stands at the line of the sentence that writes the check; it stood at 0, which points
+        // an author at nothing in a document with many rules
+        keurNegatieSoort(houder, kc, heeftWerkwoord, rijTabelregel > 0 ? rijTabelregel
+                : kc == null || kc.bron() == null ? 0 : kc.bron().line());
     }
 
     /** As above, at {@code line}. A negated RESULT (dialect §4) passes its sentence's line, so its warning stands at
-     *  the rule on the wire; the condition-side callers keep the 0 they always passed, so the diagnostics of
-     *  documents without a negated result do not move. */
+     *  the rule on the wire; a condition passes the line of its check, or the table's line in a row of a decision
+     *  table. */
     private void keurNegatieSoort(Objecttype houder, Conditie kc, boolean heeftWerkwoord, int line) {
         if (houder == null || !(kc instanceof Conditie.Kenmerk k) || !k.negatie()) return;
         Objecttype.KenmerkSoort soort = houder.kenmerkSoort(k.kenmerk());
