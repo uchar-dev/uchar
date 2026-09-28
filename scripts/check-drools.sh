@@ -1084,7 +1084,16 @@ EXPECTED_CHANNEL=(
 # ALL goldens in the exec branch: exactly the kustwacht line moves. The DRL-text branch refuses the new golden on
 # its defaults sentence (class (A) of DRL_CHANNEL) and still answers kustwacht wrong, so EXPECTED_DRL_PLAYED does
 # not move.
-EXPECTED_PLAYED=222
+# 222 -> 223 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new, from bron.rgs and
+# scenario.rgs and hand-computed — nine characteristic checks folded over the finds of a Jutter: 'alle', 'geen
+# van de' and 'ten minste één van de' over a possessive and an adjectival characteristic, affirmed and negated
+# with 'niet' and 'geen', two multi-word names, the anchor written as the role name, and the negated possessive
+# form in a bullet under 'alle volgende voorwaarden'. Until the card the RegelSpraak frontend lowered 'geen'
+# under a quantifier to the affirmed check and cut a multi-word name to its last word, with diagnostics []
+# (grammar/DIVERGENCES.md §13.4.15.45); the document is the frontend's reading since. No source file of this
+# backend changed: both branches play the two cases on the first run, PLAYED 2, with ref's and clingo's
+# values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=223
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1432,7 +1441,9 @@ DRL_CHANNEL=(
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 188 -> 189 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new. This branch plays
 # its three cases through the same bean-model change, PLAYED 3. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=189
+# 189 -> 190 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new. This branch plays its
+# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=190
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
