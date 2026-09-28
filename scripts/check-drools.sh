@@ -130,7 +130,16 @@ EXCLUDE_KNOWN=(
   # ExecModelTranspiler) and the identical diffs synced into backends/drools here, so ref ≡ clingo ≡
   # Drools now on both — they PLAY+PASS. The official RegelSpraak spec (§9.7.5) is silent on the
   # zero-recipient case, so the no-recipient rest becoming leeg is a bugfix, not a v1 delta.
-  "anchor/jutterswet-kustwacht|v0-divergence (CORRECTED: NOT a leeg operand): NEGATION-as-failure is not stratified — a geen-<kenmerk> rule fires before the positive kenmerk is derived and is never retracted, so rustwacht reads present though its post IS a risicopost. Original toolchain agrees with our port: DRL-oracle AND exec-model both fire the negated kenmerk true. v1-delta candidate: stratify negated-kenmerk reads."
+  # anchor/jutterswet-kustwacht LEFT this list 2026-09-28, and the reason it stood here with named the
+  # wrong mechanism: "negation-as-failure is not stratified". The derived stratum already put the rustwacht
+  # rule after the risicopost rule. What kept rustwacht present was its condition, "zijn post geen risicopost
+  # is": a navigated characteristic check, tested on the Wachter's own pattern, which Drools runs when the
+  # Wachter is inserted or updated — so the risicopost characteristic the post receives later was never seen.
+  # The exec-model branch now tests a condition that reads through a to-one navigation after a far-side join
+  # on the reached object (ExecModelTranspiler.regelVoorwaarde) and plays both cases against the unchanged
+  # pins. The original toolchain agreed with the port because it lowers the condition the same way. That
+  # leaves this list EMPTY; the mechanism stays for the next divergence, and both loops over it read an
+  # empty list.
   # jutterswet-keurmerk LEFT the list 2026-08-29 (card triage-sluiting, PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11): the
   # embedded-double-quote divergence was a backends/drools string-encoding defect, not a v0 semantic
   # difference. ExecModelTranspiler.tekstOfEnumLabel now strips only the paired Tekst DELIMITERS (as
@@ -180,7 +189,7 @@ EXCLUDE_KNOWN=(
   #       the version flank beside it.
 )
 
-known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]}"; do [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
+known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] || continue; [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
 
 # --- the expected-channel floor: which channel each golden BELONGS to (fails in both directions) ----
 # Entry: "<golden-relative-path>|<channel>|<reason it is not PLAYED>", channels:
@@ -218,7 +227,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: the WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad) and this golden's refusal moved one layer deeper, exactly as bergingstoezicht's did. Its middle relation 'berging' declares BOTH roles to-many, so §13.3.9 — which stores a relation in one scalar reference field, on whichever end is the ONE side — derives no field at either end and the hop Boot -> Vondst has nothing to read. That is the erflijn shape, and lifting it is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own, which the card that built the walk put out of scope"
   "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: one bean field necessarily carries BOTH directions; the arm keeps refusing CONSERVATIVELY since 2026-09-10 — its old ground (the directed reading) is withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
-  "anchor/jutterswet-kustwacht|DIVERGE|the one value-divergence — full reason in EXCLUDE_KNOWN above (negation-as-failure is not stratified)"
   "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: AANTAL over a to-one element role whose sister role is plural — one shared bean field; a CONSERVATIVE refusal since 2026-09-10, its old ground withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
   "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
@@ -1063,7 +1071,20 @@ EXPECTED_CHANNEL=(
 # declaration; the beans of every existing golden are byte-identical and no golden changes its report line
 # in either branch (measured per golden over all 277). Both branches play the three cases, PLAYED 3, with
 # ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=220
+# 220 -> 222 (2026-09-28, the condition over a navigated derived value): TWO new players, one from each side of
+# the change. The exec branch used to test a condition that reads through a to-one navigation on the subject's
+# pattern, which Drools runs when the subject is inserted or updated, so a value another rule later derived on
+# the reached object was never seen; the branch now tests such a condition after a far-side join on that object.
+# anchor/jutterswet-kustwacht leaves EXCLUDE_KNOWN and EXPECTED_CHANNEL: its rustwacht was this form (reason at
+# EXCLUDE_KNOWN), and the branch plays its two cases, PLAYED 2, against the unchanged pins. jutterswet-meldingsketen,
+# new, from bron.rgs and scenario.rgs and hand-computed: five rules on the Vondst whose condition reads a value
+# of its vinder that a defaults group or a characteristic assignment derives — a gevuld test, a compound with an
+# own part, a comparison with a parameter, a characteristic check and its negation, and a §6.5 division under the
+# condition — played in the exec branch, PLAYED 3, with ref's and clingo's values. Measured before and after over
+# ALL goldens in the exec branch: exactly the kustwacht line moves. The DRL-text branch refuses the new golden on
+# its defaults sentence (class (A) of DRL_CHANNEL) and still answers kustwacht wrong, so EXPECTED_DRL_PLAYED does
+# not move.
+EXPECTED_PLAYED=222
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1076,21 +1097,21 @@ EXPECTED_PLAYED=220
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-four of the eighty-nine
+# Why the reasons are grouped rather than written one by one: eighty-five of the ninety
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 34 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 31 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 35 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 33 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 33 of the 34 lines refuse on that one
-  # sentence; the 34th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. All 33 ARE that asymmetry — the exec branch plays them.
+  # toolchain does not have, and DrlTranspiler never did. 34 of the 35 lines refuse on that one
+  # sentence; the 35th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. All 34 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 31 is 35 exec-only players — those 33, jutterswet-vouwrand of class (C) and
-  # jutterswet-initialisatievolgorde of class (D) — minus 4 goldens
+  # The 33 is 37 exec-only players — those 34, jutterswet-vouwrand of class (C), and
+  # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
   # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
@@ -1124,6 +1145,10 @@ DRL_CHANNEL=(
   # bean name collision): anchor/jutterswet-toelagegronden leaves the class for class (F), 35 -> 34
   # lines, and the two new goldens of (F) move neither played count, so the gap stays 31 (219 - 188);
   # the six class heads (A 34, B 37, C 10, D 2, E 3, F 3 = 89 lines) were counted against the list.
+  # Recounted again the same day (the condition over a navigated derived value): jutterswet-meldingsketen
+  # joins the class, 34 -> 35 lines, and anchor/jutterswet-kustwacht now plays in the exec branch and not in
+  # this one, so the gap is 33 (222 - 189); the six class heads (A 35, B 37, C 10, D 2, E 3, F 3 = 90 lines)
+  # were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1137,6 +1162,7 @@ DRL_CHANNEL=(
   "jutterswet-diepwrakbasis|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-hardheidsaftrek-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-havenrooster|EXCLUDE|drl-transpiler MARKER: TODO datum-rekenkunde (dagsoort) — the same limit as the exec branch, one sentence earlier: the shared day-kind compiler carries no PARAMETER operand, so this branch markers the arithmetic instead of skipping the rule"
+  "jutterswet-meldingsketen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-nestkenmerk-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-opgave-boven-berekening|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-opgave-datum|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1242,14 +1268,15 @@ DRL_CHANNEL=(
   # jutterswet-initialisatievolgorde: this branch's initialisatie keeps the leeg-guard alone, so a
   # value computed against a read another rule has not yet written stays (0 and 5 where 26 and 18 are
   # right); the exec branch was repaired, see EXPECTED_PLAYED. anchor/jutterswet-kustwacht answers two
-  # wrong values in both cases. rustwacht is the value-divergence it SHARES with the exec branch —
-  # negation-as-failure is not stratified, so a geen-<kenmerk> rule fires before the positive
-  # kenmerk is derived; the exec branch's full reason is in EXCLUDE_KNOWN above, and both branches
-  # inherit it from the ported runtime. gevarenwacht is this branch's own: it stays absent where ref,
-  # clingo and the exec branch derive it present. The §13.4.6 class that stood here until
+  # wrong values in both cases, and both have one cause: this branch writes a navigated characteristic
+  # check into the subject's pattern, and an update of the reached post does not test it again. So
+  # rustwacht ("zijn post geen risicopost is") stays present and gevarenwacht ("zijn post risicopost
+  # is") stays absent after the post becomes a risicopost. Until 2026-09-28 the exec branch shared the
+  # rustwacht half; it now tests such a condition after a far-side join and plays both cases (reason at
+  # EXCLUDE_KNOWN above). The §13.4.6 class that stood here until
   # 2026-09-19 — four goldens reading leeg or faulting at fire on a creation — is gone, repaired
   # rather than pinned (card drl-objectcreatie-defect), and with it the last ERROR entry.
-  "anchor/jutterswet-kustwacht|FAIL|the v0 negation-stratification divergence on rustwacht, shared with the exec branch (full reason in EXCLUDE_KNOWN); this branch also leaves gevarenwacht absent in both cases, where ref, clingo and the exec branch derive it present (measured 2026-09-25) — the label FAIL does not tell the two apart"
+  "anchor/jutterswet-kustwacht|FAIL|a navigated characteristic check in a condition sits in the Wachter's pattern and is not tested again when the post becomes a risicopost: rustwacht stays present and gevarenwacht absent in both cases, where ref, clingo and the exec branch answer the reverse (measured 2026-09-28)"
   "jutterswet-initialisatievolgorde|FAIL|the initialisatie's leeg-guard reads the running fact base, so the value it computed against a read another rule had not yet written stays (bergloon 0 and vindloon 5 where ref, clingo and the exec branch answer 26 and 18); RUNTIME-SEMANTICS ch. 5.4 reads the guard off the input"
   # (E) No case file — nothing to replay, in either branch.
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file"
@@ -1518,7 +1545,8 @@ if [ ${#FAILED[@]} -gt 0 ]; then
 fi
 
 # stale guard: every listed exclusion must have been hit as a divergence
-for e in "${EXCLUDE_KNOWN[@]}"; do
+for e in "${EXCLUDE_KNOWN[@]:-}"; do
+  [ -n "$e" ] || continue
   n="${e%%|*}"; hit=0
   for h in "${KNOWN_HIT[@]:-}"; do [ "$h" = "$n" ] && hit=1; done
   [ $hit -eq 1 ] || fail "stale exclusion: '$n' is listed but did not diverge (gone, or now carried) — remove it"
