@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "opgegeven meldingsdatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-12"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "berekende meldingsdatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave meldingsdatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "ter controle"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-04-11"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

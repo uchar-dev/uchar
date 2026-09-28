@@ -1,0 +1,82 @@
+Scenario geen opgave
+Gegeven is de volgende situatie:
+een Vondst V
+- de vinddag is 10-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 13-03-2026
+- de berekende meldingsdatum van V is 13-03-2026
+- V heeft geen afwijkende opgave meldingsdatum
+- V is niet ter controle
+- de uiterste afhaaldatum van V is 12-04-2026
+- de gegevens zijn consistent
+
+Scenario opgave gelijk
+Gegeven is de volgende situatie:
+een Vondst V
+- de vinddag is 10-03-2026
+- de opgegeven meldingsdatum is 13-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 13-03-2026
+- de berekende meldingsdatum van V is 13-03-2026
+- V heeft geen afwijkende opgave meldingsdatum
+- V is niet ter controle
+- de uiterste afhaaldatum van V is 12-04-2026
+- de gegevens zijn consistent
+
+Scenario opgave wijkt af
+Gegeven is de volgende situatie:
+een Vondst V
+- de vinddag is 10-03-2026
+- de opgegeven meldingsdatum is 12-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 12-03-2026
+- de berekende meldingsdatum van V is 13-03-2026
+- V heeft afwijkende opgave meldingsdatum
+- V is ter controle
+- de uiterste afhaaldatum van V is 11-04-2026
+- de gegevens zijn inconsistent volgens "controle opgave meldingsdatum" voor V
+
+Scenario opgave zonder feiten
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven meldingsdatum is 12-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 12-03-2026
+- de berekende meldingsdatum van V is leeg
+- V heeft geen afwijkende opgave meldingsdatum
+- V is niet ter controle
+- de uiterste afhaaldatum van V is 11-04-2026
+- de gegevens zijn consistent
+
+Scenario niets
+Gegeven is de volgende situatie:
+een Vondst V
+Met als verwacht resultaat:
+- de meldingsdatum van V is 01-03-2026
+- de berekende meldingsdatum van V is leeg
+- V heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van V is 31-03-2026
+- de gegevens zijn consistent
+
+Scenario doel zelf in invoer
+Gegeven is de volgende situatie:
+een Vondst V
+- de vinddag is 10-03-2026
+- de meldingsdatum is 20-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 13-03-2026
+- de berekende meldingsdatum van V is 13-03-2026
+- V heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van V is 12-04-2026
+- de gegevens zijn consistent
+
+Scenario doel zelf zonder feiten
+Gegeven is de volgende situatie:
+een Vondst V
+- de meldingsdatum is 20-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 20-03-2026
+- de berekende meldingsdatum van V is leeg
+- V heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van V is 19-04-2026
+- de gegevens zijn consistent

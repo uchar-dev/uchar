@@ -1,0 +1,26 @@
+Objecttype de Vondst (mv: Vondsten)
+    de vinddag Datum in dagen;
+    de meldingsdatum Datum in dagen (mag opgegeven worden);
+    de uiterste afhaaldatum Datum in dagen;
+    is ter controle kenmerk (bijvoeglijk);
+
+// Bron: art. 3f lid 1
+Regel melding na de vinddag
+    geldig altijd
+        De meldingsdatum van een Vondst moet berekend worden als de vinddag van de Vondst plus 3 dagen.
+
+// Bron: art. 3f lid 2
+Regel melding bij onbekende vinddag
+    geldig altijd
+        De meldingsdatum van een Vondst moet geïnitialiseerd worden op 01-03-2026.
+
+// Bron: art. 3f lid 4
+Regel controle bij afwijkende meldingsdatum
+    geldig altijd
+        Een Vondst is ter controle
+        indien hij afwijkende opgave meldingsdatum heeft.
+
+// Bron: art. 3f lid 5
+Regel afhaaltermijn
+    geldig altijd
+        De uiterste afhaaldatum van een Vondst moet berekend worden als de meldingsdatum van de Vondst plus 30 dagen.
