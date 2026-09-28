@@ -1034,7 +1034,14 @@ EXPECTED_CHANNEL=(
 # over rules that compute a premium, a sum, a count and a threshold. This backend's loader reads the side
 # table into the model and no transpiler reads it: both branches play the two cases on the first run,
 # PLAYED 2 each, with ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=217
+# 217 -> 218 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new, from bron.rgs and
+# scenario.rgs and hand-computed — the object type 'Recht op premie', the role plural 'rechten op premie' and
+# the fact type 'jutter heeft premierecht', names the RegelSpraak frontend cut short before
+# (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"), over rules that compute a premium, a sum, a filtered
+# count and a threshold. The first corpus golden whose object-type name carries spaces. No source file of this
+# backend changed: both branches play the two cases on the first run, PLAYED 2 each, with ref's and clingo's
+# values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=218
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1357,7 +1364,9 @@ DRL_CHANNEL=(
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 186 -> 187 (2026-09-27, card vocabulaires-benamingen): jutterswet-vocabulaires, new. This branch plays its
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=187
+# 187 -> 188 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new. This branch plays its
+# two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=188
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
