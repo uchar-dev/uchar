@@ -41,14 +41,17 @@ public final class FactModelGenerator {
      *  the {@link ContractValidator} checks. */
     /** IR-SPEC ch. 2.2: the members a subtype's bean declares ITSELF. The generated bean
      *  {@code extends} its supertype's, so every inherited member is already a field there; emitting
-     *  it again would hide the parent's. The subtraction is by PROPERTY NAME, the same key the dedup
+     *  it again would hide the ancestor's. The subtraction is by PROPERTY NAME, the same key the dedup
      *  below uses, because the derived reference arms re-derive the SAME role field on a subtype that
-     *  the parent already carries (a relation hung on the supertype). */
+     *  an ancestor already carries (a relation hung on the supertype), and it runs over every ancestor:
+     *  subtracting the direct supertype's own members only let a grandchild declare such a field again. */
     public static List<Lid> leden(RegelSpraakModel model, Objecttype ot) {
         List<Lid> alle = alleLeden(model, ot);
         if (ot.supertype == null) return alle;
         java.util.Set<String> geerfd = new java.util.HashSet<>();
-        for (Lid l : leden(model, ot.supertype)) geerfd.add(l.eigenschap());
+        List<Objecttype> keten = ot.keten();
+        for (int i = 1; i < keten.size(); i++)
+            for (Lid l : alleLeden(model, keten.get(i))) geerfd.add(l.eigenschap());
         List<Lid> uit = new ArrayList<>();
         for (Lid l : alle) if (!geerfd.contains(l.eigenschap())) uit.add(l);
         return uit;
@@ -61,8 +64,8 @@ public final class FactModelGenerator {
         // and a Boolean attribute); the bean can carry only one field, and the runtime property resolution
         // reads whichever getter exists — so the FIRST derivation (attribute > kenmerk > referentie) wins.
         // The two loops below ITERATE the OWN declaration maps, deliberately, and are the reason this
-        // class reads no chain-closed facet map either: {@link #leden} subtracts what the supertype's
-        // bean already declares and the generated class `extends` it, so a chain-closed iteration would
+        // class reads no chain-closed facet map either: {@link #leden} subtracts what the ancestors'
+        // beans already declare and the generated class `extends` them, so a chain-closed iteration would
         // visit every inherited member once per descendant only to have the subtraction remove it again.
         // The facet lookups INSIDE them are keyed by a name this very iteration produced, so the nearest
         // declaration IS ot (WF-105 refuses shadowing) and the own map already answers for it.
