@@ -5,8 +5,15 @@ import dev.uchar.regelspraak.model.*;
 import dev.uchar.regelspraak.model.RegelSpraakModel.*;
 import dev.uchar.regelspraak.parser.RegelSpraak;
 import dev.uchar.regelspraak.parser.RegelSpraak.*;
+import dev.uchar.regelspraak.parser.RegelSpraakLexer;
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -46,6 +53,8 @@ public final class DefinitionResolver {
         // the 'is een' clauses bind only now: resolution is document-wide and ORDER-FREE, so a
         // forward reference is legal and only an undeclared name refuses (SUBTYPING §9.2)
         bindSupertypen();
+        // a role's filler binds only now, for the same reason: a fact type may name a type declared after it
+        weigerOngedeclareerdeVullers();
         for (RegelContext r : alleRegels(doc)) {
             model.regels.add(new Regel(src(r.regelNaam()), "regel"));
         }
@@ -125,6 +134,7 @@ public final class DefinitionResolver {
         if (ctx.meervoudsvorm() != null) ot.meervoud = src(ctx.meervoudsvorm()); // §13.2.29, for §8.1.6 plural refs
         supertypeClausules(ot, ctx.objectTypeSupertype());
         for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m);
+        ledenNaKop(ot, ctx, ctx.objectTypeMember());
     }
 
     // ---------------- the uchar 'is een' dialect extension (IR-SPEC ch. 2.2) ----------------
@@ -290,6 +300,7 @@ public final class DefinitionResolver {
         // an extensie adds members to an existing (or new) object type — merge, do not redeclare
         Objecttype ot = model.objecttypen.computeIfAbsent(src(ctx.objectTypeNaam()), Objecttype::new);
         for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m);
+        ledenNaKop(ot, ctx, ctx.objectTypeMember());
     }
 
     private void member(Objecttype ot, ObjectTypeMemberContext m) {
@@ -905,9 +916,16 @@ public final class DefinitionResolver {
         Feittype ft = new Feittype(src(ctx.feitTypeNaam()));
         ft.wederkerig = ctx.WEDERKERIG_FEITTYPE() != null;
         List<Rol> rollen = new ArrayList<>();
+        java.util.Set<ParserRuleContext> opVorigeRegel =
+                meldLedenOpVorigeRegel(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.naam + "'");
         for (RolSpecificatieContext rs : ctx.rolSpecificatie()) {
             String rolNaam = src(rs.rolNaam());
             String meervoud = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
+            if (!opVorigeRegel.contains(rs))
+                meldOnleesbareNaam("feittype '" + ft.naam + "'", "de rol", rolNaam, rs.getStart().getLine());
+            if (rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
+                rolVullers.add(new RolVuller(ft.naam, rolNaam, src(rs.objectTypeNaam()),
+                        rs.objectTypeNaam().getStart().getLine()));
             // §13.3.9.3: feitTypeNaam excludes 'de'/'het' (it stops at the role's article), so a feittype
             // name that itself contains an article ("bonus van DE groep") truncates there and the leftover
             // "de <woord>" is absorbed by this greedy rolNaam — corrupting it to "<woord> de <echte rol>"
@@ -916,6 +934,9 @@ public final class DefinitionResolver {
             // instead follows a bare noun ("groep de bonusgroep"). So flag a 'de'/'het' that has a word
             // before AND after it and is NOT preceded by a preposition — the tell-tale of a swallowed
             // name+article boundary — without warning on spec-legal "… van de/het …" names.
+            // Beside the line check, not instead of it: that check names the line and the word where a role
+            // begins on the head's line, this guess names the likely cause, and it alone sees the swallow where
+            // the role name runs on over the next line.
             if (lidwoordNaBareWoord(rolNaam))
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                         "feittype '" + ft.naam + "': de rolnaam '" + rolNaam + "' bevat een lidwoord (de/het) na een"
@@ -1013,6 +1034,194 @@ public final class DefinitionResolver {
                 if (!rolBezet[j] && RegelSpraakModel.rolNaamMatcht(uit.get(j), kandidaat)) return j;
         }
         return -1;
+    }
+
+    /** The two checks on the members of one head: the line check, and the readability of every name it did not
+     *  refuse — a refused member is a misreading, so its name is not the one the author declared. */
+    private void ledenNaKop(Objecttype ot, ParserRuleContext definitie, List<ObjectTypeMemberContext> leden) {
+        String drager = "objecttype '" + ot.naam + "'";
+        java.util.Set<ParserRuleContext> geweigerd = meldLedenOpVorigeRegel(definitie, leden, ObjectTypeMemberContext.class, drager);
+        for (ObjectTypeMemberContext m : leden) {
+            if (geweigerd.contains(m)) continue;
+            if (m.attribuutSpecificatie() != null)
+                meldOnleesbareNaam(drager, "het attribuut", naam(m.attribuutSpecificatie().lowerNaam()), m.getStart().getLine());
+            else if (m.kenmerkSpecificatie() != null)
+                meldOnleesbareNaam(drager, "het kenmerk", kenmerkNaam(m.kenmerkSpecificatie()), m.getStart().getLine());
+        }
+    }
+
+    // ---------------- a declaration on the line where the previous one ended ----------------
+    /** Where a head ends: its last token before the first member or role, and whether that token ends a NAME — the
+     *  type name of the head or of its 'is een' clause, or the fact type's name — rather than an annotation. */
+    private record KopEinde(Token token, boolean opNaam) {}
+
+    private static KopEinde kopEinde(ParserRuleContext definitie, Class<?> lid) {
+        Token eind = null;
+        ParseTree laatste = null;
+        for (ParseTree kind : definitie.children == null ? List.<ParseTree>of() : definitie.children) {
+            if (lid.isInstance(kind)) break;
+            Token t = kind instanceof TerminalNode n ? n.getSymbol()
+                    : kind instanceof ParserRuleContext p ? p.getStop() : null;
+            if (t == null || t.getTokenIndex() < 0) continue;   // a token the error recovery conjured stands nowhere
+            eind = t;
+            laatste = kind;
+        }
+        return eind == null ? null : new KopEinde(eind, eindigtOpNaam(laatste));
+    }
+
+    private static boolean eindigtOpNaam(ParseTree t) {
+        if (t instanceof ObjectTypeNaamContext || t instanceof FeitTypeNaamContext) return true;
+        if (t instanceof ObjectTypeSupertypeContext s && s.getChildCount() > 0)
+            return eindigtOpNaam(s.getChild(s.getChildCount() - 1));
+        return false;
+    }
+
+    /** A member (attribute, characteristic) or a role that begins on the line where the head, the previous member or
+     *  the previous role ended is refused. The lexer skips every line end, so a name the grammar cut short leaves
+     *  its rest to be read as a declaration of its own, and that reading went out without a word: one attribute
+     *  became two, a fact type lost the words of its name to its first role (grammar/DIVERGENCES.md, "Namen in
+     *  declaratiekoppen"). The lines of the tokens decide, never their capitals. A member that runs on over the next
+     *  line (the §3.9 example) begins on a line of its own and stays admitted; a heading ('---') runs to the end of
+     *  its line, so nothing begins after it there. The sentence names the word the declaration begins with and the
+     *  token the previous one ended on, and, where a keyword is the likely cut, the spelling that does read: the
+     *  keyword joined by a hyphen to its neighbour. Returns the refused members or roles. */
+    private java.util.Set<ParserRuleContext> meldLedenOpVorigeRegel(ParserRuleContext definitie,
+                                                                   List<? extends ParserRuleContext> leden,
+                                                                   Class<? extends ParserRuleContext> soortLid,
+                                                                   String drager) {
+        java.util.Set<ParserRuleContext> geweigerd = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        KopEinde kop = kopEinde(definitie, soortLid);
+        if (kop == null) return geweigerd;
+        Token vorige = kop.token();
+        String vorigeZin = "de kop";
+        boolean opNaam = kop.opNaam(), opKenmerk = false;
+        boolean rol = soortLid == RolSpecificatieContext.class;
+        for (ParserRuleContext lid : leden) {
+            Token begin = lid.getStart(), eind = lid.getStop();
+            if (begin == null || eind == null || eind.getTokenIndex() < begin.getTokenIndex()) continue;
+            String lidZin = lidZin(lid);
+            if (lidZin != null && begin.getLine() == vorige.getLine()) {
+                String woord = begin.getText();
+                String hint = "";
+                if (opNaam && sleutelwoord(begin))
+                    hint = " — hoort '" + woord + "' bij de naam, verbind het dan met een koppelteken aan het woord "
+                            + "ervoor ('" + vorige.getText() + "-" + woord + "')";
+                else if (opKenmerk)
+                    hint = " — hoort 'kenmerk' bij de naam, verbind het dan met een koppelteken aan het woord erna "
+                            + "('kenmerk-" + woord + "')";
+                fout(drager + ": " + lidZin + " begint met '" + woord + "' op de regel waar " + vorigeZin
+                        + " eindigt, direct na '" + vorige.getText() + "'; " + (rol ? "een rol" : "een lid")
+                        + " begint op een eigen regel" + hint, begin.getLine());
+                geweigerd.add(lid);
+            }
+            vorige = eind;
+            vorigeZin = lidZin == null ? "de koptekst"
+                    : (rol ? "de vorige rol " : "het vorige lid ") + lidZin.substring(lidZin.indexOf('\''));
+            opNaam = rol;                                  // a role ends on its filler, an object-type name
+            opKenmerk = !rol && eind.getType() == RegelSpraak.KENMERK;
+        }
+        return geweigerd;
+    }
+
+    /** "het attribuut 'naam'", "het kenmerk 'naam'" or "de rol 'naam'"; null for a heading. */
+    private String lidZin(ParserRuleContext lid) {
+        if (lid instanceof RolSpecificatieContext r) return "de rol '" + src(r.rolNaam()) + "'";
+        ObjectTypeMemberContext m = (ObjectTypeMemberContext) lid;
+        if (m.attribuutSpecificatie() != null) return "het attribuut '" + naam(m.attribuutSpecificatie().lowerNaam()) + "'";
+        if (m.kenmerkSpecificatie() != null) return "het kenmerk '" + kenmerkNaam(m.kenmerkSpecificatie()) + "'";
+        return null;
+    }
+
+    /** A token of the language rather than a word of the author: neither a name word of either case nor a number. */
+    private static boolean sleutelwoord(Token t) {
+        return t.getType() != RegelSpraak.UPPER_ID && t.getType() != RegelSpraak.LOWER_ID && t.getType() != RegelSpraak.NUMBER;
+    }
+
+    // ---------------- a role's filler is a declared object type ----------------
+    private record RolVuller(String feittype, String rol, String vuller, int regel) {}
+    private final List<RolVuller> rolVullers = new ArrayList<>();
+
+    /** WF-003 for a role's filler, BEFORE the emission: until this check the frontend wrote the document without a
+     *  word and only the verifier refused it, so a check without the verifier passed a filler like 'BK Jutter' — a
+     *  role name cut at its first capitalised word, its rest read as the type. Case-insensitive, as WF-003 resolves.
+     *  An ERROR where the document shows the misreading: the name is declared as another kind (the sentence says
+     *  which), or a shorter tail of it is a declared object type (the sentence says the role name ended at the first
+     *  capitalised word). A WARNING where the name is declared nowhere in the document: one file of a model that
+     *  declares its object types in another file reads so on its own, and resolves once the files are read as one
+     *  (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"); the verifier still refuses such a file emitted on its
+     *  own. */
+    private void weigerOngedeclareerdeVullers() {
+        for (RolVuller v : rolVullers) {
+            if (model.objecttypeOpNaam(v.vuller()) != null) continue;
+            String soort = soortVanNaam(v.vuller());
+            String zin = "feittype '" + v.feittype() + "': de rol '" + v.rol() + "' heeft als objecttype '" + v.vuller()
+                    + "', en dat is " + (soort == null ? "nergens als objecttype gedeclareerd" : "een " + soort + ", geen objecttype")
+                    + " — WF-003: de vuller van een rol is een gedeclareerd objecttype";
+            boolean misgelezen = soort != null;
+            String[] woorden = v.vuller().split(" ");
+            for (int i = 1; i < woorden.length; i++) {
+                String staart = String.join(" ", java.util.Arrays.copyOfRange(woorden, i, woorden.length));
+                Objecttype ot = model.objecttypeOpNaam(staart);
+                if (ot == null) continue;
+                zin += "; '" + ot.naam + "' is dat wel: een rolnaam eindigt bij het eerste woord met een hoofdletter, dus '"
+                        + String.join(" ", java.util.Arrays.copyOfRange(woorden, 0, i)) + "' is als deel van het objecttype gelezen";
+                misgelezen = true;
+                break;
+            }
+            if (misgelezen) fout(zin, v.regel());
+            else model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                    zin + "; staat het in een ander bestand van het model, lees de bestanden dan samen", v.regel()));
+        }
+    }
+
+    // ---------------- a declared name rule text does not read ----------------
+    /** A declared attribute, characteristic or role name that rule text cannot read back as one name gets a WARNING
+     *  naming the word. The name is lexed again on its own and parsed as the {@code kaleNaam} of rule text, up to its
+     *  end: 'als' is no word of a name there, and 'van' separates two parts of one and so neither opens nor closes
+     *  it. A WARNING and no ERROR: the declaration itself is well-formed, a document that never reads the name in a
+     *  rule is sound, and one source outside this repository carries such a name (grammar/DIVERGENCES.md, "Namen in
+     *  declaratiekoppen"). */
+    private void meldOnleesbareNaam(String drager, String soort, String naam, int regel) {
+        List<String> woorden = new ArrayList<>();
+        int fout = onleesbaarWoord(naam, woorden);
+        if (fout < 0) return;
+        List<String> voorbeeld = new ArrayList<>(woorden);
+        int links = fout > 0 ? fout - 1 : fout;
+        if (links + 1 < voorbeeld.size()) {
+            voorbeeld.set(links, voorbeeld.get(links) + "-" + voorbeeld.get(links + 1));
+            voorbeeld.remove(links + 1);
+        }
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
+                drager + ": regeltekst leest " + soort + " '" + naam + "' niet als één naam, want '" + woorden.get(fout)
+                        + "' is daar geen woord van een naam; verbind het met een koppelteken aan een buurwoord ('"
+                        + String.join(" ", voorbeeld) + "')", regel));
+    }
+
+    /** The index, among the tokens of {@code naam} lexed on their own, of the first word that keeps the
+     *  {@code kaleNaam} of rule text from reading the whole name; -1 when it reads it. {@code woorden} receives the
+     *  tokens' texts. */
+    static int onleesbaarWoord(String naam, List<String> woorden) {
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(naam));
+        lexer.removeErrorListeners();
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        tokens.fill();
+        List<Token> lijst = tokens.getTokens().stream()
+                .filter(t -> t.getChannel() == Token.DEFAULT_CHANNEL && t.getType() != Token.EOF).toList();
+        for (Token t : lijst) woorden.add(t.getText());
+        RegelSpraak parser = new RegelSpraak(tokens);
+        parser.removeErrorListeners();
+        parser.setErrorHandler(new BailErrorStrategy());
+        Token dader;
+        try {
+            parser.kaleNaam();
+            dader = tokens.LT(1);
+        } catch (ParseCancellationException e) {
+            dader = e.getCause() instanceof RecognitionException r ? r.getOffendingToken() : tokens.LT(1);
+        }
+        if (dader == null || dader.getType() == Token.EOF) return -1;
+        for (int i = 0; i < lijst.size(); i++) if (lijst.get(i).getTokenIndex() == dader.getTokenIndex()) return i;
+        throw new IllegalStateException("DefinitionResolver.onleesbaarWoord: het token '" + dader.getText()
+                + "' staat niet in de naam '" + naam + "'");
     }
 
     // ---------------- helpers ----------------
