@@ -1665,10 +1665,10 @@ final class RuleChecker {
     private final List<Opgave> gelowerd = new ArrayList<>();
 
     /** The declaration half, before any rule resolves. A marker on a characteristic is refused. A marked attribute
-     *  must be a Numeriek without a unit, not time-dependent and not dimensioned, and none of the member names it
-     *  generates may exist yet in the inheritance line of its type; then its two attributes are declared right after
-     *  it and its characteristic at the end of the type's characteristics. One ERROR per marker, at the declaration's
-     *  line, naming the first reason that holds. */
+     *  must be a Numeriek without a unit or a Datum in dagen, not time-dependent and not dimensioned, and none of the
+     *  member names it generates may exist yet in the inheritance line of its type; then its two attributes are
+     *  declared right after it and its characteristic at the end of the type's characteristics. One ERROR per marker,
+     *  at the declaration's line, naming the first reason that holds. */
     private void opgaveDeclaraties(RegelSpraakDocumentContext doc) {
         // the declaration line of every member, per declaring type, for the collision message
         Map<Objecttype, Map<String, Integer>> lidRegels = new java.util.IdentityHashMap<>();
@@ -1746,19 +1746,21 @@ final class RuleChecker {
         String x = o.attribuut();
         AttribuutSpecificatieContext a = o.declaratie();
         Datatype dt = t.attributen.get(x);
-        // The corpus carries attribute defaults targets of datatype Number without a unit only, so that is the one
-        // family the three executors are measured on; another family waits for a witness of its own.
+        // Two families are measured in the three executors, each on a golden of its own: a Numeriek without a unit
+        // and a Datum in dagen; another family waits for a witness of its own. A unit clause after a date needs no
+        // sentence here: it is an ERROR where the datatype is read.
         boolean lidEenheid = a.MET_EENHEID() != null;
-        if (!(dt instanceof Datatype.Numeriek n) || n.heeftEenheid() || lidEenheid) {
+        boolean getal = dt instanceof Datatype.Numeriek n && !n.heeftEenheid() && !lidEenheid;
+        if (!getal && !(dt instanceof Datatype.DatumInDagen)) {
             NumeriekDatatypeContext nd = a.datatype() == null ? null : a.datatype().numeriekDatatype();
             String genoemd = dt instanceof Datatype.Numeriek n && n.heeftEenheid()
                     ? "Numeriek met eenheid " + (nd != null && nd.eenheidExpressie() != null
                             ? src(nd.eenheidExpressie()) : n.eenheid().weergave())
                     : dt instanceof Datatype.Numeriek && lidEenheid ? "Numeriek met eenheid " + src(a.eenheidExpressie())
                     : dt == null ? "onbekend" : dt.naam();
-            return o.kop() + ": " + MARKERING + " staat alleen op een Numeriek attribuut zonder eenheid, en '" + x
-                    + "' is " + genoemd + " — een defaults-groep op een attribuut van een ander datatype of met een "
-                    + "eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)";
+            return o.kop() + ": " + MARKERING + " staat alleen op een Numeriek attribuut zonder eenheid of een Datum "
+                    + "in dagen, en '" + x + "' is " + genoemd + " — een defaults-groep op een attribuut van een ander "
+                    + "datatype of met een eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)";
         }
         if (t.attribuutGranulariteit.containsKey(x))
             return o.kop() + ": " + MARKERING + " staat niet op een tijdsafhankelijk attribuut — een defaults-groep "
