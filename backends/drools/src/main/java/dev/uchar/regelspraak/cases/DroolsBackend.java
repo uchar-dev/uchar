@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
+import dev.uchar.regelspraak.graaf.ProducentConsument;
+import dev.uchar.regelspraak.ir.ResolvedStartpunt;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -91,14 +93,15 @@ public final class DroolsBackend {
      *
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.Documentfout a document that is not well-formed {@code uchar-ir-v1}
-     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a reciprocal
-     *      self-relation the bean model cannot hold, a bean-contract violation, a construct the branch does not
-     *      lower, and on the DRL-text branch a prioritized-defaults extension or a DRL text the Drools compiler
-     *      rejects */
+     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
+     *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
+     *      violation, a construct the branch does not lower, and on the DRL-text branch a prioritized-defaults
+     *      extension or a DRL text the Drools compiler rejects */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
         RegelSpraakModel model = loaded.model();
+        weigerBeannaambotsing(loaded);
 
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
@@ -140,6 +143,43 @@ public final class DroolsBackend {
             };
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
+    /** Two declarations on one Java name of the bean model, refused before a bean is generated, in the sentences of
+     *  {@link FactModelGenerator}: an object type whose fact class another type, a class the generator writes itself
+     *  or a {@code java.lang} type already names; two roles on one reference field of one type; and a member whose
+     *  bean property belongs to another declaration, where a form of the rule layer reads or writes it (the forms of
+     *  {@link ProducentConsument}, and a §9.9 start-point determination, which names its anchor member). Such a member
+     *  that nothing uses is left alone: its field is simply absent, and a case that names it is refused by the case
+     *  reader. Here and not in the loader, because the rule graph and every other reading of the loaded model keep
+     *  the two names apart; only the bean model does not. */
+    private static void weigerBeannaambotsing(IrLoader.Loaded loaded) {
+        RegelSpraakModel model = loaded.model();
+        String klasse = FactModelGenerator.klassebotsing(model);
+        if (klasse != null) throw new Excluded(klasse);
+        List<FactModelGenerator.Verdringing> verdringingen = FactModelGenerator.verdringingen(model);
+        if (verdringingen.isEmpty()) return;
+        String rol = FactModelGenerator.rolbotsing(verdringingen);
+        if (rol != null) throw new Excluded(rol);
+        Map<ProducentConsument.ElementSleutel, String> gebruik = new java.util.HashMap<>();
+        for (ProducentConsument.Vorm v : ProducentConsument.vormen(model, loaded.prioritizedDefaults(),
+                ProducentConsument.wireNavigatie(loaded))) {
+            String wie = v.soort().name().toLowerCase(java.util.Locale.ROOT) + " '" + v.naam() + "'";
+            for (ProducentConsument.ElementSleutel e : v.schrijft()) gebruik.putIfAbsent(e, wie);
+            for (ProducentConsument.ElementSleutel e : v.leest()) gebruik.putIfAbsent(e, wie);
+        }
+        for (ResolvedStartpunt sp : model.resolvedStartpunten)
+            gebruik.putIfAbsent(ProducentConsument.elementVan(model.objecttypeOpNaam(sp.objecttype()), sp.lid(), false),
+                    "de startpuntbepaling van tijdlijn '" + sp.tijdlijn() + "'");
+        for (FactModelGenerator.Verdringing v : verdringingen) {
+            FactModelGenerator.Herkomst h = v.verdrongen();
+            // a role without a field of its own is refused where it is used, by the gate that asks the field's name
+            // and type (FactModelGenerator.heeftReferentieVeld); rolbotsing above took the one shape that gate passes
+            if (h.soort() == FactModelGenerator.Herkomst.Soort.ROL) continue;
+            String wie = gebruik.get(ProducentConsument.ElementSleutel.van(h.bron(), h.naam(),
+                    h.soort() == FactModelGenerator.Herkomst.Soort.KENMERK));
+            if (wie != null) throw new Excluded(FactModelGenerator.verdringingReden(v) + "; " + wie + " leest of schrijft het");
         }
     }
 

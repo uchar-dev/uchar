@@ -81,9 +81,22 @@ public final class CaseRunner {
      *  report's coverage ranges over ({@link #rapport}). Empty for the DRL-text branch, which reports nothing. */
     private List<Dekking> dekking = List.of();
 
+    /** The members of the model without a bean field of their own ({@link FactModelGenerator#verdringingen}): a
+     *  case that sets or reads one is refused by name, since the replay would reach the field of the declaration
+     *  that took the property. */
+    private final List<FactModelGenerator.Verdringing> verdringingen;
+
     private CaseRunner(RegelSpraakModel model, KieBase kieBase, ClassLoader cl,
                        Map<String, java.util.function.Predicate<LocalDate>> dagsoortGlobalen) {
         this.model = model; this.kieBase = kieBase; this.cl = cl; this.dagsoortGlobalen = dagsoortGlobalen;
+        this.verdringingen = FactModelGenerator.verdringingen(model);
+    }
+
+    /** Refuses a case that sets or reads ({@code handeling}) the attribute or, with {@code kenmerk}, the
+     *  characteristic {@code naam} of an instance of {@code ot} when that member has no bean field of its own. */
+    private void eigenVeld(Objecttype ot, String naam, boolean kenmerk, String handeling) {
+        String reden = ot == null ? null : FactModelGenerator.verdrongenLid(verdringingen, ot, naam, kenmerk);
+        if (reden != null) throw new Excluded(reden + "; de case " + handeling + " het");
     }
 
     /** Load {@code irPath}, build the KieBase, and replay each of {@code casePaths}. Any {@link Excluded}
@@ -510,6 +523,7 @@ public final class CaseRunner {
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
             Datatype dt = ot.attribuut(e.getKey());
             if (dt == null) throw new Excluded("case sets undeclared attribute '" + e.getKey() + "' on " + ot.naam);
+            eigenVeld(ot, e.getKey(), false, "zet");
             if (gedimensioneerd(ot, e.getKey()))
                 throw new Excluded("dimensioned attribute input '" + e.getKey() + "' (§3.6, a Map bean member) "
                         + "is not carried by the v0 backend");
@@ -539,6 +553,7 @@ public final class CaseRunner {
                         + "time-dependent kenmerk of " + ot.naam + ": deliver it as a characteristicTimelines "
                         + "entry — the static characteristics list asserts a scalar truth no temporal reader "
                         + "consults");
+            eigenVeld(ot, k.asText(), true, "zet");
             roep(bean, Namen.setter(k.asText()), boolean.class, Boolean.TRUE);
         }
         JsonNode ctls = i.get("characteristicTimelines");
@@ -548,6 +563,7 @@ public final class CaseRunner {
             // Excluded would file a broken corpus case under "not carried", silently green.
             if (!Namen.bevatNaam(ot.kenmerkGranulariteitLeden(), e.getKey()))
                 throw new IllegalArgumentException("kenmerktijdlijn op niet-temporeel kenmerk '" + e.getKey() + "'");
+            eigenVeld(ot, e.getKey(), true, "zet");
             roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.kenmerkGranulariteitLeden().keySet(), e.getKey())), List.class,
                     kenmerkTijdreeks(e.getValue(), e.getKey()));
         }
@@ -971,6 +987,7 @@ public final class CaseRunner {
         String attr = v.get("attribute").asText();
         String label = v.get("label").asText();
         Objecttype ot = labelType.get(label);
+        eigenVeld(ot, attr, false, "leest");
         if (ot != null && gedimensioneerd(ot, attr))
             throw new Excluded("dimensioned attribute read-back '" + attr + "' (§3.6, a Map bean member) "
                     + "is not carried by the v0 backend");
@@ -1004,6 +1021,7 @@ public final class CaseRunner {
             throw new IllegalArgumentException("attributeTimeline-verwachting op onbekend label '" + label + "'");
         if (!temporeel(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
+        eigenVeld(ot, attr, false, "leest");
         List<Object> verwacht = tijdreeks(v.get("timeline"), attr, "expected " + label + "." + attr, rooster(ot, attr),
                 true);
         Object gelezen = labelNaarBean.containsKey(label) ? lees(labelNaarBean.get(label), Namen.getter(attr)) : null;
@@ -1037,6 +1055,7 @@ public final class CaseRunner {
     }
 
     private String kenmerk(JsonNode v, boolean aanwezigVerwacht) {
+        eigenVeld(labelType.get(v.get("label").asText()), v.get("characteristic").asText(), true, "leest");
         Object bean = labelNaarBean.get(v.get("label").asText());
         Object gelezen = bean == null ? null : lees(bean, Namen.getter(v.get("characteristic").asText()));
         boolean aanwezig = Boolean.TRUE.equals(gelezen);

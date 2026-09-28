@@ -37,8 +37,26 @@ public final class FactModelGenerator {
      *  boolean {@code is<X>} form (a scalar kenmerk). */
     public record Lid(String eigenschap, String javaType, boolean isVorm) {}
 
-    /** Every bean member the model implies for {@code ot} — the ONE derivation the generator renders and
-     *  the {@link ContractValidator} checks. */
+    /** The declaration a bean member stands for: an attribute or a characteristic {@code naam} of the object type
+     *  {@code bron} that declares it, or the role {@code naam} of the fact type {@code bron} (null when the role
+     *  resolves to no single declaration). One origin reached twice is one declaration: a role field is derived
+     *  again on every subtype of the type that plays the other role, and once per subtype of its own filler. */
+    public record Herkomst(Soort soort, String naam, String bron) {
+        public enum Soort { ATTRIBUUT, KENMERK, ROL }
+
+        /** The declaration in the words of a refusal. */
+        public String beschrijving() {
+            return switch (soort) {
+                case ATTRIBUUT -> "het attribuut '" + naam + "' van " + bron;
+                case KENMERK -> "het kenmerk '" + naam + "' van " + bron;
+                case ROL -> "de rol '" + naam + "'" + (bron == null ? "" : " (feittype '" + bron + "')");
+            };
+        }
+    }
+
+    /** A bean member the model implies and the declaration it stands for, before the dedup of {@link #alleLeden}. */
+    private record Kandidaat(Lid lid, Herkomst herkomst) {}
+
     /** IR-SPEC ch. 2.2: the members a subtype's bean declares ITSELF. The generated bean
      *  {@code extends} its supertype's, so every inherited member is already a field there; emitting
      *  it again would hide the ancestor's. The subtraction is by PROPERTY NAME, the same key the dedup
@@ -63,6 +81,17 @@ public final class FactModelGenerator {
         // kenmerk and to-one role may legally share a name (a single name can be declared as both a kenmerk
         // and a Boolean attribute); the bean can carry only one field, and the runtime property resolution
         // reads whichever getter exists — so the FIRST derivation (attribute > kenmerk > referentie) wins.
+        // What lost the property has no field of its own: verdringingen() names it, and the backend refuses
+        // every use of it by name.
+        for (Kandidaat k : kandidaten(model, ot))
+            if (gezien.add(k.lid().eigenschap())) uit.add(k.lid());
+        return uit;
+    }
+
+    /** Every bean member the model implies for {@code ot}, with its origin, in the order the dedup of
+     *  {@link #alleLeden} keeps the first of: the attributes, the kenmerken, the reference fields. */
+    private static List<Kandidaat> kandidaten(RegelSpraakModel model, Objecttype ot) {
+        List<Kandidaat> uit = new ArrayList<>();
         // The two loops below ITERATE the OWN declaration maps, deliberately, and are the reason this
         // class reads no chain-closed facet map either: {@link #leden} subtracts what the ancestors'
         // beans already declare and the generated class `extends` them, so a chain-closed iteration would
@@ -75,13 +104,13 @@ public final class FactModelGenerator {
             if (!ot.dimensiesVan(naam).isEmpty()) type = "java.util.Map<String, java.math.BigDecimal>";   // §3.6
             else if (ot.attribuutGranulariteit.containsKey(naam)) type = "java.util.List<Segment>";       // §13.3.6
             else type = javaType(e.getValue());
-            if (gezien.add(Namen.ident(naam, false)))
-                uit.add(new Lid(Namen.ident(naam, false), type, false));
+            uit.add(new Kandidaat(new Lid(Namen.ident(naam, false), type, false),
+                    new Herkomst(Herkomst.Soort.ATTRIBUUT, naam, ot.naam)));
         }
         for (String k : ot.kenmerken) {
             boolean temporeel = ot.kenmerkGranulariteit.containsKey(k);                                    // §13.3.6
-            if (gezien.add(Namen.ident(k, false)))
-                uit.add(new Lid(Namen.ident(k, false), temporeel ? "java.util.List<Segment>" : "boolean", !temporeel));
+            uit.add(new Kandidaat(new Lid(Namen.ident(k, false), temporeel ? "java.util.List<Segment>" : "boolean",
+                    !temporeel), new Herkomst(Herkomst.Soort.KENMERK, k, ot.naam)));
         }
         // §13.3.9: the scalar to-one reference fields — derived from the SAME authority the transpilers
         // navigate by (verbindendeRollen + naarVeelRol): for every other objecttype, the houder carries ONE
@@ -107,19 +136,149 @@ public final class FactModelGenerator {
             if (doelwit == ot) continue;
             for (String rol : model.verbindendeRollen(ot, doelwit)) {
                 if (model.naarVeelRol(ot, doelwit, rol)) continue;
-                if (gezien.add(Namen.ident(rol, false)))
-                    uit.add(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false));
+                uit.add(new Kandidaat(new Lid(Namen.ident(rol, false), Namen.ident(doelwit.naam, true), false),
+                        rolHerkomst(model, ot, doelwit, rol)));
             }
         }
         // §13.3.9.2: the SELF-PAIR reference field, which the loop above cannot reach because it skips
         // ot itself. It is derivable for exactly one shape — a wederkerig feittype — see zelfpaarRol.
         String zelf = zelfpaarRol(model, ot);
-        if (zelf != null && gezien.add(Namen.ident(zelf, false)))
-            uit.add(new Lid(Namen.ident(zelf, false), Namen.ident(ot.naam, true), false));
+        if (zelf != null)
+            uit.add(new Kandidaat(new Lid(Namen.ident(zelf, false), Namen.ident(ot.naam, true), false),
+                    rolHerkomst(model, ot, ot, zelf)));
         for (String rol : zelfpaarRollen(model, ot))                                                   // §13.3.9 self-typed
-            if (gezien.add(Namen.ident(rol, false)))
-                uit.add(new Lid(Namen.ident(rol, false), Namen.ident(ot.naam, true), false));
+            uit.add(new Kandidaat(new Lid(Namen.ident(rol, false), Namen.ident(ot.naam, true), false),
+                    rolHerkomst(model, ot, ot, rol)));
         return uit;
+    }
+
+    /** The declaration of the role {@code rol} that a field on {@code houder} toward {@code doelwit} stands for:
+     *  the role of that name that {@code doelwit} may fill, in a fact type that relates {@code houder} — the search
+     *  {@code verbindendeRollen} admits a role by, which leaves exactly one. */
+    private static Herkomst rolHerkomst(RegelSpraakModel model, Objecttype houder, Objecttype doelwit, String rol) {
+        String feittype = null;
+        int n = 0;
+        for (Feittype ft : model.feittypen.values())
+            for (Rol r : ft.rollen)
+                if (rol.equalsIgnoreCase(r.naam()) && vult(model, r, doelwit)
+                        && (ft.wederkerig ? vult(model, r, houder)
+                                          : ft.rollen.stream().anyMatch(h -> h != r && vult(model, h, houder)))) {
+                    feittype = ft.naam;
+                    n++;
+                }
+        return new Herkomst(Herkomst.Soort.ROL, rol, n == 1 ? feittype : null);
+    }
+
+    /** Whether {@code ot} may fill {@code r}: it is the role's filler or a subtype of it. */
+    private static boolean vult(RegelSpraakModel model, Rol r, Objecttype ot) {
+        Objecttype vuller = model.objecttypeOpNaam(r.objecttypeNaam());
+        return vuller != null ? ot.isEen(vuller) : r.objecttypeNaam().equalsIgnoreCase(ot.naam);
+    }
+
+    /** A bean member without a field of its own. On the bean of {@code type} the property of the member
+     *  {@code verdrongen} stands for belongs to {@code eigenaar}, which the generator ports first: an ancestor's
+     *  member before a descendant's, and within one type the attributes, the kenmerken, the reference fields, in
+     *  that order and each in declaration order. {@code Namen.ident} drops the spaces and hyphens of a name and
+     *  camel-cases its words, so two names the verifier keeps apart can meet here, and WF-002 lets an attribute and
+     *  a characteristic share even the same name. Whatever reads or writes {@code verdrongen} reaches the field of
+     *  {@code eigenaar}: a crash at fire when their types differ, and when they agree the one member silently
+     *  written through the other. */
+    public record Verdringing(Objecttype type, Herkomst verdrongen, Lid verdrongenLid, Herkomst eigenaar,
+                              Lid eigenaarLid) {
+        /** The bean property both fall on, as {@code <Klasse>.<eigenschap>}. */
+        public String javaNaam() { return Namen.ident(type.naam, true) + "." + verdrongenLid.eigenschap(); }
+    }
+
+    /** Every {@link Verdringing} of the model, once per member that lost its property: on the type whose bean
+     *  would have declared it, not again on each subtype that inherits the loss. A member reached twice from one
+     *  declaration is not one. */
+    public static List<Verdringing> verdringingen(RegelSpraakModel model) {
+        List<Verdringing> uit = new ArrayList<>();
+        for (Objecttype ot : model.objecttypen.values()) {
+            Map<String, Kandidaat> eigenaar = new java.util.HashMap<>();
+            List<Objecttype> keten = ot.keten();
+            for (int i = keten.size() - 1; i >= 1; i--)                   // the ancestors, root first
+                for (Kandidaat k : kandidaten(model, keten.get(i))) eigenaar.putIfAbsent(k.lid().eigenschap(), k);
+            for (Kandidaat k : kandidaten(model, ot)) {
+                Kandidaat eerder = eigenaar.putIfAbsent(k.lid().eigenschap(), k);
+                if (eerder != null && !eerder.herkomst().equals(k.herkomst()))
+                    uit.add(new Verdringing(ot, k.herkomst(), k.lid(), eerder.herkomst(), eerder.lid()));
+            }
+        }
+        return uit;
+    }
+
+    /** Why {@code v}'s member has no field of its own, in the one sentence both branches and the case reader
+     *  refuse a use of it with; the caller appends who uses it. */
+    public static String verdringingReden(Verdringing v) {
+        return "beannaambotsing: " + v.verdrongen().beschrijving() + " valt op de beaneigenschap " + v.javaNaam()
+                + " van " + v.eigenaar().beschrijving() + " en heeft geen eigen veld";
+    }
+
+    /** {@link #verdringingReden} for the member a case names on an instance of {@code ot} — an attribute, or with
+     *  {@code kenmerk} a characteristic, resolved on {@code ot}'s chain under the verifier's name identity — or
+     *  null when that member has a field of its own (or {@code ot} declares none by that name). */
+    public static String verdrongenLid(List<Verdringing> verdringingen, Objecttype ot, String naam, boolean kenmerk) {
+        String sleutel = Namen.norm(naam);
+        for (Objecttype t : ot.keten())
+            for (String lid : kenmerk ? t.kenmerken : t.attributen.keySet())
+                if (Namen.norm(lid).equals(sleutel)) {
+                    Herkomst h = new Herkomst(kenmerk ? Herkomst.Soort.KENMERK : Herkomst.Soort.ATTRIBUUT, lid, t.naam);
+                    for (Verdringing v : verdringingen) if (v.verdrongen().equals(h)) return verdringingReden(v);
+                    return null;
+                }
+        return null;
+    }
+
+    /** Two ROLES on one reference field of one type, as a refusal, or null. A field of another type is left to the
+     *  use sites, whose gate asks name and type ({@link #heeftReferentieVeld}) and refuses by name; one of the same
+     *  type passes that gate for both roles, and every reader and writer of either then works one relation. */
+    public static String rolbotsing(List<Verdringing> verdringingen) {
+        for (Verdringing v : verdringingen)
+            if (v.verdrongen().soort() == Herkomst.Soort.ROL && v.eigenaar().soort() == Herkomst.Soort.ROL
+                    && v.verdrongenLid().javaType().equals(v.eigenaarLid().javaType()))
+                return "beannaambotsing: " + v.verdrongen().beschrijving() + " valt op het referentieveld "
+                        + v.javaNaam() + " van " + v.eigenaar().beschrijving() + ", een veld van hetzelfde type, en de"
+                        + " bean draagt per veld één relatie";
+        return null;
+    }
+
+    /** The classes the generator writes into {@link #PAKKET} itself, with what each is for. */
+    private static final Map<String, String> HULPKLASSEN =
+            Map.of("Segment", "de segmenten van een tijdlijn", "Inconsistentie", "een inconsistentie");
+
+    /** Why the object types of {@code model} do not each get a fact class of their own, or null when they do:
+     *  two types on one class name ({@code Namen.ident} is not injective, while WF-001 compares the names
+     *  case-insensitively and keeps them apart), a type on the name of a class the generator writes itself, or a
+     *  type on the name of a public {@code java.lang} type, which the fact class then hides from the generated beans
+     *  (their own package comes first) and from the DRL text (which imports every fact class by name). */
+    public static String klassebotsing(RegelSpraakModel model) {
+        Map<String, Objecttype> klassen = new java.util.HashMap<>();
+        for (Objecttype ot : model.objecttypen.values()) {
+            String klasse = Namen.ident(ot.naam, true), fqn = PAKKET + "." + klasse;
+            Objecttype eerder = klassen.putIfAbsent(klasse, ot);
+            if (eerder != null)
+                return "beannaambotsing: de objecttypen '" + eerder.naam + "' en '" + ot.naam + "' vallen op één"
+                        + " feitklasse, " + fqn + ", en het beanmodel maakt één klasse per naam";
+            if (HULPKLASSEN.containsKey(klasse))
+                return "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", de"
+                        + " hulpklasse die het beanmodel zelf genereert voor " + HULPKLASSEN.get(klasse);
+            if (javaLang(klasse))
+                return "beannaambotsing: het objecttype '" + ot.naam + "' valt op de feitklasse " + fqn + ", en die"
+                        + " verbergt java.lang." + klasse + " voor de gegenereerde beans en de DRL-tekst";
+        }
+        return null;
+    }
+
+    /** Whether {@code java.lang} has a public type of this simple name — the names every Java source sees
+     *  without an import. */
+    private static boolean javaLang(String klasse) {
+        try {
+            Class<?> c = Class.forName("java.lang." + klasse, false, ClassLoader.getPlatformClassLoader());
+            return java.lang.reflect.Modifier.isPublic(c.getModifiers());
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     /**
