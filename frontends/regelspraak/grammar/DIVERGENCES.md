@@ -2415,7 +2415,7 @@ schema, the file name, the scope and its IR document, the CLI) and
 `ScenarioParametersetTest` (the two tokens, a case file with a jaargang and
 a whole timeline written by hand, the exclusive end, and each refusal of
 the parameter set on its line). The corpus:
-seven goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
+nine goldens carry a `scenario.rgs` beside their `bron.rgs` whose lowering
 reproduces their pinned case files, and whose scenario route reproduces their
 `ir.json`, byte for byte — the handwritten expectations are the anchor —:
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
@@ -2425,9 +2425,12 @@ names every form of its document: a scope that leaves a form out writes an IR
 document no golden pins, so the leaving out, the dropped diagnostics among it,
 is witnessed by `ScenarioLoweringTest` alone) and
 `jutterswet-dubbelverbinding` (a shared situation, roles written from both
-sides with a plural key, a peildatum) and `jutterswet-jaarvaststelling` (a
+sides with a plural key, a peildatum), `jutterswet-jaarvaststelling` (a
 parameter set with two jaargangen of a threshold, an amount, a percentage
-and a date, chosen by two scenarios one day apart). Together they carry
+and a date, chosen by two scenarios one day apart), `jutterswet-premierecht` (an object
+type named with a preposition, a fact type named with a verb) and
+`jutterswet-opgave-datum` (the opgave marker on a date, an `inconsistent
+volgens` expectation). Together they carry
 every expectation kind of the case format.
 
 ---

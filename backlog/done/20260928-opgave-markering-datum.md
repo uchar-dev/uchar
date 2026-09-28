@@ -423,3 +423,41 @@ werkelijk 2026-03-13`.
 | `cbc1bdfa` | DIVERGENCES §7: de markering op een Datum in dagen |
 
 Daarna één commit met dit Result.
+
+## Keuring (hoofdsessie, 2026-09-28)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `83cc99a8` (logs `/tmp/v2/uchar-gates/`): groen. Gemeten daar:
+gate 3 314 goldens schoon, 501 negatief; gate 5 en 6 741 cases exact;
+gate 7 697 weerleggingen, 44 overlevers (ongewijzigd); gate 9 gedraaid,
+241 checks; gate 10 969 toetsen, 102 rgs-goldens byte-gelijk; gate 11 45
+bronnen byte-gelijk, 29 pariteitscases in de drie uitvoerders; gate 12
+speelt 219 en 188 (de exec-pin één omhoog, eigen commit van de bouwer op
+het beschermde pad, hier geland); gate 16 9 goldens, 40 casebestanden.
+Vijf gates gaven in mijn eerste run exit 2: ze waren onder `sh` gestart
+en gebruiken bash-procesvervanging; onder bash groen — geen bevinding
+over de kaart.
+
+Gelezen: de verbrede toelating in `opgaveDeclaraties` (één voorwaarde,
+de zin van K3 letterlijk, de lowering ongeraakt); de twee getuigen en de
+weigertabel met de rij Datum-tijd; de golden met eigen casustekst, zeven
+handgerekende cases en een `scenario.rgs` die ze regenereert; het
+gate-12-voorstel met de hertelling van klasse (A) en de kop van
+`DRL_CHANNEL`; de drie plekken in DIVERGENCES §7 met de telling van de
+defaultsgroepen op een attribuut (40 in 25 goldens, één op een datum).
+De metingen die de kaart eenvoudiger maakten, aanvaard: `plus` op een
+lege datum blijft leeg in de drie uitvoerders, dus de berekening draagt
+geen voorwaarde; de initialisatiedefault met datumliteral speelt, dus
+K5 vervalt; de eenheidsclausule na een datum blijft de ERROR van de
+datatypelezer, zonder eigen zin van de markering.
+
+Registerwerk in de landingscommit: de aanvulling op de Landed-alinea
+van rij 8 in `spec/CONSTRUCTS.md`; in DIVERGENCES onder Scenariotoetsen
+→ Witnesses de telling "seven goldens carry a scenario.rgs" naar negen,
+met `jutterswet-premierecht` en `jutterswet-opgave-datum` erbij (open
+punt 3 van de bouwer). De vloeren van gate 16 blijven staan (7 en 31
+onder 9 en 40; geen krimp te bewaken). Open, niet als kaart: Datum-tijd,
+Tekst, Percentage, Boolean, enumeratie en Numeriek met eenheid, elk een
+eigen golden. Daarna: pin-bump naar de distributie (de dienst-replay-pin
+gaat mee als de golden door de dienst speelt) en lokaal naar de
+werkbank.
