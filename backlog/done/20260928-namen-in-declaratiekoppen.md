@@ -510,3 +510,47 @@ refuses it (WF-004); `scripts/admit.sh` and `corpus/README.md` do not know the
   landt via de hoofdsessie)
 - `74cf2f41` DIVERGENCES: sectie Namen in declaratiekoppen
 - de commit die deze Result-sectie in de kaart zet (de kop van de branch)
+
+## Keuring (hoofdsessie, 2026-09-28)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch (`/tmp/naamkop/logs/run1`): groen. Gemeten daar: gate 3 313 goldens
+schoon, 501 negatief; gate 5 en 6 734 cases exact; gate 10 967 toetsen, 101
+rgs-goldens byte-gelijk; gate 11 45 bronnen byte-gelijk, 27 toetsen; gate 12
+speelt 218 en 188 (gelijkheidspinnen één omhoog, eigen commit van de bouwer
+op het beschermde pad, hier geland); gate 15 237/126; gate 16 8/33.
+
+Gelezen: de drie verbrede producties (objecttypenaam met de voorzetsels die
+regeltekst leest, zonder 'van'; meervoud tot het sluithaakje; feittypenaam
+met elk eenwoordig token behalve de lidwoorden, de telwoorden van de
+kardinaliteitsregel en de blokopeners, elk met zijn reden in het
+grammaticacommentaar); de resolvercontroles met hun zinnen uit echte uitvoer
+(lid of rol op de regel van de vorige declaratie, rolvuller, onleesbare
+naam); de zeventien toetsen; de golden met handberekende pinnen en een
+`scenario.rgs` dat gate 16 regenereert; de DIVERGENCES-sectie met de
+woordensets en de meting; de inertie over 643 bronnen (geen exitstatus en
+geen model veranderd; de restverschillen zijn de nieuwe waarschuwingen op
+losse bestanden van meerbestandsmodellen en de 'expecting'-tekst); de
+tripwires (geen kaartnummers, geen pariteitszone-naam, geen privénamen in
+de artefacten).
+
+Twee afwijkingen van de opdracht, aanvaard als maintainersbesluit: de
+diagnosezinnen zijn Nederlands, zoals alle bestaande zinnen van deze
+frontend (de opdracht was daar tegenstrijdig); en de rolvullercontrole is
+een ERROR waar het document de misslag toont (een staart van de vuller is
+een gedeclareerd objecttype, of de naam is als ander soort gedeclareerd) en
+een WARNING waar de naam nergens in het document staat, omdat de
+oorspronkelijke modeltoets van de pariteitszone een losse plak zonder
+foutmelding resolveert en die zone alleen-lezen is; de verifier weigert zo'n
+los bestand onder WF-003. Overal een ERROR vraagt een aanvulling van die
+plak, een besluit over de zone. Registerwerk in de commit na de landing:
+PLAN §9-alinea; geen CONSTRUCTS-rij, de IR is ongewijzigd; `scripts/admit.sh`
+en `corpus/README.md` kennen sindsdien `scenario.rgs`.
+
+Open, vastgelegd in PLAN §9 en niet als kaart: een ongedeclareerde dimensie
+passeert de frontend nog stil en alleen de verifier weigert haar (WF-004).
+Buiten de kaart, zoals de kaart ze noemt: attribuutnamen met een
+hoofdletterwoord, sleutelwoorden in namen (koppelteken), kleingeschreven
+'van' in typenamen (koppelteken), domeinnamen met voorzetsels. Daarna:
+pin-bump naar de distributie (de replay-pin gaat mee als de golden door de
+dienst speelt) en lokaal naar de werkbank.

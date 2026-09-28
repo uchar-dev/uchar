@@ -997,6 +997,23 @@ after `met peildatum`).
 
 **Named vocabularies landed (2026-09-27, card `vocabulaires-benamingen`):** a document can declare named vocabularies and give every designatable declaration — object type, attribute, characteristic, fact type, role, enumeration value, parameter, named form, rule group — a name in each, as a side table without semantics (IR-SPEC ch. 2.12; WF-116 to WF-120 with fifteen negatiefs, one per arm), written by the RegelSpraak dialect as `Vocabulaire <naam> (standaard) (taal: <code>)` and `(<vocabulaire>: <benaming>)` at the end of a name group, read structurally by every reader and carried by the Drools loader into `RegelSpraakModel` with a public reading entry; golden `jutterswet-vocabulaires`, gate 12 plays 217 and 187, and gate 13's new vocabulary leg holds ref, clingo and both Drools branches indifferent to the table stripped, exchanged and rotated. Three maintainer decisions of the same day shaped the surface: a vocabulary has no kind (every designation is text), the head's properties stand in their own parentheses, and the annotations close the name group. Open, recorded and not opened as cards: the service and the explanation per vocabulary (a card in the distribution), the lint against the concept map (the workbench), a status per designation and several languages, a strip output to bare RegelSpraak; a default vocabulary cannot coexist with declarations the frontend writes itself (decision-table rows, the opgave marker's members, a start point's anchor), which the completeness rule refuses; and the redundancy warning of WF-120 is accounted for by literal containment, with WF-113 (b)'s weakness. Recorded the same day from the distribution's card `dienst-vocabulaires` (the service reads every designation and answers in a chosen vocabulary): `RegelGraaf` gives no element key per node, so a consumer that wants to name a node in a vocabulary has to find the declaration through the node's label and cannot decide a node whose attribute and characteristic share a name; a public key per node, or a naming function on the Mermaid rendering, is the way out. And the reachability of a role from an object type (IR-SPEC ch. 2.6) lives in the frontend only privately (`feittypeRelateert`, `rolHeeftObjecttype`), so the distribution states the same rule a second time over the public model.
 
+**Names in declaration heads landed (2026-09-28, card `namen-in-declaratiekoppen`):** the
+RegelSpraak frontend reads an object-type name with the prepositions rule text already reads
+(`Recht op premie`) in every position of the production, a plural up to its closing
+parenthesis, and a fact-type name with its verbs (`jutter heeft premierecht`); a member or
+role that begins on the line where the previous declaration ended is an ERROR on that line,
+a role's filler that is no object type is reported before the emission, and a declared name
+rule text cannot read back gets a WARNING naming the word
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, "Namen in declaratiekoppen"; inertness
+measured over 643 sources, no exit status and no model changed; golden
+`jutterswet-premierecht`, gate 12 plays 218 and 188).
+Open: the filler check is an ERROR only where the document shows the misreading and a
+WARNING where the type is declared nowhere, because the parity zone's own model test
+resolves such a slice without an error — an ERROR everywhere needs that slice completed, the
+maintainer's call; an undeclared dimension still passes the frontend and only the verifier
+refuses it (WF-004); `scripts/admit.sh` and `corpus/README.md` do not know the
+`scenario.rgs` of a golden.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
