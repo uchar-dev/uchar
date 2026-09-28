@@ -387,3 +387,37 @@ Na de rebase op `08f55ce9` (tussen haken de hash vóór de rebase):
     02366f30 (eab71d20) GenavigeerdeVoorwaardeWitnessTest: kenmerkcheck over een verdrongen rolveld
 
 en de commit die dit Result in de kaart zet. Niet gepusht, niet gemerged; de kaart blijft in `backlog/doing/`.
+
+## Keuring (hoofdsessie, 2026-09-29)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `4628e591`, die de bouwer al op main `08f55ce9` had gerebased
+(logs `/tmp/v2/uchar-gates5/`): groen. Gemeten daar: gate 3 318 goldens
+schoon; gate 5 en 6 751 cases exact; gate 7 707 weerleggingen, 44
+overlevers (ongewijzigd); gate 10 990 toetsen, 106 rgs-goldens
+byte-gelijk; gate 12 speelt 222 en 189 (de exec-pin twee omhoog: de nieuwe
+golden en het anker kustwacht, dat de weigerlijst verlaat; voorstel van de
+bouwer, hier geland); gate 16 13 scenario-goldens, 50 casebestanden.
+
+Gelezen: `regelVoorwaarde` in de exec-transpiler (een voorwaarde die door
+een rol leest krijgt de far-side join die een genavigeerde waarde al had
+en wordt getoetst op het onderwerp dat na die joins opnieuw gebonden is;
+de begeleiders, objectcreatie en feitcreatie gaan door dezelfde weg), de
+vormruimte met vóór-metingen, de acht getuigenrijen, de golden met
+handberekening en `scenario.rgs`, de sweep (over 279 goldens verschuiven
+precies kustwacht en meldingsketen; beans en DRL-tak byte-gelijk) en het
+gate-12-voorstel. De afwijkingen aanvaard met hun meting: de fix reikt
+ook tot de begeleiders en de creaties (dezelfde fout), kustwacht speelt
+(de oude reden "negatie niet gestratificeerd" was onjuist), en een
+genavigeerde kenmerkcheck zonder eigen beanveld weigert nu benoemd.
+
+Registerwerk in de landingscommit: `spec/CONSTRUCTS.md` rij 6 (de
+conformantieflank van 2026-08-29 gesloten in de exec-tak; de opgetekende
+open vorm nu alleen voor de DRL-teksttak) en `spec/IR-SPEC.md` ch. 5.5
+(tweede bullet van de opgetekende flank). Open, in het Result en niet als
+kaart: de DRL-teksttak houdt de fout; de leeg-toets met de lezer vóór de
+schrijver blijft de eerste bullet van de flank; een deling met een literal
+als deeltal krijgt in beide Drools-takken geen §6.5-begeleider (nieuw
+gevonden); een voorwaarde over twee rollen blijft benoemd geweigerd.
+Gevolg voor de regelset op de werkbank: brug K4 kan weg zodra de pin
+verschuift; pin-bump nu, samen met de twee kaarten van dezelfde dag.

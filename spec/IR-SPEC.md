@@ -8745,6 +8745,11 @@ has two forms.
   branches agree with them. (A fold in a rule's VALUE is re-evaluated and
   agrees in either order.)
 - On a NAVIGATED operand in a condition it does not depend on the order.
+  *Closed in the exec-model branch on 2026-09-28 (card
+  `drools-exec-voorwaarde-genavigeerde-afleiding`, golden
+  `jutterswet-meldingsketen`): a condition that reads through a to-one
+  navigation is tested after a far-side join on the reached object; the
+  DRL-text branch keeps the form described here.*
   With a rule deriving the far side's attribute, both branches answer as if
   that attribute were never written, in either order: "de a van het ding is
   leeg" yields 1 where `ref/` and `backends/clingo` give leeg, and the
