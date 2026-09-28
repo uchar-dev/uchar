@@ -8,6 +8,7 @@ import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedConsistentie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
+import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
@@ -55,6 +56,23 @@ class OpgaveMarkeringTest {
         Regel standaardwaarde
             geldig altijd
                 De waarde van een Vondst moet geïnitialiseerd worden op 25,00.
+        """;
+
+    /** A marked Datum in dagen, computed from another date and initialised with a date literal; the marked
+     *  declaration stands on line 3. */
+    private static final String VONDST_DATUM = """
+        Objecttype de Vondst (mv: Vondsten)
+            de vinddag Datum in dagen;
+            de meldingsdatum Datum in dagen (mag opgegeven worden);
+
+        Regel melding na de vinddag
+            geldig altijd
+                De meldingsdatum van een Vondst moet berekend worden als de vinddag van de Vondst plus 3 dagen.
+
+        // Bron: seizoensopening
+        Regel melding bij onbekende vinddag
+            geldig altijd
+                De meldingsdatum van een Vondst moet geïnitialiseerd worden op 01-03-2026.
         """;
 
     private static String compact(String s) {
@@ -267,6 +285,72 @@ class OpgaveMarkeringTest {
              "initialisation": true, "source": {"snippet": "standaardwaarde"}}],""")), c);
     }
 
+    @Test void op_een_datum_in_dagen_bouwt_de_markering_dezelfde_vijf_stukken() {
+        RegelSpraakModel m = Resolver.resolve(VONDST_DATUM);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        Objecttype v = m.objecttypen.get("Vondst");
+
+        // 1 and 2: the two attributes right after X, each with X's datatype
+        assertEquals(List.of("vinddag", "meldingsdatum", "opgegeven meldingsdatum", "berekende meldingsdatum"),
+                List.copyOf(v.attributen.keySet()));
+        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("meldingsdatum"));
+        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("opgegeven meldingsdatum"));
+        assertEquals(new Datatype.DatumInDagen(), v.attributen.get("berekende meldingsdatum"));
+
+        // 2: the computation from another date keeps its name and targets berekende X
+        ResolvedRegel w = regel(m, "melding na de vinddag");
+        assertEquals("berekende meldingsdatum", doelVan(w));
+        assertEquals("vinddag", gelezen(((Expr.Binair) w.waarde()).links()));
+
+        // 3: the opgave, the computation, and the initialisation with its date literal as the lowest default
+        PrioritizedDefaults g = groep(m, "opgave boven berekening meldingsdatum");
+        assertEquals("meldingsdatum", g.attribuut());
+        assertEquals(3, g.defaults().size());
+        assertEquals(List.of("opgegeven meldingsdatum", "berekende meldingsdatum"),
+                g.defaults().subList(0, 2).stream().map(d -> gelezen(d.consequentie())).toList(), "van hoog naar laag");
+        Default init = g.defaults().get(2);
+        assertTrue(init.initialisatie(), "de initialisatie is de laagste default");
+        assertNull(init.voorwaarde(), "een initialisatiedefault draagt geen geschreven rechtvaardiging");
+        Expr.Literal datum = assertInstanceOf(Expr.Literal.class, init.consequentie());
+        assertEquals("2026-03-01", datum.waarde(), "de datum zoals de wire haar schrijft; de bron houdt 01-03-2026");
+        assertEquals(new Datatype.DatumInDagen(), datum.type());
+        assertEquals("seizoensopening", init.bron(), "de statuutannotatie van de initialisatieregel");
+
+        // 4 and 5: the characteristic compares the two dates, the consistency asserts it absent
+        assertEquals(List.of("afwijkende opgave meldingsdatum"), v.kenmerken);
+        Conditie.Samengesteld alle = assertInstanceOf(Conditie.Samengesteld.class,
+                regel(m, "afwijking opgave meldingsdatum").voorwaarde());
+        Conditie.Vergelijking ongelijk = assertInstanceOf(Conditie.Vergelijking.class, alle.onderdelen().get(2));
+        assertEquals(Conditie.Operator.ONGELIJK, ongelijk.op());
+        assertEquals("opgegeven meldingsdatum", gelezen(ongelijk.links()));
+        assertEquals("berekende meldingsdatum", gelezen(ongelijk.rechts()));
+        assertEquals(List.of("controle opgave meldingsdatum"),
+                m.consistenties.stream().map(ResolvedConsistentie::naam).toList());
+        assertEquals(List.of("melding na de vinddag", "afwijking opgave meldingsdatum"),
+                m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(),
+                "de initialisatieregel is opgenomen in de groep en staat niet meer als regel");
+    }
+
+    @Test void op_een_datum_in_dagen_draagt_de_wire_het_datumtype_en_de_datumliteral() {
+        RegelSpraakModel m = Resolver.resolve(VONDST_DATUM);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String ir = IrEmitter.emit(m);
+        Verslag.verantwoord(ir);
+        String c = compact(ir);
+        assertTrue(c.contains(compact("""
+            {"node": "Attribute", "name": "opgegeven meldingsdatum",
+             "datatype": {"node": "Date", "precision": "day"}},
+            {"node": "Attribute", "name": "berekende meldingsdatum",
+             "datatype": {"node": "Date", "precision": "day"}}""")),
+                () -> "de gegenereerde attributen dragen het datumtype niet:\n" + ir);
+        assertTrue(c.contains(compact("""
+            {"node": "Default",
+             "consequence": {"node": "Literal", "value": {"date": "2026-03-01"},
+                             "type": {"node": "Date", "precision": "day"}, "source": {"snippet": "01-03-2026"}},
+             "initialisation": true, "source": {"snippet": "seizoensopening"}}],""")),
+                () -> "de initialisatiedefault draagt de datumliteral niet zo:\n" + ir);
+    }
+
     @Test void lezers_van_het_doel_blijven_het_doel_lezen() {
         RegelSpraakModel m = Resolver.resolve(VONDST.replace("(mv: Vondsten)\n",
                 "(mv: Vondsten)\n    de heffing Numeriek (getal met 2 decimalen);\n") + WAARDERING + """
@@ -429,9 +513,10 @@ class OpgaveMarkeringTest {
             "Numeriek (geheel getal) met eenheid €  | Numeriek met eenheid €",
             "Percentage (getal met 2 decimalen)      | Percentage",
             "Boolean                                 | Boolean",
-            "Datum in dagen                          | Datum in dagen"
+            "Datum en tijd in millisecondes          | Datum-tijd"
     })
-    void de_markering_op_iets_anders_dan_een_getal_zonder_eenheid_weigert(String datatype, String genoemd) {
+    void de_markering_op_iets_anders_dan_een_getal_zonder_eenheid_of_een_datum_weigert(String datatype,
+                                                                                       String genoemd) {
         RegelSpraakModel m = Resolver.resolve("""
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -441,8 +526,9 @@ class OpgaveMarkeringTest {
             """.formatted(datatype));
         Diagnostic d = enigeFout(m);
         assertEquals("attribuut 'opgave' van Vondst: '(mag opgegeven worden)' staat alleen op een Numeriek attribuut "
-                + "zonder eenheid, en 'opgave' is " + genoemd + " — een defaults-groep op een attribuut van een ander "
-                + "datatype of met een eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)", d.message());
+                + "zonder eenheid of een Datum in dagen, en 'opgave' is " + genoemd + " — een defaults-groep op een "
+                + "attribuut van een ander datatype of met een eenheid is nog niet in alle drie de uitvoerders gemeten "
+                + "(dialect §7)", d.message());
         assertEquals(5, d.line());
     }
 
