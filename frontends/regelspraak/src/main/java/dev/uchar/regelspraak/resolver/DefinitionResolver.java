@@ -14,6 +14,7 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -916,14 +917,15 @@ public final class DefinitionResolver {
         Feittype ft = new Feittype(src(ctx.feitTypeNaam()));
         ft.wederkerig = ctx.WEDERKERIG_FEITTYPE() != null;
         List<Rol> rollen = new ArrayList<>();
-        java.util.Set<ParserRuleContext> opVorigeRegel =
-                meldLedenOpVorigeRegel(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.naam + "'");
+        boolean hersteld = hersteld(ctx);
+        java.util.Set<ParserRuleContext> opVorigeRegel = hersteld ? java.util.Set.of()
+                : meldLedenOpVorigeRegel(ctx, ctx.rolSpecificatie(), RolSpecificatieContext.class, "feittype '" + ft.naam + "'");
         for (RolSpecificatieContext rs : ctx.rolSpecificatie()) {
             String rolNaam = src(rs.rolNaam());
             String meervoud = rs.meervoudsvorm() != null ? src(rs.meervoudsvorm()) : null; // declared "(mv: …)"
-            if (!opVorigeRegel.contains(rs))
+            if (!hersteld && !opVorigeRegel.contains(rs))
                 meldOnleesbareNaam("feittype '" + ft.naam + "'", "de rol", rolNaam, rs.getStart().getLine());
-            if (rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
+            if (!hersteld && rs.objectTypeNaam() != null && rs.objectTypeNaam().getStart() != null)
                 rolVullers.add(new RolVuller(ft.naam, rolNaam, src(rs.objectTypeNaam()),
                         rs.objectTypeNaam().getStart().getLine()));
             // §13.3.9.3: feitTypeNaam excludes 'de'/'het' (it stops at the role's article), so a feittype
@@ -1039,6 +1041,7 @@ public final class DefinitionResolver {
     /** The two checks on the members of one head: the line check, and the readability of every name it did not
      *  refuse — a refused member is a misreading, so its name is not the one the author declared. */
     private void ledenNaKop(Objecttype ot, ParserRuleContext definitie, List<ObjectTypeMemberContext> leden) {
+        if (hersteld(definitie)) return;
         String drager = "objecttype '" + ot.naam + "'";
         java.util.Set<ParserRuleContext> geweigerd = meldLedenOpVorigeRegel(definitie, leden, ObjectTypeMemberContext.class, drager);
         for (ObjectTypeMemberContext m : leden) {
@@ -1051,6 +1054,16 @@ public final class DefinitionResolver {
     }
 
     // ---------------- a declaration on the line where the previous one ended ----------------
+    /** Whether the parser recovered inside {@code t}: an error node, or a rule that caught a recognition error. The
+     *  boundaries of a recovered definition are the recovery's and not the author's, so the checks below leave it
+     *  alone; its syntax error is reported already, and it is the one to act on. */
+    private static boolean hersteld(ParseTree t) {
+        if (t instanceof ErrorNode) return true;
+        if (t instanceof ParserRuleContext p && p.exception != null) return true;
+        for (int i = 0; i < t.getChildCount(); i++) if (hersteld(t.getChild(i))) return true;
+        return false;
+    }
+
     /** Where a head ends: its last token before the first member or role, and whether that token ends a NAME — the
      *  type name of the head or of its 'is een' clause, or the fact type's name — rather than an annotation. */
     private record KopEinde(Token token, boolean opNaam) {}
