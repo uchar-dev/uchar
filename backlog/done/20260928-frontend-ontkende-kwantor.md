@@ -619,3 +619,33 @@ Tegen de run van voor de rebase: meldingsketen komt erbij in gates 2, 3,
 223 en DRL 190 (de opgetelde pinnen), value-divergence 0 en kanaalvloer 58
 -> 57 (kustwacht speelt), DRL-vloer 89 -> 90 (meldingsketen in klasse (A)),
 backend-JUnit 873 -> 881 (de getuige van main).
+
+## Keuring (hoofdsessie, 2026-09-29)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `9fb4ffb5`, door de bouwer gerebased op main `26ca6b0b` met de
+opgetelde pinnen (logs `/tmp/v2/uchar-gates6/`): groen. Gemeten daar:
+gate 3 319 goldens schoon; gate 5 en 6 753 cases exact; gate 7 709
+weerleggingen, 44 overlevers (ongewijzigd); gate 10 999 toetsen, 107
+rgs-goldens byte-gelijk; gate 12 speelt 223 en 190 (beide pinnen één
+omhoog, voorstel van de bouwer, hier geland); gate 16 14 scenario-goldens,
+52 casebestanden.
+
+Gelezen: de oorzaak (het anker van de ledenfrase las door over `geen` en
+over de woorden van een meerwoordige naam, zodat de kwantorvouw de
+ontkenning of de naam verloor), de fix in `ExpressieBouwer` en
+`RuleChecker` (de woorden na de naam waarmee het anker het onderwerp
+noemt gaan terug vóór de kenmerknaam; `niet` en `geen` gelden beide als
+ontkenning met de Tabel-16-waarschuwing), de vormruimte van 88 vormen (27
+stil fout vóór, 79 goed en 9 luid na), de getuigen, de golden met
+handberekening en `scenario.rgs` die in alle vier de uitvoerders speelt,
+de inertie (184 documenten, alleen de nieuwe golden verschilt) en de
+nieuwe DIVERGENCES-sectie §13.4.15.45. De vier afwijkingen van de kaart
+aanvaard met hun meting (bredere fix voor meerwoordige namen, bredere
+meting, `er is een` bestaat niet in de grammatica, de sectie onder een
+nieuwe kop). Open, vastgelegd in het Result en niet als kaart: een
+ontkenning in een die/dat-deelselectie weigert luid; een kwantorvouw als
+bullet onder "ten minste één van de volgende voorwaarden" weigeren beide
+Drools-takken; DIVERGENCES mist nog de sectie over ontkend lidmaatschap
+waar twee grammaticacommentaren naar verwijzen. Pin-bump samen met de
+kaart drools-exec-defaults-justificatie-vouw.
