@@ -24,8 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * reproduction {@code attribuut uitkomst: verwacht 2026-03-01, werkelijk leeg}; the object creation {@code
  * attribuut meldingaantal: verwacht 1, werkelijk 0}; the fact creation the same; the division by an empty divisor
  * under the voorwaarde {@code verwacht inconsistent, werkelijk consistent} beside {@code verwacht 5.00, werkelijk
- * leeg}; and the anchor {@code kenmerk rustwacht: verwacht afwezig, werkelijk aanwezig} in both its cases. The row
- * without a relation is a flank: green before and after, it holds the null alternative of the far-side join.
+ * leeg}; the fired-rule marker under the voorwaarde {@code kenmerk afgehandeld: verwacht aanwezig, werkelijk
+ * afwezig}; and the anchor {@code kenmerk rustwacht: verwacht afwezig, werkelijk aanwezig} in both its cases. The
+ * division row and the marker row stay red with the host rule alone repaired: their companions repeat the host's
+ * voorwaarde and need the same test. The row without a relation is a flank: green before and after, it holds the
+ * null alternative of the far-side join.
  */
 class GenavigeerdeVoorwaardeWitnessTest {
 
@@ -75,6 +78,32 @@ class GenavigeerdeVoorwaardeWitnessTest {
                                 vondst("V", "J", getal("basisbedrag", "10") + ", " + getal("deler", "2"))),
                         waarde("V", "uitkomstwaarde", null, "5.00") + ", {\"kind\":\"consistent\"}")),
                 "de deling door 2");
+    }
+
+    @Test void de_gevuurd_begeleider_volgt_de_voorwaarde_van_zijn_gastregel() throws Exception {
+        // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. The
+        // marker is inserted by a companion that repeats the host's voorwaarde, so it must see the derivation as
+        // the host does. V's uitkomst is given as the value the host writes, so the host's write changes nothing
+        // and updates no fact: only the join on the jutter can run the companion's test again. No arbiter: ref
+        // faults on 'is gevuurd' and the ASP backend does not translate it, so this row pins the Drools reading,
+        // the host fired. Measured 2026-09-28: red on the jar of the claim and with the host alone repaired
+        // (kenmerk afgehandeld: verwacht aanwezig, werkelijk afwezig), green once the companion takes the test.
+        String model = "{\"objectTypes\":[" + JUTTER_DATUMS + ",{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
+                + "\"plural\":\"Vondsten\",\"attributes\":[" + VONDST_UITKOMST + "],\"characteristics\":[{\"node\":"
+                + "\"Characteristic\",\"name\":\"afgehandeld\",\"kind\":\"adjectival\"}]}],\"factTypes\":[" + JUTTER_VONDST
+                + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
+        String afgehandeld = "{\"node\":\"Rule\",\"name\":\"afgehandeld\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},"
+                + "\"target\":{\"node\":\"AttributeReference\",\"attribute\":\"afgehandeld\",\"subjectType\":\"Vondst\","
+                + "\"source\":{\"snippet\":\"Een Vondst is afgehandeld\"}},\"value\":{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}},\"condition\":{\"node\":\"Regelversie\","
+                + "\"regel\":\"uitkomst\",\"inconsistent\":false,\"source\":{\"snippet\":\"regelversie uitkomst is gevuurd\"}},"
+                + "\"initialisation\":false}]}";
+        String ir = document(model, regels(AFGELEID, regel("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
+                gevuld(viaJutter("afgeleide datum"))), afgehandeld), "", "");
+        assertNull(speel(ir, zaak(List.of(jutter("J", MELDING_MAART), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")),
+                        waarde("V", "uitkomst", "2026-03-01") + ", {\"kind\":\"characteristicPresent\",\"label\":\"V\","
+                        + "\"characteristic\":\"afgehandeld\"}")),
+                "de gevuurd-markering onder de voorwaarde op de afgeleide datum");
     }
 
     @Test void een_objectcreatie_ziet_de_afgeleide_waarde() throws Exception {
