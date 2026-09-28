@@ -406,6 +406,8 @@ public final class ExecModelTranspiler {
             pattern = pattern.expr(nextId("absorb"),
                     (Predicate1) (o -> !geabsorbeerd.contains(o.getClass())));
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
+        // the navigations whose far-side join the voorwaarde already carries, so the value's watch adds none twice
+        Set<String> gejoind = new LinkedHashSet<>();
 
         // §8.4/§13.4.5 a TEMPORAL KENMERK doel (kenmerkGranulariteit — a List<Segment> TRUE-period timeline, not a
         // boolean) is written the timeline of its voorwaarde's TRUE-periods: the doel-kenmerk holds exactly where the
@@ -430,7 +432,7 @@ public final class ExecModelTranspiler {
                     && (Namen.bevatNaam(doel.objecttype().granulariteitLeden(), doel.attribuut())
                         || Namen.bevatNaam(doel.objecttype().kenmerkGranulariteitLeden(), doel.attribuut())))
                 return skip("regel (periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip): " + r.naam());
-            Gate gate = voorwaarde(r.voorwaarde(), pattern, doel.objecttype(), sVar);
+            Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, doel.objecttype(), sVar, factClass, gejoind);
             // the sharpened §13.3.9 reason where a navigated hop refused (navReden), else the honest scope note
             if (gate == null) return skip("regel (" + (navReden != null ? navReden
                     : voorwaardeSkipReden(r.voorwaarde())) + "): " + r.naam());
@@ -698,7 +700,7 @@ public final class ExecModelTranspiler {
             // Navigated-read reactivity: a to-one navigated value read makes the rule stale on the FAR fact's update
             // (property/class reactivity is per fact TYPE). Add a far-side JOIN per distinct navigation so the spiegel
             // re-fires when the navigated fact lands (the order-fragility fix). The consequence's read stays as-is.
-            List<RuleItemBuilder<?>> navWatch = navReactiviteit(r.waarde(), doel.objecttype(), sVar);
+            List<RuleItemBuilder<?>> navWatch = navReactiviteit(r.waarde(), doel.objecttype(), sVar, gejoind);
             if (navWatch == null) return skip("regel (" + navReden + "): " + r.naam());
             extra.addAll(navWatch);
             // §4 value-side unit restatement, EXACT (a kenmerk value is Boolean, no unit). Mirrors DrlTranspiler.omrekenWaarde.
@@ -2088,11 +2090,19 @@ public final class ExecModelTranspiler {
      *  <p>null (never an empty list) when a hop has NO bean field: the join would probe a displaced member and bind
      *  the wrong fact, so the whole construct is refused with {@link #navReden}. A {@code continue} would drop the
      *  watch silently and leave the rule stale — the one direction this method exists to prevent. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private List<RuleItemBuilder<?>> navReactiviteit(Expr waarde, Objecttype subject, Variable subjectVar) {
+    private List<RuleItemBuilder<?>> navReactiviteit(Expr waarde, Objecttype subject, Variable subjectVar,
+                                                     Set<String> gejoind) {
         List<Expr.AttribuutRef> refs = new ArrayList<>();
         navRefs(waarde, subject, refs);
-        if (refs.isEmpty()) return List.of();
+        return navJoins(refs, List.of(), subject, subjectVar, gejoind);
+    }
+
+    /** One far-side join per distinct navigation among {@code refs} and {@code kenmerkHops} whose key is not yet in
+     *  {@code gejoind}; the keys it joins are added there. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<RuleItemBuilder<?>> navJoins(List<Expr.AttribuutRef> refs, List<KenmerkHop> kenmerkHops,
+                                              Objecttype subject, Variable subjectVar, Set<String> gejoind) {
+        if (refs.isEmpty() && kenmerkHops.isEmpty()) return List.of();
         // Distinct by the reached FAR type + full role path (subject -> reader): the same relation read twice needs
         // one item. Key on the ordered role hops that reach the fact whose attribute is read.
         java.util.LinkedHashMap<String, java.util.function.Function<Object, Object>> joins = new java.util.LinkedHashMap<>();
@@ -2129,6 +2139,16 @@ public final class ExecModelTranspiler {
             joins.putIfAbsent(key, reachFar);
             farTypes.putIfAbsent(key, far);
         }
+        for (KenmerkHop h : kenmerkHops) {
+            // the characteristic check reads the reached fact exactly as leafPredicate does, over the one hop
+            if (!heeftVeld("genavigeerde kenmerkcheck", subject, h.rol(), h.doel())) return null;   // §13.3.9 name-dedup
+            if (factClass(h.doel()) == null) continue;
+            String key = h.doel().naam + "|" + h.rol();
+            joins.putIfAbsent(key, typedGetter(factClass(subject), h.rol()));
+            farTypes.putIfAbsent(key, h.doel());
+        }
+        joins.keySet().removeAll(gejoind);
+        gejoind.addAll(joins.keySet());
         List<RuleItemBuilder<?>> uit = new ArrayList<>();
         for (var entry : joins.entrySet()) {
             final java.util.function.Function<Object, Object> reachFar = entry.getValue();
@@ -3386,6 +3406,38 @@ public final class ExecModelTranspiler {
             case TEN_HOOGSTE -> hits <= drempel;
             case PRECIES     -> hits == drempel;
         };
+    }
+
+    /** A rule's voorwaarde as the rule's own firing condition. {@link #voorwaarde} puts its tests on the subject's
+     *  pattern, and Drools runs those when the SUBJECT is inserted or updated. A test that reads through a to-one
+     *  navigation reads another fact, and an update of that fact does not run the test again: a value another rule
+     *  derives on the reached object after the subject was inserted is never seen, so the rule never fires, or fires
+     *  on a value that no longer holds. Such a voorwaarde gets the far-side join per distinct navigation that
+     *  {@link #navReactiviteit} gives a navigated VALUE read, and its tests go on the subject bound a second time,
+     *  FROM {@code $subject}, after those joins: that pattern is evaluated again whenever the tuple before it
+     *  changes, an update of the reached object included. The subject pattern gets the opaque always-true expr, so
+     *  it stays class-reactive as the voorwaarde's own tests made it, and an update of the subject still reaches
+     *  the test. A voorwaarde that reaches no object to join keeps its tests on the subject pattern, unchanged; it is
+     *  lowered a second time for that, since which pattern it goes on is known only after the joins. The lowering
+     *  runs before the joins, so where it declines its own reason stands. {@code gejoind} receives the keys of the
+     *  joins made here. null where {@link #voorwaarde} declines, or a hop it accepted has no bean field
+     *  ({@link #navReden}). */
+    private Gate regelVoorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar,
+                                 Class<?> factClass, Set<String> gejoind) {
+        List<Expr.AttribuutRef> refs = new ArrayList<>();
+        List<KenmerkHop> hops = new ArrayList<>();
+        navRefs(c, subject, refs, hops);
+        if (refs.isEmpty() && hops.isEmpty()) return voorwaarde(c, pattern, subject, subjectVar);
+        Variable voorwaardeVar = DSL.declarationOf(factClass, "$voorwaarde", DSL.from(subjectVar));
+        Gate gate = voorwaarde(c, PatternDSL.pattern(voorwaardeVar), subject, voorwaardeVar);
+        if (gate == null) return null;
+        List<RuleItemBuilder<?>> joins = navJoins(refs, hops, subject, subjectVar, gejoind);
+        if (joins == null) return null;
+        if (joins.isEmpty()) return voorwaarde(c, pattern, subject, subjectVar);
+        List<RuleItemBuilder<?>> extra = new ArrayList<>(joins);
+        extra.add(gate.pattern());
+        extra.addAll(gate.extra());
+        return new Gate(pattern.expr(nextId("fresh"), (Predicate1) (s -> true)), extra);
     }
 
     private Gate voorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar) {
@@ -6734,7 +6786,7 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
         if (oc.voorwaarde() != null) {
-            Gate gate = voorwaarde(oc.voorwaarde(), pattern, subject, sVar);
+            Gate gate = regelVoorwaarde(oc.voorwaarde(), pattern, subject, sVar, subjClass, new LinkedHashSet<>());
             if (gate == null) return skip("objectcreatie ("
                     + (navReden != null ? navReden : "voorwaarde buiten scope") + "): " + oc.naam());
             pattern = gate.pattern();
@@ -6869,7 +6921,7 @@ public final class ExecModelTranspiler {
         Predicate1<Object> doelGuard = null;
         boolean inert = false;
         if (fc.voorwaarde() != null) {
-            Gate g = voorwaarde(fc.voorwaarde(), ankerPat, anker, sVar);
+            Gate g = regelVoorwaarde(fc.voorwaarde(), ankerPat, anker, sVar, ankerClass, new LinkedHashSet<>());
             if (g != null) {
                 ankerPat = g.pattern();
                 ankerExtra.addAll(g.extra());
@@ -7143,7 +7195,7 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
         List<RuleItemBuilder<?>> gateExtra = List.of();
         if (r.voorwaarde() != null) {                       // §9.9: the fout only applies under the write's voorwaarde
-            Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
+            Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, subject, sVar, factClass, new LinkedHashSet<>());
             if (gate == null) return List.of();             // unlowerable host voorwaarde -> no companion (DRL: voorwaardeMarker -> return)
             pattern = gate.pattern();
             gateExtra = gate.extra();
@@ -7178,7 +7230,7 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
         if (r.voorwaarde() != null) {
-            Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
+            Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, subject, sVar, factClass, new LinkedHashSet<>());
             if (gate == null) return List.of();             // unlowerable host voorwaarde -> no companion (reader stays a marker)
             pattern = gate.pattern();
             extra.addAll(gate.extra());
@@ -7240,7 +7292,7 @@ public final class ExecModelTranspiler {
         PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
         List<RuleItemBuilder<?>> gateExtra = List.of();
         if (r.voorwaarde() != null) {                       // the site only fires when the host gate holds
-            Gate gate = voorwaarde(r.voorwaarde(), pattern, subject, sVar);
+            Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, subject, sVar, factClass, new LinkedHashSet<>());
             if (gate == null) return null;                  // unlowerable host voorwaarde -> no companion (DRL: voorwaardeMarker -> return)
             pattern = gate.pattern();
             gateExtra = gate.extra();                       // a §8.1.7 far-side membership exists/not -> thread it into the companion (mirror DRL lc.extra())
@@ -8165,6 +8217,21 @@ public final class ExecModelTranspiler {
                 if (d instanceof Expr.TekstReeks.Ingevoegd i) eigenReads(i.expr(), subject, uit);
         } else if (e instanceof Expr.DimensieCel dc) {
             eigenReads(dc.attribuut(), subject, uit);
+        }
+    }
+
+    /** The to-one navigations a VOORWAARDE reads with the rule's subject as subject: the navigated attribute reads
+     *  of its operands, walked as a value's are, and the hop of a navigated characteristic check. A quantifier fold
+     *  is not entered: its filter and matrix read with the ELEMENT as subject, inside the fold's own accumulate. */
+    private void navRefs(Conditie c, Objecttype subject, java.util.List<Expr.AttribuutRef> refs, List<KenmerkHop> hops) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Samengesteld s -> { for (Conditie d : s.onderdelen()) navRefs(d, subject, refs, hops); }
+            case Conditie.Kenmerk k -> { KenmerkHop h = kenmerkHop(k, subject); if (h != null) hops.add(h); }
+            case Conditie.Vergelijking v -> { navRefs(v.links(), subject, refs); navRefs(v.rechts(), subject, refs); }
+            case Conditie.Predicaat p -> navRefs(p.operand(), subject, refs);
+            case Conditie.Periode p -> { navRefs(p.vanaf(), subject, refs); navRefs(p.tot(), subject, refs); }
+            default -> { }
         }
     }
 
