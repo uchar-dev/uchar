@@ -358,3 +358,45 @@ Basisrun op de claim, vóór elke wijziging: ook alle zestien groen
 - `68fe0e31` goldens premiespelling en halfstokspelling: twee namen, één Java-naam
 - `927b93dc` voorstel gate 12: de beannaambotsing in beide weigerlijsten
 - en de commit met dit Result.
+
+## Keuring (hoofdsessie, 2026-09-28)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `776ad3f9` (logs `/tmp/v2/uchar-gates2/`): groen. Gemeten daar:
+gate 3 316 goldens schoon; gate 5 en 6 745 cases exact; gate 7 701
+weerleggingen, 44 overlevers (ongewijzigd); gate 10 969 toetsen, 104
+rgs-goldens byte-gelijk; gate 11 groen (29 pariteitscases); gate 12
+speelt 219 en 188 met de twee nieuwe EXCLUDE-regels; gate 15 240
+goldens; gate 16 11 scenario-goldens, 44 casebestanden.
+
+Gelezen: de controle `weigerBeannaambotsing` in `DroolsBackend.build`
+(klasse, rol, lid-bij-gebruik, in beide takken, vóór de beangeneratie),
+de herkomstafleiding in `FactModelGenerator` (`leden()` over de hele
+keten), de weigering in `CaseRunner` voor een case die zo'n lid zet of
+leest, de zestien getuigenrijen met hun vóór-metingen (crash,
+contractmelding of fout antwoord), de twee goldens met eigen casustekst
+en `scenario.rgs`, en het gate-12-voorstel (de nieuwe kanaalklasse, de
+hertelling, de nieuwe zin voor `anchor/jutterswet-toelagegronden`). Geen
+rechten- of padtripwire in de artefacten.
+
+De vier afwijkingen van de kaart zijn aanvaard met de gemeten grond:
+een `Excluded` in `DroolsBackend.build` in plaats van een
+loader-`Refusal` (de regelgraaf en de scopeanalyse lezen via de loader
+en houden de namen uit elkaar); goldens met een gate-12-pin in plaats
+van een negatief- of rood-getuige (de documenten zijn verifier-schoon
+en spelen in ref en clingo); de bredere reikwijdte (attribuut ×
+attribuut, kenmerk × kenmerk, eigen × geërfd lid, rol × rol, hulpklasse,
+`java.lang`), elk met een fout antwoord of crash vóór; en `leden()` over
+de hele keten (nul beans veranderd). Botsingsvrije klassenamen zijn
+bewust niet gebouwd: 124 naamplekken in 8 bestanden en een gewijzigde
+bean van een anker. Gevolg voor een gebruiker: twee objecttypen die
+CamelCase één klasse spellen blijven in de Drools-uitvoerders
+onverenigbaar, nu met één benoemde melding in plaats van een crash.
+
+Open, vastgelegd in het Result en niet als kaart: twee parameters die
+alleen in spaties of koppeltekens verschillen delen één global (fout
+antwoord in beide takken); dagsoortglobals niet gemeten; een
+Java-sleutelwoord als eigenschap laat de beancompilatie kaal crashen;
+de `VerzoekMapper` van de distributie zet feiten zonder deze controle.
+Geen registerwerk: geen spec-tekst verandert. Daarna: pin-bump naar de
+distributie en lokaal naar de werkbank.
