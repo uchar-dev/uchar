@@ -77,11 +77,16 @@ final class RuleChecker {
      *  checker is driven without a stream (no annotations are then collected). */
     private final CommonTokenStream tokens;
 
-    RuleChecker(RegelSpraakModel model) { this(model, null); }
+    /** The members an extension declares again, with whether the repeat is admitted ({@link DefinitionResolver}): the
+     *  opgave pass reads the marker of an admitted repeat only, since a refused one is refused by its own sentence. */
+    private final Map<ObjectTypeMemberContext, Boolean> herhalingen;
 
-    RuleChecker(RegelSpraakModel model, CommonTokenStream tokens) {
+    RuleChecker(RegelSpraakModel model) { this(model, null, Map.of()); }
+
+    RuleChecker(RegelSpraakModel model, CommonTokenStream tokens, Map<ObjectTypeMemberContext, Boolean> herhalingen) {
         this.model = model;
         this.tokens = tokens;
+        this.herhalingen = herhalingen;
         this.bouwer = new ExpressieBouwer(model);
         this.bouwer.setSamengesteldeFilter(this::samengesteldeElementFilter);   // §13.4.13.4 compound subselectie
     }
@@ -1687,6 +1692,7 @@ final class RuleChecker {
             Objecttype t = model.objecttypen.get(src(typeNaam));
             if (t == null) continue;
             for (ObjectTypeMemberContext lid : leden) {
+                if (Boolean.FALSE.equals(herhalingen.get(lid))) continue;
                 String naam = lid.attribuutSpecificatie() != null ? src(lid.attribuutSpecificatie().lowerNaam())
                         : lid.kenmerkSpecificatie() != null ? kenmerkDeclaratieNaam(lid.kenmerkSpecificatie()) : null;
                 if (naam == null) continue;
@@ -1726,7 +1732,7 @@ final class RuleChecker {
         }
     }
 
-    private static boolean gemarkeerdLid(ObjectTypeMemberContext lid) {
+    static boolean gemarkeerdLid(ObjectTypeMemberContext lid) {
         if (lid.attribuutSpecificatie() != null) return lid.attribuutSpecificatie().MAG_OPGEGEVEN_WORDEN() != null;
         KenmerkSpecificatieContext k = lid.kenmerkSpecificatie();
         if (k instanceof BijvoeglijkKenmerkContext b) return b.MAG_OPGEGEVEN_WORDEN() != null;

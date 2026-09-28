@@ -54,6 +54,9 @@ public final class DefinitionResolver {
         // the 'is een' clauses bind only now: resolution is document-wide and ORDER-FREE, so a
         // forward reference is legal and only an undeclared name refuses (SUBTYPING §9.2)
         bindSupertypen();
+        // a member an extension declares again is judged only now: the head may follow the extension, and a role it
+        // names may be declared after it
+        weigerHerdeclaraties();
         // a role's filler binds only now, for the same reason: a fact type may name a type declared after it
         weigerOngedeclareerdeVullers();
         for (RegelContext r : alleRegels(doc)) {
@@ -134,7 +137,7 @@ public final class DefinitionResolver {
         if (ctx.BEZIELD() != null) ot.bezield = true;
         if (ctx.meervoudsvorm() != null) ot.meervoud = src(ctx.meervoudsvorm()); // §13.2.29, for §8.1.6 plural refs
         supertypeClausules(ot, ctx.objectTypeSupertype());
-        for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m);
+        for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m, ctx, false);
         ledenNaKop(ot, ctx, ctx.objectTypeMember());
     }
 
@@ -284,11 +287,13 @@ public final class DefinitionResolver {
         for (Objecttype v : voorouders) {
             boolean botst = attribuut ? bevatNaam(v.attributen.keySet(), naam) : bevatNaam(v.kenmerken, naam);
             if (!botst) continue;
-            fout("objecttype '" + ot.naam + "': " + soort + " '" + naam + "' is al gedeclareerd op '" + v.naam
-                    + "' hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één "
+            int regel = lidRegel.getOrDefault(ot, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0);
+            fout("objecttype '" + ot.naam + "': " + soort + " '" + naam + "' (bronregel " + regel + ") is al "
+                    + "gedeclareerd op '" + v.naam + "' (bronregel "
+                    + lidRegel.getOrDefault(v, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0)
+                    + ") hogerop in de keten — WF-105: een subtype herdeclareert geen geërfde naam (één "
                     + "exemplaar zou twee declaraties van die naam dragen, en welke een lezer vindt bepaalt "
-                    + "datatype, dimensies en tijdlijnfacet van elke lezing ervan)",
-                    lidRegel.getOrDefault(ot, java.util.Map.of()).getOrDefault(naam.toLowerCase(), 0));
+                    + "datatype, dimensies en tijdlijnfacet van elke lezing ervan)", regel);
             return;                                      // one report per member, at its nearest declarant
         }
     }
@@ -297,15 +302,163 @@ public final class DefinitionResolver {
         model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, bericht, regel));
     }
 
+    // ---------------- a member an extension declares again ----------------
+    /** One member declaration, in a head or in an extension, in document order. */
+    private record Lid(Objecttype type, boolean attribuut, String naam, boolean extensie,
+                       ObjectTypeMemberContext ctx, ParserRuleContext definitie) {
+        int regel() { return ctx.getStart().getLine(); }
+        /** A declaration of the same member: one type, one kind, one name (ci, WF-002). */
+        boolean zelfde(Lid ander) {
+            return type == ander.type && attribuut == ander.attribuut && naam.equalsIgnoreCase(ander.naam);
+        }
+    }
+    private final List<Lid> leden = new ArrayList<>();
+
+    /** Every member an extension declares that its type already carries, and whether that repeat is admitted. The
+     *  model holds the declaration the type carries, so the designations on a repeat are not read a second time
+     *  ({@link Benamingen}), and the opgave pass reads the marker of an admitted repeat only ({@link RuleChecker}). */
+    private final java.util.Map<ObjectTypeMemberContext, Boolean> herhalingen = new java.util.IdentityHashMap<>();
+
+    java.util.Map<ObjectTypeMemberContext, Boolean> herhalingen() { return herhalingen; }
+
+    /** The source line of each role, per fact type, for the refusal of a role an extension declares again. */
+    private final java.util.Map<Feittype, java.util.Map<String, Integer>> rolRegels = new java.util.IdentityHashMap<>();
+
+    /** An extension adds members to a type and replaces none (grammar/DIVERGENCES.md, §5 and §7). A member it declares
+     *  that the type already carries, in its head or, where no head declares it, in an earlier extension, is admitted
+     *  as that declaration written again word for word, the opgave marker aside; the repeat may add the marker once.
+     *  Any other repeat is an ERROR at the repeat's line that names both lines: until this check the repeat replaced
+     *  the declaration without a word, also with another datatype, and a repeated characteristic went to the wire
+     *  twice. The words decide, so layout and the closing ';' do not count. The literal repeat is admitted because it
+     *  changes nothing, and the casus of the repository's temporary parity zone writes three of them. Along the
+     *  inheritance line WF-105 refuses every repeat, literal or not ({@link #weigerGeshadowdeLeden}). A definition the
+     *  parser recovered inside is left alone: its syntax error is the one to act on. */
+    private void weigerHerdeclaraties() {
+        for (Lid d : leden) {
+            if (!d.extensie() || hersteld(d.definitie())) continue;
+            Lid b = bestaande(d);
+            if (b == null || hersteld(b.definitie())) continue;
+            if (b != d) oordeel(d, b);
+            else if (d.attribuut()) weigerRolHerdeclaratie(d);
+        }
+    }
+
+    /** The declaration of d's member the type carries: its head's, else the first in document order. */
+    private Lid bestaande(Lid d) {
+        Lid eerste = null;
+        for (Lid l : leden) {
+            if (!l.zelfde(d)) continue;
+            if (!l.extensie()) return l;
+            if (eerste == null) eerste = l;
+        }
+        return eerste;
+    }
+
+    private void oordeel(Lid d, Lid b) {
+        String reden = null;
+        if (!woorden(d.ctx()).equals(woorden(b.ctx())))
+            reden = "'" + tekst(d.ctx()) + "' is niet letterlijk '" + tekst(b.ctx()) + "'";
+        else if (RuleChecker.gemarkeerdLid(d.ctx())) {
+            Lid gemarkeerd = eerdereMarkering(d, b);
+            if (gemarkeerd != null)
+                reden = "dat draagt '(mag opgegeven worden)' al (bronregel " + gemarkeerd.regel() + ")";
+        }
+        herhalingen.put(d.ctx(), reden == null);
+        if (reden == null) return;
+        fout("objecttype '" + d.type().naam + "': de extensie declareert " + (d.attribuut() ? "het attribuut '"
+                : "het kenmerk '") + d.naam() + "' (bronregel " + d.regel() + "), dat " + d.type().naam + " al draagt "
+                + "(bronregel " + b.regel() + "), en " + reden + " — een extensie voegt leden toe en vervangt er geen: "
+                + "een lid dat het objecttype al draagt, herhaalt zij alleen letterlijk, en '(mag opgegeven worden)' "
+                + "komt er hooguit één keer bij (WF-002, dialect §7)", d.regel());
+    }
+
+    /** The declaration of d's member that carries the opgave marker already: the one the type carries, or an admitted
+     *  repeat before d that added it; null when none does. */
+    private Lid eerdereMarkering(Lid d, Lid b) {
+        if (RuleChecker.gemarkeerdLid(b.ctx())) return b;
+        for (Lid l : leden) {
+            if (l == d) return null;
+            if (l.zelfde(d) && Boolean.TRUE.equals(herhalingen.get(l.ctx())) && RuleChecker.gemarkeerdLid(l.ctx()))
+                return l;
+        }
+        return null;
+    }
+
+    /** The words of a member declaration without the opgave marker and the closing ';': what a repeat writes again. */
+    private static List<String> woorden(ParseTree t) {
+        List<String> uit = new ArrayList<>();
+        if (t instanceof TerminalNode n) {
+            int soort = n.getSymbol().getType();
+            if (soort != RegelSpraak.MAG_OPGEGEVEN_WORDEN && soort != RegelSpraak.SEMICOLON) uit.add(n.getText());
+        } else {
+            for (int i = 0; i < t.getChildCount(); i++) uit.addAll(woorden(t.getChild(i)));
+        }
+        return uit;
+    }
+
+    /** A member declaration as written, without its closing ';'. */
+    private static String tekst(ObjectTypeMemberContext m) {
+        return src(m).replaceFirst("\\s*;$", "");
+    }
+
+    /** An extension declares attributes and characteristics, so the grammar reads a role line in it ('de vinder
+     *  Jutter;') as an attribute whose type is a domain. Where that name is no domain but a declared object type, and
+     *  the member's name is a role of a fact type the type or a supertype of it takes part in, the line declares that
+     *  role again: an ERROR naming both lines. Until this check the line was refused as an undeclared domain on line
+     *  0; the member leaves the model, so that refusal does not come beside this one. */
+    private void weigerRolHerdeclaratie(Lid d) {
+        AttribuutSpecificatieContext a = d.ctx().attribuutSpecificatie();
+        if (a.datatype() != null || a.domeinNaam() == null) return;
+        String vuller = src(a.domeinNaam());
+        if (bevatNaam(model.domeinen.keySet(), vuller) || model.objecttypeOpNaam(vuller) == null) return;
+        for (Feittype ft : model.feittypen.values()) {
+            if (ft.rollen.stream().noneMatch(r -> d.type().isEen(model.objecttypeOpNaam(r.objecttypeNaam())))) continue;
+            for (Rol r : ft.rollen) {
+                if (!r.naam().equalsIgnoreCase(d.naam())) continue;
+                herhalingen.put(d.ctx(), false);
+                vergeetAttribuut(d.type(), d.naam());
+                fout("objecttype '" + d.type().naam + "': de extensie declareert '" + d.naam() + "' met het "
+                        + "objecttype '" + vuller + "' (bronregel " + d.regel() + "), en dat is de rol '" + r.naam()
+                        + "' van feittype '" + ft.naam + "' (bronregel "
+                        + rolRegels.getOrDefault(ft, java.util.Map.of()).getOrDefault(r.naam(), 0) + ") — een "
+                        + "extensie voegt attributen en kenmerken toe en geen rollen: een rol staat in haar feittype",
+                        d.regel());
+                return;
+            }
+        }
+    }
+
+    /** Take an attribute back out of a type: the attribute and every side map keyed by its name. */
+    private static void vergeetAttribuut(Objecttype ot, String naam) {
+        ot.attributen.remove(naam);
+        ot.attribuutMeervoud.remove(naam);
+        ot.attribuutDimensies.remove(naam);
+        ot.attribuutGranulariteit.remove(naam);
+        ot.attribuutTijdlijnAantal.remove(naam);
+        ot.attribuutTijdlijnNaam.remove(naam);
+        ot.attribuutVastStartpunt.remove(naam);
+    }
+
     private void extensie(ObjectTypeExtensieContext ctx) {
-        // an extensie adds members to an existing (or new) object type — merge, do not redeclare
+        // an extensie adds members to an existing (or new) object type and replaces none (weigerHerdeclaraties)
         Objecttype ot = model.objecttypen.computeIfAbsent(src(ctx.objectTypeNaam()), Objecttype::new);
-        for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m);
+        for (ObjectTypeMemberContext m : ctx.objectTypeMember()) member(ot, m, ctx, true);
         ledenNaKop(ot, ctx, ctx.objectTypeMember());
     }
 
-    private void member(Objecttype ot, ObjectTypeMemberContext m) {
+    private void member(Objecttype ot, ObjectTypeMemberContext m, ParserRuleContext definitie, boolean extensie) {
         onthoudLidRegel(ot, m);
+        boolean herhaling = false;
+        if (m.attribuutSpecificatie() != null || m.kenmerkSpecificatie() != null) {
+            boolean attribuut = m.attribuutSpecificatie() != null;
+            Lid lid = new Lid(ot, attribuut, attribuut ? naam(m.attribuutSpecificatie().lowerNaam())
+                    : kenmerkNaam(m.kenmerkSpecificatie()), extensie, m, definitie);
+            herhaling = leden.stream().anyMatch(l -> l.zelfde(lid) && (extensie || l.extensie()));
+            leden.add(lid);
+            // an extension's repeat is judged once every declaration is read; the model keeps the declaration the
+            // type already carries, so the rest of the document reads that one
+            if (herhaling && extensie) return;
+        }
         if (m.attribuutSpecificatie() != null) {
             AttribuutSpecificatieContext a = m.attribuutSpecificatie();
             String naam = naam(a.lowerNaam());
@@ -333,7 +486,8 @@ public final class DefinitionResolver {
         } else if (m.kenmerkSpecificatie() != null) {
             String naam = kenmerkNaam(m.kenmerkSpecificatie());
             meldHoofdletterBotsing(ot, naam, ot.kenmerken, m.getStart().getLine());
-            ot.kenmerken.add(naam);
+            // a head after an extension that declared the characteristic: the name stands once
+            if (!herhaling || !ot.kenmerken.contains(naam)) ot.kenmerken.add(naam);
             ot.kenmerkSoorten.put(naam, kenmerkSoortVan(m.kenmerkSpecificatie()));   // §3.5 drives the §8.1.8 predicate form
             TijdlijnContext kt = tijdlijnVan(m.kenmerkSpecificatie());
             Granulariteit gk = granulariteitVan(kt);
@@ -946,6 +1100,7 @@ public final class DefinitionResolver {
                         + " afkapt en in de rol wordt geabsorbeerd (§13.3.9.3); hernoem het feittype zonder lidwoord",
                         ctx.feitTypeNaam().getStart().getLine()));
             rollen.add(new Rol(rolNaam, src(rs.objectTypeNaam()), meervoud));
+            rolRegels.computeIfAbsent(ft, k -> new java.util.HashMap<>()).putIfAbsent(rolNaam, rs.getStart().getLine());
         }
         // §13.3.9.1 cardinaliteit: the line "<q1> <rol1> … <q2> <rol2>" marks each role one or
         // meerdere. A wederkerig role is enkelvoudig (§3.11), so only a normal feittype's roles

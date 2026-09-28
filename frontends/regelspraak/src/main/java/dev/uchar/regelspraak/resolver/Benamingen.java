@@ -34,7 +34,15 @@ final class Benamingen {
     /** The line of each vocabulary declaration, by its name as declared. */
     private final Map<String, Integer> vocabulaireRegels = new LinkedHashMap<>();
 
-    Benamingen(RegelSpraakModel model) { this.model = model; }
+    /** The members an extension declares again ({@link DefinitionResolver}): the type carries the declaration they
+     *  repeat, so their designations are that declaration's, read there once; a refused repeat is refused by its own
+     *  sentence. */
+    private final java.util.Set<ObjectTypeMemberContext> herhalingen;
+
+    Benamingen(RegelSpraakModel model, java.util.Set<ObjectTypeMemberContext> herhalingen) {
+        this.model = model;
+        this.herhalingen = herhalingen;
+    }
 
     // --- pass 1: the declarations and their annotations -----------------------------------------
 
@@ -136,6 +144,7 @@ final class Benamingen {
     }
 
     private void lid(Objecttype ot, ObjectTypeMemberContext m) {
+        if (herhalingen.contains(m)) return;
         if (m.attribuutSpecificatie() != null) {
             AttribuutSpecificatieContext a = m.attribuutSpecificatie();
             annotaties(Benoembaar.attribuut(ot.naam, DefinitionResolver.src(a.lowerNaam())), a.benaming(), a);
