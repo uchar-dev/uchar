@@ -116,3 +116,17 @@ initialisation writes and the initialisation writes it again: `ref` faults on it
 value read (`@watch`), not to its own target, so after the initialisation writes nothing re-fires the
 erase and the session stops before the cap. No corpus case can hold the corner — `ref` faults, so it is
 no golden, and the red zone pins `ref` and clingo only.
+
+## Recorded: a condition that reads through a role
+
+The exec-model branch tests a condition that reads through a to-one navigation — an attribute or a characteristic
+of the reached object — after a far-side join on that object (`ExecModelTranspiler.regelVoorwaarde`), so a value
+another rule derives there later is seen; the companions that mirror a rule's condition, the object creations and
+the fact creations take the same test (golden `jutterswet-meldingsketen`, witness `GenavigeerdeVoorwaardeWitnessTest`).
+Three limits remain, measured 2026-09-28 with `ref` and clingo as the arbiters. The DRL-text branch still writes such
+a test into the subject's pattern, so there the rule never fires on a value derived later on the reached object, or
+fires on the value the object held at insertion (`anchor/jutterswet-kustwacht`, pinned in gate 12's DRL list). A test
+that holds on an empty value, such as a leeg test on a derived attribute, fires on the transient leeg when its rule
+is declared before the rule that writes the value, and the write stays; this holds for an own and a navigated operand
+alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic check is stratified and is not
+affected. A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
