@@ -1,0 +1,155 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "rechten op premie": [
+            "R5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "rechten op premie": [
+            "R6",
+            "R7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "R5",
+        "objectType": "Recht op premie",
+        "attributes": {
+          "vondstgewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R6",
+        "objectType": "Recht op premie",
+        "attributes": {
+          "vondstgewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "R7",
+        "objectType": "Recht op premie",
+        "attributes": {
+          "vondstgewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "premietarief": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "R5",
+      "characteristic": "toegekend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "R6",
+      "characteristic": "toegekend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "R7",
+      "characteristic": "toegekend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R5",
+      "attribute": "premie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R6",
+      "attribute": "premie",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "R7",
+      "attribute": "premie",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "premiebedrag",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "premiebedrag",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "aantal toegekende rechten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "aantal toegekende rechten",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J5",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,433 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premiebedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal toegekende rechten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "premiegerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Recht op premie",
+        "animate": false,
+        "plural": "Rechten op premie",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "toegekend",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "jutter heeft premierecht",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "rechthebbende",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "recht op premie",
+            "objectType": "Recht op premie",
+            "plural": "rechten op premie",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "premietarief",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "toekenning van een recht op premie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toegekend",
+              "subjectType": "Recht op premie",
+              "source": {
+                "snippet": "Een Recht op premie is toegekend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Recht op premie",
+                "source": {
+                  "snippet": "het vondstgewicht van het Recht op premie"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "het vondstgewicht van het Recht op premie groter is dan 2"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premie van een recht op premie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Recht op premie",
+              "source": {
+                "snippet": "De premie van een Recht op premie"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Recht op premie",
+                "source": {
+                  "snippet": "het vondstgewicht van het Recht op premie"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "premietarief",
+                "source": {
+                  "snippet": "het premietarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het vondstgewicht van het Recht op premie maal het premietarief"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "toegekend",
+              "negated": false,
+              "source": {
+                "snippet": "het Recht op premie toegekend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premiebedrag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premiebedrag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het premiebedrag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "premie",
+                  "subjectType": "Recht op premie",
+                  "source": {
+                    "snippet": "de premie van alle rechten op premie van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Recht op premie",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutter heeft premierecht",
+                "role": "recht op premie"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de premie van alle rechten op premie van de Jutter of 0 als die er niet zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal toegekende rechten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal toegekende rechten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal toegekende rechten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "rechten op premie",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "rechten op premie van de Jutter die toegekend zijn"
+                  }
+                }
+              ],
+              "elementType": "Recht op premie",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "toegekend",
+                "negated": false,
+                "source": {
+                  "snippet": "toegekend zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutter heeft premierecht",
+                "role": "recht op premie"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal rechten op premie van de Jutter die toegekend zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premiegerechtigdheid",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premiegerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is premiegerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "premiebedrag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn premiebedrag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "20"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "20"
+                }
+              },
+              "source": {
+                "snippet": "zijn premiebedrag groter is dan 20"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

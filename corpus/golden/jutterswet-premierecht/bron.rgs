@@ -1,0 +1,38 @@
+Parameter het premietarief : Numeriek (geheel getal)
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het premiebedrag Numeriek (geheel getal);
+    het aantal toegekende rechten Numeriek (niet-negatief geheel getal);
+    is premiegerechtigd kenmerk (bijvoeglijk);
+
+Objecttype het Recht op premie (mv: Rechten op premie)
+    het vondstgewicht Numeriek (geheel getal);
+    de premie Numeriek (geheel getal);
+    is toegekend kenmerk (bijvoeglijk);
+
+Feittype jutter heeft premierecht
+    de rechthebbende Jutter
+    het recht op premie (mv: rechten op premie) Recht op premie
+Eén rechthebbende heeft meerdere rechten op premie
+
+Regel toekenning van een recht op premie
+    geldig altijd
+        Een Recht op premie is toegekend
+        indien het vondstgewicht van het Recht op premie groter is dan 2.
+
+Regel premie van een recht op premie
+    geldig altijd
+        De premie van een Recht op premie moet berekend worden als het vondstgewicht van het Recht op premie maal het premietarief
+        indien het Recht op premie toegekend is.
+
+Regel premiebedrag van een jutter
+    geldig altijd
+        Het premiebedrag van een Jutter moet berekend worden als de som van de premie van alle rechten op premie van de Jutter of 0 als die er niet zijn.
+
+Regel aantal toegekende rechten
+    geldig altijd
+        Het aantal toegekende rechten van een Jutter moet berekend worden als het aantal rechten op premie van de Jutter die toegekend zijn.
+
+Regel premiegerechtigdheid
+    geldig altijd
+        Een Jutter is premiegerechtigd indien zijn premiebedrag groter is dan 20.

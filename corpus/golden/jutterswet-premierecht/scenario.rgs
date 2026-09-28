@@ -1,0 +1,63 @@
+Scenario tarief vier
+Gegeven is de volgende situatie:
+de parameter het premietarief is 4
+een Jutter J1
+- de rechten op premie zijn R1, R2 en R3
+een Jutter J2
+- de rechten op premie zijn R4
+een Jutter J3
+een Recht op premie R1
+- het vondstgewicht is 5
+een Recht op premie R2
+- het vondstgewicht is 2
+een Recht op premie R3
+- het vondstgewicht is 3
+een Recht op premie R4
+- het vondstgewicht is 1
+Met als verwacht resultaat:
+- R1 is toegekend
+- R2 is niet toegekend
+- R3 is toegekend
+- R4 is niet toegekend
+- de premie van R1 is 20
+- de premie van R2 is leeg
+- de premie van R3 is 12
+- de premie van R4 is leeg
+- het premiebedrag van J1 is 32
+- het premiebedrag van J2 is 0
+- het premiebedrag van J3 is 0
+- het aantal toegekende rechten van J1 is 2
+- het aantal toegekende rechten van J2 is 0
+- het aantal toegekende rechten van J3 is 0
+- J1 is premiegerechtigd
+- J2 is niet premiegerechtigd
+- J3 is niet premiegerechtigd
+- de gegevens zijn consistent
+
+Scenario tarief vijf op de grens
+Gegeven is de volgende situatie:
+de parameter het premietarief is 5
+een Jutter J4
+- de rechten op premie zijn R5
+een Jutter J5
+- de rechten op premie zijn R6 en R7
+een Recht op premie R5
+- het vondstgewicht is 4
+een Recht op premie R6
+- het vondstgewicht is 3
+een Recht op premie R7
+- het vondstgewicht is 3
+Met als verwacht resultaat:
+- R5 is toegekend
+- R6 is toegekend
+- R7 is toegekend
+- de premie van R5 is 20
+- de premie van R6 is 15
+- de premie van R7 is 15
+- het premiebedrag van J4 is 20
+- het premiebedrag van J5 is 30
+- het aantal toegekende rechten van J4 is 1
+- het aantal toegekende rechten van J5 is 2
+- J4 is niet premiegerechtigd
+- J5 is premiegerechtigd
+- de gegevens zijn consistent

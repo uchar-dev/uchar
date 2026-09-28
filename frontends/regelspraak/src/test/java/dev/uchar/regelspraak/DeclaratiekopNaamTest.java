@@ -14,6 +14,8 @@ import dev.uchar.regelspraak.resolver.ScenarioResolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * documents the three checks now stop were written to disk, one of them with a guess in a WARNING.
  */
 class DeclaratiekopNaamTest {
+
+    private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-premierecht");
 
     private static RegelSpraakModel schoon(String bron) {
         RegelSpraakModel m = Resolver.resolve(bron);
@@ -436,5 +440,20 @@ class DeclaratiekopNaamTest {
             """);
         assertEquals(List.of("Recht Op Premie"), new ArrayList<>(m.objecttypen.keySet()));
         assertEquals(0, tel(ir(m), "\"node\":\"Unresolved\""));
+    }
+
+    /** The golden's source: the three names in one model, every rule resolved, no diagnostic. Gate 10 re-emits its
+     *  ir.json and gate 16 lowers its scenario document, whose instances are written 'een Recht op premie R1', to its
+     *  case files. */
+    @Test void de_golden_leest_zonder_diagnose() throws Exception {
+        RegelSpraakModel m = schoon(Files.readString(GOLDEN.resolve("bron.rgs")));
+        assertEquals(List.of("Jutter", "Recht op premie"), new ArrayList<>(m.objecttypen.keySet()));
+        assertEquals("Rechten op premie", m.objecttypen.get("Recht op premie").meervoud);
+        assertEquals(List.of("jutter heeft premierecht"), new ArrayList<>(m.feittypen.keySet()));
+        Rol rol = m.feittypen.get("jutter heeft premierecht").rollen.get(1);
+        assertEquals(new Rol("recht op premie", "Recht op premie", "rechten op premie", true), rol);
+        assertEquals(5, m.resolvedRegels.size());
+        assertEquals(0, tel(ir(m), "\"node\":\"Unresolved\""));
+        assertTrue(Files.readString(GOLDEN.resolve("scenario.rgs")).contains("een Recht op premie R1\n"));
     }
 }
