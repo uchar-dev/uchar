@@ -1438,11 +1438,18 @@ reason that holds, and the marker then generates nothing (witness:
   the negative direction needs an opgave with three values, which the case
   format does not have for a characteristic ("kenmerk 'K' van T:
   '(mag opgegeven worden)' staat alleen op een attribuut — …");
-- an attribute that is no Numeriek without a unit, the unit written in the
-  datatype, after a domain, or carried by the domain ("… staat alleen op een
-  Numeriek attribuut zonder eenheid, en 'X' is Tekst — …"): every attribute
-  defaults target of the corpus is a number without a unit, so that is the
-  one family the three executors are measured on;
+- an attribute that is neither a Numeriek without a unit — the unit written in
+  the datatype, after a domain, or carried by the domain — nor a Datum in dagen
+  ("… staat alleen op een Numeriek attribuut zonder eenheid of een Datum in
+  dagen, en 'X' is Tekst — …"): those are the two families the three executors
+  are measured on. Counted on 2026-09-28, 40 defaults groups in 25 goldens have
+  an attribute target: 39, in 24 goldens, a number without a unit, and one a
+  Datum in dagen, the date golden below. A `Datum en tijd in millisecondes`
+  ("… en 'X' is Datum-tijd — …"), a text, a percentage, a boolean, an
+  enumeration and a number with a unit stay refused, each until a golden of its
+  own plays in the three executors. A unit clause after a date gets no sentence
+  of the marker: it is refused where the datatype is read ("… een Datum in
+  dagen draagt geen eenheid"), and that ERROR is the only one;
 - a time-dependent attribute (WF-086) and a dimensioned one (a defaults group
   on a dimensioned attribute does not play in every executor);
 - an allocation, or an object creation's initialisation, that writes X: the
@@ -1487,8 +1494,9 @@ which is the measurement above stated as a property.
 
 ### Scope / limitations of this card
 
-- A number without a unit only. A date, a text, an enumeration or a number with
-  a unit waits for a golden per family that plays in the three executors.
+- A number without a unit and a date in days only. A date-time, a text, a
+  percentage, a boolean, an enumeration or a number with a unit waits for a
+  golden per family that plays in the three executors.
 - No marker on a characteristic: the three-valued opgave of the proposal's §5.8
   is a card of its own.
 - No retargeting of allocations and object creations, and no composition with
@@ -1542,11 +1550,23 @@ which is the measurement above stated as a property.
 Goldens: `jutterswet-opgave-boven-berekening` (two marked attributes, one with
 an initialisation, and a rule reading the generated characteristic; ref,
 clingo and the Drools exec branch replay its twelve cases, the DRL-text branch
-refuses it on its defaults sentence) and `jutterswet-opgave-vormen` (the three
+refuses it on its defaults sentence), `jutterswet-opgave-vormen` (the three
 authored forms that are no plain rule under the marker: a tree with a nested
 exception, an unordered block whose conflict is recorded under the moved
 target, and the rows of a decision table; fifteen cases, replayed and refused
-the same way).
+the same way) and `jutterswet-opgave-datum` (the marker on a Datum in dagen,
+computed from another date by `plus`, initialised with a date literal as the
+lowest default, read by a computation, with a rule reading the generated
+characteristic; seven cases, written as a scenario document). Measured on
+2026-09-28: ref and clingo replay the seven cases exactly, the Drools exec
+branch plays them (`PLAYED 7`), the date literal of the initialisation default
+among them, and the DRL-text branch refuses the document on its defaults
+sentence. The computation of the date golden carries no condition: an empty
+date propagates through `plus` (ch. 1.2), so without the other date the
+computation decides nothing and the initialisation below it decides. Measured
+the same day on the computation alone, without the marker, on a Vondst without
+the other date: the target stays empty in ref (`oracle: PASS`), clingo
+(`clingo: PASS`) and the Drools exec branch (`PLAYED 1`).
 
 ---
 
