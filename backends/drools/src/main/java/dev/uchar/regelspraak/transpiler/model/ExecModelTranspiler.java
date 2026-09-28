@@ -120,6 +120,9 @@ public final class ExecModelTranspiler {
      *  by IDENTITY: {@link Default} is a record with value equality, and the loader's defaults and the ones
      *  {@link #regelLid} makes are distinct objects. */
     private final Map<Default, Objecttype> defaultHerkomst = new java.util.IdentityHashMap<>();
+    /** The salience of each effective stack's reduce-rule, derived over all groups at once in {@link #groepVolgorde}
+     *  before any group is built. Keyed by IDENTITY: the stacks of {@link #defaultsGroepen} are records. */
+    private final Map<EffectieveStapel, Integer> groepSalience = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -142,10 +145,11 @@ public final class ExecModelTranspiler {
     private dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid eff =
             new dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid(java.util.List.of());
     private final List<String> overgeslagen = new ArrayList<>();
-    /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the single
-     *  context where a §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring
-     *  DrlTranspiler.waarde's KETEN branch. A chain reaching any CONDITION lowering (which also passes a
-     *  non-null valueSubject into scalarWaarde) must keep the symmetric marker the DRL back-end emits. */
+    /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the context where a
+     *  §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring DrlTranspiler.waarde's KETEN
+     *  branch. A chain reaching any CONDITION lowering (which also passes a non-null valueSubject into scalarWaarde)
+     *  must keep the symmetric marker the DRL back-end emits; the one exception is an operand of a defaults
+     *  justification ({@link #rechtvaardigingZijde}), which the DRL-text branch does not lower at all. */
     private boolean ketenWaardePad;
     /** Monotonic within ONE rule (reset per rule) — keeps each rule's declaration NAMES ({@code $e_0}, {@code $inc_1})
      *  unique. Declaration names are per-rule scoped, so they may repeat across rules. */
@@ -348,8 +352,13 @@ public final class ExecModelTranspiler {
             stapels = List.of();
             meet("defaults", "effectieve stapels", () -> skipList("defaults: " + e.getMessage()));
         }
+        // Built and measured in declared order, so the coverage manifest keeps its order; added to the model in the
+        // order groepVolgorde derives, a group after every group that writes what it reads (see there).
+        List<Integer> volgorde = groepVolgorde(stapels);
+        List<List<Rule>> groepRegels = new ArrayList<>();
         for (EffectieveStapel groep : stapels)
-            for (Rule rule : meet("defaults", defaultsConstructNaam(groep), () -> defaultsGroep(groep))) m.addRule(rule);
+            groepRegels.add(meet("defaults", defaultsConstructNaam(groep), () -> defaultsGroep(groep)));
+        for (int i : volgorde) for (Rule rule : groepRegels.get(i)) m.addRule(rule);
         return m;
     }
 
@@ -2051,8 +2060,9 @@ public final class ExecModelTranspiler {
      *  generalisation of {@link #navReader}'s single-hop root-guard, mirroring DrlTranspiler's KETEN value read.
      *  The pad is re-validated against THIS subject (volgKeten), so a chain resolved against another subject skips.
      *  Reached from the consequence VALUE path (scalarWaarde's chain branch, gated by {@code ketenWaardePad}) and,
-     *  on the condition side, only by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}); every
-     *  other condition keeps the symmetric marker both back-ends emit. */
+     *  on the condition side, by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}) and by an
+     *  operand of a defaults justification ({@link #rechtvaardigingZijde}, which the DRL-text branch does not lower);
+     *  every other condition keeps the symmetric marker both back-ends emit. */
     private java.util.function.Function<Object, Object> navKetenReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
         FactModelGenerator.Navigatiewandeling w = keten(a, subject);
@@ -7711,19 +7721,21 @@ public final class ExecModelTranspiler {
     }
 
     /** Lower one defaults group to its single reduce-rule (a port of ref's {@code run_defaults_group},
-     *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom), RHS the top-down walk over the
+     *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom), a far-side join per navigation
+     *  the defaults read and an accumulate per aggregation a justification reads; RHS the top-down walk over the
      *  defaults with leeg fall-through, recursion into {@code excepties}, member reconciliation, and one idempotent
      *  write or one §9.5 {@code Inconsistentie}. Loud, reason-carrying {@code skipList} fences (the exec-back-end's
      *  skip discipline, surfaced by {@link #meet} as a SKIP): a temporal defaults target (ref-parity), a
-     *  channel-depositing consequence (division), a justification/consequence not reducible to the subject-local
-     *  lambda machinery. */
+     *  channel-depositing consequence (division), a consequence not reducible to the value machinery, and a
+     *  justification whose form {@link #rechtvaardiging} does not lower, named with its condition. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> defaultsGroep(EffectieveStapel stapel) {
         List<PrioritizedDefaults> members = stapel.leden();
         // The conflict path inserts one Inconsistentie and never un-writes a target, and the idempotency
-        // guard blocks re-insertion; that is only sound because defaultsSalience holds the reduce-rule
-        // strictly below every producer of every read of every default — a premature fire cannot happen. Keep
-        // that invariant in mind before weakening the salience derivation.
+        // guard blocks re-insertion; that is only sound because groepVolgorde holds the reduce-rule below every
+        // producer of every read of every default — in salience, and after it in the model where the two share
+        // a salience — so a premature fire cannot happen. Keep that invariant in mind before weakening the
+        // salience derivation or the order of the groups.
         PrioritizedDefaults l0 = members.get(0);
         // the stack's OWNER, not the declaring subject of its members: inheritance has already folded
         // the supertype's declarations in, so this is the type whose instances the stack runs on
@@ -7757,24 +7769,43 @@ public final class ExecModelTranspiler {
             if (l.geldigheid() != null && !l.geldigheid().altijd())
                 return skipList("defaults (gedateerde geldigheid op " + targetForm + " — defaults-vensters niet gedragen)");
 
+        seq = 0;
+        Variable sVar = DSL.declarationOf(factClass, "$subject");
+
         // compile every member chain; a non-lowerable default throws DefaultsOnvertaalbaar (one loud fence for the group).
+        // A justification that reads beyond the subject adds to the reduce-rule what it reads: an accumulate per
+        // aggregation, whose result the consequence binds, and the globals it compares with.
+        RechtvaardigingBouw bouw = new RechtvaardigingBouw(sVar);
         List<List<GecompileerdeDefault>> ledenDefaults = new ArrayList<>();
         Set<String> globalNamen = new LinkedHashSet<>();
         try {
             for (PrioritizedDefaults l : members) {
-                List<GecompileerdeDefault> ds = compileDefaults(l.defaults(), onderwerp, isChar, doel);
+                List<GecompileerdeDefault> ds = compileDefaults(l.defaults(), onderwerp, isChar, doel, bouw);
                 verzamelDefaultsGlobals(ds, globalNamen);
                 ledenDefaults.add(ds);
             }
         } catch (DefaultsOnvertaalbaar e) {
             return skipList("defaults (" + targetForm + "): " + e.getMessage());
         }
+        globalNamen.addAll(bouw.globals);
+        // RUNTIME-SEMANTICS ch. 7.4: the group decides at the fixpoint of what its defaults read. A read through a role
+        // reads another fact, and the subject pattern below does not react to an update of that fact, so every
+        // navigation a justification or a consequence makes gets the far-side join a navigated value read gets in a
+        // rule (navJoins): the group fires again when the reached object changes and decides on what it holds then.
+        // Per level a default was declared on, as its reads are compiled there (ch. 7.10).
+        Map<Objecttype, List<Expr.AttribuutRef>> navLezingen = new LinkedHashMap<>();
+        Map<Objecttype, List<KenmerkHop>> navHops = new LinkedHashMap<>();
+        for (PrioritizedDefaults l : members) defaultsNavigaties(l.defaults(), onderwerp, navLezingen, navHops);
+        List<RuleItemBuilder<?>> verreJoins = new ArrayList<>();
+        Set<String> gejoind = new LinkedHashSet<>();
+        for (Objecttype niveau : navLezingen.keySet()) {
+            List<RuleItemBuilder<?>> j = navJoins(navLezingen.get(niveau), navHops.get(niveau), niveau, sVar, gejoind);
+            if (j == null) return skipList("defaults (" + targetForm + "): " + navReden);
+            verreJoins.addAll(j);
+        }
 
         java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doel);
         BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doel);
-
-        seq = 0;
-        Variable sVar = DSL.declarationOf(factClass, "$subject");
         // class-reactive: an opaque always-true expr keeps the pattern reactive to EVERY subject property change, so
         // the reduce-rule re-fires when a producer writes any read of any default (the freshness idiom). WF-051 keeps
         // the target off the read set, so the group's own write never cycles it (NO_LOOP guards self-retrigger).
@@ -7787,10 +7818,13 @@ public final class ExecModelTranspiler {
                 ? PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> s.getClass() == factClass))
                 : PatternDSL.pattern(sVar).expr(nextId("lfresh"), (Predicate1) (s -> true));
 
-        // resolve the globals the default consequences read (empty for the scalar-first flip set).
+        // resolve the globals the defaults read (empty for the scalar-first flip set). The consequence binds the
+        // subject, then what the justifications' accumulates bound, then the globals.
         List<String> gnames = new ArrayList<>(globalNamen);
         List<Variable> vars = new ArrayList<>();
         vars.add(sVar);
+        vars.addAll(bouw.gebonden);
+        final int nGebonden = bouw.gebonden.size();
         for (String gn : gnames) {
             Global<?> g = waardeGlobal(gn);
             if (g == null) return skipList("defaults (" + targetForm + "): consequentie leest niet-geregistreerde global " + gn);
@@ -7808,9 +7842,10 @@ public final class ExecModelTranspiler {
 
         RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
             Object s = args[0];
+            Object[] gebonden = java.util.Arrays.copyOfRange(args, 1, 1 + nGebonden);
             Map<String, BigDecimal> gm = new LinkedHashMap<>();
-            vulGlobalMap(gm, gnamesF, args, 1);
-            DefaultsRun run = new DefaultsRun(s, gm, getterF, isCharF, targetFormF);
+            vulGlobalMap(gm, gnamesF, args, 1 + nGebonden);
+            DefaultsRun run = new DefaultsRun(s, gm, gebonden, getterF, isCharF, targetFormF);
             List<Uitkomst> memberResults = new ArrayList<>();
             for (List<GecompileerdeDefault> member : ledenDefaultsF) memberResults.add(run.decide(member, List.of()));
             Uitkomst res = run.reconcile(memberResults, List.of());
@@ -7830,7 +7865,8 @@ public final class ExecModelTranspiler {
                 default -> { /* UNDECIDED: no write — the target keeps what the fact base holds */ }
             }
         });
-        if (consequence == null) return skipList("defaults (" + targetForm + "): te veel gebonden globals");
+        if (consequence == null) return skipList("defaults (" + targetForm + "): te veel gebonden variabelen"
+                + " (aggregaties en globals)");
 
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern);
@@ -7852,44 +7888,45 @@ public final class ExecModelTranspiler {
                 items.add(DSL.not(guard));
             }
         }
+        items.addAll(verreJoins);
+        items.addAll(bouw.accItems);
         items.add(consequence);
 
-        // group-local salience (§5.1 of the design): strictly below every PRODUCER of every default's
-        // justification/consequence read (recursed through excepties), so a monotone characteristic write cannot
-        // decide before its reads have settled. Derived locally from the group's reads, NOT the full dep_forms graph.
-        int salience = defaultsSalience(members, onderwerp);
+        // group salience (§5.1 of the design): below every PRODUCER of every default's justification/consequence
+        // read (recursed through excepties), so a monotone characteristic write cannot decide before its reads have
+        // settled — derived per group in groepVolgorde, over the ordinary rules and the other groups.
+        Integer afgeleid = groepSalience.get(stapel);
+        int salience = afgeleid != null ? afgeleid : defaultsSalience(members, onderwerp);
         var bouwer = PatternDSL.rule(kop(defaultsConstructNaam(stapel))).attribute(Rule.Attribute.NO_LOOP, true);
         if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
         return List.of(bouwer.build(items.toArray(new RuleItemBuilder[0])));
     }
 
-    private List<GecompileerdeDefault> compileDefaults(List<Default> defaults, Objecttype onderwerp, boolean isChar, String doel) {
+    private List<GecompileerdeDefault> compileDefaults(List<Default> defaults, Objecttype onderwerp, boolean isChar, String doel,
+                                                      RechtvaardigingBouw bouw) {
         List<GecompileerdeDefault> uit = new ArrayList<>();
-        for (Default r : defaults) uit.add(compileDefault(r, onderwerp, isChar, doel));
+        for (Default r : defaults) uit.add(compileDefault(r, onderwerp, isChar, doel, bouw));
         return uit;
     }
 
     /** Compile one default to its build-time closures. A form the scalar-first back-end does not carry raises a loud
      *  {@link DefaultsOnvertaalbaar} (caught in {@link #defaultsGroep} as the group's fence reason). */
-    private GecompileerdeDefault compileDefault(Default r, Objecttype stapelEigenaar, boolean isChar, String doel) {
+    private GecompileerdeDefault compileDefault(Default r, Objecttype stapelEigenaar, boolean isChar, String doel,
+                                                RechtvaardigingBouw bouw) {
         // compiled on the level the default was declared on; an exception group's defaults share their root's
         Objecttype onderwerp = defaultHerkomst.getOrDefault(r, stapelEigenaar);
-        Predicate1<Object> just;
+        Rechtvaardiging just;
         boolean init = r.initialisatie();
         if (init) {
             if (isChar) throw new DefaultsOnvertaalbaar("initialisatie-default op kenmerk-defaults (WF-075/ref-fault)");
             // justified via target-empty at fire time (ch. 7.3), and where a folded initialisation's own
             // condition holds
-            just = r.voorwaarde() == null ? null : subjectConditie(r.voorwaarde(), onderwerp);
-            if (r.voorwaarde() != null && just == null)
-                throw new DefaultsOnvertaalbaar("niet-reduceerbare justificatie (far-side/aggregatie/global): " + defaultsReden(r));
+            just = r.voorwaarde() == null ? null : justificatie(r.voorwaarde(), onderwerp, bouw);
         } else if (r.voorwaarde() == null) {
             if (r.heeftEigenInhoud()) throw new DefaultsOnvertaalbaar("deciding default zonder justificatie");
             just = null;   // a contentless group-default never evaluates justified
         } else {
-            just = subjectConditie(r.voorwaarde(), onderwerp);
-            if (just == null)
-                throw new DefaultsOnvertaalbaar("niet-reduceerbare justificatie (far-side/aggregatie/global): " + defaultsReden(r));
+            just = justificatie(r.voorwaarde(), onderwerp, bouw);
         }
         Boolean besluit = isChar ? r.besluit() : null;
         WaardeFn conseq = null;
@@ -7912,17 +7949,259 @@ public final class ExecModelTranspiler {
         List<List<GecompileerdeDefault>> exc = null;
         if (r.excepties() != null) {
             exc = new ArrayList<>();
-            for (ExceptionGroup sl : r.excepties().leden()) exc.add(compileDefaults(sl.defaults(), onderwerp, isChar, doel));
+            for (ExceptionGroup sl : r.excepties().leden()) exc.add(compileDefaults(sl.defaults(), onderwerp, isChar, doel, bouw));
         }
         return new GecompileerdeDefault(just, init, besluit, conseq, exc, r.heeftEigenInhoud());
     }
     private static String defaultsReden(Default r) { return r.bron() == null ? "<default>" : r.bron(); }
 
+    /** A default's justification as the reduce-rule evaluates it when it fires: over the subject, the numeric globals
+     *  the consequence binds, and what the rule's left-hand side bound for the justifications — the result, and the
+     *  contributor count where there is one, of each aggregation they read ({@link RechtvaardigingBouw#gebonden}). */
+    @FunctionalInterface
+    private interface Rechtvaardiging { boolean test(Object s, Map<String, BigDecimal> gm, Object[] gebonden); }
+
+    /** What the justifications of ONE defaults group add to its reduce-rule, collected while they are compiled: the
+     *  accumulate of each aggregation they read, the variables that bind its result for the consequence (index-aligned
+     *  with the {@code gebonden} a {@link Rechtvaardiging} receives), and the globals they read. {@code weigering}
+     *  names the first form a justification does not lower, for the group's fence. */
+    private static final class RechtvaardigingBouw {
+        final Variable subject;
+        final List<RuleItemBuilder<?>> accItems = new ArrayList<>();
+        final List<Variable> gebonden = new ArrayList<>();
+        final Set<String> globals = new LinkedHashSet<>();
+        String weigering;
+        RechtvaardigingBouw(Variable subject) { this.subject = subject; }
+    }
+
+    /** A default's justification, or the group's fence: a {@link DefaultsOnvertaalbaar} that names the form which does
+     *  not lower and the condition it stands in. */
+    private Rechtvaardiging justificatie(Conditie c, Objecttype onderwerp, RechtvaardigingBouw bouw) {
+        bouw.weigering = null;
+        Rechtvaardiging j = rechtvaardiging(c, onderwerp, bouw);
+        if (j == null)
+            throw new DefaultsOnvertaalbaar("rechtvaardiging niet vertaald, " + (bouw.weigering != null ? bouw.weigering
+                    : rechtvaardigingVorm(c) + ": " + snippet(c.bron())));
+        return j;
+    }
+
+    /** Compile one justification. Where the subject-local predicate of {@link #subjectConditie} lowers it, that is the
+     *  justification, as before. Otherwise a composite folds its members here, with the stop triggers of ch. 5.10
+     *  ({@link #vastgesteld}) and the verdict of {@link #telVerdict}, and each member lowers on its own: a
+     *  subject-local leaf; a comparison with an aggregation ({@link #aggregatieRechtvaardiging}); or a comparison or a
+     *  leeg/gevuld test whose operands lower as values do ({@link #scalaireRechtvaardiging}), a chain of roles and a
+     *  numeric parameter among them. A justification is evaluated when the rule fires, not as a test on the subject's
+     *  pattern, so a member of any of these kinds may stand under any quantifier. null where a member does not
+     *  lower, with {@code bouw.weigering} naming it. */
+    private Rechtvaardiging rechtvaardiging(Conditie c, Objecttype subject, RechtvaardigingBouw bouw) {
+        Predicate1<Object> lokaal = subjectConditie(c, subject);
+        if (lokaal != null) return (s, gm, a) -> toets(lokaal, s);
+        if (c instanceof Conditie.Samengesteld sam) {
+            List<Rechtvaardiging> leden = new ArrayList<>();
+            for (Conditie deel : sam.onderdelen()) {
+                Rechtvaardiging lid = rechtvaardiging(deel, subject, bouw);
+                if (lid == null) return null;
+                leden.add(lid);
+            }
+            final Conditie.Kwantor kw = sam.kwantor();
+            final int drempel = sam.drempel();
+            return (s, gm, a) -> {
+                int hits = 0;
+                for (int i = 0; i < leden.size(); i++) {
+                    Boolean vast = vastgesteld(kw, drempel, hits, i, leden.size() - i);
+                    if (vast != null) return vast;
+                    if (leden.get(i).test(s, gm, a)) hits++;
+                }
+                return telVerdict(kw, drempel, hits, leden.size());
+            };
+        }
+        if (c instanceof Conditie.Vergelijking v && v.periode() == null && heeftAggregatieOperand(v))
+            return aggregatieRechtvaardiging(v, subject, bouw);
+        Rechtvaardiging r = scalaireRechtvaardiging(c, subject, bouw);
+        if (r == null && bouw.weigering == null) bouw.weigering = rechtvaardigingVorm(c) + ": " + snippet(c.bron());
+        return r;
+    }
+
+    /** Drools' {@link Predicate1#test} declares a checked exception; a justification's leaves never throw one. */
+    private static boolean toets(Predicate1<Object> p, Object s) {
+        try { return p.test(s); }
+        catch (RuntimeException e) { throw e; }
+        catch (Exception e) { throw new RuntimeException(e); }
+    }
+
+    /** A comparison with an aggregation on either side (IR-SPEC ch. 4.3). Each aggregation becomes an accumulate on the
+     *  reduce-rule's left-hand side ({@link #aggregatie}, with the contributor count bound as a rule's condition binds
+     *  it, so an empty minimum or maximum is leeg and not a missing row), and the justification reads its result when
+     *  the rule fires. The accumulate reacts to every element that joins, leaves or changes, so the group fires again
+     *  when the fold moves (ch. 7.4). The comparison is the one a rule's condition makes over an aggregation
+     *  ({@link #aggregatieVoorwaarde}), with the unit restatement of {@link #getalvergelijking}. */
+    private Rechtvaardiging aggregatieRechtvaardiging(Conditie.Vergelijking v, Objecttype subject, RechtvaardigingBouw bouw) {
+        if (!isNumeriekOp(v.op()) || !getalOfAggregatie(v.links()) || !getalOfAggregatie(v.rechts())) {
+            bouw.weigering = "een vergelijking van een aggregatie met iets anders dan een getal: " + snippet(v.bron());
+            return null;
+        }
+        Eval l = rechtvaardigingZijde(v.links(), subject, bouw);
+        if (l == null) return null;
+        Eval r = rechtvaardigingZijde(v.rechts(), subject, bouw);
+        if (r == null) return null;
+        return getalvergelijking(l, r, v);
+    }
+
+    private boolean getalOfAggregatie(Expr e) {
+        if (e instanceof Expr.Functie f && isAggregatieKind(f.kind()) && !isGelisteFold(f)) return true;
+        Datatype t = eff.typeVan(e);
+        return t != null && (t.isNumeriek() || t.isPercentage());
+    }
+
+    /** A comparison, or a leeg/gevuld test, whose operands lower as values do ({@link #rechtvaardigingZijde}): the form
+     *  a subject-local leaf does not carry because an operand reads a chain of roles or a numeric parameter. Per
+     *  datatype the comparison is the one the subject-local leaves make: numbers by {@link #getalvergelijking}, where
+     *  both sides are numbers as {@link #getalachtigVergelijkbaar} has them; two dates of one kind by
+     *  {@link #datumVergelijkTemporal}; a text, an enumeration value or a boolean by equality with the leeg cells of
+     *  Tabel 38 and 44 ({@link #tekstAttrGelijk}). An expression that the condition path refuses for its unit or its
+     *  dimension ({@link #parityOnveilig}) is refused here too. null otherwise. */
+    private Rechtvaardiging scalaireRechtvaardiging(Conditie c, Objecttype subject, RechtvaardigingBouw bouw) {
+        if (c instanceof Conditie.Predicaat p && p.periode() == null
+                && (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD)) {
+            Eval w = rechtvaardigingZijde(p.operand(), subject, bouw);
+            if (w == null) return null;
+            final boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
+            return (s, gm, a) -> (w.apply(s, gm, a) == null) == leeg;
+        }
+        if (!(c instanceof Conditie.Vergelijking v) || v.periode() != null) return null;
+        Datatype lt = eff.typeVan(v.links()), rt = eff.typeVan(v.rechts());
+        if (lt == null || rt == null) return null;
+        if (parityOnveilig(v.links()) || parityOnveilig(v.rechts())) {
+            bouw.weigering = "een uitdrukking met een dimensiecel of een omrekening tussen eenheden zonder exacte factor: "
+                    + snippet(v.bron());
+            return null;
+        }
+        final Conditie.Operator op = v.op();
+        boolean getallen = getalachtigVergelijkbaar(v.links()) && getalachtigVergelijkbaar(v.rechts()) && isNumeriekOp(op);
+        boolean datums = lt.isDatum() && rt.isDatum() && sameDatumKind(lt, rt) && isDatumVergelijkOp(op);
+        boolean gelijkheid = (op == Conditie.Operator.GELIJK || op == Conditie.Operator.ONGELIJK)
+                && nietGetalOfDatum(lt) && nietGetalOfDatum(rt);
+        if (!getallen && !datums && !gelijkheid) return null;
+        Eval l = rechtvaardigingZijde(v.links(), subject, bouw);
+        if (l == null) return null;
+        Eval r = rechtvaardigingZijde(v.rechts(), subject, bouw);
+        if (r == null) return null;
+        if (getallen) return getalvergelijking(l, r, v);
+        if (datums) return (s, gm, a) -> datumVergelijkTemporal(datumWaarde(l.apply(s, gm, a)), datumWaarde(r.apply(s, gm, a)), op);
+        final java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(lt, rt);
+        final boolean gelijk = op == Conditie.Operator.GELIJK;
+        return (s, gm, a) -> tekstAttrGelijk(n.apply(l.apply(s, gm, a)), n.apply(r.apply(s, gm, a)), gelijk);
+    }
+
+    private static boolean nietGetalOfDatum(Datatype t) {
+        return !t.isNumeriek() && !t.isPercentage() && !t.isDatum();
+    }
+
+    /** A numeric comparison of two sides read when the rule fires: exactly, a Breuk kept a Breuk, where the declared
+     *  units agree, and with the §5.1 restatement of {@link #restatement} where they differ — the leeg cells of
+     *  ch. 1.2 by {@link RegelSpraakRuntime#rsAggVergelijk} either way. */
+    private Rechtvaardiging getalvergelijking(Eval l, Eval r, Conditie.Vergelijking v) {
+        BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));
+        final String op = Operatoren.symbool(v.op());
+        if (f[0].compareTo(BigDecimal.ONE) == 0 && f[1].compareTo(BigDecimal.ONE) == 0)
+            return (s, gm, a) -> RegelSpraakRuntime.rsAggVergelijk(l.apply(s, gm, a), r.apply(s, gm, a), op);
+        final BigDecimal fl = f[0], fr = f[1];
+        return (s, gm, a) -> RegelSpraakRuntime.rsAggVergelijk(scale(RegelSpraakRuntime.toBd(l.apply(s, gm, a)), fl),
+                scale(RegelSpraakRuntime.toBd(r.apply(s, gm, a)), fr), op);
+    }
+
+    /** One side of a justification's comparison, read when the rule fires: an aggregation through its accumulate (the
+     *  fold's result, or the leegwaarde of ch. 1.2e when no element contributes), anything else as the consequence
+     *  reads a value ({@link #scalarWaarde}) — a chain of roles included, null-safely, and a numeric parameter from the
+     *  globals the consequence binds. The chain gate of the value path is opened here, and only here, on the
+     *  condition side: the DRL-text branch has no defaults lowering to stay symmetric with, and the group's far-side
+     *  join makes the chain's reached object fire it again. null where the side does not lower, with
+     *  {@code bouw.weigering} naming it. */
+    private Eval rechtvaardigingZijde(Expr e, Objecttype subject, RechtvaardigingBouw bouw) {
+        if (e instanceof Expr.Functie f && isAggregatieKind(f.kind()) && !isGelisteFold(f)) {
+            Agg agg = aggregatie(f, subject, bouw.subject, true);
+            if (agg == null) {
+                bouw.weigering = "een aggregatie die deze tak niet vouwt (" + (aggregatieReden != null ? aggregatieReden
+                        : "aggregatie buiten Phase-C scope") + "): " + snippet(f.bron());
+                return null;
+            }
+            bouw.accItems.add(agg.accItem());
+            final int iResultaat = bouw.gebonden.size();
+            bouw.gebonden.add(agg.resultVar());
+            if (agg.countVar() == null) return (s, gm, a) -> a[iResultaat];
+            final int iTelling = bouw.gebonden.size();
+            bouw.gebonden.add(agg.countVar());
+            final WaardeFn leeg = agg.somFallback();
+            return (s, gm, a) -> foldLeeg(a[iResultaat], a[iTelling], leeg, s);
+        }
+        if (containsAggregatie(e)) {
+            bouw.weigering = "een aggregatie binnen een rekenkundige uitdrukking: " + snippet(e.bron());
+            return null;
+        }
+        WaardeFn w;
+        boolean vorig = ketenWaardePad;
+        navReden = null;   // a reason an earlier member's probe left belongs to that member, not to this operand
+        try { ketenWaardePad = true; w = scalarWaarde(subject, e); }
+        finally { ketenWaardePad = vorig; }
+        if (w == null) {
+            bouw.weigering = (navReden != null ? navReden : "een operand die deze tak niet als waarde leest") + ": "
+                    + snippet(e.bron());
+            return null;
+        }
+        for (String gn : w.globals())
+            if (waardeGlobal(gn) == null) {
+                bouw.weigering = "de parameter '" + gn + "', die deze tak in een rechtvaardiging alleen als getal leest: "
+                        + snippet(e.bron());
+                return null;
+            }
+        bouw.globals.addAll(w.globals());
+        final BiFunction<Object, Map<String, BigDecimal>, Object> fn = w.fn();
+        return (s, gm, a) -> fn.apply(s, gm);
+    }
+
+    /** The form of a justification member this branch does not lower, as the fence names it. */
+    private static String rechtvaardigingVorm(Conditie c) {
+        return switch (c) {
+            case Conditie.Kwantorvouw kv -> "een kwantorvouw (een telling over de gekoppelde instanties, die deze tak alleen"
+                    + " in de voorwaarde van een regel vouwt)";
+            case Conditie.Periode p -> "een periodevergelijking";
+            case Conditie.Regelversie r -> "een regelversiepredicaat";
+            case Conditie.Kenmerk k -> "een kenmerkcheck die deze tak niet op het onderwerp of één rol ver leest";
+            case Conditie.Rollidmaatschap r -> "een rolcheck";
+            case Conditie.VerreRollidmaatschap r -> "een rolcheck";
+            case Conditie.Onopgelost o -> "een onopgeloste voorwaarde";
+            case Conditie.Vergelijking v when v.periode() != null -> "een vergelijking over een gehele periode";
+            case Conditie.Predicaat p when p.periode() != null -> "een predicaat over een gehele periode";
+            case Conditie.Predicaat p -> "het predicaat " + p.soort().name().toLowerCase();
+            default -> "een vorm buiten de rechtvaardigingen die deze tak vertaalt";
+        };
+    }
+
+    private static String snippet(dev.uchar.regelspraak.ir.Bron bron) {
+        return bron == null || bron.snippet() == null ? "<zonder bron>" : bron.snippet();
+    }
+
+    /** The navigations the defaults of a group read, grouped by the level each default was declared on (ch. 7.10:
+     *  a default is compiled there), through {@link #navRefs} over every justification and consequence, the nested
+     *  exception groups included. */
+    private void defaultsNavigaties(List<Default> defaults, Objecttype niveau,
+                                    Map<Objecttype, List<Expr.AttribuutRef>> refs, Map<Objecttype, List<KenmerkHop>> hops) {
+        for (Default d : defaults) {
+            Objecttype eigen = defaultHerkomst.getOrDefault(d, niveau);
+            List<Expr.AttribuutRef> r = refs.computeIfAbsent(eigen, k -> new ArrayList<>());
+            navRefs(d.voorwaarde(), eigen, r, hops.computeIfAbsent(eigen, k -> new ArrayList<>()));
+            if (d.consequentie() != null) navRefs(d.consequentie(), eigen, r);
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden()) defaultsNavigaties(g.defaults(), eigen, refs, hops);
+        }
+    }
+
     /** A subject-local condition predicate ({@code subject -> boolean}): a compound recurses per its kwantor,
      *  every leaf goes through the shared {@link #leafPredicate} (kenmerk / own-or-navigated comparison / predicaat).
      *  null when ANY part is not reducible (a global-reading bullet, a deeper form leafPredicate declines) — the
-     *  caller then declines the whole form: a defaults group's justification, a consistency's assertion, a composite
-     *  among a rule condition's counted criteria. Generalises {@link #leafCompound} to arbitrary nesting. */
+     *  caller then declines the whole form (a consistency's assertion, a composite among a rule condition's counted
+     *  criteria) or, for a defaults group's justification, lowers it member by member in {@link #rechtvaardiging}.
+     *  Generalises {@link #leafCompound} to arbitrary nesting. */
     private Predicate1<Object> subjectConditie(Conditie c, Objecttype subject) {
         if (c == null) return null;
         if (c instanceof Conditie.Samengesteld sam) {
@@ -8013,10 +8292,150 @@ public final class ExecModelTranspiler {
         return false;
     }
 
+    /** RUNTIME-SEMANTICS ch. 7.4, over all groups at once: a group decides once the producers of what it reads have
+     *  run, and a group can be such a producer. Returns the order in which the groups' reduce-rules are added to the
+     *  model — every group after the groups that write what it reads, otherwise in declared order — and fills
+     *  {@link #groepSalience}. Drools fires the activations of one salience in the order the rules were added (the
+     *  ordinary rules first: they are added before every group), so a reader ordered after its producer fires after it
+     *  when the two share a salience. Built in declared order, a group that read the target of a group declared after
+     *  it decided on the target as it stood before that group had run, and a characteristic it attributed then stayed
+     *  (a written characteristic is never withdrawn, ch. 5.3).
+     *
+     *  <p>The salience of a group is the lowest of: {@link #defaultsSalience}, below the ordinary rules that write what
+     *  it reads on its own type, unchanged; the salience of each ordinary rule that writes what it reads beyond its
+     *  subject — on the type a role reaches, or on the elements an aggregation folds or filters — as the rule is added
+     *  before it; and the salience of each group that writes what it reads, as that group is added before it. A cycle
+     *  between groups, which WF-051 excludes wherever a justification closes it, keeps the declared order for the
+     *  groups on it. */
+    private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
+        int n = stapels.size();
+        List<Set<Lezing>> lezingen = new ArrayList<>();
+        for (EffectieveStapel st : stapels) {
+            Set<Lezing> l = new LinkedHashSet<>();
+            for (PrioritizedDefaults lid : st.leden()) verzamelLezingen(lid.defaults(), st.eigenaar(), l);
+            lezingen.add(l);
+        }
+        List<List<Integer>> producenten = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            List<Integer> p = new ArrayList<>();
+            for (int j = 0; j < n; j++)
+                if (j != i && schrijftVoor(stapels.get(j), stapels.get(i), lezingen.get(i))) p.add(j);
+            producenten.add(p);
+        }
+        List<Integer> volgorde = new ArrayList<>();
+        boolean[] geplaatst = new boolean[n];
+        while (volgorde.size() < n) {
+            int kies = -1;
+            for (int i = 0; i < n && kies < 0; i++) {
+                if (geplaatst[i]) continue;
+                boolean klaar = true;
+                for (int j : producenten.get(i)) klaar &= geplaatst[j];
+                if (klaar) kies = i;
+            }
+            for (int i = 0; i < n && kies < 0; i++) if (!geplaatst[i]) kies = i;   // on a cycle: declared order
+            geplaatst[kies] = true;
+            volgorde.add(kies);
+        }
+        groepSalience.clear();
+        for (int i : volgorde) {
+            EffectieveStapel st = stapels.get(i);
+            int salience = defaultsSalience(st.leden(), st.eigenaar());
+            for (Lezing l : lezingen.get(i)) {
+                if (!l.ver()) continue;
+                for (ResolvedRegel r : model.resolvedRegels)
+                    if (r.doel() instanceof Expr.AttribuutRef d && d.attribuut() != null && d.objecttype() != null
+                            && d.attribuut().equals(l.naam()) && verwant(l.houder(), d.objecttype()))
+                        salience = Math.min(salience, strat.salience(r));
+            }
+            for (int j : producenten.get(i)) {
+                Integer p = groepSalience.get(stapels.get(j));
+                if (p != null) salience = Math.min(salience, p);
+            }
+            groepSalience.put(st, salience);
+        }
+        return volgorde;
+    }
+
+    /** A read of a defaults group, keyed on the type that holds the value: the subject for an own read, the type a role
+     *  reaches for a read through it, the element type for what an aggregation folds or filters. {@code ver} marks a
+     *  read beyond the subject. */
+    private record Lezing(Objecttype houder, String naam, boolean ver) {}
+
+    /** Whether group {@code p} writes what group {@code g} reads: its target, on the subject's own type for an own read,
+     *  and on the reached or folded type, or a subtype or supertype of it, for a read beyond the subject. */
+    private static boolean schrijftVoor(EffectieveStapel p, EffectieveStapel g, Set<Lezing> lezingen) {
+        String doel = defaultsNorm(p.leden().get(0).doel());
+        for (Lezing l : lezingen) {
+            if (!defaultsNorm(l.naam()).equals(doel)) continue;
+            if (l.ver() ? verwant(l.houder(), p.eigenaar()) : gelijkeType(p.eigenaar(), g.eigenaar())) return true;
+        }
+        return false;
+    }
+
+    private static boolean verwant(Objecttype a, Objecttype b) {
+        return a != null && b != null && (a.isEen(b) || b.isEen(a) || gelijkeType(a, b));
+    }
+
+    /** The reads of a group's defaults, justifications and consequences, recursed through excepties. */
+    private void verzamelLezingen(List<Default> defaults, Objecttype subject, Set<Lezing> uit) {
+        for (Default r : defaults) {
+            Objecttype niveau = defaultHerkomst.getOrDefault(r, subject);
+            conditieLezingen(r.voorwaarde(), niveau, false, uit);
+            exprLezingen(r.consequentie(), niveau, false, uit);
+            if (r.excepties() != null)
+                for (ExceptionGroup sl : r.excepties().leden()) verzamelLezingen(sl.defaults(), niveau, uit);
+        }
+    }
+
+    private void conditieLezingen(Conditie c, Objecttype subject, boolean ver, Set<Lezing> uit) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Kenmerk k -> {
+                if (k.kenmerk() == null) return;
+                KenmerkHop hop = kenmerkHop(k, subject);
+                uit.add(hop != null ? new Lezing(hop.doel(), k.kenmerk(), true)
+                        : new Lezing(subject, k.kenmerk(), ver || genavigeerd(k)));
+            }
+            case Conditie.Samengesteld sam -> { for (Conditie d : sam.onderdelen()) conditieLezingen(d, subject, ver, uit); }
+            case Conditie.Vergelijking v -> { exprLezingen(v.links(), subject, ver, uit); exprLezingen(v.rechts(), subject, ver, uit); }
+            case Conditie.Predicaat p -> exprLezingen(p.operand(), subject, ver, uit);
+            case Conditie.Periode pd -> { exprLezingen(pd.vanaf(), subject, ver, uit); exprLezingen(pd.tot(), subject, ver, uit); }
+            case Conditie.Kwantorvouw kv -> {
+                conditieLezingen(kv.filter(), kv.elementObjecttype(), true, uit);
+                conditieLezingen(kv.toets(), kv.elementObjecttype(), true, uit);
+            }
+            default -> { }
+        }
+    }
+
+    private void exprLezingen(Expr e, Objecttype subject, boolean ver, Set<Lezing> uit) {
+        if (e == null) return;
+        for (Expr k : letKinderen(e)) exprLezingen(k, subject, ver, uit);   // ch. 4.10: a Let-wrapped read is a read
+        if (e instanceof Expr.AttribuutRef a) {
+            if (a.attribuut() == null) return;
+            boolean verweg = ver || !ongenavigeerd(a) || (a.objecttype() != null && a.objecttype() != subject);
+            uit.add(new Lezing(a.objecttype() != null ? a.objecttype() : subject, a.attribuut(), verweg));
+        } else if (e instanceof Expr.Binair b) { exprLezingen(b.links(), subject, ver, uit); exprLezingen(b.rechts(), subject, ver, uit); }
+        else if (e instanceof Expr.Afgerond af) { exprLezingen(af.basis(), subject, ver, uit); }
+        else if (e instanceof Expr.Begrensd bg) {
+            exprLezingen(bg.basis(), subject, ver, uit); exprLezingen(bg.minimum(), subject, ver, uit); exprLezingen(bg.maximum(), subject, ver, uit);
+        } else if (e instanceof Expr.Functie f) {
+            boolean vouw = isAggregatieKind(f.kind()) && !isGelisteFold(f);
+            Objecttype elem = vouw && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
+            for (Expr a : f.argumenten()) exprLezingen(a, elem, ver || vouw, uit);
+            if (f.filter() != null) conditieLezingen(f.filter(), elem, true, uit);
+            exprLezingen(f.leegwaarde(), subject, ver, uit);
+        } else if (e instanceof Expr.DimensieCel dc) { exprLezingen(dc.attribuut(), subject, ver, uit); }
+        else if (e instanceof Expr.TekstReeks tr) {
+            for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i) exprLezingen(i.expr(), subject, ver, uit);
+        }
+    }
+
     /** Group-local salience: strictly below every producer of every read of every default (§5.1). Collect the
      *  kenmerk/attribute names the group reads (justifications + consequences, recursed through excepties), find the
      *  resolved rules that WRITE them on this subject type, and sit one below the minimum of their salience — so a
-     *  monotone characteristic write decides only at the fixpoint of its reads. No producers (input-only reads) -> 0. */
+     *  monotone characteristic write decides only at the fixpoint of its reads. No producers (input-only reads) -> 0.
+     *  The part of {@link #groepVolgorde} that reads the subject's own type. */
     private int defaultsSalience(List<PrioritizedDefaults> members, Objecttype onderwerp) {
         Set<String> reads = new LinkedHashSet<>();
         for (PrioritizedDefaults l : members) verzamelDefaultsLeesnamen(l.defaults(), reads);
@@ -8082,7 +8501,7 @@ public final class ExecModelTranspiler {
      *  target is empty), the characteristic decision (or null), the attribute value fn (or null), and the nested
      *  exception-group members (or null). {@code heeftEigenInhoud} separates a form-a default from a contentless
      *  group-default. */
-    private record GecompileerdeDefault(Predicate1<Object> justificatie, boolean initialisatie, Boolean besluit,
+    private record GecompileerdeDefault(Rechtvaardiging justificatie, boolean initialisatie, Boolean besluit,
             WaardeFn consequentie, List<List<GecompileerdeDefault>> excepties, boolean heeftEigenInhoud) {}
 
     /** A loud, reason-carrying fence raised while compiling defaults the scalar-first back-end does not carry. */
@@ -8097,21 +8516,22 @@ public final class ExecModelTranspiler {
     private static final class DefaultsRun {
         private final Object s;
         private final Map<String, BigDecimal> gm;
+        /** What the rule's left-hand side bound for the justifications ({@link RechtvaardigingBouw#gebonden}). */
+        private final Object[] gebonden;
         private final java.util.function.Function<Object, Object> doelGetter;
         private final boolean isChar;
         private final String targetForm;
-        DefaultsRun(Object s, Map<String, BigDecimal> gm, java.util.function.Function<Object, Object> doelGetter,
-                    boolean isChar, String targetForm) {
-            this.s = s; this.gm = gm; this.doelGetter = doelGetter; this.isChar = isChar; this.targetForm = targetForm;
+        DefaultsRun(Object s, Map<String, BigDecimal> gm, Object[] gebonden,
+                    java.util.function.Function<Object, Object> doelGetter, boolean isChar, String targetForm) {
+            this.s = s; this.gm = gm; this.gebonden = gebonden; this.doelGetter = doelGetter; this.isChar = isChar;
+            this.targetForm = targetForm;
         }
 
         private boolean justified(GecompileerdeDefault r) {
             if (r.initialisatie() && doelGetter.apply(s) != null) return false;   // ch. 7.3: the target is empty
             if (r.initialisatie() && r.justificatie() == null) return true;
             if (r.justificatie() == null) return false;
-            try { return r.justificatie().test(s); }              // Drools Predicate1.test declares a checked Exception
-            catch (RuntimeException e) { throw e; }
-            catch (Exception e) { throw new RuntimeException(e); }
+            return r.justificatie().test(s, gm, gebonden);
         }
 
         /** A default's OWN decision (ch. 7.1), exception group aside — a Beslissing when it decides, null when it
