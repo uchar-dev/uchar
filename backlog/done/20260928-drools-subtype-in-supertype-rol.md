@@ -365,3 +365,35 @@ cases (11 en 44); gate 12 op 220 / 189 / 873.
     5caf206b weigerzin van het beanveld noemt wie de eigenschap houdt
 
 en daarna de commit die dit Result in de kaart zet.
+
+## Keuring (hoofdsessie, 2026-09-29)
+
+Geland op main na een rebase op de landing van de kaart
+frontend-extensie-herdeclaratie (geen conflicten) en een eigen run van
+alle zestien gates op de rebased kop `95d2c42d` (logs
+`/tmp/v2/uchar-gates4/`): groen. Gemeten daar: gate 3 317 goldens schoon;
+gate 5 en 6 748 cases exact; gate 7 704 weerleggingen, 44 overlevers
+(ongewijzigd); gate 10 990 toetsen; gate 12 speelt 220 en 189 (beide
+pinnen één omhoog, voorstel van de bouwer, hier geland); gate 16 12
+scenario-goldens, 47 casebestanden.
+
+Gelezen: het referentieveld van een rol krijgt het type van de
+gedeclareerde vuller in plaats van het eerste type in declaratievolgorde,
+en `heeftReferentieVeld` laat een strikt subtype toe in het veld van
+dezelfde roldeclaratie; de case-lezer, de transpilers en de spiegelpas
+van de wederkerige rol volgen; de zestien gemeten vormen (to-one en
+to-many, beide kanten, regel op subtype en supertype, twee niveaus,
+verdeling, objectcreatie, feitcreatie) met hun vóór-meting (alle zestien
+weigerden, ref en clingo speelden); de elf getuigenrijen; de golden met
+handberekening en `scenario.rgs`; de beans van 346 documenten byte-gelijk.
+De afwijkingen van de kaart aanvaard met hun meting: `EXPECTED_DRL_PLAYED`
+ook één omhoog (de teksttak speelt de golden), het veldtype volgt de
+vuller (nodig voor de declaratievolgorde en de wederkerige rol), de
+spiegelpas aangepast (anders een stil verkeerde waarde), de redenzinnen
+aangescherpt. De misleidende zin "a same-named role toward another type"
+is weg; twee gelijknamige rollen op één houder blijven een benoemde grens
+van het beanmodel.
+
+Gevolg voor de regelset op de werkbank: brug A8 (drie feittypen versmald
+tot het subtype) kan terug naar de modelkaart zodra de pin verschuift.
+Pin-bump samen met de kaart drools-exec-voorwaarde-genavigeerde-afleiding.
