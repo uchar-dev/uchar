@@ -1052,7 +1052,18 @@ EXPECTED_CHANNEL=(
 # backend changed: the exec branch plays its seven cases on the first run, PLAYED 7, with ref's and clingo's
 # values, the date literal of the initialisation default among them. The DRL-text branch refuses it on its
 # defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=219
+# 219 -> 220 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new, from bron.rgs and
+# scenario.rgs and hand-computed — an instance of a subtype of a role's declared filler in that role (IR-SPEC
+# ch. 2.6: the filler is an upper bound), one level down and two, read from both ends: the to-one read on the
+# side that stores the link, and from the subtype a count, a sum, a quantifier, a role check and an
+# allocation, beside a count on the supertype and a one-to-one relation written from either end. Before the
+# card both branches refused it: the fold join asked the reference field's type by equality, and the case
+# input blamed a second role the document does not have. The bean model now types a reference field by the
+# role's declared filler and takes an instance of a strict subtype into the field of that same role
+# declaration; the beans of every existing golden are byte-identical and no golden changes its report line
+# in either branch (measured per golden over all 277). Both branches play the three cases, PLAYED 3, with
+# ref's and clingo's values. EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=220
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1392,7 +1403,9 @@ DRL_CHANNEL=(
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 187 -> 188 (2026-09-28, card namen-in-declaratiekoppen): jutterswet-premierecht, new. This branch plays its
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=188
+# 188 -> 189 (2026-09-28, card drools-subtype-in-supertype-rol): jutterswet-wrakmelding, new. This branch plays
+# its three cases through the same bean-model change, PLAYED 3. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=189
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
