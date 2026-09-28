@@ -140,9 +140,11 @@ class DefaultsRechtvaardigingWitnessTest {
         String verwacht = String.join(",", kenmerk("M1", "dringend", false), kenmerk("M2", "dringend", true),
                 kenmerk("M3", "dringend", true), kenmerk("M4", "dringend", true));
         assertNull(speel(ir, zaak(meldinstanties("ruwe premie"), verwacht, "")), "dringend na de afleiding van de premie");
-        // The same group over a premie that a defaults group writes (20 where the drempel of the Jutter is above 0,
-        // else 10), with the Melding declared first, so the reading group is built first. ref and clingo: M1 (J1,
-        // drempel 1) not dringend, M2 (J2, no drempel, premie 10) dringend.
+        // The group with the threshold 15, over a premie that a defaults group writes (20 where the drempel of the
+        // Jutter is above 0, else 10), with the Melding declared first, so the reading group is built first. ref and
+        // clingo: M1 (J1, drempel 1, premie 20) not dringend, M2 (J2, no drempel, premie 10) dringend.
+        groep = kenmerkgroep("dringendheid", "Melding", "dringend",
+                besluit(groter(viaVondstJutter("premie"), getal(15)), false), besluit(ALTIJD, true));
         String premie = groep("premie", "Jutter", "premie",
                 standaard(groter(eigen("drempel", "Jutter"), getal(0)), getal(20)), standaard(ALTIJD, getal(10)));
         String model = model(List.of(MELDING, VONDST, JUTTER), List.of(JUTTER_VONDST, VONDST_MELDING), "");
