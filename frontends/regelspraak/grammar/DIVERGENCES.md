@@ -755,6 +755,21 @@ silently fold the wrong set, which is by far the worse of the two.
   re-opens a type to add members and is left alone: a second declaration site
   for one relation would immediately reopen the second-parent question across
   constructs.
+- An extension adds members and replaces none. A member the type already
+  carries — in its head, or in an earlier extension where no head declares
+  it — the extension may write again only word for word, the closing `;`
+  aside, and it may add `(mag opgegeven worden)` to it once (§7). Any other
+  repeat (another datatype or number specification, a unit, timeline,
+  dimension or plural, another article or kind of characteristic, a second
+  marker) is an ERROR on the repeat's line that names both lines, and so is a
+  role line in an extension whose name is a role of a fact type the type takes
+  part in (witness: `ExtensieHerdeclaratieTest`, every sentence whole). Until
+  then the repeat replaced the declaration without a diagnostic, also with
+  another datatype. The word-for-word repeat is admitted because it changes
+  nothing and the casus of the repository's temporary parity zone writes three
+  of them (measured 2026-09-28; no source of the corpus declares an
+  extension). Along the inheritance line WF-105 refuses every repeat, literal
+  or not, and its sentence names both lines.
 - Multiple inheritance is refused, not modelled (mandate decision 2).
 - The clause declares the relation only. Nothing about the defaults-stack
   composition is authored from source; that is the kernel's, keyed on the
@@ -1353,6 +1368,11 @@ lexing as `LOWER_ID` everywhere else, and a comment, an enumeration literal or
 a text literal that contains the sequence is never lexed as the token (witness:
 `OpgaveMarkeringTest`, an attribute named "mag worden stand" and the text
 literal `"(mag opgegeven worden)"`).
+
+An extension marks an attribute its type already declares by writing that
+declaration again word for word with the marker added (§5, on the extension),
+and the lowering is the one of the marker in the head, the consistency's source
+line aside (witness: `ExtensieHerdeclaratieTest`).
 
 ### Inertness — measured, not assumed
 
