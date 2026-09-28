@@ -1,0 +1,194 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Sein",
+        "animate": false,
+        "plural": "Seinen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "half-stok",
+            "datatype": {
+              "node": "Boolean"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rouwmelding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "half stok",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "halfstok van een sein",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "half stok",
+              "subjectType": "Sein",
+              "source": {
+                "snippet": "Een Sein is half stok"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "hoogte",
+                "subjectType": "Sein",
+                "source": {
+                  "snippet": "de hoogte van het Sein"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "de hoogte van het Sein kleiner is dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rouwmelding van een sein",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rouwmelding",
+              "subjectType": "Sein",
+              "source": {
+                "snippet": "De rouwmelding van een Sein"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "half-stok",
+                "subjectType": "Sein",
+                "source": {
+                  "snippet": "de half-stok van het Sein"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "boolean": true
+                },
+                "type": {
+                  "node": "Boolean"
+                },
+                "source": {
+                  "snippet": "waar"
+                }
+              },
+              "source": {
+                "snippet": "de half-stok van het Sein gelijk is aan waar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

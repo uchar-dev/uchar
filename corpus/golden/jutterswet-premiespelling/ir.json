@@ -1,0 +1,123 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "RechtOpPremie",
+        "animate": false,
+        "plural": "RechtenOpPremie",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grondslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Recht op premie",
+        "supertype": "RechtOpPremie",
+        "animate": false,
+        "plural": "Rechten op premie",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "premie van een recht op premie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premie",
+              "subjectType": "Recht op premie",
+              "source": {
+                "snippet": "De premie van een Recht op premie"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "grondslag",
+                "subjectType": "Recht op premie",
+                "source": {
+                  "snippet": "de grondslag van het Recht op premie"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de grondslag van het Recht op premie plus 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

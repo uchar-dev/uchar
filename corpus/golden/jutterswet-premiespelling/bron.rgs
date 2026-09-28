@@ -1,0 +1,9 @@
+Objecttype het RechtOpPremie (mv: RechtenOpPremie)
+    de grondslag Numeriek (geheel getal);
+
+Objecttype het Recht op premie is een RechtOpPremie (mv: Rechten op premie)
+    de premie Numeriek (geheel getal);
+
+Regel premie van een recht op premie
+    geldig altijd
+        De premie van een Recht op premie moet berekend worden als de grondslag van het Recht op premie plus 1.

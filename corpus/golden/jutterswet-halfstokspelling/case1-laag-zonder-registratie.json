@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Sein",
+        "attributes": {
+          "hoogte": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "half stok"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "rouwmelding"
+    }
+  ]
+}

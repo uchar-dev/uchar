@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Recht op premie",
+        "attributes": {
+          "grondslag": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "RechtOpPremie",
+        "attributes": {
+          "grondslag": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "premie",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "grondslag",
+      "value": {
+        "number": "7"
+      }
+    }
+  ]
+}

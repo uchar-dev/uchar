@@ -1,0 +1,16 @@
+Scenario laag zonder registratie
+Gegeven is de volgende situatie:
+een Sein S1
+- de hoogte is 3
+Met als verwacht resultaat:
+- S1 is half stok
+- de rouwmelding van S1 is leeg
+
+Scenario hoog met registratie
+Gegeven is de volgende situatie:
+een Sein S2
+- de hoogte is 8
+- de half-stok is waar
+Met als verwacht resultaat:
+- S2 is niet half stok
+- de rouwmelding van S2 is 1

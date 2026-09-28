@@ -1,0 +1,15 @@
+Objecttype het Sein (mv: Seinen)
+    de half-stok Boolean;
+    de hoogte Numeriek (geheel getal);
+    de rouwmelding Numeriek (geheel getal);
+    is half stok kenmerk (bijvoeglijk);
+
+Regel halfstok van een sein
+    geldig altijd
+        Een Sein is half stok
+        indien de hoogte van het Sein kleiner is dan 5.
+
+Regel rouwmelding van een sein
+    geldig altijd
+        De rouwmelding van een Sein moet berekend worden als 1
+        indien de half-stok van het Sein gelijk is aan waar.

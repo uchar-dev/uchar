@@ -1,0 +1,16 @@
+Scenario grondslag vier
+Gegeven is de volgende situatie:
+een Recht op premie P1
+- de grondslag is 4
+een RechtOpPremie P2
+- de grondslag is 7
+Met als verwacht resultaat:
+- de premie van P1 is 5
+- de grondslag van P2 is 7
+
+Scenario grondslag nul
+Gegeven is de volgende situatie:
+een Recht op premie P3
+- de grondslag is 0
+Met als verwacht resultaat:
+- de premie van P3 is 1

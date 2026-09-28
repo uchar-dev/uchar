@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S2",
+        "objectType": "Sein",
+        "attributes": {
+          "hoogte": {
+            "number": "8"
+          },
+          "half-stok": {
+            "boolean": true
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "S2",
+      "characteristic": "half stok"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "rouwmelding",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P3",
+        "objectType": "Recht op premie",
+        "attributes": {
+          "grondslag": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "P3",
+      "attribute": "premie",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}
