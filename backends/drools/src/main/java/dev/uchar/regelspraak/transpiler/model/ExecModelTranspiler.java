@@ -8294,81 +8294,105 @@ public final class ExecModelTranspiler {
 
     /** RUNTIME-SEMANTICS ch. 7.4, over all groups at once: a group decides once the producers of what it reads have
      *  run, and a group can be such a producer. Returns the order in which the groups' reduce-rules are added to the
-     *  model — every group after the groups that write what it reads, otherwise in declared order — and fills
-     *  {@link #groepSalience}. Drools fires the activations of one salience in the order the rules were added (the
-     *  ordinary rules first: they are added before every group), so a reader ordered after its producer fires after it
-     *  when the two share a salience. Built in declared order, a group that read the target of a group declared after
-     *  it decided on the target as it stood before that group had run, and a characteristic it attributed then stayed
-     *  (a written characteristic is never withdrawn, ch. 5.3).
+     *  model — every group after the groups that write, directly or through ordinary rules, what it reads, otherwise in
+     *  declared order — and fills {@link #groepSalience}. Drools fires the activations of one salience in the order the
+     *  rules were added (the ordinary rules first: they are added before every group), so a reader ordered after its
+     *  producer fires after it when the two share a salience. Built in declared order, a group that read the target of
+     *  a group declared after it decided on the target as it stood before that group had run, and a characteristic it
+     *  attributed then stayed (a written characteristic is never withdrawn, ch. 5.3).
      *
-     *  <p>The salience of a group is the lowest of: {@link #defaultsSalience}, below the ordinary rules that write what
-     *  it reads on its own type, unchanged; the salience of each ordinary rule that writes what it reads beyond its
-     *  subject — on the type a role reaches, or on the elements an aggregation folds or filters — as the rule is added
-     *  before it; and the salience of each group that writes what it reads, as that group is added before it. A cycle
-     *  between groups, which WF-051 excludes wherever a justification closes it, keeps the declared order for the
-     *  groups on it. */
+     *  <p>The salience of a group is the lowest band anything it reads waits on: {@link #defaultsSalience}, below the
+     *  ordinary rules that write what it reads on its own type, unchanged, lowered to the band of every producer of
+     *  what it reads — an ordinary rule or a group, on its own type, on the type a role reaches, or on the elements an
+     *  aggregation folds or filters — where a producer's band is the lowest salience among it and the producers of
+     *  what it reads in turn. The ordinary rules keep their own salience; only the groups take the band. A producer
+     *  that itself waits on a negated read (a lower band) moved the value after a group in the band above had decided,
+     *  and a characteristic that group attributed stayed. A cycle between groups, which WF-051 excludes wherever a
+     *  justification closes it, keeps the declared order for the groups on it. */
     private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
-        int n = stapels.size();
-        List<Set<Lezing>> lezingen = new ArrayList<>();
+        List<ResolvedRegel> regels = model.resolvedRegels;
+        int nR = regels.size(), n = nR + stapels.size();
+        // node i < nR is ordinary rule i, node nR + g is group g: what each reads and writes, and where it starts
+        List<Set<Lezing>> leest = new ArrayList<>();
+        List<Lezing> schrijft = new ArrayList<>();
+        int[] band = new int[n];
+        for (int i = 0; i < nR; i++) {
+            ResolvedRegel r = regels.get(i);
+            Expr.AttribuutRef d = r.doel() instanceof Expr.AttribuutRef a ? a : null;
+            Set<Lezing> l = new LinkedHashSet<>();
+            if (d != null && d.objecttype() != null) {   // a rule without an own target does not lower (regel())
+                conditieLezingen(r.voorwaarde(), d.objecttype(), false, l);
+                exprLezingen(r.waarde(), d.objecttype(), false, l);
+            }
+            leest.add(l);
+            schrijft.add(d != null && d.attribuut() != null && d.objecttype() != null
+                    ? new Lezing(d.objecttype(), d.attribuut(), false) : null);
+            band[i] = strat.salience(r);
+        }
         for (EffectieveStapel st : stapels) {
             Set<Lezing> l = new LinkedHashSet<>();
             for (PrioritizedDefaults lid : st.leden()) verzamelLezingen(lid.defaults(), st.eigenaar(), l);
-            lezingen.add(l);
+            leest.add(l);
+            schrijft.add(new Lezing(st.eigenaar(), st.leden().get(0).doel(), false));
+            band[leest.size() - 1] = defaultsSalience(st.leden(), st.eigenaar());
         }
         List<List<Integer>> producenten = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
+        for (int c = 0; c < n; c++) {
             List<Integer> p = new ArrayList<>();
-            for (int j = 0; j < n; j++)
-                if (j != i && schrijftVoor(stapels.get(j), stapels.get(i), lezingen.get(i))) p.add(j);
+            for (int q = 0; q < n; q++) if (q != c && leestWat(leest.get(c), schrijft.get(q))) p.add(q);
             producenten.add(p);
         }
-        List<Integer> volgorde = new ArrayList<>();
-        boolean[] geplaatst = new boolean[n];
-        while (volgorde.size() < n) {
-            int kies = -1;
-            for (int i = 0; i < n && kies < 0; i++) {
-                if (geplaatst[i]) continue;
-                boolean klaar = true;
-                for (int j : producenten.get(i)) klaar &= geplaatst[j];
-                if (klaar) kies = i;
+        // the band: each node no higher than any producer; values only fall, and no lower than the lowest start
+        for (boolean bewoog = true; bewoog; ) {
+            bewoog = false;
+            for (int c = 0; c < n; c++)
+                for (int q : producenten.get(c))
+                    if (band[q] < band[c]) { band[c] = band[q]; bewoog = true; }
+        }
+        // the groups each group waits on, through ordinary rules as well
+        int nG = stapels.size();
+        List<Set<Integer>> wachtOp = new ArrayList<>();
+        for (int g = 0; g < nG; g++) {
+            Set<Integer> groepen = new LinkedHashSet<>();
+            java.util.ArrayDeque<Integer> rij = new java.util.ArrayDeque<>(producenten.get(nR + g));
+            Set<Integer> gezien = new java.util.HashSet<>(rij);
+            while (!rij.isEmpty()) {
+                int q = rij.poll();
+                if (q >= nR && q != nR + g) groepen.add(q - nR);
+                for (int v : producenten.get(q)) if (gezien.add(v)) rij.add(v);
             }
-            for (int i = 0; i < n && kies < 0; i++) if (!geplaatst[i]) kies = i;   // on a cycle: declared order
+            wachtOp.add(groepen);
+        }
+        List<Integer> volgorde = new ArrayList<>();
+        boolean[] geplaatst = new boolean[nG];
+        while (volgorde.size() < nG) {
+            int kies = -1;
+            for (int g = 0; g < nG && kies < 0; g++) {
+                if (geplaatst[g]) continue;
+                boolean klaar = true;
+                for (int h : wachtOp.get(g)) klaar &= geplaatst[h];
+                if (klaar) kies = g;
+            }
+            for (int g = 0; g < nG && kies < 0; g++) if (!geplaatst[g]) kies = g;   // on a cycle: declared order
             geplaatst[kies] = true;
             volgorde.add(kies);
         }
         groepSalience.clear();
-        for (int i : volgorde) {
-            EffectieveStapel st = stapels.get(i);
-            int salience = defaultsSalience(st.leden(), st.eigenaar());
-            for (Lezing l : lezingen.get(i)) {
-                if (!l.ver()) continue;
-                for (ResolvedRegel r : model.resolvedRegels)
-                    if (r.doel() instanceof Expr.AttribuutRef d && d.attribuut() != null && d.objecttype() != null
-                            && d.attribuut().equals(l.naam()) && verwant(l.houder(), d.objecttype()))
-                        salience = Math.min(salience, strat.salience(r));
-            }
-            for (int j : producenten.get(i)) {
-                Integer p = groepSalience.get(stapels.get(j));
-                if (p != null) salience = Math.min(salience, p);
-            }
-            groepSalience.put(st, salience);
-        }
+        for (int g = 0; g < nG; g++) groepSalience.put(stapels.get(g), band[nR + g]);
         return volgorde;
     }
 
-    /** A read of a defaults group, keyed on the type that holds the value: the subject for an own read, the type a role
-     *  reaches for a read through it, the element type for what an aggregation folds or filters. {@code ver} marks a
-     *  read beyond the subject. */
+    /** A read of a defaults group or an ordinary rule, keyed on the type that holds the value: the subject for an own
+     *  read, the type a role reaches for a read through it, the element type for what an aggregation folds or filters.
+     *  {@code ver} marks a read beyond the subject. A write is the same triple, on the type written. */
     private record Lezing(Objecttype houder, String naam, boolean ver) {}
 
-    /** Whether group {@code p} writes what group {@code g} reads: its target, on the subject's own type for an own read,
-     *  and on the reached or folded type, or a subtype or supertype of it, for a read beyond the subject. */
-    private static boolean schrijftVoor(EffectieveStapel p, EffectieveStapel g, Set<Lezing> lezingen) {
-        String doel = defaultsNorm(p.leden().get(0).doel());
-        for (Lezing l : lezingen) {
-            if (!defaultsNorm(l.naam()).equals(doel)) continue;
-            if (l.ver() ? verwant(l.houder(), p.eigenaar()) : gelijkeType(p.eigenaar(), g.eigenaar())) return true;
-        }
+    /** Whether {@code geschreven} is among {@code lezingen}: the same name on the same type, a subtype or a supertype. */
+    private static boolean leestWat(Set<Lezing> lezingen, Lezing geschreven) {
+        if (geschreven == null) return false;
+        String naam = defaultsNorm(geschreven.naam());
+        for (Lezing l : lezingen)
+            if (defaultsNorm(l.naam()).equals(naam) && verwant(l.houder(), geschreven.houder())) return true;
         return false;
     }
 

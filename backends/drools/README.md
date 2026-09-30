@@ -138,8 +138,10 @@ The exec-model branch lowers a justification that is no subject-local predicate 
 becomes an accumulate on the group's reduce-rule whose result the justification reads when the rule fires, and a
 comparison or a leeg/gevuld test whose operand reads a chain of roles or a numeric parameter reads that operand as a
 rule's value does. Every navigation the defaults of a group read gets a far-side join, so the group fires again when
-the reached object changes; and a group is added to the model after the groups that write what it reads and takes
-their salience (`groepVolgorde`), so it decides after them (RUNTIME-SEMANTICS ch. 7.4). Golden
+the reached object changes; and a group takes the lowest salience among the producers of what it reads and the
+producers they wait on in turn, and is added to the model after the groups among them (`groepVolgorde`), so it
+decides after them (RUNTIME-SEMANTICS ch. 7.4). It is not placed strictly below them: a rule that reads the group's
+characteristic as a negation shares the band below, and there an ordinary rule fires first. Golden
 `jutterswet-premiestaffel`, witness `DefaultsRechtvaardigingWitnessTest`. Still refused, each by name with its
 condition: a quantifier fold, an aggregation inside an arithmetic expression, a parameter that is not a number, a
 period comparison and a rule-version predicate in a justification; an aggregation in a consequence keeps the
