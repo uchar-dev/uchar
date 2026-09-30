@@ -670,40 +670,6 @@ public final class ExecModelTranspiler {
                 };
                 consequence = DSL.on(sVar, (Variable) resVar).execute(body);
             }
-        } else if (isScalarSoort(r.soort()) && containsAggregatie(r.waarde())) {
-            // §5.8 AGGREGATION INSIDE ARITHMETIC ("het aantal elementen maal de factor", "de totaal van X plus Y"):
-            // the value is an arithmetic tree whose operand is an aggregation. Lower each embedded aggregation to its
-            // own accumulate CE (binding a result var), then the consequence combines the bound results + own-attr
-            // reads + a (≤1) global. Mirrors DrlTranspiler.waarde recursing through binairTerm into accumulate.
-            Set<String> aggGlobals = new LinkedHashSet<>();
-            List<RuleItemBuilder<?>> accItems = new ArrayList<>();
-            List<Variable> accVars = new ArrayList<>();
-            Eval eval = lowerVal(r.waarde(), doel.objecttype(), sVar, aggGlobals, accItems, accVars);
-            if (eval == null) return skip("regel (aggregatie-in-arithmetiek buiten scope): " + r.naam());
-            List<String> gnames = new ArrayList<>(aggGlobals);
-            // consequence vars: [subject, g0, g1, ..., acc0, acc1, ...]; the body rebuilds the global map + agg array.
-            List<Variable> vars = new ArrayList<>();
-            vars.add(sVar);
-            for (String gn : gnames) {
-                Global<?> g = waardeGlobal(gn);   // numeric Parameter or the §5.3 rekendatum pseudo-slot
-                if (g == null) return skip("regel (aggregatie-waarde refereert niet-geregistreerde global " + gn + "): " + r.naam());
-                vars.add((Variable) g);
-            }
-            vars.addAll(accVars);
-            final List<String> fgn = gnames; final int nG = gnames.size(); final int nAgg = accVars.size();
-            final Datatype mixVan = effType(r.waarde()), mixNaar = effType(doel);   // §4 declaration-derived, once at build
-            consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
-                Object s = args[0];
-                Map<String, BigDecimal> gm = new LinkedHashMap<>();
-                vulGlobalMap(gm, fgn, args, 1);
-                Object[] aggs = new Object[nAgg];
-                for (int i = 0; i < nAgg; i++) aggs[i] = args[1 + nG + i];
-                Object v = eval.apply(s, gm, aggs);
-                v = herschaalWaarde(v, mixVan, mixNaar);   // §4 EXACT restate the whole value into the doel unit
-                werkBij(drools, s, doelGetter, doelSetter, v, staandScalairDoel);
-            });
-            if (consequence == null) return skip("regel (aggregatie-waarde: te veel gebonden variabelen): " + r.naam());
-            extra.addAll(accItems);
         } else if (isScalarSoort(r.soort()) && r.waarde() instanceof Expr.ParameterRef tpr
                 && nietNumeriekeGlobal(globalNaam(tpr.parameter().naam())) != null) {
             // §13.4.6 assign a single NON-NUMERIC Parameter-GLOBAL verbatim into the attribute — a Tekst/Enumeratie String
@@ -718,11 +684,19 @@ public final class ExecModelTranspiler {
             // scalar value path: a WaardeFn(subject, global-values -> value) plus the Parameter-globals it reads.
             // the doel's objecttype rides along as the VALUE-path subject (no-mutable-build-state: a parameter, no field),
             // so a to-one navigated value read can resolve its role.
+            // A fold over a set source anywhere in the value ("de eerste van de vinddag van alle vondsten van de
+            // Jutter", "zijn startdag plus de maximale waarde van …", "10% van de som van …") becomes an accumulate
+            // beside the subject pattern, and the value reads its result from a slot (vouwslot): the same scalarWaarde
+            // then gives every operator around it, date arithmetic and the empty operand of ch. 1.2 included.
             WaardeFn wf;
+            List<Vouwslot> slots = new ArrayList<>();
             try {
                 // §13.4.1 multi-hop chains lower only here (the consequence VALUE), mirroring DrlTranspiler.waarde's
                 // KETEN branch; the flag is build-time-only and strictly scoped so no condition lowering sees it.
                 ketenWaardePad = true;
+                vouwslots = slots;
+                vouwOnderwerp = sVar;
+                vouwReden = null;
                 wf = switch (r.soort()) {
                     case KENMERKTOEKENNING -> WaardeFn.constant(Boolean.TRUE);      // "is <kenmerk>" -> kenmerk == true
                     case GELIJKSTELLING, BEREKENING, INITIALISATIE -> scalarWaarde(doel.objecttype(), r.waarde());
@@ -730,8 +704,16 @@ public final class ExecModelTranspiler {
                 };
             } finally {
                 ketenWaardePad = false;
+                vouwslots = null;
+                vouwOnderwerp = null;
             }
-            if (wf == null) return skip("regel (" + (navReden != null ? navReden : "waarde buiten scope") + "): " + r.naam());
+            if (wf == null) return skip("regel (" + (navReden != null ? navReden
+                    : vouwReden != null ? vouwReden : "waarde buiten scope") + "): " + r.naam());
+            // A §6.5/§6.6 site under a ch. 4.10 node gets a companion that evaluates that node again on its own
+            // (sondeConsequentie), without the accumulates of this rule; a fold there could not be read.
+            if (!slots.isEmpty() && Expr.bevat(r.waarde(), x -> (x instanceof Expr.Let || x instanceof Expr.IfThenElse)
+                    && Expr.bevat(x, y -> y instanceof Expr.Functie yf && isInstantievouw(yf))))
+                return skip("regel (een vouw over een setbron onder een Let of IfThenElse, ch. 4.10): " + r.naam());
             // Navigated-read reactivity: a to-one navigated value read makes the rule stale on the FAR fact's update
             // (property/class reactivity is per fact TYPE). Add a far-side JOIN per distinct navigation so the spiegel
             // re-fires when the navigated fact lands (the order-fragility fix). The consequence's read stays as-is.
@@ -752,15 +734,22 @@ public final class ExecModelTranspiler {
                 if (g == null) return skip("regel (THEN-waarde refereert niet-geregistreerde global " + gn + "): " + r.naam());
                 vars.add((Variable) g);
             }
+            // consequence vars: [subject, globals..., then per fold its count (when bound) and its result]
+            for (Vouwslot v : slots) {
+                extra.add(v.agg().accItem());
+                vars.addAll(v.variabelen());
+            }
             BiFunction<Object, Map<String, BigDecimal>, Object> fn = wf.fn();
             final List<String> fgn = gnames;
+            final int vouwVanaf = 1 + gnames.size();
             consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
                 Object s = args[0];
                 Map<String, BigDecimal> gm = new LinkedHashMap<>();
                 vulGlobalMap(gm, fgn, args, 1);
+                vulVouwslots(gm, slots, args, vouwVanaf, s);
                 werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
-            if (consequence == null) return skip("regel (THEN-waarde: te veel gebonden globals): " + r.naam());
+            if (consequence == null) return skip("regel (THEN-waarde: te veel gebonden globals en vouwen): " + r.naam());
         }
 
         // The subject pattern first (binds $subject), then far-side exists/not joins and any accumulate (which
@@ -928,6 +917,21 @@ public final class ExecModelTranspiler {
                 && f.argumenten().size() >= 2 && f.filter() == null;
     }
 
+    /** A fold over the members of a set source (IR-SPEC ch. 4.3): the kinds that count, add or order them, EERSTE and
+     *  LAATSTE among the ordering ones (RUNTIME-SEMANTICS ch. 1.2e), as against the listed fold over two or more
+     *  scalar operands. */
+    private static boolean isInstantievouw(Expr.Functie f) {
+        return (isAggregatieKind(f.kind()) || f.kind() == Expr.FunctieKind.EERSTE || f.kind() == Expr.FunctieKind.LAATSTE)
+                && !isGelisteFold(f);
+    }
+
+    /** The folds that select one contributed value by its order: minimum/eerste the least, maximum/laatste the
+     *  greatest (RUNTIME-SEMANTICS ch. 1.2e). */
+    private static boolean ordenend(Expr.FunctieKind k) {
+        return k == Expr.FunctieKind.MINIMUM || k == Expr.FunctieKind.MAXIMUM
+                || k == Expr.FunctieKind.EERSTE || k == Expr.FunctieKind.LAATSTE;
+    }
+
     /** A lowered aggregation: the accumulate rule item, the result Variable, and (for §5.8.2 SOM) the contributor
      *  count Variable + the empty-sum fallback. */
     private record Agg(RuleItemBuilder<?> accItem, Variable resultVar, Variable countVar, WaardeFn somFallback, boolean isSom) {}
@@ -1016,7 +1020,7 @@ public final class ExecModelTranspiler {
         if (elemClass == null) return null;
         boolean count = f.kind() == Expr.FunctieKind.AANTAL;
         // §5.8.3 a multi-operand min/max, or a multi-operand count without a resolved union filter, drops operands -> skip.
-        if ((f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM) && f.argumenten().size() > 1) return null;
+        if (ordenend(f.kind()) && f.argumenten().size() > 1) return null;
         if (count && f.argumenten().size() > 1 && f.filter() == null) return null;
         Expr.AttribuutRef arg = !f.argumenten().isEmpty() && f.argumenten().get(0) instanceof Expr.AttribuutRef a ? a : null;
         boolean temporeel = arg != null && arg.objecttype() != null && Namen.bevatNaam(arg.objecttype().granulariteitLeden(), arg.attribuut());
@@ -1029,6 +1033,16 @@ public final class ExecModelTranspiler {
         // three in step instead of answering from whichever bucket the getter happens to hand over.
         if (temporeel && f.kind() != Expr.FunctieKind.SOM && f.kind() != Expr.FunctieKind.TOTAAL) return null;
         if (!count && arg == null) return null;   // sum/min/max/filled-count need an attribute to fold
+        // EERSTE and LAATSTE order their members, so a member needs an order: a number or a date (WF-038). A second
+        // line of defence behind the verifier, as the one Vouwwaarde keeps for MINIMUM and MAXIMUM: another member
+        // would reach the accumulate and fail there, which names no form.
+        if ((f.kind() == Expr.FunctieKind.EERSTE || f.kind() == Expr.FunctieKind.LAATSTE)
+                && !eff.typeVan(arg).isDatum() && !eff.typeVan(arg).isGetalachtig()) {
+            aggregatieReden = "vouw " + f.kind() + " over de setbron '" + arg.attribuut() + "' van " + elem.naam
+                    + ": die leden zijn van type " + eff.typeVan(arg).naam() + " en kennen geen ordening; WF-038 eist"
+                    + " onder een ordenende vouw een getal of een datum (§5.8.3)";
+            return null;
+        }
         // The VALUE fold below accumulates in BigDecimal, and a member that is not a number has no
         // place in it — it used to CRASH there rather than decline (a ClassCastException on the
         // som/totaal bind, an IllegalStateException out of the min/max accumulate cast). A crash
@@ -1278,7 +1292,11 @@ public final class ExecModelTranspiler {
         // `min`/`max` keyword resolves to for a BigDecimal arg. (Seam, adversary-noted: if a future objecttype ever
         // lowered a Numeriek to a Double/Integer getter, DRL's keyword would fall back to the generic null-NPEing
         // Double sum while this stays BigDecimal — re-introduce an `attr != null` source guard if that invariant breaks.)
-        Variable amtVar = DSL.declarationOf(BigDecimal.class, "$amt_" + (seq++));
+        // EERSTE/LAATSTE order dates (RUNTIME-SEMANTICS ch. 1.2e): Min/MaxAccumulateFunction compare any Comparable,
+        // and a LocalDate or LocalDateTime is one, so the member is bound as it is and never as a BigDecimal.
+        boolean datumLid = !temporeel && eff.typeVan(arg).isDatum();
+        Class<?> amtKlasse = datumLid ? Comparable.class : BigDecimal.class;
+        Variable amtVar = DSL.declarationOf((Class) amtKlasse, "$amt_" + (seq++));
         if (f.kind() == Expr.FunctieKind.SOM) {
             // §5.8.2: empty SOM -> the leegwaarde (null, or a literal "of N als die er niet zijn"), not 0. Filter to
             // non-empty contributors, count them, and sum; the consequence branches on the count.
@@ -1300,8 +1318,8 @@ public final class ExecModelTranspiler {
         // TOTAAL (empty -> 0) / MIN / MAX: bind the per-element value and fold it.
         Class<?> accClass = switch (f.kind()) {
             case TOTAAL  -> accFn("BigDecimalSumAccumulateFunction");
-            case MINIMUM -> accFn("MinAccumulateFunction");
-            case MAXIMUM -> accFn("MaxAccumulateFunction");
+            case MINIMUM, EERSTE -> accFn("MinAccumulateFunction");
+            case MAXIMUM, LAATSTE -> accFn("MaxAccumulateFunction");
             default      -> null;
         };
         if (accClass == null) return null;
@@ -1313,12 +1331,13 @@ public final class ExecModelTranspiler {
         // extends it to TOTAAL/MIN/MAX. A temporal per-element fold reads a List<Segment> getter, never null here.)
         PatternDSL.PatternDef src2 = (temporeel ? src : src.expr(nextId("nn"), (Predicate1) (e) -> RegelSpraakRuntime.get(e, attr) != null))
                 .bind(amtVar, (Function1) elemWaarde);
-        if (leegCount && (f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM)) {
+        if (leegCount && ordenend(f.kind())) {
             // §5.8.3 an empty MIN/MAX is LEEG (§5.3 Tabel 37 / §5.6 Tabel 44), but MinAccumulateFunction/MaxAccumulateFunction
             // bind NO result row over an EMPTY source, so a condition compare would never run (the rule silently reads onwaar).
             // In a condition context bind count too (a row always exists); aggregatieVoorwaarde then treats it like a SOM
-            // (count==0 -> a null aggregate, no fallback) and rsAggVergelijk applies the leegwaarde cells. The VALUE side
-            // (leegCount=false) keeps the bare fold -> an empty value-aggregation simply does not fire (unchanged).
+            // (count==0 -> a null aggregate, no fallback) and rsAggVergelijk applies the leegwaarde cells. A fold inside
+            // a rule's value (vouwslot) binds the count as well, so the value around it reads the empty fold as leeg;
+            // a bare value fold (leegCount=false) keeps the bare accumulate -> an empty one does not fire.
             Variable cntVar = DSL.declarationOf(Object.class, "$cnt_" + (seq++));
             RuleItemBuilder acc = DSL.accumulate(accBron(src2, extra),
                     DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(cntVar),
@@ -4509,6 +4528,72 @@ public final class ExecModelTranspiler {
         }
     }
 
+    /** A fold over a set source inside a rule's value: its accumulate, which {@link #regel} places beside the subject
+     *  pattern, and the key under which the consequence hands the fold's value to the value through the map every
+     *  {@link WaardeFn} already threads. {@code getal}: the members are numbers, read as BigDecimal; otherwise dates,
+     *  read as they are. */
+    private record Vouwslot(String sleutel, Agg agg, boolean getal) {
+        List<Variable> variabelen() {
+            return agg.countVar() == null ? List.of(agg.resultVar()) : List.of(agg.countVar(), agg.resultVar());
+        }
+    }
+
+    /** The folds of the value {@link #regel} is lowering, non-null only while it lowers that value: build-time state,
+     *  scoped like {@link #ketenWaardePad}, so no other lowering meets a slot. {@link #vouwOnderwerp} is the subject
+     *  variable their accumulates join to, and {@link #vouwReden} names the first fold that did not lower. */
+    private List<Vouwslot> vouwslots;
+    private Variable vouwOnderwerp;
+    private String vouwReden;
+
+    /** A fold over a set source as a value operand: an accumulate joined to the rule's subject, read back from its slot.
+     *  The accumulate binds a count beside an ordering fold, so an empty source still yields a row and reads leeg
+     *  (RUNTIME-SEMANTICS ch. 1.2e) instead of leaving the rule unfired; the value around it then applies the empty
+     *  operand of its operator (ch. 1.2), as it does for any other operand. The collector is closed while the fold
+     *  lowers: a filter or a fallback belongs to the accumulate, not to the consequence. */
+    private WaardeFn vouwslot(Objecttype subject, Expr.Functie f) {
+        List<Vouwslot> slots = vouwslots;
+        Agg agg;
+        vouwslots = null;
+        try {
+            agg = aggregatie(f, subject, vouwOnderwerp, true);
+        } finally {
+            vouwslots = slots;
+        }
+        if (agg == null) {
+            if (vouwReden == null)
+                vouwReden = aggregatieReden != null ? aggregatieReden
+                        : "vouw " + f.kind() + " over een setbron die deze tak niet in een waarde vouwt: " + snippet(f.bron());
+            return null;
+        }
+        String sleutel = "vouw " + slots.size();   // a space: no Parameter global (Namen.ident) and no binder slot collides
+        Expr lid = f.argumenten().isEmpty() ? null : f.argumenten().get(0);
+        boolean getal = lid == null || f.kind() == Expr.FunctieKind.AANTAL || f.kind() == Expr.FunctieKind.AANTAL_GEVULDE
+                || !eff.typeVan(lid).isDatum();
+        slots.add(new Vouwslot(sleutel, agg, getal));
+        return new WaardeFn((s, gm) -> ((Map<?, ?>) gm).get(sleutel), Set.of());
+    }
+
+    /** Put each fold's value in {@code gm} under its slot key, from the consequence arguments starting at {@code i}:
+     *  the count (when bound) and the result of every slot, in slot order. A count of 0 is the empty source: the
+     *  sum's fallback, else leeg. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void vulVouwslots(Map<String, BigDecimal> gm, List<Vouwslot> slots, Object[] args, int i, Object s) {
+        for (Vouwslot v : slots) {
+            Object waarde;
+            if (v.agg().countVar() != null) {
+                Object telling = args[i++], resultaat = args[i++];
+                WaardeFn terugval = v.agg().somFallback();
+                waarde = ((Number) telling).longValue() == 0L
+                        ? (terugval == null ? null : terugval.fn().apply(s, Map.of()))
+                        : v.getal() ? RegelSpraakRuntime.toBd(resultaat) : resultaat;
+            } else {
+                Object resultaat = args[i++];
+                waarde = v.getal() ? RegelSpraakRuntime.toBd(resultaat) : resultaat;
+            }
+            ((Map) gm).put(v.sleutel(), waarde);
+        }
+    }
+
     /** Scalar value: Literal | own-attr read | Parameter-global read | a {@code +} of those (rsNul leegwaarde).
      *  null -> skip. The global read pulls its value from the consequence-bound map (see {@link #regel}). */
     private WaardeFn scalarWaarde(Objecttype valueSubject, Expr e) {
@@ -4525,6 +4610,10 @@ public final class ExecModelTranspiler {
         }
         // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
+        // A fold over a set source has no value the consequence can compute: it is an accumulate on the rule's left
+        // side, which only a rule's value can place (vouwslots is set there alone).
+        if (e instanceof Expr.Functie vf && isInstantievouw(vf))
+            return vouwslots == null ? null : vouwslot(valueSubject, vf);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             // §13.2.5/§389: a non-terminating rational literal (1/3) becomes an EXACT Breuk so downstream +,-,×,÷
             // stay exact (9 maal 1/3 = 3); a terminating one (4/2, 3/2) stays a plain BigDecimal (fast path).
@@ -5240,7 +5329,8 @@ public final class ExecModelTranspiler {
      *  (accItem + result Variable, index-aligned with accVarsOut) and the Parameter-globals it reads. null -> out of
      *  scope (caller skips). Mirrors {@link #scalarWaarde}/{@link #scalarWrapper} for the scalar leaves, but threads
      *  aggregation result vars through the {@code aggResults[]} the consequence binds. A SOM (count+fallback two-var
-     *  fold) inside arithmetic is not lowered here -> null (honest skip). */
+     *  fold) inside arithmetic is not lowered here -> null (honest skip). Only an object creation's toekenning uses it;
+     *  a rule's value reads its folds through {@link #vouwslot} and {@link #scalarWaarde}. */
     private Eval lowerVal(Expr e, Objecttype subject, Variable sVar, Set<String> globalsOut,
                           List<RuleItemBuilder<?>> accItemsOut, List<Variable> accVarsOut) {
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
@@ -6796,7 +6886,7 @@ public final class ExecModelTranspiler {
         //   - A §5.8 AGGREGATION-valued toekenning ("het aantal elementen van de houder maal <param>", the
         //     count is NOT an attribute) cannot host its accumulate CE inside a WaardeFn, so it lowers via lowerVal to
         //     an Eval + its own accumulate CE(s) + result Variable(s) threaded through the consequence's aggsAll[],
-        //     exactly like the regel aggregatie-in-arithmetiek path (L454-486). DrlTranspiler.objectCreatie likewise
+        //     as a rule's value did until its folds became slots (vouwslot). DrlTranspiler.objectCreatie likewise
         //     collects an embedded aggregation into the "when" via its Acc context.
         seq = 0;                                                     // aggregatie() names its patterns off seq
         Variable sVar = DSL.declarationOf(subjClass, "$subject");
@@ -7490,6 +7580,12 @@ public final class ExecModelTranspiler {
     private static String voorwaardeSkipReden(Conditie c) {
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)) return "voorwaarde met onleesbaar datum-tijd-lexeem";
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumLexeem)) return "voorwaarde met onleesbaar datum-lexeem";
+        // the comparisons of a condition compare numbers with an accumulate's result (aggregatieVoorwaarde); a date
+        // fold is lowered only as a rule's value (vouwslot), and the refusal says so rather than naming a scope
+        if (Conditie.bevatOperand(c, e -> e instanceof Expr.Functie f && isInstantievouw(f)
+                && (f.kind() == Expr.FunctieKind.EERSTE || f.kind() == Expr.FunctieKind.LAATSTE)))
+            return "voorwaarde met een datumvouw (EERSTE/LAATSTE) over een rol, die deze tak alleen in de waarde van een"
+                    + " regel vouwt";
         return "voorwaarde buiten Phase-B scope";
     }
 
@@ -8498,7 +8594,7 @@ public final class ExecModelTranspiler {
         else if (e instanceof Expr.Begrensd bg) {
             exprLezingen(bg.basis(), subject, ver, uit); exprLezingen(bg.minimum(), subject, ver, uit); exprLezingen(bg.maximum(), subject, ver, uit);
         } else if (e instanceof Expr.Functie f) {
-            boolean vouw = isAggregatieKind(f.kind()) && !isGelisteFold(f);
+            boolean vouw = isInstantievouw(f);
             Objecttype elem = vouw && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
             for (Expr a : f.argumenten()) exprLezingen(a, elem, ver || vouw, uit);
             if (f.filter() != null) conditieLezingen(f.filter(), elem, true, uit);
