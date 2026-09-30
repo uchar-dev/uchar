@@ -123,6 +123,11 @@ public final class ExecModelTranspiler {
     /** The salience of each effective stack's reduce-rule, derived over all groups at once in {@link #groepVolgorde}
      *  before any group is built. Keyed by IDENTITY: the stacks of {@link #defaultsGroepen} are records. */
     private final Map<EffectieveStapel, Integer> groepSalience = new java.util.IdentityHashMap<>();
+    /** The salience of an ordinary rule where {@link #groepVolgorde} places it below the stratum
+     *  {@link dev.uchar.regelspraak.transpiler.Stratificatie} derives: a rule that reads the characteristic of a
+     *  defaults group under negation, and a rule that reads the characteristic of such a rule under negation in
+     *  turn. Keyed by IDENTITY. */
+    private final Map<ResolvedRegel, Integer> regelSalience = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -301,6 +306,24 @@ public final class ExecModelTranspiler {
             rekendatumGlobal = DSL.globalOf(java.time.LocalDate.class, PKG, "rekendatum");
             m.addGlobal(rekendatumGlobal);
         }
+        // The effective defaults stacks and their order come first, before any rule is built: the order derives the
+        // salience of the groups AND lowers that of a rule reading a group's characteristic under negation
+        // (groepVolgorde), and a rule's salience is fixed when it is built. The composition itself can refuse
+        // (ch. 7.10 corner (a), a declared-unordered SET across a supertype boundary), and so can the order (a
+        // negative cycle through a group); either refusal is measured below, in the family's own place.
+        List<EffectieveStapel> stapels;
+        List<Integer> volgorde;
+        DefaultsOnvertaalbaar stapelFout = null;
+        try {
+            stapels = defaultsGroepen();
+            volgorde = groepVolgorde(stapels);
+        } catch (DefaultsOnvertaalbaar e) {
+            stapels = List.of();
+            volgorde = List.of();
+            groepSalience.clear();
+            regelSalience.clear();
+            stapelFout = e;
+        }
         // Every construct family runs through meet(), which records the Dekking verdict around the
         // UNCHANGED emitter call — the emit order, rule-add order and all lowering behavior are as
         // before; only the measurement is new. (The manifest's inter-family order differs from the
@@ -341,20 +364,15 @@ public final class ExecModelTranspiler {
         for (dev.uchar.regelspraak.ir.ResolvedUniciteitUnie u : model.uniciteitUnies)  // §8.1.6 "verenigd met" (Phase H)
             for (Rule rule : meet("uniciteit-unie", u.naam(), () -> uniciteitUnie(u))) m.addRule(rule);
         // §6.1 / ch. 7 prioritized defaults: one reduce-rule per (group, subject), a port of ref's run_defaults_group.
-        // The composition itself can refuse (ch. 7.10 corner (a), a declared-unordered SET across a
-        // supertype boundary). That is a per-form NOT-CARRIED, not a crash: route it through the manifest
-        // like every other one, so the gate reports it in the auto-excluded channel with its reason
+        // A refusal of the composition or of the order is a per-form NOT-CARRIED, not a crash: route it through the
+        // manifest like every other one, so the gate reports it in the auto-excluded channel with its reason
         // instead of as an unclassified ERROR.
-        List<EffectieveStapel> stapels;
-        try {
-            stapels = defaultsGroepen();
-        } catch (DefaultsOnvertaalbaar e) {
-            stapels = List.of();
-            meet("defaults", "effectieve stapels", () -> skipList("defaults: " + e.getMessage()));
+        if (stapelFout != null) {
+            String reden = stapelFout.getMessage();
+            meet("defaults", "effectieve stapels", () -> skipList("defaults: " + reden));
         }
         // Built and measured in declared order, so the coverage manifest keeps its order; added to the model in the
         // order groepVolgorde derives, a group after every group that writes what it reads (see there).
-        List<Integer> volgorde = groepVolgorde(stapels);
         List<List<Rule>> groepRegels = new ArrayList<>();
         for (EffectieveStapel groep : stapels)
             groepRegels.add(meet("defaults", defaultsConstructNaam(groep), () -> defaultsGroep(groep)));
@@ -7488,7 +7506,8 @@ public final class ExecModelTranspiler {
      *  into one -1 band where source order decides (the StratificatieKetenTest red case). Both back-ends read
      *  the SAME derivation — the single-runtime principle for the agenda. */
     private int stratificatieSalience(ResolvedRegel r) {
-        return strat.salience(r);
+        Integer onderGroep = regelSalience.get(r);   // below a group whose characteristic it reads negated
+        return onderGroep != null ? onderGroep : strat.salience(r);
     }
 
     // ================= §6.1 / ch. 7 prioritized defaults (reduce-rule port of ref's run_defaults_group) =========
@@ -8267,27 +8286,36 @@ public final class ExecModelTranspiler {
     /** RUNTIME-SEMANTICS ch. 7.4, over all groups at once: a group decides once the producers of what it reads have
      *  run, and a group can be such a producer. Returns the order in which the groups' reduce-rules are added to the
      *  model — every group after the groups that write, directly or through ordinary rules, what it reads, otherwise in
-     *  declared order — and fills {@link #groepSalience}. Drools fires the activations of one salience in the order the
-     *  rules were added (the ordinary rules first: they are added before every group), so a reader ordered after its
-     *  producer fires after it when the two share a salience. Built in declared order, a group that read the target of
-     *  a group declared after it decided on the target as it stood before that group had run, and a characteristic it
-     *  attributed then stayed (a written characteristic is never withdrawn, ch. 5.3).
+     *  declared order — and fills {@link #groepSalience} and {@link #regelSalience}. Drools fires the activations of one
+     *  salience in the order the rules were added (the ordinary rules first: they are added before every group), so a
+     *  reader ordered after its producer fires after it when the two share a salience. Built in declared order, a
+     *  group that read the target of a group declared after it decided on the target as it stood before that group
+     *  had run, and a characteristic it attributed then stayed (a written characteristic is never withdrawn, ch. 5.3).
      *
      *  <p>The salience of a group is the lowest band anything it reads waits on: {@link #defaultsSalience}, below the
      *  ordinary rules that write what it reads on its own type, unchanged, lowered to the band of every producer of
      *  what it reads — an ordinary rule or a group, on its own type, on the type a role reaches, or on the elements an
      *  aggregation folds or filters — where a producer's band is the lowest salience among it and the producers of
-     *  what it reads in turn. The ordinary rules keep their own salience; only the groups take the band. A producer
-     *  that itself waits on a negated read (a lower band) moved the value after a group in the band above had decided,
-     *  and a characteristic that group attributed stayed. A cycle between groups, which WF-051 excludes wherever a
-     *  justification closes it, keeps the declared order for the groups on it. */
+     *  what it reads in turn. A producer that itself waits on a negated read (a lower band) moved the value after a
+     *  group in the band above had decided, and a characteristic that group attributed stayed.
+     *
+     *  <p>The group is not placed strictly below its producers, and a rule that reads its characteristic under
+     *  negation is placed strictly below the group instead: the ch. 7.4 edge from the group's write to that reader
+     *  is negative, and {@link dev.uchar.regelspraak.transpiler.Stratificatie} does not see a group as a producer, so
+     *  it put such a reader one band below the rules only. In the band of a group that itself waits on a lower band,
+     *  the reader, an ordinary rule, fired first and attributed from the characteristic before the group decided it
+     *  (measured: rustig for every melding). A rule that reads the characteristic of a rule lowered so under
+     *  negation goes below that rule in turn. The other rules keep the salience the stratification gives them.
+     *
+     *  <p>A cycle between groups through positive reads keeps the declared order for the groups on it. A cycle with a
+     *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name. */
     private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
         List<ResolvedRegel> regels = model.resolvedRegels;
         int nR = regels.size(), n = nR + stapels.size();
         // node i < nR is ordinary rule i, node nR + g is group g: what each reads and writes, and where it starts
         List<Set<Lezing>> leest = new ArrayList<>();
         List<Lezing> schrijft = new ArrayList<>();
-        int[] band = new int[n];
+        int[] sal = new int[n];
         for (int i = 0; i < nR; i++) {
             ResolvedRegel r = regels.get(i);
             Expr.AttribuutRef d = r.doel() instanceof Expr.AttribuutRef a ? a : null;
@@ -8299,14 +8327,14 @@ public final class ExecModelTranspiler {
             leest.add(l);
             schrijft.add(d != null && d.attribuut() != null && d.objecttype() != null
                     ? new Lezing(d.objecttype(), d.attribuut(), false) : null);
-            band[i] = strat.salience(r);
+            sal[i] = strat.salience(r);
         }
         for (EffectieveStapel st : stapels) {
             Set<Lezing> l = new LinkedHashSet<>();
             for (PrioritizedDefaults lid : st.leden()) verzamelLezingen(lid.defaults(), st.eigenaar(), l);
             leest.add(l);
             schrijft.add(new Lezing(st.eigenaar(), st.leden().get(0).doel(), false));
-            band[leest.size() - 1] = defaultsSalience(st.leden(), st.eigenaar());
+            sal[leest.size() - 1] = defaultsSalience(st.leden(), st.eigenaar());
         }
         List<List<Integer>> producenten = new ArrayList<>();
         for (int c = 0; c < n; c++) {
@@ -8314,12 +8342,47 @@ public final class ExecModelTranspiler {
             for (int q = 0; q < n; q++) if (q != c && leestWat(leest.get(c), schrijft.get(q))) p.add(q);
             producenten.add(p);
         }
-        // the band: each node no higher than any producer; values only fall, and no lower than the lowest start
-        for (boolean bewoog = true; bewoog; ) {
-            bewoog = false;
-            for (int c = 0; c < n; c++)
-                for (int q : producenten.get(c))
-                    if (band[q] < band[c]) { band[c] = band[q]; bewoog = true; }
+        // per rule, the producers of a characteristic it reads under negation, as the stratification reads it: a
+        // group with that characteristic as its target, and a characteristic assignment
+        List<List<Integer>> ontkendVan = new ArrayList<>();
+        for (int c = 0; c < nR; c++) {
+            ResolvedRegel r = regels.get(c);
+            List<Integer> p = new ArrayList<>();
+            for (int g = 0; g < stapels.size(); g++) {
+                EffectieveStapel st = stapels.get(g);
+                if (!st.leden().get(0).isKenmerk()) continue;
+                for (Objecttype t : st.eigenaar().keten())
+                    if (strat.leestOntkend(r, t, st.leden().get(0).doel())) { p.add(nR + g); break; }
+            }
+            for (int q = 0; q < nR; q++) {
+                ResolvedRegel w = regels.get(q);
+                if (q != c && w.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING && schrijft.get(q) != null
+                        && strat.leestOntkend(r, schrijft.get(q).houder(), schrijft.get(q).naam())) p.add(q);
+            }
+            ontkendVan.add(p);
+        }
+        int[] band = sal.clone();
+        for (int ronde = 0; ; ronde++) {
+            // the band: each node no higher than its own salience or any producer's band
+            for (int c = 0; c < n; c++) band[c] = Math.min(band[c], sal[c]);
+            for (boolean bewoog = true; bewoog; ) {
+                bewoog = false;
+                for (int c = 0; c < n; c++)
+                    for (int q : producenten.get(c))
+                        if (band[q] < band[c]) { band[c] = band[q]; bewoog = true; }
+            }
+            boolean veranderd = false;
+            for (int g = nR; g < n; g++) if (band[g] < sal[g]) { sal[g] = band[g]; veranderd = true; }
+            for (int c = 0; c < nR; c++)
+                for (int q : ontkendVan.get(c)) {
+                    // a group always; a rule only once it is lowered, as the stratification already holds c below it
+                    boolean telt = q >= nR || sal[q] < strat.salience(regels.get(q));
+                    if (telt && sal[q] - 1 < sal[c]) { sal[c] = sal[q] - 1; veranderd = true; }
+                }
+            if (!veranderd) break;
+            if (ronde > 2 * n + 2)
+                throw new DefaultsOnvertaalbaar("een ontkende lezing in een kring door een defaultsgroep: de groep en de"
+                        + " regels die haar kenmerk ontkend lezen hebben geen volgorde (WF-046, WF-051)");
         }
         // the groups each group waits on, through ordinary rules as well
         int nG = stapels.size();
@@ -8350,7 +8413,10 @@ public final class ExecModelTranspiler {
             volgorde.add(kies);
         }
         groepSalience.clear();
-        for (int g = 0; g < nG; g++) groepSalience.put(stapels.get(g), band[nR + g]);
+        regelSalience.clear();
+        for (int g = 0; g < nG; g++) groepSalience.put(stapels.get(g), sal[nR + g]);
+        for (int i = 0; i < nR; i++)
+            if (sal[i] != strat.salience(regels.get(i))) regelSalience.put(regels.get(i), sal[i]);
         return volgorde;
     }
 

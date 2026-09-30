@@ -47,6 +47,8 @@ import java.util.Map;
 public final class Stratificatie {
 
     private final Map<String, Integer> saliencePerRegel = new HashMap<>();
+    /** Per rule, the characteristics it reads under negation, as the derivation below keys them. */
+    private final Map<String, List<Read>> negatiefPerRegel = new HashMap<>();
     /** Whether a kenmerk check navigates — IR-SPEC ch. 4.5, its binding is the hop, which rides beside the model
      *  ({@code IrLoader.Loaded.navigatieBindingen}). */
     private final java.util.function.Predicate<Conditie.Kenmerk> genavigeerd;
@@ -125,6 +127,7 @@ public final class Stratificatie {
                                                              // one-level heuristic, locally
             else salience = -depth[i];
             s.saliencePerRegel.put(r.naam(), salience);
+            s.negatiefPerRegel.put(r.naam(), reads.get(i).stream().filter(Read::negatie).toList());
         }
         return s;
     }
@@ -132,6 +135,17 @@ public final class Stratificatie {
     /** The derived agenda salience for {@code r}: 0, or negative for a negation-consumer (its stratum). */
     public int salience(ResolvedRegel r) {
         return saliencePerRegel.getOrDefault(r.naam(), 0);
+    }
+
+    /** Whether {@code r} reads characteristic {@code kenmerk} under negation on {@code type}, with the type matched as
+     *  this derivation matches a producer: by name, and any type for a navigated read whose owning type did not
+     *  resolve. For a producer this derivation does not see — the exec-model branch's defaults groups — so the
+     *  reader can be placed below it by the same reading of the condition. */
+    public boolean leestOntkend(ResolvedRegel r, Objecttype type, String kenmerk) {
+        for (Read read : negatiefPerRegel.getOrDefault(r.naam(), List.of()))
+            if (read.kenmerk().equals(naamKey(kenmerk)) && (read.typeKey() == null || read.typeKey().equals(typeKey(type))))
+                return true;
+        return false;
     }
 
     private record Read(String typeKey, String kenmerk, boolean negatie) {

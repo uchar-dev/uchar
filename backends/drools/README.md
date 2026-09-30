@@ -140,8 +140,9 @@ comparison or a leeg/gevuld test whose operand reads a chain of roles or a numer
 rule's value does. A group takes the lowest salience among the producers of what it reads, on its own type, beyond a
 role or in a fold, and the producers they wait on in turn, and is added to the model after the groups among them
 (`groepVolgorde`), so it decides after them (RUNTIME-SEMANTICS ch. 7.4); an aggregation's accumulate follows its
-elements. It is not placed strictly below them: a rule that reads the group's characteristic as a negation shares the
-band below, and there an ordinary rule fires first. A group carries no far-side join: with the order in place none of
+elements. It is not placed strictly below them; a rule that reads the group's characteristic under negation is placed
+strictly below the group instead, since the stratification of the rules does not see a group as a producer and an
+ordinary rule fires first in a band it shares with a group. A group carries no far-side join: with the order in place none of
 the measured forms needed one, and a producer outside the rules and the groups (an allocation) could not be measured,
 see the open points of the card. Golden
 `jutterswet-premiestaffel`, witness `DefaultsRechtvaardigingWitnessTest`. Still refused, each by name with its
