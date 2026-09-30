@@ -149,3 +149,25 @@ see the open points of the card. Golden
 condition: a quantifier fold, an aggregation inside an arithmetic expression, a parameter that is not a number, a
 period comparison and a rule-version predicate in a justification; an aggregation in a consequence keeps the
 consequence's own refusal. The DRL-text branch has no defaults lowering at all.
+
+## Recorded: a condition that puts no test on the subject
+
+The exec-model branch lowers a quantifier fold over a role, an aggregation comparison and a role check whose link is
+stored on the other end into rule items after the subject pattern (an accumulate with its test, an exists), so such a
+condition puts no test on that pattern, and a pattern without a test reacts to no update of the subject. The rule fired
+once, when the condition first held, and did not read again an operand of its value, or an own operand the condition
+compares in its accumulate, that a rule declared after it or a defaults group wrote later: the value stayed empty, or
+the empty operand counted as 0 (RUNTIME-SEMANTICS ch. 1.2), where `ref` and clingo answer the fixpoint.
+`ExecModelTranspiler.regel` now gives such a pattern the opaque always-true test (`zonderToets`), so the rule is
+evaluated again on every update of the subject (RUNTIME-SEMANTICS ch. 5.1); golden `jutterswet-sluitdag`, witness
+`KwantorvoorwaardeOperandWitnessTest`. A fold over a characteristic was affected less often: the stratification reads
+its matrix as a negated read and places the rule below band 0, so a writer in band 0 fired first, and only a writer in
+the rule's own band that fired after it was missed. Three limits remain, measured 2026-09-30 with `ref` and clingo as
+the arbiters. A fold whose verdict holds while a derived value is still empty, such as "de bergdag van geen van de
+vondsten van de Berging gevuld is", fires on that empty value when its rule is declared before the writer, and the
+write stays: the leeg test of the section on a condition that reads through a role, here in the matrix of a fold. A
+fold under a counting composite ("ten minste één van de volgende voorwaarden") is refused in both branches, in the
+exec-model branch with the generic sentence `voorwaarde buiten Phase-B scope`. The DRL-text branch, whose rules watch
+what they read, plays these forms except two, and refuses those with a defaults group: an aggregation comparison whose
+own threshold is derived later does not fire, and an operand one role away under a fold that holds at insertion is
+read before its writer ran.
