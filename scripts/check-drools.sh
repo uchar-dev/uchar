@@ -1103,7 +1103,18 @@ EXPECTED_CHANNEL=(
 # at their salience, so it plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after
 # over ALL goldens in both branches: no report line moves. The DRL-text branch refuses the new golden on its defaults
 # sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=224
+# 224 -> 225 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new, from bron.rgs and
+# scenario.rgs and hand-computed: three rules on the Berging whose condition is a quantifier fold over its vondsten
+# ('alle' over a derived bergdag, 'geen' over the vinddag, 'ten minste één' over the derived bergdag) and whose value
+# reads own attributes that rules declared after them derive (the laatste bergdag, a fold; the uiterste meldingsdag,
+# a rule on it; the wachttijd), as a sum with a literal, a sum of two operands and an equation, over two vondsten,
+# one without vinddag, and none. Such a condition lowers wholly into separate rule items, which left the subject
+# pattern without a test and so without reactivity: the exec branch computed each rule once, when its fold first
+# held, on operands still empty (sluitdag 1, controledag 0, afrekendag leeg). The branch now gives such a pattern the
+# opaque always-true expr and plays the three cases, PLAYED 3, with ref's and clingo's values. Measured before and
+# after over ALL goldens in both branches: no report line moves. The DRL-text branch plays the new golden, PLAYED 3,
+# so EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=225
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1170,7 +1181,9 @@ DRL_CHANNEL=(
   # were counted against the list. Recounted 2026-09-30 (the justification that counts or reads further than one
   # role): jutterswet-premiestaffel joins the class, 35 -> 36 lines, and plays in the exec branch only, so the gap
   # is 34 (224 - 190, jutterswet-zinkende-jutter of the same day playing in both); the six class heads (A 36, B 37,
-  # C 10, D 2, E 3, F 3 = 91 lines) were counted against the list.
+  # C 10, D 2, E 3, F 3 = 91 lines) were counted against the list. Recounted again the same day (the operand under a
+  # quantifier condition): jutterswet-sluitdag plays in both branches and moves neither the gap nor a class head, so
+  # the gap is 34 (225 - 191) and the heads hold at 91 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1457,7 +1470,10 @@ DRL_CHANNEL=(
 # its three cases through the same bean-model change, PLAYED 3. Reason block at EXPECTED_PLAYED above.
 # 189 -> 190 (2026-09-29, card frontend-ontkende-kwantor): jutterswet-zinkende-jutter, new. This branch plays its
 # two cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=190
+# 190 -> 191 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new. This branch plays its
+# three cases with no change of its own, PLAYED 3: its rules watch what their value reads. Reason block at
+# EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=191
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
