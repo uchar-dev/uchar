@@ -758,13 +758,23 @@ public final class ExecModelTranspiler {
         }
 
         // The subject pattern first (binds $subject), then far-side exists/not joins and any accumulate (which
-        // reference $subject), then the consequence. NO_LOOP is mandatory (the modify must not re-fire this rule).
+        // reference $subject), then the consequence. NO_LOOP keeps the modify from re-firing this rule, save the one
+        // case below.
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern);
         items.addAll(extra);
         items.add(consequence);
         int salience = stratificatieSalience(r);   // §9.2 negation-stratification: producers of a negated-read kenmerk first
-        var bouwer = PatternDSL.rule(kop(r.naam())).attribute(Rule.Attribute.NO_LOOP, true);
+        var bouwer = PatternDSL.rule(kop(r.naam()));
+        // A fold in the value whose subselection an element can leave, when another rule writes what the subselection
+        // tests, is revised through its accumulate: groepVolgorde orders the rule after the writers of a negative read
+        // only, and a comparison can drop an element after the rule fired (an initialisatie, then a berekening). Drools
+        // passes that revision on with the subject's last propagation context, and NO_LOOP drops an activation whose last
+        // context came from the rule's own consequence: the rule's own write to its subject, which a subject pattern with
+        // any test sees. The value then kept a result that still counted the element. Without NO_LOOP the idempotent
+        // werkBij ends the recompute: the rule fires once more on its own write, writes nothing, and stops.
+        if (!Expr.bevat(r.waarde(), x -> x instanceof Expr.Functie f && isInstantievouw(f) && f.filter() != null))
+            bouwer = bouwer.attribute(Rule.Attribute.NO_LOOP, true);
         if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
         return bouwer.build(items.toArray(new RuleItemBuilder[0]));
     }
@@ -7648,7 +7658,9 @@ public final class ExecModelTranspiler {
      *  into one -1 band where source order decides (the StratificatieKetenTest red case). Both back-ends read
      *  the SAME derivation — the single-runtime principle for the agenda. */
     private int stratificatieSalience(ResolvedRegel r) {
-        Integer onderGroep = regelSalience.get(r);   // below a group whose characteristic it reads negated
+        // below a group whose characteristic it reads negated, or below the writers of what a fold in the rule reads
+        // negatively (groepVolgorde)
+        Integer onderGroep = regelSalience.get(r);
         return onderGroep != null ? onderGroep : strat.salience(r);
     }
 
@@ -8447,7 +8459,9 @@ public final class ExecModelTranspiler {
      *  it put such a reader one band below the rules only. In the band of a group that itself waits on a lower band,
      *  the reader, an ordinary rule, fired first and attributed from the characteristic before the group decided it
      *  (measured: rustig for every melding). A rule that reads the characteristic of a rule lowered so under
-     *  negation goes below that rule in turn. The other rules keep the salience the stratification gives them.
+     *  negation goes below that rule in turn. A rule with a fold, in its condition or its value, that reads a value
+     *  negatively ({@link #vouwOntkend}) goes below the band of every rule and group that writes that value. The other rules
+     *  keep the salience the stratification gives them.
      *
      *  <p>A cycle between groups through positive reads keeps the declared order for the groups on it. A cycle with a
      *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name. */
@@ -8503,6 +8517,19 @@ public final class ExecModelTranspiler {
             }
             ontkendVan.add(p);
         }
+        // per rule, the rules and groups that write what a fold in its condition or value reads negatively (vouwOntkend)
+        List<List<Integer>> vouwOntkendVan = new ArrayList<>();
+        for (int c = 0; c < nR; c++) {
+            ResolvedRegel r = regels.get(c);
+            Set<Lezing> neg = new LinkedHashSet<>();
+            if (r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null) {
+                vouwOntkend(r.voorwaarde(), d.objecttype(), false, false, false, neg);
+                vouwOntkend(r.waarde(), d.objecttype(), false, false, neg);
+            }
+            List<Integer> p = new ArrayList<>();
+            for (int q = 0; q < n; q++) if (q != c && leestWat(neg, schrijft.get(q))) p.add(q);
+            vouwOntkendVan.add(p);
+        }
         int[] band = sal.clone();
         for (int ronde = 0; ; ronde++) {
             // the band: each node no higher than its own salience or any producer's band
@@ -8521,10 +8548,15 @@ public final class ExecModelTranspiler {
                     boolean telt = q >= nR || sal[q] < strat.salience(regels.get(q));
                     if (telt && sal[q] - 1 < sal[c]) { sal[c] = sal[q] - 1; veranderd = true; }
                 }
+            // below the band of every writer of what a fold in the rule reads negatively, which is below what that writer
+            // waits on in turn
+            for (int c = 0; c < nR; c++)
+                for (int q : vouwOntkendVan.get(c))
+                    if (band[q] - 1 < sal[c]) { sal[c] = band[q] - 1; veranderd = true; }
             if (!veranderd) break;
             if (ronde > 2 * n + 2)
-                throw new DefaultsOnvertaalbaar("een ontkende lezing in een kring door een defaultsgroep: de groep en de"
-                        + " regels die haar kenmerk ontkend lezen hebben geen volgorde (WF-046, WF-051)");
+                throw new DefaultsOnvertaalbaar("een ontkende lezing in een kring door een defaultsgroep of een vouw in een"
+                        + " voorwaarde: de regels en groepen op die kring hebben geen volgorde (WF-046, WF-051)");
         }
         // the groups each group waits on, through ordinary rules as well
         int nG = stapels.size();
@@ -8560,6 +8592,89 @@ public final class ExecModelTranspiler {
         for (int i = 0; i < nR; i++)
             if (sal[i] != strat.salience(regels.get(i))) regelSalience.put(regels.get(i), sal[i]);
         return volgorde;
+    }
+
+    /** What a fold in a rule's condition or value reads negatively, in the polarity of the verifier's dependency walk
+     *  (its {@code dep_cond}, WF-046; IR-SPEC ch. 5.5): a read under a leeg or gevuld test and a negated characteristic;
+     *  every read in the range of a quantifier fold, its subselection, under alle, geen, ten hoogste and precies, where a
+     *  member that joins the range can cost the verdict; every read in its matrix under geen, ten hoogste and precies; and
+     *  both under a negation-like composite ({@code neg}). {@code heel}: the part being walked is negative as a whole.
+     *  Only a read inside a fold is collected ({@code inVouw}): a leeg or gevuld test outside one keeps the limit of README
+     *  "Recorded: a condition that reads through a role".
+     *
+     *  <p>{@link #groepVolgorde} places the rule below the writers of what this collects, where {@code ref/} and the ASP
+     *  backend evaluate it too. In a condition the fold cannot be revised once its rule has written: a verdict that holds
+     *  while a value is still empty — "het gewicht van ten minste één van de vondsten die aan de volgende voorwaarde
+     *  voldoen: zijn afgeleide dag is leeg, groter is dan 15", or alle over a subselection still empty — fired on that
+     *  transient when the rule came before the writer or a defaults group wrote the value, and the write stayed. In a
+     *  value the fold is revised ({@link #regel} drops NO_LOOP there), but a revision to leeg decides nothing on a standing
+     *  target (RUNTIME-SEMANTICS ch. 7.8): a maximum written over the transient source stayed when the source then
+     *  emptied, and a consumer of the value had seen the transient. */
+    private void vouwOntkend(Conditie c, Objecttype subject, boolean neg, boolean heel, boolean inVouw, Set<Lezing> uit) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Kenmerk k -> { if (inVouw && (heel || neg || k.negatie())) conditieLezingen(k, subject, true, uit); }
+            case Conditie.Predicaat p -> vouwOntkend(p.operand(), subject, heel
+                    || p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD, inVouw, uit);
+            case Conditie.Vergelijking v -> {
+                vouwOntkend(v.links(), subject, heel, inVouw, uit);
+                vouwOntkend(v.rechts(), subject, heel, inVouw, uit);
+            }
+            case Conditie.Periode pd -> {
+                vouwOntkend(pd.vanaf(), subject, heel, inVouw, uit);
+                vouwOntkend(pd.tot(), subject, heel, inVouw, uit);
+            }
+            case Conditie.Samengesteld sam -> {
+                boolean neg2 = neg || sam.kwantor() == Conditie.Kwantor.GEEN || sam.kwantor() == Conditie.Kwantor.TEN_HOOGSTE
+                        || sam.kwantor() == Conditie.Kwantor.PRECIES;
+                for (Conditie d : sam.onderdelen()) vouwOntkend(d, subject, neg2, heel, inVouw, uit);
+            }
+            case Conditie.Kwantorvouw kv -> {
+                Objecttype elem = kv.elementObjecttype() != null ? kv.elementObjecttype() : subject;
+                boolean bereik = neg || kv.kwantor() != Conditie.Kwantor.TEN_MINSTE;
+                boolean matrix = neg || !(kv.kwantor() == Conditie.Kwantor.TEN_MINSTE || kv.kwantor() == Conditie.Kwantor.ALLE);
+                vouwOntkend(kv.filter(), elem, bereik, heel || bereik, true, uit);
+                vouwOntkend(kv.toets(), elem, matrix, heel || matrix, true, uit);
+            }
+            default -> { }
+        }
+    }
+
+    /** The expression side of {@link #vouwOntkend(Conditie, Objecttype, boolean, boolean, boolean, Set)}: an
+     *  aggregation's subselection is a condition of its own, where the verifier restarts its negation context, so only
+     *  what is negative there by itself counts, or all of it when the aggregation sits in a part negative as a whole. */
+    private void vouwOntkend(Expr e, Objecttype subject, boolean heel, boolean inVouw, Set<Lezing> uit) {
+        switch (e) {
+            case null -> { }
+            case Expr.AttribuutRef a -> { if (inVouw && heel) exprLezingen(a, subject, true, uit); }
+            case Expr.Let l -> {
+                vouwOntkend(l.value(), subject, heel, inVouw, uit);
+                vouwOntkend(l.body(), subject, heel, inVouw, uit);
+            }
+            case Expr.IfThenElse k -> {
+                vouwOntkend(k.conditie(), subject, false, heel, inVouw, uit);
+                vouwOntkend(k.dan(), subject, heel, inVouw, uit);
+                vouwOntkend(k.anders(), subject, heel, inVouw, uit);
+            }
+            case Expr.Functie f -> {
+                boolean vouw = isInstantievouw(f);
+                Objecttype elem = vouw && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
+                for (Expr a : f.argumenten()) vouwOntkend(a, elem, heel, inVouw || vouw, uit);
+                if (vouw) vouwOntkend(f.filter(), elem, false, heel, true, uit);
+                vouwOntkend(f.leegwaarde(), subject, heel, inVouw, uit);
+            }
+            case Expr.Binair b -> {
+                vouwOntkend(b.links(), subject, heel, inVouw, uit);
+                vouwOntkend(b.rechts(), subject, heel, inVouw, uit);
+            }
+            case Expr.Afgerond af -> vouwOntkend(af.basis(), subject, heel, inVouw, uit);
+            case Expr.Begrensd bg -> {
+                vouwOntkend(bg.basis(), subject, heel, inVouw, uit);
+                vouwOntkend(bg.minimum(), subject, heel, inVouw, uit);
+                vouwOntkend(bg.maximum(), subject, heel, inVouw, uit);
+            }
+            default -> { }
+        }
     }
 
     /** A read of a defaults group or an ordinary rule, keyed on the type that holds the value: the subject for an own
