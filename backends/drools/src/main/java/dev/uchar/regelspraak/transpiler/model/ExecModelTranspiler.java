@@ -152,10 +152,16 @@ public final class ExecModelTranspiler {
     private final List<String> overgeslagen = new ArrayList<>();
     /** Build-time-only gate: true WHILE lowering a scalar consequence value (the THEN-waarde), the context where a
      *  §13.4.1 multi-hop navigation chain may lower ({@link #navKetenReader}) — mirroring DrlTranspiler.waarde's KETEN
-     *  branch. A chain reaching any CONDITION lowering (which also passes a non-null valueSubject into scalarWaarde)
-     *  must keep the symmetric marker the DRL back-end emits; the one exception is an operand of a defaults
-     *  justification ({@link #rechtvaardigingZijde}), which the DRL-text branch does not lower at all. */
+     *  branch. A chain reaching a CONDITION lowering (which also passes a non-null valueSubject into scalarWaarde)
+     *  lowers only where a join per hop covers it ({@link #gejoindeLezingen}) or as an operand of a defaults
+     *  justification ({@link #rechtvaardigingZijde}); the DRL-text branch keeps its marker for both. */
     private boolean ketenWaardePad;
+    /** Build-time-only: the navigated reads of the voorwaarde {@link #regelVoorwaarde} is lowering, by identity — the
+     *  reads its far-side joins cover, so the test runs again when an object on the way changes. Two readings lower
+     *  only for these: a §13.4.1 chain of to-one hops ({@link #navDoel}, and in {@link #scalarWaarde} beside
+     *  {@link #ketenWaardePad}), and a navigated operand of a date computation ({@link #gejoindeLezer}). Empty outside
+     *  that lowering: an assertion, a quantifier fold or a filter reads without such a join and keeps the refusal. */
+    private Set<Expr.AttribuutRef> gejoindeLezingen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     /** Monotonic within ONE rule (reset per rule) — keeps each rule's declaration NAMES ({@code $e_0}, {@code $inc_1})
      *  unique. Declaration names are per-rule scoped, so they may repeat across rules. */
     private int seq;
@@ -2154,30 +2160,46 @@ public final class ExecModelTranspiler {
      *  generalisation of {@link #navReader}'s single-hop root-guard, mirroring DrlTranspiler's KETEN value read.
      *  The pad is re-validated against THIS subject (volgKeten), so a chain resolved against another subject skips.
      *  Reached from the consequence VALUE path (scalarWaarde's chain branch, gated by {@code ketenWaardePad}) and,
-     *  on the condition side, by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}) and by an
-     *  operand of a defaults justification ({@link #rechtvaardigingZijde}, which the DRL-text branch does not lower);
-     *  every other condition keeps the symmetric marker both back-ends emit. */
+     *  on the condition side, by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}), by an
+     *  operand of a defaults justification ({@link #rechtvaardigingZijde}, which the DRL-text branch does not lower)
+     *  and by a read a rule's voorwaarde joins hop by hop ({@link #gejoindeLezingen}); every other condition keeps the
+     *  refusal, and the DRL-text branch its marker. */
     private java.util.function.Function<Object, Object> navKetenReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
         FactModelGenerator.Navigatiewandeling w = keten(a, subject);
         if (w == null) return null;   // ONOPGELOST / to-many
+        List<java.util.function.Function<Object, Object>> hops = ketenStappen(w, subject);
+        if (hops == null) return null;
+        java.util.function.Function<Object, Object> attrGet = typedGetter(factClass(a.objecttype()), a.attribuut());
+        return s -> {
+            Object o = langsKeten(hops, s);
+            return o == null ? null : attrGet.apply(o);   // §5.5.5 an intervening leeg relation reads the operand as leeg
+        };
+    }
+
+    /** One typed getter per hop of the chain walk {@code w} from {@code subject}, or null where a hop has no bean
+     *  field (§13.3.9 name-dedup, {@link #heeftVeld}): EVERY hop, not just the first, since a chain is only readable
+     *  where each of its links has a field. */
+    private List<java.util.function.Function<Object, Object>> ketenStappen(FactModelGenerator.Navigatiewandeling w,
+                                                                          Objecttype subject) {
         List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
         Objecttype cur = subject;
         for (int i = 0; i < w.rollen().size(); i++) {
-            // EVERY hop, not just the first: a chain is only readable where each of its links has a field.
-            if (!heeftVeld("genavigeerde lezing", cur, w.rollen().get(i), w.bereikt().get(i))) return null;   // §13.3.9 name-dedup
+            if (!heeftVeld("genavigeerde lezing", cur, w.rollen().get(i), w.bereikt().get(i))) return null;
             hops.add(typedGetter(factClass(cur), w.rollen().get(i)));
             cur = w.bereikt().get(i);
         }
-        java.util.function.Function<Object, Object> attrGet = typedGetter(factClass(a.objecttype()), a.attribuut());
-        return s -> {
-            Object o = s;
-            for (java.util.function.Function<Object, Object> h : hops) {
-                o = h.apply(o);
-                if (o == null) return null;   // §5.5.5 an intervening leeg relation reads the operand as leeg
-            }
-            return attrGet.apply(o);
-        };
+        return hops;
+    }
+
+    /** The object {@code hops} reach from {@code s}, or null where one of them reaches nothing. */
+    private static Object langsKeten(List<java.util.function.Function<Object, Object>> hops, Object s) {
+        Object o = s;
+        for (java.util.function.Function<Object, Object> h : hops) {
+            o = h.apply(o);
+            if (o == null) return null;
+        }
+        return o;
     }
 
     /** §13.4.1/§13.3.9 REACTIVITY over a to-ONE navigated value read: property/class reactivity is per fact TYPE,
@@ -2198,14 +2220,19 @@ public final class ExecModelTranspiler {
                                                      Set<String> gejoind) {
         List<Expr.AttribuutRef> refs = new ArrayList<>();
         navRefs(waarde, subject, refs);
-        return navJoins(refs, List.of(), subject, subjectVar, gejoind);
+        return navJoins(refs, List.of(), subject, subjectVar, gejoind, false);
     }
 
     /** One far-side join per distinct navigation among {@code refs} and {@code kenmerkHops} whose key is not yet in
-     *  {@code gejoind}; the keys it joins are added there. */
+     *  {@code gejoind}; the keys it joins are added there. With {@code elkeHop} a §13.4.1 chain is joined at every
+     *  object it passes, in order, and not only at the object it reaches: a relation in the middle of the chain can
+     *  be set after the subject matched (a fact creation writes that field and updates the object that holds it),
+     *  and with that object outside the tuple nothing runs the test again. A voorwaarde asks for this; a value keeps
+     *  the one join. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<RuleItemBuilder<?>> navJoins(List<Expr.AttribuutRef> refs, List<KenmerkHop> kenmerkHops,
-                                              Objecttype subject, Variable subjectVar, Set<String> gejoind) {
+                                              Objecttype subject, Variable subjectVar, Set<String> gejoind,
+                                              boolean elkeHop) {
         if (refs.isEmpty() && kenmerkHops.isEmpty()) return List.of();
         // Distinct by the reached FAR type + full role path (subject -> reader): the same relation read twice needs
         // one item. Key on the ordered role hops that reach the fact whose attribute is read.
@@ -2218,14 +2245,18 @@ public final class ExecModelTranspiler {
                 // §13.4.1 multi-hop chain: walk the bound role hops to the fact declaring the read attribute.
                 FactModelGenerator.Navigatiewandeling w = keten(a, subject);
                 if (w == null) continue;
-                List<java.util.function.Function<Object, Object>> hops = new ArrayList<>();
-                Objecttype cur = subject;
-                for (int i = 0; i < w.rollen().size(); i++) {
-                    if (!heeftVeld("genavigeerde lezing", cur, w.rollen().get(i), w.bereikt().get(i))) return null;   // §13.3.9 name-dedup
-                    hops.add(typedGetter(factClass(cur), w.rollen().get(i)));
-                    cur = w.bereikt().get(i);
+                List<java.util.function.Function<Object, Object>> hops = ketenStappen(w, subject);
+                if (hops == null) return null;   // §13.3.9 name-dedup
+                for (int i = 1; elkeHop && i < hops.size(); i++) {
+                    // an object on the way, keyed as a join that reaches it over those hops alone is
+                    Objecttype tussen = w.bereikt().get(i - 1);
+                    if (factClass(tussen) == null) continue;
+                    List<java.util.function.Function<Object, Object>> deel = List.copyOf(hops.subList(0, i));
+                    String tussenKey = tussen.naam + "|" + String.join(".", w.rollen().subList(0, i));
+                    joins.putIfAbsent(tussenKey, s -> langsKeten(deel, s));
+                    farTypes.putIfAbsent(tussenKey, tussen);
                 }
-                reachFar = s -> { Object o = s; for (var h : hops) { o = h.apply(o); if (o == null) return null; } return o; };
+                reachFar = s -> langsKeten(hops, s);
                 key = far.naam + "|" + String.join(".", w.rollen());
             } else {
                 // single-hop to-one: the bound role exactly as navReader reads it; an own read is the eigenReads
@@ -2282,12 +2313,41 @@ public final class ExecModelTranspiler {
      *  voorwaarde now also reads a navigated comparison leegwaarde-faithfully (genavigeerdeVergelijkingVoorwaarde). */
     private String navComparisonRole(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || ongenavigeerd(a) || !a.objecttype().heeftLid(a.attribuut())) return null;
-        if (keten(a)) return null;   // §13.4.1 multi-hop chain: comparisons keep the symmetric marker
+        if (keten(a)) return null;   // §13.4.1 multi-hop chain: navDoel's, where a join per hop covers it
         String rol = wireRol(a, subject);
         if (rol == null) return null;
         if (subject != null && model.naarVeelRol(subject, a.objecttype(), rol)) return null;   // NAAR_VEEL
         if (!heeftVeld("genavigeerde lezing", subject, rol, a.objecttype())) return null;   // §13.3.9 no bean field to read (name-dedup)
         return rol;
+    }
+
+    /** The object a navigated condition read reaches — over its one to-one hop as {@link #navComparisonRole} resolves
+     *  it, or over a §13.4.1 chain of to-one hops — as a function of the subject, which yields null at run time where a
+     *  hop reaches nothing (§5.5.5: the operand then reads leeg, as over an absent single relation). A chain lowers
+     *  only for a read the voorwaarde {@link #regelVoorwaarde} is lowering joins hop by hop
+     *  ({@link #gejoindeLezingen}): without those joins no update of an object on the way runs the test again. null
+     *  when the read does not resolve there. */
+    private java.util.function.Function<Object, Object> navDoel(Expr.AttribuutRef a, Objecttype subject) {
+        if (!keten(a)) {
+            String rol = navComparisonRole(a, subject);
+            return rol == null ? null : s -> RegelSpraakRuntime.get(s, rol);
+        }
+        if (!gejoindeLezingen.contains(a) || a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;
+        FactModelGenerator.Navigatiewandeling w = keten(a, subject);
+        List<java.util.function.Function<Object, Object>> hops = w == null ? null : ketenStappen(w, subject);
+        return hops == null ? null : s -> langsKeten(hops, s);
+    }
+
+    /** The value subject a date computation in comparison {@code v} is read with: {@code subject} where every
+     *  navigated read of the comparison is one the voorwaarde {@link #regelVoorwaarde} is lowering joins
+     *  ({@link #gejoindeLezingen}), so the computation reads through them as a rule's value does and the joins run
+     *  the test again; null otherwise, which leaves a navigated read there unresolved and the comparison refused. A
+     *  comparison without a navigated read keeps null, as before. */
+    private Objecttype gejoindeLezer(Conditie.Vergelijking v, Objecttype subject) {
+        List<Expr.AttribuutRef> refs = new ArrayList<>();
+        navRefs(v.links(), subject, refs);
+        navRefs(v.rechts(), subject, refs);
+        return !refs.isEmpty() && gejoindeLezingen.containsAll(refs) ? subject : null;
     }
 
     /** THE own-read shape test (IR-SPEC ch. 4.1a): a read without bindings is the subject's (or, in a fold's filter,
@@ -3517,15 +3577,17 @@ public final class ExecModelTranspiler {
      *  navigation reads another fact, and an update of that fact does not run the test again: a value another rule
      *  derives on the reached object after the subject was inserted is never seen, so the rule never fires, or fires
      *  on a value that no longer holds. Such a voorwaarde gets the far-side join per distinct navigation that
-     *  {@link #navReactiviteit} gives a navigated VALUE read, and its tests go on the subject bound a second time,
-     *  FROM {@code $subject}, after those joins: that pattern is evaluated again whenever the tuple before it
-     *  changes, an update of the reached object included. The subject pattern gets the opaque always-true expr, so
-     *  it stays class-reactive as the voorwaarde's own tests made it, and an update of the subject still reaches
-     *  the test. A voorwaarde that reaches no object to join keeps its tests on the subject pattern, unchanged; it is
-     *  lowered a second time for that, since which pattern it goes on is known only after the joins. The lowering
-     *  runs before the joins, so where it declines its own reason stands. {@code gejoind} receives the keys of the
-     *  joins made here. null where {@link #voorwaarde} declines, or a hop it accepted has no bean field
-     *  ({@link #navReden}). */
+     *  {@link #navReactiviteit} gives a navigated VALUE read, and a §13.4.1 chain of to-one hops one join per object
+     *  it passes ({@link #navJoins} with {@code elkeHop}); its tests go on the subject bound a second time, FROM
+     *  {@code $subject}, after those joins: that pattern is evaluated again whenever the tuple before it changes, an
+     *  update of a reached object included. The subject pattern gets the opaque always-true expr, so it stays
+     *  class-reactive as the voorwaarde's own tests made it, and an update of the subject still reaches the test.
+     *  While the voorwaarde lowers for that pattern its navigated reads are the {@link #gejoindeLezingen}: only there
+     *  does a chain, or a navigated operand of a date computation, lower. A voorwaarde that reaches no object to join
+     *  keeps its tests on the subject pattern, unchanged; it is lowered a second time for that, since which pattern
+     *  it goes on is known only after the joins. The lowering runs before the joins, so where it declines its own
+     *  reason stands. {@code gejoind} receives the keys of the joins made here. null where {@link #voorwaarde}
+     *  declines, or a hop it accepted has no bean field ({@link #navReden}). */
     private Gate regelVoorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar,
                                  Class<?> factClass, Set<String> gejoind) {
         List<Expr.AttribuutRef> refs = new ArrayList<>();
@@ -3533,9 +3595,17 @@ public final class ExecModelTranspiler {
         navRefs(c, subject, refs, hops);
         if (refs.isEmpty() && hops.isEmpty()) return voorwaarde(c, pattern, subject, subjectVar);
         Variable voorwaardeVar = DSL.declarationOf(factClass, "$voorwaarde", DSL.from(subjectVar));
-        Gate gate = voorwaarde(c, PatternDSL.pattern(voorwaardeVar), subject, voorwaardeVar);
+        Set<Expr.AttribuutRef> buiten = gejoindeLezingen;
+        gejoindeLezingen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        gejoindeLezingen.addAll(refs);
+        Gate gate;
+        try {
+            gate = voorwaarde(c, PatternDSL.pattern(voorwaardeVar), subject, voorwaardeVar);
+        } finally {
+            gejoindeLezingen = buiten;
+        }
         if (gate == null) return null;
-        List<RuleItemBuilder<?>> joins = navJoins(refs, hops, subject, subjectVar, gejoind);
+        List<RuleItemBuilder<?>> joins = navJoins(refs, hops, subject, subjectVar, gejoind, true);
         if (joins == null) return null;
         if (joins.isEmpty()) return voorwaarde(c, pattern, subject, subjectVar);
         List<RuleItemBuilder<?>> extra = new ArrayList<>(joins);
@@ -3795,10 +3865,10 @@ public final class ExecModelTranspiler {
                 return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
                         tekstVergelijk(n.apply(RegelSpraakRuntime.get(s, attr)), n.apply(gv), gelijk)), List.of());
             }
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 return tekstVergelijk(n.apply(rel == null ? null : RegelSpraakRuntime.get(rel, attr)), n.apply(gv), gelijk);   // §5.5.5 null relation -> leeg
             }), List.of());
         }
@@ -3825,8 +3895,8 @@ public final class ExecModelTranspiler {
                 && eff.typeVan(la).isGetalachtig() && isNumeriekOp(v.op()) && v.rechts() instanceof Expr.ParameterRef pr) {   // §4.8 numeriek OR percentage
             if (la.objecttype() == null || Namen.bevatNaam(la.objecttype().granulariteitLeden(), la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             Global<BigDecimal> g = globals.get(globalNaam(pr.parameter().naam()));
             if (g == null) return null;
             String attr = la.attribuut();
@@ -3837,7 +3907,7 @@ public final class ExecModelTranspiler {
                 // tables decide — NOT a blanket short-circuit-to-false (which was WRONG for ONGELIJK: leeg != global is
                 // WAAR, §5.6 Tabel 44). Ordering / GELIJK of a leeg operand stay onwaar (Tabel 33-42); only ONGELIJK
                 // flips to WAAR. Mirrors the standalone navigated comparison (3eb94d0) and DRL's leegwaarde-faithful form.
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 BigDecimal lv = rel == null ? null : RegelSpraakRuntime.toBd(RegelSpraakRuntime.get(rel, attr));
                 return vergelijk(scale(lv, f[0]), scale((BigDecimal) gv, f[1]), op);
             }), List.of());
@@ -3895,7 +3965,8 @@ public final class ExecModelTranspiler {
         if (c instanceof Conditie.Vergelijking v && isDatumVergelijkOp(v.op())
                 && eff.typeVan(v.links()).isDatum() && eff.typeVan(v.rechts()).isDatum()
                 && (isDatumRekenExpr(v.links()) || isDatumRekenExpr(v.rechts()))) {
-            WaardeFn lw = scalarWaarde(null, v.links()), rw = scalarWaarde(null, v.rechts());
+            Objecttype lezer = gejoindeLezer(v, subject);   // null unless the voorwaarde joins its navigated reads
+            WaardeFn lw = scalarWaarde(lezer, v.links()), rw = scalarWaarde(lezer, v.rechts());
             if (lw != null && rw != null) {
                 Set<String> gset = new LinkedHashSet<>(lw.globals()); gset.addAll(rw.globals());
                 if (gset.size() == 1) {
@@ -4032,12 +4103,12 @@ public final class ExecModelTranspiler {
                 && p.operand() instanceof Expr.AttribuutRef pa && !ongenavigeerd(pa)) {
             if (pa.objecttype() == null || Namen.bevatNaam(pa.objecttype().granulariteitLeden(), pa.attribuut())) return null;  // temporal -> Phase F
             if (!pa.objecttype().dimensiesVan(pa.attribuut()).isEmpty()) return null;   // §3.6 gedimensioneerd -> marker
-            String rol = navComparisonRole(pa, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(pa, subject);
+            if (doel == null) return null;
             String attr = pa.attribuut();
             boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 boolean isLeeg = rel == null || RegelSpraakRuntime.get(rel, attr) == null;
                 return isLeeg == leeg;
             };
@@ -4061,10 +4132,10 @@ public final class ExecModelTranspiler {
                 return s -> (elf ? RegelSpraakRuntime.rsElfproef(RegelSpraakRuntime.get(s, attr))
                                  : RegelSpraakRuntime.rsNumeriekMetExact(RegelSpraakRuntime.get(s, attr), n)) == wanted;
             }
-            String rol = navComparisonRole(pa, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(pa, subject);
+            if (doel == null) return null;
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 if (rel == null) return false;   // mvel `rol!.attr` short-circuits the WHOLE constraint to non-match on a
                                                  // null reference -> onwaar for BOTH polarities (the navigated null house rule)
                 return (elf ? RegelSpraakRuntime.rsElfproef(RegelSpraakRuntime.get(rel, attr))
@@ -4095,8 +4166,8 @@ public final class ExecModelTranspiler {
                 && v.rechts() instanceof Expr.Literal lit && lit.type().isNumeriek()) {
             if (la.objecttype() == null || Namen.bevatNaam(la.objecttype().granulariteitLeden(), la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd (Map) -> marker
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             BigDecimal rhs = bd(lit);
             if (rhs == null) return null;
             String attr = la.attribuut();
@@ -4104,7 +4175,7 @@ public final class ExecModelTranspiler {
             BigDecimal[] f = restatement(effType(la), effType(lit));
             BigDecimal rhsScaled = scale(rhs, f[1]);
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 // §5.5.5 a null to-one relation reads LEEG (like a present relation with a null attribute), then vergelijk's
                 // leegwaarde semantics decide (Tabel 33-44): ordering/GELIJK of a leeg operand -> onwaar, but ONGELIJK ->
                 // WAAR (Tabel 44, one-leeg). NOT a blanket short-circuit (which would make a leeg-vs-X ONGELIJK wrongly false).
@@ -4123,13 +4194,13 @@ public final class ExecModelTranspiler {
             if (subject == null || !subject.heeftLid(ra.attribuut())) return null;                                          // own RHS member
             if (Namen.bevatNaam(subject.granulariteitLeden(), ra.attribuut())) return null;                                    // temporal RHS -> Phase F
             if (!subject.dimensiesVan(ra.attribuut()).isEmpty()) return null;                                               // §3.6 RHS -> marker
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             String lattr = la.attribuut(), rattr = ra.attribuut();
             Conditie.Operator op = v.op();
             BigDecimal[] f = restatement(effType(la), effType(ra));
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 Object lval = rel == null ? null : RegelSpraakRuntime.get(rel, lattr);   // §5.5.5 null relation -> leeg -> vergelijk (Tabel 44)
                 return vergelijk(scale(RegelSpraakRuntime.toBd(lval), f[0]), scale(num(s, rattr), f[1]), op);
             };
@@ -4183,7 +4254,8 @@ public final class ExecModelTranspiler {
         if (c instanceof Conditie.Vergelijking v && isDatumVergelijkOp(v.op())
                 && eff.typeVan(v.links()).isDatum() && eff.typeVan(v.rechts()).isDatum()
                 && (isDatumRekenExpr(v.links()) || isDatumRekenExpr(v.rechts()))) {
-            WaardeFn lw = scalarWaarde(null, v.links()), rw = scalarWaarde(null, v.rechts());
+            Objecttype lezer = gejoindeLezer(v, subject);   // null unless the voorwaarde joins its navigated reads
+            WaardeFn lw = scalarWaarde(lezer, v.links()), rw = scalarWaarde(lezer, v.rechts());
             if (lw == null || rw == null || !lw.globals().isEmpty() || !rw.globals().isEmpty()) return null;
             BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
             Conditie.Operator op = v.op();
@@ -4321,14 +4393,14 @@ public final class ExecModelTranspiler {
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || Namen.bevatNaam(la.objecttype().granulariteitLeden(), la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             String attr = la.attribuut();
             java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(eff.typeVan(la), lit.type());
             Object rhs = n.apply(Literalen.tekstOfEnumLabel(lit));
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 Object val = rel == null ? null : RegelSpraakRuntime.get(rel, attr);   // §5.5.5 null relation -> leeg
                 return rhs.equals(n.apply(val)) == gelijk;   // leeg != literal -> ONGELIJK WAAR (Tabel 44); leeg == literal -> GELIJK onwaar
             };
@@ -4378,13 +4450,13 @@ public final class ExecModelTranspiler {
                 && (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)) {
             if (la.objecttype() == null || Namen.bevatNaam(la.objecttype().granulariteitLeden(), la.attribuut())) return null;  // temporal -> Phase F
             if (!la.objecttype().dimensiesVan(la.attribuut()).isEmpty()) return null;                                       // §3.6 gedimensioneerd -> marker
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             String attr = la.attribuut();
             Boolean rhs = dev.uchar.regelspraak.kern.Literalen.waar(lit.waarde());
             boolean gelijk = v.op() == Conditie.Operator.GELIJK;
             return s -> {
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 Object val = rel == null ? null : RegelSpraakRuntime.get(rel, attr);   // §5.5.5 null relation -> leeg
                 return rhs.equals(val) == gelijk;   // leeg != literal -> ONGELIJK WAAR (Tabel 44); leeg == literal -> GELIJK onwaar
             };
@@ -4403,13 +4475,13 @@ public final class ExecModelTranspiler {
                 if (!subject.heeftLid(attr)) return null;
                 return s -> { java.time.LocalDate ld = asDag(RegelSpraakRuntime.get(s, attr)); return neg != (ld != null && pred.test(ld)); };
             }
-            String rol = navComparisonRole(la, subject);
-            if (rol == null) return null;
+            java.util.function.Function<Object, Object> doel = navDoel(la, subject);
+            if (doel == null) return null;
             return s -> {
                 // §5.15 + Tabel 16: an absent relation (or a leeg datum) reads a leegwaarde, which is NEVER a dagsoort.
                 // Under two-valued negation "is een <dagsoort>" -> ONWAAR (neg=false), "is geen <dagsoort>" -> WAAR
                 // (neg=true). Mirrors DRL `(neg?"!":"") (partner!.x != null && rsDagsoort(partner!.x))` (the `!.` short-circuit).
-                Object rel = RegelSpraakRuntime.get(s, rol);
+                Object rel = doel.apply(s);
                 java.time.LocalDate ld = rel != null ? asDag(RegelSpraakRuntime.get(rel, attr)) : null;
                 return neg != (ld != null && pred.test(ld));
             };
@@ -4748,11 +4820,12 @@ public final class ExecModelTranspiler {
             // testable — DRL crashes). Only reached on the VALUE path (valueSubject set); the condition path skips it.
             if (a.objecttype() != null && Namen.bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())) return null;   // temporal -> Phase F
             if (a.objecttype() != null && !a.objecttype().dimensiesVan(a.attribuut()).isEmpty()) return null;             // §3.6 gedimensioneerd -> marker
-            // §13.4.1 a MULTI-hop chain lowers ONLY on the consequence value path (ketenWaardePad, set around the
-            // scalar THEN-waarde) — a chain in a CONDITION keeps the symmetric marker DRL emits (operand/attribuutOperand
-            // marker KETEN), so neither back-end fires ahead of the other.
+            // §13.4.1 a MULTI-hop chain lowers on the consequence value path (ketenWaardePad, set around the scalar
+            // THEN-waarde) and in a CONDITION only where a join per hop covers it (gejoindeLezingen, set by
+            // regelVoorwaarde); elsewhere in a condition it stays refused. The DRL-text branch markers a chain in any
+            // condition (operand/attribuutOperand marker KETEN).
             java.util.function.Function<Object, Object> reader = !keten(a) ? navReader(a, valueSubject)
-                    : ketenWaardePad ? navKetenReader(a, valueSubject) : null;
+                    : ketenWaardePad || gejoindeLezingen.contains(a) ? navKetenReader(a, valueSubject) : null;
             if (reader == null) return null;
             return new WaardeFn((s, gm) -> reader.apply(s), Set.of());
         }
@@ -5726,9 +5799,9 @@ public final class ExecModelTranspiler {
             if (subject == null || !subject.heeftLid(attr)) return null;
             return s -> datumWaarde(RegelSpraakRuntime.get(s, attr));
         }
-        String rol = navComparisonRole(a, subject);
-        if (rol == null) return null;
-        return s -> { Object rel = RegelSpraakRuntime.get(s, rol); return rel == null ? null : datumWaarde(RegelSpraakRuntime.get(rel, attr)); };
+        java.util.function.Function<Object, Object> doel = navDoel(a, subject);
+        if (doel == null) return null;
+        return s -> { Object rel = doel.apply(s); return rel == null ? null : datumWaarde(RegelSpraakRuntime.get(rel, attr)); };
     }
     /** §5.1 Tabel 32: the multipliers that restate the left/right comparison operands into a common unit before
      *  comparing (so "24 mnd > 2 jr" compares 24 vs 24, not 24 vs 2) — the BigDecimal mirror of the DRL oracle's
