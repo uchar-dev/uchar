@@ -40,6 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * are green and the join is gone. The row with a negation reader of a group's characteristic is a flank, green before
  * and after; with every group placed strictly below its producers it answers {@code kenmerk rustig: verwacht afwezig,
  * werkelijk aanwezig}.
+ *
+ * <p>The row where the reader of the characteristic sits in the band of the group itself came last (2026-09-30), with
+ * the reader placed below the group: before that, in both its documents, {@code kenmerk rustig: verwacht afwezig,
+ * werkelijk aanwezig} — on the transpiler of the claim already for the document on the own type, which that
+ * transpiler lowers, and on the band of the group for the document two roles away.
  */
 class DefaultsRechtvaardigingWitnessTest {
 
@@ -243,6 +248,45 @@ class DefaultsRechtvaardigingWitnessTest {
                         String.join(",", kenmerk("M1", "dringend", false), kenmerk("M1", "rustig", true),
                                 kenmerk("M2", "dringend", true), kenmerk("M2", "rustig", false)), "")),
                 "rustig na de beslissing over dringend");
+    }
+
+    @Test void een_negatielezer_van_het_kenmerkdoel_zakt_onder_de_groep() throws Exception {
+        // "Een Melding is rustig indien de Melding niet dringend is" reads the target of the dringendheid group under
+        // negation. The stratification sees no producer of dringend among the rules and puts the reader one band below
+        // them, -1; the group sits in band -1 too, in two ways: below the rule that writes the meldpremie it reads on
+        // its own type, and in the band of a premie two roles away that waits on a negated read. In one band the
+        // reader, an ordinary rule, fires first and attributes rustig before dringend is decided. ref and clingo: M1
+        // not dringend and rustig, M2 dringend and not rustig, in both documents.
+        String melding = objecttype("Melding", "Meldingen", false,
+                List.of(attribuut("meldpremie"), attribuut("ruwe meldpremie")), List.of("dringend", "rustig"));
+        String nietDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
+        String rust = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", nietDringend, null);
+        String meldpremie = regel("meldpremie", "Melding", "meldpremie", eigen("ruwe meldpremie", "Melding"), null, "equation");
+        String eigenGroep = kenmerkgroep("dringendheid", "Melding", "dringend",
+                besluit(groter(eigen("meldpremie", "Melding"), getal(5)), false), besluit(ALTIJD, true));
+        String verwacht = String.join(",", kenmerk("M1", "dringend", false), kenmerk("M1", "rustig", true),
+                kenmerk("M2", "dringend", true), kenmerk("M2", "rustig", false));
+        assertNull(speel(document(model(List.of(melding), List.of(), ""), List.of(meldpremie, rust), List.of(eigenGroep)),
+                        zaak(List.of(instantie("M1", "Melding", "\"ruwe meldpremie\":{\"number\":\"8\"}", "", ""),
+                                instantie("M2", "Melding", "\"ruwe meldpremie\":{\"number\":\"3\"}", "", "")), verwacht, "")),
+                "rustig na dringend, op het eigen type");
+        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+                List.of("ijverig"));
+        String nietIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
+        List<String> regels = List.of(regel("bonuspremie", "Jutter", "bonuspremie", getal(20), nietIjverig, "calculation"),
+                regel("premie uit bonus", "Jutter", "premie", eigen("bonuspremie", "Jutter"), null, "equation"), rust);
+        String verreGroep = kenmerkgroep("dringendheid", "Melding", "dringend",
+                besluit(groter(viaVondstJutter("premie"), getal(15)), false), besluit(ALTIJD, true));
+        List<String> inst = List.of(instantie("J1", "Jutter", "", "", ""), instantie("J2", "Jutter", "", "", "\"ijverig\""),
+                vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
+                instantie("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
+                instantie("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
+        assertNull(speel(document(model(List.of(jutter, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MELDING), ""),
+                        regels, List.of(verreGroep)), zaak(inst, verwacht, "")),
+                "rustig na dringend, twee rollen ver in de band van een negatielezer");
     }
 
     // ---------------- a parameter ----------------
