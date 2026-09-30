@@ -426,3 +426,39 @@ Na de rebase op `1f601d19` (tussen haken de hash vóór de rebase):
     b31260cd            Exectak: een negatielezer van een groepskenmerk zakt onder de groep
 
 en de commit die dit Result in de kaart zet. Niet gepusht, niet gemerged; de kaart blijft in `backlog/doing/`.
+
+## Keuring (hoofdsessie, 2026-09-30)
+
+Geland op main na een eigen run van alle zestien gates op de kop van de
+branch, `420435f1`, door de bouwer gerebased op main `1f601d19` met de
+opgetelde pinnen (logs `/tmp/v2/uchar-gates7/`): groen. Gemeten daar:
+gate 3 320 goldens schoon; gate 5 en 6 755 cases exact; gate 7 711
+weerleggingen, 44 overlevers (ongewijzigd); gate 10 999 toetsen, 108
+rgs-goldens byte-gelijk; gate 12 speelt 224 in de exec-tak en 190 in de
+DRL-tak (de exec-pin één omhoog, voorstel van de bouwer, hier geland),
+JUnit 897; gate 16 15 scenario-goldens, 54 casebestanden.
+
+Gelezen: de oorzaak (elke rechtvaardiging werd een toets op het onderwerp,
+waarin een aggregatie, een keten van rollen en een parameter niet passen;
+de groepen beslisten vóór de groepen en verre regels die schrijven wat zij
+lezen, zodat vijf al spelende vormen stil fout antwoordden), de fix in
+`ExecModelTranspiler` en `Stratificatie` (een aggregatie als accumulate op
+de reduce-regel, een keten of numerieke parameter gelezen als regelwaarde,
+`groepVolgorde` met de band van de producenten en de negatielezer onder de
+groep, weigering met vorm en voorwaarde), de vormruimte van 76 vormen (11
+spelend vóór, 68 na, 5 met naam geweigerd, 3 crashes buiten de kaart), de
+getuigen (16 rijen rood-eerst plus één rij van `RekenjaarWitnessTest`), de
+golden `jutterswet-premiestaffel` met handberekening in alle uitvoerders,
+de sweep (281 goldens, alleen de nieuwe golden verschuift, DRL-tak gelijk)
+en de README-sectie. De vijf afwijkingen van de kaart aanvaard met hun
+meting (bredere fix met de groepsvolgorde, geen far-side-joins, groep in de
+band van haar producenten en erna, één rij van een bestaand testbestand,
+`Stratificatie.leestOntkend`). Registertekst in
+`spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` bij deze landing gezet.
+Open, vastgelegd in het Result en niet als kaart: een kwantorvouw, een
+aggregatie binnen een rekensom en een datum- of tekstparameter in een
+rechtvaardiging weigeren met naam; een verdeling met een eerst leeg bedrag
+crasht in beide Drools-takken, en ref en clingo verschillen daar;
+verdelingen en creaties tellen niet mee in de groepsvolgorde. Pin-bump
+naar de distributie en de werkbank hierna, samen met de kaart
+frontend-ontkende-kwantor.

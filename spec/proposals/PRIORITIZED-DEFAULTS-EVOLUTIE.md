@@ -318,6 +318,16 @@ edges), rather than rebuilding the full `dep_forms` graph in Java — the §7
 chapter then records the bounded-narrower-stratifier posture this
 instantiates.
 
+Landed 2026-09-30 (exec-model branch): a justification that counts, reads a
+chain of roles or a numeric parameter lowers member by member — an
+aggregation as an accumulate on the reduce-rule, a chain or a numeric
+parameter read as a rule value — and the refusal names the form and the
+condition. Salience: a group takes the band of the producers of what it
+reads, transitively through rules and groups, and is added after the groups
+it waits on; a rule that reads a group's characteristic under negation is
+placed strictly below the group. Witnesses: `DefaultsRechtvaardigingWitnessTest`,
+the golden `jutterswet-premiestaffel`.
+
 ### 5.2 Flip inventory and order
 
 Fifteen goldens / 67 cases flip on defaults work alone, risk-ascending:
