@@ -1640,11 +1640,13 @@ final class RuleChecker {
     // The opgave marker '(mag opgegeven worden)' on an attribute declaration — the uchar DIALECT EXTENSION of
     // grammar/DIVERGENCES.md §7: the hardship pattern of spec/proposals/PHASE4-DEFAULTS.md §4.1 as a declaration.
     // For a marked attribute X of object type T the resolver lowers onto structure the wire already carries: the
-    // input attribute 'opgegeven X'; the attribute 'berekende X', which every computing writer of X targets from
-    // then on; one defaults group 'opgave boven berekening X' on X, the opgave above the computation and an authored
-    // initialisation of X as the lowest default; the possessive characteristic 'afwijkende opgave X', attributed by
-    // the rule 'afwijking opgave X' where opgave and computation are both filled and differ; and the consistency
-    // 'controle opgave X', which asserts that characteristic absent, so a contradiction deposits one §9.5 fact.
+    // input attribute 'opgegeven X'; the attribute 'berekende X', which every computing writer of X, on T or on a
+    // subtype of T, targets from then on, each on its own type; one defaults group 'opgave boven berekening X' on X,
+    // the opgave above the computation and an authored initialisation of X on T as the lowest default, which every
+    // subtype inherits whole (RUNTIME-SEMANTICS ch. 7.10); the possessive characteristic 'afwijkende opgave X',
+    // attributed by the rule 'afwijking opgave X' where opgave and computation are both filled and differ; and the
+    // consistency 'controle opgave X', which asserts that characteristic absent, so a contradiction deposits one §9.5
+    // fact.
     // The generated members are declared BEFORE the rules resolve, so a rule can read them (an author routes a
     // deviating case through the characteristic); the writers move AFTER the defaults lowering, so a tree or an
     // unordered set of the dialect's own blocks moves whole. Case input on X itself keeps Reading A
@@ -1802,15 +1804,19 @@ final class RuleChecker {
     }
 
     /** The rule half, after the defaults lowering: move the computing writers of X to 'berekende X', lift an
-     *  initialisation of X into the generated group, and add the group, the attribution rule and the consistency.
+     *  initialisation of X into the generated group, and add the group, the attribution rule and the consistency. A
+     *  writer on a subtype of T moves as one on T does and keeps its type, so the writers of 'berekende X' compose
+     *  per concrete type by ch. 7.10 exactly as those of X did without the marker, and the group on T, which no
+     *  subtype writes beside, is the top of every subtype's stack. An initialisation of X on a subtype stays on X,
+     *  where the fold of ch. 7.10 makes it the lowest default of that subtype's stack, its condition kept.
      *  Refused, one ERROR at the declaration's line: an allocation or an object creation that writes X (the marker
-     *  moves neither, and beside the group each is a second writer, WF-050); a writer of X on another type of the
-     *  inheritance line (the ch. 7.10 composition with the generated group is not built); a writer of a generated
-     *  member; a generated form name another form already carries (WF-020); more than one initialisation of X, or one
+     *  moves neither, and beside the group each is a second writer, WF-050); a writer of a generated member; a
+     *  generated form name another form already carries (WF-020); more than one initialisation of X on T, or one
      *  with a window, with versions or with a condition (the group has one window and one initialisation default, and
-     *  that default's justification is the empty input). Without a computing writer X is input already and nothing is
-     *  generated: a WARNING, and the generated members are withdrawn — an ERROR instead when a rule reads one of them,
-     *  since the name would then read nothing. */
+     *  that default's justification is the empty input); two initialisations in one inheritance line, and one on a
+     *  subtype with a window or with versions ({@link #subtypeInitialisatieFout}). Without a computing writer X is
+     *  input already and nothing is generated: a WARNING, and the generated members are withdrawn — an ERROR instead
+     *  when a rule reads one of them, since the name would then read nothing. */
     private void opgaveLowering(RegelSpraakDocumentContext doc) {
         if (opgaven.isEmpty()) return;
         Map<String, String[]> vormen = vormPlekken(doc);
@@ -1820,17 +1826,21 @@ final class RuleChecker {
             List<Integer> rekenend = new ArrayList<>();
             List<Integer> groepen = new ArrayList<>();
             List<ResolvedRegel> init = new ArrayList<>();
+            List<ResolvedRegel> subInit = new ArrayList<>();
             for (int i = 0; i < model.resolvedRegels.size(); i++) {
                 ResolvedRegel r = model.resolvedRegels.get(i);
-                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING || eigenDoel(r.doel(), o.attribuut()) != t)
-                    continue;
-                if (r.soort() == ResolvedRegel.Soort.INITIALISATIE) init.add(r);
-                else rekenend.add(i);
+                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
+                Objecttype u = eigenDoel(r.doel(), o.attribuut());
+                if (u == null || !u.isEen(t)) continue;
+                if (r.soort() != ResolvedRegel.Soort.INITIALISATIE) rekenend.add(i);
+                else if (u == t) init.add(r);
+                else subInit.add(r);
             }
             for (int i = 0; i < model.prioritizedDefaults.size(); i++) {
                 PrioritizedDefaults pd = model.prioritizedDefaults.get(i);
-                if (!pd.isKenmerk() && zelfdeNaam(pd.attribuut(), o.attribuut())
-                        && model.objecttypeOpNaam(pd.onderwerp()) == t) groepen.add(i);
+                Objecttype u = model.objecttypeOpNaam(pd.onderwerp());
+                if (!pd.isKenmerk() && zelfdeNaam(pd.attribuut(), o.attribuut()) && u != null && u.isEen(t))
+                    groepen.add(i);
             }
             String reden = opgaveSchrijverFout(o);
             if (reden == null && rekenend.isEmpty() && groepen.isEmpty()) {
@@ -1852,6 +1862,7 @@ final class RuleChecker {
             }
             if (reden == null) reden = vormnaamFout(o, vormen, gegenereerd);
             if (reden == null) reden = initialisatieFout(o, init);
+            if (reden == null) reden = subtypeInitialisatieFout(o, init, subInit);
             if (reden != null) { fout(o.line(), reden); continue; }
 
             // 2. the computing writers keep their names and shapes and write 'berekende X'
@@ -1938,8 +1949,9 @@ final class RuleChecker {
         return new Expr.AttribuutRef(naam, o.type(), "zijn", null, dt, Bron.van(o.declaratie(), "zijn " + naam));
     }
 
-    /** The writer refusals: an allocation or an object creation that writes X, a writer of X on another type of the
-     *  inheritance line, and a writer of a generated member. Null when none holds. */
+    /** The writer refusals: an allocation or an object creation that writes X, and a writer of a generated member.
+     *  Null when none holds. A writer of X on a subtype of T is lowered; a supertype of T does not have X (WF-105), so
+     *  a rule that writes X there is refused at its own target (WF-022). */
     private String opgaveSchrijverFout(Opgave o) {
         Objecttype t = o.type();
         String x = o.attribuut();
@@ -1954,25 +1966,6 @@ final class RuleChecker {
                 return o.kop() + ": " + MARKERING + ", maar de objectcreatie '" + zonderVersie(oc.naam()) + "' kent '"
                         + x + "' toe bij het aanmaken — de markering verlegt die toekenning niet naar '" + o.berekende()
                         + "', en naast de defaults-groep op '" + x + "' is zij een tweede schrijver (WF-050) (dialect §7)";
-        List<String[]> erflijn = new ArrayList<>();   // {writer, type}
-        for (ResolvedRegel r : model.resolvedRegels) {
-            Objecttype u = eigenDoel(r.doel(), x);
-            if (u != null && u != t && inLijn(t, u) && r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
-                erflijn.add(new String[] {"regel '" + zonderVersie(r.naam()) + "'", u.naam});
-        }
-        for (PrioritizedDefaults pd : model.prioritizedDefaults) {
-            Objecttype u = model.objecttypeOpNaam(pd.onderwerp());
-            if (!pd.isKenmerk() && zelfdeNaam(pd.attribuut(), x) && u != null && u != t && inLijn(t, u))
-                erflijn.add(new String[] {"de defaults-groep '" + pd.naam() + "'", u.naam});
-        }
-        if (!erflijn.isEmpty()) {
-            String[] w = erflijn.get(0);
-            Objecttype u = model.objecttypeOpNaam(w[1]);
-            return o.kop() + ": " + MARKERING + ", maar " + w[0] + " schrijft '" + x + "' voor " + u.naam + ", een "
-                    + (u.isEen(t) ? "subtype" : "supertype") + " van " + t.naam + " — de gegenereerde defaults-groep op "
-                    + t.naam + " zou met de schrijvers van " + u.naam + " samengaan tot één stapel per type "
-                    + "(RUNTIME-SEMANTICS ch. 7.10), en die samenstelling bouwt de markering niet (dialect §7)";
-        }
         // a generated member has one writer or none: the case supplies 'opgegeven X', the moved writers compute
         // 'berekende X', the generated rule attributes 'afwijkende opgave X'
         for (String g : List.of(o.opgegeven(), o.berekende(), o.afwijkend())) {
@@ -2085,6 +2078,45 @@ final class RuleChecker {
                     + "' heeft een voorwaarde — de initialisatiedefault van de gegenereerde defaults-groep is alleen "
                     + "gerechtvaardigd waar '" + o.attribuut() + "' in de invoer leeg is, en draagt geen eigen "
                     + "voorwaarde (WF-050) (dialect §7)";
+        return null;
+    }
+
+    /** The initialisations of X on subtypes of T, which stay on X: the generated group opens the fold of ch. 7.10 on
+     *  X's chain, and the fold makes each the lowest default of its type's stack, its condition kept, below the
+     *  inherited group (measured 2026-09-30 in ref, clingo and the Drools exec branch). Refused: two initialisations
+     *  in one inheritance line — T's and a subtype's, two on one subtype, or one on a subtype and one on a subtype of
+     *  it — since the stack of the lower type would carry two initialisation defaults; measured, the three executors
+     *  gave the higher one without a diagnostic, where the unmarked document is refused under WF-079, whose
+     *  initialisation arm the group lifts. And one with a window or with versions: the fold takes no windowed rule,
+     *  and the three executors refused it by name where the unmarked document plays. Null when none holds. */
+    private String subtypeInitialisatieFout(Opgave o, List<ResolvedRegel> init, List<ResolvedRegel> subInit) {
+        List<ResolvedRegel> lijn = new ArrayList<>(init);
+        lijn.addAll(subInit);
+        for (int i = 0; i < lijn.size(); i++)
+            for (int j = i + 1; j < lijn.size(); j++) {
+                ResolvedRegel a = lijn.get(i), b = lijn.get(j);
+                Objecttype ta = eigenDoel(a.doel(), o.attribuut()), tb = eigenDoel(b.doel(), o.attribuut());
+                if (zonderVersie(a.naam()).equals(zonderVersie(b.naam())) || !ta.isEen(tb) && !tb.isEen(ta)) continue;
+                boolean aHoog = tb.isEen(ta);
+                ResolvedRegel hoog = aHoog ? a : b, laag = aHoog ? b : a;
+                Objecttype th = aHoog ? ta : tb, tl = aHoog ? tb : ta;
+                return o.kop() + ": " + MARKERING + ", en '" + o.attribuut() + "' heeft twee initialisaties in één "
+                        + "erflijn ('" + zonderVersie(hoog.naam()) + "' voor " + th.naam + " en '"
+                        + zonderVersie(laag.naam()) + "' voor " + tl.naam + ") — de effectieve stapel van " + tl.naam
+                        + " zou twee initialisatiedefaults dragen, en RUNTIME-SEMANTICS ch. 7.10 kent er één; zonder "
+                        + "de markering weigert WF-079 dit paar (dialect §7)";
+            }
+        for (ResolvedRegel s : subInit) {
+            long versies = subInit.stream().filter(r -> zonderVersie(r.naam()).equals(zonderVersie(s.naam()))).count();
+            if (versies == 1 && s.geldigheid().altijd()) continue;
+            String type = eigenDoel(s.doel(), o.attribuut()).naam;
+            return o.kop() + ": " + MARKERING + ", en de initialisatie '" + zonderVersie(s.naam()) + "' van '"
+                    + o.attribuut() + "' voor " + type + " heeft "
+                    + (versies > 1 ? "meer dan één versie" : "een ander geldigheidsvenster dan altijd")
+                    + " — naast de gegenereerde defaults-groep op " + o.type().naam + " wordt zij een default in de "
+                    + "effectieve stapel van " + type + " (RUNTIME-SEMANTICS ch. 7.10), en die neemt geen regel met "
+                    + "een venster op (dialect §7)";
+        }
         return null;
     }
 
