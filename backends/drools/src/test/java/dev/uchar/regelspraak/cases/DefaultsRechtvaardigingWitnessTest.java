@@ -34,7 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The row where the reached value changes after the group fired came after the fix (2026-09-30). On the transpiler of
  * the claim it is refused in the lumped sentence; on the fix with the group's far-side joins left out it answers
  * {@code attribuut gemelde premie: verwacht 20, werkelijk 10}, so it holds the joins, as the two rows over a later
- * group hold the order of the groups.
+ * group hold the order of the groups. The row with a characteristic target whose far producer waits on a negated read
+ * came with the band of a group (2026-09-30): on the fix before it, where a group took only the salience of its direct
+ * producers, it answers {@code kenmerk dringend: verwacht afwezig, werkelijk aanwezig}. The row with a negation reader
+ * of a group's characteristic is a flank, green before and after; with every group placed strictly below its producers
+ * it answers {@code kenmerk rustig: verwacht afwezig, werkelijk aanwezig}.
  */
 class DefaultsRechtvaardigingWitnessTest {
 
@@ -186,6 +190,58 @@ class DefaultsRechtvaardigingWitnessTest {
                 "{\"kind\":\"attributeEmpty\",\"label\":\"J2\",\"attribute\":\"premie\"}",
                 waarde("M1", "gemelde premie", 20), waarde("M2", "gemelde premie", 10));
         assertNull(speel(ir, zaak(inst, verwacht, "")), "de gemelde premie na de late premie");
+    }
+
+    @Test void een_kenmerkdoel_wacht_op_de_band_van_een_verre_producent() throws Exception {
+        // The row above with a characteristic target: "Een Melding is dringend", "Uitzondering: Een Melding is niet
+        // dringend indien de premie van de jutter van de vondst van de Melding groter is dan 15". The premie rule is
+        // in band 0 but waits on the bonuspremie, a negated read in band -1; a group that decided in band 0 attributed
+        // dringend to M1 before the premie was 20, and the join cannot withdraw it. ref and clingo: M1 not dringend,
+        // M2 dringend.
+        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+                List.of("ijverig"));
+        String model = model(List.of(jutter, VONDST, MELDING), List.of(JUTTER_VONDST, VONDST_MELDING), "");
+        String nietIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
+        List<String> regels = List.of(regel("bonuspremie", "Jutter", "bonuspremie", getal(20), nietIjverig, "calculation"),
+                regel("premie uit bonus", "Jutter", "premie", eigen("bonuspremie", "Jutter"), null, "equation"));
+        String groep = kenmerkgroep("dringendheid", "Melding", "dringend",
+                besluit(groter(viaVondstJutter("premie"), getal(15)), false), besluit(ALTIJD, true));
+        List<String> inst = List.of(instantie("J1", "Jutter", "", "", ""), instantie("J2", "Jutter", "", "", "\"ijverig\""),
+                vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
+                instantie("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
+                instantie("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
+        assertNull(speel(document(model, regels, List.of(groep)), zaak(inst,
+                        String.join(",", waarde("J1", "premie", 20), kenmerk("M1", "dringend", false),
+                                kenmerk("M2", "dringend", true)), "")),
+                "dringend na de late premie");
+    }
+
+    @Test void een_negatielezer_van_het_kenmerkdoel_vuurt_na_de_groep() throws Exception {
+        // A flank: "Een Melding is rustig indien de Melding niet dringend is" reads the target of the dringendheid
+        // group (threshold 5) as a negation, in band -1, while the group reads a premie that a rule in band 0 derives
+        // from the ruwe premie. The group stays in the band of that producer and fires before the reader; a group
+        // placed strictly below its producers would share band -1 with the reader, which as an ordinary rule fires
+        // first and attributes rustig to every melding. ref and clingo: M1 not dringend and rustig, M2 dringend and not
+        // rustig.
+        String melding = objecttype("Melding", "Meldingen", false, List.of(attribuut("gemelde premie")),
+                List.of("dringend", "rustig"));
+        String model = model(List.of(JUTTER, VONDST, melding), List.of(JUTTER_VONDST, VONDST_MELDING), "");
+        String nietDringend = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"dringend\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"de Melding niet dringend is\"}}";
+        String rust = regel("rust", "Melding", "rustig", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},"
+                + "\"type\":{\"node\":\"Boolean\"},\"source\":{\"snippet\":\"waar\"}}", nietDringend, null);
+        String groep = kenmerkgroep("dringendheid", "Melding", "dringend",
+                besluit(groter(viaVondstJutter("premie"), getal(5)), false), besluit(ALTIJD, true));
+        List<String> inst = List.of(instantie("J1", "Jutter", "\"ruwe premie\":{\"number\":\"8\"}", "", ""),
+                instantie("J2", "Jutter", "\"ruwe premie\":{\"number\":\"3\"}", "", ""),
+                vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
+                instantie("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
+                instantie("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
+        assertNull(speel(document(model, List.of(rust, PREMIE_UIT_RUWE_PREMIE), List.of(groep)), zaak(inst,
+                        String.join(",", kenmerk("M1", "dringend", false), kenmerk("M1", "rustig", true),
+                                kenmerk("M2", "dringend", true), kenmerk("M2", "rustig", false)), "")),
+                "rustig na de beslissing over dringend");
     }
 
     // ---------------- a parameter ----------------
