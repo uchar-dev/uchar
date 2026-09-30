@@ -30,6 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * group reads what a later group writes answers {@code kenmerk zwaar: verwacht afwezig, werkelijk aanwezig} in its
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
+ *
+ * <p>The row where the reached value changes after the group fired came after the fix (2026-09-30). On the transpiler of
+ * the claim it is refused in the lumped sentence; on the fix with the group's far-side joins left out it answers
+ * {@code attribuut gemelde premie: verwacht 20, werkelijk 10}, so it holds the joins, as the two rows over a later
+ * group hold the order of the groups.
  */
 class DefaultsRechtvaardigingWitnessTest {
 
@@ -156,6 +161,31 @@ class DefaultsRechtvaardigingWitnessTest {
                         String.join(",", kenmerk("M1", "dringend", false), kenmerk("M2", "dringend", true),
                                 waarde("J1", "premie", 20), waarde("J2", "premie", 10)), "")),
                 "dringend over een premie uit een latere groep");
+    }
+
+    @Test void de_groep_beslist_opnieuw_als_de_verre_waarde_na_haar_verandert() throws Exception {
+        // "De bonuspremie van een Jutter moet berekend worden als 20 indien hij niet ijverig is" (a negated read, so
+        // the stratification puts it below salience 0), "De premie van een Jutter moet gesteld worden op de
+        // bonuspremie van de Jutter" (salience 0), and the gemelde premie of the card's R2 over that premie with the
+        // threshold 15. The premie rule is the producer the group reads, and the group fires in its band, before the
+        // bonuspremie is written; when the premie then changes, only the far-side join on the reached jutter fires
+        // the group again. ref and clingo: J1 (not ijverig) premie 20 and M1 20; J2 (ijverig) premie leeg and M2 10.
+        String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
+                List.of("ijverig"));
+        String model = model(List.of(jutter, VONDST, MELDING), List.of(JUTTER_VONDST, VONDST_MELDING), "");
+        String nietIjverig = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"ijverig\",\"negated\":true,"
+                + "\"source\":{\"snippet\":\"hij niet ijverig is\"}}";
+        List<String> regels = List.of(regel("bonuspremie", "Jutter", "bonuspremie", getal(20), nietIjverig, "calculation"),
+                regel("premie uit bonus", "Jutter", "premie", eigen("bonuspremie", "Jutter"), null, "equation"));
+        String ir = document(model, regels, List.of(gemeldgroep(groter(viaVondstJutter("premie"), getal(15)))));
+        List<String> inst = List.of(instantie("J1", "Jutter", "", "", ""), instantie("J2", "Jutter", "", "", "\"ijverig\""),
+                vondst("V1", "J1", "", false), vondst("V2", "J2", "", false),
+                instantie("M1", "Melding", "", "\"vondst\":[\"V1\"]", ""),
+                instantie("M2", "Melding", "", "\"vondst\":[\"V2\"]", ""));
+        String verwacht = String.join(",", waarde("J1", "premie", 20),
+                "{\"kind\":\"attributeEmpty\",\"label\":\"J2\",\"attribute\":\"premie\"}",
+                waarde("M1", "gemelde premie", 20), waarde("M2", "gemelde premie", 10));
+        assertNull(speel(ir, zaak(inst, verwacht, "")), "de gemelde premie na de late premie");
     }
 
     // ---------------- a parameter ----------------
