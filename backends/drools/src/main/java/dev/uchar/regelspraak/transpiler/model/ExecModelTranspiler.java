@@ -4579,9 +4579,10 @@ public final class ExecModelTranspiler {
         }
     }
 
-    /** The folds of the value {@link #regel} is lowering, non-null only while it lowers that value: build-time state,
-     *  scoped like {@link #ketenWaardePad}, so no other lowering meets a slot. {@link #vouwOnderwerp} is the subject
-     *  variable their accumulates join to, and {@link #vouwReden} names the first fold that did not lower. */
+    /** The folds of the value {@link #regel} is lowering, or of the consequence {@link #compileDefault} is lowering,
+     *  non-null only while it lowers that value: build-time state, scoped like {@link #ketenWaardePad}, so no other
+     *  lowering meets a slot. {@link #vouwOnderwerp} is the subject variable their accumulates join to, and
+     *  {@link #vouwReden} names the first fold that did not lower. */
     private List<Vouwslot> vouwslots;
     private Variable vouwOnderwerp;
     private String vouwReden;
@@ -4652,7 +4653,7 @@ public final class ExecModelTranspiler {
         // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         // A fold over a set source has no value the consequence can compute: it is an accumulate on the rule's left
-        // side, which only a rule's value can place (vouwslots is set there alone).
+        // side, which only a rule's value and a default's consequence can place (vouwslots is set there alone).
         if (e instanceof Expr.Functie vf && isInstantievouw(vf))
             return vouwslots == null ? null : vouwslot(valueSubject, vf);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
@@ -7895,12 +7896,13 @@ public final class ExecModelTranspiler {
 
     /** Lower one defaults group to its single reduce-rule (a port of ref's {@code run_defaults_group},
      *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom) and an accumulate per aggregation
-     *  a justification reads; RHS the top-down walk over the defaults with leeg fall-through, recursion into
+     *  a justification reads and per fold a consequence reads; RHS the top-down walk over the defaults with leeg fall-through, recursion into
      *  {@code excepties}, member reconciliation, and one idempotent write or one §9.5 {@code Inconsistentie}. Loud,
      *  reason-carrying {@code skipList} fences (the exec-back-end's
      *  skip discipline, surfaced by {@link #meet} as a SKIP): a temporal defaults target (ref-parity), a
-     *  channel-depositing consequence (division), a consequence not reducible to the value machinery, and a
-     *  justification whose form {@link #rechtvaardiging} does not lower, named with its condition. */
+     *  channel-depositing consequence (division), a consequence the value machinery does not lower, named with the
+     *  form and the consequence, and a justification whose form {@link #rechtvaardiging} does not lower, named with its
+     *  condition. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> defaultsGroep(EffectieveStapel stapel) {
         List<PrioritizedDefaults> members = stapel.leden();
@@ -7991,6 +7993,10 @@ public final class ExecModelTranspiler {
             if (g == null) return skipList("defaults (" + targetForm + "): consequentie leest niet-geregistreerde global " + gn);
             vars.add((Variable) g);
         }
+        // then per fold of a consequence its count (where bound) and its result, which fill the slots it reads
+        final List<Vouwslot> slots = bouw.vouwslots;
+        final int vouwVanaf = vars.size();
+        for (Vouwslot v : slots) vars.addAll(v.variabelen());
 
         boolean kanConflicteren = ledenDefaults.size() >= 2 || bevatMeervoudigeExcepties(ledenDefaults);
         final String fqcn = FACTS + ".Inconsistentie";
@@ -8006,6 +8012,7 @@ public final class ExecModelTranspiler {
             Object[] gebonden = java.util.Arrays.copyOfRange(args, 1, 1 + nGebonden);
             Map<String, BigDecimal> gm = new LinkedHashMap<>();
             vulGlobalMap(gm, gnamesF, args, 1 + nGebonden);
+            vulVouwslots(gm, slots, args, vouwVanaf, s);
             DefaultsRun run = new DefaultsRun(s, gm, gebonden, getterF, isCharF, targetFormF);
             List<Uitkomst> memberResults = new ArrayList<>();
             for (List<GecompileerdeDefault> member : ledenDefaultsF) memberResults.add(run.decide(member, List.of()));
@@ -8027,7 +8034,7 @@ public final class ExecModelTranspiler {
             }
         });
         if (consequence == null) return skipList("defaults (" + targetForm + "): te veel gebonden variabelen"
-                + " (aggregaties en globals)");
+                + " (aggregaties, vouwen en globals)");
 
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern);
@@ -8050,6 +8057,7 @@ public final class ExecModelTranspiler {
             }
         }
         items.addAll(bouw.accItems);
+        for (Vouwslot v : slots) items.add(v.agg().accItem());
         items.add(consequence);
 
         // group salience (§5.1 of the design): below every PRODUCER of every default's justification/consequence
@@ -8094,12 +8102,29 @@ public final class ExecModelTranspiler {
             String foutplek = foutplekSoort(r.consequentie());
             if (foutplek != null)
                 throw new DefaultsOnvertaalbaar("kanaal-deponerende consequentie (" + foutplek + ") op defaults-target: " + defaultsReden(r));
+            // A fold over a set source in the consequence lowers as it does in a rule's value (vouwslot): an accumulate
+            // on the group's reduce-rule, whose result the consequence reads from a slot, so every operator of the
+            // scalar value applies around it.
             WaardeFn wf;
             boolean prev = ketenWaardePad;
-            try { ketenWaardePad = true; wf = scalarWaarde(onderwerp, r.consequentie()); }
-            finally { ketenWaardePad = prev; }
+            List<Vouwslot> vorigeSlots = vouwslots;
+            Variable vorigOnderwerp = vouwOnderwerp;
+            navReden = null;
+            vouwReden = null;
+            try {
+                ketenWaardePad = true;
+                vouwslots = bouw.vouwslots;
+                vouwOnderwerp = bouw.subject;
+                wf = scalarWaarde(onderwerp, r.consequentie());
+            } finally {
+                ketenWaardePad = prev;
+                vouwslots = vorigeSlots;
+                vouwOnderwerp = vorigOnderwerp;
+            }
             if (wf == null)
-                throw new DefaultsOnvertaalbaar("niet-reduceerbare consequentie (far-side/aggregatie): " + defaultsReden(r));
+                throw new DefaultsOnvertaalbaar("consequentie niet vertaald, " + (vouwReden != null ? vouwReden
+                        : navReden != null ? navReden : "een waarde die deze tak niet leest") + ": "
+                        + snippet(r.consequentie().bron()));
             // §4 EXACT restate into the target unit. The TARGET side already reads the declaration
             // (onderwerp.attribuut); the SOURCE side is a consequence VALUE — an ordinary composite position, so it
             // takes the ch. 2.10 derivation like every other restatement site in this file.
@@ -8124,12 +8149,14 @@ public final class ExecModelTranspiler {
     /** What the justifications of ONE defaults group add to its reduce-rule, collected while they are compiled: the
      *  accumulate of each aggregation they read, the variables that bind its result for the consequence (index-aligned
      *  with the {@code gebonden} a {@link Rechtvaardiging} receives), and the globals they read. {@code weigering}
-     *  names the first form a justification does not lower, for the group's fence. */
+     *  names the first form a justification does not lower, for the group's fence. {@code vouwslots}: the folds the
+     *  consequences read, each an accumulate on the same rule ({@link #vouwslot}), with keys unique in the group. */
     private static final class RechtvaardigingBouw {
         final Variable subject;
         final List<RuleItemBuilder<?>> accItems = new ArrayList<>();
         final List<Variable> gebonden = new ArrayList<>();
         final Set<String> globals = new LinkedHashSet<>();
+        final List<Vouwslot> vouwslots = new ArrayList<>();
         String weigering;
         RechtvaardigingBouw(Variable subject) { this.subject = subject; }
     }
@@ -8400,9 +8427,8 @@ public final class ExecModelTranspiler {
         if (e instanceof Expr.Functie f) {
             if (f.kind() == Expr.FunctieKind.WORTEL) return "wortel";
             for (Expr a : f.argumenten()) { String r = foutplekSoort(a); if (r != null) return r; }
-            // leegwaarde is the §5.8.2 empty-set fallback; unreachable on a built defaults group today (an
-            // aggregation consequence already declines via scalarWaarde) — checked anyway so a site
-            // can never hide in the fallback if that fence ever moves.
+            // leegwaarde is the §5.8.2 empty-set fallback, which a fold in a consequence evaluates when its
+            // source is empty (vulVouwslots): a site there is fenced like any other.
             return foutplekSoort(f.leegwaarde());
         }
         if (e instanceof Expr.TekstReeks tr) {
