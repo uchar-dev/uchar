@@ -8,9 +8,12 @@ een Strandvoogd S3
 - de beheerde jutters zijn J4
 een Strandvoogd S4
 een Jutter J1
+- de startdag is 01-03-2026
 een Jutter J2
+- de startdag is 01-03-2026
 een Jutter J3
 een Jutter J4
+- de startdag is 01-01-2026
 een Vondst V1
 - de vinddag is 12-03-2026
 - het gewicht is 4
@@ -59,10 +62,10 @@ Met als verwacht resultaat:
 - de meldgrens van J2 is leeg
 - de meldgrens van J3 is leeg
 - de meldgrens van J4 is 30-01-2026
-- de zoekgrens van J1 is 25-03-2026
-- de zoekgrens van J2 is leeg
+- de zoekgrens van J1 is 21-03-2026
+- de zoekgrens van J2 is 01-03-2026
 - de zoekgrens van J3 is leeg
-- de zoekgrens van J4 is 05-01-2026
+- de zoekgrens van J4 is 06-01-2026
 - de vondstspanne van J1 is 15 dagen
 - de vondstspanne van J2 is leeg
 - de vondstspanne van J3 is leeg
@@ -85,6 +88,7 @@ Gegeven is de volgende situatie:
 een Strandvoogd S5
 - de beheerde jutters zijn J5 en J6
 een Jutter J5
+- de startdag is 01-01-2025
 een Jutter J6
 een Vondst V7
 - de vinddag is 30-06-2025
@@ -122,8 +126,8 @@ Met als verwacht resultaat:
 - de eerste zware vinddag van J6 is leeg
 - de meldgrens van J5 is 16-03-2025
 - de meldgrens van J6 is 09-02-2025
-- de zoekgrens van J5 is 26-03-2025
-- de zoekgrens van J6 is 10-01-2025
+- de zoekgrens van J5 is 10-02-2025
+- de zoekgrens van J6 is leeg
 - de vondstspanne van J5 is 260 dagen
 - de vondstspanne van J6 is 0 dagen
 - de weeggrens van J5 is 2

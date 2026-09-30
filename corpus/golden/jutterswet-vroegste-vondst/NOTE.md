@@ -11,7 +11,7 @@ its gewicht is above 5, by a rule declared after every fold that reads it.
 | laatste vinddag van een jutter | de laatste van de vinddag van alle vondsten van de Jutter | the latest date |
 | eerste zware vinddag | de eerste van de vinddag van alle vondsten van de Jutter die zwaar zijn | the same fold with a condition on the elements, derived later |
 | meldgrens | (de eerste van de vinddag …) plus 30 dagen | a date fold as operand, plus a duration |
-| zoekgrens | (de eerste van de vinddag …) plus de maximale waarde van de zoekduur van alle vondsten van de Jutter | a number fold (in dagen) as the duration added to a date fold |
+| zoekgrens | zijn startdag plus de maximale waarde van de zoekduur van alle vondsten van de Jutter | a number fold (in dagen) as the duration of an own date |
 | vondstspanne | de tijdsduur van de eerste van … tot de laatste van … in hele dagen | two date folds as the operands of a duration |
 | weeggrens | (de minimale waarde van het gewicht …) plus 1 | a number fold as operand, over an empty source too |
 | heffing | 10% van de som van het gewicht … | a percentage of a sum |
@@ -31,7 +31,8 @@ plus and percentage van coalesce an empty operand to 0.
 12-03-2026, gewicht 4, zoekduur 10 dagen), V2 (20-03-2026, 7, 3 dagen), V3
 (no vinddag, 6, 20 dagen) and V4 (05-03-2026, 2, no zoekduur), in that order;
 J2 has no vondst; J3 has V5, without vinddag and gewicht; J4 has V6
-(31-12-2025, 9, 5 dagen). S1 beheert J1 and J3, S2 J2, S3 J4, S4 no jutter.
+(31-12-2025, 9, 5 dagen). Startdag J1 and J2 01-03-2026, J4 01-01-2026, J3
+none. S1 beheert J1 and J3, S2 J2, S3 J4, S4 no jutter.
 
 - zwaar: V2 (7), V3 (6) and V6 (9); not V1, V4 and V5 (no gewicht).
 - eerste and laatste vinddag: J1 over {12-03, 20-03, 05-03} (V3 is skipped)
@@ -43,8 +44,10 @@ J2 has no vondst; J3 has V5, without vinddag and gewicht; J4 has V6
   **leeg** (V5 is not zwaar); J4 **31-12-2025**.
 - meldgrens: 05-03-2026 + 30 = **04-04-2026**; J2, J3 **leeg**; 31-12-2025 +
   30 = **30-01-2026**.
-- zoekgrens: J1 05-03-2026 + max{10, 3, 20} = **25-03-2026**; J2 and J3 an
-  empty date: **leeg**; J4 31-12-2025 + 5 = **05-01-2026**.
+- zoekgrens: J1 01-03-2026 + max{10, 3, 20} = **21-03-2026**; J2 01-03-2026
+  plus the maximum over no contributor, an empty duration that counts as 0 =
+  **01-03-2026**; J3 no startdag: **leeg**; J4 01-01-2026 + 5 =
+  **06-01-2026**.
 - vondstspanne: J1 05-03 to 20-03 = **15 dagen**; J2, J3 **leeg**; J4 **0
   dagen**.
 - weeggrens: J1 min{4, 7, 6, 2} + 1 = **3**; J2 leeg + 1 = **1**; J3 (V5 has
@@ -56,8 +59,8 @@ J2 has no vondst; J3 has V5, without vinddag and gewicht; J4 has V6
 
 `case2-volgorde-en-gelijkspel.json` (22 expectations). J5 has V7 (30-06-2025,
 8, 12 dagen), V8 (14-02-2025, 3), V9 (01-11-2025, 6, 40 dagen) and V10
-(14-02-2025, 1), in that order; J6 has V11 (10-01-2025, 2, no zoekduur). S5
-beheert J5 and J6.
+(14-02-2025, 1), in that order; J6 has V11 (10-01-2025, 2, no zoekduur).
+Startdag J5 01-01-2025, J6 none. S5 beheert J5 and J6.
 
 - zwaar: V7 and V9; not V8, V10 and V11.
 - eerste vinddag J5 **14-02-2025**, reached by V8 and V10 (a tie: the fold
@@ -67,9 +70,8 @@ beheert J5 and J6.
 - eerste zware vinddag: J5 over {30-06, 01-11} **30-06-2025**; J6 **leeg**.
 - meldgrens: 14-02-2025 + 30 = **16-03-2025**; 10-01-2025 + 30 =
   **09-02-2025**.
-- zoekgrens: J5 14-02-2025 + max{12, 40} = **26-03-2025**; J6 10-01-2025 plus
-  the maximum over no filled zoekduur, an empty duration that counts as 0 =
-  **10-01-2025**.
+- zoekgrens: J5 01-01-2025 + max{12, 40} = **10-02-2025**; J6 no startdag:
+  **leeg**.
 - vondstspanne: J5 14-02 to 01-11-2025 = **260 dagen**; J6 **0 dagen**.
 - weeggrens: J5 min{8, 3, 6, 1} + 1 = **2**; J6 2 + 1 = **3**.
 - heffing: J5 10% of 18 = **1,80**; J6 10% of 2 = **0,20**.
@@ -77,7 +79,7 @@ beheert J5 and J6.
   member of the second jutter.
 
 A no-op run fails both cases: it leaves every derived value leeg and every
-characteristic absent (case 1: 25 mismatches, case 2: 18).
+characteristic absent (case 1: 26 mismatches, case 2: 17).
 
 ## The square
 
@@ -92,22 +94,17 @@ drools-exec-datumvouw-over-rol (2026-09-30):
 
     EXCLUDE transpiler SKIP: regel: eerste vinddag van een jutter — regel (waarde buiten scope): eerste vinddag van een jutter
 
-and, on the same forms in separate documents, a date plus the maximum of a
-duration refused as `aggregatie-in-arithmetiek buiten scope`, the weeggrens
-answered leeg where the source is empty (`verwacht 1, werkelijk leeg`) and
-the heffing answered leeg for every Jutter. The branch now lowers a fold over a set source inside
+and, on the same forms in separate documents, the zoekgrens refused as
+`aggregatie-in-arithmetiek buiten scope`, the weeggrens answered leeg where
+the source is empty (`verwacht 1, werkelijk leeg`) and the heffing answered
+leeg for every Jutter. The branch now lowers a fold over a set source inside
 a rule's value to an accumulate beside the subject pattern, and the value
 reads its result as an operand.
 
 Not in this golden, with its reason: the earliest date-and-time over a role
 (the ASP backend does not fold a date-and-time over a set), a date fold in a
-condition (the exec-model branch refuses it by name), the minimum or maximum
-over a date set (the RegelSpraak frontend types that spelling out;
-`jutterswet-vondstbereik` carries it by hand), and a number fold added to an
-own date attribute (`zijn startdag plus de maximale waarde van …`): the
-Drools backend's `DrlEenheidsplekWitnessTest`, which twists the unit
-annotation of every derived position of every golden, recognises the date
-side of a date plus a duration by its own type annotation alone, which a
-reference does not carry, so it would twist that duration's unit and the
-loader would refuse the document. The first, second and fourth are rows of
-`DatumvouwOverRolWitnessTest`.
+condition (the exec-model branch refuses it by name), and the minimum or
+maximum over a date set (the RegelSpraak frontend types that spelling out;
+`jutterswet-vondstbereik` carries it by hand, and the exec-model branch plays
+it since the same day). The first two are rows of
+`DatumvouwOverRolWitnessTest` in the Drools backend.

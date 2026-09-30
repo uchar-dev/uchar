@@ -47,14 +47,22 @@
       {
         "label": "J1",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
         "roles": {},
         "characteristics": []
       },
       {
         "label": "J2",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
         "roles": {},
         "characteristics": []
       },
@@ -68,7 +76,11 @@
       {
         "label": "J4",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "startdag": {
+            "date": "2026-01-01"
+          }
+        },
         "roles": {},
         "characteristics": []
       },
@@ -325,13 +337,16 @@
       "label": "J1",
       "attribute": "zoekgrens",
       "value": {
-        "date": "2026-03-25"
+        "date": "2026-03-21"
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "J2",
-      "attribute": "zoekgrens"
+      "attribute": "zoekgrens",
+      "value": {
+        "date": "2026-03-01"
+      }
     },
     {
       "kind": "attributeEmpty",
@@ -343,7 +358,7 @@
       "label": "J4",
       "attribute": "zoekgrens",
       "value": {
-        "date": "2026-01-05"
+        "date": "2026-01-06"
       }
     },
     {

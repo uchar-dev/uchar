@@ -27,6 +27,14 @@
         "attributes": [
           {
             "node": "Attribute",
+            "name": "startdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "eerste vinddag",
             "datatype": {
               "node": "Date",
@@ -466,30 +474,11 @@
               "node": "Binary",
               "op": "plus",
               "left": {
-                "node": "Aggregation",
-                "kind": "first",
-                "arguments": [
-                  {
-                    "node": "AttributeReference",
-                    "attribute": "vinddag",
-                    "subjectType": "Vondst",
-                    "source": {
-                      "snippet": "de vinddag van alle vondsten van de Jutter"
-                    }
-                  }
-                ],
-                "elementType": "Vondst",
-                "sourceRole": {
-                  "node": "RoleBinding",
-                  "factType": "JutterHeeftVondst",
-                  "role": "vondst"
-                },
-                "type": {
-                  "node": "Date",
-                  "precision": "day"
-                },
+                "node": "AttributeReference",
+                "attribute": "startdag",
+                "subjectType": "Jutter",
                 "source": {
-                  "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                  "snippet": "zijn startdag"
                 }
               },
               "right": {
@@ -535,7 +524,7 @@
                 "precision": "day"
               },
               "source": {
-                "snippet": "(de eerste van de vinddag van alle vondsten van de Jutter) plus de maximale waarde van de zoekduur van alle vondsten van de Jutter"
+                "snippet": "zijn startdag plus de maximale waarde van de zoekduur van alle vondsten van de Jutter"
               }
             },
             "initialisation": false,

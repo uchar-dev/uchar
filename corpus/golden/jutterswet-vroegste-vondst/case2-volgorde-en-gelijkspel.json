@@ -18,7 +18,11 @@
       {
         "label": "J5",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "startdag": {
+            "date": "2025-01-01"
+          }
+        },
         "roles": {},
         "characteristics": []
       },
@@ -220,16 +224,13 @@
       "label": "J5",
       "attribute": "zoekgrens",
       "value": {
-        "date": "2025-03-26"
+        "date": "2025-02-10"
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "J6",
-      "attribute": "zoekgrens",
-      "value": {
-        "date": "2025-01-10"
-      }
+      "attribute": "zoekgrens"
     },
     {
       "kind": "attributeValue",

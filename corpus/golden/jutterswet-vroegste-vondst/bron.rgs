@@ -2,6 +2,7 @@ Objecttype de Strandvoogd (mv: Strandvoogden) (bezield)
 	de eerste vinddag Datum in dagen;
 
 Objecttype de Jutter (mv: Jutters) (bezield)
+	de startdag Datum in dagen;
 	de eerste vinddag Datum in dagen;
 	de laatste vinddag Datum in dagen;
 	de eerste zware vinddag Datum in dagen;
@@ -45,7 +46,7 @@ Regel meldgrens
 
 Regel zoekgrens
 	geldig altijd
-		De zoekgrens van een Jutter moet berekend worden als (de eerste van de vinddag van alle vondsten van de Jutter) plus de maximale waarde van de zoekduur van alle vondsten van de Jutter.
+		De zoekgrens van een Jutter moet berekend worden als zijn startdag plus de maximale waarde van de zoekduur van alle vondsten van de Jutter.
 
 Regel vondstspanne
 	geldig altijd
