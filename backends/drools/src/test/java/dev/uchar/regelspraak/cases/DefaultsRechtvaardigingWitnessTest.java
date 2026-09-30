@@ -31,11 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
  *
- * <p>Three rows came after the fix of 10a0918d (2026-09-30), and hold the band a group takes (groepVolgorde). The row
- * where the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in
- * the lumped sentence; on 10a0918d, where a group took only the salience of its direct producers, green through the
+ * <p>Three rows came after the first fix (2026-09-30), and hold the band a group takes (groepVolgorde). The row where
+ * the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in the
+ * lumped sentence; on the first fix, where a group took only the salience of its direct producers, green through the
  * far-side join that fix carried, and red with that join left out ({@code attribuut gemelde premie: verwacht 20,
- * werkelijk 10}). The same row with a characteristic target: red on 10a0918d, join and all ({@code kenmerk dringend:
+ * werkelijk 10}). The same row with a characteristic target: red on the first fix, join and all ({@code kenmerk dringend:
  * verwacht afwezig, werkelijk aanwezig}), since a join cannot withdraw an attributed characteristic. With the band both
  * are green and the join is gone. The row with a negation reader of a group's characteristic is a flank, green before
  * and after; with every group placed strictly below its producers it answers {@code kenmerk rustig: verwacht afwezig,
