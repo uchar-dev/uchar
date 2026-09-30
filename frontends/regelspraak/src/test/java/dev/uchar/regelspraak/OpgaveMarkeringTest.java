@@ -452,6 +452,156 @@ class OpgaveMarkeringTest {
         assertEquals("bonus", groep(m, "opgave boven berekening bonus").attribuut());
     }
 
+    // -------------------------------------------------------------------- writers on a subtype (ch. 7.10)
+
+    /** The card's reproduction: the date is declared on the supertype, where the source declares it and every subtype
+     *  has it; the rule that derives it stands on the subtype, the only type that knows its operand. The marked
+     *  declaration stands on line 3. */
+    private static final String STRANDVONDST = """
+        Objecttype de Vondst (mv: Vondsten)
+            de vinddatum Datum in dagen;
+            de meldingsdatum Datum in dagen (mag opgegeven worden);
+        Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+            de aanspoeldatum Datum in dagen;
+            is beschadigd kenmerk (bijvoeglijk);
+        """;
+
+    private static final String BARNSTEENVONDST = """
+        Objecttype de Barnsteenvondst is een Strandvondst (mv: Barnsteenvondsten)
+            de keurdatum Datum in dagen;
+        """;
+
+    private static final String VINDDAG = """
+
+        Regel melding op vinddag
+            geldig altijd
+                De meldingsdatum van een Vondst moet gesteld worden op zijn vinddatum
+                indien zijn vinddatum gevuld is.
+        """;
+
+    private static final String AANSPOELDAG = """
+
+        Regel melding op aanspoeldag
+            geldig altijd
+                De meldingsdatum van een Strandvondst moet gesteld worden op zijn aanspoeldatum
+                indien zijn aanspoeldatum gevuld is.
+        """;
+
+    private static Objecttype doeltype(ResolvedRegel r) {
+        return ((Expr.AttribuutRef) r.doel()).objecttype();
+    }
+
+    @Test void een_schrijver_op_een_subtype_schrijft_de_berekening_van_zijn_eigen_type() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + AANSPOELDAG);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        // the members stand on the declaring type; the subtype inherits them
+        assertEquals(List.of("vinddatum", "meldingsdatum", "opgegeven meldingsdatum", "berekende meldingsdatum"),
+                List.copyOf(m.objecttypen.get("Vondst").attributen.keySet()));
+        assertEquals(List.of("aanspoeldatum"), List.copyOf(m.objecttypen.get("Strandvondst").attributen.keySet()));
+        // the writer keeps its type: 'berekende meldingsdatum' of a Strandvondst is what its own rule computes
+        ResolvedRegel r = regel(m, "melding op aanspoeldag");
+        assertEquals("berekende meldingsdatum", doelVan(r));
+        assertEquals("Strandvondst", doeltype(r).naam);
+        // one group, on the declaring type: each subtype inherits it whole, so the opgave tops every type's stack
+        assertEquals(List.of("opgave boven berekening meldingsdatum"),
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+        PrioritizedDefaults g = groep(m, "opgave boven berekening meldingsdatum");
+        assertEquals("Vondst", g.onderwerp());
+        assertEquals("meldingsdatum", g.attribuut());
+        assertEquals(List.of("opgegeven meldingsdatum", "berekende meldingsdatum"),
+                g.defaults().stream().map(d -> gelezen(d.consequentie())).toList());
+        assertEquals("Vondst", doeltype(regel(m, "afwijking opgave meldingsdatum")).naam);
+        assertEquals("Vondst", m.consistenties.get(0).subject().naam);
+        assertEquals(List.of("melding op aanspoeldag", "afwijking opgave meldingsdatum"),
+                m.resolvedRegels.stream().map(ResolvedRegel::naam).toList());
+        String ir = IrEmitter.emit(m);
+        Verslag.verantwoord(ir);
+        assertTrue(compact(ir).contains(compact("""
+            "target": {"node": "AttributeReference", "attribute": "berekende meldingsdatum", "subjectType": "Strandvondst",
+                       "source": {"snippet": "De meldingsdatum van een Strandvondst"}}""")),
+                () -> "de regel van het subtype schrijft niet 'berekende meldingsdatum' met zijn eigen brontekst:\n" + ir);
+    }
+
+    @Test void schrijvers_op_het_supertype_en_het_subtype_verhuizen_elk_op_hun_eigen_type() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + VINDDAG + AANSPOELDAG);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        for (String[] w : new String[][] {{"melding op vinddag", "Vondst"}, {"melding op aanspoeldag", "Strandvondst"}}) {
+            ResolvedRegel r = regel(m, w[0]);
+            assertEquals("berekende meldingsdatum", doelVan(r), w[0]);
+            assertEquals(w[1], doeltype(r).naam, w[0]);
+        }
+        assertEquals(1, m.prioritizedDefaults.size(), "één defaults-groep");
+        assertEquals("Vondst", groep(m, "opgave boven berekening meldingsdatum").onderwerp());
+    }
+
+    @Test void een_afwijkingsboom_op_het_subtype_verhuist_heel_naar_de_berekening() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + VINDDAG + AANSPOELDAG + """
+
+            Afwijking van melding op aanspoeldag: melding bij schade
+                geldig altijd
+                    De meldingsdatum van een Strandvondst moet gesteld worden op zijn vinddatum
+                    indien hij beschadigd is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(List.of("melding op aanspoeldag", "opgave boven berekening meldingsdatum"),
+                m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList());
+        PrioritizedDefaults boom = groep(m, "melding op aanspoeldag");
+        assertEquals("Strandvondst", boom.onderwerp(), "de boom blijft op het subtype");
+        assertEquals("berekende meldingsdatum", boom.attribuut(), "de boom schrijft de berekening");
+        assertEquals(2, boom.defaults().size(), "naam en vorm blijven");
+        assertEquals("berekende meldingsdatum", doelVan(regel(m, "melding op vinddag")));
+        assertEquals("Vondst", groep(m, "opgave boven berekening meldingsdatum").onderwerp());
+    }
+
+    @Test void een_schrijver_op_een_kleinkind_verhuist_op_zijn_eigen_type() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + BARNSTEENVONDST + """
+
+            Regel melding op keurdag
+                geldig altijd
+                    De meldingsdatum van een Barnsteenvondst moet gesteld worden op zijn keurdatum
+                    indien zijn keurdatum gevuld is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ResolvedRegel r = regel(m, "melding op keurdag");
+        assertEquals("berekende meldingsdatum", doelVan(r));
+        assertEquals("Barnsteenvondst", doeltype(r).naam);
+        assertEquals("Vondst", groep(m, "opgave boven berekening meldingsdatum").onderwerp());
+    }
+
+    @Test void de_initialisatie_van_het_declarerende_type_is_de_laagste_default_ook_voor_het_subtype() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + AANSPOELDAG + """
+
+            Regel melding bij onbekende dag
+                geldig altijd
+                    De meldingsdatum van een Vondst moet geïnitialiseerd worden op 01-03-2026.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        PrioritizedDefaults g = groep(m, "opgave boven berekening meldingsdatum");
+        assertEquals(3, g.defaults().size());
+        assertTrue(g.defaults().get(2).initialisatie(), "de initialisatie is de laagste default");
+        assertEquals(List.of("melding op aanspoeldag", "afwijking opgave meldingsdatum"),
+                m.resolvedRegels.stream().map(ResolvedRegel::naam).toList(), "de initialisatie verlaat de regellijst");
+    }
+
+    @Test void een_initialisatie_op_een_subtype_blijft_met_haar_voorwaarde_op_het_doel() {
+        // ch. 7.10 folds it into the stack of the subtype with its condition, below the inherited group
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + AANSPOELDAG + """
+
+            Regel melding bij schade zonder aanspoeldag
+                geldig altijd
+                    De meldingsdatum van een Strandvondst moet geïnitialiseerd worden op 01-03-2026
+                    indien hij beschadigd is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ResolvedRegel init = regel(m, "melding bij schade zonder aanspoeldag");
+        assertEquals(ResolvedRegel.Soort.INITIALISATIE, init.soort());
+        assertEquals("meldingsdatum", doelVan(init));
+        assertEquals("Strandvondst", doeltype(init).naam);
+        assertNotNull(init.voorwaarde(), "de voorwaarde blijft");
+        assertEquals(2, groep(m, "opgave boven berekening meldingsdatum").defaults().size(),
+                "de groep op Vondst draagt geen initialisatie");
+    }
+
     // -------------------------------------------------------------------- inertness: the token and its words
 
     @Test void zonder_markering_verandert_er_niets() {
@@ -614,23 +764,80 @@ class OpgaveMarkeringTest {
         assertEquals(2, d.line());
     }
 
-    @Test void een_schrijver_op_een_subtype_weigert() {
-        RegelSpraakModel m = Resolver.resolve(VONDST + """
+    @Test void een_initialisatie_op_het_declarerende_type_en_een_op_een_subtype_weigeren() {
+        // measured with the marker lowered: the stack of a Strandvondst carries both, and ref, clingo and the Drools
+        // exec branch give it the group's initialisation without a diagnostic; unmarked, the verifier refuses the pair
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + AANSPOELDAG + """
 
-            Objecttype de Wrakvondst is een Vondst (mv: Wrakvondsten)
-                de wrakkorting Numeriek (getal met 2 decimalen);
-            """ + WAARDERING + """
-
-            Regel wrakwaardering
+            Regel melding bij onbekende dag
                 geldig altijd
-                    De waarde van een Wrakvondst moet berekend worden als de taxatie van de Wrakvondst verminderd met de wrakkorting van de Wrakvondst.
+                    De meldingsdatum van een Vondst moet geïnitialiseerd worden op 01-03-2026.
+
+            Regel melding bij onbekende aanspoeldag
+                geldig altijd
+                    De meldingsdatum van een Strandvondst moet geïnitialiseerd worden op 15-03-2026.
             """);
         Diagnostic d = enigeFout(m);
-        assertEquals("attribuut 'waarde' van Vondst: '(mag opgegeven worden)', maar regel 'wrakwaardering' schrijft "
-                + "'waarde' voor Wrakvondst, een subtype van Vondst — de gegenereerde defaults-groep op Vondst zou met "
-                + "de schrijvers van Wrakvondst samengaan tot één stapel per type (RUNTIME-SEMANTICS ch. 7.10), en die "
-                + "samenstelling bouwt de markering niet (dialect §7)", d.message());
+        assertEquals("attribuut 'meldingsdatum' van Vondst: '(mag opgegeven worden)', en 'meldingsdatum' heeft twee "
+                + "initialisaties in één erflijn ('melding bij onbekende dag' voor Vondst en 'melding bij onbekende "
+                + "aanspoeldag' voor Strandvondst) — de effectieve stapel van Strandvondst zou twee "
+                + "initialisatiedefaults dragen, en RUNTIME-SEMANTICS ch. 7.10 kent er één; zonder de markering "
+                + "weigert WF-079 dit paar (dialect §7)", d.message());
         assertEquals(3, d.line());
+        assertTrue(m.prioritizedDefaults.isEmpty(), "de markering genereert niets");
+    }
+
+    @Test void initialisaties_op_een_subtype_en_een_kleinkind_weigeren() {
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + BARNSTEENVONDST + AANSPOELDAG + """
+
+            Regel melding bij onbekende aanspoeldag
+                geldig altijd
+                    De meldingsdatum van een Strandvondst moet geïnitialiseerd worden op 01-03-2026.
+
+            Regel melding bij onbekende keurdag
+                geldig altijd
+                    De meldingsdatum van een Barnsteenvondst moet geïnitialiseerd worden op 15-03-2026.
+            """);
+        Diagnostic d = enigeFout(m);
+        assertEquals("attribuut 'meldingsdatum' van Vondst: '(mag opgegeven worden)', en 'meldingsdatum' heeft twee "
+                + "initialisaties in één erflijn ('melding bij onbekende aanspoeldag' voor Strandvondst en 'melding bij "
+                + "onbekende keurdag' voor Barnsteenvondst) — de effectieve stapel van Barnsteenvondst zou twee "
+                + "initialisatiedefaults dragen, en RUNTIME-SEMANTICS ch. 7.10 kent er één; zonder de markering "
+                + "weigert WF-079 dit paar (dialect §7)", d.message());
+        assertEquals(3, d.line());
+    }
+
+    @Test void een_initialisatie_op_een_subtype_met_een_venster_weigert() {
+        // measured with the marker lowered: ref, clingo and the Drools exec branch each refuse a windowed rule beside
+        // an inherited defaults stack, where the unmarked document plays
+        RegelSpraakModel m = Resolver.resolve(STRANDVONDST + AANSPOELDAG + """
+
+            Regel melding bij onbekende aanspoeldag
+                geldig vanaf 01-01-2026
+                    De meldingsdatum van een Strandvondst moet geïnitialiseerd worden op 01-03-2026.
+            """);
+        Diagnostic d = enigeFout(m);
+        assertEquals("attribuut 'meldingsdatum' van Vondst: '(mag opgegeven worden)', en de initialisatie 'melding bij "
+                + "onbekende aanspoeldag' van 'meldingsdatum' voor Strandvondst heeft een ander geldigheidsvenster dan "
+                + "altijd — naast de gegenereerde defaults-groep op Vondst wordt zij een default in de effectieve "
+                + "stapel van Strandvondst (RUNTIME-SEMANTICS ch. 7.10), en die neemt geen regel met een venster op "
+                + "(dialect §7)", d.message());
+        assertEquals(3, d.line());
+    }
+
+    @Test void een_schrijver_op_een_supertype_krijgt_alleen_de_doelweigering() {
+        // a supertype does not have the marked attribute (WF-105 keeps a name to one type of the line), so its rule's
+        // target is refused where the rule is read, and the marker adds no sentence of its own
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Vondst (mv: Vondsten)
+                de vinddatum Datum in dagen;
+            Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+                de aanspoeldatum Datum in dagen;
+                de meldingsdatum Datum in dagen (mag opgegeven worden);
+            """ + VINDDAG + AANSPOELDAG);
+        Diagnostic d = enigeFout(m);
+        assertEquals("regeldoel 'De meldingsdatum van een Vondst': 'meldingsdatum' is geen gedeclareerd attribuut van "
+                + "Vondst (WF-022, IR-SPEC ch. 3.1)", d.message());
     }
 
     @Test void een_gegenereerde_ledennaam_die_al_gedeclareerd_is_weigert() {
