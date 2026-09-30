@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * number plus 1 answered leeg over an empty source where ref and clingo answer 1 ({@code verwacht 1, werkelijk
  * leeg}), and a percentage of a sum answered leeg for every subject ({@code verwacht 1.90, werkelijk leeg}); a date
  * fold in a condition refused {@code voorwaarde buiten Phase-B scope}, which names no form, and so did a fold bound by
- * a Let, with or without a division beside it ({@code waarde buiten scope}). One row is a flank, green before and
+ * a Let, with or without a division beside it ({@code waarde buiten scope}). The minimum and the maximum over a date,
+ * which only a hand-written document spells, refused by the member-type sentence of {@code kern.Vouwwaarde}. One row is a flank, green before and
  * after: the number folds the branch already played.
  */
 class DatumvouwOverRolWitnessTest {
@@ -187,14 +188,35 @@ class DatumvouwOverRolWitnessTest {
 
     @Test void een_datumvouw_in_een_voorwaarde_weigert_met_de_vorm() throws Exception {
         // "Een Jutter is vroeg indien de eerste van de vinddag van alle vondsten van de Jutter eerder is dan
-        // 01-03-2026": ref and clingo answer J4 vroeg. This branch folds a date only in a rule's value, and the refusal
-        // must name that form.
-        String ir = document(kenmerkRegel("vroeg", "Jutter",
-                vergelijking("earlier", vouw("first", "vinddag", null), datumLiteraal("2026-03-01"))));
-        Path p = tijdelijk(ir);
-        JsonNode c = JSON.readTree(zaak(situatie(true, false, null), List.of()));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false));
-        assertTrue(e.getMessage().contains("een datumvouw (EERSTE/LAATSTE) over een rol"), e.getMessage());
+        // 01-03-2026", and the same with the minimum of the vinddag, which only a hand-written document can spell: ref
+        // and clingo answer J4 vroeg. This branch folds a date only in a rule's value, and the refusal must name that
+        // form.
+        for (String kind : new String[] { "first", "minimum" }) {
+            String ir = document(kenmerkRegel("vroeg", "Jutter",
+                    vergelijking("earlier", vouw(kind, "vinddag", null), datumLiteraal("2026-03-01"))));
+            Path p = tijdelijk(ir);
+            JsonNode c = JSON.readTree(zaak(situatie(true, false, null), List.of()));
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false), kind);
+            assertTrue(e.getMessage().contains("een ordenende vouw over een datumbron"), kind + ": " + e.getMessage());
+        }
+    }
+
+    @Test void het_minimum_en_het_maximum_over_datums() throws Exception {
+        // "de minimale waarde van de vinddag van alle vondsten van de Jutter" and "de maximale waarde van …", which
+        // the RegelSpraak frontend types out and a hand-written document carries (WF-038 admits a date under an
+        // ordering fold): the same folds as eerste and laatste (RUNTIME-SEMANTICS ch. 1.2e), bare and as the operand of
+        // a date plus a duration. ref and clingo: the values of the eerste/laatste rows.
+        String kaal = document(regel("eerste vinddag", "Jutter", "eerste vinddag", vouw("minimum", "vinddag", null)),
+                regel("laatste vinddag", "Jutter", "laatste vinddag", vouw("maximum", "vinddag", null)));
+        assertNull(speel(kaal, zaak(situatie(true, false, null),
+                        perJutter("eerste vinddag", datum("2026-03-05"), null, null, datum("2025-12-31")),
+                        perJutter("laatste vinddag", datum("2026-03-20"), null, null, datum("2025-12-31")))),
+                "minimum en maximum als hele waarde");
+        String plus = document(regel("meldgrens", "Jutter", "meldgrens",
+                binair("plus", vouw("minimum", "vinddag", null), duur("30"), DATUM)));
+        assertNull(speel(plus, zaak(situatie(true, false, null),
+                        perJutter("meldgrens", datum("2026-04-04"), null, null, datum("2026-01-30")))),
+                "het minimum plus 30 dagen");
     }
 
     @Test void een_vouw_onder_daarbij_geldt() throws Exception {

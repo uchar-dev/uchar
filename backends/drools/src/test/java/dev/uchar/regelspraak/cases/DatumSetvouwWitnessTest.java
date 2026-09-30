@@ -11,11 +11,15 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The VALUE fold over a set source whose members are NOT numbers — a crash in both branches until
- * 2026-09-20, and a named refusal since (card datum-setbron-breuk).
+ * 2026-09-20, and a named refusal since (card datum-setbron-breuk). The ORDERING fold over a date
+ * plays in the exec-model branch since 2026-09-30 (card drools-exec-datumvouw-over-rol); the DRL-text
+ * branch still refuses it by name.
  *
  * <p>RED FIRST, measured on the jar built from the commit before this card, on the documents below:
  * <pre>
@@ -43,9 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * because it is the whole finding of the card. An ADDITIVE fold over a date has no reading anywhere:
  * {@code ref} faults on the addition itself and the ASP backend declines in translation. An ORDERING
  * fold over a date is well defined and BOTH OCaml executors carry it
- * ({@code corpus/golden/jutterswet-vondstbereik}, hand-computed absolutes) — this backend is the one
- * that does not. A reader of a gate report has to be able to tell "nobody carries this" from "we do
- * not carry this".
+ * ({@code corpus/golden/jutterswet-vondstbereik}, hand-computed absolutes); the exec-model branch
+ * folds it in a rule's value since 2026-09-30, as it folds eerste/laatste, so the DRL-text branch is
+ * the one that does not, and its refusal says so. A reader of a gate report has to be able to tell
+ * "nobody carries this" from "this branch does not carry this".
  *
  * <p>The last row is the narrowness guard: a NUMERIC set source under the very same kinds still
  * plays in both branches, so the arm refuses a member type and not a fold.
@@ -57,7 +62,8 @@ class DatumSetvouwWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    /** The MINIMUM/MAXIMUM-over-a-date-set golden: ref = clingo pin it, this backend refuses it. */
+    /** The MINIMUM/MAXIMUM-over-a-date-set golden: ref, clingo and the exec-model branch play it, the DRL-text
+     *  branch refuses it. */
     private static final String BEREIK = "jutterswet-vondstbereik";
 
     /** Its numeric sibling — MINIMUM/MAXIMUM over a `kg` member — which both branches PLAY. */
@@ -79,14 +85,21 @@ class DatumSetvouwWitnessTest {
               "value": { "text": "aa" } } ] }
         """;
 
-    @Test void de_ordenende_vouw_over_een_datumbron_weigert_bij_naam() throws Exception {
-        // The golden as it stands. Both branches must name the fold, the member type AND the fact
-        // that the reading exists — this is a gap in this backend, not a semantic difference.
-        BeideTakken.geweigerd(ir(BEREIK), zaak(BEREIK, "case1-bereik.json"),
-                "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type "
-                        + "Datum in dagen en niet getalachtig, terwijl beide takken elke waardevouw in "
-                        + "BigDecimal accumuleren. De ordenende lezing KIEST één bijgedragen waarde",
-                "an ordering fold over a date set source refuses by name in both branches");
+    @Test void de_ordenende_vouw_over_een_datumbron_speelt_in_de_exectak() throws Exception {
+        // The golden as it stands, both cases, with the values ref and clingo answer: the exec-model branch folds
+        // the dates by their order, through the accumulate it folds eerste/laatste with.
+        for (String c : new String[] { "case1-bereik.json", "case2-volgorde.json" })
+            assertNull(CaseRunner.speelCase(ir(BEREIK), zaak(BEREIK, c), false), "exec-model — " + c);
+    }
+
+    @Test void de_drl_tak_weigert_de_ordenende_datumvouw_bij_naam() throws Exception {
+        // The DRL-text branch still accumulates every value fold in BigDecimal. It must name the fold, the member
+        // type, the fact that the reading exists AND that it is this branch that does not carry it.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir(BEREIK), zaak(BEREIK, "case1-bereik.json"), true));
+        assertTrue(e.getMessage().contains("vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van"
+                + " type Datum in dagen en niet getalachtig, terwijl de DRL-teksttak elke waardevouw in BigDecimal"
+                + " accumuleert. De ordenende lezing KIEST één bijgedragen waarde"), e.getMessage());
     }
 
     @Test void de_optellende_vouw_over_een_datumbron_weigert_om_een_andere_reden() throws Exception {
