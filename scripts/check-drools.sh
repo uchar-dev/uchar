@@ -1114,7 +1114,17 @@ EXPECTED_CHANNEL=(
 # opaque always-true expr and plays the three cases, PLAYED 3, with ref's and clingo's values. Measured before and
 # after over ALL goldens in both branches: no report line moves. The DRL-text branch plays the new golden, PLAYED 3,
 # so EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=225
+# 225 -> 226 (2026-09-30, card opgave-markering-schrijver-op-subtype): jutterswet-opgave-subtype, new, from
+# bron.rgs and scenario.rgs and hand-computed — the RegelSpraak frontend's opgave marker (grammar/DIVERGENCES.md
+# §7) on a date of the Vondst whose computing writers stand on its subtypes, which the frontend refused until that
+# day: an exception tree on the Strandvondst and an own base on the Barnsteenvondst, a subtype of the
+# Strandvondst, write the generated 'berekende meldingsdatum' each on its own type, and the one generated group
+# on the Vondst, with the authored initialisation as its lowest default, tops the stack of every type that
+# inherits it; rules on the subtype read the generated characteristic and 'berekende meldingsdatum'. No source
+# file of this backend changed: the exec branch plays its twelve cases on the first run, PLAYED 12, with ref's
+# and clingo's values. The DRL-text branch refuses it on its defaults sentence (class (A) of DRL_CHANNEL), so
+# EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=226
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1127,20 +1137,20 @@ EXPECTED_PLAYED=225
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-six of the ninety-one
+# Why the reasons are grouped rather than written one by one: eighty-seven of the ninety-two
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 36 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 34 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 37 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 35 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 35 of the 36 lines refuse on that one
-  # sentence; the 36th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. All 35 ARE that asymmetry — the exec branch plays them.
+  # toolchain does not have, and DrlTranspiler never did. 36 of the 37 lines refuse on that one
+  # sentence; the 37th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. All 36 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 34 is 38 exec-only players — those 35, jutterswet-vouwrand of class (C), and
+  # The 35 is 39 exec-only players — those 36, jutterswet-vouwrand of class (C), and
   # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
@@ -1183,7 +1193,10 @@ DRL_CHANNEL=(
   # is 34 (224 - 190, jutterswet-zinkende-jutter of the same day playing in both); the six class heads (A 36, B 37,
   # C 10, D 2, E 3, F 3 = 91 lines) were counted against the list. Recounted again the same day (the operand under a
   # quantifier condition): jutterswet-sluitdag plays in both branches and moves neither the gap nor a class head, so
-  # the gap is 34 (225 - 191) and the heads hold at 91 lines.
+  # the gap is 34 (225 - 191) and the heads hold at 91 lines. Recounted again the same day (card
+  # opgave-markering-schrijver-op-subtype): jutterswet-opgave-subtype joins the class, 36 -> 37 lines, and plays in
+  # the exec branch only, so the gap is 35 (226 - 191); the six class heads (A 37, B 37, C 10, D 2, E 3, F 3 = 92
+  # lines) were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1201,6 +1214,7 @@ DRL_CHANNEL=(
   "jutterswet-nestkenmerk-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-opgave-boven-berekening|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-opgave-datum|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-opgave-subtype|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-opgave-vormen|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-overzeelezing-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-penningrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
