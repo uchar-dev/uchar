@@ -1451,8 +1451,8 @@ two passes of `RuleChecker`:
 | Piece | Lowered to |
 |---|---|
 | 1 | attribute `opgegeven X` on T, X's datatype, right after X; no writer — the case supplies it |
-| 2 | attribute `berekende X` on T, right after `opgegeven X`; every computing writer of X — a gelijkstelling or berekening, a row of a decision table, a defaults group of an `Uitzondering op` or `Afwijking van` tree, the sibling groups of an `Uitzonderingen ongeordend` block — keeps its name, shape, condition, window and statute annotation and targets `berekende X`; an unordered set moves as a set, every member still unordered |
-| 3 | one `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`, as the anchors spell it; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and, where the author wrote an initialisation of X, that initialisation as the lowest default (`initialisation: true`, its value as consequence, its statute annotation as source); the initialisation rule leaves the rule list |
+| 2 | attribute `berekende X` on T, right after `opgegeven X`; every computing writer of X on T or on a subtype of T, at any depth — a gelijkstelling or berekening, a row of a decision table, a defaults group of an `Uitzondering op` or `Afwijking van` tree, the sibling groups of an `Uitzonderingen ongeordend` block — keeps its type, name, shape, condition, window and statute annotation and targets `berekende X`; an unordered set moves as a set, every member still unordered |
+| 3 | one `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`, as the anchors spell it; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and, where the author wrote an initialisation of X on T, that initialisation as the lowest default (`initialisation: true`, its value as consequence, its statute annotation as source); the initialisation rule leaves the rule list |
 | 4 | the possessive characteristic `afwijkende opgave X` at the end of T's characteristics, attributed by the rule `afwijking opgave X` under one `all` of: `opgegeven X` filled, `berekende X` filled, `opgegeven X` notEqual `berekende X` |
 | 5 | the consistency `controle opgave X`, whose assertion is the characteristic check of `afwijkende opgave X`, negated |
 
@@ -1491,6 +1491,57 @@ The contradiction. An opgave that differs from a filled computation attributes
 subject (ch. 5.6); an opgave equal to the computation, or an opgave without a
 computable value, deposits nothing.
 
+Writers on a subtype. A writer of X on a subtype of T, at any depth, moves as
+a writer on T does and keeps its type: it writes `berekende X` for the
+instances of that subtype. The writers of `berekende X` therefore compose per
+concrete type by RUNTIME-SEMANTICS ch. 7.10 as the writers of X compose in the
+document without the marker: a subtype's own base replaces the inherited base,
+an inherited exception still outranks it, a type without a writer of its own is
+written by its supertypes' writers, and plain writers on two levels without a
+defaults group in the chain keep the flat reading they have without the
+marker. No subtype writes X after the lowering, so each inherits the generated
+group on T whole: for every concrete type the opgave is the highest default of
+X's stack, the computation default below it reads the `berekende X` of that
+type's own composition, and the initialisation and the virtual input default
+stay below it (ch. 7.10, blocks 2 to 4). The generated members, rule, group and
+consistency stay on T. A supertype of T has no X, since WF-105 keeps a member
+name to one type of the line, so a rule that writes X on a supertype is refused
+at its own target (WF-022) and the marker adds no sentence of its own.
+
+Measured 2026-09-30 in ref, clingo and the Drools exec branch: a
+gelijkstelling, a berekening, an `Uitzondering op` tree, an `Afwijking van`
+tree, a decision table and an `Uitzonderingen ongeordend` block on the
+subtype; a writer on each of two sibling subtypes; a writer on a grandchild
+alone, and an own base on a grandchild under the subtype's tree; a plain
+writer on T beside an `Afwijking van` tree on the subtype; an initialisation
+on T below a subtype's writer; a subtype rule that reads `afwijkende opgave X`
+and one that reads `berekende X`; a number as well as a date; the opgave
+filled, empty and equal to the computation. Each plays in the three executors
+with the hand-computed values, and the DRL-text branch refuses each on its
+defaults sentence. Where the composition is the point — the tree beside a
+writer on T, the grandchild under the tree, the unordered block — the document
+without the marker, measured beside it, gives X the same values where no
+opgave is given. Two plain
+conditional writers on T and on a subtype play where one of them applies to an
+instance; where both apply to one instance, ref and the Drools exec branch
+report no fixpoint and clingo gives the target two values, with and without the
+marker: two computing rules on one target are agenda order (ch. 7.7), and the
+marker does not choose between them. Two unconditional writers on T and on a
+subtype are refused by the verifier under WF-079, on `berekende X` with the
+marker and on X without it. An `Afwijking van` on T's rule written for the
+subtype is refused by the target refusal of §4, with and without the marker.
+
+An initialisation on a subtype stays on X. The generated group opens the fold
+of ch. 7.10 on X's chain, and the fold makes the subtype's initialisation the
+initialisation default of that type's stack, below the inherited group, with
+its condition: it never enters the generated group, so, unlike an
+initialisation on T, it may carry one. Measured the same day in the three
+executors, with and without the marker: an initialisation on the subtype with
+the condition "indien hij beschadigd is" gives its date to a beschadigde
+instance for which nothing above it decides and whose X the case leaves empty,
+and leaves an instance that is not beschadigd empty; initialisations on two
+sibling subtypes each give the instances of their own type their own date.
+
 ### Fail-fast refusals (resolver, loud diagnostics)
 
 Each is one ERROR at the line of the marked declaration, naming the first
@@ -1518,8 +1569,26 @@ reason that holds, and the marker then generates nothing (witness:
   on a dimensioned attribute does not play in every executor);
 - an allocation, or an object creation's initialisation, that writes X: the
   marker moves neither, and beside the group each is a second writer (WF-050);
-- a writer of X on another type of T's inheritance line: the ch. 7.10
-  composition of the generated group with that type's writers is not built;
+- two initialisations of X in one inheritance line where at least one stands
+  on a subtype — T's and a subtype's, two on one subtype, or one on a subtype
+  and one on a type below it ("… heeft twee initialisaties in één erflijn
+  ('melding bij onbekende dag' voor Vondst en 'melding bij onbekende
+  aanspoeldag' voor Strandvondst) — de effectieve stapel van Strandvondst zou
+  twee initialisatiedefaults dragen, …"): the stack of the lower type would
+  carry two initialisation defaults, and ch. 7.10 composes one. Measured
+  2026-09-30 with the refusal left out, for T's and a subtype's and for a
+  subtype's and a grandchild's: ref, clingo and the Drools exec branch gave the
+  higher one without a diagnostic. Without the marker the verifier refuses
+  both pairs under WF-079, whose initialisation arm reads a target without
+  defaults only, and the generated group makes X a target with defaults;
+- an initialisation of X on a subtype with a window other than always or with
+  more than one version ("… heeft een ander geldigheidsvenster dan altijd —
+  naast de gegenereerde defaults-groep op Vondst wordt zij een default in de
+  effectieve stapel van Strandvondst …"): the fold of ch. 7.10 takes no
+  windowed rule. Measured the same day with the refusal left out: ref and
+  clingo fault and the Drools exec branch refuses the document, each naming the
+  windowed rule beside an inherited defaults stack, where the document without
+  the marker plays in all three;
 - a generated member name that T's inheritance line already declares, and a
   writer of a generated member — `opgegeven X` is the case's, `berekende X`
   the moved writers', `afwijkende opgave X` the generated rule's — each with
@@ -1563,8 +1632,10 @@ which is the measurement above stated as a property.
   golden per family that plays in the three executors.
 - No marker on a characteristic: the three-valued opgave of the proposal's §5.8
   is a card of its own.
-- No retargeting of allocations and object creations, and no composition with
-  writers elsewhere in the inheritance line.
+- No retargeting of allocations and object creations. Writers of X on the
+  subtypes of T are lowered (above); on a subtype, two initialisations in one
+  inheritance line and an initialisation with a window or with versions stay
+  refused.
 - The generated names are fixed by the attribute's name; they carry no type
   name, so the form names of two marked attributes of one name collide.
 - A computation of X that reads X, directly or through another attribute, is a
@@ -1604,7 +1675,17 @@ which is the measurement above stated as a property.
   2026-09-25 on `x` of a Klok computed from its `y` and `y` of a Ding, its
   supertype, computed from its `x`, the verifier gives `WF-045 … zet x -> zet y
   -> zet x` and the frontend says nothing. A cycle only these close is refused
-  by the verifier and not warned by the frontend.
+  by the verifier and not warned by the frontend. A writer on a subtype makes
+  one of them: a computation on the subtype that reads `afwijkende opgave X`
+  closes a cycle through the generated rule, which stands on T. Measured
+  2026-09-30 on a rule on the Strandvondst writing `meldingsdatum` "indien hij
+  afwijkende opgave meldingsdatum heeft": the verifier refuses it under WF-045
+  and WF-046 and the frontend gives no WARNING, where the same rule on the
+  Vondst gets `kringverwijzing tussen berekeningen: Vondst.berekende
+  meldingsdatum -> Vondst.afwijkende opgave meldingsdatum -> …`. A computation
+  on the subtype that reads the `berekende X` it writes stays on one type and
+  is warned (`Strandvondst.berekende meldingsdatum -> Strandvondst.berekende
+  meldingsdatum`).
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.
@@ -1631,6 +1712,16 @@ computation decides nothing and the initialisation below it decides. Measured
 the same day on the computation alone, without the marker, on a Vondst without
 the other date: the target stays empty in ref (`oracle: PASS`), clingo
 (`clingo: PASS`) and the Drools exec branch (`PLAYED 1`).
+`jutterswet-opgave-subtype` puts the marker on a date of the Vondst whose
+writers stand on its subtypes: an `Uitzondering op` tree on the Strandvondst,
+an own base on the Barnsteenvondst below it, the initialisation on the Vondst,
+and rules on the Strandvondst that read the generated characteristic and
+`berekende X`; twelve cases, written as a scenario document. Measured on
+2026-09-30: ref and clingo replay the twelve cases exactly, the Drools exec
+branch plays them (`PLAYED 12`), and the DRL-text branch refuses the document
+on its defaults sentence. The same document without the marker, the two rules
+that read generated members left out, gives the same values of X in the eight
+cases without an opgave, in the three executors.
 
 ---
 
