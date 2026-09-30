@@ -432,3 +432,24 @@ en wat na de kaart nog niet speelt (open punten 1 tot 3).
     0089cf79 backends/drools/README: een voorwaarde zonder toets op het onderwerp
 
 en de commit die dit Result in de kaart zet en haar naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-09-30)
+
+Eigen run van de zestien gates op `22634b24` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates8/`. Alle zestien exit 0: gate 3 321 goldens; gate 5 en 6
+758 cases (ref = clingo); gate 7 714 cases, 44 pinned; gate 10 JUnit 999, 109
+rgs-goldens; gate 12 `check-drools: PASS`, played 225 (pin 225), DRL 191 (pin
+191), JUnit 906; gate 16 16 scenario-goldens, 57 casebestanden. De fix
+gelezen: één plek in `ExecModelTranspiler` (een onderwerppatroon zonder toets
+krijgt de altijd-ware expr `fresh`, `zonderToets` faalt luid op een ander
+patroontype); geen wijziging aan ref, clingo of spec. De drie afwijkingen van
+de kaart aanvaard (de fix dekt ook de aggregatievergelijking en de rolcheck;
+ook een eigen operand van de voorwaarde; de DRL-pin +1). De voorgestelde
+registertekst is in dit landingscommit gezet in `spec/IR-SPEC.md` ch. 5.5
+(de eerste bullet van de recorded flank noemt nu de matrix van een
+kwantorvouw). Open punten 1–8 gelezen: geen kaart; 6 (clingo, maximum van
+twee scalaire operanden) en 7 (frontend, `plus` achter een vouw) zijn luide
+weigeringen; 8 volgt nu (distributie- en werkbankpin). Landing: ff van
+`card/drools-exec-kwantorvoorwaarde-eigen-operand` op main.
+

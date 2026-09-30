@@ -8736,8 +8736,12 @@ is non-conforming.
 open).* That guard does not reach the leeg/gevuld test, and the divergence
 has two forms.
 
-- On the subject's OWN operand, and in a fold filter or a quantifier filter
-  inside a condition, it depends on the document order. With the reader
+- On the subject's OWN operand, in a fold filter or a quantifier filter
+  inside a condition, and in the matrix of a quantifier fold (measured
+  2026-09-30, card `drools-exec-kwantorvoorwaarde-eigen-operand`: with "de
+  bergdag van geen van de vondsten van de Berging gevuld is" declared before
+  the rule that derives the bergdag, both Drools branches write 1 where
+  `ref/` and `backends/clingo` answer leeg), it depends on the document order. With the reader
   before the rule that derives the tested attribute, both Drools branches
   act on the transient leeg: an attribute reader writes 1 and a
   characteristic reader attributes its characteristic, where `ref/` and
