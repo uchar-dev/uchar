@@ -123,16 +123,31 @@ The exec-model branch tests a condition that reads through a to-one navigation �
 of the reached object — after a far-side join on that object (`ExecModelTranspiler.regelVoorwaarde`), so a value
 another rule derives there later is seen; the companions that mirror a rule's condition, the object creations and
 the fact creations take the same test (golden `jutterswet-meldingsketen`, witness `GenavigeerdeVoorwaardeWitnessTest`).
-Three limits remain, measured 2026-09-28 with `ref` and clingo as the arbiters. The DRL-text branch still writes such
+Two limits remain, measured 2026-09-28 with `ref` and clingo as the arbiters. The DRL-text branch still writes such
 a test into the subject's pattern, so there the rule never fires on a value derived later on the reached object, or
 fires on the value the object held at insertion (`anchor/jutterswet-kustwacht`, pinned in gate 12's DRL list). A test
 that holds on an empty value, such as a leeg test on a derived attribute, fires on the transient leeg when its rule
-is declared before the rule that writes the value, and the write stays; this holds for an own and a navigated operand
-alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic check is stratified and is not
-affected. The same test inside a fold, in the subselection of a fold or the matrix of a quantifier, no longer fires on
-the transient in the exec-model branch since 2026-09-30: such a rule is placed below the writers of what the test
-reads (the section on a fold whose subselection tests a value derived later); a test outside a fold keeps this limit.
-A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
+is declared before the rule that writes the value, and the write stays; this holds for an own operand, one read over a
+role and one over a chain of roles alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic
+check is stratified and is not affected. The same test inside a fold, in the subselection of a fold or the matrix of a
+quantifier, no longer fires on the transient in the exec-model branch since 2026-09-30: such a rule is placed below the
+writers of what the test reads (the section on a fold whose subselection tests a value derived later); a test outside a
+fold keeps this limit.
+A condition that reads through a chain of two or more to-one roles takes a far-side join on every object the chain
+passes, in order, and its test goes on the subject bound again after the last join (golden `jutterswet-havenketen`,
+witness `KetenVoorwaardeWitnessTest`, measured 2026-10-01): a relation in the middle of the chain that a fact creation
+sets while the rules run is seen, which a join on the reached object alone does not see; a rule's value that reads a
+chain takes the same joins. A comparison, a leeg or gevuld test and a date computation lower over a chain as over one
+role, and a navigated operand of a date computation — a date plus or minus a duration, also a duration parameter, one
+role away or more — lowers as it does without navigation. A chain lowers only where the condition's joins cover it: in
+the matrix or the subselection of a fold it keeps the fold's named refusal, and a consistency rule's assertion over a
+chain is refused (`schending buiten Phase-D scope`) where one over one role plays. A comparison this branch does not
+lower over one role either, such as an own number on the left of a navigated one or a date computation against a date
+parameter, is refused over a chain in the same words. A characteristic check over two roles does not reach this branch:
+the wire's navigated check carries one to-one hop (IR-SPEC ch. 4.5), and the frontend leaves the check unresolved,
+which ref and clingo refuse too. The DRL-text branch refuses a condition over two or more roles with its marker
+`TODO voorwaarde`, and joins a chain in a rule's value at the reached object only, so there a value over a chain whose
+middle relation a fact creation sets later stays leeg.
 
 ## Recorded: a defaults justification that counts or reads further than one role, and a consequence that folds
 
