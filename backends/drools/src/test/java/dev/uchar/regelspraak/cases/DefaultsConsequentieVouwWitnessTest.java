@@ -213,7 +213,7 @@ class DefaultsConsequentieVouwWitnessTest {
         // The subselection of the fold reads the uiterste bergdag, which later rules or a later group write. First an
         // initialisation to the bergdag and a gelijkstelling to the meldingsdag where filled, under "die aan de
         // volgende voorwaarde voldoen: zijn uiterste bergdag is later dan 05-03-2026": before the gelijkstelling V1
-        // (bergdag 09-03) passes, after it V2 alone does. ref and clingo: B1 03-03-2026.
+        // (bergdag 09-03) passes, after it V2 and V3 do, and V3 has no bergdag. ref and clingo: B1 03-03-2026.
         String later = "{\"node\":\"Compound\",\"quantifier\":\"the\",\"threshold\":0,\"parts\":[{\"node\":\"Comparison\","
                 + "\"op\":\"later\",\"left\":" + eigen("uiterste bergdag", "Vondst") + ",\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"date\":\"2026-03-05\"},\"type\":" + DATUM + ",\"source\":{\"snippet\":\"05-03-2026\"}},"
