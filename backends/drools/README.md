@@ -129,7 +129,10 @@ fires on the value the object held at insertion (`anchor/jutterswet-kustwacht`, 
 that holds on an empty value, such as a leeg test on a derived attribute, fires on the transient leeg when its rule
 is declared before the rule that writes the value, and the write stays; this holds for an own and a navigated operand
 alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic check is stratified and is not
-affected. A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
+affected. The same test inside a fold, in the subselection of a fold or the matrix of a quantifier, no longer fires on
+the transient in the exec-model branch since 2026-09-30: such a rule is placed below the writers of what the test
+reads (the section on a fold whose subselection tests a value derived later); a test outside a fold keeps this limit.
+A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
 
 ## Recorded: a defaults justification that counts or reads further than one role
 
@@ -162,15 +165,16 @@ the empty operand counted as 0 (RUNTIME-SEMANTICS ch. 1.2), where `ref` and clin
 evaluated again on every update of the subject (RUNTIME-SEMANTICS ch. 5.1); golden `jutterswet-sluitdag`, witness
 `KwantorvoorwaardeOperandWitnessTest`. A fold over a characteristic was affected less often: the stratification reads
 its matrix as a negated read and places the rule below band 0, so a writer in band 0 fired first, and only a writer in
-the rule's own band that fired after it was missed. Three limits remain, measured 2026-09-30 with `ref` and clingo as
-the arbiters. A fold whose verdict holds while a derived value is still empty, such as "de bergdag van geen van de
-vondsten van de Berging gevuld is", fires on that empty value when its rule is declared before the writer, and the
-write stays: the leeg test of the section on a condition that reads through a role, here in the matrix of a fold. A
-fold under a counting composite ("ten minste één van de volgende voorwaarden") is refused in both branches, in the
-exec-model branch with the generic sentence `voorwaarde buiten Phase-B scope`. The DRL-text branch, whose rules watch
-what they read, plays these forms except two, and refuses those with a defaults group: an aggregation comparison whose
-own threshold is derived later does not fire, and an operand one role away under a fold that holds at insertion is
-read before its writer ran.
+the rule's own band that fired after it was missed. Three limits were measured 2026-09-30 with `ref` and clingo as
+the arbiters, and the exec-model branch has closed the first since the same day. A fold whose verdict holds while a
+derived value is still empty, such as "de bergdag van geen van de vondsten van de Berging gevuld is", fired on that
+empty value when its rule was declared before the writer, and the write stayed: the leeg test of the section on a
+condition that reads through a role, here in the matrix of a fold; the branch now places such a rule below the writer
+(the section on a fold whose subselection tests a value derived later). A fold under a counting composite ("ten
+minste één van de volgende voorwaarden") is refused in both branches, in the exec-model branch with the generic
+sentence `voorwaarde buiten Phase-B scope`. The DRL-text branch, whose rules watch what they read, plays these forms
+except two, and refuses those with a defaults group: an aggregation comparison whose own threshold is derived later
+does not fire, and an operand one role away under a fold that holds at insertion is read before its writer ran.
 
 ## Recorded: a fold over a set source inside a rule's value
 
@@ -197,3 +201,31 @@ toekenning through `lowerVal`: a percentage of a sum answers leeg, and over an e
 no object. The DRL-text branch markers the eerste/laatste fold over a set (`TODO aggregatie EERSTE`), refuses the
 minimum and maximum over a date with the `Vouwwaarde` sentence, which names that branch, and answers leeg for the
 minimum or maximum of an empty source plus 1 and for a date plus the maximum of an empty source.
+
+## Recorded: a fold whose subselection tests a value derived later
+
+A fold whose subselection ("die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg") tests a value that
+another rule or a defaults group writes later. `ref` and clingo evaluate the fold after that writer where the
+subselection reads the value negatively (a leeg or gevuld test, a negated characteristic, the range of a quantifier
+other than ten minste één; IR-SPEC ch. 5.5, WF-046), and reach the fixpoint of a comparison by iterating. The exec-model
+branch answered from the value as it stood before the writer, measured 2026-09-30. In a rule's value the fold is an
+accumulate that sees an element leave its subselection, but Drools passes that revision on with the subject's last
+propagation context, and NO_LOOP drops an activation whose last context came from the rule's own consequence: when the
+rule's own write was the subject's last change, the value kept the maximum that still counted the element (two roles
+away, where the fold's members have the subject's type, the freshness expr of that own read made the subject pattern see
+the write; one role away an own condition did). An ordering fold whose subselection emptied read leeg, which decides
+nothing on a standing target (RUNTIME-SEMANTICS ch. 7.8), so the value over the transient source stayed, over a case
+input too, and a characteristic granted on it stayed. In a condition the rule fired on the transient, and a rule does
+not write back. Now a rule whose value holds a fold with a subselection carries no NO_LOOP (`ExecModelTranspiler.regel`;
+the idempotent `werkBij` ends the recompute after one more firing), and `groepVolgorde` places a rule below the band of
+every rule and group that writes what a fold in its condition or value reads negatively, in the verifier's polarity
+(`vouwOntkend`). Each half alone leaves measured forms wrong: the order alone a comparison whose element leaves the
+subselection after the rule fired (an initialisatie, then a berekening), the revision alone the condition, the emptied
+source and what reads the value. Golden `jutterswet-zwaarste-vondst`, witness `VouwfilterLatereAfleidingWitnessTest`.
+Limits that remain, measured 2026-09-30 with `ref` and clingo as the arbiters: a leeg or gevuld test outside a fold, see
+the section on a condition that reads through a role; a quantifier over two roles with a subselection, which the loader
+refuses in both branches (`Kwantorvouw.bronPad`) and the RegelSpraak frontend does not read. Not measured: a writer
+outside the rules and the groups (an allocation, a creation), which the order does not see, and a sum over a temporal
+attribute of a set with a subselection, which keeps NO_LOOP. The DRL-text branch, whose rules watch what they read,
+revises a fold in a value, but fires a condition on the transient (`verwacht leeg, werkelijk 1`), keeps a maximum whose
+subselection emptied (`verwacht leeg, werkelijk 20`), and refuses a document with a defaults group.
