@@ -1,0 +1,929 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandvoogd",
+        "animate": true,
+        "plural": "Strandvoogden",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "eerste vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "eerste vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laatste vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerste zware vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldgrens",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zoekgrens",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstspanne",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dag",
+                "canonical": "dag",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weeggrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zoekduur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dag",
+                "canonical": "dag",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zwaar",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "StrandvoogdBeheertJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "strandvoogd",
+            "objectType": "Strandvoogd",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "beheerde jutter",
+            "objectType": "Jutter",
+            "plural": "beheerde jutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "eerste vinddag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste vinddag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De eerste vinddag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laatste vinddag van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laatste vinddag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De laatste vinddag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van de vinddag van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerste zware vinddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste zware vinddag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De eerste zware vinddag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van de Jutter die zwaar zijn"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "zwaar",
+                "negated": false,
+                "source": {
+                  "snippet": "zwaar zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de vinddag van alle vondsten van de Jutter die zwaar zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De meldgrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Aggregation",
+                "kind": "first",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vinddag",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de vinddag van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "30"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "30 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "(de eerste van de vinddag van alle vondsten van de Jutter) plus 30 dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zoekgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zoekgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De zoekgrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Aggregation",
+                "kind": "first",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vinddag",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de vinddag van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "Aggregation",
+                "kind": "maximum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "zoekduur",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de zoekduur van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "de maximale waarde van de zoekduur van alle vondsten van de Jutter"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "(de eerste van de vinddag van alle vondsten van de Jutter) plus de maximale waarde van de zoekduur van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vondstspanne",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstspanne",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vondstspanne van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "duration",
+              "arguments": [
+                {
+                  "node": "Aggregation",
+                  "kind": "first",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                  }
+                },
+                {
+                  "node": "Aggregation",
+                  "kind": "last",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de laatste van de vinddag van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "dag",
+                  "canonical": "dag",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "de tijdsduur van de eerste van de vinddag van alle vondsten van de Jutter tot de laatste van de vinddag van alle vondsten van de Jutter in hele dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "weeggrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "weeggrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De weeggrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Aggregation",
+                "kind": "minimum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de minimale waarde van het gewicht van alle vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(de minimale waarde van het gewicht van alle vondsten van de Jutter) plus 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "heffing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "percentageOf",
+              "left": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "right": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de som van het gewicht van alle vondsten van de Jutter"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10% van de som van het gewicht van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerste vinddag van een strandvoogd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste vinddag",
+              "subjectType": "Strandvoogd",
+              "source": {
+                "snippet": "De eerste vinddag van een Strandvoogd"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van alle beheerde jutters van de Strandvoogd"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "StrandvoogdBeheertJutter",
+                  "role": "beheerde jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de vinddag van alle vondsten van alle beheerde jutters van de Strandvoogd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zwaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is zwaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht groter is dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

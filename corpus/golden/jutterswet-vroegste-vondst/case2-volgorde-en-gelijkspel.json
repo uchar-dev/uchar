@@ -1,0 +1,291 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S5",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutters": [
+            "J5",
+            "J6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2025-06-30"
+          },
+          "gewicht": {
+            "number": "8"
+          },
+          "zoekduur": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2025-02-14"
+          },
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V9",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2025-11-01"
+          },
+          "gewicht": {
+            "number": "6"
+          },
+          "zoekduur": {
+            "number": "40"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V10",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2025-02-14"
+          },
+          "gewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V11",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2025-01-10"
+          },
+          "gewicht": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J6"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V7",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V8",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V9",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V10",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V11",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2025-02-14"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2025-01-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "laatste vinddag",
+      "value": {
+        "date": "2025-11-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "laatste vinddag",
+      "value": {
+        "date": "2025-01-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "eerste zware vinddag",
+      "value": {
+        "date": "2025-06-30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J6",
+      "attribute": "eerste zware vinddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "meldgrens",
+      "value": {
+        "date": "2025-03-16"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "meldgrens",
+      "value": {
+        "date": "2025-02-09"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "zoekgrens",
+      "value": {
+        "date": "2025-03-26"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "zoekgrens",
+      "value": {
+        "date": "2025-01-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "vondstspanne",
+      "value": {
+        "number": "260"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "vondstspanne",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "weeggrens",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "weeggrens",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "heffing",
+      "value": {
+        "number": "1.80"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "heffing",
+      "value": {
+        "number": "0.20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S5",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2025-01-10"
+      }
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+Scenario vier bronvormen
+Gegeven is de volgende situatie:
+een Strandvoogd S1
+- de beheerde jutters zijn J1 en J3
+een Strandvoogd S2
+- de beheerde jutters zijn J2
+een Strandvoogd S3
+- de beheerde jutters zijn J4
+een Strandvoogd S4
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Vondst V1
+- de vinddag is 12-03-2026
+- het gewicht is 4
+- de zoekduur is 10 dagen
+- de jutter is J1
+een Vondst V2
+- de vinddag is 20-03-2026
+- het gewicht is 7
+- de zoekduur is 3 dagen
+- de jutter is J1
+een Vondst V3
+- het gewicht is 6
+- de zoekduur is 20 dagen
+- de jutter is J1
+een Vondst V4
+- de vinddag is 05-03-2026
+- het gewicht is 2
+- de jutter is J1
+een Vondst V5
+- de jutter is J3
+een Vondst V6
+- de vinddag is 31-12-2025
+- het gewicht is 9
+- de zoekduur is 5 dagen
+- de jutter is J4
+Met als verwacht resultaat:
+- V1 is niet zwaar
+- V2 is zwaar
+- V3 is zwaar
+- V4 is niet zwaar
+- V5 is niet zwaar
+- V6 is zwaar
+- de eerste vinddag van J1 is 05-03-2026
+- de eerste vinddag van J2 is leeg
+- de eerste vinddag van J3 is leeg
+- de eerste vinddag van J4 is 31-12-2025
+- de laatste vinddag van J1 is 20-03-2026
+- de laatste vinddag van J2 is leeg
+- de laatste vinddag van J3 is leeg
+- de laatste vinddag van J4 is 31-12-2025
+- de eerste zware vinddag van J1 is 20-03-2026
+- de eerste zware vinddag van J2 is leeg
+- de eerste zware vinddag van J3 is leeg
+- de eerste zware vinddag van J4 is 31-12-2025
+- de meldgrens van J1 is 04-04-2026
+- de meldgrens van J2 is leeg
+- de meldgrens van J3 is leeg
+- de meldgrens van J4 is 30-01-2026
+- de zoekgrens van J1 is 25-03-2026
+- de zoekgrens van J2 is leeg
+- de zoekgrens van J3 is leeg
+- de zoekgrens van J4 is 05-01-2026
+- de vondstspanne van J1 is 15 dagen
+- de vondstspanne van J2 is leeg
+- de vondstspanne van J3 is leeg
+- de vondstspanne van J4 is 0 dagen
+- de weeggrens van J1 is 3
+- de weeggrens van J2 is 1
+- de weeggrens van J3 is 1
+- de weeggrens van J4 is 10
+- de heffing van J1 is 1,90
+- de heffing van J2 is 0,00
+- de heffing van J3 is 0,00
+- de heffing van J4 is 0,90
+- de eerste vinddag van S1 is 05-03-2026
+- de eerste vinddag van S2 is leeg
+- de eerste vinddag van S3 is 31-12-2025
+- de eerste vinddag van S4 is leeg
+
+Scenario volgorde en gelijkspel
+Gegeven is de volgende situatie:
+een Strandvoogd S5
+- de beheerde jutters zijn J5 en J6
+een Jutter J5
+een Jutter J6
+een Vondst V7
+- de vinddag is 30-06-2025
+- het gewicht is 8
+- de zoekduur is 12 dagen
+- de jutter is J5
+een Vondst V8
+- de vinddag is 14-02-2025
+- het gewicht is 3
+- de jutter is J5
+een Vondst V9
+- de vinddag is 01-11-2025
+- het gewicht is 6
+- de zoekduur is 40 dagen
+- de jutter is J5
+een Vondst V10
+- de vinddag is 14-02-2025
+- het gewicht is 1
+- de jutter is J5
+een Vondst V11
+- de vinddag is 10-01-2025
+- het gewicht is 2
+- de jutter is J6
+Met als verwacht resultaat:
+- V7 is zwaar
+- V8 is niet zwaar
+- V9 is zwaar
+- V10 is niet zwaar
+- V11 is niet zwaar
+- de eerste vinddag van J5 is 14-02-2025
+- de eerste vinddag van J6 is 10-01-2025
+- de laatste vinddag van J5 is 01-11-2025
+- de laatste vinddag van J6 is 10-01-2025
+- de eerste zware vinddag van J5 is 30-06-2025
+- de eerste zware vinddag van J6 is leeg
+- de meldgrens van J5 is 16-03-2025
+- de meldgrens van J6 is 09-02-2025
+- de zoekgrens van J5 is 26-03-2025
+- de zoekgrens van J6 is 10-01-2025
+- de vondstspanne van J5 is 260 dagen
+- de vondstspanne van J6 is 0 dagen
+- de weeggrens van J5 is 2
+- de weeggrens van J6 is 3
+- de heffing van J5 is 1,80
+- de heffing van J6 is 0,20
+- de eerste vinddag van S5 is 10-01-2025
