@@ -29,8 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * navigated read refused {@code regel (aggregatie-in-arithmetiek buiten scope)}; the minimum and the maximum of a
  * number plus 1 answered leeg over an empty source where ref and clingo answer 1 ({@code verwacht 1, werkelijk
  * leeg}), and a percentage of a sum answered leeg for every subject ({@code verwacht 1.90, werkelijk leeg}); a date
- * fold in a condition refused {@code voorwaarde buiten Phase-B scope}, which names no form. One row is a flank,
- * green before and after: the number folds the branch already played.
+ * fold in a condition refused {@code voorwaarde buiten Phase-B scope}, which names no form, and so did a fold bound by
+ * a Let, with or without a division beside it ({@code waarde buiten scope}). One row is a flank, green before and
+ * after: the number folds the branch already played.
  */
 class DatumvouwOverRolWitnessTest {
 
@@ -196,6 +197,31 @@ class DatumvouwOverRolWitnessTest {
         assertTrue(e.getMessage().contains("een datumvouw (EERSTE/LAATSTE) over een rol"), e.getMessage());
     }
 
+    @Test void een_vouw_onder_daarbij_geldt() throws Exception {
+        // "De telling van een Jutter moet berekend worden als de vangst plus 1. Daarbij geldt: de vangst is het aantal
+        // vondsten van de Jutter": a Let (IR-SPEC ch. 4.10) whose bound value is the fold. ref and clingo: J1 5, J2 1,
+        // J3 2, J4 2.
+        String ir = document(regel("telling", "Jutter", "telling", let("vangst", telling(),
+                binair("plus", binder("vangst"), getalLiteraal("1"), GEHEEL), GEHEEL)));
+        assertNull(speel(ir, zaak(situatie(true, false, null), perJutter("telling", getal("5"), getal("1"), getal("2"), getal("2")))),
+                "een vouw als gebonden waarde van een Let");
+    }
+
+    @Test void een_vouw_en_een_deling_onder_een_let_weigeren_met_de_vorm() throws Exception {
+        // "… als de vangst gedeeld door zijn gewicht. Daarbij geldt: de vangst is het aantal vondsten van de Jutter".
+        // The §6.5 companion of that division evaluates the Let again in a rule of its own, without this rule's
+        // accumulate, so the fold would not lower there and the build would fail; ref and clingo answer, the DRL-text
+        // branch plays it. The refusal names the form.
+        String decimaal = "{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}";
+        String ir = document(regel("uitkomst", "Jutter", "uitkomst", let("vangst", telling(),
+                binair("dividedBy", binder("vangst"), eigen("gewicht", "Jutter"), decimaal), decimaal)));
+        Path p = tijdelijk(ir);
+        JsonNode c = JSON.readTree(zaak(situatie(true, false, null), List.of()));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false));
+        assertTrue(e.getMessage().contains("een vouw over een setbron en een deling of wortel onder één Let of IfThenElse"),
+                e.getMessage());
+    }
+
     // ---------------- documents ----------------
 
     private static final String GEHEEL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
@@ -213,7 +239,7 @@ class DatumvouwOverRolWitnessTest {
             + "," + objecttype("Jutter", "Jutters", true, List.of(attr("eerste vinddag", DATUM), attr("laatste vinddag", DATUM),
                     attr("laatste bergdag", DATUM), attr("meldgrens", DATUM), attr("startdag", DATUM), attr("telling", GEHEEL),
                     attr("uitkomst", "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}"),
-                    attr("spanne", DAGEN), attr("eerste vindtijdstip", TIJDSTIP)),
+                    attr("spanne", DAGEN), attr("eerste vindtijdstip", TIJDSTIP), attr("gewicht", GEHEEL)),
                     "{\"node\":\"Characteristic\",\"name\":\"vroeg\",\"kind\":\"adjectival\"}")
             + "," + objecttype("Vondst", "Vondsten", false, List.of(attr("vinddag", DATUM), attr("bergdag", DATUM),
                     attr("vindtijdstip", TIJDSTIP), attr("gewicht", GEHEEL), attr("zoekduur", DAGEN)),
@@ -257,6 +283,15 @@ class DatumvouwOverRolWitnessTest {
 
     private static String binair(String op, String links, String rechts, String type) {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + links + ",\"right\":" + rechts + ",\"type\":" + type + "}";
+    }
+
+    private static String let(String binder, String waarde, String lichaam, String type) {
+        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + waarde
+                + ",\"body\":" + lichaam + "}";
+    }
+
+    private static String binder(String naam) {
+        return "{\"node\":\"BinderRef\",\"name\":\"" + naam + "\"}";
     }
 
     private static String vergelijking(String op, String links, String rechts) {
