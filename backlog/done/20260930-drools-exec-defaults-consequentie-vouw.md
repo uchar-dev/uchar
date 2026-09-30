@@ -475,3 +475,29 @@ de run hierboven is die daarna.
     a6aa37b5 DefaultsConsequentieVouwWitnessTest: V3 gaat ook door de subselectie
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `55184584` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates12/`. Alle zestien exit 0: gate 10 JUnit 1008, 113
+rgs-goldens; gate 12 `check-drools: PASS`, played 231 (pin 231), DRL 191
+(pin 191), JUnit 951; gate 16 20 scenario-goldens, 76 casebestanden. De fix
+gelezen: `compileDefault` verlaagt de consequentie met de vouwslots aan,
+per groep in `RechtvaardigingBouw.vouwslots`; hun accumulates staan op de
+reduce-regel na die van de rechtvaardigingen en de slots zijn gevuld vóór
+`DefaultsRun` beslist; `groepVolgorde` las de consequentie al, dus de
+volgorde blijft (mutatieproef gemeten). Afwijking 1 aanvaard: de markering
+boven een afwijkingsboom waarvan de basis vouwt is de vorm die de
+weigering gaf, en die staat in de getuige en de golden. Afwijking 2
+aanvaard: één weigerzin met vorm en consequentie voor elke oorzaak; geen
+gate of getuige pinde de oude zin. De voorgestelde registertekst is in dit
+landingscommit gezet in `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md`
+§5.1, na de alinea van de rechtvaardiging. Twee commitkoppen van 73
+tekens aanvaard (ff-only, geen rebase). Open punten 1–7 gelezen: geen
+kaart. 1 en 2 zijn grenzen van de ASP-vertaling (het minimum of maximum
+van twee getalvouwen; een niet-exacte deling in een subselectie, waar ref
+antwoordt en clingo een guard laat vuren) en staan hier als aantekening; 3
+(negen variabelen) en 4 (§13.3.9) zijn benoemde weigeringen; 5 blijft open
+punt 5 van de justificatie-kaart; 6 is het kanaal van de DRL-teksttak; 7
+is de pin die op deze landing volgt.

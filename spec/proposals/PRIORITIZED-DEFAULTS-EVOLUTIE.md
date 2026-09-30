@@ -328,6 +328,16 @@ it waits on; a rule that reads a group's characteristic under negation is
 placed strictly below the group. Witnesses: `DefaultsRechtvaardigingWitnessTest`,
 the golden `jutterswet-premiestaffel`.
 
+Landed 2026-10-01 (exec-model branch): a consequence that folds over a set
+source — the earliest or the latest date, a count, a sum, a minimum or a
+maximum, on its own, inside a computation or as an operand of a listed
+fold — lowers as a rule's value does: an accumulate on the reduce-rule
+whose result the consequence reads, in the base and the exceptions of a
+tree and in the group the opgave marker generates. A consequence that does
+not lower is refused with the form and the consequence. Witnesses:
+`DefaultsConsequentieVouwWitnessTest`, the golden
+`jutterswet-sluitdag-gemeld`.
+
 ### 5.2 Flip inventory and order
 
 Fifteen goldens / 67 cases flip on defaults work alone, risk-ascending:
