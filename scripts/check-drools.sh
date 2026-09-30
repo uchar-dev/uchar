@@ -1147,7 +1147,19 @@ EXPECTED_CHANNEL=(
 # in the exec branch's own words. Measured before and after over ALL goldens in both branches: exactly the vondstbereik
 # line moves in the exec branch; in the DRL-text branch the same golden keeps its channel and its refusal now names that
 # branch as the one that does not carry the fold (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=229
+# 229 -> 230 (2026-09-30, the fold whose subselection tests a value derived later): jutterswet-zwaarste-vondst, new,
+# from bron.rgs and scenario.rgs and hand-computed: four folds over the vondsten of a Berging whose subselection tests
+# a value other rules derive after them, the afgeleide dag of a defaults group (a maximum two roles away and a
+# quantifier in a condition, both on "zijn afgeleide dag is leeg"), a characteristic on it (a sum over "hij is niet
+# gedateerd") and a registratiedag an initialisatie and then a berekening write (a maximum over "later dan"), over
+# two vondsten, three with the opgegeven dag going first, and all dated. The exec branch computed each fold over the
+# vondsten as they stood before the writers: a revision of the value was dropped by NO_LOOP when the rule's own write
+# was the subject's last change, an emptied maximum read leeg, which decides nothing on a standing target (ch. 7.8),
+# and the condition fired on the transient. It now places a rule below the writers of what a fold in it reads negatively and leaves a rule whose
+# value folds with a subselection without NO_LOOP, and plays the three cases, PLAYED 3, with ref's and clingo's
+# values. Measured before and after over ALL goldens in both branches: no report line moves. The DRL-text branch
+# refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=230
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1160,20 +1172,20 @@ EXPECTED_PLAYED=229
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-seven of the ninety-three
+# Why the reasons are grouped rather than written one by one: eighty-eight of the ninety-four
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 37 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 38 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 38 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 39 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 36 of the 37 lines refuse on that one
-  # sentence; the 37th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. All 36 ARE that asymmetry — the exec branch plays them.
+  # toolchain does not have, and DrlTranspiler never did. 37 of the 38 lines refuse on that one
+  # sentence; the 38th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. All 37 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 38 is 42 exec-only players — those 36, jutterswet-vouwrand, jutterswet-vondstbereik,
+  # The 39 is 43 exec-only players — those 37, jutterswet-vouwrand, jutterswet-vondstbereik,
   # jutterswet-vondstvenster and jutterswet-vroegste-vondst of class (C), and
   # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
@@ -1224,7 +1236,10 @@ DRL_CHANNEL=(
   # jutterswet-vondstvenster and the new jutterswet-vroegste-vondst play in the exec branch only (class (C)), so the
   # gap is 37 (228 - 191); the six class heads (A 37, B 37, C 11, D 2, E 3, F 3 = 93 lines) were counted against the
   # list. Recounted again the same day (the minimum and maximum over a date): jutterswet-vondstbereik plays in the exec
-  # branch only (class (C)), so the gap is 38 (229 - 191), and the six class heads hold at 93 lines.
+  # branch only (class (C)), so the gap is 38 (229 - 191), and the six class heads hold at 93 lines. Recounted again
+  # the same day (the fold whose subselection tests a value derived later): jutterswet-zwaarste-vondst joins the class,
+  # 37 -> 38 lines, and plays in the exec branch only, so the gap is 39 (230 - 191); the six class heads (A 38, B 37,
+  # C 11, D 2, E 3, F 3 = 94 lines) were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1260,6 +1275,7 @@ DRL_CHANNEL=(
   "jutterswet-wrakinitialisatie|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wrakrecht|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-wrakrecht-flogic|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-zwaarste-vondst|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "synth3-nestkorting|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "ww-herleving-inkomen-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   # (B) loader Refusals — 37, and SHARED with the exec branch: both branches read the wire through
