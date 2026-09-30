@@ -485,3 +485,26 @@ in een voorwaarde, een vouw naast een deling of wortel onder één Let, de objec
     433c5a30 backends/drools/README: minimum en maximum over datums spelen ook
 
 en de commit die dit bijgewerkte Result in de kaart zet. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-09-30)
+
+Eigen run van de zestien gates op `83052d70` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates10/`. Alle zestien exit 0: gate 3 323 goldens; gate 5 en
+6 772 cases (ref = clingo); gate 7 728 cases, 44 pinned; gate 10 JUnit 1008,
+111 rgs-goldens; gate 12 `check-drools: PASS`, played 229 (pin 229), DRL 191
+(pin 191), JUnit 922; gate 16 18 scenario-goldens, 71 casebestanden. De
+lowering gelezen: een vouw in de waarde wordt een eigen accumulate over een
+Comparable en de waarde leest haar uitkomst; minimum en maximum over datums
+vouwen als eerste en laatste. De tweede ronde (op verzoek van de
+hoofdsessie, met toestemming voor twee bestaande testbestanden) liet
+`jutterswet-vondstbereik` spelen en zette de vorm "eigen datum plus een vouw
+in dagen" in de golden. Afwijkingen van de kaart aanvaard (twee bestaande
+goldens verlaten het kanaal, acceptatie (d) las "ongewijzigd" te strak). De
+voorgestelde registertekst is in dit landingscommit gezet in de NOTE.md van
+`jutterswet-vondstvenster` en `jutterswet-vondstbereik`. Open punten
+gelezen: geen kaart; de objectcreatie met een vouw (stil fout antwoord bij
+een percentage en een leeg minimum plus 1, van vóór deze kaart) is de eerste
+kandidaat voor een volgende Drools-kaart; de DRL-teksttak volgens haar
+kanaal. Landing: ff van `card/drools-exec-datumvouw-over-rol` op main.
+

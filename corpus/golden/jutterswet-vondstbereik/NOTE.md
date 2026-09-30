@@ -34,11 +34,10 @@ has nothing to check. Measured 2026-09-20; the eerste/laatste spelling of
 the same fold DOES have one, which is why its twin carries a source.
 
 Every expectation below is hand-computed; `ref` and clingo replay them
-exactly (gate 5 = gate 6). The Drools backend carries neither of its
-transpiler branches for this fold — both accumulate in `BigDecimal` and a
-date-valued member has no place there — and refuses the golden per form
-with a named reason in gate 12's two channel lists. The square is a
-two-executor agreement here and says so.
+exactly (gate 5 = gate 6). The exec-model branch of the Drools backend plays it since 2026-09-30 (card drools-exec-datumvouw-
+over-rol: the same accumulate over a Comparable that folds its first/last twin), so the square is
+ref ≡ clingo ≡ Drools-exec; the DRL-text branch accumulates every value fold in `BigDecimal` and
+refuses the golden per form with a named reason in gate 12's DRL channel list.
 
 ## case1-bereik — the four source shapes (9 expectations)
 

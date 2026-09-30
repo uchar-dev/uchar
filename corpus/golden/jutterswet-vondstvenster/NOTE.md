@@ -12,10 +12,9 @@ VALUES, never a positional pick of the first or last filled member. That claim
 is only worth something if a document can tell the two readings apart, so
 `case2-volgorde` is built so that the member order and the value order point in
 opposite directions, in BOTH directions at once. Every expectation below is
-hand-computed; `ref` and clingo replay them exactly (gate 5 ≡ gate 6). The
-Drools backend carries neither of its transpiler branches for this fold and
-refuses the golden per form with a named reason (gate 12's channel list), so
-the square is a two-executor agreement here and says so.
+hand-computed; `ref` and clingo replay them exactly (gate 5 ≡ gate 6). The Drools backend's exec-model branch plays it since 2026-09-30 (card drools-exec-datumvouw-over-
+rol: the fold as an accumulate over a Comparable), so the square is ref ≡ clingo ≡ Drools-exec; the
+DRL-text branch refuses it per form with a named marker (gate 12's DRL channel list).
 
 ## case1-venster — the four source shapes (9 expectations)
 
