@@ -8746,8 +8746,20 @@ has two forms.
   act on the transient leeg: an attribute reader writes 1 and a
   characteristic reader attributes its characteristic, where `ref/` and
   `backends/clingo` answer leeg and absent. With the writer first, both
-  branches agree with them. (A fold in a rule's VALUE is re-evaluated and
-  agrees in either order.)
+  branches agree with them. (A fold in a rule's VALUE is re-evaluated, but that did not suffice:
+  measured 2026-09-30, card `drools-exec-vouwfilter-latere-afleiding`, the
+  exec-model branch's NO_LOOP dropped the revision when the rule's own write
+  was the subject's last change, and in both Drools branches an ordering fold
+  whose subselection emptied kept the value it had computed over the
+  transient source, since leeg decides nothing on a standing target,
+  RUNTIME-SEMANTICS ch. 7.8.)
+  *Closed in the exec-model branch on 2026-09-30 for a test inside a fold
+  (card `drools-exec-vouwfilter-latere-afleiding`, golden
+  `jutterswet-zwaarste-vondst`): a rule is placed below the writers of what a
+  fold in its condition or value reads negatively, in the polarity of
+  WF-046, and a rule whose value folds with a subselection carries no
+  NO_LOOP. A leeg or gevuld test outside a fold, and the DRL-text branch,
+  keep the form described here.*
 - On a NAVIGATED operand in a condition it does not depend on the order.
   *Closed in the exec-model branch on 2026-09-28 (card
   `drools-exec-voorwaarde-genavigeerde-afleiding`, golden

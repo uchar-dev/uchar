@@ -552,3 +552,23 @@ volstaat, golden en getuige, en wat blijft (open punten 1 tot 6).
     63702c13 backends/drools/README: een vouw met een subselectie op later
 
 en de commit die dit Result in de kaart zet en haar naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-09-30)
+
+Eigen run van de zestien gates op `e9591052` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates11/`. Alle zestien exit 0: gate 10 JUnit 1008, 112
+rgs-goldens; gate 12 `check-drools: PASS`, played 230 (pin 230), DRL 191
+(pin 191), JUnit 937; gate 16 19 scenario-goldens, 74 casebestanden. De fix
+gelezen: geen NO_LOOP op een regel met een vouw met subselectie in de
+waarde, en `groepVolgorde` zet een regel onder de schrijvers van wat een
+vouw in haar negatief leest (de polariteit van WF-046); beide helften
+gemeten nodig. De voorgestelde registertekst is in dit landingscommit
+gezet in `spec/IR-SPEC.md` ch. 5.5 (de recorded flank). Twee commitkoppen
+van 73 en 76 tekens aanvaard (ff-only, geen rebase). Open punten 1–8
+gelezen: geen kaart; 1 en 2 blijven de gedocumenteerde volgordegrens van de
+leeg-toets buiten een vouw en de DRL-teksttak; 3 en 4 (kwantor en telling
+over twee rollen) staan in de kaart frontend-kwantor-over-een-pad; 8 volgt
+nu. Landing: ff van `card/drools-exec-vouwfilter-latere-afleiding` op main
+(de ff en de twee wachtende kaarten gingen dit commit vooraf).
+
