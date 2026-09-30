@@ -1,0 +1,76 @@
+Scenario een gedateerde en een ongedateerde vondst
+Gegeven is de volgende situatie:
+een Berging B
+- de vondsten zijn V1 en V2
+een Vondst V1
+- het gewicht is 10
+een Vondst V2
+- de vinddag is 01-03-2026
+- het gewicht is 20
+Met als verwacht resultaat:
+- de afgeleide dag van V1 is leeg
+- de afgeleide dag van V2 is 01-03-2026
+- de registratiedag van V2 is 01-03-2026
+- V1 is niet gedateerd
+- V2 is gedateerd
+- het zwaarste gewicht van V1 is 10
+- het zwaarste gewicht van V2 is 10
+- het zwaarste late gewicht van V1 is 20
+- het zwaarste late gewicht van V2 is 20
+- het losse gewicht van B is 10
+- de meldklasse van B is leeg
+
+Scenario de opgave gaat voor
+Gegeven is de volgende situatie:
+een Berging B
+- de vondsten zijn V1, V2 en V3
+een Vondst V1
+- de opgegeven dag is 15-02-2026
+- het gewicht is 30
+een Vondst V2
+- het gewicht is 20
+een Vondst V3
+- de vinddag is 01-03-2026
+- de opgegeven dag is 15-01-2026
+- het gewicht is 25
+Met als verwacht resultaat:
+- de afgeleide dag van V1 is 15-02-2026
+- de afgeleide dag van V2 is leeg
+- de afgeleide dag van V3 is 15-01-2026
+- de registratiedag van V1 is 15-02-2026
+- de registratiedag van V3 is 15-01-2026
+- V1 is gedateerd
+- V2 is niet gedateerd
+- V3 is gedateerd
+- het zwaarste gewicht van V1 is 20
+- het zwaarste gewicht van V2 is 20
+- het zwaarste gewicht van V3 is 20
+- het zwaarste late gewicht van V1 is 30
+- het zwaarste late gewicht van V2 is 30
+- het zwaarste late gewicht van V3 is 30
+- het losse gewicht van B is 20
+- de meldklasse van B is 1
+
+Scenario alle vondsten gedateerd
+Gegeven is de volgende situatie:
+een Berging B
+- de vondsten zijn V1 en V2
+een Vondst V1
+- de vinddag is 01-02-2026
+- het gewicht is 10
+een Vondst V2
+- de vinddag is 01-03-2026
+- het gewicht is 20
+Met als verwacht resultaat:
+- de afgeleide dag van V1 is 01-02-2026
+- de afgeleide dag van V2 is 01-03-2026
+- de registratiedag van V1 is 01-02-2026
+- de registratiedag van V2 is 01-03-2026
+- V1 is gedateerd
+- V2 is gedateerd
+- het zwaarste gewicht van V1 is leeg
+- het zwaarste gewicht van V2 is leeg
+- het zwaarste late gewicht van V1 is 20
+- het zwaarste late gewicht van V2 is 20
+- het losse gewicht van B is leeg
+- de meldklasse van B is leeg

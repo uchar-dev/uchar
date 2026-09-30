@@ -1,0 +1,700 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven dag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afgeleide dag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "registratiedag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zwaarste gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zwaarste late gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gedateerd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "losse gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldklasse",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "BergingBetreftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "zwaarste",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaarste gewicht",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het zwaarste gewicht van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Predicate",
+                    "kind": "empty",
+                    "operand": {
+                      "node": "AttributeReference",
+                      "attribute": "afgeleide dag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn afgeleide dag"
+                      }
+                    },
+                    "negated": false,
+                    "digits": 0,
+                    "source": {
+                      "snippet": "zijn afgeleide dag is leeg"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "berging"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "vondst"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zwaarste late",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaarste late gewicht",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het zwaarste late gewicht van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn registratiedag is later dan 01-02-2026"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "registratiedag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn registratiedag"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "date": "2026-02-01"
+                      },
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "01-02-2026"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn registratiedag is later dan 01-02-2026"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn registratiedag is later dan 01-02-2026"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "berging"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "vondst"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn registratiedag is later dan 01-02-2026"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "losse gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "losse gewicht",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "Het losse gewicht van een Berging"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Berging die aan de volgende voorwaarde voldoen: hij is niet gedateerd"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gedateerd",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet gedateerd"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is niet gedateerd"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Berging die aan de volgende voorwaarde voldoen: hij is niet gedateerd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldklasse",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldklasse",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De meldklasse van een Berging"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "1"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Predicate",
+                    "kind": "empty",
+                    "operand": {
+                      "node": "AttributeReference",
+                      "attribute": "afgeleide dag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn afgeleide dag"
+                      }
+                    },
+                    "negated": false,
+                    "digits": 0,
+                    "source": {
+                      "snippet": "zijn afgeleide dag is leeg"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de Berging die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "15"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "15"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de Berging die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg groter is dan 15"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van ten minste \u00e9\u00e9n van de vondsten van de Berging die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg groter is dan 15"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gedateerd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gedateerd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is gedateerd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "afgeleide dag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn afgeleide dag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn afgeleide dag gevuld is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "registratie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "registratiedag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De registratiedag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn vinddag"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opgave",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "registratiedag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De registratiedag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven dag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven dag"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "opgegeven dag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn opgegeven dag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn opgegeven dag gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "afgeleid",
+        "subject": "Vondst",
+        "attribute": "afgeleide dag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "opgegeven dag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn opgegeven dag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn opgegeven dag gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven dag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven dag"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn vinddag gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de vinddag van de Vondst"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

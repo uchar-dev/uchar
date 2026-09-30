@@ -1,0 +1,57 @@
+Objecttype de Vondst (mv: Vondsten)
+    de vinddag Datum in dagen;
+    de opgegeven dag Datum in dagen;
+    de afgeleide dag Datum in dagen;
+    de registratiedag Datum in dagen;
+    het gewicht Numeriek (geheel getal);
+    het zwaarste gewicht Numeriek (geheel getal);
+    het zwaarste late gewicht Numeriek (geheel getal);
+    is gedateerd kenmerk (bijvoeglijk);
+Objecttype de Berging (mv: Bergingen)
+    het losse gewicht Numeriek (geheel getal);
+    de meldklasse Numeriek (geheel getal);
+Feittype BergingBetreftVondst
+    de berging Berging
+    de vondst (mv: vondsten) Vondst
+Eén berging betreft meerdere vondsten
+
+Regel zwaarste
+    geldig altijd
+        Het zwaarste gewicht van een Vondst moet berekend worden als de maximale waarde van het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg.
+
+Regel zwaarste late
+    geldig altijd
+        Het zwaarste late gewicht van een Vondst moet berekend worden als de maximale waarde van het gewicht van alle vondsten van de berging van de Vondst die aan de volgende voorwaarde voldoen: zijn registratiedag is later dan 01-02-2026.
+
+Regel losse gewicht
+    geldig altijd
+        Het losse gewicht van een Berging moet berekend worden als de som van het gewicht van alle vondsten van de Berging die aan de volgende voorwaarde voldoen: hij is niet gedateerd.
+
+Regel meldklasse
+    geldig altijd
+        De meldklasse van een Berging moet berekend worden als 1
+        indien het gewicht van ten minste één van de vondsten van de Berging die aan de volgende voorwaarde voldoen: zijn afgeleide dag is leeg groter is dan 15.
+
+Regel afgeleid
+    geldig altijd
+        De afgeleide dag van een Vondst moet gesteld worden op de vinddag van de Vondst
+        indien zijn vinddag gevuld is.
+
+Afwijking van afgeleid: opgave gaat voor
+    geldig altijd
+        De afgeleide dag van een Vondst moet gesteld worden op zijn opgegeven dag
+        indien zijn opgegeven dag gevuld is.
+
+Regel gedateerd
+    geldig altijd
+        Een Vondst is gedateerd
+        indien zijn afgeleide dag gevuld is.
+
+Regel registratie
+    geldig altijd
+        De registratiedag van een Vondst moet geïnitialiseerd worden op zijn vinddag.
+
+Regel opgave
+    geldig altijd
+        De registratiedag van een Vondst moet gesteld worden op zijn opgegeven dag
+        indien zijn opgegeven dag gevuld is.
