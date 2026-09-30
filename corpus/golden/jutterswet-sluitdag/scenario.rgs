@@ -1,0 +1,50 @@
+Scenario twee gevonden vondsten
+Gegeven is de volgende situatie:
+een Berging B
+- de openingsdag is 25
+een Vondst V1
+- de vinddag is 30
+- de berging is B
+een Vondst V2
+- de vinddag is 20
+- de berging is B
+Met als verwacht resultaat:
+- de bergdag van V1 is 31
+- de bergdag van V2 is 21
+- de laatste bergdag van B is 31
+- de uiterste meldingsdag van B is 36
+- de wachttijd van B is 15
+- de sluitdag van B is 32
+- de afrekendag van B is 36
+- de controledag van B is 46
+
+Scenario een vondst zonder vinddag
+Gegeven is de volgende situatie:
+een Berging B
+- de openingsdag is 15
+een Vondst V1
+- de vinddag is 30
+- de berging is B
+een Vondst V2
+- de berging is B
+Met als verwacht resultaat:
+- de bergdag van V1 is 31
+- de bergdag van V2 is leeg
+- de laatste bergdag van B is 31
+- de uiterste meldingsdag van B is 36
+- de wachttijd van B is 5
+- de sluitdag van B is leeg
+- de afrekendag van B is leeg
+- de controledag van B is 36
+
+Scenario geen vondsten
+Gegeven is de volgende situatie:
+een Berging B
+- de openingsdag is 12
+Met als verwacht resultaat:
+- de laatste bergdag van B is leeg
+- de uiterste meldingsdag van B is 5
+- de wachttijd van B is 2
+- de sluitdag van B is 1
+- de afrekendag van B is 5
+- de controledag van B is leeg

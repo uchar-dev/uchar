@@ -1,0 +1,621 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "openingsdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laatste bergdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste meldingsdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afrekendag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "controledag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bergdag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "BergingBetreftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "sluitdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluitdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De sluitdag van een Berging"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "laatste bergdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn laatste bergdag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn laatste bergdag plus 1"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "test": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "bergdag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de bergdag van alle vondsten van de Berging"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "de bergdag van alle vondsten van de Berging gevuld is"
+                }
+              },
+              "source": {
+                "snippet": "de bergdag van alle vondsten van de Berging gevuld is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afrekendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afrekendag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De afrekendag van een Berging"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "uiterste meldingsdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn uiterste meldingsdag"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Vondst",
+              "test": {
+                "node": "Predicate",
+                "kind": "empty",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van geen van de vondsten van de Berging"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "de vinddag van geen van de vondsten van de Berging leeg is"
+                }
+              },
+              "source": {
+                "snippet": "de vinddag van geen van de vondsten van de Berging leeg is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "controledag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "controledag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De controledag van een Berging"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "laatste bergdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn laatste bergdag"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachttijd",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn wachttijd"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn laatste bergdag plus zijn wachttijd"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "bergdag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de bergdag van ten minste \u00e9\u00e9n van de vondsten van de Berging"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "de bergdag van ten minste \u00e9\u00e9n van de vondsten van de Berging gevuld is"
+                }
+              },
+              "source": {
+                "snippet": "de bergdag van ten minste \u00e9\u00e9n van de vondsten van de Berging gevuld is"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bergdag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De bergdag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn vinddag plus 1"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn vinddag gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laatste bergdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laatste bergdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De laatste bergdag van een Berging"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bergdag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de bergdag van alle vondsten van de Berging"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van de bergdag van alle vondsten van de Berging"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uiterste meldingsdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uiterste meldingsdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De uiterste meldingsdag van een Berging"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "laatste bergdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn laatste bergdag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn laatste bergdag plus 5"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachttijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachttijd",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De wachttijd van een Berging"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "openingsdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn openingsdag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn openingsdag min 10"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

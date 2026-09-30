@@ -1,0 +1,64 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Berging",
+        "attributes": {
+          "openingsdag": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "B",
+      "attribute": "laatste bergdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "wachttijd",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "sluitdag",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "afrekendag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B",
+      "attribute": "controledag"
+    }
+  ]
+}

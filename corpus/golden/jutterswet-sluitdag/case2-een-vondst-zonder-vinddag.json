@@ -1,0 +1,103 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Berging",
+        "attributes": {
+          "openingsdag": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "B"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "bergdag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "bergdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "laatste bergdag",
+      "value": {
+        "number": "31"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "number": "36"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "wachttijd",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B",
+      "attribute": "sluitdag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B",
+      "attribute": "afrekendag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "controledag",
+      "value": {
+        "number": "36"
+      }
+    }
+  ]
+}

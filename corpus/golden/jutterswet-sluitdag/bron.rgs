@@ -1,0 +1,49 @@
+Objecttype de Berging (mv: Bergingen)
+    de openingsdag Numeriek (geheel getal);
+    de laatste bergdag Numeriek (geheel getal);
+    de uiterste meldingsdag Numeriek (geheel getal);
+    de wachttijd Numeriek (geheel getal);
+    de sluitdag Numeriek (geheel getal);
+    de afrekendag Numeriek (geheel getal);
+    de controledag Numeriek (geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+    de vinddag Numeriek (geheel getal);
+    de bergdag Numeriek (geheel getal);
+
+Feittype BergingBetreftVondst
+    de berging Berging
+    de vondst (mv: vondsten) Vondst
+Eén berging betreft meerdere vondsten
+
+Regel sluitdag
+    geldig altijd
+        De sluitdag van een Berging moet berekend worden als zijn laatste bergdag plus 1
+        indien de bergdag van alle vondsten van de Berging gevuld is.
+
+Regel afrekendag
+    geldig altijd
+        De afrekendag van een Berging moet gesteld worden op zijn uiterste meldingsdag
+        indien de vinddag van geen van de vondsten van de Berging leeg is.
+
+Regel controledag
+    geldig altijd
+        De controledag van een Berging moet berekend worden als zijn laatste bergdag plus zijn wachttijd
+        indien de bergdag van ten minste één van de vondsten van de Berging gevuld is.
+
+Regel bergdag
+    geldig altijd
+        De bergdag van een Vondst moet berekend worden als zijn vinddag plus 1
+        indien zijn vinddag gevuld is.
+
+Regel laatste bergdag
+    geldig altijd
+        De laatste bergdag van een Berging moet berekend worden als de maximale waarde van de bergdag van alle vondsten van de Berging.
+
+Regel uiterste meldingsdag
+    geldig altijd
+        De uiterste meldingsdag van een Berging moet berekend worden als zijn laatste bergdag plus 5.
+
+Regel wachttijd
+    geldig altijd
+        De wachttijd van een Berging moet berekend worden als zijn openingsdag min 10.
