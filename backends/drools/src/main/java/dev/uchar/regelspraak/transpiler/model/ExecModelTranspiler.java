@@ -2211,8 +2211,10 @@ public final class ExecModelTranspiler {
      *  alternative binds the reached fact so its modify re-activates the rule; the {@code eval} alternative fires the
      *  NULL-relation subject (which reads leeg and never goes stale, but MUST still fire, §6.9 — e.g. a broken chain
      *  whose value still adds an OWN attribute). The two alternatives are mutually exclusive, so no subject
-     *  double-fires. The consequence keeps its OWN null-safe navigated read. Unresolvable / to-many navigations are
-     *  skipped (they lower elsewhere / stay a marker). Mirrors the DRL back-end navReactiviteitClausules.
+     *  double-fires. A chain gets such an item for every object it passes ({@link #navJoins}), since a relation on
+     *  the way can be set later too. The consequence keeps its OWN null-safe navigated read. Unresolvable / to-many
+     *  navigations are skipped (they lower elsewhere / stay a marker). Mirrors the DRL back-end
+     *  navReactiviteitClausules, which joins a chain at the object it reaches only.
      *  <p>null (never an empty list) when a hop has NO bean field: the join would probe a displaced member and bind
      *  the wrong fact, so the whole construct is refused with {@link #navReden}. A {@code continue} would drop the
      *  watch silently and leave the rule stale — the one direction this method exists to prevent. */
@@ -2220,19 +2222,17 @@ public final class ExecModelTranspiler {
                                                      Set<String> gejoind) {
         List<Expr.AttribuutRef> refs = new ArrayList<>();
         navRefs(waarde, subject, refs);
-        return navJoins(refs, List.of(), subject, subjectVar, gejoind, false);
+        return navJoins(refs, List.of(), subject, subjectVar, gejoind);
     }
 
     /** One far-side join per distinct navigation among {@code refs} and {@code kenmerkHops} whose key is not yet in
-     *  {@code gejoind}; the keys it joins are added there. With {@code elkeHop} a §13.4.1 chain is joined at every
-     *  object it passes, in order, and not only at the object it reaches: a relation in the middle of the chain can
-     *  be set after the subject matched (a fact creation writes that field and updates the object that holds it),
-     *  and with that object outside the tuple nothing runs the test again. A voorwaarde asks for this; a value keeps
-     *  the one join. */
+     *  {@code gejoind}; the keys it joins are added there. A §13.4.1 chain is joined at every object it passes, in
+     *  order, and not only at the object it reaches: a relation in the middle of the chain can be set after the
+     *  subject matched (a fact creation writes that field and updates the object that holds it), and with that object
+     *  outside the tuple nothing runs the rule again — for a voorwaarde and a value alike. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<RuleItemBuilder<?>> navJoins(List<Expr.AttribuutRef> refs, List<KenmerkHop> kenmerkHops,
-                                              Objecttype subject, Variable subjectVar, Set<String> gejoind,
-                                              boolean elkeHop) {
+                                              Objecttype subject, Variable subjectVar, Set<String> gejoind) {
         if (refs.isEmpty() && kenmerkHops.isEmpty()) return List.of();
         // Distinct by the reached FAR type + full role path (subject -> reader): the same relation read twice needs
         // one item. Key on the ordered role hops that reach the fact whose attribute is read.
@@ -2247,7 +2247,7 @@ public final class ExecModelTranspiler {
                 if (w == null) continue;
                 List<java.util.function.Function<Object, Object>> hops = ketenStappen(w, subject);
                 if (hops == null) return null;   // §13.3.9 name-dedup
-                for (int i = 1; elkeHop && i < hops.size(); i++) {
+                for (int i = 1; i < hops.size(); i++) {
                     // an object on the way, keyed as a join that reaches it over those hops alone is
                     Objecttype tussen = w.bereikt().get(i - 1);
                     if (factClass(tussen) == null) continue;
@@ -3576,11 +3576,11 @@ public final class ExecModelTranspiler {
      *  pattern, and Drools runs those when the SUBJECT is inserted or updated. A test that reads through a to-one
      *  navigation reads another fact, and an update of that fact does not run the test again: a value another rule
      *  derives on the reached object after the subject was inserted is never seen, so the rule never fires, or fires
-     *  on a value that no longer holds. Such a voorwaarde gets the far-side join per distinct navigation that
-     *  {@link #navReactiviteit} gives a navigated VALUE read, and a §13.4.1 chain of to-one hops one join per object
-     *  it passes ({@link #navJoins} with {@code elkeHop}); its tests go on the subject bound a second time, FROM
-     *  {@code $subject}, after those joins: that pattern is evaluated again whenever the tuple before it changes, an
-     *  update of a reached object included. The subject pattern gets the opaque always-true expr, so it stays
+     *  on a value that no longer holds. Such a voorwaarde gets the far-side joins that {@link #navReactiviteit} gives
+     *  a navigated VALUE read ({@link #navJoins}: one per distinct navigation, and for a §13.4.1 chain of to-one hops
+     *  one per object it passes), and its tests go on the subject bound a second time, FROM {@code $subject}, after
+     *  those joins: that pattern is evaluated again whenever the tuple before it changes, an update of a reached
+     *  object included. The subject pattern gets the opaque always-true expr, so it stays
      *  class-reactive as the voorwaarde's own tests made it, and an update of the subject still reaches the test.
      *  While the voorwaarde lowers for that pattern its navigated reads are the {@link #gejoindeLezingen}: only there
      *  does a chain, or a navigated operand of a date computation, lower. A voorwaarde that reaches no object to join
@@ -3605,7 +3605,7 @@ public final class ExecModelTranspiler {
             gejoindeLezingen = buiten;
         }
         if (gate == null) return null;
-        List<RuleItemBuilder<?>> joins = navJoins(refs, hops, subject, subjectVar, gejoind, true);
+        List<RuleItemBuilder<?>> joins = navJoins(refs, hops, subject, subjectVar, gejoind);
         if (joins == null) return null;
         if (joins.isEmpty()) return voorwaarde(c, pattern, subject, subjectVar);
         List<RuleItemBuilder<?>> extra = new ArrayList<>(joins);

@@ -22,12 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * on Jutterswet material, each one measured form of the card's form space with the values {@code ref} and clingo
  * answer.
  *
- * <p><b>Red before the fix</b> (measured 2026-10-01 on the transpiler of the claim, exec-model branch): every row was
- * refused in the generic sentence {@code transpiler SKIP: regel: <regel> — regel (voorwaarde buiten Phase-B scope):
- * <regel>}. The row whose second relation a fact creation sets later also fails with the chain joined at its END
- * object only (the one join a chain read in a rule's value gets): the Jutter that the fact creation updates is then
- * not in the rule's tuple, so the test is not run again ({@code attribuut uitkomst: verwacht 2026-09-15, werkelijk
- * leeg}); it holds the join per hop.
+ * <p><b>Red before the fix</b> (measured 2026-10-01 on the transpiler of the claim, exec-model branch): every row
+ * over a voorwaarde was refused in the generic sentence {@code transpiler SKIP: regel: <regel> — regel (voorwaarde
+ * buiten Phase-B scope): <regel>}. The row whose second relation a fact creation sets later also fails with the chain
+ * joined at its END object only, the one join a chain read in a rule's value had: the Jutter the fact creation
+ * updates is then not in the rule's tuple, so the test is not run again ({@code attribuut uitkomst: verwacht
+ * 2026-09-15, werkelijk leeg}); it holds the join per hop. The row over the VALUE was that same wrong answer on the
+ * claim ({@code verwacht 2026-01-01, werkelijk leeg}): the value's chain now gets the join per hop too.
  */
 class KetenVoorwaardeWitnessTest {
 
