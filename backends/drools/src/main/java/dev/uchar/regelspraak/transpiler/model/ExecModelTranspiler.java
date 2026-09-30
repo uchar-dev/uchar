@@ -7721,10 +7721,10 @@ public final class ExecModelTranspiler {
     }
 
     /** Lower one defaults group to its single reduce-rule (a port of ref's {@code run_defaults_group},
-     *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom), a far-side join per navigation
-     *  the defaults read and an accumulate per aggregation a justification reads; RHS the top-down walk over the
-     *  defaults with leeg fall-through, recursion into {@code excepties}, member reconciliation, and one idempotent
-     *  write or one §9.5 {@code Inconsistentie}. Loud, reason-carrying {@code skipList} fences (the exec-back-end's
+     *  eval.ml:1630-1771): LHS the class-reactive subject pattern (freshness idiom) and an accumulate per aggregation
+     *  a justification reads; RHS the top-down walk over the defaults with leeg fall-through, recursion into
+     *  {@code excepties}, member reconciliation, and one idempotent write or one §9.5 {@code Inconsistentie}. Loud,
+     *  reason-carrying {@code skipList} fences (the exec-back-end's
      *  skip discipline, surfaced by {@link #meet} as a SKIP): a temporal defaults target (ref-parity), a
      *  channel-depositing consequence (division), a consequence not reducible to the value machinery, and a
      *  justification whose form {@link #rechtvaardiging} does not lower, named with its condition. */
@@ -7788,21 +7788,9 @@ public final class ExecModelTranspiler {
             return skipList("defaults (" + targetForm + "): " + e.getMessage());
         }
         globalNamen.addAll(bouw.globals);
-        // RUNTIME-SEMANTICS ch. 7.4: the group decides at the fixpoint of what its defaults read. A read through a role
-        // reads another fact, and the subject pattern below does not react to an update of that fact, so every
-        // navigation a justification or a consequence makes gets the far-side join a navigated value read gets in a
-        // rule (navJoins): the group fires again when the reached object changes and decides on what it holds then.
-        // Per level a default was declared on, as its reads are compiled there (ch. 7.10).
-        Map<Objecttype, List<Expr.AttribuutRef>> navLezingen = new LinkedHashMap<>();
-        Map<Objecttype, List<KenmerkHop>> navHops = new LinkedHashMap<>();
-        for (PrioritizedDefaults l : members) defaultsNavigaties(l.defaults(), onderwerp, navLezingen, navHops);
-        List<RuleItemBuilder<?>> verreJoins = new ArrayList<>();
-        Set<String> gejoind = new LinkedHashSet<>();
-        for (Objecttype niveau : navLezingen.keySet()) {
-            List<RuleItemBuilder<?>> j = navJoins(navLezingen.get(niveau), navHops.get(niveau), niveau, sVar, gejoind);
-            if (j == null) return skipList("defaults (" + targetForm + "): " + navReden);
-            verreJoins.addAll(j);
-        }
+        // A read through a role reads another fact, which the subject pattern below does not watch. The group does
+        // not need to: it waits for the producers of what it reads, wherever they write (groepVolgorde), so it
+        // decides once they have run (RUNTIME-SEMANTICS ch. 7.4), and an aggregation's accumulate follows its elements.
 
         java.util.function.Function<Object, Object> doelGetter = Accessors.getter(factClass, doel);
         BiConsumer<Object, Object> doelSetter = Accessors.setter(factClass, doel);
@@ -7888,7 +7876,6 @@ public final class ExecModelTranspiler {
                 items.add(DSL.not(guard));
             }
         }
-        items.addAll(verreJoins);
         items.addAll(bouw.accItems);
         items.add(consequence);
 
@@ -8114,8 +8101,8 @@ public final class ExecModelTranspiler {
      *  fold's result, or the leegwaarde of ch. 1.2e when no element contributes), anything else as the consequence
      *  reads a value ({@link #scalarWaarde}) — a chain of roles included, null-safely, and a numeric parameter from the
      *  globals the consequence binds. The chain gate of the value path is opened here, and only here, on the
-     *  condition side: the DRL-text branch has no defaults lowering to stay symmetric with, and the group's far-side
-     *  join makes the chain's reached object fire it again. null where the side does not lower, with
+     *  condition side: the DRL-text branch has no defaults lowering to stay symmetric with, and the group waits for
+     *  the producers of what the chain reads (groepVolgorde). null where the side does not lower, with
      *  {@code bouw.weigering} naming it. */
     private Eval rechtvaardigingZijde(Expr e, Objecttype subject, RechtvaardigingBouw bouw) {
         if (e instanceof Expr.Functie f && isAggregatieKind(f.kind()) && !isGelisteFold(f)) {
@@ -8179,21 +8166,6 @@ public final class ExecModelTranspiler {
 
     private static String snippet(dev.uchar.regelspraak.ir.Bron bron) {
         return bron == null || bron.snippet() == null ? "<zonder bron>" : bron.snippet();
-    }
-
-    /** The navigations the defaults of a group read, grouped by the level each default was declared on (ch. 7.10:
-     *  a default is compiled there), through {@link #navRefs} over every justification and consequence, the nested
-     *  exception groups included. */
-    private void defaultsNavigaties(List<Default> defaults, Objecttype niveau,
-                                    Map<Objecttype, List<Expr.AttribuutRef>> refs, Map<Objecttype, List<KenmerkHop>> hops) {
-        for (Default d : defaults) {
-            Objecttype eigen = defaultHerkomst.getOrDefault(d, niveau);
-            List<Expr.AttribuutRef> r = refs.computeIfAbsent(eigen, k -> new ArrayList<>());
-            navRefs(d.voorwaarde(), eigen, r, hops.computeIfAbsent(eigen, k -> new ArrayList<>()));
-            if (d.consequentie() != null) navRefs(d.consequentie(), eigen, r);
-            if (d.excepties() != null)
-                for (ExceptionGroup g : d.excepties().leden()) defaultsNavigaties(g.defaults(), eigen, refs, hops);
-        }
     }
 
     /** A subject-local condition predicate ({@code subject -> boolean}): a compound recurses per its kwantor,

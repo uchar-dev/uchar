@@ -31,14 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
  *
- * <p>The row where the reached value changes after the group fired came after the fix (2026-09-30). On the transpiler of
- * the claim it is refused in the lumped sentence; on the fix with the group's far-side joins left out it answers
- * {@code attribuut gemelde premie: verwacht 20, werkelijk 10}, so it holds the joins, as the two rows over a later
- * group hold the order of the groups. The row with a characteristic target whose far producer waits on a negated read
- * came with the band of a group (2026-09-30): on the fix before it, where a group took only the salience of its direct
- * producers, it answers {@code kenmerk dringend: verwacht afwezig, werkelijk aanwezig}. The row with a negation reader
- * of a group's characteristic is a flank, green before and after; with every group placed strictly below its producers
- * it answers {@code kenmerk rustig: verwacht afwezig, werkelijk aanwezig}.
+ * <p>Three rows came after the fix of 10a0918d (2026-09-30), and hold the band a group takes (groepVolgorde). The row
+ * where the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in
+ * the lumped sentence; on 10a0918d, where a group took only the salience of its direct producers, green through the
+ * far-side join that fix carried, and red with that join left out ({@code attribuut gemelde premie: verwacht 20,
+ * werkelijk 10}). The same row with a characteristic target: red on 10a0918d, join and all ({@code kenmerk dringend:
+ * verwacht afwezig, werkelijk aanwezig}), since a join cannot withdraw an attributed characteristic. With the band both
+ * are green and the join is gone. The row with a negation reader of a group's characteristic is a flank, green before
+ * and after; with every group placed strictly below its producers it answers {@code kenmerk rustig: verwacht afwezig,
+ * werkelijk aanwezig}.
  */
 class DefaultsRechtvaardigingWitnessTest {
 
@@ -171,9 +172,9 @@ class DefaultsRechtvaardigingWitnessTest {
         // "De bonuspremie van een Jutter moet berekend worden als 20 indien hij niet ijverig is" (a negated read, so
         // the stratification puts it below salience 0), "De premie van een Jutter moet gesteld worden op de
         // bonuspremie van de Jutter" (salience 0), and the gemelde premie of the card's R2 over that premie with the
-        // threshold 15. The premie rule is the producer the group reads, and the group fires in its band, before the
-        // bonuspremie is written; when the premie then changes, only the far-side join on the reached jutter fires
-        // the group again. ref and clingo: J1 (not ijverig) premie 20 and M1 20; J2 (ijverig) premie leeg and M2 10.
+        // threshold 15. The premie rule is the producer the group reads; in its band, 0, the group would read the
+        // premie before the bonuspremie is written. It waits in the band of the bonuspremie instead. ref and clingo:
+        // J1 (not ijverig) premie 20 and M1 20; J2 (ijverig) premie leeg and M2 10.
         String jutter = objecttype("Jutter", "Jutters", true, List.of(attribuut("premie"), attribuut("bonuspremie")),
                 List.of("ijverig"));
         String model = model(List.of(jutter, VONDST, MELDING), List.of(JUTTER_VONDST, VONDST_MELDING), "");
