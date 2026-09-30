@@ -134,24 +134,31 @@ the transient in the exec-model branch since 2026-09-30: such a rule is placed b
 reads (the section on a fold whose subselection tests a value derived later); a test outside a fold keeps this limit.
 A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
 
-## Recorded: a defaults justification that counts or reads further than one role
+## Recorded: a defaults justification that counts or reads further than one role, and a consequence that folds
 
 The exec-model branch lowers a justification that is no subject-local predicate member by member
 (`ExecModelTranspiler.rechtvaardiging`): an aggregation (count, sum, minimum, maximum, with or without a filter)
 becomes an accumulate on the group's reduce-rule whose result the justification reads when the rule fires, and a
 comparison or a leeg/gevuld test whose operand reads a chain of roles or a numeric parameter reads that operand as a
-rule's value does. A group takes the lowest salience among the producers of what it reads, on its own type, beyond a
-role or in a fold, and the producers they wait on in turn, and is added to the model after the groups among them
-(`groepVolgorde`), so it decides after them (RUNTIME-SEMANTICS ch. 7.4); an aggregation's accumulate follows its
-elements. It is not placed strictly below them; a rule that reads the group's characteristic under negation is placed
-strictly below the group instead, since the stratification of the rules does not see a group as a producer and an
-ordinary rule fires first in a band it shares with a group. A group carries no far-side join: with the order in place none of
-the measured forms needed one, and a producer outside the rules and the groups (an allocation) could not be measured,
-see the open points of the card. Golden
-`jutterswet-premiestaffel`, witness `DefaultsRechtvaardigingWitnessTest`. Still refused, each by name with its
-condition: a quantifier fold, an aggregation inside an arithmetic expression, a parameter that is not a number, a
-period comparison and a rule-version predicate in a justification; an aggregation in a consequence keeps the
-consequence's own refusal. The DRL-text branch has no defaults lowering at all.
+rule's value does. A consequence that folds over a set source — the earliest or the latest date, a count, a sum, a
+minimum or a maximum, on its own, inside a computation or as an operand of a listed fold — lowers as a rule's value
+does (the section on a fold over a set source inside a rule's value): each fold becomes an accumulate on the same
+reduce-rule, and the consequence reads its result from a slot (`ExecModelTranspiler.compileDefault`, `vouwslot`), in
+the base and the exceptions of a tree and in the group the opgave marker generates. A group takes the lowest salience
+among the producers of what it reads, on its own type, beyond a role or in a fold, and the producers they wait on in
+turn, and is added to the model after the groups among them (`groepVolgorde`), so it decides after them
+(RUNTIME-SEMANTICS ch. 7.4); an aggregation's accumulate follows its elements. It is not placed strictly below them; a
+rule that reads the group's characteristic under negation is placed strictly below the group instead, since the
+stratification of the rules does not see a group as a producer and an ordinary rule fires first in a band it shares
+with a group. A group carries no far-side join: with the order in place none of the measured forms needed one, and a
+producer outside the rules and the groups (an allocation) could not be measured, see the open points of the card.
+Goldens `jutterswet-premiestaffel` and `jutterswet-sluitdag-gemeld`, witnesses `DefaultsRechtvaardigingWitnessTest` and
+`DefaultsConsequentieVouwWitnessTest`. Still refused, each by name with its condition: a quantifier fold, an
+aggregation inside an arithmetic expression, a parameter that is not a number, a period comparison and a rule-version
+predicate in a justification. A consequence that does not lower is refused with the form and the consequence
+(`consequentie niet vertaald`), such as a fold over a relation whose two roles are both plural (§13.3.9), and a group
+whose aggregations, folds and globals bind more variables than the consequence takes (nine, the subject among them) by
+that count. The DRL-text branch has no defaults lowering at all.
 
 ## Recorded: a condition that puts no test on the subject
 
