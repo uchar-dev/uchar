@@ -95,15 +95,19 @@ class KetenVoorwaardeWitnessTest {
         // van de kustwacht van de Haven". The fact creation sets J's haven and updates J after V matched; only a join
         // on the Jutter runs the test again. ref and clingo: V 15-09-2026, X (its jutter has no werver) leeg.
         String ir = document(List.of(uitkomstIndien(predicaat("filled", viaHaven("openingsdag"))), AFGELEIDE_OPENINGSDAG),
-                "\"factCreations\":[{\"node\":\"FactCreation\",\"name\":\"werving\",\"versions\":[{\"factType\":"
-                        + "\"HavenHeeftJutter\",\"anchorRole\":\"haven\",\"targetRole\":\"havenjutter\",\"anchor\":\"Haven\","
-                        + "\"path\":[" + rolbinding("KustwachtBewaaktHaven", "kustwacht") + "," + rolbinding("Werving", "geworven jutter")
-                        + "],\"validity\":{\"node\":\"Validity\"}}]}],");
-        assertNull(speel(ir, zaak(List.of(kustwacht("K", "2026-06-01"), kustwacht("K2", null), haven("H", "2026-01-01", "K"),
-                        instantie("J", "Jutter", "\"vergunningsdag\":{\"date\":\"2026-03-01\"}", "\"werver\":[\"K\"]"),
-                        instantie("J2", "Jutter", "", "\"werver\":[\"K2\"]"),
-                        vondst("V", "2026-09-15", "J"), vondst("X", "2026-09-15", "J2")),
-                datum("V", "2026-09-15") + ", " + leeg("X"))), "de haven komt uit de werving");
+                WERVING);
+        assertNull(speel(ir, zaak(WERVING_SITUATIE, datum("V", "2026-09-15") + ", " + leeg("X"))), "de haven komt uit de werving");
+    }
+
+    @Test void de_waarde_over_de_keten_ziet_de_tweede_relatie_die_een_feitcreatie_later_legt() throws Exception {
+        // The same fact creation under a rule whose VALUE reads the chain: "De uitkomst van een Vondst moet gesteld
+        // worden op de openingsdag van de haven van de jutter van de Vondst". The value's far-side join on the reached
+        // Haven alone does not see J's haven being set. ref and clingo: V 01-01-2026, X leeg. Measured 2026-10-01:
+        // red on the transpiler of the fix of the voorwaarde (attribuut uitkomst: verwacht 2026-01-01, werkelijk leeg),
+        // as on the claim.
+        String ir = document(List.of(regel("uitkomst", "Vondst", "uitkomst", viaHaven("openingsdag"), null), AFGELEIDE_OPENINGSDAG),
+                WERVING);
+        assertNull(speel(ir, zaak(WERVING_SITUATIE, datum("V", "2026-01-01") + ", " + leeg("X"))), "de haven komt uit de werving");
     }
 
     // ---------------- further forms of (a) ----------------
@@ -273,6 +277,18 @@ class KetenVoorwaardeWitnessTest {
     private static String uitkomstIndien(String voorwaarde) {
         return regel("uitkomst", "Vondst", "uitkomst", eigen("vinddag"), voorwaarde);
     }
+
+    /** "Een havenjutter van een Haven is een geworven jutter van de kustwacht van de Haven." */
+    private static final String WERVING = "\"factCreations\":[{\"node\":\"FactCreation\",\"name\":\"werving\",\"versions\":[{"
+            + "\"factType\":\"HavenHeeftJutter\",\"anchorRole\":\"haven\",\"targetRole\":\"havenjutter\",\"anchor\":\"Haven\","
+            + "\"path\":[" + rolbinding("KustwachtBewaaktHaven", "kustwacht") + "," + rolbinding("Werving", "geworven jutter")
+            + "],\"validity\":{\"node\":\"Validity\"}}]}],";
+
+    /** H (kustwacht K) and J (werver K) are linked by no haven relation until the werving; J2's werver K2 guards no
+     *  haven; V's jutter is J, X's J2. */
+    private static final List<String> WERVING_SITUATIE = List.of(kustwacht("K", "2026-06-01"), kustwacht("K2", null),
+            haven("H", "2026-01-01", "K"), instantie("J", "Jutter", "\"vergunningsdag\":{\"date\":\"2026-03-01\"}", "\"werver\":[\"K\"]"),
+            instantie("J2", "Jutter", "", "\"werver\":[\"K2\"]"), vondst("V", "2026-09-15", "J"), vondst("X", "2026-09-15", "J2"));
 
     /** "De afgeleide openingsdag van een Haven moet gesteld worden op zijn openingsdag." */
     private static final String AFGELEIDE_OPENINGSDAG = regel("afgeleide openingsdag", "Haven", "afgeleide openingsdag",
