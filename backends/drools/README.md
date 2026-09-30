@@ -130,3 +130,17 @@ that holds on an empty value, such as a leeg test on a derived attribute, fires 
 is declared before the rule that writes the value, and the write stays; this holds for an own and a navigated operand
 alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic check is stratified and is not
 affected. A condition over two or more hops is refused by name, except the whole-period leeg and gevuld test.
+
+## Recorded: a defaults justification that counts or reads further than one role
+
+The exec-model branch lowers a justification that is no subject-local predicate member by member
+(`ExecModelTranspiler.rechtvaardiging`): an aggregation (count, sum, minimum, maximum, with or without a filter)
+becomes an accumulate on the group's reduce-rule whose result the justification reads when the rule fires, and a
+comparison or a leeg/gevuld test whose operand reads a chain of roles or a numeric parameter reads that operand as a
+rule's value does. Every navigation the defaults of a group read gets a far-side join, so the group fires again when
+the reached object changes; and a group is added to the model after the groups that write what it reads and takes
+their salience (`groepVolgorde`), so it decides after them (RUNTIME-SEMANTICS ch. 7.4). Golden
+`jutterswet-premiestaffel`, witness `DefaultsRechtvaardigingWitnessTest`. Still refused, each by name with its
+condition: a quantifier fold, an aggregation inside an arithmetic expression, a parameter that is not a number, a
+period comparison and a rule-version predicate in a justification; an aggregation in a consequence keeps the
+consequence's own refusal. The DRL-text branch has no defaults lowering at all.
