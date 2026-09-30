@@ -1,0 +1,147 @@
+Scenario strandvondst berekend
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de aanspoeldag is 10-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van S is 12-03-2026
+- de berekende meldingsdatum van S is 12-03-2026
+- S heeft geen afwijkende opgave meldingsdatum
+- S is niet ter controle
+- de controledag van S is leeg
+- de uiterste afhaaldatum van S is 11-04-2026
+- de gegevens zijn consistent
+
+Scenario strandvondst beschadigd
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de aanspoeldag is 10-03-2026
+- is beschadigd
+Met als verwacht resultaat:
+- de meldingsdatum van S is 10-03-2026
+- de berekende meldingsdatum van S is 10-03-2026
+- S heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van S is 09-04-2026
+- de gegevens zijn consistent
+
+Scenario strandvondst opgave wijkt af
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de aanspoeldag is 10-03-2026
+- de opgegeven meldingsdatum is 15-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van S is 15-03-2026
+- de berekende meldingsdatum van S is 12-03-2026
+- S heeft afwijkende opgave meldingsdatum
+- S is ter controle
+- de controledag van S is 12-03-2026
+- de uiterste afhaaldatum van S is 14-04-2026
+- de gegevens zijn inconsistent volgens "controle opgave meldingsdatum" voor S
+
+Scenario strandvondst opgave gelijk
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de aanspoeldag is 10-03-2026
+- de opgegeven meldingsdatum is 12-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van S is 12-03-2026
+- de berekende meldingsdatum van S is 12-03-2026
+- S heeft geen afwijkende opgave meldingsdatum
+- S is niet ter controle
+- de controledag van S is leeg
+- de uiterste afhaaldatum van S is 11-04-2026
+- de gegevens zijn consistent
+
+Scenario barnsteenvondst eigen basis
+Gegeven is de volgende situatie:
+een Barnsteenvondst B
+- de aanspoeldag is 10-03-2026
+- de keurdag is 20-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van B is 20-03-2026
+- de berekende meldingsdatum van B is 20-03-2026
+- B heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van B is 19-04-2026
+- de gegevens zijn consistent
+
+Scenario barnsteenvondst geerfde uitzondering
+Gegeven is de volgende situatie:
+een Barnsteenvondst B
+- de aanspoeldag is 10-03-2026
+- de keurdag is 20-03-2026
+- is beschadigd
+Met als verwacht resultaat:
+- de meldingsdatum van B is 10-03-2026
+- de berekende meldingsdatum van B is 10-03-2026
+- B heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van B is 09-04-2026
+- de gegevens zijn consistent
+
+Scenario barnsteenvondst zonder keurdag
+Gegeven is de volgende situatie:
+een Barnsteenvondst B
+- de aanspoeldag is 10-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van B is 01-03-2026
+- de berekende meldingsdatum van B is leeg
+- B heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van B is 31-03-2026
+- de gegevens zijn consistent
+
+Scenario barnsteenvondst opgave wijkt af
+Gegeven is de volgende situatie:
+een Barnsteenvondst B
+- de aanspoeldag is 10-03-2026
+- de keurdag is 20-03-2026
+- de opgegeven meldingsdatum is 18-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van B is 18-03-2026
+- de berekende meldingsdatum van B is 20-03-2026
+- B heeft afwijkende opgave meldingsdatum
+- B is ter controle
+- de controledag van B is 20-03-2026
+- de uiterste afhaaldatum van B is 17-04-2026
+- de gegevens zijn inconsistent volgens "controle opgave meldingsdatum" voor B
+
+Scenario vondst zonder berekening
+Gegeven is de volgende situatie:
+een Vondst V
+Met als verwacht resultaat:
+- de meldingsdatum van V is 01-03-2026
+- de berekende meldingsdatum van V is leeg
+- V heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van V is 31-03-2026
+- de gegevens zijn consistent
+
+Scenario vondst met opgave
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven meldingsdatum is 07-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V is 07-03-2026
+- de berekende meldingsdatum van V is leeg
+- V heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van V is 06-04-2026
+- de gegevens zijn consistent
+
+Scenario doel zelf in invoer
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de aanspoeldag is 10-03-2026
+- de meldingsdatum is 20-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van S is 12-03-2026
+- de berekende meldingsdatum van S is 12-03-2026
+- S heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van S is 11-04-2026
+- de gegevens zijn consistent
+
+Scenario doel zelf zonder feiten
+Gegeven is de volgende situatie:
+een Strandvondst S
+- de meldingsdatum is 20-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van S is 20-03-2026
+- de berekende meldingsdatum van S is leeg
+- S heeft geen afwijkende opgave meldingsdatum
+- de uiterste afhaaldatum van S is 19-04-2026
+- de gegevens zijn consistent

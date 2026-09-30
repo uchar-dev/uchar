@@ -1,0 +1,608 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste afhaaldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave meldingsdatum",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "supertype": "Vondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aanspoeldag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "controledag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "beschadigd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ter controle",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Barnsteenvondst",
+        "supertype": "Strandvondst",
+        "animate": false,
+        "plural": "Barnsteenvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "melding na de keuring",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende meldingsdatum",
+              "subjectType": "Barnsteenvondst",
+              "source": {
+                "snippet": "De meldingsdatum van een Barnsteenvondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "keurdag",
+              "subjectType": "Barnsteenvondst",
+              "source": {
+                "snippet": "zijn keurdag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3g lid 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "controle bij afwijkende meldingsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ter controle",
+              "subjectType": "Strandvondst",
+              "source": {
+                "snippet": "Een Strandvondst is ter controle"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave meldingsdatum",
+              "negated": false,
+              "source": {
+                "snippet": "hij afwijkende opgave meldingsdatum heeft"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3g lid 6"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "controledag bij afwijkende meldingsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "controledag",
+              "subjectType": "Strandvondst",
+              "source": {
+                "snippet": "De controledag van een Strandvondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "berekende meldingsdatum",
+              "subjectType": "Strandvondst",
+              "source": {
+                "snippet": "zijn berekende meldingsdatum"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "ter controle",
+              "negated": false,
+              "source": {
+                "snippet": "hij ter controle is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3g lid 6"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afhaaltermijn",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uiterste afhaaldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De uiterste afhaaldatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldingsdatum",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de meldingsdatum van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "30"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "30 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de meldingsdatum van de Vondst plus 30 dagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3g lid 7"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave meldingsdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst heeft afwijkende opgave meldingsdatum"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven meldingsdatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven meldingsdatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende meldingsdatum"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende meldingsdatum is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn opgegeven meldingsdatum"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende meldingsdatum",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn berekende meldingsdatum"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave meldingsdatum",
+        "versions": [
+          {
+            "subject": "Vondst",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave meldingsdatum",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave meldingsdatum"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de meldingsdatum Datum in dagen (mag opgegeven worden)",
+              "line": 2
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "melding na het aanspoelen",
+        "subject": "Strandvondst",
+        "attribute": "berekende meldingsdatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "beschadigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij beschadigd is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "aanspoeldag",
+              "subjectType": "Strandvondst",
+              "source": {
+                "snippet": "zijn aanspoeldag"
+              }
+            },
+            "source": {
+              "snippet": "art. 3g lid 2"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aanspoeldag",
+                "subjectType": "Strandvondst",
+                "source": {
+                  "snippet": "de aanspoeldag van de Strandvondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "2 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de aanspoeldag van de Strandvondst plus 2 dagen"
+              }
+            },
+            "source": {
+              "snippet": "art. 3g lid 1"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "art. 3g lid 1"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening meldingsdatum",
+        "subject": "Vondst",
+        "attribute": "meldingsdatum",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn opgegeven meldingsdatum"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven meldingsdatum"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn berekende meldingsdatum"
+              }
+            },
+            "source": {
+              "snippet": "berekende meldingsdatum"
+            }
+          },
+          {
+            "node": "Default",
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "date": "2026-03-01"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "01-03-2026"
+              }
+            },
+            "initialisation": true,
+            "source": {
+              "snippet": "art. 3g lid 4"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

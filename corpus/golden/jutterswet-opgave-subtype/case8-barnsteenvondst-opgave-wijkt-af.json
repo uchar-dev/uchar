@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Barnsteenvondst",
+        "attributes": {
+          "aanspoeldag": {
+            "date": "2026-03-10"
+          },
+          "keurdag": {
+            "date": "2026-03-20"
+          },
+          "opgegeven meldingsdatum": {
+            "date": "2026-03-18"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-18"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "berekende meldingsdatum",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "B",
+      "characteristic": "afwijkende opgave meldingsdatum"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "B",
+      "characteristic": "ter controle"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "controledag",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-04-17"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "controle opgave meldingsdatum",
+      "label": "B"
+    }
+  ]
+}

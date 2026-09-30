@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B",
+        "objectType": "Barnsteenvondst",
+        "attributes": {
+          "aanspoeldag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B",
+      "attribute": "berekende meldingsdatum"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "B",
+      "characteristic": "afwijkende opgave meldingsdatum"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-03-31"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

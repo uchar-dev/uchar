@@ -1,0 +1,50 @@
+Objecttype de Vondst (mv: Vondsten)
+    de meldingsdatum Datum in dagen (mag opgegeven worden);
+    de uiterste afhaaldatum Datum in dagen;
+
+Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+    de aanspoeldag Datum in dagen;
+    de controledag Datum in dagen;
+    is beschadigd kenmerk (bijvoeglijk);
+    is ter controle kenmerk (bijvoeglijk);
+
+Objecttype de Barnsteenvondst is een Strandvondst (mv: Barnsteenvondsten)
+    de keurdag Datum in dagen;
+
+// Bron: art. 3g lid 1
+Regel melding na het aanspoelen
+    geldig altijd
+        De meldingsdatum van een Strandvondst moet berekend worden als de aanspoeldag van de Strandvondst plus 2 dagen.
+
+// Bron: art. 3g lid 2
+Uitzondering op melding na het aanspoelen: melding bij schade
+    geldig altijd
+        De meldingsdatum van een Strandvondst moet gesteld worden op zijn aanspoeldag
+        indien hij beschadigd is.
+
+// Bron: art. 3g lid 3
+Regel melding na de keuring
+    geldig altijd
+        De meldingsdatum van een Barnsteenvondst moet gesteld worden op zijn keurdag.
+
+// Bron: art. 3g lid 4
+Regel melding bij onbekende dag
+    geldig altijd
+        De meldingsdatum van een Vondst moet geïnitialiseerd worden op 01-03-2026.
+
+// Bron: art. 3g lid 6
+Regel controle bij afwijkende meldingsdatum
+    geldig altijd
+        Een Strandvondst is ter controle
+        indien hij afwijkende opgave meldingsdatum heeft.
+
+// Bron: art. 3g lid 6
+Regel controledag bij afwijkende meldingsdatum
+    geldig altijd
+        De controledag van een Strandvondst moet gesteld worden op zijn berekende meldingsdatum
+        indien hij ter controle is.
+
+// Bron: art. 3g lid 7
+Regel afhaaltermijn
+    geldig altijd
+        De uiterste afhaaldatum van een Vondst moet berekend worden als de meldingsdatum van de Vondst plus 30 dagen.

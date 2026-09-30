@@ -1,0 +1,56 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "aanspoeldag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "beschadigd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "berekende meldingsdatum",
+      "value": {
+        "date": "2026-03-10"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S",
+      "characteristic": "afwijkende opgave meldingsdatum"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-04-09"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
