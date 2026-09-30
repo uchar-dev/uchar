@@ -443,3 +443,23 @@ Daarna één commit met dit Result, die de kaart naar `backlog/done` verplaatst.
 > `berekende X`; twelve cases from a scenario document), in ref ≡ clingo ≡
 > Drools exec; the DRL-text branch refuses it on its defaults sentence. No
 > wire, spec, verifier or executor change.
+
+## Keuring (hoofdsessie, 2026-09-30)
+
+Eigen run van de zestien gates op `2475ead1` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates9/`. Alle zestien exit 0: gate 3 322 goldens; gate 5 en 6
+770 cases (ref = clingo); gate 7 726 cases, 44 pinned; gate 10 JUnit 1008,
+110 rgs-goldens; gate 12 `check-drools: PASS`, played 226 (pin 226), DRL 191
+(pin 191), JUnit 906; gate 16 17 scenario-goldens, 69 casebestanden. De
+lowering gelezen: een schrijver op een subtype verhuist op zijn eigen type
+naar `berekende X`, de groep blijft op T en wordt heel geërfd (ch. 7.10);
+twee benoemde weigeringen erbij, beide eerst zonder weigering gemeten. De
+registertekst is in dit landingscommit gezet in `spec/CONSTRUCTS.md` rij 8.
+Open punten 1–8 gelezen: geen kaart; 3 (de telling van de scenario-goldens
+in DIVERGENCES) en 6 (WF-079 noemt `berekende X`) zijn tekstpunten voor een
+volgende frontend-kaart; 5 (twee vlakke schrijvers op T en S, geen fixpunt
+in ref en exec, twee waarden in clingo) staat los van de markering en is een
+eigen vondst; 8 volgt nu (distributie- en werkbankpin). Landing: ff van
+`card/opgave-markering-schrijver-op-subtype` op main.
+
