@@ -1,0 +1,188 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K4",
+        "objectType": "Kustwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B4",
+        "objectType": "Berging",
+        "attributes": {
+          "opgegeven uiterste meldingsdag": {
+            "date": "2026-03-30"
+          },
+          "opgegeven afrekendag": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {
+          "kustwacht": [
+            "K4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B5",
+        "objectType": "Berging",
+        "attributes": {
+          "gemelde sluitdag": {
+            "date": "2026-03-20"
+          }
+        },
+        "roles": {
+          "kustwacht": [
+            "K4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "B5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergdag": {
+            "date": "2026-03-14"
+          },
+          "meldingsdag": {
+            "date": "2026-03-13"
+          },
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergdag": {
+            "date": "2026-03-02"
+          },
+          "meldingsdag": {
+            "date": "2026-03-04"
+          },
+          "gewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B5"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "B4",
+      "attribute": "sluitdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B4",
+      "attribute": "berekende uiterste meldingsdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B4",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "berekende uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B4",
+      "attribute": "berekende afrekendag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B4",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-03-20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B4",
+      "attribute": "vrachtgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "vrachtgewicht",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K4",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-14"
+      }
+    }
+  ]
+}

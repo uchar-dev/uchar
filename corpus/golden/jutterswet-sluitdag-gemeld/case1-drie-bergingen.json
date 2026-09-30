@@ -1,0 +1,296 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kustwacht",
+        "attributes": {
+          "gemelde sluitdag": {
+            "date": "2026-03-25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Kustwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berging",
+        "attributes": {},
+        "roles": {
+          "kustwacht": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Berging",
+        "attributes": {
+          "gemelde sluitdag": {
+            "date": "2026-03-12"
+          },
+          "gemelde gewicht": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "kustwacht": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B3",
+        "objectType": "Berging",
+        "attributes": {},
+        "roles": {
+          "kustwacht": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergdag": {
+            "date": "2026-03-09"
+          },
+          "meldingsdag": {
+            "date": "2026-03-05"
+          },
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergdag": {
+            "date": "2026-03-03"
+          },
+          "meldingsdag": {
+            "date": "2026-03-11"
+          },
+          "gewicht": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "meldingsdag": {
+            "date": "2026-03-06"
+          },
+          "gewicht": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergdag": {
+            "date": "2026-03-01"
+          },
+          "meldingsdag": {
+            "date": "2026-03-02"
+          },
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "berging": [
+            "B2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-09"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-12"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "sluitdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "berekende uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-09"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-09"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "berekende uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-16"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "uiterste meldingsdag",
+      "value": {
+        "date": "2026-03-16"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "berekende uiterste meldingsdag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "uiterste meldingsdag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B1",
+      "attribute": "berekende afrekendag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-03-11"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "berekende afrekendag",
+      "value": {
+        "date": "2026-03-12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-03-12"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "afrekendag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "vrachtgewicht",
+      "value": {
+        "number": "13"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "vrachtgewicht",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B3",
+      "attribute": "vrachtgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K1",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-09"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "K2",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-25"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "K3",
+      "attribute": "sluitdag"
+    }
+  ]
+}

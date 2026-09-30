@@ -1,0 +1,1102 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustwacht",
+        "animate": false,
+        "plural": "Kustwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gemelde sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gemelde sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uiterste meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven uiterste meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende uiterste meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afrekendag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opgegeven afrekendag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "berekende afrekendag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gemelde gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vrachtgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave uiterste meldingsdag",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afwijkende opgave afrekendag",
+            "kind": "possessive"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "BergingBetreftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "KustwachtBeheertBerging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustwacht",
+            "objectType": "Kustwacht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "plural": "bergingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "afrekendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "berekende afrekendag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "De afrekendag van een Berging"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "gemelde sluitdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn gemelde sluitdag"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gemelde sluitdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn gemelde sluitdag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gemelde sluitdag gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave uiterste meldingsdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave uiterste meldingsdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "Een Berging heeft afwijkende opgave uiterste meldingsdag"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven uiterste meldingsdag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn opgegeven uiterste meldingsdag"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven uiterste meldingsdag is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende uiterste meldingsdag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn berekende uiterste meldingsdag"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende uiterste meldingsdag is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven uiterste meldingsdag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn opgegeven uiterste meldingsdag"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende uiterste meldingsdag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn berekende uiterste meldingsdag"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven uiterste meldingsdag is gevuld - zijn berekende uiterste meldingsdag is gevuld - zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afwijking opgave afrekendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afwijkende opgave afrekendag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "Een Berging heeft afwijkende opgave afrekendag"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven afrekendag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn opgegeven afrekendag"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn opgegeven afrekendag is gevuld"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende afrekendag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn berekende afrekendag"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn berekende afrekendag is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "opgegeven afrekendag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn opgegeven afrekendag"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "berekende afrekendag",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "zijn berekende afrekendag"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afrekendag is gevuld - zijn berekende afrekendag is gevuld - zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "controle opgave uiterste meldingsdag",
+        "versions": [
+          {
+            "subject": "Berging",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave uiterste meldingsdag",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave uiterste meldingsdag"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de uiterste meldingsdag Datum in dagen (mag opgegeven worden)",
+              "line": 8
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "controle opgave afrekendag",
+        "versions": [
+          {
+            "subject": "Berging",
+            "assertion": {
+              "node": "CharacteristicCheck",
+              "characteristic": "afwijkende opgave afrekendag",
+              "negated": true,
+              "source": {
+                "snippet": "hij heeft geen afwijkende opgave afrekendag"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "de afrekendag Datum in dagen (mag opgegeven worden)",
+              "line": 9
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "sluitdag",
+        "subject": "Berging",
+        "attribute": "sluitdag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gemelde sluitdag",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn gemelde sluitdag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gemelde sluitdag gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "gemelde sluitdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn gemelde sluitdag"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bergdag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de bergdag van alle vondsten van de Berging"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van de bergdag van alle vondsten van de Berging"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "uiterste meldingsdag",
+        "subject": "Berging",
+        "attribute": "berekende uiterste meldingsdag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Berging",
+                    "source": {
+                      "snippet": "vondsten van de Berging"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Berging"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Berging groter is dan 2"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "sluitdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn sluitdag"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Aggregation",
+                "kind": "last",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "meldingsdag",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de meldingsdag van alle vondsten van de Berging"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "de laatste van de meldingsdag van alle vondsten van de Berging"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "14"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "dag",
+                    "canonical": "dag",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "14 dagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "(de laatste van de meldingsdag van alle vondsten van de Berging) plus 14 dagen"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "vrachtgewicht",
+        "subject": "Berging",
+        "attribute": "vrachtgewicht",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gemelde gewicht",
+                "subjectType": "Berging",
+                "source": {
+                  "snippet": "zijn gemelde gewicht"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gemelde gewicht leeg is"
+              }
+            },
+            "consequence": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Berging"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "BergingBetreftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Berging"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "gemelde gewicht",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn gemelde gewicht"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "sluitdag van een kustwacht",
+        "subject": "Kustwacht",
+        "attribute": "sluitdag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gemelde sluitdag",
+                "subjectType": "Kustwacht",
+                "source": {
+                  "snippet": "zijn gemelde sluitdag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gemelde sluitdag gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "gemelde sluitdag",
+              "subjectType": "Kustwacht",
+              "source": {
+                "snippet": "zijn gemelde sluitdag"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bergdag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de bergdag van alle vondsten van alle bergingen van de Kustwacht"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "KustwachtBeheertBerging",
+                  "role": "berging"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "BergingBetreftVondst",
+                  "role": "vondst"
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van de bergdag van alle vondsten van alle bergingen van de Kustwacht"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening uiterste meldingsdag",
+        "subject": "Berging",
+        "attribute": "uiterste meldingsdag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven uiterste meldingsdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn opgegeven uiterste meldingsdag"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven uiterste meldingsdag"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende uiterste meldingsdag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn berekende uiterste meldingsdag"
+              }
+            },
+            "source": {
+              "snippet": "berekende uiterste meldingsdag"
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "opgave boven berekening afrekendag",
+        "subject": "Berging",
+        "attribute": "afrekendag",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "opgegeven afrekendag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn opgegeven afrekendag"
+              }
+            },
+            "source": {
+              "snippet": "opgegeven afrekendag"
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "berekende afrekendag",
+              "subjectType": "Berging",
+              "source": {
+                "snippet": "zijn berekende afrekendag"
+              }
+            },
+            "source": {
+              "snippet": "berekende afrekendag"
+            }
+          },
+          {
+            "node": "Default",
+            "consequence": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "Aggregation",
+                  "kind": "last",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "bergdag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de bergdag van alle vondsten van de Berging"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "BergingBetreftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de laatste van de bergdag van alle vondsten van de Berging"
+                  }
+                },
+                {
+                  "node": "Aggregation",
+                  "kind": "last",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "meldingsdag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de meldingsdag van alle vondsten van de Berging"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "BergingBetreftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de laatste van de meldingsdag van alle vondsten van de Berging"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van (de laatste van de bergdag van alle vondsten van de Berging) en (de laatste van de meldingsdag van alle vondsten van de Berging)"
+              }
+            },
+            "initialisation": true
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

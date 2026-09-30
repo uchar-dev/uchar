@@ -1,0 +1,90 @@
+Scenario drie bergingen
+Gegeven is de volgende situatie:
+een Kustwacht K1
+een Kustwacht K2
+- de gemelde sluitdag is 25-03-2026
+een Kustwacht K3
+een Berging B1
+- de kustwacht is K1
+een Berging B2
+- de gemelde sluitdag is 12-03-2026
+- het gemelde gewicht is 30
+- de kustwacht is K1
+een Berging B3
+- de kustwacht is K2
+een Vondst V1
+- de bergdag is 09-03-2026
+- de meldingsdag is 05-03-2026
+- het gewicht is 4
+- de berging is B1
+een Vondst V2
+- de bergdag is 03-03-2026
+- de meldingsdag is 11-03-2026
+- het gewicht is 7
+- de berging is B1
+een Vondst V3
+- de meldingsdag is 06-03-2026
+- het gewicht is 2
+- de berging is B1
+een Vondst V4
+- de bergdag is 01-03-2026
+- de meldingsdag is 02-03-2026
+- het gewicht is 5
+- de berging is B2
+Met als verwacht resultaat:
+- de sluitdag van B1 is 09-03-2026
+- de sluitdag van B2 is 12-03-2026
+- de sluitdag van B3 is leeg
+- de berekende uiterste meldingsdag van B1 is 09-03-2026
+- de uiterste meldingsdag van B1 is 09-03-2026
+- de berekende uiterste meldingsdag van B2 is 16-03-2026
+- de uiterste meldingsdag van B2 is 16-03-2026
+- de berekende uiterste meldingsdag van B3 is leeg
+- de uiterste meldingsdag van B3 is leeg
+- de berekende afrekendag van B1 is leeg
+- de afrekendag van B1 is 11-03-2026
+- de berekende afrekendag van B2 is 12-03-2026
+- de afrekendag van B2 is 12-03-2026
+- de afrekendag van B3 is leeg
+- het vrachtgewicht van B1 is 13
+- het vrachtgewicht van B2 is 30
+- het vrachtgewicht van B3 is leeg
+- de sluitdag van K1 is 09-03-2026
+- de sluitdag van K2 is 25-03-2026
+- de sluitdag van K3 is leeg
+
+Scenario opgave en een lege bijdrager
+Gegeven is de volgende situatie:
+een Kustwacht K4
+een Berging B4
+- de opgegeven uiterste meldingsdag is 30-03-2026
+- de opgegeven afrekendag is 01-04-2026
+- de kustwacht is K4
+een Berging B5
+- de gemelde sluitdag is 20-03-2026
+- de kustwacht is K4
+een Vondst V6
+- de berging is B5
+een Vondst V7
+- de bergdag is 14-03-2026
+- de meldingsdag is 13-03-2026
+- het gewicht is 6
+- de berging is B5
+een Vondst V8
+- de bergdag is 02-03-2026
+- de meldingsdag is 04-03-2026
+- het gewicht is 1
+- de berging is B5
+Met als verwacht resultaat:
+- de sluitdag van B4 is leeg
+- de sluitdag van B5 is 20-03-2026
+- de berekende uiterste meldingsdag van B4 is leeg
+- de uiterste meldingsdag van B4 is 30-03-2026
+- de berekende uiterste meldingsdag van B5 is 20-03-2026
+- de uiterste meldingsdag van B5 is 20-03-2026
+- de berekende afrekendag van B4 is leeg
+- de afrekendag van B4 is 01-04-2026
+- de afrekendag van B5 is 20-03-2026
+- het vrachtgewicht van B4 is leeg
+- het vrachtgewicht van B5 is 7
+- de sluitdag van K4 is 14-03-2026
