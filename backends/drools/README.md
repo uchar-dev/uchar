@@ -171,3 +171,29 @@ exec-model branch with the generic sentence `voorwaarde buiten Phase-B scope`. T
 what they read, plays these forms except two, and refuses those with a defaults group: an aggregation comparison whose
 own threshold is derived later does not fire, and an operand one role away under a fold that holds at insertion is
 read before its writer ran.
+
+## Recorded: a fold over a set source inside a rule's value
+
+The exec-model branch lowers a fold over a set source anywhere in a rule's value — the earliest or the latest date
+over a role ("de eerste van de vinddag van alle vondsten van de Jutter"), with a condition on the elements or over a
+path of roles, and a count, sum, minimum or maximum as an operand of a computation — to an accumulate beside the
+subject pattern (`ExecModelTranspiler.vouwslot`). The consequence hands each fold's result to the value through the
+map `scalarWaarde` already threads, so every operator of the scalar value applies around it: date arithmetic, a
+duration between two folds, a percentage, a clamp, a navigated operand, and the empty operands of RUNTIME-SEMANTICS
+ch. 1.2. EERSTE and LAATSTE order their members through `Min`/`MaxAccumulateFunction` over a `Comparable` (ch. 1.2e),
+and an ordering fold inside a value binds a count, so an empty source reads leeg instead of leaving the rule unfired.
+Golden `jutterswet-vroegste-vondst`, and `jutterswet-vondstvenster` plays since; witness
+`DatumvouwOverRolWitnessTest`. Until 2026-09-30 the branch refused the date folds (`waarde buiten scope`) and lowered
+a fold inside a computation through an evaluator of its own, `lowerVal`, which refused date arithmetic, a navigated
+read and a clamp, and answered leeg for a percentage of a sum and for the minimum or maximum of an empty source plus
+1, where `ref` and clingo answer. Four limits remain, measured 2026-09-30 with `ref` and clingo as the arbiters. A
+date fold in a condition is refused by name (`voorwaarde met een datumvouw (EERSTE/LAATSTE) over een rol`): the
+comparisons of a condition compare numbers. The minimum or maximum over a date set source (`jutterswet-vondstbereik`)
+stays refused in both branches with the shared member-type sentence of `kern.Vouwwaarde`, which
+`DatumSetvouwWitnessTest` pins, although the accumulate of EERSTE and LAATSTE would fold it. A fold beside a division
+or a root under one Let or IfThenElse (ch. 4.10) is refused by name, since the path-probe companion of such a §6.5 or
+§6.6 site evaluates that node without the rule's accumulates; a fold bound by a Let alone plays. An object creation
+still lowers a fold in a toekenning through `lowerVal`: a percentage of a sum answers leeg, and over an empty source
+the minimum plus 1 creates no object. The DRL-text branch markers the EERSTE/LAATSTE fold over a set (`TODO aggregatie
+EERSTE`), and answers leeg for the minimum or maximum of an empty source plus 1 and for a date plus the maximum of an
+empty source.
