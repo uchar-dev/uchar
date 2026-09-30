@@ -1,0 +1,160 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Kustwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Kustwacht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {
+          "openingsdag": {
+            "date": "2026-01-01"
+          }
+        },
+        "roles": {
+          "kustwacht": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vergunningsdag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {
+          "werver": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vergunningsdag": {
+            "date": "2026-05-01"
+          }
+        },
+        "roles": {
+          "werver": [
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-09-15"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-09-15"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "afgeleide openingsdag",
+      "value": {
+        "date": "2026-01-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "havendatum",
+      "value": {
+        "date": "2026-09-15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "registerdatum",
+      "value": {
+        "date": "2026-09-15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "wachtdatum",
+      "value": {
+        "date": "2026-09-15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "havenopening",
+      "value": {
+        "date": "2026-01-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "havendatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "registerdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "wachtdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "havenopening"
+    }
+  ]
+}

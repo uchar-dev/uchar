@@ -1,0 +1,74 @@
+Scenario vier vondsten
+Gegeven is de volgende situatie:
+een Haven H1
+- de openingsdag is 01-01-2026
+een Haven H2
+een Jutter J1
+- de vergunningsdag is 01-03-2026
+- de haven is H1
+een Jutter J2
+- de vergunningsdag is 01-05-2026
+- de haven is H2
+een Jutter J3
+- de vergunningsdag is 01-02-2026
+een Vondst V1
+- de vinddag is 15-09-2026
+- de jutter is J1
+een Vondst V2
+- de vinddag is 15-12-2025
+- de jutter is J1
+een Vondst V3
+- de vinddag is 15-09-2026
+- de jutter is J2
+een Vondst V4
+- de vinddag is 15-09-2026
+- de jutter is J3
+Met als verwacht resultaat:
+- de afgeleide openingsdag van H1 is 01-01-2026
+- de afgeleide openingsdag van H2 is leeg
+- de havendatum van V1 is 15-09-2026
+- de registerdatum van V1 is 15-09-2026
+- de wachtdatum van V1 is 15-09-2026
+- de havenopening van V1 is 01-01-2026
+- de havendatum van V2 is leeg
+- de registerdatum van V2 is 15-12-2025
+- de wachtdatum van V2 is leeg
+- de havenopening van V2 is 01-01-2026
+- de havendatum van V3 is leeg
+- de registerdatum van V3 is leeg
+- de wachtdatum van V3 is leeg
+- de havenopening van V3 is leeg
+- de havendatum van V4 is leeg
+- de registerdatum van V4 is leeg
+- de wachtdatum van V4 is 15-09-2026
+- de havenopening van V4 is leeg
+
+Scenario haven uit de werving
+Gegeven is de volgende situatie:
+een Kustwacht K1
+een Kustwacht K2
+een Haven H1
+- de openingsdag is 01-01-2026
+- de kustwacht is K1
+een Jutter J1
+- de vergunningsdag is 01-03-2026
+- de werver is K1
+een Jutter J2
+- de vergunningsdag is 01-05-2026
+- de werver is K2
+een Vondst V1
+- de vinddag is 15-09-2026
+- de jutter is J1
+een Vondst V2
+- de vinddag is 15-09-2026
+- de jutter is J2
+Met als verwacht resultaat:
+- de afgeleide openingsdag van H1 is 01-01-2026
+- de havendatum van V1 is 15-09-2026
+- de registerdatum van V1 is 15-09-2026
+- de wachtdatum van V1 is 15-09-2026
+- de havenopening van V1 is 01-01-2026
+- de havendatum van V2 is leeg
+- de registerdatum van V2 is leeg
+- de wachtdatum van V2 is leeg
+- de havenopening van V2 is leeg

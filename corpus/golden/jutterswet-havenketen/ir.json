@@ -1,0 +1,564 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustwacht",
+        "animate": false,
+        "plural": "Kustwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "sluitingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Haven",
+        "animate": false,
+        "plural": "Havens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "openingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afgeleide openingsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergunningsdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "havendatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "registerdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "havenopening",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "HavenHeeftJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "haven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "havenjutter",
+            "objectType": "Jutter",
+            "plural": "havenjutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "KustwachtBewaaktHaven",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustwacht",
+            "objectType": "Kustwacht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "bewaakte haven",
+            "objectType": "Haven",
+            "plural": "bewaakte havens",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "Werving",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "werver",
+            "objectType": "Kustwacht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "geworven jutter",
+            "objectType": "Jutter",
+            "plural": "geworven jutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "havendatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havendatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De havendatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn vinddag"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "afgeleide openingsdag",
+                "subjectType": "Haven",
+                "source": {
+                  "snippet": "de afgeleide openingsdag van de haven van de jutter van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "HavenHeeftJutter",
+                    "role": "haven"
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "zijn vinddag later is dan de afgeleide openingsdag van de haven van de jutter van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "registerdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "registerdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De registerdatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn vinddag"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "openingsdag",
+                "subjectType": "Haven",
+                "source": {
+                  "snippet": "de openingsdag van de haven van de jutter van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "HavenHeeftJutter",
+                    "role": "haven"
+                  }
+                ]
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "de openingsdag van de haven van de jutter van de Vondst gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De wachtdatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn vinddag"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "Binary",
+                "op": "minus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vinddag"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "6"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": {
+                      "node": "Unit",
+                      "abbreviation": "mnd",
+                      "system": "Tijd",
+                      "canonical": "mnd",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  },
+                  "source": {
+                    "snippet": "6 mnd"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vinddag min 6 mnd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "vergunningsdag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de vergunningsdag van de jutter van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "zijn vinddag min 6 mnd later is dan de vergunningsdag van de jutter van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "havenopening",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havenopening",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De havenopening van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "afgeleide openingsdag",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "de afgeleide openingsdag van de haven van de jutter van de Vondst"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "HavenHeeftJutter",
+                  "role": "haven"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afgeleide openingsdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afgeleide openingsdag",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "De afgeleide openingsdag van een Haven"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "openingsdag",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "zijn openingsdag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "werving",
+        "versions": [
+          {
+            "factType": "HavenHeeftJutter",
+            "anchorRole": "haven",
+            "targetRole": "havenjutter",
+            "anchor": "Haven",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "KustwachtBewaaktHaven",
+                "role": "kustwacht"
+              },
+              {
+                "node": "RoleBinding",
+                "factType": "Werving",
+                "role": "geworven jutter"
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
