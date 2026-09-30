@@ -2248,7 +2248,7 @@ public final class ExecModelTranspiler {
                 List<java.util.function.Function<Object, Object>> hops = ketenStappen(w, subject);
                 if (hops == null) return null;   // §13.3.9 name-dedup
                 for (int i = 1; i < hops.size(); i++) {
-                    // an object on the way, keyed as a join that reaches it over those hops alone is
+                    // each object on the way, under the key a read ending there has, so that read shares the join
                     Objecttype tussen = w.bereikt().get(i - 1);
                     if (factClass(tussen) == null) continue;
                     List<java.util.function.Function<Object, Object>> deel = List.copyOf(hops.subList(0, i));
