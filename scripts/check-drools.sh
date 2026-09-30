@@ -1159,7 +1159,18 @@ EXPECTED_CHANNEL=(
 # value folds with a subselection without NO_LOOP, and plays the three cases, PLAYED 3, with ref's and clingo's
 # values. Measured before and after over ALL goldens in both branches: no report line moves. The DRL-text branch
 # refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=230
+# 230 -> 231 (2026-10-01, the consequence of a default that folds over a role): jutterswet-sluitdag-gemeld, new, from
+# bron.rgs and scenario.rgs and hand-computed: defaults groups whose consequence folds over the vondsten of a Berging —
+# the latest bergdag as the base under a gemelde sluitdag; the latest meldingsdag plus 14 dagen as the base of a tree the
+# opgave marker moves to 'berekende uiterste meldingsdag', under an exception that counts and reads the sluitdag another
+# group writes; the latest of two folds as the initialisation the marker lifts into its generated group; a sum in an
+# exception; and the latest bergdag two roles away from a Kustwacht — over three bergingen, and over an opgave and an
+# empty contributor. The exec branch refused every such group ("niet-reduceerbare consequentie"); it now lowers a fold in
+# a consequence as it lowers one in a rule's value, an accumulate on the group's rule whose result the consequence reads,
+# and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
+# branches: no report line moves. The DRL-text branch refuses the new golden on its defaults sentence (class (A) of
+# DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=231
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1172,20 +1183,20 @@ EXPECTED_PLAYED=230
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-eight of the ninety-four
+# Why the reasons are grouped rather than written one by one: eighty-nine of the ninety-five
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
-  # (A) ch. 7 prioritizedDefaults — 38 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 39 below the exec one: the exec branch grew a
+  # (A) ch. 7 prioritizedDefaults — 39 lines, and since the objectcreatie repair below the ONLY
+  # remaining reason of size for this count sitting 40 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 37 of the 38 lines refuse on that one
-  # sentence; the 38th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
-  # the header counts since 2026-09-22. All 37 ARE that asymmetry — the exec branch plays them.
+  # toolchain does not have, and DrlTranspiler never did. 38 of the 39 lines refuse on that one
+  # sentence; the 39th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
+  # the header counts since 2026-09-22. All 38 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 39 is 43 exec-only players — those 37, jutterswet-vouwrand, jutterswet-vondstbereik,
+  # The 40 is 44 exec-only players — those 38, jutterswet-vouwrand, jutterswet-vondstbereik,
   # jutterswet-vondstvenster and jutterswet-vroegste-vondst of class (C), and
   # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
@@ -1239,7 +1250,10 @@ DRL_CHANNEL=(
   # branch only (class (C)), so the gap is 38 (229 - 191), and the six class heads hold at 93 lines. Recounted again
   # the same day (the fold whose subselection tests a value derived later): jutterswet-zwaarste-vondst joins the class,
   # 37 -> 38 lines, and plays in the exec branch only, so the gap is 39 (230 - 191); the six class heads (A 38, B 37,
-  # C 11, D 2, E 3, F 3 = 94 lines) were counted against the list.
+  # C 11, D 2, E 3, F 3 = 94 lines) were counted against the list. Recounted 2026-10-01 (the consequence of a default
+  # that folds over a role): jutterswet-sluitdag-gemeld joins the class, 38 -> 39 lines, and plays in the exec branch
+  # only, so the gap is 40 (231 - 191); the six class heads (A 39, B 37, C 11, D 2, E 3, F 3 = 95 lines) were counted
+  # against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1264,6 +1278,7 @@ DRL_CHANNEL=(
   "jutterswet-premiestaffel|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-samenloop|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-schorsing|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
+  "jutterswet-sluitdag-gemeld|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-strandmelding|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-tariefrecht-catala|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "jutterswet-uitsluiting-rgs|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
