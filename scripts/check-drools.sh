@@ -1170,7 +1170,18 @@ EXPECTED_CHANNEL=(
 # and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
 # branches: no report line moves. The DRL-text branch refuses the new golden on its defaults sentence (class (A) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=231
+# 231 -> 232 (2026-10-01, a condition over a chain of roles): jutterswet-havenketen, new, from bron.rgs and
+# scenario.rgs and hand-computed: conditions on a Vondst that read two roles away (later than the afgeleide
+# openingsdag of the haven of its jutter; the openingsdag of that haven gevuld) and one role away inside a date
+# computation (its vinddag min 6 mnd later than the vergunningsdag of its jutter), and a value that reads the same
+# chain, over four vondsten, one of them with a jutter without a haven, and over a haven that a fact creation links to
+# the jutter only during the run, the derivation after its readers. The exec branch refused every such condition
+# ("voorwaarde buiten Phase-B scope"); it now joins a chain at every object it passes, for a condition and a value
+# alike, tests the condition on the subject bound again after those joins, and plays the two cases, PLAYED 2, with
+# ref's and clingo's values. With a join on the reached haven alone the second case failed: the value read leeg.
+# Measured before and after over ALL goldens in both branches: no report line moves. The DRL-text branch refuses the
+# new golden on its marker 'TODO voorwaarde' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=232
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1183,21 +1194,21 @@ EXPECTED_PLAYED=231
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: eighty-nine of the ninety-five
+# Why the reasons are grouped rather than written one by one: ninety of the ninety-six
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 39 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 40 below the exec one: the exec branch grew a
+  # remaining reason of size for this count sitting 41 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
   # toolchain does not have, and DrlTranspiler never did. 38 of the 39 lines refuse on that one
   # sentence; the 39th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
   # the header counts since 2026-09-22. All 38 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 40 is 44 exec-only players — those 38, jutterswet-vouwrand, jutterswet-vondstbereik,
-  # jutterswet-vondstvenster and jutterswet-vroegste-vondst of class (C), and
+  # The 41 is 45 exec-only players — those 38, jutterswet-havenketen, jutterswet-vouwrand,
+  # jutterswet-vondstbereik, jutterswet-vondstvenster and jutterswet-vroegste-vondst of class (C), and
   # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
@@ -1253,7 +1264,9 @@ DRL_CHANNEL=(
   # C 11, D 2, E 3, F 3 = 94 lines) were counted against the list. Recounted 2026-10-01 (the consequence of a default
   # that folds over a role): jutterswet-sluitdag-gemeld joins the class, 38 -> 39 lines, and plays in the exec branch
   # only, so the gap is 40 (231 - 191); the six class heads (A 39, B 37, C 11, D 2, E 3, F 3 = 95 lines) were counted
-  # against the list.
+  # against the list. Recounted again the same day (the condition over a chain of roles): jutterswet-havenketen joins
+  # class (C), 11 -> 12 lines, and plays in the exec branch only, so the gap is 41 (232 - 191); the six class heads
+  # (A 39, B 37, C 12, D 2, E 3, F 3 = 96 lines) were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1335,7 +1348,7 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 11, this branch's own per-form refusals, each naming the rule it
+  # (C) DrlTranspiler MARKERs — 12, this branch's own per-form refusals, each naming the rule it
   # could not lower. The count's history, oldest first:
   # Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and the class header
   # was carrying 12 over a list of 13: the v8-enum-emitter addition had not been counted. It went
@@ -1358,10 +1371,14 @@ DRL_CHANNEL=(
   # branch markers by name ('TODO aggregatie EERSTE') and the exec branch plays; EXPECTED_DRL_PLAYED
   # does not move (reason block at EXPECTED_PLAYED). The same day (the minimum and maximum over a
   # date) jutterswet-vondstbereik stays here and plays in the exec branch; the count stays 11.
-  # SEVEN of the eleven are goldens the exec branch refuses too, on its own wording of the
+  # 11 -> 12 (2026-10-01, the condition over a chain of roles): jutterswet-havenketen, a NEW golden this
+  # branch markers by name ('TODO voorwaarde') and the exec branch plays; EXPECTED_DRL_PLAYED does not
+  # move (reason block at EXPECTED_PLAYED).
+  # SEVEN of the twelve are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the consistency rule, the §8.4.3 clip on a temporal
   # target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
-  # FOUR are this branch alone, and the exec branch PLAYS them:
+  # FIVE are this branch alone, and the exec branch PLAYS them:
+  #   jutterswet-havenketen (exec PLAYED 2) — a TODO voorwaarde on a read over two roles;
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons;
   #   jutterswet-vondstbereik, jutterswet-vondstvenster and jutterswet-vroegste-vondst (exec PLAYED 2
   #   each) — the ordering fold over a date set source, which the exec branch lowers since 2026-09-30
@@ -1373,6 +1390,7 @@ DRL_CHANNEL=(
   "anchor/jutterswet-erflijn|EXCLUDE|MARKER regel: aggregation join with both sides plural — neither end stores a bean field (§13.3.9)"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|MARKER regel: aggregation join whose storage direction is the far side (§13.3.9)"
   "anchor/jutterswet-penninguitgifte|EXCLUDE|MARKER consistentie: unresolved consistency rule over every Penning"
+  "jutterswet-havenketen|EXCLUDE|MARKER regel: TODO voorwaarde — a read over two roles"
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
   "jutterswet-pachtvenster|EXCLUDE|MARKER regel: TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3) — the ch. 3.10 clip, built in ref and clingo since 2026-09-23; shared with the exec branch, each in its own words"
