@@ -639,7 +639,8 @@ public final class ExecModelTranspiler {
                 werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
             if (consequence == null) return skip("regel (totaal: te veel gebonden globals): " + r.naam());
-        } else if (isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie fx && !isGelisteFold(fx)) {
+        } else if (isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie fx && !isGelisteFold(fx)
+                && !ordenendeDatumvouw(fx)) {   // a date result is no BigDecimal: the scalar path reads it from a slot
             // (a ≥2-operand MINIMUM/MAXIMUM is a §5.8.3 LISTED concatenation fold, not an instance accumulate — it
             //  flows to the scalar path / concatenatieFold below.)
             Agg agg = aggregatie(fx, doel.objecttype(), sVar, false);   // value side: bare fold (empty -> no-op)
@@ -936,6 +937,14 @@ public final class ExecModelTranspiler {
                 || k == Expr.FunctieKind.EERSTE || k == Expr.FunctieKind.LAATSTE;
     }
 
+    /** An ordering fold over a set source whose members are dates (a day or a date-and-time), read off the member's
+     *  declaration. */
+    private static boolean ordenendeDatumvouw(Expr.Functie f) {
+        if (!ordenend(f.kind()) || isGelisteFold(f) || f.argumenten().isEmpty()) return false;
+        Datatype lid = dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid.typeZonderBinder(f.argumenten().get(0));
+        return lid != null && lid.isDatum();
+    }
+
     /** A lowered aggregation: the accumulate rule item, the result Variable, and (for §5.8.2 SOM) the contributor
      *  count Variable + the empty-sum fallback. */
     private record Agg(RuleItemBuilder<?> accItem, Variable resultVar, Variable countVar, WaardeFn somFallback, boolean isSom) {}
@@ -1009,8 +1018,14 @@ public final class ExecModelTranspiler {
      *  becomes a source constraint, and the accumulate function (count / BigDecimal sum / min / max) binds the
      *  result. Mirrors DrlTranspiler.accumulate. null -> skip (unresolvable join, unstructured filter, a temporal /
      *  multi-operand fold, or a non-literal SOM fallback) — never a silently-wrong aggregate over EVERY instance. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount) {
+        return aggregatie(f, subject, subjectVar, leegCount, false);
+    }
+
+    /** {@code waarde}: the caller reads the result as an operand of a rule's value ({@link #vouwslot}), the one place
+     *  that takes a result that is not a number; there an ordering fold over a date lowers. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount, boolean waarde) {
         aggregatieReden = null;                      // a stale reason must never be attached to another skip
         // §5.7 / IR-SPEC ch. 4.3 / WF-110: the count over an INSTANCE-SET UNION. Read first and
         // returning, because a union is a whole source of its own: every derivation below reads
@@ -1047,12 +1062,24 @@ public final class ExecModelTranspiler {
                     + " onder een ordenende vouw een getal of een datum (§5.8.3)";
             return null;
         }
+        // An ordering fold over a date (RUNTIME-SEMANTICS ch. 1.2e) selects one contributed date, which vouw binds as
+        // a Comparable. Only a rule's value reads such a result as it is; a condition and a justification compare the
+        // result as a number, so there the fold stays refused, in this branch's words.
+        boolean datumOrdening = ordenendeDatumvouw(f);
+        if (datumOrdening && !waarde) {
+            aggregatieReden = "vouw " + f.kind() + " over de datumbron '" + arg.attribuut() + "' van " + elem.naam
+                    + " buiten de waarde van een regel: deze tak vouwt een datum alleen daar, want een voorwaarde en"
+                    + " een rechtvaardiging vergelijken de uitkomst als getal (§5.8.3)";
+            return null;
+        }
         // The VALUE fold below accumulates in BigDecimal, and a member that is not a number has no
         // place in it — it used to CRASH there rather than decline (a ClassCastException on the
         // som/totaal bind, an IllegalStateException out of the min/max accumulate cast). A crash
         // names no form and reaches the gate as an ERROR instead of as a channel with a reason, so
-        // the question is asked here, before anything lowers, through the reason BOTH branches share.
-        String vw = dev.uchar.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, arg);
+        // the question is asked here, before anything lowers, through the reason BOTH branches share —
+        // except for the ordering fold over a date, which this branch lowers in a rule's value and which
+        // only the DRL-text branch still refuses with that reason.
+        String vw = datumOrdening ? null : dev.uchar.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, arg);
         if (vw != null) { aggregatieReden = vw; return null; }
 
         // IR-SPEC ch. 4.3 / WF-102: a RANGE that is a PATH replaces the whole one-step join derivation below. It is
@@ -4559,7 +4586,7 @@ public final class ExecModelTranspiler {
         Agg agg;
         vouwslots = null;
         try {
-            agg = aggregatie(f, subject, vouwOnderwerp, true);
+            agg = aggregatie(f, subject, vouwOnderwerp, true, true);
         } finally {
             vouwslots = slots;
         }
@@ -7586,10 +7613,9 @@ public final class ExecModelTranspiler {
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumLexeem)) return "voorwaarde met onleesbaar datum-lexeem";
         // the comparisons of a condition compare numbers with an accumulate's result (aggregatieVoorwaarde); a date
         // fold is lowered only as a rule's value (vouwslot), and the refusal says so rather than naming a scope
-        if (Conditie.bevatOperand(c, e -> e instanceof Expr.Functie f && isInstantievouw(f)
-                && (f.kind() == Expr.FunctieKind.EERSTE || f.kind() == Expr.FunctieKind.LAATSTE)))
-            return "voorwaarde met een datumvouw (EERSTE/LAATSTE) over een rol, die deze tak alleen in de waarde van een"
-                    + " regel vouwt";
+        if (Conditie.bevatOperand(c, e -> e instanceof Expr.Functie f && ordenendeDatumvouw(f)))
+            return "voorwaarde met een ordenende vouw over een datumbron (eerste, laatste, minimum of maximum over een"
+                    + " rol), die deze tak alleen in de waarde van een regel vouwt";
         return "voorwaarde buiten Phase-B scope";
     }
 

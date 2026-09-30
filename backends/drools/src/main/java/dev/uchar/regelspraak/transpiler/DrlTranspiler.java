@@ -4023,7 +4023,9 @@ public final class DrlTranspiler {
         // has no place in it: until 2026-09-20 this branch emitted DRL that did not COMPILE ("Unable
         // to Analyse Expression") over a date-valued member, which reaches a report as a whole-file
         // compile refusal naming no form at all. Asked through the reason the exec branch shares, so
-        // the two branches cannot drift into two wordings for one limit.
+        // the two branches cannot drift into two wordings for one limit. An ordering fold over a date is
+        // the exception: the exec branch folds it in a rule's value and no longer asks, so for it the
+        // sentence names this branch alone.
         if (!fn.equals("count") && !f.argumenten().isEmpty()
                 && f.argumenten().get(0) instanceof Expr.AttribuutRef va) {
             String vw = dev.uchar.regelspraak.transpiler.kern.Vouwwaarde.weigering(f, elem, va);
