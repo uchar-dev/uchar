@@ -1,0 +1,100 @@
+Scenario staffel
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Jutter J5
+een Vondst V1
+- de jutter is J1
+- het gewicht is 6
+een Vondst V2
+- de jutter is J1
+- het gewicht is 4
+een Vondst V3
+- de jutter is J1
+- het gewicht is 9
+een Vondst V4
+- de jutter is J2
+- het gewicht is 2
+een Vondst V5
+- de jutter is J2
+- het gewicht is 3
+een Vondst V6
+- de jutter is J2
+- het gewicht is 1
+een Vondst V7
+- de jutter is J3
+- het gewicht is 12
+een Vondst V8
+- de jutter is J5
+- het gewicht is 4
+een Vondst V9
+- de jutter is J5
+- het gewicht is 3
+een Melding M1
+- de vondst is V1
+een Melding M2
+- de vondst is V4
+een Melding M3
+- de vondst is V7
+een Melding M4
+een Controle C1
+- de melding is M1
+een Controle C2
+- de melding is M3
+een Controle C3
+- de melding is M4
+een Controle C4
+de parameter de zwaartegrens is 14
+Met als verwacht resultaat:
+- V1 is zwaar
+- V2 is niet zwaar
+- V3 is zwaar
+- V7 is zwaar
+- de premie van J1 is 30
+- de premie van J2 is 20
+- de premie van J3 is 10
+- de premie van J4 is 10
+- de premie van J5 is 10
+- J1 is ijverig
+- J2 is niet ijverig
+- J3 is ijverig
+- J4 is ijverig
+- J5 is niet ijverig
+- de gemelde premie van M1 is 20
+- de gemelde premie van M2 is 20
+- de gemelde premie van M3 is 10
+- de gemelde premie van M4 is 10
+- M1 is niet dringend
+- M2 is dringend
+- M3 is dringend
+- M4 is dringend
+- de controlepremie van C1 is 15
+- de controlepremie van C2 is 5
+- de controlepremie van C3 is 5
+- de controlepremie van C4 is 5
+
+Scenario hogere zwaartegrens
+Gegeven is de volgende situatie:
+een Jutter J1
+een Vondst V1
+- de jutter is J1
+- het gewicht is 6
+een Vondst V2
+- de jutter is J1
+- het gewicht is 4
+een Vondst V3
+- de jutter is J1
+- het gewicht is 9
+een Melding M1
+- de vondst is V1
+een Controle C1
+- de melding is M1
+de parameter de zwaartegrens is 20
+Met als verwacht resultaat:
+- de premie van J1 is 20
+- J1 is ijverig
+- de gemelde premie van M1 is 20
+- M1 is dringend
+- de controlepremie van C1 is 15

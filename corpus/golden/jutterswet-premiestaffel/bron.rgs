@@ -1,0 +1,88 @@
+Parameter de zwaartegrens : Numeriek (geheel getal)
+
+Objecttype de Melding (mv: Meldingen)
+    de gemelde premie Numeriek (geheel getal);
+    is dringend kenmerk (bijvoeglijk);
+
+Objecttype de Controle (mv: Controles)
+    de controlepremie Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de premie Numeriek (geheel getal);
+    is ijverig kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    is zwaar kenmerk (bijvoeglijk);
+
+Feittype JutterHeeftVondst
+    de jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén jutter heeft meerdere vondsten
+
+Feittype VondstHeeftMelding
+    de vondst Vondst
+    de melding (mv: meldingen) Melding
+Eén vondst heeft meerdere meldingen
+
+Feittype MeldingHeeftControle
+    de melding Melding
+    de controle (mv: controles) Controle
+Eén melding heeft meerdere controles
+
+Regel gemelde premie
+    geldig altijd
+        De gemelde premie van een Melding moet berekend worden als 10.
+
+Uitzondering op gemelde premie: melding over een rijke jutter
+    geldig altijd
+        De gemelde premie van een Melding moet berekend worden als 20
+        indien de premie van de jutter van de vondst van de Melding groter is dan 15.
+
+Regel dringendheid
+    geldig altijd
+        Een Melding is dringend.
+
+Uitzondering op dringendheid: melding over een jutter met de hoogste premie
+    geldig altijd
+        Een Melding is niet dringend
+        indien de premie van de jutter van de vondst van de Melding groter is dan 25.
+
+Regel controlepremie
+    geldig altijd
+        De controlepremie van een Controle moet berekend worden als 5.
+
+Uitzondering op controlepremie: controle van een rijke jutter
+    geldig altijd
+        De controlepremie van een Controle moet berekend worden als 15
+        indien de premie van de jutter van de vondst van de melding van de Controle groter is dan 15.
+
+Regel premie
+    geldig altijd
+        De premie van een Jutter moet berekend worden als 10.
+
+Uitzondering op premie: premie bij veel vondsten
+    geldig altijd
+        De premie van een Jutter moet berekend worden als 20
+        indien het aantal vondsten van de Jutter groter is dan 2.
+
+Uitzondering op premie: premie bij een zware vangst
+    geldig altijd
+        De premie van een Jutter moet berekend worden als 30
+        indien de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens.
+
+Regel ijver
+    geldig altijd
+        Een Jutter is ijverig.
+
+Uitzondering op ijver: lichte vondsten
+    geldig altijd
+        Een Jutter is niet ijverig
+        indien hij aan ten minste één van de volgende voorwaarden voldoet:
+        - de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2
+        - de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5.
+
+Regel zwaarte
+    geldig altijd
+        Een Vondst is zwaar
+        indien het gewicht van de Vondst groter is dan 5.

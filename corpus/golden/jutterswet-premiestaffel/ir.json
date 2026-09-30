@@ -1,0 +1,844 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gemelde premie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "dringend",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Controle",
+        "animate": false,
+        "plural": "Controles",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "controlepremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ijverig",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zwaar",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "VondstHeeftMelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "plural": "meldingen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "MeldingHeeftControle",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "controle",
+            "objectType": "Controle",
+            "plural": "controles",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "zwaartegrens",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "zwaarte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is zwaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "het gewicht van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van de Vondst groter is dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "gemelde premie",
+        "subject": "Melding",
+        "attribute": "gemelde premie",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "premie",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de premie van de jutter van de vondst van de Melding"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "VondstHeeftMelding",
+                    "role": "vondst"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "15"
+                }
+              },
+              "source": {
+                "snippet": "de premie van de jutter van de vondst van de Melding groter is dan 15"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "dringendheid",
+        "subject": "Melding",
+        "characteristic": "dringend",
+        "defaults": [
+          {
+            "node": "Default",
+            "decision": false,
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "premie",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de premie van de jutter van de vondst van de Melding"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "VondstHeeftMelding",
+                    "role": "vondst"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "25"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "25"
+                }
+              },
+              "source": {
+                "snippet": "de premie van de jutter van de vondst van de Melding groter is dan 25"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "controlepremie",
+        "subject": "Controle",
+        "attribute": "controlepremie",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "premie",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de premie van de jutter van de vondst van de melding van de Controle"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "MeldingHeeftControle",
+                    "role": "melding"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "VondstHeeftMelding",
+                    "role": "vondst"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "15"
+                }
+              },
+              "source": {
+                "snippet": "de premie van de jutter van de vondst van de melding van de Controle groter is dan 15"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "15"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "15"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "premie",
+        "subject": "Jutter",
+        "attribute": "premie",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter die zwaar zijn"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "zwaar",
+                  "negated": false,
+                  "source": {
+                    "snippet": "zwaar zijn"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de som van het gewicht van alle vondsten van de Jutter die zwaar zijn"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "zwaartegrens",
+                "source": {
+                  "snippet": "de zwaartegrens"
+                }
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die zwaar zijn groter is dan de zwaartegrens"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "30"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "30"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter groter is dan 2"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "ijver",
+        "subject": "Jutter",
+        "characteristic": "ijverig",
+        "defaults": [
+          {
+            "node": "Default",
+            "decision": false,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "minimum",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "het gewicht van alle vondsten van de Jutter"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de minimale waarde van het gewicht van alle vondsten van de Jutter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "maximum",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "het gewicht van alle vondsten van de Jutter"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de maximale waarde van het gewicht van alle vondsten van de Jutter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan ten minste \u00e9\u00e9n van de volgende voorwaarden voldoet: - de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2 - de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5."
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "decision": true,
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

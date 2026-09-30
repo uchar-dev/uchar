@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "M1",
+        "objectType": "Melding",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Controle",
+        "attributes": {},
+        "roles": {
+          "melding": [
+            "M1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "zwaartegrens": {
+        "number": "20"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "M1",
+      "attribute": "gemelde premie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M1",
+      "characteristic": "dringend"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "C1",
+      "attribute": "controlepremie",
+      "value": {
+        "number": "15"
+      }
+    }
+  ]
+}
