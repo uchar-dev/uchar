@@ -45,7 +45,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The twist mirrors the harness's table deliberately — same derived positions, same reason-carrying
  * exceptions (a {@code Literal}'s own lexeme, the WF-035 duration operand, a WF-038 tijdsduur). It is
  * duplicated in Java rather than shared because the harness twists FILES for three executors and this
- * twists a parsed tree for one; if the harness's table gains a class, this list must gain it too.
+ * twists a parsed tree for one; if the harness's table gains a class, this list must gain it too. Whether
+ * an operand of a date plus a duration is a DATE is read as the harness reads it ({@code gedeclareerd}):
+ * a reference carries no type since L2, so it answers with the declaration it names, and a Let's binder
+ * with the declaration of its binding. Reading only the node's own annotation, this witness took an own
+ * date attribute for no date, twisted the duration beside it, and the loader refused the lying document
+ * (measured 2026-09-30 on {@code jutterswet-vroegste-vondst}: "date ± duration: the duration unit
+ * 'dag-verdraaid7' is neither a recognised time unit nor a declared day kind").
  */
 class DrlEenheidsplekWitnessTest {
 
@@ -72,7 +78,7 @@ class DrlEenheidsplekWitnessTest {
         for (Path ir : goldens()) {
             JsonNode eerlijk = JSON.readTree(Files.readString(ir));
             JsonNode liegend = eerlijk.deepCopy();
-            int n = verdraai(liegend, false);
+            int n = verdraai(liegend, false, new Declaraties(eerlijk), Map.of());
             if (n == 0) continue;                    // no derived position carries a convertible unit here
             String a, b;
             try {
@@ -94,11 +100,12 @@ class DrlEenheidsplekWitnessTest {
 
     // ---------------- the twist (mirrors scripts/check-reftype-derivation.sh) ----------------
 
-    /** Graft the sister unit onto every derived position under {@code x}; return the number of grafts. */
-    private static int verdraai(JsonNode x, boolean vrijgesteldDoorOuder) {
+    /** Graft the sister unit onto every derived position under {@code x}; return the number of grafts. {@code scope}
+     *  maps each binder in scope (lower-cased) to the declaration of its binding. */
+    private static int verdraai(JsonNode x, boolean vrijgesteldDoorOuder, Declaraties d, Map<String, JsonNode> scope) {
         if (x.isArray()) {
             int n = 0;
-            for (JsonNode kind : x) n += verdraai(kind, false);
+            for (JsonNode kind : x) n += verdraai(kind, false, d, scope);
             return n;
         }
         if (!(x instanceof ObjectNode o)) return 0;
@@ -107,8 +114,8 @@ class DrlEenheidsplekWitnessTest {
         JsonNode duur = null;
         if ("Binary".equals(node) && Set.of("plus", "minus", "reducedBy").contains(o.path("op").asText(""))) {
             JsonNode l = o.get("left"), r = o.get("right");
-            if (datumGetypeerd(l) && !datumGetypeerd(r)) duur = r;
-            else if (datumGetypeerd(r) && !datumGetypeerd(l)) duur = l;
+            if (datumGetypeerd(l, d, scope) && !datumGetypeerd(r, d, scope)) duur = r;
+            else if (datumGetypeerd(r, d, scope) && !datumGetypeerd(l, d, scope)) duur = l;
         }
         boolean vrijgesteld = vrijgesteldDoorOuder || "Literal".equals(node)
                 || ("BuiltinCall".equals(node) && GEEN_FUNCTIE.contains(o.path("kind").asText("")));
@@ -117,10 +124,17 @@ class DrlEenheidsplekWitnessTest {
             ObjectNode zusje = zusje(t.get("unit"), KLASSE.get(node));
             if (zusje != null) { t.set("unit", zusje); n++; }
         }
+        // the binder a Let opens is in scope of its body, with the declaration of its binding
+        Map<String, JsonNode> binnen = scope;
+        if ("Let".equals(node)) {
+            binnen = new java.util.HashMap<>(scope);
+            binnen.put(o.path("binder").asText("").toLowerCase(java.util.Locale.ROOT), gedeclareerd(o.get("value"), d, scope));
+        }
         for (var it = o.fields(); it.hasNext(); ) {
             var e = it.next();
             if (e.getKey().equals("type")) continue;   // a DECLARATION never sits under an expression's own type
-            n += verdraai(e.getValue(), e.getValue() == duur);
+            n += verdraai(e.getValue(), e.getValue() == duur, d,
+                    "Let".equals(node) && e.getKey().equals("body") ? binnen : scope);
         }
         return n;
     }
@@ -150,8 +164,51 @@ class DrlEenheidsplekWitnessTest {
         return uit;
     }
 
-    private static boolean datumGetypeerd(JsonNode e) {
-        return e != null && e.get("type") != null && "Date".equals(e.get("type").path("node").asText(""));
+    private static boolean datumGetypeerd(JsonNode e, Declaraties d, Map<String, JsonNode> scope) {
+        JsonNode t = gedeclareerd(e, d, scope);
+        return t != null && "Date".equals(t.path("node").asText(""));
+    }
+
+    /** The datatype an operand has, as the harness's {@code gedeclareerd} reads it: a reference by the declaration it
+     *  names (an attribute up the supertype chain, a parameter, a dimension cell's attribute, a binder's binding),
+     *  every other node by its own annotation. */
+    private static JsonNode gedeclareerd(JsonNode e, Declaraties d, Map<String, JsonNode> scope) {
+        if (e == null || !e.isObject()) return null;
+        return switch (e.path("node").asText("")) {
+            case "AttributeReference" -> d.attribuut(e.path("subjectType").asText(""), e.path("attribute").asText(""));
+            case "ParameterReference" -> d.parameters.get(e.path("parameter").asText("").toLowerCase(java.util.Locale.ROOT));
+            case "DimensionCellRead" -> gedeclareerd(e.get("attribute"), d, scope);
+            case "BinderRef" -> scope.get(e.path("name").asText("").toLowerCase(java.util.Locale.ROOT));
+            default -> e.get("type");
+        };
+    }
+
+    /** The declarations of one document, lower-cased as the harness keys them. */
+    private static final class Declaraties {
+        final Map<String, String> supertype = new java.util.HashMap<>();
+        final Map<String, JsonNode> attributen = new java.util.HashMap<>();
+        final Map<String, JsonNode> parameters = new java.util.HashMap<>();
+
+        Declaraties(JsonNode doc) {
+            JsonNode model = doc.path("model");
+            for (JsonNode ot : model.path("objectTypes")) {
+                String n = ot.path("name").asText("").toLowerCase(java.util.Locale.ROOT);
+                if (ot.hasNonNull("supertype")) supertype.put(n, ot.get("supertype").asText().toLowerCase(java.util.Locale.ROOT));
+                for (JsonNode a : ot.path("attributes"))
+                    attributen.put(n + "|" + a.path("name").asText("").toLowerCase(java.util.Locale.ROOT), a.get("datatype"));
+            }
+            for (JsonNode p : model.path("parameters"))
+                parameters.put(p.path("name").asText("").toLowerCase(java.util.Locale.ROOT), p.get("datatype"));
+        }
+
+        JsonNode attribuut(String type, String naam) {
+            String a = naam.toLowerCase(java.util.Locale.ROOT);
+            for (String t = type.toLowerCase(java.util.Locale.ROOT); t != null; t = supertype.get(t)) {
+                JsonNode dt = attributen.get(t + "|" + a);
+                if (dt != null) return dt;
+            }
+            return null;
+        }
     }
 
     // ---------------- helpers ----------------
