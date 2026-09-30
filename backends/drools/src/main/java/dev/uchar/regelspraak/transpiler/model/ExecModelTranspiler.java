@@ -465,6 +465,14 @@ public final class ExecModelTranspiler {
                     : voorwaardeSkipReden(r.voorwaarde())) + "): " + r.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
+            // A voorwaarde that lowers wholly into separate rule items (a quantifier fold or an aggregation comparison:
+            // an accumulate and its test; a role check stored on the other end or a rule-version check: an exists)
+            // leaves no test on the subject pattern, while the freshness below counts every voorwaarde as one that
+            // did. Such a pattern reacts to no update of the subject: the rule fired once, when the voorwaarde first
+            // held, and an operand of its value, or an own operand the voorwaarde tests in its accumulate, that a
+            // later rule wrote never reached it (RUNTIME-SEMANTICS ch. 5.1). The opaque always-true expr makes it
+            // class-reactive, as a test on the subject would have.
+            if (zonderToets(pattern)) pattern = pattern.expr(nextId("fresh"), (Predicate1) (s -> true));
         }
         // §9.6 initialisatie assigns only when the doel holds NO value yet — apart from its own write
         // (RUNTIME-SEMANTICS ch. 5.4): a case input and a berekening's value switch the guard off, so the
@@ -765,6 +773,14 @@ public final class ExecModelTranspiler {
         var bouwer = PatternDSL.rule(kop(r.naam())).attribute(Rule.Attribute.NO_LOOP, true);
         if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
         return bouwer.build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /** Whether the pattern carries no constraint. Every pattern here is built by {@code PatternDSL.pattern}, which keeps
+     *  its constraints as items; another implementation would leave the question unanswered, so it fails. */
+    private static boolean zonderToets(PatternDSL.PatternDef<?> p) {
+        if (!(p instanceof PatternDSL.PatternDefImpl<?> impl))
+            throw new IllegalStateException("onderwerppatroon buiten PatternDSL.pattern: " + p.getClass().getName());
+        return impl.getItems().isEmpty();
     }
 
     /** Per subject and attribute, the value an initialisatie last wrote there (RUNTIME-SEMANTICS ch. 5.4): the
