@@ -710,10 +710,14 @@ public final class ExecModelTranspiler {
             if (wf == null) return skip("regel (" + (navReden != null ? navReden
                     : vouwReden != null ? vouwReden : "waarde buiten scope") + "): " + r.naam());
             // A §6.5/§6.6 site under a ch. 4.10 node gets a companion that evaluates that node again on its own
-            // (sondeConsequentie), without the accumulates of this rule; a fold there could not be read.
+            // (sondeConsequentie), without the accumulates of this rule; a fold in that node could not be read there.
             if (!slots.isEmpty() && Expr.bevat(r.waarde(), x -> (x instanceof Expr.Let || x instanceof Expr.IfThenElse)
-                    && Expr.bevat(x, y -> y instanceof Expr.Functie yf && isInstantievouw(yf))))
-                return skip("regel (een vouw over een setbron onder een Let of IfThenElse, ch. 4.10): " + r.naam());
+                    && Expr.bevat(x, y -> y instanceof Expr.Functie yf && isInstantievouw(yf))
+                    && Expr.bevat(x, y -> (y instanceof Expr.Binair yb && (yb.op() == Expr.BinOp.GEDEELD_DOOR
+                            || yb.op() == Expr.BinOp.GEDEELD_DOOR_ABS))
+                            || (y instanceof Expr.Functie yw && yw.kind() == Expr.FunctieKind.WORTEL))))
+                return skip("regel (een vouw over een setbron en een deling of wortel onder één Let of IfThenElse,"
+                        + " ch. 4.10): " + r.naam());
             // Navigated-read reactivity: a to-one navigated value read makes the rule stale on the FAR fact's update
             // (property/class reactivity is per fact TYPE). Add a far-side JOIN per distinct navigation so the spiegel
             // re-fires when the navigated fact lands (the order-fragility fix). The consequence's read stays as-is.
