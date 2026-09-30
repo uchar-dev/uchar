@@ -21,14 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * exception, in the group the frontend's opgave marker generates (grammar/DIVERGENCES.md §7) and in the group on
  * {@code berekende X} it moves a tree to. RUNTIME-SEMANTICS ch. 7.1: a default decides with its consequence where its
  * justification holds and the consequence is not leeg; ch. 1.2e gives the empty fold. The same fold in an ordinary
- * rule's value plays since the date fold over a role became an accumulate beside the subject pattern. {@code ref/} and
- * the ASP backend answer every row here; every document is authored in this class on Jutterswet material, and each is
- * the document of one measured form of the card's form space, with the values {@code ref} and clingo answer.
+ * rule's value plays since the date fold over a role became an accumulate beside the subject pattern. {@code ref/}
+ * answers every row here, and the ASP backend every row but the maximum of two number folds, which it does not
+ * translate; every document is authored in this class on Jutterswet material, and each is the document of one measured
+ * form of the card's form space, with the values {@code ref} and clingo answer.
  *
  * <p><b>Red before the fix</b> (measured 2026-09-30 on the transpiler of the claim, exec-model branch): every row that
  * plays was refused for the whole group in one lumped sentence that names neither the form nor the consequence
  * ({@code niet-reduceerbare consequentie (far-side/aggregatie): <default>}; {@code <default>} because a default carries
- * no source text on the wire); the two refusal rows found that same sentence where they look for the form.
+ * no source text on the wire); the two refusal rows found that same sentence where they look for the form. The row over
+ * two number folds came after the fix and was red on the transpiler of the claim in the same sentence.
  */
 class DefaultsConsequentieVouwWitnessTest {
 
@@ -142,6 +144,21 @@ class DefaultsConsequentieVouwWitnessTest {
                 standaard(gevuld(eigen("gemeld gewicht", "Berging")), eigen("gemeld gewicht", "Berging")),
                 standaard(ALTIJD, plusEen)));
         assertNull(speel(getalIr, zaak(situatie(false), gewichten("14", "30", "1", "25", "1"))), "de som plus 1");
+    }
+
+    @Test void twee_getalvouwen_als_operanden() throws Exception {
+        // "Het maatgewicht van een Berging moet berekend worden als de maximale waarde van (de som van het gewicht van
+        // alle vondsten van de Berging) en (het aantal vondsten van de Berging)" under the afwijking of the gemeld
+        // gewicht. ref: B1 13, B3 0 (the empty sum is skipped), B5 1. The ASP backend does not translate a listed fold
+        // whose operands are number folds, in an ordinary rule neither, so here ref alone answers.
+        String twee = "{\"node\":\"Aggregation\",\"kind\":\"maximum\",\"arguments\":[" + vouw("sum", "gewicht", GEHEEL,
+                "de som van het gewicht van alle vondsten van de Berging") + "," + TELLING + "],\"type\":" + GEHEEL
+                + ",\"source\":{\"snippet\":\"de maximale waarde van (…) en (…)\"}}";
+        String ir = document(false, List.of(), groep("maatgewicht", "Berging", "maatgewicht",
+                standaard(gevuld(eigen("gemeld gewicht", "Berging")), eigen("gemeld gewicht", "Berging")),
+                standaard(ALTIJD, twee)));
+        assertNull(speel(ir, zaak(situatie(false), gewichten("13", "30", "0", "25", "1"))),
+                "het maximum van een som en een telling");
     }
 
     // ---------------- two roles away ----------------
