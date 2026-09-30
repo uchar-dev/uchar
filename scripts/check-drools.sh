@@ -263,7 +263,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-vondstbereik|EXCLUDE|transpiler SKIP: regel 'vroegste vondstdag van een jutter' — the MINIMUM/MAXIMUM fold over a DATE set source (card datum-setbron-breuk, 2026-09-20). Both branches accumulate a VALUE fold in BigDecimal, so a date-valued member has no place in it: until this card they CRASHED there (a ClassCastException on the som/totaal bind, an IllegalStateException out of the min/max accumulate cast) and they now refuse BY NAME, with the sentence saying WHICH kind of refusal it is — the ordering reading IS well defined (ch. 1.2e) and both OCaml executors carry it, so this is a gap in THIS backend and not a semantic difference. The golden's absolute pins are therefore a ref = clingo pair, and that is recorded here rather than hidden. Its EERSTE/LAATSTE twin jutterswet-vondstvenster plays in this branch since 2026-09-30 (the date fold over a role, reason block at EXPECTED_PLAYED): the exec branch folds the same order over a date when it is spelled EERSTE/LAATSTE, and keeps this MINIMUM/MAXIMUM spelling refused while DatumSetvouwWitnessTest pins that refusal in both branches"
   "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
@@ -1132,14 +1131,23 @@ EXPECTED_CHANNEL=(
 # jutterswet-vondstvenster leaves EXPECTED_CHANNEL: its two rules are this form, and the branch plays its two
 # cases, PLAYED 2, against the unchanged pins. jutterswet-vroegste-vondst, new, from bron.rgs and scenario.rgs and
 # hand-computed: the earliest and the latest vinddag over the vondsten of a Jutter, the earliest over the zware
-# vondsten with zwaar derived later, the earliest plus 30 dagen, the earliest plus the maximum of a zoekduur, the
+# vondsten with zwaar derived later, the earliest plus 30 dagen, a startdag plus the maximum of a zoekduur, the
 # tijdsduur between the earliest and the latest, the minimum of a gewicht plus 1, 10% of a sum, and the earliest
 # vinddag two roles deep from a Strandvoogd, over four source shapes and a case whose member order is not the value
 # order; played in the exec branch, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL
 # goldens in both branches: exactly the vondstvenster line moves, in the exec branch. The DRL-text branch refuses
 # both goldens on its marker 'TODO aggregatie EERSTE' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not
 # move.
-EXPECTED_PLAYED=228
+# 228 -> 229 (2026-09-30, the minimum and maximum over a date): jutterswet-vondstbereik leaves EXPECTED_CHANNEL. The
+# minimum and the maximum over a date set source are the ordering fold eerste and laatste are (RUNTIME-SEMANTICS
+# ch. 1.2e), and the accumulate over a Comparable that the exec branch folds those with carries them; in a rule's value
+# the branch no longer asks the member-type refusal of kern.Vouwwaarde, and the bare numeric fold leaves such a fold to
+# the value's slots. The branch plays the golden's two cases, PLAYED 2, against the unchanged pins, and
+# DatumSetvouwWitnessTest expects that now. Outside a rule's value (a condition, a justification) the form stays refused
+# in the exec branch's own words. Measured before and after over ALL goldens in both branches: exactly the vondstbereik
+# line moves in the exec branch; in the DRL-text branch the same golden keeps its channel and its refusal now names that
+# branch as the one that does not carry the fold (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
+EXPECTED_PLAYED=229
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1158,16 +1166,16 @@ EXPECTED_PLAYED=228
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 37 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 37 below the exec one: the exec branch grew a
+  # remaining reason of size for this count sitting 38 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
   # toolchain does not have, and DrlTranspiler never did. 36 of the 37 lines refuse on that one
   # sentence; the 37th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
   # the header counts since 2026-09-22. All 36 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 37 is 41 exec-only players — those 36, jutterswet-vouwrand, jutterswet-vondstvenster and
-  # jutterswet-vroegste-vondst of class (C), and jutterswet-initialisatievolgorde and
-  # anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
+  # The 38 is 42 exec-only players — those 36, jutterswet-vouwrand, jutterswet-vondstbereik,
+  # jutterswet-vondstvenster and jutterswet-vroegste-vondst of class (C), and
+  # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
   # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
@@ -1215,7 +1223,8 @@ DRL_CHANNEL=(
   # lines) were counted against the list. Recounted again the same day (the date fold over a role):
   # jutterswet-vondstvenster and the new jutterswet-vroegste-vondst play in the exec branch only (class (C)), so the
   # gap is 37 (228 - 191); the six class heads (A 37, B 37, C 11, D 2, E 3, F 3 = 93 lines) were counted against the
-  # list.
+  # list. Recounted again the same day (the minimum and maximum over a date): jutterswet-vondstbereik plays in the exec
+  # branch only (class (C)), so the gap is 38 (229 - 191), and the six class heads hold at 93 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1316,15 +1325,16 @@ DRL_CHANNEL=(
   # EXPECTED_DRL_PLAYED.
   # 10 -> 11 (2026-09-30, the date fold over a role): jutterswet-vroegste-vondst, a NEW golden this
   # branch markers by name ('TODO aggregatie EERSTE') and the exec branch plays; EXPECTED_DRL_PLAYED
-  # does not move (reason block at EXPECTED_PLAYED).
-  # EIGHT of the eleven are goldens the exec branch refuses too, on its own wording of the
-  # same limit (the many-to-many bean field, the consistency rule, the date-valued value fold, the
-  # §8.4.3 clip on a temporal target, and the out-of-scope condition — jutterswet-klipwacht, shared,
-  # not split).
-  # THREE are this branch alone, and the exec branch PLAYS them:
+  # does not move (reason block at EXPECTED_PLAYED). The same day (the minimum and maximum over a
+  # date) jutterswet-vondstbereik stays here and plays in the exec branch; the count stays 11.
+  # SEVEN of the eleven are goldens the exec branch refuses too, on its own wording of the
+  # same limit (the many-to-many bean field, the consistency rule, the §8.4.3 clip on a temporal
+  # target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
+  # FOUR are this branch alone, and the exec branch PLAYS them:
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons;
-  #   jutterswet-vondstvenster and jutterswet-vroegste-vondst (exec PLAYED 2 each) — the EERSTE/LAATSTE
-  #   fold over a set source, which the exec branch lowers since 2026-09-30 and this one markers.
+  #   jutterswet-vondstbereik, jutterswet-vondstvenster and jutterswet-vroegste-vondst (exec PLAYED 2
+  #   each) — the ordering fold over a date set source, which the exec branch lowers since 2026-09-30
+  #   and this one refuses (the minimum/maximum) or markers (the eerste/laatste).
   # Until 2026-09-23 two more stood here, anchor/jutterswet-wachtersketen and
   # synth2-budgetgrens-onder, an OBJECTCREATIE marker on the unresolved back-link to Wachter; they
   # left with card drl-creatie-koppelloos (reason block at EXPECTED_DRL_PLAYED).
@@ -1335,7 +1345,7 @@ DRL_CHANNEL=(
   "jutterswet-klipwacht|EXCLUDE|MARKER regel: TODO voorwaarde — the gedurende clip as a composite member"
   "jutterswet-muntketen|EXCLUDE|MARKER regel: bronPad step Boot -> Munt has no bean field — the same many-to-many middle relation"
   "jutterswet-pachtvenster|EXCLUDE|MARKER regel: TODO periodevergelijking op een tijdsafhankelijk doel (§8.4.3) — the ch. 3.10 clip, built in ref and clingo since 2026-09-23; shared with the exec branch, each in its own words"
-  "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the shared member-type reason, word for word the exec branch's (card datum-setbron-breuk, 2026-09-20). Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
+  "jutterswet-vondstbereik|EXCLUDE|MARKER regel: the MINIMUM/MAXIMUM fold over a DATE set source — the member-type reason of kern.Vouwwaarde (card datum-setbron-breuk, 2026-09-20), which since 2026-09-30 names this branch as the one that does not carry the fold: the exec branch plays the golden. Its EERSTE/LAATSTE twin sits one line below and is refused one arm earlier, on the fold KIND rather than on the member type"
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
   "jutterswet-vroegste-vondst|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
