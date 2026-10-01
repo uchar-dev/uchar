@@ -240,6 +240,26 @@ spec bug.
   (scalar or temporal); it remains on multi-writer and versioned
   computing targets, and an allocation `doelAttribuut` supplied by the
   case is fenced the same way.
+- Two or more computing rules on one target whose populations share a
+  concrete type (on one type, or on a type and its subtype) would give
+  the target two values in one model wherever two of them apply to one
+  subject and differ, where ref faults on its pass budget (ch. 5.1,
+  5.7). Each such writer therefore also derives its value under its own
+  index (`wval/4`) and its firing (`wvuurt/3`); a writer that fires
+  without a value writes leeg, unless it is standing (ch. 7.8: on a
+  type chain each writer is the only one of its own key, and a standing
+  writer writes nothing on leeg). Every pair of writers that share a
+  concrete type gets one named witness, `viol("two writers of one target
+  disagree: rules "A" and "B" write different values to the attribute a
+  of a T — no fixpoint, divergence is a fault (ch. 5.7)", S)`, so the
+  program is UNSAT and never a second value. Writers whose conditions
+  exclude each other, or that write the same value, derive no witness
+  (`corpus/golden/jutterswet-melding-naar-aard`,
+  `corpus/rood/jutterswet-dubbele-melding`). On a standing target the
+  case input stands only where no writer of the subject decides, a
+  standing writer on another type of the chain included. Two computing
+  rules on a temporal target are refused by name: a timeline is no
+  single term to compare.
 - An initialisation outside the desugaring domain — a conditional one,
   which ch. 7.7 excludes, or a windowed one — translates natively, as
   ref replays it (RS ch. 5.4): its `val` head needs the condition and

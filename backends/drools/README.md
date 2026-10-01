@@ -103,19 +103,28 @@ read of it on a strict subtype of the created type, where ch. 5.1 closes the wri
 The tests that need the frontend's resolver live under `src/bronroute/`, outside this build, which carries no
 parser; the gate compiles them against the frontend's classes and this jar.
 
-## Recorded: the DRL-text branch answers where the others refuse
+## Recorded: two writers of one target
 
-One corner, measured 2026-09-25 and deliberately not built. A computing rule and a conditional
-initialisation write one target (outside the ch. 7.7 desugaring, RUNTIME-SEMANTICS ch. 5.4), the
-computing rule's condition holds and its value evaluates leeg. In v0 the computing rule erases what the
-initialisation writes and the initialisation writes it again: `ref` faults on its pass budget
-(`no fixpoint within 100 passes — divergence is a fault (ch. 5.7)`), the ASP backend derives its
-`viol/2` witness for the same body, and the exec-model branch reaches the shared fire cap
-(`geen fixpunt (kringverwijzing?)`). The DRL-text branch answers the initialisation's value instead
-(`verwacht leeg, werkelijk 25.00`): its computing rule is property-reactive to what its condition and
-value read (`@watch`), not to its own target, so after the initialisation writes nothing re-fires the
-erase and the session stops before the cap. No corpus case can hold the corner — `ref` faults, so it is
-no golden, and the red zone pins `ref` and clingo only.
+Two rules that write one attribute of one object and whose conditions both hold there have no common fixpoint when
+they write different values (RUNTIME-SEMANTICS ch. 5.1, 5.7); WF-079 refuses two unconditional writers, so two
+conditional ones reach the engine. In the exec-model branch the two fire each other again until the replay's fire
+cap. The replay keeps the last writes of the session (`cases.Schrijfconflict`, an agenda listener on every case's
+session, the red path's and the witness seams' included) and at the cap names the writers that kept changing one
+attribute of one object to different values, in document order, with their values: "geen fixpunt: twee schrijvers
+van één doel geven verschillende waarden — de regel "melding op vinddag" schrijft 2026-03-04 en de regel "melding op
+aanspoeldag" schrijft 2026-03-01 in het attribuut meldingsdatum van V, een Vondst; divergentie is een fout
+(RUNTIME-SEMANTICS ch. 5.7)". Before this, it reported "geen fixpunt (kringverwijzing?)", a cycle the document does not
+contain; a run that reaches the cap otherwise, such as a creation that keeps minting, keeps that sentence. With three
+writers the engine can let two of them fire each other while the third waits on the agenda, so the sentence names at
+least two, where `ref` names all three. In the DRL-text branch a computing rule watches what its condition and value
+read and not its own target, so each writer fired once and the one that fired last kept its value without a word; a
+computing rule on a target that another rule writes (a computing rule or an initialisatie) now watches that target as
+well (`DrlTranspiler.gedeeldDoel`), so both branches reach the cap and give the same sentence. The same holds for the
+corner this section used to record: a computing rule that evaluates leeg beside a conditional initialisatie outside
+the ch. 7.7 domain, where `ref` faults and the ASP backend derives its `viol/2` witness, and where the DRL-text branch
+answered the initialisatie's value. Writers whose conditions exclude each other, or that write the same value, play in
+both branches (golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witness
+`OverlappendeSchrijversWitnessTest`).
 
 ## Recorded: a condition that reads through a role
 
