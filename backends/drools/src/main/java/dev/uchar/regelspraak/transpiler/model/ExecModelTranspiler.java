@@ -8563,7 +8563,7 @@ public final class ExecModelTranspiler {
         WaardeFn conseq = null;
         if (!isChar && r.consequentie() != null) {
             String foutplek = foutplekSoort(r.consequentie());
-            if (foutplek != null)
+            if (foutplek != null && !plekIsDeConsequentie(r.consequentie()))
                 throw new DefaultsOnvertaalbaar("kanaal-deponerende consequentie (" + foutplek + ") op defaults-target: " + defaultsReden(r));
             // A fold over a set source in the consequence lowers as it does in a rule's value (vouwslot): an accumulate
             // on the group's reduce-rule, whose result the consequence reads from a slot, so every operator of the
@@ -8879,6 +8879,23 @@ public final class ExecModelTranspiler {
             };
         }
         return leafPredicate(c, subject);
+    }
+
+    /** Whether the one §9.5 site of a defaults consequence is the consequence itself, under at most a rounding: a
+     *  division (§6.5) or a root (§6.6) whose operands hold no site. A fault there yields leeg, a rounding keeps leeg
+     *  leeg (RUNTIME-SEMANTICS ch. 1.2), and a default whose consequence is leeg falls through (ch. 7.1), so the site
+     *  faults exactly where its default does not decide; the deposit of a default that falls through does not persist
+     *  (ch. 7.1, the row "speculative default evaluation" of ch. 7.5), and one that decides has none. Such a consequence
+     *  owes no companion and lowers as an ordinary division or root. A site under another operator (the leeg of a
+     *  division plus 5 decides 5 with the deposit) still has no companion and stays refused. */
+    private boolean plekIsDeConsequentie(Expr e) {
+        Expr k = e;
+        while (k instanceof Expr.Afgerond af) k = af.basis();
+        if (k instanceof Expr.Binair b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS))
+            return foutplekSoort(b.links()) == null && foutplekSoort(b.rechts()) == null;
+        if (k instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL)
+            return f.leegwaarde() == null && f.argumenten().stream().allMatch(a -> foutplekSoort(a) == null);
+        return false;
     }
 
     /** The kind ({@code "deling"} / {@code "wortel"}) of the first §9.5 channel-depositing site in an expression —
