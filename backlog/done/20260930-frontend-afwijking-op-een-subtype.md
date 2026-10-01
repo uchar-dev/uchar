@@ -494,3 +494,37 @@ Geen tekst voor `spec/IR-SPEC.md` of `spec/RUNTIME-SEMANTICS.md`: de draad en de
     038a5f38 DIVERGENCES §4: de erflijn onder de fail-fast refusals
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `556e9f52` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates18/`. Alle zestien exit 0: gate 4 330 goldens schoon,
+503 negatief-cases, 346 op hun arm; gate 10 JUnit 1063, 117 rgs-goldens;
+gate 12 `check-drools: PASS`, played 235 (pin 235), DRL 192 (pin 192),
+JUnit 1020; gate 16 24 scenario-goldens, 84 casebestanden. De fix gelezen:
+`keurKnoop` neemt een blok direct onder de basis aan voor een strikt
+subtype op het geërfde lid; `boomDefaults` splitst de kinderen per type en
+`subtypeGroep` maakt per subtype één groep `<basis> voor <subtype>` met
+één groep-default (ch. 7.9) die de blokken als geordende
+uitzonderingsgroep draagt, zodat ch. 7.10 de geërfde basis eronder houdt;
+`opSubtype` laat voor een `Uitzondering op` de eigen lezingen van de
+basisvoorwaarde het subtype noemen (WF-053); vier benoemde weigeringen
+(eigen basis op de erflijn, lid van een ongeordend blok, subtypeblok vóór
+een supertypeblok, bezette groepsnaam). Afwijking 1 aanvaard (geen
+negatief-case: de verifier neemt de omgekeerde richting aan, gate 10 pint
+de weigering); 2 aanvaard (ongeordende leden benoemd geweigerd zolang de
+caselader van ref en clingo de samengestelde conflictsleutel niet aanneemt,
+open punt 1); 3 aanvaard; 4 aanvaard (de bron van de groep zegt dat de
+basis geërfd is; WF-113 laat geen INFO toe); 5 aanvaard (de uitweg van de
+geneste weigering noemt nu de eigen uitzondering onder de geërfde basis;
+drie gepinde zinnen in `UitzonderingOpUitzonderingTest` volgen, oud en
+nieuw in het Result); 6 aanvaard. De voorgestelde registertekst is in dit
+landingscommit gezet in `spec/CONSTRUCTS.md` rij 39 (Landed-alinea). Voor
+de eigenaar: open punt 1 (de caselader van ref en clingo neemt de
+padsleutel van de samengestelde stapel niet aan; laag `ref/` en de spec)
+en open punt 3 (normkeuze: telt de geschreven volgorde tussen een
+subtypeblok en een supertypeblok, nu een weigering); 2 is een
+ontwerpkeuze (initialisatie op het subtype naast de groep); 4 bestaand
+(de exec-tak sluit defaults-vensters uit). Commitkoppen tot 68 tekens
+aanvaard.
