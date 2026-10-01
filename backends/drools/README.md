@@ -228,10 +228,19 @@ where `ref` and clingo answer. Two limits remain, measured 2026-09-30 with `ref`
 ordering fold over a date in a condition is refused by name (`voorwaarde met een ordenende vouw over een datumbron`):
 a condition compares the accumulate's result as a number. A fold beside a division or a root under one Let or
 IfThenElse (ch. 4.10) is refused by name, since the path-probe companion of such a §6.5 or §6.6 site evaluates that
-node without the rule's accumulates; a fold bound by a Let alone plays. The DRL-text branch markers the eerste/laatste
-fold over a set (`TODO aggregatie EERSTE`), refuses the minimum and maximum over a date with the `Vouwwaarde`
-sentence, which names that branch, and answers leeg for the minimum or maximum of an empty source plus 1 and for a
-date plus the maximum of an empty source.
+node without the rule's accumulates; a fold bound by a Let alone plays. The DRL-text branch refuses the same rule in
+the same sentence since 2026-10-01. The DRL-text branch markers the eerste/laatste fold over a set (`TODO aggregatie
+EERSTE`), refuses the minimum and maximum over a date with the `Vouwwaarde` sentence, which names that branch, and
+answers leeg for the minimum or maximum of an empty source plus 1 and for a date plus the maximum of an empty source.
+
+A §6.5 division or a §6.6 root in a rule's value whose operand holds a fold — a sum or a minimum as the divisor, a
+fold as the dividend or inside a compound operand, the radicand of a root — gets a companion in both branches since
+2026-10-01 (`ExecModelTranspiler.vouwCompanion`, `DrlTranspiler.vouwCompanion`). The companion lowers the operands as
+the rule's value does, each fold an accumulate of its own with the count bound, so an empty source reads leeg, and
+raises the Inconsistentie where a filled dividend meets a leeg divisor or the radicand is negative. Before, a
+companion read only an own or to-one navigated attribute, and the case read consistent where `ref` and clingo deposit
+(`verwacht inconsistent, werkelijk consistent`). A divisor that is 0 stays a fault at fire in every executor (ref:
+"division by numeric zero"). Witness `VouwBegeleiderWitnessTest`.
 
 The toekenning of an object creation ("Een Jutter heeft een afrekening met heffing gelijk aan 10% van de som van het
 gewicht van alle vondsten van de Jutter") goes the same way since 2026-10-01 (`ExecModelTranspiler.objectCreatie`):
@@ -240,18 +249,31 @@ guard, and the value is restated into the declared unit of the member it is writ
 which a toekenning without a fold did not get either (`verwacht 2000, werkelijk 2`). Golden `jutterswet-afrekening`,
 witness `ObjectcreatieVouwWitnessTest`. Until that day the creation lowered a fold through `lowerVal`: a percentage of
 a sum answered leeg, a minimum or maximum over an empty source left the creation unfired, so a constant beside it read
-leeg too, and a date fold, a clamp and a navigated operand were refused. Refused by name: a division or a root in a
-toekenning (`kanaal-deponerende toekenning`), since a creation has no companion that raises the Fout and the case read
-consistent where `ref` turns it inconsistent; more folds than a consequence binds (`te veel gebonden variabelen`); and
-a date fold in the creation's condition, in the sentence of a rule's condition. Measured 2026-10-01 and not repaired:
-a creation fires before a writer of what it reads that comes later on the agenda — a defaults group, a creation
-declared after it, a fact creation — and does not fire again (`verwacht 15, werkelijk leeg`, `verwacht 1, werkelijk
-0`), where RUNTIME-SEMANTICS ch. 6.1 evaluates a creation strictly above the producers of what it reads; a toekenning
-without a fold has the same limit, and so has the DRL-text branch for the later creation and the fact creation (it
-refuses a document with a defaults group). The DRL-text branch, unchanged otherwise: it markers a date fold in a
-toekenning (`TODO aggregatie EERSTE`, `TODO datum-rekenkunde`), leaves the creation unfired over an empty source where
-a toekenning holds a minimum or maximum (`verwacht 1, werkelijk leeg`), writes a toekenning without restating it into
-the member's unit (`verwacht 2000, werkelijk 2`), and reads a division by leeg in a toekenning as consistent.
+leeg too, and a date fold, a clamp and a navigated operand were refused. A division or a root in a toekenning plays:
+the creation evaluates its toekenningen once, when it mints, and the probe every §6.5/§6.6 site reports to rides that
+evaluation, so the creation raises the Inconsistentie for itself and its subject where `ref` deposits (ch. 5.5, 5.6);
+for one round of the same day it was refused by name (`kanaal-deponerende toekenning`). Refused by name: more folds
+than a consequence binds (`te veel gebonden variabelen`), and a date fold in the creation's condition, in the sentence
+of a rule's condition.
+
+A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and mints once. Since 2026-10-01 the object and the fact
+creations are nodes of `groepVolgorde` beside the rules and the groups: a creation reads its condition, its
+toekenningen, the population of its subject and the links its folds, quantifiers and navigations follow, and writes
+its toekenningen on the created type, that type's population and its link; a fact creation reads its condition and the
+links of its hops and writes its link. A creation goes below every node it waits on that would otherwise fire after it
+— a defaults group, a rule the stratification places lower, a creation declared after it, a fact creation — and a
+recursive creation stays on its generations (ch. 5.5). Before, it fired at salience 0 before such a writer and wrote
+leeg or 0 (`verwacht 15, werkelijk leeg`, `verwacht 1, werkelijk 0`). Witness `CreatieVolgordeWitnessTest`; no golden
+changes its salience. What remains, measured 2026-10-01: a reader of a creation's output that writes irrevocably, such
+as a characteristic assignment over a count of the created objects, can fire before the creation (`kenmerk
+onafgerekend: verwacht afwezig, werkelijk aanwezig`, before and after this change), since the stratification lowers a
+rule only below the writers of a characteristic it reads negated and of what a fold in it reads negatively.
+
+The DRL-text branch, unchanged otherwise: it orders no creation (a later creation and a fact creation give the same 0;
+it refuses a document with a defaults group), markers a date fold in a toekenning (`TODO aggregatie EERSTE`, `TODO
+datum-rekenkunde`), leaves the creation unfired over an empty source where a toekenning holds a minimum or maximum
+(`verwacht 1, werkelijk leeg`), writes a toekenning without restating it into the member's unit (`verwacht 2000,
+werkelijk 2`), and reads a division by leeg in a toekenning as consistent.
 
 ## Recorded: a fold whose subselection tests a value derived later
 
