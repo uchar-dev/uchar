@@ -555,3 +555,368 @@ leeg-toets met de lezer vóór de schrijver verruimt de bekende grens van
 plaatsing onder de schrijvers van de operand (open punt 2 van de
 voorganger), kandidaat voor een eigen kaart. Commitkoppen tot 76 tekens
 aanvaard (ff-only, geen rebase). Open punten 2 en 5–8: geen kaart.
+
+## Vervolgronde lezer-onder-schrijver (2026-10-01, bouwer)
+
+Tak `vervolg/lezer-onder-schrijver` in een eigen worktree, vanaf uchar main `4f00731e`; niet gerebased, niet gepusht,
+niet gemerged. Gemeten met de uitvoerders van deze kop: `_build/default/ref/bin/runner.exe`,
+`_build/default/backends/clingo/bin/clingo_runner.exe`, `_build/default/spec/verifier/bin/verifier.exe`, de frontend
+(`Resolver --ir … --cases … bron.rgs scenario.rgs`) en de Drools-jar (`java -jar <jar> ir.json case…`, `--drl` voor de
+teksttak). "Vóór" is de jar van de claim `50a90973` (code gelijk aan main), "na" de jar van `454c9ab5` (de laatste
+codecommit). Elke vorm is een eigen Jutterswet-document (bron.rgs + scenario.rgs), door de frontend verlaagd en door een
+meetscript gemeten. Generator, meetscripts, sweep en tabellen staan buiten de repo onder `/tmp/v2/probe/los-bouw/`
+(`maak.py`, `meet.sh`, `meet-alle.sh`, `sweep.sh`, `dump-getuige.sh`, `tool/ToonSalience.java`; tabellen `meting-*.tsv`,
+`sweep-*.tsv`, `salience-*.txt`).
+
+### Gat K-c: de leeg/gevuld-toets (en een vergelijking) met de lezer vóór de schrijver
+
+#### Reproductie op deze kop
+
+| vorm | ref | clingo | exectak op de claim |
+|---|---|---|---|
+| x-leeg-lezer-eerst (keten, uit de meting van de vorige bouwer) | `oracle: PASS (6 expectations)` | `clingo: PASS (6 expectations)` | `FAIL … verwacht leeg, werkelijk 2026-09-15; verwacht leeg, werkelijk 2026-05-15; verwacht leeg, werkelijk 2026-09-15` |
+| x-leeg-lezer-eerst-een-rol | idem | idem | `FAIL … verwacht leeg, werkelijk 2026-09-15` (vier keer) |
+| a-eigen-leeg-regel-regel-lezer-eerst (eigen operand) | `oracle: PASS (5 expectations)` | `clingo: PASS (5 expectations)` | `FAIL … verwacht leeg, werkelijk 2026-09-15` |
+
+#### Oorzaak
+
+`groepVolgorde` zette een gewone regel alleen onder (a) de schrijvers van een kenmerk dat zij ontkend leest
+(`ontkendVan`: een groep met dat kenmerk als doel, een kenmerktoekenning) en (b) de schrijvers van wat een vouw in haar
+negatief leest (`vouwOntkend`, alleen binnen een vouw: `inVouw`). Een leeg- of gevuld-toets buiten een vouw, en wat een
+kenmerktoekenning in een vergelijking leest, kregen geen plaats. Drools vuurt één salience in de volgorde waarin de
+regels zijn toegevoegd: de gewone regels in gedeclareerde volgorde, daarna onder meer de verdelingen en de creaties, als
+laatste de groepen. Een lezer die vóór
+zijn schrijver staat, of die leest wat een defaultsgroep of een creatie schrijft, toetste daardoor op de tijdelijke
+leegte, en zijn schrijving bleef: een kenmerk is monotoon (ch. 5.3) en een geschreven attribuut wordt niet ingetrokken
+als de voorwaarde later onwaar wordt (ch. 6.1, recorded residuals).
+
+#### Fix en gekozen ordening (`17e623b8`)
+
+`ExecModelTranspiler.groepVolgorde` krijgt per gewone regel de verzameling knopen waarna zij vuurt:
+
+- wat zij onder een leeg- of gevuld-toets leest, waar ook in voorwaarde of waarde, ook binnen een vouw, met de relaties
+  van een genavigeerde operand (nieuw: `leegLezingen`; RUNTIME-SEMANTICS ch. 6.1: een negatieve rand in beide
+  polariteiten);
+- voor een kenmerktoekenning, die onherroepelijk schrijft, alles wat zij leest behalve een kenmerk (stratum-strikt, ch.
+  6.1): attributen, de populatie van een vouw, de koppelingen van een navigatie of vouw. `conditieLezingen` en
+  `exprLezingen` kregen daarvoor de vlag `kenmerken` (onwaar: een kenmerkcheck en de relaties van haar hop tellen niet;
+  een positieve kenmerklezing is monotoon, een ontkende is gestratificeerd).
+
+Voor elke schrijver van zo'n lezing (een gewone regel, een defaultsgroep, een object- of feitcreatie) komen de schrijver
+en alles waarop hij transitief wacht (`bereik`) in die verzameling. De regel vuurt na elk van die knopen: lager in
+salience, of gelijk en eerder toegevoegd (`laadrang`), dezelfde voorwaarde die de creaties al hadden. Een regel die na
+zijn schrijver staat, houdt dus zijn salience. Een schrijver die zelf (transitief) op de regel wacht, ligt met haar op
+een kring: bij een negatieve lezing weigert de regel met de vorm in de zin (`kringWeigering`, WF-046), bij een
+stratum-strikte lezing houdt zij haar plaats (de generaties van een recursieve creatie ordenen haar, ch. 5.5). Een
+leeg-toets op het eigen doel van de regel weigert ook: `regel (een leeg- of gevuld-toets op afgeleide registratiedag van
+Vondst, dat deze regel zelf schrijft: een kring zonder volgorde (WF-046)): afgeleide registratiedag zelf`; op een kring
+van twee regels: `regel (een leeg- of gevuld-toets op afgeleide controledag van Vondst, dat de regel afgeleide
+controledag, die op deze regel wacht, schrijft: een kring zonder volgorde (WF-046)): afgeleide registratiedag`.
+
+De begeleiders van een regel (§6.5 deling, §6.6 wortel, leeg startpunt, gevuurd) krijgen de salience van hun regel
+(`companionRule` en `gevuurdCompanions`): zij herhalen de voorwaarde van de regel en meldden op salience 0 de tijdelijke
+stand (d-begeleider-deling: `verwacht consistent, werkelijk inconsistent (uitkomstwaarde @ V)`, ook na de ordening van
+de regel alleen).
+
+Niet gekozen: (1) de band min één, zoals `vouwOntkend` doet (niet gebouwd en niet gemeten; eigen gevolgtrekking: die zet
+een lezer ook onder een schrijver die al vóór hem vuurt, dus zakken meer regels in het corpus); (2) de ordening in
+`Stratificatie`: die delen beide takken, en de teksttak houdt volgens de opdracht haar kanaal; (3) een vergelijking in
+de voorwaarde van een regel die een attribuut schrijft ook ordenen: ch. 6.1 leest die positief, en of zo'n lezing
+negatief wordt is de normvraag die ch. 6.1 openlaat (open punt 1).
+
+#### Vormruimte vóór en na (exectak; DRL-tekst vóór = na op alle vormen)
+
+Raster A (72 vormen): operand eigen ("zijn afgeleide registratiedag"), één rol ("de afgeleide vergunningsdag van de
+jutter van de Vondst") en keten ("de afgeleide openingsdag van de haven van de jutter van de Vondst") × toets leeg,
+gevuld, "ongelijk is aan <de waarde van V>" × lezer gewone regel ("De uitkomst van een Vondst moet gesteld worden op
+zijn vinddag indien …") en kenmerktoekenning ("Een Vondst is gemarkeerd indien …") × schrijver regel en defaultsgroep ×
+lezer vóór en na de schrijver. Vijf vondsten, elk operand met een gevulde en lege waarde.
+
+| toets | lezer | schrijver | volgorde | ref / clingo | exectak vóór → na (per drie operanden) | DRL-tekst (eigen / rol / keten) |
+|---|---|---|---|---|---|---|
+| leeg | regel | regel | lezer eerst | PASS / PASS | FAIL → PLAYED (3) | FAIL / FAIL / TODO voorwaarde |
+| leeg | regel | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
+| leeg | regel | groep | beide | PASS / PASS | FAIL → PLAYED (6) | EXCLUDE (defaults) |
+| leeg | kenmerk | regel | lezer eerst | PASS / PASS | FAIL → PLAYED (3) | FAIL / FAIL / TODO voorwaarde |
+| leeg | kenmerk | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
+| leeg | kenmerk | groep | beide | PASS / PASS | FAIL → PLAYED (6) | EXCLUDE (defaults) |
+| gevuld | regel, kenmerk | regel, groep | beide | PASS / PASS | PLAYED → PLAYED (24) | regel: PLAYED / FAIL / TODO voorwaarde; groep: EXCLUDE |
+| ongelijk | kenmerk | regel | lezer eerst | PASS / PASS | FAIL → PLAYED (3) | FAIL / FAIL / TODO voorwaarde |
+| ongelijk | kenmerk | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
+| ongelijk | kenmerk | groep | beide | PASS / PASS | FAIL → PLAYED (6) | EXCLUDE (defaults) |
+| ongelijk | regel | regel | lezer eerst | `MISMATCH: V.uitkomst = 2026-09-15, expected leeg` / PASS | FAIL → FAIL (3) | FAIL / FAIL / TODO voorwaarde |
+| ongelijk | regel | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
+| ongelijk | regel | groep | beide | `MISMATCH` (idem) / PASS | FAIL → FAIL (6) | EXCLUDE (defaults) |
+
+De FAIL-zinnen vóór: `verwacht leeg, werkelijk 2026-09-15` (de gewone regel) en `kenmerk gemarkeerd: verwacht afwezig,
+werkelijk aanwezig` (de kenmerktoekenning). De negen ongelijk-vormen met een gewone regel als lezer, de lezer vóór de
+schrijver of een groep als schrijver, hebben geen arbiter: ref schrijft op de tijdelijke leegte (het recorded residual
+van ch. 6.1), clingo niet; de exectak volgt ref, vóór en na.
+
+Raster B (twee operanden), de schrijver na de lezer:
+
+| vorm | ref / clingo | exectak vóór → na | DRL-tekst |
+|---|---|---|---|
+| samengesteld, regel: "hij aan alle volgende voorwaarden voldoet: - de afgeleide vergunningsdag van de jutter van de Vondst is leeg - zijn vinddag is gevuld" | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-09-15` → PLAYED | FAIL |
+| samengesteld, kenmerk | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| samengesteld, regel, groep | PASS / PASS | FAIL → PLAYED | EXCLUDE (defaults) |
+| samengesteld, kenmerk, groep | PASS / PASS | FAIL → PLAYED | EXCLUDE (defaults) |
+| twee later afgeleide operanden, kenmerk: "… ongelijk is aan zijn afgeleide controledag" | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| twee later afgeleide operanden, regel | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-09-15` → idem | FAIL |
+
+De laatste rij blijft fout: ref en clingo antwoorden hier gelijk, want ref toetst de lezer pas in de volgende ronde na
+beide schrijvers; de exectak toetst opnieuw na de eerste schrijver (één operand gevuld, de andere leeg: ongelijk) en
+schrijft. Een vergelijking in een regel die een attribuut schrijft leest positief (ch. 6.1); open punt 1.
+
+Raster D (bijzondere vormen):
+
+| vorm | ref / clingo | exectak vóór → na | DRL-tekst |
+|---|---|---|---|
+| d-ketting: "uitkomst indien zijn afgeleide controledag leeg is", "afgeleide controledag … indien de afgeleide vergunningsdag van de jutter van de Vondst leeg is", dan de schrijver | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-08-15` → PLAYED | FAIL |
+| d-negatie-na-lezer: "gemeld indien hij niet gemarkeerd is", "gemarkeerd indien zijn afgeleide registratiedag leeg is", schrijver | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| d-begeleider-deling: "zijn waarde gedeeld door zijn deler indien zijn afgeleide registratiedag leeg is" | PASS / PASS | FAIL `verwacht consistent, werkelijk inconsistent (uitkomstwaarde @ V)` → PLAYED | FAIL (idem) |
+| d-creatie-na-lezer: een creatie leest de uitvoer van een leeg-lezer vóór zijn schrijver | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-12-31` → PLAYED | EXCLUDE (TODO aggregatie) |
+| d-groep-na-lezer: een defaultsgroep leest de uitvoer van een leeg-lezer | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-09-15` → PLAYED | EXCLUDE (defaults) |
+| d-zelf-alleen: "De afgeleide registratiedag … op zijn vinddag indien zijn afgeleide registratiedag leeg is" | verifier `WF-046 FAIL`; ref `EVALUATION FAULT: WF-045`; clingo `UNSATISFIABLE` | PLAYED → EXCLUDE (de weigering hierboven) | PLAYED |
+| d-zelf-met-schrijver: idem, naast de gewone schrijver | idem | FAIL `geen fixpunt: twee schrijvers van één doel …` → EXCLUDE (idem) | FAIL (idem) |
+| d-kring-leeg: twee regels, elk onder een leeg-toets op het doel van de ander | verifier `WF-046 FAIL`; ref `EVALUATION FAULT: WF-045`; clingo `MISMATCH` | PLAYED → EXCLUDE (de weigering hierboven) | PLAYED |
+| d-kring-kenmerk: "gemarkeerd indien zijn afgeleide controledag ongelijk is aan 01-06-2026", "afgeleide controledag … indien hij gemarkeerd is" | verifier `WF-045 FAIL`; ref `EVALUATION FAULT`; clingo `UNSATISFIABLE` | PLAYED → PLAYED (stratum-strikt op een kring: blijft) | PLAYED |
+
+#### Getuige
+
+`LezerOnderSchrijverWitnessTest` (exectak, negentien rijen, documenten in de klasse op Jutterswet-materiaal). Voor K-c:
+`een_leegtoets_op_het_eigen_lid_voor_zijn_schrijver` (beide volgordes),
+`een_leegtoets_een_rol_ver_op_een_lid_uit_een_defaultsgroep`, `een_leegtoets_over_een_keten_in_een_kenmerktoekenning`,
+`een_kenmerk_over_een_vergelijking_met_een_later_afgeleide_waarde`, `een_samengestelde_voorwaarde_met_een_leegtoets`,
+`twee_later_afgeleide_operanden_in_een_kenmerktoekenning`, `een_ketting_van_leeglezers`,
+`een_ontkende_lezer_van_een_kenmerk_op_een_leegtoets`, `de_begeleider_van_een_deling_onder_een_leegtoets`,
+`een_creatie_wacht_op_een_lezer_die_onder_zijn_schrijver_staat`, en de twee weigeringen
+`een_leegtoets_op_een_kring_met_zijn_schrijver_weigert_met_de_vorm` en
+`een_leegtoets_op_het_eigen_doel_weigert_met_de_vorm`. Rood op de claim (`292f4f34` tegen de transpiler van `50a90973`):
+`Tests run: 16, Failures: 16`, met de zinnen van de tabellen en `Expected … CaseRunner.Excluded to be thrown, but
+nothing was thrown` voor de weigeringen. De drie rijen van de flank (consistentie, verdeling) rood in `ab1bd924` tegen
+`17e623b8`: `Tests run: 19, Failures: 3`. Na `454c9ab5`: 19 van 19 groen; de suite 1019 tests, 0 failures. De twintig
+documenten die de klasse speelt, zijn met zachte asserts uitgeschreven en gemeten (`dump-getuige.sh`): de achttien die
+moeten spelen `verifier: PASS`, `oracle: PASS` en `clingo: PASS`; de twee weigeringen `WF-046 FAIL` in de verifier en
+`EVALUATION FAULT: WF-045` in ref.
+
+### Gat K-f: een lezer van de uitvoer van een creatie die onherroepelijk schrijft
+
+#### Reproductie op deze kop
+
+f-lezer-onder-de-creatie (de vorm van de vorige bouwer: "Een Jutter is onafgerekend indien het aantal afrekeningen van
+de Jutter gelijk is aan 0", de creatie onder een basis uit een defaultsgroep): ref `oracle: PASS (8 expectations)`,
+clingo `clingo: PASS (8 expectations)`, exectak op de claim `FAIL … kenmerk onafgerekend: verwacht afwezig, werkelijk
+aanwezig` (vier keer).
+
+#### Oorzaak
+
+Dezelfde als K-c, voor de lezingen die een creatie schrijft: een creatie schrijft de populatie van het gemaakte type,
+haar koppeling en haar toekenningen, en een kenmerktoekenning leest een telling van de gemaakte objecten (populatie en
+koppeling) stratum-strikt. De ordening zette een regel alleen onder de schrijvers van een ontkend kenmerk en van een
+negatieve vouwlezing; een creatie wordt na de regels toegevoegd, dus de lezer vuurde op salience 0 vóór de creatie op de
+telling 0, ook zonder groep.
+
+#### Fix en gekozen ordening
+
+Dezelfde commit `17e623b8`: de stratum-strikte lezingen van een kenmerktoekenning omvatten de populatie en de
+koppelingen van een telling, en de creaties zijn al knopen die ze schrijven, dus de lezer komt na de creatie en na alles
+waarop de creatie wacht (de groep). Een leeg-toets over de koppeling van een creatie ("de afrekendag van de afrekening
+van de Jutter leeg is") is een negatieve lezing van die koppeling en van het gemaakte lid en wacht ook.
+
+#### Vormruimte vóór en na (raster C, 40 vormen; DRL-tekst vóór = na)
+
+Creatie "Een Jutter heeft een afrekening (een bon) met afrekendag (bondag) gelijk aan zijn vergunningsdag indien zijn
+vergunningsdag gevuld is", feitcreatie "Een gecontroleerd net van een Jutter is een net van de Jutter"; lezer vóór en na
+de creatie in het document.
+
+| vorm | ref / clingo | exectak vóór → na | DRL-tekst |
+|---|---|---|---|
+| rol: "de afrekendag van de afrekening van de Jutter" leeg, regel en kenmerk (4) | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-12-31` en `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| rol, ongelijk 01-03-2026, kenmerk (2) | PASS / PASS | FAIL → PLAYED | FAIL |
+| rol, ongelijk, regel (2) | `MISMATCH: J.uitkomst = 2026-12-31` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| rol, gevuld (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
+| keten: "de afrekendag van de afrekening van de jutter van de Vondst", leeg en ongelijk, kenmerk; leeg, regel (6) | PASS / PASS | FAIL → PLAYED | TODO voorwaarde |
+| keten, ongelijk, regel (2) | `MISMATCH` / PASS | FAIL → FAIL (geen arbiter) | TODO voorwaarde |
+| keten, gevuld (4) | PASS / PASS | PLAYED → PLAYED | TODO voorwaarde |
+| telling: "het aantal bonnen van de Jutter gelijk is aan 0", kenmerk (2) | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| telling gelijk aan 0, regel (een gelijkstelling) (2) | `MISMATCH: J3.uitkomst = 2026-12-31` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| telling groter dan 0 (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
+| feit: "het aantal gecontroleerde netten van de Jutter gelijk is aan 0", kenmerk (2) | PASS / PASS | FAIL → PLAYED | FAIL |
+| feit gelijk aan 0, regel (2) | `MISMATCH` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| feit groter dan 0 (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
+| f-lezer-onder-de-creatie (vorige bouwer) | PASS (8) / PASS (8) | FAIL → PLAYED | EXCLUDE (defaults) |
+
+Een gelijkstelling over een telling van de gemaakte objecten schrijft een attribuut en is geen onherroepelijke lezer:
+ref schrijft daar op de tijdelijke 0 en clingo niet, de exectak volgt ref, vóór en na (de normvraag van open punt 1).
+
+#### Getuige
+
+In dezelfde klasse: `een_kenmerk_over_het_aantal_gemaakte_objecten`,
+`een_kenmerk_over_de_koppeling_die_een_feitcreatie_legt`, `een_leegtoets_over_de_koppeling_van_een_creatie`,
+`een_kenmerk_op_een_creatie_die_op_een_defaultsgroep_wacht`; rood en groen zoals hierboven.
+
+### In dezelfde laag gevonden en gemaakt (`ab1bd924`, `454c9ab5`)
+
+| vorm | ref / clingo | exectak vóór → na | DRL-tekst |
+|---|---|---|---|
+| d-consistentie-groep: "De vinddag van een Vondst moet later zijn dan zijn afgeleide registratiedag", dat lid uit een groep | PASS / PASS | FAIL `verwacht consistent, werkelijk inconsistent (controle vinddag @ V)` → PLAYED | EXCLUDE (defaults) |
+| e-consistentie-creatie: "De vergunningsdag van een Jutter moet eerder zijn dan de afrekendag van de afrekening van de Jutter", met een creatie | PASS / PASS | FAIL `verwacht consistent, werkelijk inconsistent (controle vergunningsdag @ J)` → PLAYED | PLAYED |
+| d-consistentie-regel: idem, het lid uit een gewone regel | PASS / PASS | PLAYED → PLAYED | PLAYED |
+| e-verdeling-leeg: "Een Berger is gemarkeerd indien zijn bergingsaandeel leeg is" vóór en na de verdeling (2) | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
+| f-vouw-verdeling-waar: "het aantal bergers van de Berging die aan de volgende voorwaarde voldoen: zijn bergingsaandeel is leeg groter is dan 0" | PASS / PASS | FAIL `verwacht leeg, werkelijk 1` → PLAYED | FAIL |
+| f-vouw-creatie: dezelfde vouw over de bonnen van een creatie | PASS / PASS | PLAYED → PLAYED (sinds de vorige ronde) | FAIL |
+| e-uniciteit-groep: "De afgeleide registratiedagen van alle Vondsten moeten uniek zijn", het lid uit een groep | PASS / PASS | PLAYED → PLAYED | EXCLUDE (defaults) |
+| e-verdeling-bron-groep: een verdeling waarvan een groep de bron schrijft | `EVALUATION FAULT: empty source amount in equal-shares allocation` / PASS | `ERROR ConsequenceException … NullPointerException` → idem | EXCLUDE (defaults) |
+
+Een consistentieregel schrijft een kanaal dat nooit wordt ingetrokken en leest stratum-strikt (ch. 6.1); zij werd
+toegevoegd na de regels en vóór de verdelingen, creaties en groepen, zonder salience. Een verdeling was geen knoop, dus
+een lezer van wat zij schrijft kreeg geen plaats na haar. `454c9ab5`: een verdeling is een knoop (zij leest haar bron,
+haar voorwaarde op de bron, de rato-, maximum- en volgordeleden op de ontvangers, hun populatie en haar koppeling; zij
+schrijft het doel van de ontvangers en de rest van de bron) en houdt haar eigen plaats; `laadrang` kent haar plek (na de
+regels, vóór de creaties). Een consistentieregel komt na elke schrijver van wat haar assertie leest en wat die schrijver
+wacht (`consistentieSalience`, toegepast in `consistentie()`). Getuigerijen
+`een_consistentie_over_een_lid_uit_een_defaultsgroep`, `een_consistentie_over_de_koppeling_van_een_creatie`,
+`een_leegtoets_op_wat_een_verdeling_schrijft`.
+
+### Breder nagemeten
+
+De 94 vormen van de vorige bouwer van de keten (`/tmp/v2/probe/vtr-bouw/vorm/`) en de 63 van de creatievolgorde
+(`/tmp/v2/probe/ocv-vervolg/vorm/`), met beide jars in beide takken: alleen x-leeg-lezer-eerst,
+x-leeg-lezer-eerst-een-rol en f-lezer-onder-de-creatie veranderen, FAIL → PLAYED; de teksttak is gelijk; drie vormen
+weigert de frontend, zoals vóór. De drie vormen van `/tmp/v2/probe/v1/` (eigen operand onder een kwantor) spelen vóór en
+na.
+
+### Sweep
+
+Over alle 289 goldens, elke golden met al zijn cases, statusregel per golden en per tak, jar van de claim tegen de jar
+na `17e623b8` en na `454c9ab5`: alle 578 regels gelijk, exectak PLAYED 234, DRL-tak PLAYED 192. Geen gepinde uitkomst
+verandert.
+
+Saliences (`tool/ToonSalience.java` op beide jars, alle regels van alle goldens): tien goldens krijgen een lagere
+salience voor een lezer die nu na zijn schrijver komt; geen status verandert.
+
+| golden | regel: oud → nieuw | waarom |
+|---|---|---|
+| jutterswet-havenketen | registerdatum 0 → -1 | gevuld-toets over een keten waarvan de feitcreatie werving de relatie legt |
+| jutterswet-meldingsketen | aanmelddatum van een vondst 0 → -1; erkenning van de melder 0 → -1; tijdige aanmelding 0 → -1; ongemelde vondst -1 → -2 | gevuld-toets en kenmerkvergelijking op de erkende meldingsdatum uit een groep; de ontkenning van erkend volgt |
+| jutterswet-opgave-subtype | afwijking opgave meldingsdatum 0 → -1; controle opgave meldingsdatum 0 → -1 | de kenmerktoekenning en de consistentieregel die de opgavemarkering maakt, lezen de berekende waarde uit een groep |
+| jutterswet-opgave-vormen | afwijking opgave waarde/wachtgeld 0 → -1; controle opgave waarde/wachtgeld 0 → -1 | idem |
+| jutterswet-sluitdag-gemeld | afwijking opgave uiterste meldingsdag 0 → -1; controle opgave uiterste meldingsdag 0 → -1 | idem |
+| jutterswet-overzeelezing-catala | kenmerktoekenning overzees 0 → -1; defaults A:Vondstaanslag.heffing 0 → -1 | het kenmerk vergelijkt de registratiezone die de creatie zet; de groep die het kenmerk leest volgt |
+| jutterswet-zwaarste-vondst | gedateerd 0 → -1; losse gewicht -1 → -2 | gevuld-toets op de afgeleide dag uit een groep; de ontkenning van gedateerd volgt |
+| anchor/jutterswet-wachtersketen, jutterswet-wachtersketen-rgs, synth2-budgetgrens-onder | rangdetector 0 → -1 | de consistentieregel leest de rang die de recursieve creatie zet |
+
+### README (`8c220ac8`)
+
+`backends/drools/README.md`: een nieuwe sectie "Recorded: a reader after the writers of what it reads" (welke lezingen
+de exectak ordent, welke schrijvers, de weigering op een kring, de begeleiders en de consistentieregel, wat open blijft
+en het kanaal van de teksttak). De leeg-toets in "Recorded: a condition that reads through a role", de grenzen in
+"Recorded: a fold whose subselection tests a value derived later" en de alinea over de creatie in `groepVolgorde` wijzen
+ernaar en zeggen wat sinds deze ronde gesloten is. De teksttak, gemeten en beschreven: een leeg-toets en een
+vergelijking in een kenmerktoekenning vóór hun schrijver vuren op de tijdelijke stand; een toets één rol ver ziet de
+verre kant niet; een telling van gemaakte objecten of van de koppelingen van een feitcreatie leest 0; een leeg-toets op
+het doel van een verdeling vuurt eerst; een voorwaarde over twee rollen weigert zij met haar marker en een document met
+een defaultsgroep aan de deur; een consistentieregel over de koppeling van een creatie speelt daar.
+
+### Gates
+
+Alle zestien met `/tmp/v2/uchar-gates20/run.sh` op de kop `535c1487` (de laatste commit vóór dit Result; de
+Result-commit raakt alleen de kaart), `dune build` exit 0, elk script onder zijn shebang; logs in
+`/tmp/v2/uchar-gates20/`. Alle zestien exit 0. Eerder ook op `8c220ac8` (vóór de commentaarcommit; logs in
+`/tmp/v2/uchar-gates20/kop-8c220ac8/`), met dezelfde tellingen. Gate 10: `JUnit suite green (1044 tests, floor 173); 116
+rgs golden(s) re-emit byte-identically (floor 80)`. Gate 12: `check-drools: PASS`, `played 234` (pin 234), `DRL-text
+branch played 192` (pin 192), `JUnit 1019 tests, floor 239`. Gate 16: `23 scenario golden(s) (floor 7) regenerate 82
+case file(s) (floor 31) and their ir.json byte-identically`.
+
+### Golden en pinnen
+
+Geen golden: elke gemeten vorm die deze ronde sluit, pint een getuigerij met de waarden van ref en clingo, en geen vorm
+valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=234` en `EXPECTED_DRL_PLAYED=192` blijven.
+
+### Afwijkingen van de opdracht
+
+1. De ordening raakt drie vormen buiten de genoemde vormruimte, in dezelfde laag en met hetzelfde stille foute antwoord:
+   de begeleiders van een regel (zij volgen de salience van hun regel), de consistentieregel (zij komt na haar
+   schrijvers) en de verdeling als schrijver (zij is een knoop). Elk met een rood-eerst getuigerij.
+2. Tien goldens krijgen een andere salience (tabel onder Sweep); de opdracht vroeg te controleren dat geen golden dat
+   doet. Het is de gekozen ordening: elk is een lezer onder een leeg- of gevuld-toets, of een kenmerktoekenning of
+   consistentieregel, na de schrijver van wat zij leest (een groep, een creatie, een feitcreatie), en wat daarop volgt.
+   Geen statusregel verschuift. Eigen gevolgtrekking, niet gemeten: met de band min één in plaats van de laadvolgorde
+   zouden meer regels zakken.
+3. Een vergelijking in de voorwaarde van een regel die een attribuut schrijft, wordt niet geordend (de polariteit van
+   ch. 6.1); b-twee-operanden-regel blijft daardoor fout waar ref en clingo gelijk antwoorden (open punt 1).
+4. Een leeg-toets op een kring met de schrijver, of op het eigen doel, weigert nu benoemd; vóór speelden d-kring-leeg en
+   d-zelf-alleen in de exectak een antwoord dat ref en clingo niet geven (beide weigert de verifier met WF-046).
+
+### Voorgestelde registertekst (voor de hoofdsessie)
+
+- `spec/IR-SPEC.md` ch. 5.5, "Recorded flank", eerste bullet, na de zin "The exec-model branch's navigated leeg test,
+  over one role and since 2026-10-01 over a chain, has this form as well (…)": "*Closed in the exec-model branch on
+  2026-10-01 for a test anywhere in a condition or a value (witness `LezerOnderSchrijverWitnessTest`): a rule is placed
+  after every writer of what it reads under a leeg or gevuld test, and a characteristic assignment after every writer of
+  what it reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1), with every node such a writer waits on — an ordinary rule
+  declared after it, a defaults group, an object or fact creation, an allocation — strictly below it in salience or
+  level with it and added before the rule; a consistency rule takes the same placement, and a rule's companions take the
+  rule's salience. A leeg or gevuld test on a cycle with its writer, its own target included, is refused by name
+  (WF-046). A comparison in the condition of an attribute-writing rule reads positively and is not ordered: with two
+  operands derived later, `ref/` and `backends/clingo` answer leeg where the branch writes, since it tests again after
+  the first writer (RUNTIME-SEMANTICS ch. 6.1, conditions that hold on absence). The DRL-text branch keeps the form
+  described here.*" En in de alinea erna, achter "and a salience below the operand's writers for the order-dependent
+  form": "(in the exec-model branch: the far-side join since 2026-09-28, the salience since 2026-10-01)".
+- `spec/IR-SPEC.md` ch. 5.5, de recorded-alinea van 2026-10-01 (creaties): "What stays open: in the exec-model branch a
+  reader of a creation's output that writes irrevocably, … absent); the DRL-text branch orders no creation, so a later
+  creation and a fact creation still read 0 there, a coarser order than the graph without a loud refusal." wordt
+  "*Closed in the exec-model branch the same day (witness `LezerOnderSchrijverWitnessTest`):* a reader of a creation's
+  output that writes irrevocably, such as a characteristic assignment over a count of the created objects or over the
+  links a fact creation lays, and a leeg test on what a creation writes, wait on the creation; before, a characteristic
+  was attributed where `ref/` and `backends/clingo` leave it absent. What stays open: the DRL-text branch orders no
+  creation, so a later creation and a fact creation still read 0 there and a reader of their output acts on that 0, a
+  coarser order than the graph without a loud refusal."
+- `spec/CONSTRUCTS.md` rij 6, "Recorded open": het deel "both branches act on a transient leeg when an own-operand,
+  filter or navigated reader (in the exec-model branch over one role or a chain) precedes the writer of what it tests,
+  and, … ; the DRL-text branch fires an object creation before a later creation or a fact creation that writes what it
+  reads, where RUNTIME-SEMANTICS ch. 6.1 places it strictly above them, and in the exec-model branch, which places a
+  creation below those writers since 2026-10-01, a reader of a creation's output that writes irrevocably can still act
+  before the creation (IR-SPEC ch. 5.5)." wordt "the DRL-text branch acts on a transient leeg when an own-operand,
+  filter or navigated reader precedes the writer of what it tests, and on a transient value when a characteristic
+  assignment or a consistency rule does, which the exec-model branch orders since 2026-10-01 (rules, defaults groups,
+  creations and allocations as writers), and, in the DRL-text branch only since 2026-09-28, a navigated read in a
+  condition does not react to a later far-side write in either order; the DRL-text branch fires an object creation
+  before a later creation or a fact creation that writes what it reads, where RUNTIME-SEMANTICS ch. 6.1 places it
+  strictly above them, and a reader of a creation's output before the creation; in the exec-model branch a comparison in
+  the condition of an attribute-writing rule is not ordered, the norm question of RUNTIME-SEMANTICS ch. 6.1 (IR-SPEC ch.
+  5.5)."
+
+### Open punten
+
+1. Normvraag voor de eigenaar: een vergelijking in de voorwaarde van een regel die een attribuut schrijft (ook een
+   gelijkstelling over een telling van gemaakte objecten) leest positief (ch. 6.1, "conditions on attribute-writing
+   forms read positively here"), en de exectak ordent haar niet. Twee meetbare gevolgen: (a) met een vergelijking die op
+   leeg waar is ("ongelijk aan", "gelijk aan 0") vóór haar schrijver schrijven ref en de exectak, clingo niet (17 vormen
+   van rasters A en C, geen arbiter); (b) met twee later afgeleide operanden antwoorden ref en clingo gelijk en schrijft
+   de exectak (b-twee-operanden-regel), omdat Drools de lezer na de eerste schrijver opnieuw toetst. Wordt zo'n lezing
+   negatief of stratum-strikt, dan dekt dezelfde ordening haar met één regel in `groepVolgorde` (de lezingen van de
+   voorwaarde van elke regel bij `strikt`); de prijs is een lagere salience voor meer regels in het corpus.
+2. De DRL-teksttak, ongewijzigd: zie de README-sectie en de DRL-kolommen; herstel zou in die tak een eigen ordening
+   vragen (saliences uit haar stratificatie voor leeg-lezers, kenmerktoekenningen, creaties en consistentieregels).
+3. Een verdeling waarvan een defaultsgroep de bron schrijft: ref `EVALUATION FAULT: empty source amount in equal-shares
+   allocation (v0 mirror hole, ch. 4.4)`, de exectak `ERROR ConsequenceException … NullPointerException` (luid, geen
+   stil fout antwoord), clingo 30 en 30. Eigen gevolgtrekking uit de NullPointerException in `BigDecimal.divide`: de
+   verdeling vuurt vóór de groep op een lege bron. Niet in deze ronde.
+4. Niet gemeten: een regelversiecheck ("regelversie X is inconsistent") als lezer van het kanaal van een
+   consistentieregel; ref voert "is gevuurd" niet uit. De uniciteitsregel speelde in de gemeten vorm; zij is geen knoop.
+5. De distributie-CLI draait op een oudere pin en kent deze wijziging niet; de pin moet na het landen mee.
+
+### Commits
+
+    50a90973 claim: vervolg lezer-onder-schrijver
+    292f4f34 LezerOnderSchrijverWitnessTest: lezer vóór zijn schrijver, rood
+    17e623b8 Exectak: een lezer wacht op de schrijvers van wat hij negatief leest
+    ab1bd924 LezerOnderSchrijverWitnessTest: consistentie en verdeling, rood
+    454c9ab5 Exectak: verdeling als schrijver, consistentie na haar schrijvers
+    8c220ac8 backends/drools/README: een lezer na de schrijvers van wat hij leest
+    535c1487 Exectak: commentaar bij de leeg-lezingen en de verdeling als knoop
+
+en de commit "Vervolgronde lezer-onder-schrijver: Result", die deze sectie onderaan de done-kaart
+`20260930-drools-exec-voorwaarde-twee-rollen-ver.md` zet. Niet gepusht, niet gemerged.
