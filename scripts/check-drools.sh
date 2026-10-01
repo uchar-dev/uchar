@@ -1220,7 +1220,14 @@ EXPECTED_CHANNEL=(
 # join, and plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in
 # both branches: no report line moves. The DRL-text branch refuses the new golden on its marker 'TODO aggregatie EERSTE'
 # (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=236
+# 236 -> 237 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new, from bron.rgs and scenario.rgs
+# and hand-computed: "het percentage P van Y" with P a Percentage parameter written without the '%', and Y read one step
+# over a role, Y a sum between parentheses, and Y a variable of a "Daarbij geldt" part, over four cases, among them a
+# vondst without a taxatie. The RegelSpraak frontend refused the three rules before (an undeclared member, a syntax
+# error, a variable that names no role); it now lowers each to the percentageOf node the '%' form emits. No source file
+# of this backend changed: the exec branch plays the four cases on the first run, PLAYED 4, with ref's and clingo's
+# values. The DRL-text branch plays the new golden too, PLAYED 4, so EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=237
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1639,7 +1646,9 @@ DRL_CHANNEL=(
 # PLAYED 2. A computing rule on a target that a second computing rule writes now watches that target, so a write by the
 # one fires the other again where its condition holds; where the conditions exclude each other nothing fires again.
 # Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=192
+# 192 -> 193 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new. This branch plays its four
+# cases with no change of its own, PLAYED 4. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=193
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
