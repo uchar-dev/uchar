@@ -30,6 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * links a fact creation lays decided on the transient 0; the §6.5 companion of a rule under a leeg test reported the
  * division the transient let through ({@code verwacht consistent, werkelijk inconsistent}). A leeg test on a cycle with
  * its writer, and one on the rule's own target, played where the verifier refuses the document (WF-046).
+ *
+ * <p>Two flanks of the same order, red on the commit before theirs (measured 2026-10-01): a consistency rule reads its
+ * assertion stratum-strict, since its channel is never withdrawn, and was added to the model before the creations and
+ * the groups, so it reported a violation on the transient leeg ({@code verwacht consistent, werkelijk inconsistent});
+ * and an allocation, added after the rules, was no writer the order saw, so a leeg test on its target fired first
+ * ({@code kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig}).
  */
 class LezerOnderSchrijverWitnessTest {
 
@@ -244,6 +250,51 @@ class LezerOnderSchrijverWitnessTest {
         assertNull(speel(ir, zaak), "een creatie onder een defaultsgroep");
     }
 
+    // ---------------- a consistency rule and an allocation ----------------
+
+    @Test void een_consistentie_over_een_lid_uit_een_defaultsgroep() throws Exception {
+        // "De vinddag van een Vondst moet later zijn dan zijn afgeleide registratiedag", the afgeleide registratiedag by a
+        // group: the opgegeven registratiedag where it is filled, else the registratiedag. ref and clingo: consistent.
+        String controle = consistentie("controle vinddag", "Vondst", vergelijking("later", eigen("vinddag"),
+                eigen("afgeleide registratiedag")));
+        String ir = document(List.of(), List.of(), List.of(), List.of(GROEP_REGISTRATIEDAG), List.of(controle), List.of());
+        String zaak = zaak(List.of(vondst("V", "2026-09-15", null, "\"registratiedag\":{\"date\":\"2026-06-01\"}")),
+                "{\"kind\":\"consistent\"}");
+        assertNull(speel(ir, zaak), "een consistentie na een defaultsgroep");
+    }
+
+    @Test void een_consistentie_over_de_koppeling_van_een_creatie() throws Exception {
+        // "De vergunningsdag van een Jutter moet eerder zijn dan de afrekendag van de afrekening van de Jutter", with
+        // "Een Jutter heeft een afrekening met afrekendag gelijk aan 31-12-2026". ref and clingo: consistent.
+        String controle = consistentie("controle vergunningsdag", "Jutter", vergelijking("earlier",
+                eigen("vergunningsdag", "Jutter"), genavigeerd("afrekendag", "Afrekening",
+                        "de afrekendag van de afrekening van de Jutter", rolbinding("JutterHeeftAfrekening", "afrekening"))));
+        String afrekening = objectcreatie("maak een afrekening", "Afrekening", "afrekendag", datumLiteraal("2026-12-31"), null,
+                rolbinding("JutterHeeftAfrekening", "afrekening"));
+        String ir = document(List.of(), List.of(afrekening), List.of(), List.of(), List.of(controle), List.of());
+        String zaak = zaak(List.of(jutter("J", "2026-03-01", null, "")), "{\"kind\":\"consistent\"}");
+        assertNull(speel(ir, zaak), "een consistentie na een creatie");
+    }
+
+    @Test void een_leegtoets_op_wat_een_verdeling_schrijft() throws Exception {
+        // "Een Berger is gemarkeerd indien zijn bergingsaandeel leeg is", with "De opbrengst van een berging wordt
+        // verdeeld over de bergingsaandelen van alle bergers van de berging, in gelijke delen, afgerond op 0 decimalen
+        // naar beneden; als onverdeelde rest blijft de onverdeelde rest van de berging over". ref and clingo: B1 and B2
+        // (50 €) not gemarkeerd, B3 (in no berging) gemarkeerd.
+        String verdeel = "{\"node\":\"Allocation\",\"name\":\"verdeel de opbrengst van een berging\",\"versions\":[{"
+                + "\"sourceType\":\"Berging\",\"sourceAttribute\":\"opbrengst\",\"targetType\":\"Berger\","
+                + "\"targetAttribute\":\"bergingsaandeel\",\"method\":\"equalShares\",\"roundingDecimals\":0,"
+                + "\"remainderAttribute\":\"onverdeelde rest\",\"descending\":false,\"validity\":{\"node\":\"Validity\"},"
+                + "\"connectingRole\":" + rolbinding("bergingsdeelname", "berger") + "}]}";
+        String ir = document(List.of(gemarkeerdIndien("Berger", predicaat("empty", eigen("bergingsaandeel", "Berger")))),
+                List.of(), List.of(), List.of(), List.of(), List.of(verdeel));
+        String zaak = zaak(List.of(instantie("B", "Berging", "\"opbrengst\":{\"number\":\"100\"}", ""),
+                instantie("B1", "Berger", "", "\"berging\":[\"B\"]"), instantie("B2", "Berger", "", "\"berging\":[\"B\"]"),
+                instantie("B3", "Berger", "", "")),
+                kenmerk("B1", false) + "," + kenmerk("B2", false) + "," + kenmerk("B3", true));
+        assertNull(speel(ir, zaak), "een leeg-toets na een verdeling");
+    }
+
     // ---------------- what has no order ----------------
 
     @Test void een_leegtoets_op_een_kring_met_zijn_schrijver_weigert_met_de_vorm() throws Exception {
@@ -277,6 +328,9 @@ class LezerOnderSchrijverWitnessTest {
     private static final String GEHEEL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String TELGETAL = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
     private static final String TWEE_DECIMALEN = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
+    private static final String EURO = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":"
+            + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
+            + "{\"num\":1,\"den\":1}}}";
 
     private static String attribuut(String naam, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + naam + "\",\"datatype\":" + datatype + "}";
@@ -305,27 +359,33 @@ class LezerOnderSchrijverWitnessTest {
                 + (veelMeervoud == null ? ",\"many\":false}" : ",\"plural\":\"" + veelMeervoud + "\",\"many\":true}") + "]}";
     }
 
-    /** Haven, Jutter, Vondst, Afrekening, Bon and Net. A Vondst has one jutter, a Jutter one haven, one afrekening, many
-     *  bonnen, many netten and many gecontroleerde netten. */
+    /** Haven, Jutter, Vondst, Afrekening, Bon, Net, Berging and Berger. A Vondst has one jutter, a Jutter one haven, one
+     *  afrekening, many bonnen, many netten and many gecontroleerde netten, a Berging many bergers. */
     private static final String MODEL = "{\"objectTypes\":["
             + objecttype("Haven", "Havens", false, "", datums("openingsdag", "afgeleide openingsdag")) + ","
             + objecttype("Jutter", "Jutters", true, kenmerk("gemarkeerd"),
                     datums("vergunningsdag", "opgegeven vergunningsdag", "afgeleide vergunningsdag", "uitkomst", "afrekendag")) + ","
             + objecttype("Vondst", "Vondsten", false, kenmerk("gemarkeerd") + "," + kenmerk("gemeld"),
-                    datums("vinddag", "registratiedag", "afgeleide registratiedag", "controledag", "afgeleide controledag", "uitkomst")
+                    datums("vinddag", "registratiedag", "opgegeven registratiedag", "afgeleide registratiedag", "controledag",
+                            "afgeleide controledag", "uitkomst")
                     + "," + attribuut("waarde", GEHEEL) + "," + attribuut("deler", GEHEEL) + ","
                     + attribuut("uitkomstwaarde", TWEE_DECIMALEN)) + ","
             + objecttype("Afrekening", "Afrekeningen", false, "", datums("afrekendag")) + ","
             + objecttype("Bon", "Bonnen", false, "", datums("bondag")) + ","
-            + objecttype("Net", "Netten", false, "", attribuut("maas", GEHEEL))
+            + objecttype("Net", "Netten", false, "", attribuut("maas", GEHEEL)) + ","
+            + objecttype("Berging", "Bergingen", false, "", attribuut("opbrengst", EURO) + "," + attribuut("onverdeelde rest", EURO)) + ","
+            + objecttype("Berger", "Bergers", true, kenmerk("gemarkeerd"), attribuut("bergingsaandeel", EURO))
             + "],\"factTypes\":["
             + feittype("JutterHeeftVondst", "jutter", "Jutter", "vondst", "vondsten", "Vondst") + ","
             + feittype("HavenHeeftJutter", "haven", "Haven", "havenjutter", "havenjutters", "Jutter") + ","
             + feittype("JutterHeeftAfrekening", "afrekenaar", "Jutter", "afrekening", null, "Afrekening") + ","
             + feittype("JutterHeeftBon", "bonhouder", "Jutter", "bon", "bonnen", "Bon") + ","
             + feittype("JutterHeeftNet", "eigenaar", "Jutter", "net", "netten", "Net") + ","
-            + feittype("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net")
-            + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
+            + feittype("JutterControleertNet", "controleur", "Jutter", "gecontroleerd net", "gecontroleerde netten", "Net") + ","
+            + feittype("bergingsdeelname", "berging", "Berging", "berger", "bergers", "Berger")
+            + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"Munt\",\"units\":["
+            + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
+            + "{\"num\":1,\"den\":1},\"spellings\":[\"€\",\"euro\",\"euros\"]}]}],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
     private static String rolbinding(String feittype, String rol) {
         return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
@@ -440,14 +500,34 @@ class LezerOnderSchrijverWitnessTest {
             + "\"quantifier\":\"all\",\"threshold\":0,\"parts\":[],\"source\":{\"snippet\":\"altijd\"}},\"consequence\":"
             + eigen("vergunningsdag", "Jutter") + "}],\"validity\":{\"node\":\"Validity\"}}";
 
+    /** The afgeleide registratiedag by a group: the opgegeven registratiedag where it is filled, else the registratiedag. */
+    private static final String GROEP_REGISTRATIEDAG = "{\"node\":\"PrioritizedDefaults\",\"name\":\"afgeleide registratiedag\","
+            + "\"subject\":\"Vondst\",\"attribute\":\"afgeleide registratiedag\",\"defaults\":[{\"node\":\"Default\",\"justification\":"
+            + predicaat("filled", eigen("opgegeven registratiedag")) + ",\"consequence\":" + eigen("opgegeven registratiedag")
+            + "},{\"node\":\"Default\",\"justification\":{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,"
+            + "\"parts\":[],\"source\":{\"snippet\":\"altijd\"}},\"consequence\":" + eigen("registratiedag")
+            + "}],\"validity\":{\"node\":\"Validity\"}}";
+
+    /** "&lt;assertie&gt;" of a {@code type} as a consistency rule. */
+    private static String consistentie(String naam, String type, String assertie) {
+        return "{\"node\":\"Consistency\",\"name\":\"" + naam + "\",\"versions\":[{\"subject\":\"" + type + "\",\"assertion\":"
+                + assertie + ",\"validity\":{\"node\":\"Validity\"}}]}";
+    }
+
     private static String document(List<String> regels) {
         return document(regels, List.of(), List.of(), List.of());
     }
 
     private static String document(List<String> regels, List<String> creaties, List<String> feitcreaties, List<String> groepen) {
+        return document(regels, creaties, feitcreaties, groepen, List.of(), List.of());
+    }
+
+    private static String document(List<String> regels, List<String> creaties, List<String> feitcreaties, List<String> groepen,
+                                   List<String> consistenties, List<String> verdelingen) {
         return "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL + ",\"rules\":{\"rules\":[" + String.join(",", regels) + "],"
-                + "\"dayKindDefinitions\":[],\"objectCreations\":[" + String.join(",", creaties) + "],\"allocations\":[],"
-                + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[" + String.join(",", feitcreaties) + "],"
+                + "\"dayKindDefinitions\":[],\"objectCreations\":[" + String.join(",", creaties) + "],\"allocations\":["
+                + String.join(",", verdelingen) + "],\"consistencies\":[" + String.join(",", consistenties) + "],"
+                + "\"uniquenesses\":[],\"factCreations\":[" + String.join(",", feitcreaties) + "],"
                 + "\"startPointDeterminations\":[],\"ruleGroups\":[],\"prioritizedDefaults\":[" + String.join(",", groepen) + "]},"
                 + "\"diagnostics\":[]}";
     }
