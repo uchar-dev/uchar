@@ -1170,7 +1170,7 @@ final class ExpressieBouwer {
         // type. The ground this route gave before WF-102, that a fold source carries one relation, no longer
         // holds. A nested chain the walk does not decide has no anchor it can read: fewer than three segments,
         // or a last segment that is no name.
-        Bereikwandeling wandeling = wandelBereik(o, bron.objecttype());
+        Bereikwandeling wandeling = wandelBereik(o);
         if (wandeling.weigering() != null || genesteSetStap(o) != null) {
             String reden = wandeling.weigering() != null ? wandeling.weigering()
                     : "'" + src(o) + "' begint niet bij het regelonderwerp"
@@ -2684,6 +2684,12 @@ final class ExpressieBouwer {
             if (geblokkeerd != null) return geblokkeerd;
         }
         Objecttype ot = resolveOnderwerp(onderwerp);
+        // A set read whose written range walks two steps or more: the walk decides the element type where the
+        // element name is a role name and no object type (wandelBereik), the head noun's binding otherwise.
+        if (isSetOnderwerp(onderwerp)) {
+            Objecttype gelopen = wandelBereik(onderwerp).element();
+            if (gelopen != null) ot = gelopen;
+        }
         // The role the author wrote to reach `ot` (the noun of a DEFINITE reference or a
         // possessive, when it names a feittype role) — threaded so the transpiler
         // navigates the exact field even when the (subject, ot) pair is connected by more
@@ -2816,7 +2822,7 @@ final class ExpressieBouwer {
         }
         if (dt == null) dt = onbekend();
         return new Expr.AttribuutRef(attr, ot, onderwerpBron, navRol, dt, bron, isSetOnderwerp(onderwerp),
-                navigatiePad, bereikPad(onderwerp, ot), geschrevenKwantor(onderwerp),
+                navigatiePad, bereikPad(onderwerp), geschrevenKwantor(onderwerp),
                 geschrevenDrempel(onderwerp));
     }
 
@@ -2841,27 +2847,25 @@ final class ExpressieBouwer {
      * never as the anchor — and the self-denoting reading only at ZERO far hits, where the subject type
      * itself fills a role of that name ("van de aanmelder", read on the Jutter who IS the aanmelder).
      */
-    private java.util.List<RegelSpraakModel.RolBindingRef> bereikPad(OnderwerpContext onderwerp, Objecttype elem) {
-        return wandelBereik(onderwerp, elem).pad();
+    private java.util.List<RegelSpraakModel.RolBindingRef> bereikPad(OnderwerpContext onderwerp) {
+        return wandelBereik(onderwerp).pad();
     }
 
-    /** What the walk of a written fold-source range found: the path, or, where it walked a chain of three segments
-     *  or more and declined it, why — a clause about the written source ({@code weigering}) — and the way out a
-     *  declaration gives where there is one ({@code uitweg}). Both are null for every shape the walk does not
-     *  decide, the one-step range among them. */
+    /** What the walk of a written fold-source range found: the path and the element type it lands on, or, where it
+     *  walked a chain of three segments or more and declined it, why — a clause about the written source
+     *  ({@code weigering}) — and the way out a declaration gives where there is one ({@code uitweg}). The element type
+     *  and both texts are null for every shape the walk does not decide, the one-step range among them. */
     private record Bereikwandeling(java.util.List<RegelSpraakModel.RolBindingRef> pad, String weigering,
-                                   String uitweg) {
-        static final Bereikwandeling GEEN = new Bereikwandeling(java.util.List.of(), null, null);
+                                   String uitweg, Objecttype element) {
+        static final Bereikwandeling GEEN = new Bereikwandeling(java.util.List.of(), null, null, null);
         static Bereikwandeling geweigerd(String weigering, String uitweg) {
-            return new Bereikwandeling(java.util.List.of(), weigering, uitweg);
+            return new Bereikwandeling(java.util.List.of(), weigering, uitweg, null);
         }
     }
 
     /** The walk behind {@link #bereikPad}, with the reason where it declines. One walk for both, so that the path
      *  the emitter writes and the refusal {@link #keurVouwbron} words cannot disagree about one written chain. */
-    private Bereikwandeling wandelBereik(OnderwerpContext onderwerp, Objecttype elem) {
-        // An element type that did not resolve is no reason to stop before the steps: the walk then names the step
-        // that does not bind, and the landing check below declines what binds, so the path stays empty either way.
+    private Bereikwandeling wandelBereik(OnderwerpContext onderwerp) {
         if (onderwerp == null || huidigSubject == null || !isSetOnderwerp(onderwerp))
             return Bereikwandeling.GEEN;
         // The written segments, outside-in. Two shapes produce them, and both are walked: a nested
@@ -2888,14 +2892,25 @@ final class ExpressieBouwer {
             pad.add(hop.binding());
             houder = hop.doel();
         }
-        // The walk must land where the head noun already bound the element type: a mismatch means the head
-        // resolved against a different fact type than the walk did, and binding it anyway would fold a set
-        // the sentence does not name.
-        if (houder != elem)
+        // The last step bound the written element name to a role from the holder before it, so the walk lands on
+        // that role's filler. Where the name is no object type (not its name, not its declared plural), it named
+        // the role, and the role decides the element type: the filler. Where it names an object type, that type is
+        // the population, which a subtype of the filler narrows (IR-SPEC ch. 2.2) and any other type contradicts:
+        // binding it anyway would fold a set the sentence does not name. Until 2026-10-02 the head noun's own
+        // binding decided, through the first role in declaration order that carried the name, so the order of the
+        // fact types could refuse the walk (grammar/DIVERGENCES.md §13.4.1).
+        Objecttype geschreven = objecttypeVanElementnaam(segmenten.get(0));
+        if (geschreven != null && geschreven != houder && !geschreven.isEen(houder))
             return Bereikwandeling.geweigerd("'" + src(onderwerp) + "' komt via haar stappen uit bij " + houder.naam
-                    + ", maar de geschreven elementnaam " + (elem == null ? "noemt geen objecttype"
-                            : "is gelezen als " + elem.naam), null);
-        return new Bereikwandeling(java.util.List.copyOf(pad), null, null);
+                    + ", maar de geschreven elementnaam is gelezen als " + geschreven.naam, null);
+        return new Bereikwandeling(java.util.List.copyOf(pad), null, null, geschreven == null ? houder : geschreven);
+    }
+
+    /** The object type a written element name names as a whole — its name or its declared plural — or null; a role
+     *  name that is no object type's name is no object type here, and no leading word is dropped. */
+    private Objecttype objecttypeVanElementnaam(String naam) {
+        Objecttype t = model.objecttypeOpNaam(naam);
+        return t != null ? t : MeervoudMatcher.vindObjecttype(model.objecttypen.values(), naam);
     }
 
     /** Why the written step {@code stap} binds no role from {@code houder}: the classes of

@@ -113,7 +113,8 @@ class ElementnaamVouwbronTest {
         String b = B.replace("    de vondst (mv: vondsten) Vondst", "    de geborgen vondst (mv: geborgen vondsten) Vondst")
                 .replace("meerdere vondsten", "meerdere geborgen vondsten");
         vouwtOver(schoon(TYPEN + a + b + TWEE_STAPPEN.replace("alle vondsten van de berging",
-                "alle geborgen vondsten van de berging")), "hoogste gewicht in de berging", "Vondst", VIA_DE_BERGING);
+                "alle geborgen vondsten van de berging")), "hoogste gewicht in de berging", "Vondst",
+                List.of("BergingBetreftVondst.berging", "BergingBetreftVondst.geborgen vondst"));
     }
 
     // ---- the forms that already resolved, unchanged

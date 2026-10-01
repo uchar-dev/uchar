@@ -568,13 +568,18 @@ class GenesteVouwbronTest {
                         + "alle gevoerde boten van de aanmelder'");
     }
 
-    /** A walk that lands on another type than the one the written element name was read as. */
+    /** A walk that lands on another type than the object type the written element name names. Since 2026-10-02 a
+     *  role name that names no object type takes the type the walk lands on (ElementnaamVouwbronTest), so the
+     *  refusal stands where the name is the plural of an object type, Wrak, outside the landing, Vondst. */
     @Test
     void een_keten_die_elders_uitkomt_wordt_benoemd() {
-        enigeMelding(LANDINGMODEL + regel("alle geborgen vondsten van alle sloepen van de Jutter"),
-                KETEN_KOP + "'alle geborgen vondsten van alle sloepen van de Jutter' komt via haar stappen uit bij "
+        enigeMelding(LANDINGMODEL.replace("    de geborgen vondst (mv: geborgen vondsten) Vondst\n"
+                        + "Eén bergende boot heeft meerdere geborgen vondsten",
+                        "    de wrak (mv: wrakken) Vondst\nEén bergende boot heeft meerdere wrakken")
+                        + regel("alle wrakken van alle sloepen van de Jutter"),
+                KETEN_KOP + "'alle wrakken van alle sloepen van de Jutter' komt via haar stappen uit bij "
                         + "Vondst, maar de geschreven elementnaam is gelezen als Wrak" + KETEN_STAART + " — 'de "
-                        + "minimale waarde van het gewicht van alle geborgen vondsten van alle sloepen van de Jutter'");
+                        + "minimale waarde van het gewicht van alle wrakken van alle sloepen van de Jutter'");
     }
 
     /** An unknown to-ONE step beside a direct Jutter–Vondst relation. Measured on main 4db70391: route (b) left the

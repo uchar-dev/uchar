@@ -316,11 +316,33 @@ public final class RegelSpraakModel {
         return null;
     }
 
+    /** The object type a role name denotes: the filler of the roles whose DECLARED name or declared plural is
+     *  {@code naam}, and only where no role declares it so, of the roles whose guessed plural (+s/+en) it is. One
+     *  filler per pass or none: roles of one name with different fillers choose neither, so no position in the
+     *  declaration order decides, and a guessed plural never defeats a declared form (grammar/DIVERGENCES.md
+     *  §13.4.1). Until 2026-10-02 the first role in declaration order whose name or plural matched, a guessed plural
+     *  included, decided. */
     private Objecttype objecttypeViaRol(String naam) {
+        Objecttype[] gedeclareerd = vullerVanRollen(naam, true);
+        if (gedeclareerd != null) return gedeclareerd[0];
+        Objecttype[] afgeleid = vullerVanRollen(naam, false);
+        return afgeleid == null ? null : afgeleid[0];
+    }
+
+    /** The one filler of the roles {@code naam} names by their declared forms ({@code gedeclareerd}) or by a guessed
+     *  plural: a one-element array holding it, or holding null when those roles have different fillers; null when no
+     *  role is named so. A role whose filler is no declared object type is skipped. */
+    private Objecttype[] vullerVanRollen(String naam, boolean gedeclareerd) {
+        Objecttype[] gevonden = null;
         for (Feittype ft : feittypen.values())
-            for (Rol r : ft.rollen)
-                if (rolMatcht(r, naam)) return objecttypeOpNaam(r.objecttypeNaam());
-        return null;
+            for (Rol r : ft.rollen) {
+                if (!(gedeclareerd ? rolMatchtExact(r, naam) : rolMatchtBestEffort(r, naam))) continue;
+                Objecttype vuller = objecttypeOpNaam(r.objecttypeNaam());
+                if (vuller == null) continue;
+                if (gevonden == null) gevonden = new Objecttype[] {vuller};
+                else if (gevonden[0] != vuller) gevonden[0] = null;
+            }
+        return gevonden;
     }
 
     /**
