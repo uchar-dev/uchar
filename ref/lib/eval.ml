@@ -3606,10 +3606,13 @@ let parameterset_check env =
                   p d))
     (vintage_read_params env.doc)
 
-let fixpoint ~budget step world =
+(* [cause] names the divergence where it can, from the state the budget left *)
+let fixpoint ~budget ~cause step world =
   let rec go n world =
     if n > budget then
-      Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7)" budget
+      match cause world with
+      | Some why -> Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7): %s" budget why
+      | None -> Value.fault "no fixpoint within %d passes — divergence is a fault (ch. 5.7)" budget
     else
       let world, changed = step world in
       if changed then go (n + 1) world else world
@@ -3872,57 +3875,116 @@ let evaluate env world =
         (stratum, owner, members))
       (effective_defaults env)
   in
-  let pass ~k world =
-    let world, c1 =
-      List.fold_left
-        (fun (w, ch) r ->
-          if rule_stratum r > k then (w, ch)
-          else
-            let w, c = run_rule env w r in
-            (w, ch || c))
-        (world, false)
-        env.doc.resolved_regels
-    in
-    let world, c2 =
-      List.fold_left
-        (fun (w, ch) v ->
-          if verdeling_stratum v > k then (w, ch)
-          else
-            let w, c = run_verdeling env w v in
-            (w, ch || c))
-        (world, false)
+  (* the forms of stratum <= k in the order a pass runs them — rules,
+     allocations, defaults groups, fact creations, object creations, each in
+     document order — with the name the divergence diagnosis gives a writer *)
+  let named kind name = Printf.sprintf "%s %S" kind (Option.value name ~default:"<naamloos>") in
+  let steps ~k =
+    List.filter_map
+      (fun r ->
+        if rule_stratum r > k then None
+        else Some (named "rule" r.rr_naam, fun w -> run_rule env w r))
+      env.doc.resolved_regels
+    @ List.filter_map
+        (fun (v : resolved_verdeling) ->
+          if verdeling_stratum v > k then None
+          else Some (named "allocation" v.vd_naam, fun w -> run_verdeling env w v))
         env.doc.verdelingen
-    in
-    let world, c3 =
-      List.fold_left
-        (fun (w, ch) (stratum, owner, members) ->
-          if stratum > k then (w, ch)
+    @ List.filter_map
+        (fun (stratum, owner, members) ->
+          if stratum > k then None
           else
-            let w, c = run_defaults_group env w ~world0 ~owner members in
-            (w, ch || c))
-        (world, false) defaults_groups
-    in
-    let world, c4 =
-      List.fold_left
-        (fun (w, ch) fc ->
-          if fc_stratum fc > k then (w, ch)
-          else
-            let w, c = run_feit_creatie env w fc in
-            (w, ch || c))
-        (world, false)
+            Some
+              ( named "defaults group" (fst (List.hd members)).pd_naam,
+                fun w -> run_defaults_group env w ~world0 ~owner members ))
+        defaults_groups
+    @ List.filter_map
+        (fun (fc : resolved_feit_creatie) ->
+          if fc_stratum fc > k then None
+          else Some (named "fact creation" fc.fc_naam, fun w -> run_feit_creatie env w fc))
         env.doc.feit_creaties
-    in
-    let world, c5 =
-      List.fold_left
-        (fun (w, ch) (i, oc) ->
-          if oc_stratum oc > k then (w, ch)
+    @ List.filter_map
+        (fun (i, (oc : resolved_object_creatie)) ->
+          if oc_stratum oc > k then None
           else
-            let w, c = run_object_creatie env ~world0 ~idx:i w oc in
-            (w, ch || c))
-        (world, false)
+            Some (named "object creation" oc.oc_naam, fun w -> run_object_creatie env ~world0 ~idx:i w oc))
         (indexed env.doc.object_creaties)
+  in
+  let pass ~k world =
+    List.fold_left
+      (fun (w, ch) (_, step) ->
+        let w, c = step w in
+        (w, ch || c))
+      (world, false) (steps ~k)
+  in
+  (* The cause of a divergence, where the state the budget left shows one
+     (ch. 5.7). Two writers of one target whose equations demand different
+     values have no fixpoint (ch. 5.1): each pass, each overwrites the other.
+     WF-079 refuses two unconditional writers; two conditional writers whose
+     conditions both hold on one instance reach this point. Two more passes
+     are replayed form by form, and an attribute of one instance that two or
+     more writers change to different values in both passes is named with
+     its writers and their values, in the order the pass runs them. The writes
+     are read off the world (World.changed_attrs), so the replay is the pass
+     itself. A runaway creation grows the world instead, shows no such
+     attribute, and keeps the budget's sentence. *)
+  let disagreement ~k world =
+    let writes w =
+      List.fold_left
+        (fun (w, log) (who, step) ->
+          let w', _ = step w in
+          (w', log @ List.map (fun (l, a, v) -> (who, l, a, v)) (World.changed_attrs ~before:w ~after:w')))
+        (w, []) (steps ~k)
     in
-    (world, c1 || c2 || c3 || c4 || c5)
+    let conflicts log =
+      let targets =
+        List.fold_left (fun acc (_, l, a, _) -> if List.mem (l, a) acc then acc else acc @ [ (l, a) ]) [] log
+      in
+      List.filter_map
+        (fun (l, a) ->
+          (* each writer of (l, a) once, at its first write, with the last value it wrote *)
+          let writers =
+            List.fold_left
+              (fun acc (who, l', a', v) ->
+                if l' <> l || a' <> a then acc
+                else if List.mem_assoc who acc then
+                  List.map (fun (w', v') -> if w' = who then (w', v) else (w', v')) acc
+                else acc @ [ (who, v) ])
+              [] log
+          in
+          let differ =
+            List.exists (fun (_, v) -> List.exists (fun (_, v') -> not (Arith.equal v v')) writers) writers
+          in
+          if List.length writers >= 2 && differ then Some (l, a, writers) else None)
+        targets
+    in
+    let w1, first = writes world in
+    let _, second = writes w1 in
+    let first = conflicts first in
+    match
+      List.find_opt (fun (l, a, _) -> List.exists (fun (l', a', _) -> l = l' && a = a') first) (conflicts second)
+    with
+    | None -> None
+    | Some (label, attr, writers) ->
+        let otype = (World.get world label).otype in
+        let declared =
+          Option.value ~default:attr
+            (List.find_map
+               (fun (n, _) -> if norm n = attr then Some n else None)
+               (objecttype env otype).attributen)
+        in
+        let count =
+          match List.length writers with 2 -> "two" | 3 -> "three" | 4 -> "four" | n -> string_of_int n
+        in
+        let parts = List.map (fun (who, v) -> Printf.sprintf "%s writes %s" who (Value.to_string v)) writers in
+        let listed =
+          match List.rev parts with
+          | last :: before -> String.concat ", " (List.rev before) ^ " and " ^ last
+          | [] -> ""
+        in
+        Some
+          (Printf.sprintf "%s writers of one target disagree: %s to the attribute %s of %s, a %s" count
+             listed declared label otype)
   in
   (* the ch. 5.5/5.7 bounded budget: a recursive chain advances one
      generation per pass, so this also caps runaway recursion — an
@@ -3939,7 +4001,7 @@ let evaluate env world =
      fixpoint — their channel facts are idempotent (ch. 5.6) *)
   let world = ref world in
   for k = 0 to kmax do
-    world := fixpoint ~budget (pass ~k) !world;
+    world := fixpoint ~budget ~cause:(disagreement ~k) (pass ~k) !world;
     world :=
       List.fold_left
         (fun w c -> if cons_stratum c = k then run_consistentie env w c else w)

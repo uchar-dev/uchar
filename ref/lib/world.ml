@@ -112,6 +112,22 @@ let write_attr w ~label ~attr:name ~decl v =
     let w = update w { i with attrs = SMap.add (norm name) v i.attrs } in
     ({ w with init_written = List.filter (( <> ) (label, norm name)) w.init_written }, true)
 
+(* The attribute values [after] holds and [before] did not, as (label, norm
+   attribute, value) in case declaration order; an instance [before] lacks
+   counts with every attribute it carries. The divergence diagnosis of
+   Eval.evaluate reads one form's writes off this, so it observes the writes
+   [write_attr] made instead of evaluating the forms a second way. *)
+let changed_attrs ~before ~after =
+  List.concat_map
+    (fun label ->
+      let i = get after label in
+      let old a =
+        match SMap.find_opt label before.instances with Some o -> attr o a | None -> Value.Empty
+      in
+      List.rev
+        (SMap.fold (fun a v acc -> if Arith.equal (old a) v then acc else (label, a, v) :: acc) i.attrs []))
+    after.order
+
 (* An initialisation's guard (ch. 5.4): the target holds nothing, or nothing
    but what an initialisation wrote to it. *)
 let init_may_write w ~label ~attr:name =
