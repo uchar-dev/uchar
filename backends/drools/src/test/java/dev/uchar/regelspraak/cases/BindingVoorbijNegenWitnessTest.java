@@ -29,7 +29,7 @@ class BindingVoorbijNegenWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    @Test void een_afwijkingsboom_op_de_erflijn_bindt_twaalf_variabelen() throws Exception {
+    @Test void een_afwijkingsboom_op_de_erflijn_bindt_dertien_variabelen() throws Exception {
         // Regel meldtermijn: "De meldtermijn van een Jutter moet berekend worden als zijn vinddag plus de meldduur indien
         // hij aan alle volgende voorwaarden voldoet: zijn vinddag is gevuld; het aantal vondsten van de Jutter die aan de
         // volgende voorwaarde voldoen: zijn soort is gelijk aan "wrakhout" is groter dan 0".
@@ -42,7 +42,7 @@ class BindingVoorbijNegenWitnessTest {
         // Afwijking van meldtermijn: meldtermijn tot het vergunningseinde: "… gesteld worden op zijn vergunningseinde
         // indien … zijn vergunningseinde is gevuld; het aantal vondsten van de Strandjutter die … "anker" is groter dan 0".
         // The stack of a Strandjutter binds the subject, four counts, one sum with its count, two date folds with their
-        // counts and two parameters: twelve. ref and clingo: J 10-09-2026, S 20-10-2026 (the last lading), T 01-06-2026
+        // counts and two parameters: thirteen. ref and clingo: J 10-09-2026, S 20-10-2026 (the last lading), T 01-06-2026
         // (the vergunningseinde, written last and so highest), U 10-09-2026 (the inherited base), W 01-05-2026 (the
         // exception: 13 is above 10), X leeg; consistent.
         String meldtermijn = groep("meldtermijn", "Jutter", standaard(alle(gevuld(eigen("vinddag", "Jutter")),

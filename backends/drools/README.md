@@ -180,9 +180,13 @@ Goldens `jutterswet-premiestaffel` and `jutterswet-sluitdag-gemeld`, witnesses `
 `DefaultsConsequentieVouwWitnessTest`. Still refused, each by name with its condition: a quantifier fold, an
 aggregation inside an arithmetic expression, a parameter that is not a number, a period comparison and a rule-version
 predicate in a justification. A consequence that does not lower is refused with the form and the consequence
-(`consequentie niet vertaald`), such as a fold over a relation whose two roles are both plural (§13.3.9), and a group
-whose aggregations, folds and globals bind more variables than the consequence takes (nine, the subject among them) by
-that count. The DRL-text branch has no defaults lowering at all.
+(`consequentie niet vertaald`), such as a fold over a relation whose two roles are both plural (§13.3.9). Since
+2026-10-01 a consequence binds any number of variables (`consequenceOf`, which passes the DSL's `BlockN` beyond the
+nine its typed blocks spell out): a group binds what every default of its stack reads, and a tree on an inheritance
+line with counts and a sum in its justifications, date folds in its consequences and two parameters binds thirteen; a
+rule's value and a creation's toekenningen with five folds bind eleven. Until then such a group, rule or creation was
+refused by that count (`te veel gebonden variabelen`). Witness `BindingVoorbijNegenWitnessTest`. The DRL-text branch
+has no defaults lowering at all.
 
 ## Recorded: a condition that puts no test on the subject
 
@@ -252,9 +256,9 @@ a sum answered leeg, a minimum or maximum over an empty source left the creation
 leeg too, and a date fold, a clamp and a navigated operand were refused. A division or a root in a toekenning plays:
 the creation evaluates its toekenningen once, when it mints, and the probe every §6.5/§6.6 site reports to rides that
 evaluation, so the creation raises the Inconsistentie for itself and its subject where `ref` deposits (ch. 5.5, 5.6);
-for one round of the same day it was refused by name (`kanaal-deponerende toekenning`). Refused by name: more folds
-than a consequence binds (`te veel gebonden variabelen`), and a date fold in the creation's condition, in the sentence
-of a rule's condition.
+for one round of the same day it was refused by name (`kanaal-deponerende toekenning`). Five folds, eleven bound
+variables, were refused by that count until a consequence bound more than nine (see the defaults section above).
+Refused by name: a date fold in the creation's condition, in the sentence of a rule's condition.
 
 A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and mints once. Since 2026-10-01 the object and the fact
 creations are nodes of `groepVolgorde` beside the rules and the groups: a creation reads its condition, its
