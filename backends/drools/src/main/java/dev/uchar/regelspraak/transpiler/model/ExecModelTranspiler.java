@@ -7008,8 +7008,8 @@ public final class ExecModelTranspiler {
             // RUNTIME-SEMANTICS ch. 5.5/5.6: the creation evaluates its toekenningen once, when it mints, and a §6.5
             // division by leeg or a §6.6 negative root in that evaluation deposits on the channel for the creation and
             // its subject. A regel needs a companion for this, since it evaluates again on every change; a creation
-            // does not: the probe every §6.5/§6.6 site reports to (Sonde) rides this one evaluation, under the
-            // creation's own guard and before the mint closes it.
+            // does not: a probe (Sonde) in the map of this one evaluation receives the report of every §6.5/§6.6 site
+            // that faults, and the insert happens in the same firing that makes the creation's guard false.
             Sonde sonde = new Sonde();
             ((Map<String, Object>) (Map) gm).put(Sonde.SLEUTEL, sonde);
             Object newObj = RegelSpraakRuntime.newInstance(fNieuwClass);
@@ -8610,7 +8610,12 @@ public final class ExecModelTranspiler {
      *  keep the salience the stratification gives them.
      *
      *  <p>A cycle between groups through positive reads keeps the declared order for the groups on it. A cycle with a
-     *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name. */
+     *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name.
+     *
+     *  <p>The object and the fact creations are nodes too, and fill {@link #creatieSalience}: a creation reads
+     *  stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and mints once, so it goes after every node it waits on, below one
+     *  that would otherwise fire after it. A group or a rule that reads what a creation writes then waits on it in
+     *  turn, through the band and the negative fold reads. */
     private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
         List<ResolvedRegel> regels = model.resolvedRegels;
         List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> ocs = model.objectCreaties;
