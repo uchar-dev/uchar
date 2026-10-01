@@ -1852,11 +1852,13 @@ public final class DrlTranspiler {
             // doel: a temporal ATTRIBUTE producer (aantal-dagen-in / tijdsevenredig) already rides its own anchor/class
             // reactivity, and broadening its @watch would churn the pinned anchored-bucket DRL.
             if (!temporeelDoel && !temporeelKenmerkDoel) verzamelFilterKenmerkReads(r.waarde(), subject, watch);
-            // RUNTIME-SEMANTICS ch. 5.1, 5.7: where a second computing rule writes the target, each of them watches the
-            // target itself, so a write by the other fires it again where its condition holds, as every pass of ref
-            // runs it again. Two writers whose conditions both hold with different values then keep overwriting each
-            // other up to the fire cap, where the replay names them (cases.Schrijfconflict). Without the watch each
-            // fired once and the writer declared last kept its value without a word.
+            // RUNTIME-SEMANTICS ch. 5.1, 5.7: where a second rule writes the target — a computing rule or an
+            // initialisatie — a computing rule watches the target itself, so a write by the other fires it again
+            // where its condition holds, as every pass of ref runs it again. Two writers whose conditions both hold
+            // with different values then keep overwriting each other up to the fire cap, where the replay names them
+            // (cases.Schrijfconflict); so do a computing rule that evaluates leeg outside the ch. 7.7 domain and the
+            // initialisatie beside it (ch. 5.4). Without the watch each fired once and the writer that fired last kept
+            // its value without a word.
             if (r.doel() instanceof Expr.AttribuutRef dw && ongenavigeerd(dw) && dw.objecttype() == subject
                     && gedeeldDoel(r)) watch.add(ident(dw.attribuut(), false));
             rule.clausule(SUBJECT + " : " + ident(subject.naam, true) + "( " + constraint + " )"
@@ -2453,24 +2455,25 @@ public final class DrlTranspiler {
 
     /** THE own-read shape test (IR-SPEC ch. 4.1a): a read without bindings is the subject's (or, in a fold's filter,
      *  the element's) own. Every arm that reads a reference as an own attribute asks this. */
-    /** The computing rules (a gelijkstelling or berekening) per target, keyed by the member and the type on the
-     *  target's chain that declares it, so a writer on a supertype and one on its subtype share a key. Two writers on
-     *  two sibling subtypes share one as well and never write one object; the watch they get changes nothing there. */
-    private java.util.Map<String, Integer> rekenendeSchrijvers;
+    /** The rules that write an attribute (a gelijkstelling, berekening or initialisatie) per target, keyed by the
+     *  member and the type on the target's chain that declares it, so a writer on a supertype and one on its subtype
+     *  share a key. Two writers on two sibling subtypes share one as well and never write one object; the watch they
+     *  get changes nothing there. */
+    private java.util.Map<String, Integer> schrijversPerDoel;
 
-    /** Whether a computing rule other than {@code r} writes {@code r}'s target. */
+    /** Whether {@code r} is a computing rule and another rule writes its target. */
     private boolean gedeeldDoel(ResolvedRegel r) {
         if (r.soort() != ResolvedRegel.Soort.GELIJKSTELLING && r.soort() != ResolvedRegel.Soort.BEREKENING) return false;
-        if (rekenendeSchrijvers == null) {
-            rekenendeSchrijvers = new java.util.HashMap<>();
+        if (schrijversPerDoel == null) {
+            schrijversPerDoel = new java.util.HashMap<>();
             for (ResolvedRegel q : model.resolvedRegels)
-                if (q.soort() == ResolvedRegel.Soort.GELIJKSTELLING || q.soort() == ResolvedRegel.Soort.BEREKENING) {
+                if (q.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING) {
                     String k = schrijfsleutel(q);
-                    if (k != null) rekenendeSchrijvers.merge(k, 1, Integer::sum);
+                    if (k != null) schrijversPerDoel.merge(k, 1, Integer::sum);
                 }
         }
         String k = schrijfsleutel(r);
-        return k != null && rekenendeSchrijvers.getOrDefault(k, 0) > 1;
+        return k != null && schrijversPerDoel.getOrDefault(k, 0) > 1;
     }
 
     private static String schrijfsleutel(ResolvedRegel r) {
