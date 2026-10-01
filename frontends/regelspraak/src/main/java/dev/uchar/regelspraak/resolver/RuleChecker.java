@@ -105,6 +105,7 @@ final class RuleChecker {
         // bodies get the same type-checks; the group members were already resolved above (alleRegels includes them).
         for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) uitzonderingVersies(u);
         beslistabellen(doc);
+        hulpregels(doc);     // the rules of the members a fold over a set and to-one steps after it generated
         regelGroepen(doc);   // build the §9.10 group IR + the fase-2 recursief structural checks
         keurKringverwijzingen();
         // The set fence runs BEFORE the defaults lift: that pass MOVES resolved rules out of resolvedRegels into
@@ -167,6 +168,33 @@ final class RuleChecker {
     private static void verzamelDeelselecties(org.antlr.v4.runtime.tree.ParseTree t, List<PredicaatContext> uit) {
         if (t instanceof OnderwerpKetenContext k && k.predicaat() != null) uit.add(k.predicaat());
         for (int i = 0; i < t.getChildCount(); i++) verzamelDeelselecties(t.getChild(i), uit);
+    }
+
+    /** The rules that set the members {@link ExpressieBouwer} generated for a value fold over a set followed by
+     *  to-one steps (grammar/DIVERGENCES.md, "A fold over a set and to-one steps after it"), one per member, behind
+     *  every authored rule: "De &lt;lid&gt; van een &lt;element&gt; moet gesteld worden op het &lt;lid&gt; van de
+     *  &lt;stap n&gt; … van de &lt;element&gt;", the rule an author writes by hand, under the member's name. A form
+     *  of that name is refused at the fold's line (WF-020: a form name is unique in the whole model). */
+    private void hulpregels(RegelSpraakDocumentContext doc) {
+        List<ExpressieBouwer.Hulplid> leden = bouwer.hulpleden();
+        if (leden.isEmpty()) return;
+        Map<String, String[]> vormen = vormPlekken(doc);
+        for (ExpressieBouwer.Hulplid h : leden) {
+            String[] plek = vormen.get(dev.uchar.regelspraak.emit.IrEmitter.norm(h.naam()));
+            if (plek != null) {
+                fout(h.doelBron().line(), "de vouw over de stappen na de verzameling genereert de regel '" + h.naam()
+                        + "' voor het lid van die naam op " + h.element().naam + ", en " + plek[0] + " heet al zo "
+                        + "(bronregel " + plek[1] + ") — een vormnaam is uniek in het hele model, hoofdletters niet "
+                        + "meegeteld (WF-020)");
+                continue;
+            }
+            Expr.AttribuutRef doel = new Expr.AttribuutRef(h.naam(), h.element(), "een " + h.element().naam, null,
+                    h.type(), h.doelBron());
+            Expr.AttribuutRef waarde = new Expr.AttribuutRef(h.lid(), h.doel(), "de " + h.element().naam,
+                    h.element().naam, h.type(), h.waardeBron(), false, h.rollen(), List.of(), null, 0);
+            model.resolvedRegels.add(new ResolvedRegel(h.naam(), ResolvedRegel.Soort.GELIJKSTELLING, doel, waarde,
+                    null, Geldigheid.ALTIJD, List.of()));
+        }
     }
 
     /** §9.10 build the {@link dev.uchar.regelspraak.ir.ResolvedRegelGroep} carriers (member RULE NAMES + the

@@ -800,6 +800,110 @@ final class ExpressieBouwer {
     }
 
     // ---------------- §13.4.17 functies / aggregaties ----------------
+
+    /** A member generated on the element type of a value fold over ONE set followed by to-one steps
+     *  (grammar/DIVERGENCES.md, "A fold over a set and to-one steps after it"): its name, the element type it is
+     *  declared on, the declared member the steps reach, the type that member is declared on and its datatype, the
+     *  declared role names element-outward, and the source anchors of the rule that sets it. {@link RuleChecker}
+     *  adds that rule once every authored rule has resolved. */
+    record Hulplid(String naam, Objecttype element, String lid, Objecttype doel, Datatype type, List<String> rollen,
+                   Bron doelBron, Bron waardeBron) {}
+
+    /** The generated members, keyed by the element type's name and the member's name under the name identity. */
+    private final Map<String, Hulplid> hulpleden = new LinkedHashMap<>();
+
+    /** The generated members in the order their folds were resolved. */
+    List<Hulplid> hulpleden() { return List.copyOf(hulpleden.values()); }
+
+    /**
+     * §13.4.17 a value fold over ONE set followed by to-one steps: "de maximale waarde van het gewicht van de weging
+     * van de vondst van alle jutters van de Ploeg". The name of the read runs over every inner 'van', so the fold reads
+     * the member "gewicht van de weging van de vondst" of the element type, which no type declares. The steps are
+     * walked from the element type as {@link #attribuutRef} walks a chain from the subject (fewest steps first, each a
+     * to-one role, the rest of the name a declared attribute of the type reached); where they reach a scalar member,
+     * the element type gets a generated member "&lt;lid&gt; via &lt;rol 1&gt;, … en &lt;rol n&gt;" of that member's
+     * datatype, set by a generated rule from the chain ({@link RuleChecker#hulpregels}), and the fold ranges over it,
+     * a subselection staying on the element. The wire, the verifier and the executors see the document an author
+     * writes by hand with such a member. Two folds over the same steps share one member; a member of that name in the
+     * element's inheritance line refuses the lowering with an ERROR. A step that is no to-one role, a member that is
+     * time-dependent or dimensioned, and every other shape keep the arguments as they are, and with them the refusal
+     * of an undeclared member below.
+     */
+    private List<Expr> stappenNaDeVerzameling(Expr.FunctieKind kind, List<Expr> argumenten, FunctieAanroepContext f) {
+        boolean waardevouw = switch (kind) {
+            case SOM, TOTAAL, MINIMUM, MAXIMUM, EERSTE, LAATSTE, AANTAL_GEVULDE -> true;
+            default -> false;
+        };
+        if (!waardevouw || argumenten.size() != 1 || !(argumenten.get(0) instanceof Expr.AttribuutRef sa)
+                || !sa.set() || sa.objecttype() == null || sa.attribuut() == null
+                || sa.objecttype().heeftLid(sa.attribuut()) || !sa.attribuut().contains(" van "))
+            return argumenten;
+        Objecttype element = sa.objecttype();
+        String[] delen = sa.attribuut().split("\\s+van\\s+");
+        List<String> rollen = new ArrayList<>();
+        Objecttype cur = element;
+        for (int i = delen.length - 1; i >= 1; i--) {
+            RegelSpraakModel.KetenHop hop = model.ketenHop(cur, stripArtikel(delen[i]).trim());
+            if (hop == null) return argumenten;
+            rollen.add(hop.rol());
+            cur = hop.doel();
+            String prefix = String.join(" van ", java.util.Arrays.copyOfRange(delen, 0, i));
+            String lid = cur.attribuutNaam(prefix);
+            if (lid == null) {
+                String enkelvoud = MeervoudMatcher.vindAttribuut(cur, prefix);
+                if (enkelvoud != null) lid = cur.attribuutNaam(enkelvoud);
+            }
+            if (lid == null) continue;
+            if (cur.granulariteitVan(lid) != null || !cur.dimensiesVan(lid).isEmpty()) return argumenten;
+            Hulplid h = hulplid(element, lid, cur, rollen, sa, f);
+            if (h == null) return argumenten;
+            return List.of(new Expr.AttribuutRef(h.naam(), element, sa.onderwerpBron(), sa.navigatieRol(), h.type(),
+                    sa.bron(), true, sa.navigatiePad(), sa.bereikPad(), sa.kwantor(), sa.drempel()));
+        }
+        return argumenten;
+    }
+
+    /** The member {@link #stappenNaDeVerzameling} folds over: the one generated for the same steps on the element
+     *  type or an ancestor, or a new one declared on the element type. Null, with an ERROR at the fold, when a member
+     *  of that name stands anywhere in the element's inheritance line — declared by the author, or generated on a
+     *  subtype by an earlier fold (one instance would carry two members of one name, WF-105). */
+    private Hulplid hulplid(Objecttype element, String lid, Objecttype doel, List<String> rollen,
+                            Expr.AttribuutRef sa, FunctieAanroepContext f) {
+        String naam = lid + " via " + (rollen.size() == 1 ? rollen.get(0)
+                : String.join(", ", rollen.subList(0, rollen.size() - 1)) + " en " + rollen.get(rollen.size() - 1));
+        String sleutelNaam = dev.uchar.regelspraak.emit.IrEmitter.norm(naam);
+        for (Objecttype t : element.keten()) {
+            Hulplid eerder = hulpleden.get(t.naam + "\u0000" + sleutelNaam);
+            if (eerder != null) return eerder;
+        }
+        for (Objecttype u : model.objecttypen.values()) {
+            if (u != element && !u.isEen(element) && !element.isEen(u)) continue;
+            boolean bezet = u.attributen.keySet().stream()
+                    .anyMatch(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k).equals(sleutelNaam))
+                    || u.kenmerken.stream().anyMatch(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k).equals(sleutelNaam));
+            if (!bezet) continue;
+            RegelSpraakModel.Diagnostic fout = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "vouw '" + bron(f).snippet() + "': de stappen na de verzameling worden het gegenereerde lid '" + naam
+                    + "' van " + element.naam + ", en " + u.naam + " declareert die naam al — een gegenereerd lid "
+                    + "bestaat nog niet in de erflijn van het element", f.getStart().getLine());
+            if (!model.diagnostics.contains(fout)) model.diagnostics.add(fout);
+            return null;
+        }
+        Datatype type = doel.attribuut(lid);
+        element.attributen.put(naam, type);
+        // the texts of the generated rule, spelled as the author writes it by hand: the member read keeps its
+        // written article, the steps read from the element as "van de <element>"
+        String gelezen = sa.bron().snippet();
+        String staart = " van " + sa.onderwerpBron();
+        String lezing = gelezen.endsWith(staart) ? gelezen.substring(0, gelezen.length() - staart.length()) : gelezen;
+        String lidwoord = lezing.regionMatches(true, 0, "het ", 0, 4) ? "Het" : "De";
+        Hulplid h = new Hulplid(naam, element, lid, doel, type, List.copyOf(rollen),
+                Bron.van(f, lidwoord + " " + naam + " van een " + element.naam),
+                Bron.van(f, lezing + " van de " + element.naam));
+        hulpleden.put(element.naam + "\u0000" + sleutelNaam, h);
+        return h;
+    }
+
     private Expr bouwFunctie(FunctieAanroepContext f) {
         Bron bron = bron(f);
         Expr.FunctieKind kind = functieKind(f);
@@ -810,7 +914,7 @@ final class ExpressieBouwer {
         // (wortel, absolute waarde, a date component, a tijdsduur) decides on TYPES only, which a BinderRef carries
         // faithfully, so it keeps the sharing a Let gives it.
         if (binderModus && aggregeert(kind)) return ingelijnd(() -> bouwFunctie(f));
-        List<Expr> argumenten = args(f);
+        List<Expr> argumenten = stappenNaDeVerzameling(kind, args(f), f);
         Objecttype elem = aggregatieElement(kind, argumenten);
         // §13.4.17.47 telling vs a declared parameter whose name begins with "aantal": the spec
         // gives no syntactic tie-break for "het aantal <phrase>" (a count of <phrase>, or a
