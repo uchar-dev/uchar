@@ -1,0 +1,214 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "A1",
+        "objectType": "Afrekening",
+        "attributes": {
+          "heffing": {
+            "number": "9.99"
+          },
+          "weeggrens": {
+            "number": "99"
+          },
+          "afrekendag": {
+            "date": "2026-01-01"
+          },
+          "telling": {
+            "number": "42"
+          }
+        },
+        "roles": {
+          "afrekenaar": [
+            "J6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-04-01"
+          },
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-04-01"
+          },
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-15"
+          },
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V9",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          },
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J6"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "heffing",
+      "value": {
+        "number": "2.40"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "weeggrens",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-03-15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "telling",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "slotdag",
+      "value": {
+        "date": "2026-05-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "aantal brieven",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "heffing",
+      "value": {
+        "number": "9.99"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "weeggrens",
+      "value": {
+        "number": "99"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "afrekendag",
+      "value": {
+        "date": "2026-01-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "telling",
+      "value": {
+        "number": "42"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J6",
+      "attribute": "slotdag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "aantal brieven",
+      "value": {
+        "number": "1"
+      }
+    }
+  ]
+}

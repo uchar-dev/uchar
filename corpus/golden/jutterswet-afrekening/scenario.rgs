@@ -1,0 +1,87 @@
+Scenario vier bronvormen
+Gegeven is de volgende situatie:
+een Jutter J1
+een Jutter J2
+een Jutter J3
+een Jutter J4
+een Vondst V1
+- de vinddag is 12-03-2026
+- het gewicht is 4
+- de jutter is J1
+een Vondst V2
+- de vinddag is 05-03-2026
+- het gewicht is 7
+- de jutter is J1
+een Vondst V3
+- de jutter is J1
+een Vondst V4
+- de jutter is J3
+een Vondst V5
+- de vinddag is 20-03-2026
+- het gewicht is 9
+- de jutter is J4
+Met als verwacht resultaat:
+- de heffing van J1 is 1,10
+- de weeggrens van J1 is 5
+- de afrekendag van J1 is 05-03-2026
+- de telling van J1 is 3
+- de slotdag van J1 is 04-04-2026
+- het aantal brieven van J1 is 1
+- de heffing van J2 is 0,00
+- de weeggrens van J2 is 1
+- de afrekendag van J2 is leeg
+- de telling van J2 is 0
+- de slotdag van J2 is leeg
+- het aantal brieven van J2 is 0
+- de heffing van J3 is 0,00
+- de weeggrens van J3 is 1
+- de afrekendag van J3 is leeg
+- de telling van J3 is 1
+- de slotdag van J3 is leeg
+- het aantal brieven van J3 is 1
+- de heffing van J4 is 0,90
+- de weeggrens van J4 is 10
+- de afrekendag van J4 is 20-03-2026
+- de telling van J4 is 1
+- de slotdag van J4 is 19-04-2026
+- het aantal brieven van J4 is 1
+
+Scenario volgorde gelijkspel en een ingevoerde afrekening
+Gegeven is de volgende situatie:
+een Jutter J5
+een Jutter J6
+een Afrekening A1
+- de heffing is 9,99
+- de weeggrens is 99
+- de afrekendag is 01-01-2026
+- de telling is 42
+- de afrekenaar is J6
+een Vondst V6
+- de vinddag is 01-04-2026
+- het gewicht is 6
+- de jutter is J5
+een Vondst V7
+- de vinddag is 01-04-2026
+- het gewicht is 6
+- de jutter is J5
+een Vondst V8
+- de vinddag is 15-03-2026
+- het gewicht is 12
+- de jutter is J5
+een Vondst V9
+- de vinddag is 10-03-2026
+- het gewicht is 3
+- de jutter is J6
+Met als verwacht resultaat:
+- de heffing van J5 is 2,40
+- de weeggrens van J5 is 7
+- de afrekendag van J5 is 15-03-2026
+- de telling van J5 is 3
+- de slotdag van J5 is 01-05-2026
+- het aantal brieven van J5 is 1
+- de heffing van J6 is 9,99
+- de weeggrens van J6 is 99
+- de afrekendag van J6 is 01-01-2026
+- de telling van J6 is 42
+- de slotdag van J6 is leeg
+- het aantal brieven van J6 is 1

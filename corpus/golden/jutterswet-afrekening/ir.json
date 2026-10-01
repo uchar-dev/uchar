@@ -1,0 +1,931 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weeggrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afrekendag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "telling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "slotdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal brieven",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Afrekening",
+        "animate": false,
+        "plural": "Afrekeningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "weeggrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afrekendag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "telling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Zeebrief",
+        "animate": false,
+        "plural": "Zeebrieven",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "slotdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zwaar",
+            "kind": "nominal"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "JutterHeeftAfrekening",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "afrekenaar",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "afrekening",
+            "objectType": "Afrekening",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "JutterHeeftZeebrief",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "briefhouder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "zeebrief",
+            "objectType": "Zeebrief",
+            "plural": "zeebrieven",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "heffing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "heffing",
+              "subjectType": "Afrekening",
+              "source": {
+                "snippet": "de heffing van de afrekening van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftAfrekening",
+                  "role": "afrekening"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "weeggrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "weeggrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De weeggrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "weeggrens",
+              "subjectType": "Afrekening",
+              "source": {
+                "snippet": "de weeggrens van de afrekening van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftAfrekening",
+                  "role": "afrekening"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afrekendag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afrekendag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De afrekendag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "afrekendag",
+              "subjectType": "Afrekening",
+              "source": {
+                "snippet": "de afrekendag van de afrekening van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftAfrekening",
+                  "role": "afrekening"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "telling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "telling",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De telling van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "telling",
+              "subjectType": "Afrekening",
+              "source": {
+                "snippet": "de telling van de afrekening van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftAfrekening",
+                  "role": "afrekening"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "slotdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "slotdag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De slotdag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "slotdag",
+                  "subjectType": "Zeebrief",
+                  "source": {
+                    "snippet": "de slotdag van alle zeebrieven van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Zeebrief",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftZeebrief",
+                "role": "zeebrief"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van de slotdag van alle zeebrieven van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal brieven",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal brieven",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal brieven van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "zeebrieven",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zeebrieven van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Zeebrief",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftZeebrief",
+                "role": "zeebrief"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal zeebrieven van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zwaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is zwaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht groter is dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "maak een afrekening",
+        "versions": [
+          {
+            "createdType": "Afrekening",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "heffing",
+                "value": {
+                  "node": "Binary",
+                  "op": "percentageOf",
+                  "left": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "right": {
+                    "node": "Aggregation",
+                    "kind": "sum",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "het gewicht van alle vondsten van de Jutter"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de som van het gewicht van alle vondsten van de Jutter"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10% van de som van het gewicht van alle vondsten van de Jutter"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "weeggrens",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "minimum",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "het gewicht van alle vondsten van de Jutter"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de minimale waarde van het gewicht van alle vondsten van de Jutter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "(de minimale waarde van het gewicht van alle vondsten van de Jutter) plus 1"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "afrekendag",
+                "value": {
+                  "node": "Aggregation",
+                  "kind": "first",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de vinddag van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de eerste van de vinddag van alle vondsten van de Jutter"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "telling",
+                "value": {
+                  "node": "Aggregation",
+                  "kind": "count",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vondsten",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "het aantal vondsten van de Jutter"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "JutterHeeftAfrekening",
+              "role": "afrekening"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "geef een zeebrief",
+        "versions": [
+          {
+            "createdType": "Zeebrief",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "slotdag",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "last",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "vinddag",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "de vinddag van alle vondsten van de Jutter die zwaar zijn"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "filter": {
+                      "node": "CharacteristicCheck",
+                      "characteristic": "zwaar",
+                      "negated": false,
+                      "source": {
+                        "snippet": "zwaar zijn"
+                      }
+                    },
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "JutterHeeftVondst",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de laatste van de vinddag van alle vondsten van de Jutter die zwaar zijn"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "30"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified",
+                      "unit": {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "system": "Tijd",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    },
+                    "source": {
+                      "snippet": "30 dagen"
+                    }
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "(de laatste van de vinddag van alle vondsten van de Jutter die zwaar zijn) plus 30 dagen"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter groter is dan 0"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "JutterHeeftZeebrief",
+              "role": "zeebrief"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
