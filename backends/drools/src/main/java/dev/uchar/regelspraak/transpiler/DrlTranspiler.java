@@ -418,6 +418,10 @@ public final class DrlTranspiler {
          *  exactly where the consequence can carry it — the scalar setter path of {@link #regel}. A {@link Expr.Let}
          *  met while this is null has nowhere to put its need and stays an honest marker. */
         List<String> letVoorspel;
+        /** Set while a §6.5/§6.6 companion lowers an operand that holds a fold ({@link #vouwCompanion}): every fold then
+         *  binds its count, so an empty minimum or maximum gives a row and reads leeg, which is what the companion
+         *  tests. The value side of a rule keeps the bare fold. */
+        boolean telLeeg;
         /** The needs whose barrier stands between this point and the enclosing consequence, innermost last —
          *  ch. 10.6 clause 2. A need is FORCED under the conjunction of these, so a value the barrier would have
          *  cut off is never evaluated (and never faults). Pushed/popped around each {@link Expr.Let} body. */
@@ -2008,6 +2012,17 @@ public final class DrlTranspiler {
         // companion is insert-only, so adding an exists/not clause is safe — it cancels no sibling activation,
         // unlike a modify+no-loop rule. The own-attribute operand scope limit is unchanged.)
         if (subject != null) {
+            // A §6.5/§6.6 site under a Let or an IfThenElse that also holds a fold: the companion re-reads the site's
+            // needs and branch guards as patterns, and a fold has no re-readable pattern form, so the companion would
+            // be dropped and the case read consistent where ref deposits. Refused by name, in the sentence the exec
+            // branch refuses the same rule with.
+            if (Expr.bevat(r.waarde(), x -> (x instanceof Expr.Let || x instanceof Expr.IfThenElse)
+                    && Expr.bevat(x, DrlTranspiler::isVouw) && Expr.bevat(x, DrlTranspiler::isFoutplek))) {
+                navReden = "regel (een vouw over een setbron en een deling of wortel onder één Let of IfThenElse, ch. 4.10): "
+                        + r.naam();
+                out.append("// onopgelost begeleider: ").append(commentVeilig(navReden)).append('\n');
+                return;
+            }
             deelDoorLeegFout(acc, r, subject, constraint, lc.marker(), lc.extra());
             wortelNegatiefFout(acc, r, subject, constraint, lc.marker(), lc.extra());
             startpuntLeegFout(acc, r, subject, constraint, lc.marker(), lc.extra());
@@ -2052,9 +2067,15 @@ public final class DrlTranspiler {
         List<Foutplek> wortels = new ArrayList<>();
         verzamelWortels(r.waarde(), Poort.OPEN, wortels);
         List<String> guards = new ArrayList<>();   // the "radicand < 0" guard per qualifying wortel
+        List<Expr> vouwradicanden = new ArrayList<>();
         for (Foutplek fp : wortels) {
             Expr.Functie w = (Expr.Functie) fp.plek();
             if (w.argumenten().size() != 1) continue;
+            // a radicand that folds: its own companion, with the fold as an accumulate (a gated one is refused upstream)
+            if (Expr.bevat(w.argumenten().get(0), DrlTranspiler::isVouw)) {
+                vouwradicanden.add(w.argumenten().get(0));
+                continue;
+            }
             // ch. 10.6 clause 2 / ch. 10.2 gates, then the radicand itself — in the binder scope the gates
             // establish, so a radicand that is a BINDER re-reads its need. null = drop.
             String garde = plekGuards(acc, fp, subject, () -> {
@@ -2078,6 +2099,13 @@ public final class DrlTranspiler {
                 .clausule(inconsistentieGuard(r.naam()))
                 .dan(inconsistentieDan(r.naam()))
                 .render());
+        }
+        for (int i = 0; i < vouwradicanden.size(); i++) {
+            String toBd = fnImport("toBd");
+            vouwCompanion(r, subject, voorwaarde, extraClausules,
+                    " (wortel van een negatieve vouw" + (vouwradicanden.size() > 1 ? " " + (i + 1) : "") + ")",
+                    List.of(vouwradicanden.get(i)),
+                    w -> toBd + "(" + w.get(0) + ") != null && " + toBd + "(" + w.get(0) + ").signum() < 0");
         }
     }
 
@@ -2404,8 +2432,14 @@ public final class DrlTranspiler {
         List<Foutplek> delingen = new ArrayList<>();
         verzamelDelingen(r.waarde(), Poort.OPEN, delingen);
         List<String> patronen = new ArrayList<>();   // "dividend-vol, divisor-leeg" per qualifying division
+        List<Expr.Binair> vouwplekken = new ArrayList<>();
         for (Foutplek fp : delingen) {
             Expr.Binair d = (Expr.Binair) fp.plek();
+            // an operand that folds: its own companion, with the fold as an accumulate (a gated one is refused upstream)
+            if (Expr.bevat(d.links(), DrlTranspiler::isVouw) || Expr.bevat(d.rechts(), DrlTranspiler::isVouw)) {
+                vouwplekken.add(d);
+                continue;
+            }
             // ch. 10.6 clause 2 / ch. 10.2 gates, then the site itself — the latter in the binder scope the
             // former establishes, so a dividend or divisor that is a BINDER re-reads its need. null = drop.
             String patroon = plekGuards(acc, fp, subject, () -> {
@@ -2426,6 +2460,69 @@ public final class DrlTranspiler {
                 .dan(inconsistentieDan(r.naam()))
                 .render());
         }
+        for (int i = 0; i < vouwplekken.size(); i++) {
+            Expr.Binair d = vouwplekken.get(i);
+            vouwCompanion(r, subject, voorwaarde, extraClausules,
+                    " (deling door een lege vouw" + (vouwplekken.size() > 1 ? " " + (i + 1) : "") + ")",
+                    List.of(d.links(), d.rechts()), w -> "(" + w.get(0) + ") != null && (" + w.get(1) + ") == null");
+        }
+    }
+
+    /** A §6.5/§6.6 companion for a site whose operand holds a fold over a set source — a sum or a minimum as the divisor,
+     *  a fold inside a compound operand, the radicand of a root. {@link #companionDeel} gives a fold no re-readable
+     *  form, so such a site had no companion and the case read consistent where ref deposits (RUNTIME-SEMANTICS
+     *  ch. 1.2: an empty sum or minimum is leeg). The companion lowers each operand as the rule's value does, in its
+     *  own {@link Acc}, so every fold is an accumulate in the companion's when, with its count bound
+     *  ({@link Acc#telLeeg}) so an empty source reads leeg, and {@code fout} turns the operand texts into the eval it
+     *  tests. A site under a Let or an IfThenElse never gets here: such a rule is refused before its companions. */
+    private void vouwCompanion(ResolvedRegel r, Objecttype subject, String voorwaarde, List<String> extraClausules,
+                               String achtervoegsel, List<Expr> operanden,
+                               java.util.function.Function<List<String>, String> fout) {
+        Acc eigen = new Acc();
+        eigen.telLeeg = true;
+        List<String> waarden = new ArrayList<>();
+        for (Expr o : operanden) {
+            Frag f = waarde(eigen, o, subject);
+            // the rule's own value lowered this operand, so a marker here is a broken invariant, not a refusal
+            if (f.marker())
+                throw new IllegalStateException(r.naam() + achtervoegsel + ": een operand van de §6.5/§6.6-plek lowert"
+                        + " niet, terwijl de regel lowerde — bron: " + o.bron());
+            waarden.add(f.text());
+        }
+        // freshness as the rule's own pattern has it: an own operand that another rule writes later fires the
+        // companion again, since property reactivity listens only to what a pattern names
+        java.util.LinkedHashSet<String> watch = new java.util.LinkedHashSet<>();
+        for (Expr o : operanden) verzamelEigenReads(o, subject, watch);
+        Regel rule = new Regel(r.naam() + achtervoegsel)
+            .clausule(SUBJECT + " : " + ident(subject.naam, true) + "( " + voorwaarde + " )"
+                    + (watch.isEmpty() ? "" : " @watch( " + String.join(", ", watch) + " )"));
+        for (String e : extraClausules) rule.clausule(e);   // the host rule's far-side membership gate, if any
+        for (String c : eigen.clausules) rule.clausule(c);
+        rule.clausule("eval( " + fout.apply(waarden) + " )");
+        out.append(rule
+            .geldigheid(r.geldigheid())
+            .clausule(inconsistentieGuard(r.naam()))
+            .dan(inconsistentieDan(r.naam()))
+            .render());
+    }
+
+    /** A fold over the members of a set source: the kinds that count, add or order them, as against the listed fold
+     *  over two or more scalar operands (the exec branch's {@code isInstantievouw}). */
+    private static boolean isVouw(Expr e) {
+        if (!(e instanceof Expr.Functie f)) return false;
+        boolean geliste = (f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.MAXIMUM
+                || f.kind() == Expr.FunctieKind.EERSTE || f.kind() == Expr.FunctieKind.LAATSTE)
+                && f.argumenten().size() >= 2 && f.filter() == null;
+        return !geliste && switch (f.kind()) {
+            case SOM, TOTAAL, AANTAL, AANTAL_GEVULDE, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true;
+            default -> false;
+        };
+    }
+
+    /** A §6.5 division or a §6.6 root: a site whose fault deposits on the §9.5 channel. */
+    private static boolean isFoutplek(Expr e) {
+        return (e instanceof Expr.Binair b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS))
+                || (e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL);
     }
 
     /** Collect every "gedeeld door"/"gedeeld door (ABS)" node reachable through the arithmetic-wrapper layers
@@ -2874,7 +2971,7 @@ public final class DrlTranspiler {
             if (concat != null) return concat;
             Frag tijd = tijdreeksAggregatie(acc, f, subject);    // §7.1 "het totaal van" a temporal attribute's timeline
             if (tijd != null) return tijd;
-            Frag var = accumulate(acc, f, subject, false);       // hoists an accumulate into the "when" (value side: bare fold)
+            Frag var = accumulate(acc, f, subject, acc.telLeeg); // hoists an accumulate into the "when" (value side: bare fold)
             if (var != null) return var;
             // A window under GEEN or a counting quantifier in the die/dat filter is WF-112's position; the filter's
             // own marker is dropped on the way up, so the rule is named here, in the sentence the exec branch gives.
