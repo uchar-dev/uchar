@@ -1,0 +1,152 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanspoeldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "melding op vinddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De meldingsdatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn vinddatum"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "vinddatum",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn vinddatum"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn vinddatum gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "melding op aanspoeldag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldingsdatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De meldingsdatum van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "aanspoeldatum",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn aanspoeldatum"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "aanspoeldatum",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn aanspoeldatum"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn aanspoeldatum gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
