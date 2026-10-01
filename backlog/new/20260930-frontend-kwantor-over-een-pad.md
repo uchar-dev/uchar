@@ -125,3 +125,35 @@ Reproductie: `/tmp/v2/probe/vtr-bouw/`, vorm x-veel-aantal (gemaakt door
 maak.py; alleen lezen). De acceptatie van deze kaart omvat de vorm: de
 lowering (standaardweg) of, tot die er is, een benoemde weigering in de
 frontend moet ook de telling dekken.
+
+## Aanvulling (2026-10-02, uit de ronde frontend G4+G5)
+
+De ronde nam de standaardweg van deze kaart (een gegenereerd lid, geen pad
+op de draad) voor één vorm: een WAARDEVOUW over één verzameling gevolgd
+door to-one stappen ("de maximale waarde van het gewicht van de weging van
+de vondst van alle jutters van de Ploeg"). Het elementtype krijgt een lid
+"<lid> via <rol 1>, … en <rol n>", een gegenereerde regel zet het uit de
+keten, en de vouw loopt erover (DIVERGENCES, "A fold over a set and to-one
+steps after it"; golden `jutterswet-zwaarste-weging`). Een som of telling
+daarover telt per element.
+
+Open blijven, gemeten op de kop van de ronde (`126c71cd`):
+- R1 van deze kaart, de kwantor over een pad (to-one → to-many: "ten
+  minste één van de vondsten van de melder van de Melding"): ongewijzigd,
+  `check exit=3` met de WARNING "… wordt NIET gelowerd: een
+  meerstapsbereik …", ref `EVALUATION FAULT: Unresolved condition …`,
+  clingo `TRANSLATION FAULT …`, exectak `EXCLUDE …`. Luid. De standaardweg
+  hier is een gegenereerd KENMERK op het tussenobject (de melder), van
+  dezelfde vorm als het lid van de ronde.
+- De telling over een pad van meer dan één stap (de vorm van de eerste
+  Aanvulling, "het aantal havenjutters van de haven van de jutter van de
+  Vondst"): nog steeds STIL afgekapt tot een telling over
+  `JutterHeeftVondst.jutter` (gemeten op de reproductie
+  `/tmp/v2/probe/vtr-bouw/proef/veel-aantal/`: `check exit=3` alleen om de
+  exectak, de telling op de draad met `sourceRole`
+  `JutterHeeftVondst.jutter`). Een telling telt exemplaren, dus het lid
+  van de ronde past er niet op; tot een lowering er is, een benoemde
+  weigering in de frontend.
+- Een vouw over een to-many stap NA de verzameling ("de inhoud van de
+  kisten van de vondst van alle jutters"): de oude WARNING en marker
+  (luid).

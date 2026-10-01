@@ -5844,6 +5844,18 @@ form's wire result is the one-step `sourceRole` it already emits.
 Semantics and worked examples, including the three empty corners:
 `RUNTIME-SEMANTICS.md` ch. 3.4b.
 
+*Steps after the elements are no range (2026-10-02).* A read through to-one
+steps after a fold's elements ("het gewicht van de weging van de vondst van
+alle jutters van de Ploeg") is no range and no navigation on the fold source
+(WF-053): a producer spells it as a member of the element type that a rule
+sets from the chain, and folds over that member (the RegelSpraak frontend
+generates both, `frontends/regelspraak/grammar/DIVERGENCES.md`, "A fold over
+a set and to-one steps after it"). A sum or a filled count over it then adds
+or counts per element, an object two elements reach once for each; the flat
+union of RUNTIME-SEMANTICS ch. 3.4b is the reading of a range whose last
+step reaches the objects the fold reads, and a producer writes the shared
+object as a set step to have it.
+
 - **WF-102** A value fold source's multi-step range is a `sourcePath`, and
   it is a CONNECTED path from the fold subject to the element type
   (ch. 4.3).

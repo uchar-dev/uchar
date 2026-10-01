@@ -21,14 +21,13 @@ here (two in existing tests still name the old file), but the text they cited
 stayed behind. This register does not carry the sections
 `'§9.10 recursie / regelgroep'`, `'negated membership'` and
 `"concatenatie as a standalone value"`, nor the untitled topics at the other
-sites: the percentage forms and the percentage sign, the unit checks of the
-aggregations, the begrenzing bound, the period lowering, the "is gevuurd"
-predicate, the mixed date precision, the best-effort role plural, and the
-`Regelgroep` extension itself beyond the introduction above. At each site the
-comment states its own rationale, and a card that touches such a construct
-writes its section here. Two pointers land on text: the count's operand list
-(§13.4.17.47 below) and the interaction of `Regelgroep` with the defaults
-extension (§4).
+sites: the unit checks of the aggregations, the begrenzing bound, the period
+lowering, the "is gevuurd" predicate, the mixed date precision, the best-effort
+role plural, and the `Regelgroep` extension itself beyond the introduction
+above. At each site the comment states its own rationale, and a card that
+touches such a construct writes its section here. Three pointers land on text:
+the count's operand list (§13.4.17.47 below), the percentage forms (below) and
+the interaction of `Regelgroep` with the defaults extension (§4).
 
 ---
 
@@ -1243,6 +1242,38 @@ scope was bound by the type pair only, so two relations between the element
 and the parent type left the rule with the WARNING that it was not lowered,
 and the uniqueness was left off the wire.
 
+The element name of a fold source binds independently of the order of the fact
+types (2026-10-02). A name read as an object type through a role takes the
+filler of the roles whose declared name or declared plural it is, and only
+where no role declares it so, of the roles whose guessed plural it is; roles of
+one name with different fillers choose neither. Where a written range walks two
+steps or more, the walk decides the element type when the element name is no
+object type's name or declared plural: the last step bound that name to a role
+from the holder before it, and the element type is its filler; a name that
+names an object type is the population, which a subtype of the filler narrows
+and any other type contradicts, refused as before ("… komt via haar stappen uit
+bij <landing>, maar de geschreven elementnaam is gelezen als <type>"). Until
+then the first role in declaration order whose name or plural matched, a
+guessed plural included, decided: with the fact type of a subtype declared
+before the one the fold walks, a fold over two steps was refused, and a fold
+over one step from the holder ("alle vondsten van de Berging") folded over the
+subtype's instances alone — 5 where 9 is right in ref, clingo and both Drools
+branches, a silent wrong answer. A name that names both a role the walk binds
+and an object type outside the landing ("alle wrakken" for a role `wrak (mv:
+wrakken)` filled by Vondst, beside a type Wrak) read as the role before and is
+refused now. Witness: `ElementnaamVouwbronTest`.
+
+The matrix of a quantifier fold reads with the element as subject
+(RUNTIME-SEMANTICS ch. 3.9a). An operand beside the quantified one that names
+the element by its type ("… later is dan de sluitdag van de jutter van de
+Vondst") is built again with the element as subject, as a subselection and a
+condition read it, and typed again; it was built with the rule subject, from
+which the element is a to-many step, and refused as a read not laid as a
+navigation, where "de sluitdag van zijn jutter" bound. Its wire is that of the
+possessive form. Only an operand that left such a read unresolved is built
+again, so every operand that bound stays as it was. Witness:
+`KwantormatrixElementnaamTest`.
+
 Measured before the change (2026-09-26): with two relations between Schuit and
 Haven, a read by type name, a read with no relation, and the noun of case 2
 each ended in an `IllegalStateException` of the emitter, and so did a count or
@@ -1250,6 +1281,75 @@ a sum over the type's plural with two relations or none. Now case 2 binds and
 the others end in the ERROR; every rgs golden and every source of the parity
 zone re-emits unchanged (gates 10 and 11), since each read that binds now threw
 before. Witnesses: `NavigatiekeuzeTest`, `TelbereikTest`, `SubtypeDialectTest`.
+
+---
+
+## A fold over a set and to-one steps after it — a generated member
+
+A dialect lowering, not an extension of the wire: "de maximale waarde van het
+gewicht van de weging van de vondst van alle jutters van de Ploeg" folds over
+ONE set, the jutters of the Ploeg, and reads its value through to-one steps
+after the set. The name of the read runs on over every inner `van`, so the fold
+read the member "gewicht van de weging van de vondst" of Jutter, which no type
+declares; the wire has no spelling for a read through steps after a fold's
+elements, because a fold source never navigates (IR-SPEC ch. 4.1a, WF-053) and
+a `sourcePath` (WF-102) walks from the subject TO the elements.
+
+**Lowering.** For a value fold (som, totaal, minimum, maximum, eerste, laatste,
+aantal gevulde waarden) whose one argument is a set read with a member its
+element type does not have, `ExpressieBouwer.stappenNaDeVerzameling` walks the
+name's steps from the element type as a chain is walked from a subject: fewest
+steps first, each a to-one role, the rest of the name a declared attribute of
+the type reached. Where they reach a scalar member, a member is generated:
+
+- its name is `<lid> via <rol 1>, … en <rol n>`, the declared member and role
+  names element-outward (`gewicht via vondst en weging`, `vinddag via vondst`,
+  `ijkdatum via vondst, weging en weger`); a name of two steps or more holds
+  `en`, which no declared name and no read in rule text can carry, so no read
+  elsewhere binds it by accident;
+- its datatype is the reached member's;
+- it stands on the type that fills the other role of the first step's fact
+  type, where the element type is that type or a subtype of it and the steps
+  read the same from it, else on the element type: a fold over a subtype and
+  one over its supertype then share one member, in either order;
+- a generated rule of the same name sets it, behind the authored rules: "Het
+  <naam> van een <type> moet gesteld worden op het <lid> van de <stap n> … van
+  de <type>" — the rule an author writes by hand.
+
+The fold ranges over the generated member with its own range (`sourceRole` or
+`sourcePath`), and a die/dat subselection stays on the element. Two folds over
+the same steps share one member and one rule. The wire, the verifier and the
+executors see the document an author writes by hand with such a member
+(witnessed: the emitted IR equals the hand-written one but for the member's
+name and the sources).
+
+**A sum or a count per element.** The generated member is a value per element,
+so a sum (or a filled count) over it adds each element's own reached value: two
+jutters on one boat add the boat's laadvermogen twice ("de som van het
+laadvermogen van de boot van alle jutters van de Ploeg": 240 where the boats
+carry 100 and 40 and two jutters share the first). "van alle jutters" is a
+multiset over the elements. The flat union of RUNTIME-SEMANTICS ch. 3.4b is the
+reading of a RANGE, and stays the reading where the boat is written as a set
+step: "de som van het laadvermogen van alle boten van alle jutters van de
+Ploeg" is a two-step `sourcePath` and gives 140. The written form chooses; both
+play in ref, clingo and the Drools exec branch (golden
+`jutterswet-zwaarste-weging`).
+
+**Refused** with an ERROR at the fold: a member of the generated name anywhere
+in the inheritance line of the type it would stand on ("… de stappen na de
+verzameling worden het gegenereerde lid '<naam>' van <type>, en <U> declareert
+die naam al — een gegenereerd lid bestaat nog niet in de erflijn van het
+element"), and a form of that name (WF-020). **Not lowered**, so the WARNING of
+an undeclared member and the marker stay: a step that is no to-one role (a
+to-many step after the set), a time-dependent or dimensioned member, a count of
+instances ("het aantal …").
+
+Measured 2026-10-02: the three forms of the reproduction (two steps, two steps
+under a subselection, one step to a date) were markers (a WARNING, and the
+subselection an ERROR) and now play in ref, clingo, the Drools exec branch and,
+but for the earliest date, the DRL-text branch; so do a sum, a sum with a
+fallback, a minimum, a filled count and a total over two steps. Witnesses:
+`StappenNaDeVerzamelingTest`, the golden `jutterswet-zwaarste-weging`.
 
 ---
 
@@ -1465,6 +1565,73 @@ Witness: `TypemeervoudTellingTest`.
 
 ---
 
+## The percentage forms — "het percentage P van Y", with and without the '%'
+
+Not a dialect extension: the reading this frontend gives §13.4.17.12, whose
+percentage function is a number expression, an optional percentage sign, `van`
+and a number expression, where a number expression may be an attribute of a
+subject, a variable or a parenthesised expression (§13.4.17.3).
+
+**The '%' form.** `percentageVanExpr` (`expressie PERCENT_SIGN VAN expressie`)
+needs the sign: without it "P van Y" is in this grammar the attribute read "het
+<naam> van <onderwerp>", whose name runs on over every inner `van`. "12,5 % van
+het taxatiebedrag van de taxatie van de Vondst" and "het percentage havengeld %
+van (zijn getaxeerde waarde)" parse here.
+
+**The re-reading without the '%'.** "het percentage havengeld van het
+taxatiebedrag van de taxatie van de Vondst" parses as one attribute read, the
+name "percentage havengeld van het taxatiebedrag van de taxatie" on the subject
+"de Vondst". `ExpressieBouwer.bouwAttribuut` reads it as the percentage
+function where the first name part is a Percentage parameter: P is that
+parameter, and Y is the ordinary value read of every remaining name part on the
+subject, which walks a chain of to-one steps as any read does (§13.4.1). With
+no name part after P, Y is the subject as a value or a "Daarbij geldt" variable
+it names. A '%' after P is a word of the name part (the name words admit the
+sign) and is dropped before the parameter is looked up, so "het percentage
+havengeld % van het taxatiebedrag van de taxatie van de Vondst" reads the same.
+Where Y is no number — the first name part is also a member reached as a role,
+"de korting van zijn bestelling" — the read stays the navigation. The result is
+the `percentageOf` node of the '%' form, typed the same way (Y's unit, no
+decimal claim).
+
+**The parenthesised form.** "het percentage P van ( Y )" is
+`percentageVanHaakjes : bepaaldLidwoord? kaleNaamDeel VAN LPAREN expressie
+RPAREN`, the last alternative of `primaireExpressie`. An onderwerp never opens
+with '(', so no navigation competes. Two readings the grammar already had do:
+the period comparison of §13.4.15.68 after a value ("… op 5,00 van (de vinddag
+van de Vondst) tot (de meldingsdag van de Vondst)"), and the '%' form where a
+name takes the sign as a word ("P % van ( Y )", "12,5 % van ( Y )"). Being the
+last alternative, the form loses every such ambiguity to the reading the
+grammar had, and is taken only where no other reading parses. The resolver
+reads P as a name and refuses with an ERROR where it is no Percentage parameter
+or variable: "'<zin>' leest als de percentagefunctie zonder procentteken
+(§13.4.17.12), maar '<P>' is geen parameter of variabele van het type
+Percentage — schrijf het procentteken ('… % van …') of noem een percentage".
+
+**Measured 2026-10-02.** Before, the re-reading took a Y of at most two name
+parts: a navigated Y was refused with the ERROR of an undeclared member ("het
+lid 'percentage havengeld van het taxatiebedrag' bestaat niet op 'Taxatie',
+…"), a variable as Y with the ERROR that it names no role, a '%' after P with
+the ERROR of an undeclared member whose name ended in '%' — for an own member
+as well — and the parenthesised form was a syntax error. Now each lowers to
+`percentageOf` and plays in ref, clingo and both Drools branches where Y
+carries no unit. A first version placed the parenthesised form as a suffix of
+`expressie` behind a semantic predicate against the period; "P % van ( Y )" and
+"12,5 % van ( Y )" then became syntax errors, because the decision whether a
+name takes the '%' does not see a predicate inside `expressie`. All 196
+RegelSpraak sources of the repository and the 108 of the distribution emit the
+same IR, diagnostics and exit code before and after. Witnesses:
+`PercentageLezingTest`, the golden `jutterswet-havengeld`.
+
+**Not carried.** A product with a percentage ("zijn getaxeerde waarde maal het
+percentage havengeld") stays the typing ERROR "maal vereist numerieke
+operanden, kreeg …": the multiplication tables of the typing chapter (§4.4)
+list no Percentage row; the percentage function is the spelling. clingo refuses
+a percentage of an amount with a unit loudly ("a unit-carrying multiplicative
+operand is not translated"), so the golden's amounts carry none.
+
+---
+
 ## §7 The opgave marker — `(mag opgegeven worden)` on an attribute
 
 Origin: `spec/proposals/KENMERKINVOER-EN-INVOER-BOVEN-BEREKENING.md` §4.3 and
@@ -1644,18 +1811,22 @@ reason that holds, and the marker then generates nothing (witness:
   the negative direction needs an opgave with three values, which the case
   format does not have for a characteristic ("kenmerk 'K' van T:
   '(mag opgegeven worden)' staat alleen op een attribuut — …");
-- an attribute that is neither a Numeriek without a unit — the unit written in
-  the datatype, after a domain, or carried by the domain — nor a Datum in dagen
-  ("… staat alleen op een Numeriek attribuut zonder eenheid of een Datum in
-  dagen, en 'X' is Tekst — …"): those are the two families the three executors
-  are measured on. Counted on 2026-09-28, 40 defaults groups in 25 goldens have
-  an attribute target: 39, in 24 goldens, a number without a unit, and one a
-  Datum in dagen, the date golden below. A `Datum en tijd in millisecondes`
-  ("… en 'X' is Datum-tijd — …"), a text, a percentage, a boolean, an
-  enumeration and a number with a unit stay refused, each until a golden of its
-  own plays in the three executors. A unit clause after a date gets no sentence
-  of the marker: it is refused where the datatype is read ("… een Datum in
-  dagen draagt geen eenheid"), and that ERROR is the only one;
+- an attribute that is neither a Numeriek without a unit or with one unit — the
+  unit written in the datatype, after a domain, or carried by the domain — nor
+  a Datum in dagen ("… staat alleen op een Numeriek attribuut zonder eenheid of
+  met één eenheid, of op een Datum in dagen, en 'X' is Tekst — een
+  defaults-groep op een attribuut van een ander datatype of met een
+  samengestelde eenheid is nog niet in alle drie de uitvoerders gemeten
+  (dialect §7)"): those are the three families the three executors are measured
+  on. Counted on 2026-10-02, 56 defaults groups in 28 goldens have an attribute
+  target: 43, in 22 goldens, a number without a unit, 12, in 6 goldens, a Datum
+  in dagen, and one a number with a unit, the amount golden below. A `Datum en
+  tijd in millisecondes` ("… en 'X' is Datum-tijd — …"), a text, a percentage,
+  a boolean, an enumeration and a number with a composite unit (a rate such as
+  €/jr, a product of units) stay refused, each until a golden of its own plays
+  in the three executors. A unit clause after a date gets no sentence of the
+  marker: it is refused where the datatype is read ("… een Datum in dagen
+  draagt geen eenheid"), and that ERROR is the only one;
 - a time-dependent attribute (WF-086) and a dimensioned one (a defaults group
   on a dimensioned attribute does not play in every executor);
 - an allocation, or an object creation's initialisation, that writes X: the
@@ -1718,9 +1889,15 @@ which is the measurement above stated as a property.
 
 ### Scope / limitations of this card
 
-- A number without a unit and a date in days only. A date-time, a text, a
-  percentage, a boolean, an enumeration or a number with a unit waits for a
-  golden per family that plays in the three executors.
+- A number without a unit or with one unit, and a date in days. A date-time, a
+  text, a percentage, a boolean, an enumeration or a number with a composite
+  unit waits for a golden per family that plays in the three executors. The
+  opgave and the computation share the one unit of X: `opgegeven X` and
+  `berekende X` carry X's datatype, and a writer or a case input in another
+  unit of the same system is refused by the typing of an assignment
+  ("toekenning: assignment across incompatible units"), as without the marker,
+  so no conversion runs between them (measured 2026-10-02 on a computation in
+  ct and a scenario input in ct beside an amount in €).
 - No marker on a characteristic: the three-valued opgave of the proposal's §5.8
   is a card of its own.
 - No retargeting of allocations and object creations. Writers of X on the
@@ -1813,6 +1990,19 @@ branch plays them (`PLAYED 12`), and the DRL-text branch refuses the document
 on its defaults sentence. The same document without the marker, the two rules
 that read generated members left out, gives the same values of X in the eight
 cases without an opgave, in the three executors.
+`jutterswet-opgave-bedrag` puts the marker on an amount in € (one unit),
+computed by an addition in the same unit under "indien zijn taxatie gevuld is"
+— `plus` counts an empty operand as 0, so without the condition the computation
+would decide 0,00 € and the initialisation would never be reached — initialised
+with 25,00 € as the lowest default, with a rule that reads the generated
+characteristic and a computation that reads the marked amount; seven cases,
+written as a scenario document. Measured on 2026-10-02: ref and clingo replay
+the seven cases exactly, the Drools exec branch plays them (`PLAYED 7`), the
+amount of the initialisation default among them, and the DRL-text branch
+refuses the document on its defaults sentence. The lowering written by hand in
+€ played in the three executors before the frontend admitted the marker; an
+initialisation beside an `Afwijking van` group cannot be written by hand in the
+dialect, so that piece is measured on the golden itself.
 
 ---
 
@@ -2099,6 +2289,19 @@ nine prepositions on the head's own line is now read into the name, where it
 was read as a member, because the loop is greedy. The resolver's line check
 (below) refuses what that leaves on the head's line, so the shift is loud.
 
+A word on the NEXT line is never read into the name (2026-10-02):
+`objectTypeNaam` takes a word only from the line its previous word ends on (a
+semantic predicate over the token lines), since a line end bounds an
+object-type head (§13.3.1.1). Until then the loop took the first word of a
+member without an article on the line after an extension head or a head without
+`(mv: …)` ("boven de maat kenmerk (bezittelijk);", "laatste vinddag Datum in
+dagen;"), the type was named "Vondst boven" and the line check refused the
+rest; a one-word member read correctly only because the longer head then left
+no member to parse. Measured: those forms now read, the forms that read before
+emit the same IR, and all 196 RegelSpraak sources of the repository and the 108
+of the distribution emit the same IR, diagnostics and exit code. Witness:
+`KopRegeleindeTest`.
+
 ### Inertness — measured, not assumed
 
 Counted on 2026-09-28 over 643 distinct RegelSpraak sources (by content), in
@@ -2152,7 +2355,8 @@ diagnostic to act on.
   role ended, is an ERROR on that line. The lines of the tokens decide, never
   their capitals. A member that runs on over the next line begins on a line of
   its own and stays admitted (the §3.9 example); so does a member without an
-  article on the line after the head. A heading (`---`) runs to the end of its
+  article on the line after the head, of one word or more, since the head's
+  name takes no word from that line. A heading (`---`) runs to the end of its
   line, so nothing begins after it there.
 - **The filler check** (WF-003). A role's filler is a declared object type,
   compared without regard to case, and checked once every declaration is read,
