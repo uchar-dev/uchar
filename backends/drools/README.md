@@ -198,8 +198,15 @@ predicate in a justification. A consequence that does not lower is refused with 
 nine its typed blocks spell out): a group binds what every default of its stack reads, and a tree on an inheritance
 line with counts and a sum in its justifications, date folds in its consequences and two parameters binds thirteen; a
 rule's value and a creation's toekenningen with five folds bind eleven. Until then such a group, rule or creation was
-refused by that count (`te veel gebonden variabelen`). Witness `BindingVoorbijNegenWitnessTest`. The DRL-text branch
-has no defaults lowering at all.
+refused by that count (`te veel gebonden variabelen`). Witness `BindingVoorbijNegenWitnessTest`. A consequence with a
+§6.5 division or a §6.6 root was refused (`kanaal-deponerende consequentie … op defaults-target`), since a group carries
+no companion that fills the channel. Since 2026-10-01 a division or a root that is the consequence itself, under at
+most a rounding, lowers as an ordinary division or root (`plekIsDeConsequentie`): over a leeg divisor or a negative
+radicand its value is leeg, the default falls through, and the deposit of a default that falls through does not persist
+(RUNTIME-SEMANTICS ch. 7.1); a default that decides has no deposit. A site under another operator ("(… gedeeld door …)
+plus 5,00" decides 5,00 with the deposit, `ref` and clingo report it) stays refused. A numeric zero divisor faults at
+fire (`ArithmeticException`), as it does in a rule's value, where `ref` and clingo fault on "division by numeric zero".
+Witness `DefaultsDelingWitnessTest`. The DRL-text branch has no defaults lowering at all.
 
 ## Recorded: a condition that puts no test on the subject
 
