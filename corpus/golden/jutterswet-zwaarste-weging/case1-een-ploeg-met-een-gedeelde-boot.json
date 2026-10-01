@@ -1,0 +1,222 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Boot",
+        "attributes": {
+          "laadvermogen": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B2",
+        "objectType": "Boot",
+        "attributes": {
+          "laadvermogen": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {
+          "ploeg": [
+            "P"
+          ],
+          "boot": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-02-05"
+          }
+        },
+        "roles": {
+          "ploeg": [
+            "P"
+          ],
+          "boot": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P"
+          ],
+          "boot": [
+            "B2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-02"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-20"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Weging",
+        "attributes": {
+          "gewicht": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Weging",
+        "attributes": {
+          "gewicht": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Weging",
+        "attributes": {
+          "gewicht": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "actief"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "actief"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P",
+      "attribute": "zwaarste gewicht",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2026-03-02"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P",
+      "attribute": "bootcapaciteit",
+      "value": {
+        "number": "240"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P",
+      "attribute": "vlootcapaciteit",
+      "value": {
+        "number": "140"
+      }
+    }
+  ]
+}

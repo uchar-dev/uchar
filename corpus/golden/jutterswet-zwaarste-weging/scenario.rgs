@@ -1,0 +1,68 @@
+Scenario een ploeg met een gedeelde boot
+Gegeven is de volgende situatie:
+een Ploeg P
+een Boot B1
+- het laadvermogen is 100
+een Boot B2
+- het laadvermogen is 40
+een Jutter J1
+- de startdag is 01-03-2026
+- de ploeg is P
+- de boot is B1
+een Jutter J2
+- de startdag is 05-02-2026
+- de ploeg is P
+- de boot is B1
+een Jutter J3
+- de ploeg is P
+- de boot is B2
+een Vondst V1
+- de vinddag is 10-03-2026
+- de jutter is J1
+een Vondst V2
+- de vinddag is 02-03-2026
+- de jutter is J2
+een Vondst V3
+- de vinddag is 20-03-2026
+- de jutter is J3
+een Weging W1
+- het gewicht is 12
+- de vondst is V1
+een Weging W2
+- het gewicht is 7
+- de vondst is V2
+een Weging W3
+- het gewicht is 30
+- de vondst is V3
+Met als verwacht resultaat:
+- J1 is actief
+- J3 is niet actief
+- het zwaarste gewicht van P is 12
+- de eerste vinddag van P is 02-03-2026
+- de bootcapaciteit van P is 240
+- de vlootcapaciteit van P is 140
+
+Scenario lege stappen en een lege ploeg
+Gegeven is de volgende situatie:
+een Ploeg P2
+een Ploeg P3
+een Jutter J4
+- de startdag is 01-03-2026
+- de ploeg is P2
+een Jutter J5
+- de ploeg is P2
+een Vondst V5
+- de vinddag is 15-03-2026
+- de jutter is J5
+een Weging W5
+- het gewicht is 9
+- de vondst is V5
+Met als verwacht resultaat:
+- het zwaarste gewicht van P2 is leeg
+- de eerste vinddag van P2 is 15-03-2026
+- de bootcapaciteit van P2 is leeg
+- de vlootcapaciteit van P2 is leeg
+- het zwaarste gewicht van P3 is leeg
+- de eerste vinddag van P3 is leeg
+- de bootcapaciteit van P3 is leeg
+- de vlootcapaciteit van P3 is leeg

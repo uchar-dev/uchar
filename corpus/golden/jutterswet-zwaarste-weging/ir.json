@@ -1,0 +1,660 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "zwaarste gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerste vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bootcapaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vlootcapaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "startdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht via vondst en weging",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vinddag via vondst",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laadvermogen via boot",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "actief",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Weging",
+        "animate": false,
+        "plural": "Wegingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Boot",
+        "animate": false,
+        "plural": "Boten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "laadvermogen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "PloegHeeftJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "plural": "jutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "VondstHeeftWeging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "weging",
+            "objectType": "Weging",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "BootVervoertJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "boot",
+            "objectType": "Boot",
+            "plural": "boten",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opvarende",
+            "objectType": "Jutter",
+            "plural": "opvarenden",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "actief",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "actief",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is actief"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "startdag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn startdag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn startdag gevuld is"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3j lid 4"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zwaarste gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaarste gewicht",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "Het zwaarste gewicht van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht via vondst en weging",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "het gewicht van de weging van de vondst van alle jutters van de Ploeg die aan de volgende voorwaarde voldoen: hij is actief"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "actief",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij is actief"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is actief"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "PloegHeeftJutter",
+                "role": "jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het gewicht van de weging van de vondst van alle jutters van de Ploeg die aan de volgende voorwaarde voldoen: hij is actief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3j lid 1"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerste vinddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste vinddag",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "De eerste vinddag van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag via vondst",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "de vinddag van de vondst van alle jutters van de Ploeg"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "PloegHeeftJutter",
+                "role": "jutter"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de vinddag van de vondst van alle jutters van de Ploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3j lid 2"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bootcapaciteit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bootcapaciteit",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "De bootcapaciteit van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "laadvermogen via boot",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "het laadvermogen van de boot van alle jutters van de Ploeg"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "PloegHeeftJutter",
+                "role": "jutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het laadvermogen van de boot van alle jutters van de Ploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3j lid 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vlootcapaciteit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vlootcapaciteit",
+              "subjectType": "Ploeg",
+              "source": {
+                "snippet": "De vlootcapaciteit van een Ploeg"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "laadvermogen",
+                  "subjectType": "Boot",
+                  "source": {
+                    "snippet": "het laadvermogen van alle boten van alle jutters van de Ploeg"
+                  }
+                }
+              ],
+              "elementType": "Boot",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegHeeftJutter",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "BootVervoertJutter",
+                  "role": "boot"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het laadvermogen van alle boten van alle jutters van de Ploeg"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3j lid 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewicht via vondst en weging",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewicht via vondst en weging",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gewicht via vondst en weging van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "gewicht",
+              "subjectType": "Weging",
+              "source": {
+                "snippet": "het gewicht van de weging van de vondst van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "VondstHeeftWeging",
+                  "role": "weging"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vinddag via vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vinddag via vondst",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vinddag via vondst van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vinddag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de vinddag van de vondst van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "JutterHeeftVondst",
+                  "role": "vondst"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laadvermogen via boot",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laadvermogen via boot",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het laadvermogen via boot van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "laadvermogen",
+              "subjectType": "Boot",
+              "source": {
+                "snippet": "het laadvermogen van de boot van de Jutter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "BootVervoertJutter",
+                  "role": "boot"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

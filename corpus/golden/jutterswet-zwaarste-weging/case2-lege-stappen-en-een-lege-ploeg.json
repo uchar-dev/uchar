@@ -1,0 +1,124 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P2",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {
+          "ploeg": [
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-15"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W5",
+        "objectType": "Weging",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V5"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "zwaarste gewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "eerste vinddag",
+      "value": {
+        "date": "2026-03-15"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "bootcapaciteit"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "vlootcapaciteit"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "zwaarste gewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "eerste vinddag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "bootcapaciteit"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "vlootcapaciteit"
+    }
+  ]
+}

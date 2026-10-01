@@ -1,0 +1,64 @@
+Objecttype de Ploeg (mv: Ploegen)
+    het zwaarste gewicht Numeriek (geheel getal);
+    de eerste vinddag Datum in dagen;
+    de bootcapaciteit Numeriek (geheel getal);
+    de vlootcapaciteit Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de startdag Datum in dagen;
+    is actief kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de vinddag Datum in dagen;
+
+Objecttype de Weging (mv: Wegingen)
+    het gewicht Numeriek (geheel getal);
+
+Objecttype de Boot (mv: Boten)
+    het laadvermogen Numeriek (geheel getal);
+
+Feittype PloegHeeftJutter
+    de ploeg Ploeg
+    de jutter (mv: jutters) Jutter
+Eén ploeg heeft meerdere jutters
+
+Feittype JutterHeeftVondst
+    de jutter Jutter
+    de vondst Vondst
+Eén jutter heeft één vondst
+
+Feittype VondstHeeftWeging
+    de vondst Vondst
+    de weging Weging
+Eén vondst heeft één weging
+
+Feittype BootVervoertJutter
+    de boot (mv: boten) Boot
+    de opvarende (mv: opvarenden) Jutter
+Eén boot heeft meerdere opvarenden
+
+// Bron: art. 3j lid 4
+Regel actief
+    geldig altijd
+        Een Jutter is actief
+        indien zijn startdag gevuld is.
+
+// Bron: art. 3j lid 1
+Regel zwaarste gewicht
+    geldig altijd
+        Het zwaarste gewicht van een Ploeg moet berekend worden als de maximale waarde van het gewicht van de weging van de vondst van alle jutters van de Ploeg die aan de volgende voorwaarde voldoen: hij is actief.
+
+// Bron: art. 3j lid 2
+Regel eerste vinddag
+    geldig altijd
+        De eerste vinddag van een Ploeg moet berekend worden als de eerste van de vinddag van de vondst van alle jutters van de Ploeg.
+
+// Bron: art. 3j lid 3
+Regel bootcapaciteit
+    geldig altijd
+        De bootcapaciteit van een Ploeg moet berekend worden als de som van het laadvermogen van de boot van alle jutters van de Ploeg.
+
+// Bron: art. 3j lid 3
+Regel vlootcapaciteit
+    geldig altijd
+        De vlootcapaciteit van een Ploeg moet berekend worden als de som van het laadvermogen van alle boten van alle jutters van de Ploeg.
