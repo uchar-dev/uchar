@@ -136,6 +136,9 @@ public final class ExecModelTranspiler {
      *  cycle with the rule writes, its own target included: a negative read on a cycle has no order (WF-046), and the
      *  rule cannot wait for its writer. Keyed by IDENTITY. */
     private final Map<ResolvedRegel, String> kringWeigering = new java.util.IdentityHashMap<>();
+    /** The salience of a consistency rule where {@link #groepVolgorde} places it after a writer of what its assertion
+     *  reads that would otherwise fire after it. Keyed by IDENTITY: the rules are records. */
+    private final Map<dev.uchar.regelspraak.ir.ResolvedConsistentie, Integer> consistentieSalience = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -338,6 +341,7 @@ public final class ExecModelTranspiler {
             regelSalience.clear();
             creatieSalience.clear();
             kringWeigering.clear();
+            consistentieSalience.clear();
             stapelFout = e;
         }
         // Every construct family runs through meet(), which records the Dekking verdict around the
@@ -5832,7 +5836,11 @@ public final class ExecModelTranspiler {
                 .expr(nextId("ig"), (Variable) sVar, (Predicate2) (i, s) -> RegelSpraakRuntime.get(i, "subject") == s);
         Block2<org.drools.model.Drools, Object> body = (drools, s) ->
                 drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, naam, s));
-        return PatternDSL.rule(kop(naam)).build(pattern, DSL.not(guard), DSL.on(sVar).execute(body));
+        // after the writers of what the assertion reads (groepVolgorde): a violation is never withdrawn
+        var bouwer = PatternDSL.rule(kop(naam));
+        Integer salience = consistentieSalience.get(c);
+        if (salience != null) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return bouwer.build(pattern, DSL.not(guard), DSL.on(sVar).execute(body));
     }
 
     /** The §9.5 VIOLATION predicate of an assertie: the negation that fires the Inconsistentie. Phase D scope = a
@@ -8642,17 +8650,21 @@ public final class ExecModelTranspiler {
      *  <p>The object and the fact creations are nodes too, and fill {@link #creatieSalience}: a creation reads
      *  stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and mints once, so it goes after every node it waits on, below one
      *  that would otherwise fire after it. A group or a rule that reads what a creation writes then waits on it in
-     *  turn, through the band and the negative fold reads. */
+     *  turn, through the band and the negative fold reads. An allocation is a node that keeps its place, so that a
+     *  reader of what it writes waits on it, and a consistency rule, which reads its assertion stratum-strict, goes after
+     *  every writer of what it reads ({@link #consistentieSalience}). */
     private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
         List<ResolvedRegel> regels = model.resolvedRegels;
         List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> ocs = model.objectCreaties;
         List<dev.uchar.regelspraak.ir.ResolvedFeitCreatie> fcs = model.feitCreaties;
-        int nR = regels.size(), n = nR + stapels.size(), nO = ocs.size(), nC = n + nO + fcs.size();
-        // node i < nR is ordinary rule i, node nR + g is group g, node n + j object creation j and node n + nO + k fact
-        // creation k: what each reads and writes, and where it starts
+        List<ResolvedVerdeling> vds = model.verdelingen;
+        int nR = regels.size(), n = nR + stapels.size(), nO = ocs.size(), nC = n + nO + fcs.size(), nV = vds.size(),
+                nT = nC + nV;
+        // node i < nR is ordinary rule i, node nR + g is group g, node n + j object creation j, node n + nO + k fact
+        // creation k and node nC + v allocation v: what each reads and writes, and where it starts
         List<Set<Lezing>> leest = new ArrayList<>();
         List<Set<Lezing>> schrijft = new ArrayList<>();
-        int[] sal = new int[nC];
+        int[] sal = new int[nT];
         for (int i = 0; i < nR; i++) {
             ResolvedRegel r = regels.get(i);
             Expr.AttribuutRef d = r.doel() instanceof Expr.AttribuutRef a ? a : null;
@@ -8707,10 +8719,30 @@ public final class ExecModelTranspiler {
             leest.add(l);
             schrijft.add(w);
         }
+        // An allocation reads its source, its condition on the source, the members its ratio, maximum and order name on
+        // the recipients, their population and its link; it writes the recipients' target and the source's remainder
+        // (RUNTIME-SEMANTICS ch. 6.1's table). It keeps its own place, an attribute write revised when what it reads
+        // changes; it is a node so that a reader of what it writes waits on it.
+        for (ResolvedVerdeling v : vds) {
+            Set<Lezing> l = new LinkedHashSet<>(), w = new LinkedHashSet<>();
+            if (v.bronType() != null && v.doelType() != null) {
+                if (v.bronAttribuut() != null) l.add(new Lezing(v.bronType(), v.bronAttribuut(), false));
+                for (String lid : java.util.Arrays.asList(v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut()))
+                    if (lid != null) l.add(new Lezing(v.doelType(), lid, true));
+                conditieLezingen(v.voorwaarde(), v.bronType(), false, l);
+                l.add(populatie(v.doelType()));
+                RegelSpraakModel.RolBindingRef rol = rolBindingen.get(v) != null ? rolBindingen.get(v) : v.verbindendeRol();
+                if (rol != null) l.add(relatie(rol.feittype()));
+                if (v.doelAttribuut() != null) w.add(new Lezing(v.doelType(), v.doelAttribuut(), true));
+                if (v.restantAttribuut() != null) w.add(new Lezing(v.bronType(), v.restantAttribuut(), false));
+            }
+            leest.add(l);
+            schrijft.add(w);
+        }
         List<List<Integer>> producenten = new ArrayList<>();
-        for (int c = 0; c < nC; c++) {
+        for (int c = 0; c < nT; c++) {
             List<Integer> p = new ArrayList<>();
-            for (int q = 0; q < nC; q++) if (q != c && leestIets(leest.get(c), schrijft.get(q))) p.add(q);
+            for (int q = 0; q < nT; q++) if (q != c && leestIets(leest.get(c), schrijft.get(q))) p.add(q);
             producenten.add(p);
         }
         // per rule, the producers of a characteristic it reads under negation, as the stratification reads it: a
@@ -8742,12 +8774,12 @@ public final class ExecModelTranspiler {
                 vouwOntkend(r.waarde(), d.objecttype(), false, false, neg);
             }
             List<Integer> p = new ArrayList<>();
-            for (int q = 0; q < nC; q++) if (q != c && leestIets(neg, schrijft.get(q))) p.add(q);
+            for (int q = 0; q < nT; q++) if (q != c && leestIets(neg, schrijft.get(q))) p.add(q);
             vouwOntkendVan.add(p);
         }
         // every node a node waits on, transitively; a creation and a producer that also waits on it lie on one cycle
         List<Set<Integer>> bereik = new ArrayList<>();
-        for (int c = 0; c < nC; c++) {
+        for (int c = 0; c < nT; c++) {
             Set<Integer> b = new LinkedHashSet<>(producenten.get(c));
             java.util.ArrayDeque<Integer> rij = new java.util.ArrayDeque<>(b);
             while (!rij.isEmpty()) for (int v : producenten.get(rij.poll())) if (b.add(v)) rij.add(v);
@@ -8774,13 +8806,13 @@ public final class ExecModelTranspiler {
             }
             if (leestIets(neg, schrijft.get(c))) kringWeigering.put(r, leegKring(neg, schrijft.get(c), "deze regel zelf"));
             Set<Integer> na = new LinkedHashSet<>();
-            for (int q = 0; q < nC; q++) {
+            for (int q = 0; q < nT; q++) {
                 if (q == c) continue;
                 boolean negatief = leestIets(neg, schrijft.get(q));
                 if (!negatief && !leestIets(strikt, schrijft.get(q))) continue;
                 if (bereik.get(q).contains(c)) {
                     if (negatief) kringWeigering.putIfAbsent(r, leegKring(neg, schrijft.get(q),
-                            knoopNaam(q, nR, n, nO, stapels, ocs, fcs) + ", die op deze regel wacht,"));
+                            knoopNaam(q, nR, n, nO, nC, stapels) + ", die op deze regel wacht,"));
                     continue;
                 }
                 na.add(q);
@@ -8791,10 +8823,10 @@ public final class ExecModelTranspiler {
         int[] band = sal.clone();
         for (int ronde = 0; ; ronde++) {
             // the band: each node no higher than its own salience or any producer's band
-            for (int c = 0; c < nC; c++) band[c] = Math.min(band[c], sal[c]);
+            for (int c = 0; c < nT; c++) band[c] = Math.min(band[c], sal[c]);
             for (boolean bewoog = true; bewoog; ) {
                 bewoog = false;
-                for (int c = 0; c < nC; c++)
+                for (int c = 0; c < nT; c++)
                     for (int q : producenten.get(c))
                         if (band[q] < band[c]) { band[c] = band[q]; bewoog = true; }
             }
@@ -8816,7 +8848,7 @@ public final class ExecModelTranspiler {
             // rules were added, see the creations below)
             for (int c = 0; c < nR; c++)
                 for (int q : naSchrijvers.get(c)) {
-                    boolean ervoor = sal[q] > sal[c] || (sal[q] == sal[c] && laadrang(q, nR, n, nC) < c);
+                    boolean ervoor = sal[q] > sal[c] || (sal[q] == sal[c] && laadrang(q, nR, n, nC, nV) < c);
                     if (!ervoor) { sal[c] = sal[q] - 1; veranderd = true; }
                 }
             // A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and fires once per subject, so it goes after
@@ -8827,13 +8859,32 @@ public final class ExecModelTranspiler {
             for (int c = n; c < nC; c++)
                 for (int q : bereik.get(c)) {
                     if (q == c || bereik.get(q).contains(c)) continue;
-                    boolean ervoor = sal[q] > sal[c] || (sal[q] == sal[c] && laadrang(q, nR, n, nC) < laadrang(c, nR, n, nC));
+                    boolean ervoor = sal[q] > sal[c]
+                            || (sal[q] == sal[c] && laadrang(q, nR, n, nC, nV) < laadrang(c, nR, n, nC, nV));
                     if (!ervoor) { sal[c] = sal[q] - 1; veranderd = true; }
                 }
             if (!veranderd) break;
-            if (ronde > 2 * nC + 2)
+            if (ronde > 2 * nT + 2)
                 throw new DefaultsOnvertaalbaar("een ontkende lezing in een kring door een defaultsgroep of een vouw in een"
                         + " voorwaarde: de regels en groepen op die kring hebben geen volgorde (WF-046, WF-051)");
+        }
+        // A consistency rule writes a channel that is never withdrawn and reads its assertion stratum-strict
+        // (RUNTIME-SEMANTICS ch. 6.1), so it fires after every writer of what it reads and every node that writer waits
+        // on. It is added to the model after the ordinary rules and before the allocations, the creations and the groups,
+        // and no node here reads what it writes.
+        consistentieSalience.clear();
+        for (var k : model.consistenties) {
+            if (k.subject() == null) continue;
+            Set<Lezing> l = new LinkedHashSet<>();
+            conditieLezingen(k.assertie(), k.subject(), false, l);
+            int s = 0;
+            for (int q = 0; q < nT; q++) {
+                if (!leestIets(l, schrijft.get(q))) continue;
+                Set<Integer> wacht = new LinkedHashSet<>(bereik.get(q));
+                wacht.add(q);
+                for (int x : wacht) s = Math.min(s, x < nR ? sal[x] : sal[x] - 1);
+            }
+            if (s != 0) consistentieSalience.put(k, s);
         }
         // the groups each group waits on, through ordinary rules as well
         int nG = stapels.size();
@@ -8874,23 +8925,25 @@ public final class ExecModelTranspiler {
         return volgorde;
     }
 
-    /** Where node {@code q} of {@link #groepVolgorde} is added to the model: the ordinary rules, then the object and the
-     *  fact creations in declared order, then the groups. */
-    private static int laadrang(int q, int nR, int n, int nC) {
-        return q < nR ? q : q >= n ? q - n + nR : q - nR + nR + (nC - n);
+    /** Where node {@code q} of {@link #groepVolgorde} is added to the model: the ordinary rules, then the allocations,
+     *  the object and the fact creations, each in declared order, then the groups. */
+    private static int laadrang(int q, int nR, int n, int nC, int nV) {
+        if (q < nR) return q;
+        if (q >= nC) return nR + q - nC;
+        if (q >= n) return nR + nV + q - n;
+        return nR + nV + (nC - n) + q - nR;
     }
 
     /** Node {@code q} of {@link #groepVolgorde} by name, for a refusal. */
-    private String knoopNaam(int q, int nR, int n, int nO, List<EffectieveStapel> stapels,
-                             List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> ocs,
-                             List<dev.uchar.regelspraak.ir.ResolvedFeitCreatie> fcs) {
+    private String knoopNaam(int q, int nR, int n, int nO, int nC, List<EffectieveStapel> stapels) {
         if (q < nR) return "de regel " + model.resolvedRegels.get(q).naam();
         if (q < n) {
             EffectieveStapel st = stapels.get(q - nR);
             return "de defaultsgroep op " + st.leden().get(0).doel() + " van " + st.eigenaar().naam;
         }
-        if (q < n + nO) return "de objectcreatie " + ocs.get(q - n).naam();
-        return "de feitcreatie " + fcs.get(q - n - nO).naam();
+        if (q < n + nO) return "de objectcreatie " + model.objectCreaties.get(q - n).naam();
+        if (q < nC) return "de feitcreatie " + model.feitCreaties.get(q - n - nO).naam();
+        return "de verdeling " + model.verdelingen.get(q - nC).naam();
     }
 
     /** The refusal of a rule whose leeg or gevuld test reads what {@code schrijver} writes on a cycle with it. */
