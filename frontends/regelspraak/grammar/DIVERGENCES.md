@@ -298,6 +298,7 @@ bound: WF-075 and the three executors recurse to any depth.
 | `Uitzonderingen ongeordend op E1:` with members P, Q | `E1.exceptions = {unordered: true, members: [ExceptionGroup [P], ExceptionGroup [Q]]}` |
 | `Uitzonderingen ongeordend op B:` with members P, Q, B a base rule | a group-default directly above the base: `[{exceptions: {unordered: true, members: [[P], [Q]]}}, B]` |
 | `Afwijking van B: A`, B a base rule | a chain position above the base, as a first-level `Uitzondering op` |
+| `Uitzondering op B: A` or `Afwijking van B: A`, A written for a strict subtype S of B's subject | one more group, `B voor S` on S: `[{exceptions: {unordered: false, members: [ExceptionGroup [A]]}}]` (the inheritance line, under the fail-fast refusals) |
 
 The first level stays a chain and does not nest into the base: a subtype's own
 base replaces the inherited base whole (RUNTIME-SEMANTICS ch. 7.10), and
@@ -372,13 +373,15 @@ is written with this header; its `ir.json` is byte-identical to the one its
 - a block written for a subtype under a node of its supertype's tree
   (RUNTIME-SEMANTICS ch. 7.10; `spec/proposals/SUBTYPING.md` §4.3–4.4: a subtype
   inherits an exception together with what is nested under it, and addresses none
-  of it). The message names a subtype-own exception on a base rule of the subtype
-  carrying the full condition of the node plus its own: the fixed block order lets
-  it decide exactly where both apply. Where the subtype has no rule of its own on
-  the target, the message adds that it has to write one with the outcome and the
-  condition of the base it inherits (named for a direct subtype), because an own
-  base replaces the inherited one. A block for a subtype under the supertype's
-  base rule keeps the target refusal below;
+  of it). The message names the subtype's own exception under the base the
+  subtype inherits, `Afwijking van <basisregel>: <naam>`, carrying the full
+  condition of the node plus its own: the fixed block order lets it decide
+  exactly where both apply. That base is the tree's, or the base a type on the
+  subtype's line declares of its own, which replaces it (ch. 7.10). Until the
+  inheritance line below was lowered, the message asked a subtype without a rule
+  of its own on the target to write one with the outcome and the condition of
+  the base it inherits; a block for a subtype directly under the supertype's base
+  rule now lowers (the inheritance line, under the fail-fast refusals);
 - a carrier with ordered children and an `Uitzonderingen ongeordend op` block, or
   with two such blocks: nothing fixes the priority between them. The message names
   the two expressible forms, all ordered or all members of one block. Recorded, not
@@ -519,6 +522,88 @@ Witness: `DefaultsBronAnnotatieTest`, `BronAnnotatiePlaatsTest`.
   `dialect-niet-in-uitzondering`): its block's own ERROR stands, and a
   second-writer ERROR would name a rule of the very block it stands in.
 
+**The inheritance line** (RUNTIME-SEMANTICS ch. 7.9 and 7.10). An `Uitzondering
+op` or `Afwijking van` whose subject is a strict subtype of its base rule's
+subject, written on the target the subtype inherits (the same attribute or
+characteristic; WF-105 keeps a member name to one type of the line), does not
+write another target: it is the subtype's own exception. The frontend lowers the
+base's blocks for each such subtype to one more defaults group, on the subtype,
+named `<basisregel> voor <subtype>`, whose one default is a group-default: no
+justification and no consequence of its own, and one ordered exception group
+holding the subtype's blocks, the later-written one first. A group-default is no
+base, so the composition of ch. 7.10 puts the group among the subtype's own
+exceptions (block 1), above the exceptions it inherits (block 2), and keeps the
+inherited base below them (block 3). Written as an ordinary default, the block
+would be the subtype's own base and would replace the inherited one: measured on
+that IR, verifier-clean, a subtype instance for which the block decides nothing
+stays empty in ref, clingo and the Drools exec branch, where the inherited base
+decides. The base's own blocks stay in the base's group, which without them is
+the base alone. An `Uitzondering op` conjoins the base's condition, read on the
+subtype: every own read of the base's subject names the subtype, because an own
+read names the subject type, an inherited attribute included (IR-SPEC ch. 4.1a,
+WF-053); a navigated read, a characteristic check and a role check keep their
+nodes, and the emitter derives their walk from the subtype. An `Afwijking van`
+carries its own condition only. The group carries the base's window, as the
+blocks must. Its source says where the base comes from, `eigen uitzonderingen
+van Strandjutter; de basis 'meldtermijn' is geërfd van Jutter`, and the
+group-default and its exception group carry the heads that made them (`Afwijking
+van meldtermijn`, or the two heads joined by `en`). A block under a subtype's own
+block nests in it as on the base's own type. Under the opgave marker (§7) the
+subtype's group moves to `berekende X` as every group on the line does.
+
+Refused, each one ERROR at the block, the sentence naming what can be written
+instead (witness: `AfwijkingOpSubtypeTest`, every sentence literal):
+
+- a base of its own on the target, on the subtype or on a type between it and
+  the base's subject: a plain rule, or the base of a tree. That base replaces the
+  one the block names (ch. 7.10), so the block belongs under it; the message names
+  `Afwijking van <eigen basis>: <naam>`, for an `Uitzondering op` also `Uitzondering
+  op <eigen basis>: <naam>`, which conjoins that base's condition;
+- a member of an `Uitzonderingen ongeordend op` block among a subtype's own
+  exceptions, directly under the supertype's base or under the subtype's own
+  block. Not lowered: the executors agree on such a group, and on the key of a
+  conflict between its members, which names the declaring type and the default
+  index path in the composed stack (`Jutter.meldtermijn/0` on a Strandjutter);
+  the case loader of ref and clingo checks an expected conflict against the paths
+  of the declared groups and does not take that key (measured 2026-10-01), so no
+  case could pin such a conflict. The message names the ordered blocks, or an own
+  base on the subtype with the block under it;
+- a block for a subtype written before a block for one of its supertypes under
+  the same base: among the children of one carrier the later-written block ranks
+  higher, and ch. 7.10 puts a subtype's own exceptions above every exception it
+  inherits whatever the written order, so the order on the page would say the
+  opposite of the wire. The message asks to write the subtype's block after the
+  other;
+- a group name another form already carries (WF-020).
+
+WF-050's target refusal keeps its sentence for every other target: another
+attribute or characteristic, a type on another line (a sibling of the base's
+subject), and the reverse direction, a block for a supertype under a base of its
+subtype. The reverse direction has no reading as written: a group with the block
+on the supertype beside the base's group on the subtype is verifier-clean
+(measured), but there the block decides for every instance of the supertype,
+which the base never covers. The verifier has no rule to refuse it under, so
+gate 10 pins the frontend's refusal. An initialisation of the target on the
+subtype beside the subtype's group is a second writer on that level and draws the
+single-writer ERROR above; without the block, the fold of ch. 7.10 makes it the
+initialisation default of the subtype's stack.
+
+Measured on 2026-10-01 in ref, clingo and the Drools exec branch: both heads on
+a direct subtype and on a grandchild, two subtypes under one base, an exception
+of the supertype beside the subtype's block, the way out of the nested refusal, a
+negated and a positive block on a characteristic, a supertype without instances,
+the opgave marker, a navigated read and a characteristic check in the base's
+condition, an unconditional base, a block nested under the subtype's own block, a
+grandchild's block under an intermediate type's own base, two blocks and both
+heads for one subtype, and the base written after the block. Each plays with the
+hand-computed values, and the DRL-text branch refuses each on its defaults
+sentence. A window on the base and its block plays in ref and clingo, and the
+Drools exec branch excludes it by name, as it excludes every defaults group with
+a dated window. The 116 `bron.rgs` goldens re-emit byte-identically, and so do
+the two ways around the refusal that played before: the whole tree on the
+subtype, and the base repeated on the subtype with the deviation under it.
+Golden: `jutterswet-meldtermijn-strandjutter`.
+
 ### Interaction with `Regelgroep` (§9.10) — refused
 
 Maintainer decision 2026-09-23, option (a) of the card
@@ -602,8 +687,10 @@ true, matching the schema and the hand-written prioritized-defaults anchors.
 - The first card exercised the ordered shape on a characteristic only. Since
   then `jutterswet-wrakrecht` exercises it on an attribute target, on a
   supertype and its subtype, `jutterswet-schorsing` with a negated
-  exception (form 1, above), and `jutterswet-uitsluiting-rgs` and
-  `jutterswet-nestkenmerk-rgs` form 2.
+  exception (form 1, above), `jutterswet-uitsluiting-rgs` and
+  `jutterswet-nestkenmerk-rgs` form 2, and `jutterswet-meldtermijn-strandjutter`
+  a block for a subtype under its supertype's base (the inheritance line,
+  above).
 - Exception-on-exception is authored from source since form 2 (above): nested
   exceptions lower to `Default.exceptions`, and `Afwijking van` and
   `Uitzonderingen ongeordend op` joined the surface.
@@ -1530,7 +1617,9 @@ without naming them and clingo gave the target two values), with and without
 the marker: the marker does not choose between them. Two unconditional writers on T and on a
 subtype are refused by the verifier under WF-079, on `berekende X` with the
 marker and on X without it. An `Afwijking van` on T's rule written for the
-subtype is refused by the target refusal of §4, with and without the marker.
+subtype lowers to a group on the subtype (§4, the inheritance line), and under the
+marker that group moves to `berekende X` as the group of T's rule does; measured
+2026-10-01 in the three executors, the opgave filled and empty.
 
 An initialisation on a subtype stays on X. The generated group opens the fold
 of ch. 7.10 on X's chain, and the fold makes the subtype's initialisation the
