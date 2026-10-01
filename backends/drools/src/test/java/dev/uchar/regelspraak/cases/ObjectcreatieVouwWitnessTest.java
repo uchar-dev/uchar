@@ -40,7 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * condition refused in a sentence that names no form. One row is a flank, green before and after: the number folds
  * in the creation's condition. The division row was a named refusal from that day; it plays with the Fout reported
  * since the follow-up round of the same day, and was red against the refusal ({@code Excluded … kanaal-deponerende
- * toekenning (deling)}).
+ * toekenning (deling)}). The row over five folds pinned a refusal until a consequence bound more than nine variables
+ * (2026-10-01); red against that transpiler in {@code te veel gebonden variabelen: globals en vouwen}, it plays since.
  */
 class ObjectcreatieVouwWitnessTest {
 
@@ -266,11 +267,10 @@ class ObjectcreatieVouwWitnessTest {
                 perJutter("heffing", getal("1.00"), null, null, null), INCONSISTENT)), "de wortel van een negatieve som");
     }
 
-    @Test void vijf_vouwen_binden_te_veel() throws Exception {
-        // Four ordering folds and a sum: the subject, and per fold a count and a result, are eleven variables, and a
-        // consequence binds nine at most. The refusal names that, rather than the form of one toekenning. ref and
-        // clingo: weeggrens 4, telling 7, afrekendag 05-03-2026, slotdag 12-03-2026 and heffing 11,00 for J1, the
-        // values of V5 for J4, and leeg for J2 and J3.
+    @Test void vijf_vouwen() throws Exception {
+        // Four ordering folds and a sum: the subject, and per fold a count and a result, are eleven variables, which
+        // the consequence binds. ref and clingo: weeggrens 4, telling 7, afrekendag 05-03-2026, slotdag 12-03-2026 and
+        // heffing 11,00 for J1, the values of V5 for J4, and leeg for J2 and J3.
         String ir = document(false, creatie(null, toekenning("weeggrens", MINIMUM), toekenning("telling", MAXIMUM),
                         toekenning("afrekendag", EERSTE), toekenning("slotdag", LAATSTE), toekenning("heffing", SOM)),
                 leesTerug("weeggrens"), leesTerug("telling"), leesTerug("afrekendag"), leesTerug("slotdag"), leesTerug("heffing"));
@@ -279,8 +279,7 @@ class ObjectcreatieVouwWitnessTest {
                 perJutter("afrekendag", datum("2026-03-05"), null, null, datum("2026-03-20")),
                 perJutter("slotdag", datum("2026-03-12"), null, null, datum("2026-03-20")),
                 perJutter("heffing", getal("11.00"), null, null, getal("9.00")));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak));
-        assertTrue(e.getMessage().contains("te veel gebonden variabelen"), e.getMessage());
+        assertNull(speel(ir, zaak));
     }
 
     @Test void een_datumvouw_in_de_voorwaarde_van_de_creatie_weigert_met_de_vorm() throws Exception {

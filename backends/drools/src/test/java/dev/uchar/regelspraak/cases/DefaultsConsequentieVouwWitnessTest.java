@@ -30,7 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * plays was refused for the whole group in one lumped sentence that names neither the form nor the consequence
  * ({@code niet-reduceerbare consequentie (far-side/aggregatie): <default>}; {@code <default>} because a default carries
  * no source text on the wire); the two refusal rows found that same sentence where they look for the form. The row over
- * two number folds came after the fix and was red on the transpiler of the claim in the same sentence.
+ * two number folds came after the fix and was red on the transpiler of the claim in the same sentence. The row over
+ * five folds pinned a refusal of the group until a consequence bound more than nine variables (2026-10-01); red against
+ * that transpiler in {@code te veel gebonden variabelen (aggregaties, vouwen en globals)}, it plays since.
  */
 class DefaultsConsequentieVouwWitnessTest {
 
@@ -269,10 +271,10 @@ class DefaultsConsequentieVouwWitnessTest {
         assertTrue(e.getMessage().contains("de laatste van de meldingsdatum van alle meldingen van de Berging"), e.getMessage());
     }
 
-    @Test void vijf_vouwen_in_een_consequentie_binden_te_veel() throws Exception {
-        // "de laatste van (…), (…), (…), (…) en (…)" over five folds: each binds its count and its result, and the
-        // consequence binds at most nine variables, the subject among them. ref and clingo answer; the branch refuses
-        // the group by name.
+    @Test void vijf_vouwen_in_een_consequentie() throws Exception {
+        // "de laatste van (…), (…), (…), (…) en (…)" over five folds: each binds its count and its result, so the
+        // consequence binds eleven variables, the subject among them. ref and clingo: B1 12-03-2026 (the last
+        // meldingsdag; nothing writes the uiterste bergdag here), B2 and B4 their gemelde sluitdag, B3 and B5 leeg.
         List<String> vijf = new ArrayList<>();
         for (String[] l : new String[][] {{"last", "bergdag"}, {"first", "bergdag"}, {"last", "meldingsdag"},
                 {"first", "meldingsdag"}, {"last", "uiterste bergdag"}})
@@ -281,8 +283,7 @@ class DefaultsConsequentieVouwWitnessTest {
         String v = "{\"node\":\"Aggregation\",\"kind\":\"last\",\"arguments\":[" + String.join(",", vijf) + "],\"type\":"
                 + DATUM + ",\"source\":{\"snippet\":\"de laatste van (…), (…), (…), (…) en (…)\"}}";
         String ir = document(false, List.of(), sluitdaggroep("sluitdag", v));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak(List.of(), "")));
-        assertTrue(e.getMessage().contains("te veel gebonden variabelen (aggregaties, vouwen en globals)"), e.getMessage());
+        assertNull(speel(ir, zaak(situatie(false), sluitdagen("2026-03-12", "2026-03-12", null, "2026-03-20", null))));
     }
 
     // ---------------- documents ----------------
