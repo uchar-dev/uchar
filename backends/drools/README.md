@@ -103,6 +103,15 @@ read of it on a strict subtype of the created type, where ch. 5.1 closes the wri
 The tests that need the frontend's resolver live under `src/bronroute/`, outside this build, which carries no
 parser; the gate compiles them against the frontend's classes and this jar.
 
+What a defaults group reads is public per default too, since 2026-10-01: `ProducentConsument.lezingen(model, groep,
+navigatie)` gives, per default of the group in the order of the group and each default before those of its exception
+groups, its path in the tree (`[i]`, `[i, g, j]`, …), the default itself, and what its justification and its consequence
+read. A consumer that names the default where a read falls outside a scope reads it there, with the source text the
+default and its parts carry. `vormen()` takes the group's reads from it, so their union is exactly the group's
+`Vorm.leest()`; `GraafDefaultLezingTest` holds that on every defaults group of the corpus and on the forms a group
+takes: a member and a characteristic check in a justification, a member in a consequence, one and two roles away, a
+nested exception group, a member of `Uitzonderingen ongeordend op` and the group-default of `<basis> voor <subtype>`.
+
 ## Recorded: two writers of one target
 
 Two rules that write one attribute of one object and whose conditions both hold there have no common fixpoint when
