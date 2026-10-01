@@ -60,11 +60,13 @@ public final class Vouwwaarde {
         String lid = "vouw " + f.kind() + " over de setbron '" + attr + "' van " + elem.naam
                 + ": die leden zijn van type " + dt.naam() + " en niet getalachtig, terwijl ";
         // Over a DATE the ordering reading exists and three executors carry it; only the DRL-text branch asks this
-        // question for it (the exec-model branch folds it in a rule's value, ExecModelTranspiler.vouwslot).
+        // question for it (the exec-model branch folds it through a slot, ExecModelTranspiler.vouwslot, as a value
+        // and as an operand of a condition or a justification).
         if (ordenend && dt.isDatum())
             return lid + "de DRL-teksttak elke waardevouw in BigDecimal accumuleert. De ordenende lezing KIEST één"
                     + " bijgedragen waarde (ch. 1.2e) en is over een datumbron welgedefinieerd — ref, de ASP-backend en de"
-                    + " exec-modeltak (in de waarde van een regel) dragen haar, getuige golden/jutterswet-vondstbereik —"
+                    + " exec-modeltak (als waarde, in een voorwaarde en in een rechtvaardiging) dragen haar, getuige"
+                    + " golden/jutterswet-vondstbereik —"
                     + " maar de DRL-teksttak heeft haar niet gebouwd. Een gat in die tak, geen semantisch verschil (§5.8.3)";
         String kop = lid + "beide takken elke waardevouw in BigDecimal accumuleren";
         if (optellend)
