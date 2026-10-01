@@ -126,11 +126,16 @@ public final class ExecModelTranspiler {
     /** The salience of an ordinary rule where {@link #groepVolgorde} places it below the stratum
      *  {@link dev.uchar.regelspraak.transpiler.Stratificatie} derives: a rule that reads the characteristic of a
      *  defaults group under negation, and a rule that reads the characteristic of such a rule under negation in
-     *  turn. Keyed by IDENTITY. */
+     *  turn; a rule after the writers of what it reads negatively or, as a characteristic assignment, stratum-strict.
+     *  Keyed by IDENTITY. */
     private final Map<ResolvedRegel, Integer> regelSalience = new java.util.IdentityHashMap<>();
     /** The salience of an object or fact creation where {@link #groepVolgorde} places it below a producer of what it
      *  reads that would otherwise fire after it. Keyed by IDENTITY: the creations are records. */
     private final Map<Object, Integer> creatieSalience = new java.util.IdentityHashMap<>();
+    /** Per ordinary rule, the refusal {@link #groepVolgorde} derives for a leeg or gevuld test on what a writer on a
+     *  cycle with the rule writes, its own target included: a negative read on a cycle has no order (WF-046), and the
+     *  rule cannot wait for its writer. Keyed by IDENTITY. */
+    private final Map<ResolvedRegel, String> kringWeigering = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -332,6 +337,7 @@ public final class ExecModelTranspiler {
             groepSalience.clear();
             regelSalience.clear();
             creatieSalience.clear();
+            kringWeigering.clear();
             stapelFout = e;
         }
         // Every construct family runs through meet(), which records the Dekking verdict around the
@@ -395,6 +401,8 @@ public final class ExecModelTranspiler {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || !ongenavigeerd(doel) || doel.objecttype() == null) {
             return skip("regel (doel geen eigen attribuut/kenmerk): " + r.naam());
         }
+        String kring = kringWeigering.get(r);
+        if (kring != null) return skip("regel (" + kring + "): " + r.naam());
         Class<?> factClass = factClass(doel.objecttype());
         if (factClass == null) return skip("regel (geen fact-class " + doel.objecttype().naam + "): " + r.naam());
         // §13.3.6.7 a MULTI-PERIOD temporal doel ("voor elke N maanden") is a List<Segment> timeline (gran set AND a
@@ -7409,7 +7417,8 @@ public final class ExecModelTranspiler {
         }
         pattern = geldigGuard(pattern, r.geldigheid());     // §4.2 the companion only flags inside the host's window
         pattern = pattern.expr(nextId("anker"), (Predicate1) s -> anker.apply(s) == null);
-        return List.of(companionRule(naam + " (leeg startpunt)", naam, incClass, sVar, pattern, gateExtra));
+        return List.of(companionRule(naam + " (leeg startpunt)", naam, incClass, sVar, pattern, gateExtra,
+                stratificatieSalience(r)));
     }
 
     /** §8.1.9 emit a RuleFired-inserting companion for a main-regel() rule whose firing is referenced by a live
@@ -7455,7 +7464,11 @@ public final class ExecModelTranspiler {
         items.add(pattern);
         items.addAll(extra);
         items.add(DSL.on(sVar).execute(body));
-        return List.of(PatternDSL.rule(kop(naam + " (gevuurd)")).build(items.toArray(new RuleItemBuilder[0])));
+        // at the host's salience: the marker records the host's firing, not its condition on the transient
+        var bouwer = PatternDSL.rule(kop(naam + " (gevuurd)"));
+        int salience = stratificatieSalience(r);
+        if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return List.of(bouwer.build(items.toArray(new RuleItemBuilder[0])));
     }
 
     /** Collect the WORTEL nodes through the arithmetic-wrapper layers of a value (for the §6.6 fout), each with
@@ -7569,7 +7582,7 @@ public final class ExecModelTranspiler {
         if (consequence == null)
             throw new IllegalStateException(compNaam + ": te veel gebonden variabelen voor de begeleider, meer dan de"
                     + " gastregel kon binden");
-        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, extra, consequence);
+        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, extra, consequence, stratificatieSalience(r));
     }
 
     /** One §6.5/§6.6 companion rule over the host's own gate (voorwaarde + §4.2 window). A site OUTSIDE every
@@ -7595,7 +7608,7 @@ public final class ExecModelTranspiler {
         pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 the companion only flags inside the host's window
         String naam = r.naam();
         if (plek.drager() == null)
-            return companionRule(compNaam, naam, incClass, sVar, statisch.apply(pattern), gateExtra);
+            return companionRule(compNaam, naam, incClass, sVar, statisch.apply(pattern), gateExtra, stratificatieSalience(r));
         // The probe decides in the CONSEQUENCE, which binds the node's Parameter globals the way the host
         // binds its own (a pattern expr hosts one global at most). The opaque always-true expr keeps the pattern
         // class-reactive (the freshness idiom), so the probe re-runs whenever the subject is updated and the
@@ -7603,7 +7616,7 @@ public final class ExecModelTranspiler {
         // guard in companionRule stops a second insert.
         pattern = pattern.expr(nextId("fresh"), (Predicate1) (s -> true));
         return companionRule(compNaam, naam, incClass, sVar, pattern, gateExtra,
-                sondeConsequentie(compNaam, naam, subject, sVar, plek));
+                sondeConsequentie(compNaam, naam, subject, sVar, plek), stratificatieSalience(r));
     }
 
     /** The consequence of a path-probed companion: re-evaluate the outermost ch. 4.10 node on the subject with a
@@ -7655,23 +7668,26 @@ public final class ExecModelTranspiler {
      *  {@code gateExtra} items are the host rule's §8.1.7 FAR-side membership exists/not joins (a non-empty
      *  {@link Gate#extra()}): a fout companion under a far-side voorwaarde must carry that gate too, else it loses the
      *  membership and over-fires for subjects the host rule never acts on (mirror of DrlTranspiler's extraClausules
-     *  threading). The companion is insert-only, so an extra exists/not clause is safe (it cancels no sibling). */
+     *  threading). The companion is insert-only, so an extra exists/not clause is safe (it cancels no sibling).
+     *  {@code salience} is the host rule's: the companion repeats the host's condition, so it decides when the host
+     *  does; at the default salience it fired before a host that {@link #groepVolgorde} or the stratification placed
+     *  lower, on a condition that held only on the transient, and the Inconsistentie stayed. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule companionRule(String compNaam, String hostNaam, Class<?> incClass, Variable sVar,
-                              PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> gateExtra) {
+                              PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> gateExtra, int salience) {
         String fqcn = FACTS + ".Inconsistentie";
         Block2<org.drools.model.Drools, Object> body = (drools, s) ->
                 drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
-        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, gateExtra, DSL.on(sVar).execute(body));
+        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, gateExtra, DSL.on(sVar).execute(body), salience);
     }
 
-    /** {@link #companionRule(String, String, Class, Variable, PatternDSL.PatternDef, List)} with the consequence
+    /** {@link #companionRule(String, String, Class, Variable, PatternDSL.PatternDef, List, int)} with the consequence
      *  supplied — the path-probe companion decides its insert there ({@link #sondeConsequentie}); the guard and
      *  the far-side gate are the same. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Rule companionRule(String compNaam, String hostNaam, Class<?> incClass, Variable sVar,
                               PatternDSL.PatternDef pattern, List<RuleItemBuilder<?>> gateExtra,
-                              RuleItemBuilder<?> consequence) {
+                              RuleItemBuilder<?> consequence, int salience) {
         Variable incVar = DSL.declarationOf(incClass, "$inc_" + (seq++));
         PatternDSL.PatternDef guard = PatternDSL.pattern(incVar)
                 .expr(nextId("ig"), (Predicate1) i -> hostNaam.equals(RegelSpraakRuntime.get(i, "regel")))
@@ -7681,7 +7697,9 @@ public final class ExecModelTranspiler {
         items.addAll(gateExtra);                          // the host rule's far-side membership gate, if any
         items.add(DSL.not(guard));
         items.add(consequence);
-        return PatternDSL.rule(kop(compNaam)).build(items.toArray(new RuleItemBuilder[0]));
+        var bouwer = PatternDSL.rule(kop(compNaam));
+        if (salience != 0) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return bouwer.build(items.toArray(new RuleItemBuilder[0]));
     }
     /** Collect the GEDEELD_DOOR / GEDEELD_DOOR_ABS nodes through the arithmetic-wrapper layers of a value (for the
      *  §6.5 fout), each with the outermost ch. 4.10 node above it — byte-identical to DrlTranspiler.verzamelDelingen
@@ -8609,6 +8627,15 @@ public final class ExecModelTranspiler {
      *  negatively ({@link #vouwOntkend}) goes below the band of every rule and group that writes that value. The other rules
      *  keep the salience the stratification gives them.
      *
+     *  <p>A rule that reads a value under a leeg or gevuld test, a negative read in either polarity, and a characteristic
+     *  assignment, whose write is irrevocable, for every value but a characteristic it reads (stratum-strict,
+     *  RUNTIME-SEMANTICS ch. 6.1), fire after every writer of what they read and every node that writer waits on:
+     *  strictly below it, or level with it and added before the rule. Before, such a rule declared before its writer, or
+     *  reading what a defaults group or a creation writes (both added to the model after the rules), fired on the
+     *  transient leeg or 0, and a written value or characteristic stayed. A leeg or gevuld test on what a writer on a
+     *  cycle with the rule writes, its own target included, has no order and the rule is refused by name (WF-046); a
+     *  stratum-strict read on a cycle through a recursive creation keeps its place, its generations order it (ch. 5.5).
+     *
      *  <p>A cycle between groups through positive reads keeps the declared order for the groups on it. A cycle with a
      *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name.
      *
@@ -8726,6 +8753,41 @@ public final class ExecModelTranspiler {
             while (!rij.isEmpty()) for (int v : producenten.get(rij.poll())) if (b.add(v)) rij.add(v);
             bereik.add(b);
         }
+        // per rule, the nodes it fires after (RUNTIME-SEMANTICS ch. 6.1): the writers of what it reads under a leeg or
+        // gevuld test, a negative read in either polarity, and for a characteristic assignment, whose write is
+        // irrevocable, the writers of every value it reads but a characteristic, a stratum-strict read; each writer with
+        // every node it waits on in turn, since a writer fires again when one of those writes later. A writer on a cycle
+        // with the rule is left out: a negative read there has no order and the rule is refused by name (WF-046), its
+        // own target included; a stratum-strict one is discharged by the generations of a recursive creation.
+        kringWeigering.clear();
+        List<Set<Integer>> naSchrijvers = new ArrayList<>();
+        for (int c = 0; c < nR; c++) {
+            ResolvedRegel r = regels.get(c);
+            Set<Lezing> neg = new LinkedHashSet<>(), strikt = new LinkedHashSet<>();
+            if (r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null) {
+                leegLezingen(r.voorwaarde(), d.objecttype(), neg);
+                leegLezingen(r.waarde(), d.objecttype(), neg);
+                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) {
+                    conditieLezingen(r.voorwaarde(), d.objecttype(), false, false, strikt);
+                    exprLezingen(r.waarde(), d.objecttype(), false, false, strikt);
+                }
+            }
+            if (leestIets(neg, schrijft.get(c))) kringWeigering.put(r, leegKring(neg, schrijft.get(c), "deze regel zelf"));
+            Set<Integer> na = new LinkedHashSet<>();
+            for (int q = 0; q < nC; q++) {
+                if (q == c) continue;
+                boolean negatief = leestIets(neg, schrijft.get(q));
+                if (!negatief && !leestIets(strikt, schrijft.get(q))) continue;
+                if (bereik.get(q).contains(c)) {
+                    if (negatief) kringWeigering.putIfAbsent(r, leegKring(neg, schrijft.get(q),
+                            knoopNaam(q, nR, n, nO, stapels, ocs, fcs) + ", die op deze regel wacht,"));
+                    continue;
+                }
+                na.add(q);
+                na.addAll(bereik.get(q));
+            }
+            naSchrijvers.add(na);
+        }
         int[] band = sal.clone();
         for (int ronde = 0; ; ronde++) {
             // the band: each node no higher than its own salience or any producer's band
@@ -8749,6 +8811,14 @@ public final class ExecModelTranspiler {
             for (int c = 0; c < nR; c++)
                 for (int q : vouwOntkendVan.get(c))
                     if (band[q] - 1 < sal[c]) { sal[c] = band[q] - 1; veranderd = true; }
+            // after every writer of what the rule reads negatively or stratum-strict, and what that writer waits on:
+            // strictly below it, or level with it and added before the rule (Drools fires one salience in the order the
+            // rules were added, see the creations below)
+            for (int c = 0; c < nR; c++)
+                for (int q : naSchrijvers.get(c)) {
+                    boolean ervoor = sal[q] > sal[c] || (sal[q] == sal[c] && laadrang(q, nR, n, nC) < c);
+                    if (!ervoor) { sal[c] = sal[q] - 1; veranderd = true; }
+                }
             // A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and fires once per subject, so it goes after
             // every node it waits on: strictly below it, or level with it and added before it. Drools fires one
             // salience in the order the rules were added: the ordinary rules, then the object creations, then the fact
@@ -8810,6 +8880,32 @@ public final class ExecModelTranspiler {
         return q < nR ? q : q >= n ? q - n + nR : q - nR + nR + (nC - n);
     }
 
+    /** Node {@code q} of {@link #groepVolgorde} by name, for a refusal. */
+    private String knoopNaam(int q, int nR, int n, int nO, List<EffectieveStapel> stapels,
+                             List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> ocs,
+                             List<dev.uchar.regelspraak.ir.ResolvedFeitCreatie> fcs) {
+        if (q < nR) return "de regel " + model.resolvedRegels.get(q).naam();
+        if (q < n) {
+            EffectieveStapel st = stapels.get(q - nR);
+            return "de defaultsgroep op " + st.leden().get(0).doel() + " van " + st.eigenaar().naam;
+        }
+        if (q < n + nO) return "de objectcreatie " + ocs.get(q - n).naam();
+        return "de feitcreatie " + fcs.get(q - n - nO).naam();
+    }
+
+    /** The refusal of a rule whose leeg or gevuld test reads what {@code schrijver} writes on a cycle with it. */
+    private static String leegKring(Set<Lezing> neg, Set<Lezing> geschreven, String schrijver) {
+        String wat = "";
+        for (Lezing w : geschreven)
+            if (leestWat(neg, w)) {
+                wat = w.naam().equals("#populatie") ? "de populatie van " + w.houder().naam
+                        : w.naam().startsWith("#rol:") ? "de koppelingen van " + w.naam().substring(5)
+                        : w.naam() + (w.houder() != null ? " van " + w.houder().naam : "");
+                break;
+            }
+        return "een leeg- of gevuld-toets op " + wat + ", dat " + schrijver + " schrijft: een kring zonder volgorde (WF-046)";
+    }
+
     /** The fact type whose link an object creation writes: its connectingRole binding, else the one fact type that
      *  relates its subject and its created type (null where there is none or more than one, which the creation itself
      *  refuses or faults on). */
@@ -8834,8 +8930,8 @@ public final class ExecModelTranspiler {
      *  every read in the range of a quantifier fold, its subselection, under alle, geen, ten hoogste and precies, where a
      *  member that joins the range can cost the verdict; every read in its matrix under geen, ten hoogste and precies; and
      *  both under a negation-like composite ({@code neg}). {@code heel}: the part being walked is negative as a whole.
-     *  Only a read inside a fold is collected ({@code inVouw}): a leeg or gevuld test outside one keeps the limit of README
-     *  "Recorded: a condition that reads through a role".
+     *  Only a read inside a fold is collected ({@code inVouw}); a leeg or gevuld test anywhere is collected by
+     *  {@link #leegLezingen(Conditie, Objecttype, Set)} as well, which orders by the writer's band and load order.
      *
      *  <p>{@link #groepVolgorde} places the rule below the writers of what this collects, where {@code ref/} and the ASP
      *  backend evaluate it too. In a condition the fold cannot be revised once its rule has written: a verdict that holds
@@ -8912,6 +9008,71 @@ public final class ExecModelTranspiler {
         }
     }
 
+    /** What a rule reads under a leeg or gevuld test, anywhere in its condition or value, a fold's subselection and a
+     *  quantifier included: a negative read in either polarity, the hop relations of a navigated operand among them
+     *  (RUNTIME-SEMANTICS ch. 6.1, the verifier's {@code dep_cond}). {@link #groepVolgorde} places the rule after the
+     *  writers of what this collects. Before, only a test inside a fold was collected ({@link #vouwOntkend}); one outside
+     *  fired on the transient leeg when the rule came before its writer, or the writer was a defaults group or a
+     *  creation (added to the model after the rules), and its write stayed. */
+    private void leegLezingen(Conditie c, Objecttype subject, Set<Lezing> uit) {
+        switch (c) {
+            case null -> { }
+            case Conditie.Predicaat p -> {
+                if (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD)
+                    exprLezingen(p.operand(), subject, false, uit);
+                else leegLezingen(p.operand(), subject, uit);
+            }
+            case Conditie.Vergelijking v -> {
+                leegLezingen(v.links(), subject, uit);
+                leegLezingen(v.rechts(), subject, uit);
+            }
+            case Conditie.Periode pd -> {
+                leegLezingen(pd.vanaf(), subject, uit);
+                leegLezingen(pd.tot(), subject, uit);
+            }
+            case Conditie.Samengesteld sam -> { for (Conditie d : sam.onderdelen()) leegLezingen(d, subject, uit); }
+            case Conditie.Kwantorvouw kv -> {
+                Objecttype elem = kv.elementObjecttype() != null ? kv.elementObjecttype() : subject;
+                leegLezingen(kv.filter(), elem, uit);
+                leegLezingen(kv.toets(), elem, uit);
+            }
+            default -> { }
+        }
+    }
+
+    /** The expression side of {@link #leegLezingen(Conditie, Objecttype, Set)}: the conditions an expression carries. */
+    private void leegLezingen(Expr e, Objecttype subject, Set<Lezing> uit) {
+        switch (e) {
+            case null -> { }
+            case Expr.Let l -> {
+                leegLezingen(l.value(), subject, uit);
+                leegLezingen(l.body(), subject, uit);
+            }
+            case Expr.IfThenElse k -> {
+                leegLezingen(k.conditie(), subject, uit);
+                leegLezingen(k.dan(), subject, uit);
+                leegLezingen(k.anders(), subject, uit);
+            }
+            case Expr.Functie f -> {
+                Objecttype elem = isInstantievouw(f) && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
+                for (Expr a : f.argumenten()) leegLezingen(a, elem, uit);
+                leegLezingen(f.filter(), elem, uit);
+                leegLezingen(f.leegwaarde(), subject, uit);
+            }
+            case Expr.Binair b -> {
+                leegLezingen(b.links(), subject, uit);
+                leegLezingen(b.rechts(), subject, uit);
+            }
+            case Expr.Afgerond af -> leegLezingen(af.basis(), subject, uit);
+            case Expr.Begrensd bg -> {
+                leegLezingen(bg.basis(), subject, uit);
+                leegLezingen(bg.minimum(), subject, uit);
+                leegLezingen(bg.maximum(), subject, uit);
+            }
+            default -> { }
+        }
+    }
+
     /** A read of a defaults group or an ordinary rule, keyed on the type that holds the value: the subject for an own
      *  read, the type a role reaches for a read through it, the element type for what an aggregation folds or filters.
      *  {@code ver} marks a read beyond the subject. A write is the same triple, on the type written. */
@@ -8962,23 +9123,37 @@ public final class ExecModelTranspiler {
     }
 
     private void conditieLezingen(Conditie c, Objecttype subject, boolean ver, Set<Lezing> uit) {
+        conditieLezingen(c, subject, ver, true, uit);
+    }
+
+    /** {@code kenmerken} false leaves out what a characteristic check reads, its characteristic and the links of its
+     *  hops: a positive characteristic read is monotone and a negated one is stratified ({@link
+     *  dev.uchar.regelspraak.transpiler.Stratificatie}), and the hop relation of a navigated check reads positively
+     *  either way (RUNTIME-SEMANTICS ch. 6.1) — what a characteristic assignment reads stratum-strict is the rest. */
+    private void conditieLezingen(Conditie c, Objecttype subject, boolean ver, boolean kenmerken, Set<Lezing> uit) {
         switch (c) {
             case null -> { }
             case Conditie.Kenmerk k -> {
-                if (k.kenmerk() == null) return;
+                if (k.kenmerk() == null || !kenmerken) return;
                 KenmerkHop hop = kenmerkHop(k, subject);
                 uit.add(hop != null ? new Lezing(hop.doel(), k.kenmerk(), true)
                         : new Lezing(subject, k.kenmerk(), ver || genavigeerd(k)));
                 List<RegelSpraakModel.RolBindingRef> pad = navigatieBindingen.get(k);
                 if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
             }
-            case Conditie.Samengesteld sam -> { for (Conditie d : sam.onderdelen()) conditieLezingen(d, subject, ver, uit); }
-            case Conditie.Vergelijking v -> { exprLezingen(v.links(), subject, ver, uit); exprLezingen(v.rechts(), subject, ver, uit); }
-            case Conditie.Predicaat p -> exprLezingen(p.operand(), subject, ver, uit);
-            case Conditie.Periode pd -> { exprLezingen(pd.vanaf(), subject, ver, uit); exprLezingen(pd.tot(), subject, ver, uit); }
+            case Conditie.Samengesteld sam -> { for (Conditie d : sam.onderdelen()) conditieLezingen(d, subject, ver, kenmerken, uit); }
+            case Conditie.Vergelijking v -> {
+                exprLezingen(v.links(), subject, ver, kenmerken, uit);
+                exprLezingen(v.rechts(), subject, ver, kenmerken, uit);
+            }
+            case Conditie.Predicaat p -> exprLezingen(p.operand(), subject, ver, kenmerken, uit);
+            case Conditie.Periode pd -> {
+                exprLezingen(pd.vanaf(), subject, ver, kenmerken, uit);
+                exprLezingen(pd.tot(), subject, ver, kenmerken, uit);
+            }
             case Conditie.Kwantorvouw kv -> {
-                conditieLezingen(kv.filter(), kv.elementObjecttype(), true, uit);
-                conditieLezingen(kv.toets(), kv.elementObjecttype(), true, uit);
+                conditieLezingen(kv.filter(), kv.elementObjecttype(), true, kenmerken, uit);
+                conditieLezingen(kv.toets(), kv.elementObjecttype(), true, kenmerken, uit);
                 if (kv.elementObjecttype() != null) uit.add(populatie(kv.elementObjecttype()));
                 if (kv.bronRol() != null) uit.add(relatie(kv.bronRol().feittype()));
                 if (kv.bronPad() != null) for (RegelSpraakModel.RolBindingRef stap : kv.bronPad()) uit.add(relatie(stap.feittype()));
@@ -8988,22 +9163,31 @@ public final class ExecModelTranspiler {
     }
 
     private void exprLezingen(Expr e, Objecttype subject, boolean ver, Set<Lezing> uit) {
+        exprLezingen(e, subject, ver, true, uit);
+    }
+
+    /** {@code kenmerken} as in {@link #conditieLezingen(Conditie, Objecttype, boolean, boolean, Set)}. */
+    private void exprLezingen(Expr e, Objecttype subject, boolean ver, boolean kenmerken, Set<Lezing> uit) {
         if (e == null) return;
-        for (Expr k : letKinderen(e)) exprLezingen(k, subject, ver, uit);   // ch. 4.10: a Let-wrapped read is a read
+        for (Expr k : letKinderen(e)) exprLezingen(k, subject, ver, kenmerken, uit);   // ch. 4.10: a Let-wrapped read is a read
         if (e instanceof Expr.AttribuutRef a) {
             if (a.attribuut() == null) return;
             boolean verweg = ver || !ongenavigeerd(a) || (a.objecttype() != null && a.objecttype() != subject);
             uit.add(new Lezing(a.objecttype() != null ? a.objecttype() : subject, a.attribuut(), verweg));
             List<RegelSpraakModel.RolBindingRef> pad = navigatieBindingen.get(a);
             if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
-        } else if (e instanceof Expr.Binair b) { exprLezingen(b.links(), subject, ver, uit); exprLezingen(b.rechts(), subject, ver, uit); }
-        else if (e instanceof Expr.Afgerond af) { exprLezingen(af.basis(), subject, ver, uit); }
+        } else if (e instanceof Expr.Binair b) {
+            exprLezingen(b.links(), subject, ver, kenmerken, uit);
+            exprLezingen(b.rechts(), subject, ver, kenmerken, uit);
+        } else if (e instanceof Expr.Afgerond af) { exprLezingen(af.basis(), subject, ver, kenmerken, uit); }
         else if (e instanceof Expr.Begrensd bg) {
-            exprLezingen(bg.basis(), subject, ver, uit); exprLezingen(bg.minimum(), subject, ver, uit); exprLezingen(bg.maximum(), subject, ver, uit);
+            exprLezingen(bg.basis(), subject, ver, kenmerken, uit);
+            exprLezingen(bg.minimum(), subject, ver, kenmerken, uit);
+            exprLezingen(bg.maximum(), subject, ver, kenmerken, uit);
         } else if (e instanceof Expr.Functie f) {
             boolean vouw = isInstantievouw(f);
             Objecttype elem = vouw && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
-            for (Expr a : f.argumenten()) exprLezingen(a, elem, ver || vouw, uit);
+            for (Expr a : f.argumenten()) exprLezingen(a, elem, ver || vouw, kenmerken, uit);
             if (vouw && f.elementObjecttype() != null) {
                 uit.add(populatie(f.elementObjecttype()));
                 RegelSpraakModel.RolBindingRef bron = rolBindingen.get(f);
@@ -9011,11 +9195,12 @@ public final class ExecModelTranspiler {
                 List<RegelSpraakModel.RolBindingRef> pad = bronPaden.get(f);
                 if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
             }
-            if (f.filter() != null) conditieLezingen(f.filter(), elem, true, uit);
-            exprLezingen(f.leegwaarde(), subject, ver, uit);
-        } else if (e instanceof Expr.DimensieCel dc) { exprLezingen(dc.attribuut(), subject, ver, uit); }
+            if (f.filter() != null) conditieLezingen(f.filter(), elem, true, kenmerken, uit);
+            exprLezingen(f.leegwaarde(), subject, ver, kenmerken, uit);
+        } else if (e instanceof Expr.DimensieCel dc) { exprLezingen(dc.attribuut(), subject, ver, kenmerken, uit); }
         else if (e instanceof Expr.TekstReeks tr) {
-            for (Expr.TekstReeks.Deel d : tr.delen()) if (d instanceof Expr.TekstReeks.Ingevoegd i) exprLezingen(i.expr(), subject, ver, uit);
+            for (Expr.TekstReeks.Deel d : tr.delen())
+                if (d instanceof Expr.TekstReeks.Ingevoegd i) exprLezingen(i.expr(), subject, ver, kenmerken, uit);
         }
     }
 
