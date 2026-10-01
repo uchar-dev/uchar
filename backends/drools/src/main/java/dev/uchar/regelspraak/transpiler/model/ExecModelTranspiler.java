@@ -1038,8 +1038,9 @@ public final class ExecModelTranspiler {
         return aggregatie(f, subject, subjectVar, leegCount, false);
     }
 
-    /** {@code waarde}: the caller reads the result as an operand of a rule's value ({@link #vouwslot}), the one place
-     *  that takes a result that is not a number; there an ordering fold over a date lowers. */
+    /** {@code waarde}: the caller reads the result as an operand of a value ({@link #vouwslot}: a rule's value, a
+     *  default's consequence or a creation's toekenning), the one place that takes a result that is not a number;
+     *  there an ordering fold over a date lowers. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount, boolean waarde) {
         aggregatieReden = null;                      // a stale reason must never be attached to another skip
@@ -1079,13 +1080,14 @@ public final class ExecModelTranspiler {
             return null;
         }
         // An ordering fold over a date (RUNTIME-SEMANTICS ch. 1.2e) selects one contributed date, which vouw binds as
-        // a Comparable. Only a rule's value reads such a result as it is; a condition and a justification compare the
-        // result as a number, so there the fold stays refused, in this branch's words.
+        // a Comparable. Only a value reads such a result as it is; a condition and a justification compare the result
+        // as a number, so there the fold stays refused, in this branch's words.
         boolean datumOrdening = ordenendeDatumvouw(f);
         if (datumOrdening && !waarde) {
             aggregatieReden = "vouw " + f.kind() + " over de datumbron '" + arg.attribuut() + "' van " + elem.naam
-                    + " buiten de waarde van een regel: deze tak vouwt een datum alleen daar, want een voorwaarde en"
-                    + " een rechtvaardiging vergelijken de uitkomst als getal (§5.8.3)";
+                    + " buiten een waarde: deze tak vouwt een datum alleen als waarde (van een regel, de consequentie van"
+                    + " een default of de toekenning van een creatie), want een voorwaarde en een rechtvaardiging"
+                    + " vergelijken de uitkomst als getal (§5.8.3)";
             return null;
         }
         // The VALUE fold below accumulates in BigDecimal, and a member that is not a number has no
@@ -4651,10 +4653,10 @@ public final class ExecModelTranspiler {
         }
     }
 
-    /** The folds of the value {@link #regel} is lowering, or of the consequence {@link #compileDefault} is lowering,
-     *  non-null only while it lowers that value: build-time state, scoped like {@link #ketenWaardePad}, so no other
-     *  lowering meets a slot. {@link #vouwOnderwerp} is the subject variable their accumulates join to, and
-     *  {@link #vouwReden} names the first fold that did not lower. */
+    /** The folds of the value {@link #regel} is lowering, of the consequence {@link #compileDefault} is lowering, or of
+     *  the toekenningen {@link #objectCreatie} is lowering, non-null only while it lowers them: build-time state, scoped
+     *  like {@link #ketenWaardePad}, so no other lowering meets a slot. {@link #vouwOnderwerp} is the subject variable
+     *  their accumulates join to, and {@link #vouwReden} names the first fold that did not lower. */
     private List<Vouwslot> vouwslots;
     private Variable vouwOnderwerp;
     private String vouwReden;
@@ -4725,7 +4727,8 @@ public final class ExecModelTranspiler {
         // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         // A fold over a set source has no value the consequence can compute: it is an accumulate on the rule's left
-        // side, which only a rule's value and a default's consequence can place (vouwslots is set there alone).
+        // side, which only a rule's value, a default's consequence and a creation's toekenning can place (vouwslots is
+        // set there alone).
         if (e instanceof Expr.Functie vf && isInstantievouw(vf))
             return vouwslots == null ? null : vouwslot(valueSubject, vf);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
@@ -4795,7 +4798,7 @@ public final class ExecModelTranspiler {
             // §8.2 a tijdsafhankelijk (List<Segment>) attribute read in a SCALAR slot is NOT a scalar — only the §7.1
             // "het totaal van" collapses a timeline to a scalar (handled in regel() before this path). Splicing the
             // List into a scalar setter would throw at fire time (setX(List) on a BigDecimal field); skip it instead
-            // (DRL honestly markers the same read). Mirrors DrlTranspiler.isTemporeelAttribuut / lowerVal's guard.
+            // (DRL honestly markers the same read). Mirrors DrlTranspiler.isTemporeelAttribuut.
             if (a.objecttype() != null && Namen.bevatNaam(a.objecttype().granulariteitLeden(), a.attribuut())) return null;
             // §3.6 a bare read of a gedimensioneerd attribuut (its field is a Map<label,value>) is under-specified —
             // a scalar slot needs a pinned label (a DimensieCel) or a dimensie-fold. Skip (DRL markers it likewise).
@@ -4975,9 +4978,8 @@ public final class ExecModelTranspiler {
      * (Binair, Afgerond, Begrensd, a Functie's arguments) evaluates ALL its children unconditionally, here and
      * in ref, and a barrier never escapes the Let that raised it — so a ch. 4.10 node at the top of its path runs
      * exactly when the host value runs, and a site with no such node above it keeps its static leeg/negatief
-     * predicate (unchanged v0 behaviour, DRL parity). The aggregation-arithmetic path ({@link #lowerVal})
-     * lowers no ch. 4.10 node at all (a host with one there skips, and skips its companions with it), so every
-     * path-probed site is under {@link #scalarWaarde}, which is what the probe re-lowers.
+     * predicate (unchanged v0 behaviour, DRL parity). A value lowers through {@link #scalarWaarde} alone, so every
+     * path-probed site is under it, which is what the probe re-lowers.
      *
      * <p><b>What the gate asks, and what it therefore does and does not guarantee.</b> The companion fires when
      * SOME §6.5/§6.6 site under this node ran and faulted — not when the one syntactic site the companion is
@@ -5198,10 +5200,10 @@ public final class ExecModelTranspiler {
      *
      * <p><b>(c) Deliberately do NOT descend</b>, each for a checked reason: {@link #startpuntCompanions} (§6.8 —
      * ref carries no leeg-anchor check at all, so descending would ADD a ref-divergence; recorded at that method);
-     * {@code parityOnveilig}, {@code containsAggregatie}, {@code isDatumRekenExpr} and {@link #lowerVal}, which
-     * pattern-match concrete v0 node shapes, so a Let matches none and the answer is "not that shape" — none can
-     * fabricate a fault, because what a Let holds is lowered, or refused loudly, by {@link #scalarWaarde}, and
-     * {@code lowerVal}'s own fall-through is a null, i.e. an honest skip; {@code companionOperand}, the STATIC
+     * {@code parityOnveilig}, {@code containsAggregatie} and {@code isDatumRekenExpr}, which pattern-match
+     * concrete v0 node shapes, so a Let matches none and the answer is "not that shape" — none can fabricate a
+     * fault, because what a Let holds is lowered, or refused loudly, by {@link #scalarWaarde};
+     * {@code companionOperand}, the STATIC
      * leeg/vol predicate over a site's operands, which stays a walk over {@code AttribuutRef} only (DRL parity) —
      * the scope question moved one level up, to {@link #kwalificeertOperand}; and
      * {@code transpiler.Stratificatie.verzamelReads} (§9.2), a {@code Conditie} walk over a rule's voorwaarde only,
@@ -5408,23 +5410,21 @@ public final class ExecModelTranspiler {
 
     // ---------------- §5.8 aggregation inside arithmetic (Phase C follow-up) ----------------
     /** A lowered value-tree node: given the subject, the resolved global values, and the bound aggregation results
-     *  (index-aligned with the accVars the lowering collected), produce the value. */
+     *  (index-aligned with the variables the lowering bound, {@link RechtvaardigingBouw#gebonden}), produce the value. */
     @FunctionalInterface
     interface Eval { Object apply(Object subject, Map<String, BigDecimal> globals, Object[] aggResults); }
 
-    /** §13.4.6 one lowered objectcreatie toekenning value: EITHER a scalar {@link WaardeFn#fn()} ({@code eval==null},
-     *  no aggregation — restates inside scalarWaarde) OR an aggregation {@link Eval} ({@code fn==null}) reading its slice
-     *  {@code [aggOff, aggOff+aggCnt)} of the consequence's aggsAll[], then §4-restated from {@code van} (the value type)
-     *  into {@code naar} (the new object's attribuut unit). */
-    private record TkLower(String attr, BiFunction<Object, Map<String, BigDecimal>, Object> fn, Eval eval,
-                           int aggOff, int aggCnt, Datatype van, Datatype naar, boolean kenmerk) {}
+    /** §13.4.6 one lowered objectcreatie toekenning value: the scalar {@link WaardeFn#fn()} of {@link #scalarWaarde},
+     *  which reads a fold from its slot (vouwslot) and is restated into the new object's member unit. */
+    private record TkLower(String attr, BiFunction<Object, Map<String, BigDecimal>, Object> fn, boolean kenmerk) {}
 
     private static boolean isScalarSoort(ResolvedRegel.Soort s) {
         return s == ResolvedRegel.Soort.GELIJKSTELLING || s == ResolvedRegel.Soort.BEREKENING || s == ResolvedRegel.Soort.INITIALISATIE;
     }
 
     /** True when the value CONTAINS an aggregation Functie somewhere in its arithmetic tree (a BARE aggregation at the
-     *  root is the separate {@link #isAggregatieWaarde} path) — the trigger for the embedded-aggregation value path. */
+     *  root is the separate {@link #isAggregatieWaarde} path) — the form a justification refuses
+     *  ({@link #rechtvaardigingZijde}). */
     private static boolean containsAggregatie(Expr e) {
         if (e instanceof Expr.Functie f) {
             // a §5.8.3 LISTED MIN/MAX/EERSTE/LAATSTE fold (≥2 operands) is NOT an instance aggregation — it lowers via
@@ -5438,88 +5438,6 @@ public final class ExecModelTranspiler {
         if (e instanceof Expr.Afgerond a) return containsAggregatie(a.basis());
         if (e instanceof Expr.Begrensd g) return containsAggregatie(g.basis());
         return false;
-    }
-
-    /** Recursively lower a value tree to an {@link Eval}, collecting each embedded aggregation as its own accumulate CE
-     *  (accItem + result Variable, index-aligned with accVarsOut) and the Parameter-globals it reads. null -> out of
-     *  scope (caller skips). Mirrors {@link #scalarWaarde}/{@link #scalarWrapper} for the scalar leaves, but threads
-     *  aggregation result vars through the {@code aggResults[]} the consequence binds. A SOM (count+fallback two-var
-     *  fold) inside arithmetic is not lowered here -> null (honest skip). Only an object creation's toekenning uses it;
-     *  a rule's value reads its folds through {@link #vouwslot} and {@link #scalarWaarde}. */
-    private Eval lowerVal(Expr e, Objecttype subject, Variable sVar, Set<String> globalsOut,
-                          List<RuleItemBuilder<?>> accItemsOut, List<Variable> accVarsOut) {
-        if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
-            BigDecimal val = bd(lit);
-            return val == null ? null : (s, g, a) -> val;
-        }
-        if (e instanceof Expr.AttribuutRef ar && ongenavigeerd(ar)) {
-            if (subject != null && Namen.bevatNaam(subject.granulariteitLeden(), ar.attribuut())) return null;   // temporal -> Phase F
-            String attr = ar.attribuut();
-            return (s, g, a) -> RegelSpraakRuntime.get(s, attr);
-        }
-        if (e instanceof Expr.ParameterRef pr) {
-            String gn = globalNaam(pr.parameter().naam());
-            globalsOut.add(gn);
-            return (s, g, a) -> g.get(gn);
-        }
-        if (e instanceof Expr.Functie f && isAggregatieKind(f.kind())) {
-            Agg agg = aggregatie(f, subject, sVar, false);   // value/arith side: bare fold
-            if (agg == null) return null;
-            if (agg.isSom()) {
-                // §5.8.2 SOM inside arithmetic: ONE accumulate CE binds BOTH the contributor count and the sum;
-                // the eval branches count==0 -> the leegwaarde fallback, else toBd(sum).
-                accItemsOut.add(agg.accItem());
-                int idxCnt = accVarsOut.size(); accVarsOut.add(agg.countVar());
-                int idxSum = accVarsOut.size(); accVarsOut.add(agg.resultVar());
-                WaardeFn fallback = agg.somFallback();
-                return (s, g, a) -> ((Number) a[idxCnt]).longValue() == 0L
-                        ? (fallback == null ? null : (BigDecimal) fallback.fn().apply(s, Map.of()))
-                        : RegelSpraakRuntime.toBd(a[idxSum]);
-            }
-            int idx = accVarsOut.size();
-            accItemsOut.add(agg.accItem());
-            accVarsOut.add(agg.resultVar());
-            return (s, g, a) -> RegelSpraakRuntime.toBd(a[idx]);
-        }
-        if (e instanceof Expr.Binair b && arithmeticOp(b.op())) {
-            if (eff.typeVan(b.links()).isDatum() || eff.typeVan(b.rechts()).isDatum()) return null;   // datum arithmetic -> Phase F
-            Eval l = lowerVal(b.links(), subject, sVar, globalsOut, accItemsOut, accVarsOut);
-            Eval r = lowerVal(b.rechts(), subject, sVar, globalsOut, accItemsOut, accVarsOut);
-            if (l == null || r == null) return null;
-            Expr.BinOp op = b.op();
-            if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET) {
-                Datatype rt = effType(b.rechts()), lt = effType(b.links());   // ch. 2.10: derived, never the repetition
-                if (valueFactor(rt, lt) != null || exactHerschaalFactoren(rt, lt) != null) {   // a real conversion is due
-                    Eval inner = r; r = (s, g, a) -> { Object x = inner.apply(s, g, a); return x == null ? null : herschaalWaarde(x, rt, lt); };
-                }
-            }
-            Eval lf = l, rf = r;
-            return (s, g, a) -> {
-                Object lv = lf.apply(s, g, a), rv = rf.apply(s, g, a);
-                java.math.MathContext mc = java.math.MathContext.DECIMAL128;   // mirror mvel infix +/-/* (DECIMAL128)
-                return switch (op) {
-                    case PLUS           -> RegelSpraakRuntime.rsNul(lv).add(RegelSpraakRuntime.rsNul(rv), mc);
-                    case MIN            -> RegelSpraakRuntime.rsNul(lv).subtract(RegelSpraakRuntime.rsNul(rv), mc);
-                    case VERMINDERD_MET -> RegelSpraakRuntime.rsVerminderd(lv, rv);
-                    case MAAL           -> RegelSpraakRuntime.rsNul(lv).multiply(RegelSpraakRuntime.rsNul(rv), mc);
-                    case GEDEELD_DOOR   -> RegelSpraakRuntime.rsGedeeld(lv, rv);
-                    default             -> null;
-                };
-            };
-        }
-        if (e instanceof Expr.Afgerond af) {
-            Eval base = lowerVal(af.basis(), subject, sVar, globalsOut, accItemsOut, accVarsOut);
-            if (base == null) return null;
-            int dec = af.decimalen();
-            java.math.RoundingMode mode = afrondMode(af.modus());
-            return (s, g, a) -> RegelSpraakRuntime.rsAfronding(base.apply(s, g, a), dec, mode);
-        }
-        if (e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL && f.argumenten().size() == 1) {
-            Eval rad = lowerVal(f.argumenten().get(0), subject, sVar, globalsOut, accItemsOut, accVarsOut);
-            if (rad == null) return null;
-            return (s, g, a) -> RegelSpraakRuntime.rsWortel(rad.apply(s, g, a));
-        }
-        return null;
     }
 
     /** Build the consequence binding {@code v} (subject, then optional global, then the accumulate result vars) and
@@ -6991,44 +6909,51 @@ public final class ExecModelTranspiler {
             throw new IllegalStateException("objectcreatie " + oc.naam() + ": subjectNaarVeelCreatie(" + eenOpEen
                     + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
 
-        // Lower each toekenning value to a §13.4.6.2 value producer (TkLower). The runtime receiver is the anchor
-        // $subject (body below applies it to args[0]), so the anchor objecttype rides as the VALUE-path subject — a
-        // to-one navigated or §13.4.1 multi-hop chain value resolves against it, mirroring DrlTranspiler.objectCreatie's
-        // waarde(acc, t.waarde(), subject). The chain gate (ketenWaardePad) is set here for the same reason as the
-        // scalar THEN-waarde: a toekenning value IS a consequence value.
-        //   - A NON-aggregation value stays on the existing scalarWaarde WaardeFn path (navigated chains / builtins /
-        //     dimensiecel that lowerVal does not cover; it also restates into the target unit internally).
-        //   - A §5.8 AGGREGATION-valued toekenning ("het aantal elementen van de houder maal <param>", the
-        //     count is NOT an attribute) cannot host its accumulate CE inside a WaardeFn, so it lowers via lowerVal to
-        //     an Eval + its own accumulate CE(s) + result Variable(s) threaded through the consequence's aggsAll[],
-        //     as a rule's value did until its folds became slots (vouwslot). DrlTranspiler.objectCreatie likewise
-        //     collects an embedded aggregation into the "when" via its Acc context.
+        // Lower each toekenning value to a §13.4.6.2 value producer (TkLower), as a rule's value is lowered. The runtime
+        // receiver is the anchor $subject (body below applies it to args[0]), so the anchor objecttype rides as the
+        // VALUE-path subject — a to-one navigated or §13.4.1 multi-hop chain value resolves against it, mirroring
+        // DrlTranspiler.objectCreatie's waarde(acc, t.waarde(), subject). The chain gate (ketenWaardePad) is set here
+        // for the same reason as the scalar THEN-waarde: a toekenning value IS a consequence value. A fold over a set
+        // source anywhere in a toekenning ("10% van de som van …", "(de minimale waarde van …) plus 1", "de eerste van
+        // …") becomes an accumulate on the creation's left side and the value reads its result from a slot (vouwslot),
+        // so every operator of the scalar value applies around it, the empty operand of ch. 1.2 included; the folds of
+        // all toekenningen share one list, so their keys are unique in the creation. Until 2026-10-01 a fold went
+        // through an evaluator of its own (lowerVal), which answered a percentage leeg and bound a minimum or a
+        // maximum without a count, so over an empty source the creation did not fire at all.
         seq = 0;                                                     // aggregatie() names its patterns off seq
         Variable sVar = DSL.declarationOf(subjClass, "$subject");
         List<TkLower> tks = new ArrayList<>();
         Set<String> gNames = new LinkedHashSet<>();
-        List<RuleItemBuilder<?>> accItems = new ArrayList<>();       // all aggregation accumulate CEs, across toekenningen
-        List<Variable> accVars = new ArrayList<>();                  // all aggregation result vars, in order (aggsAll[])
+        List<Vouwslot> slots = new ArrayList<>();
         try {
             ketenWaardePad = true;
+            vouwslots = slots;
+            vouwOnderwerp = sVar;
             for (var t : oc.toekenningen()) {
-                Datatype naar = nieuw.attribuut(t.attribuut());     // the new object's attribute unit — the §4 restate target
-                if (containsAggregatie(t.waarde())) {
-                    List<Variable> tAccVars = new ArrayList<>();     // THIS toekenning's slice of the shared accVars
-                    Eval eval = lowerVal(t.waarde(), subject, sVar, gNames, accItems, tAccVars);
-                    if (eval == null) return skip("objectcreatie (aggregatie-toekenning buiten scope): " + oc.naam());
-                    int off = accVars.size(); accVars.addAll(tAccVars);   // remember offset BEFORE appending
-                    tks.add(new TkLower(t.attribuut(), null, eval, off, tAccVars.size(), effType(t.waarde()), naar, t.kenmerk()));
-                } else {
-                    WaardeFn wf = scalarWaarde(subject, t.waarde());
-                    if (wf == null) return skip("objectcreatie ("
-                            + (navReden != null ? navReden : "toekenning-waarde buiten scope") + "): " + oc.naam());
-                    gNames.addAll(wf.globals());
-                    tks.add(new TkLower(t.attribuut(), wf.fn(), null, 0, 0, effType(t.waarde()), naar, t.kenmerk()));
-                }
+                // A §6.5 division or a §6.6 root raises its Fout through a companion, and a creation has none: the
+                // value would degrade to leeg and the case read consistent where ref turns it inconsistent. Fenced as a
+                // default's consequence is (foutplekSoort).
+                String foutplek = foutplekSoort(t.waarde());
+                if (foutplek != null)
+                    return skip("objectcreatie (kanaal-deponerende toekenning (" + foutplek + "): een creatie heeft geen"
+                            + " begeleider die de Fout meldt (ch. 1.2, ch. 5.6): " + snippet(t.waarde().bron()) + "): " + oc.naam());
+                navReden = null;
+                vouwReden = null;
+                WaardeFn wf = scalarWaarde(subject, t.waarde());
+                if (wf == null) return skip("objectcreatie (" + (navReden != null ? navReden
+                        : vouwReden != null ? vouwReden : "toekenning-waarde buiten scope") + "): " + oc.naam());
+                // ch. 2.4 write boundary: the value lands in the declared unit of the member it is written to, as a
+                // rule's value lands in its doel's. A characteristic's value is a boolean, without a unit.
+                if (!t.kenmerk())
+                    wf = wf.herschaald(effType(t.waarde()), nieuw.attribuut(t.attribuut()),
+                            "een §4 toekenning naar het gecreëerde object");
+                gNames.addAll(wf.globals());
+                tks.add(new TkLower(t.attribuut(), wf.fn(), t.kenmerk()));
             }
         } finally {
             ketenWaardePad = false;
+            vouwslots = null;
+            vouwOnderwerp = null;
         }
         List<String> gList = new ArrayList<>(gNames);
 
@@ -7037,7 +6962,7 @@ public final class ExecModelTranspiler {
         if (oc.voorwaarde() != null) {
             Gate gate = regelVoorwaarde(oc.voorwaarde(), pattern, subject, sVar, subjClass, new LinkedHashSet<>());
             if (gate == null) return skip("objectcreatie ("
-                    + (navReden != null ? navReden : "voorwaarde buiten scope") + "): " + oc.naam());
+                    + (navReden != null ? navReden : voorwaardeSkipReden(oc.voorwaarde())) + "): " + oc.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
@@ -7076,22 +7001,15 @@ public final class ExecModelTranspiler {
 
         final List<TkLower> fTks = tks;
         final String fBackRef = backRef; final String fFwdRef = fwdRef; final Class<?> fNieuwClass = nieuwClass;
-        final List<String> fG = gList; final int nG = gList.size(); final int nAgg = accVars.size();
+        final List<String> fG = gList; final int vouwVanaf = 1 + gList.size();
         java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body = (drools, args) -> {
             Object s = args[0];
             Map<String, BigDecimal> gm = new LinkedHashMap<>();
             vulGlobalMap(gm, fG, args, 1);                           // no BigDecimal cast: the rekendatum slot holds a LocalDate
-            Object[] aggsAll = new Object[nAgg];                     // the aggregation result vars, bound after [subject, globals...]
-            for (int i = 0; i < nAgg; i++) aggsAll[i] = args[1 + nG + i];
+            vulVouwslots(gm, slots, args, vouwVanaf, s);             // the folds, bound after [subject, globals...]
             Object newObj = RegelSpraakRuntime.newInstance(fNieuwClass);
             for (TkLower tk : fTks) {
-                Object v;
-                if (tk.fn() != null) {
-                    v = tk.fn().apply(s, gm);                        // scalar path already restates inside scalarWaarde — do NOT double-restate
-                } else {
-                    Object[] slice = java.util.Arrays.copyOfRange(aggsAll, tk.aggOff(), tk.aggOff() + tk.aggCnt());
-                    v = herschaalWaarde(tk.eval().apply(s, gm, slice), tk.van(), tk.naar());   // §4 EXACT restate the aggregate into the attribuut unit
-                }
+                Object v = tk.fn().apply(s, gm);
                 if (tk.kenmerk()) {
                     // §13.4.6.4 kenmerkwaardetoekenning, ch. 5.5's reading: the mark is SET when the value
                     // evaluates true; false OR EMPTY leaves it unset — equivalent to an absent initialisation
@@ -7130,17 +7048,18 @@ public final class ExecModelTranspiler {
             if (g == null) return skip("objectcreatie (niet-geregistreerde global): " + oc.naam());
             vars.add((Variable) g);
         }
-        vars.addAll(accVars);                                       // [subject, globals..., accVars...] — aggsAll[] reads from args[1+nG..]
+        for (Vouwslot v : slots) vars.addAll(v.variabelen());       // [subject, globals..., per fold its count (when bound) and its result]
         RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), body);
-        if (consequence == null) return skip("objectcreatie (te veel gebonden variabelen): " + oc.naam());
+        if (consequence == null) return skip("objectcreatie (te veel gebonden variabelen: globals en vouwen): " + oc.naam());
 
-        // accumulate CEs join the related elements to $subject, so they follow the subject pattern + idempotence guard
-        // (like the regel path's extra.addAll(accItems) after the doel pattern). Order: pattern; extra; idemGuard; accItems; consequence.
+        // the folds' accumulates join the related elements to $subject, so they follow the subject pattern + idempotence
+        // guard (as a rule's follow its doel pattern). Order: pattern; extra; idemGuard; the folds; consequence.
         // idemGuard is null on the 1:1 path — that guard now rides the subject pattern itself (see above).
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern); items.addAll(extra);
         if (idemGuard != null) items.add(idemGuard);
-        items.addAll(accItems); items.add(consequence);
+        for (Vouwslot v : slots) items.add(v.agg().accItem());
+        items.add(consequence);
         return PatternDSL.rule(kop(oc.naam())).build(items.toArray(new RuleItemBuilder[0]));
     }
 
@@ -7696,10 +7615,11 @@ public final class ExecModelTranspiler {
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)) return "voorwaarde met onleesbaar datum-tijd-lexeem";
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumLexeem)) return "voorwaarde met onleesbaar datum-lexeem";
         // the comparisons of a condition compare numbers with an accumulate's result (aggregatieVoorwaarde); a date
-        // fold is lowered only as a rule's value (vouwslot), and the refusal says so rather than naming a scope
+        // fold is lowered only as a value (vouwslot), and the refusal says so rather than naming a scope
         if (Conditie.bevatOperand(c, e -> e instanceof Expr.Functie f && ordenendeDatumvouw(f)))
             return "voorwaarde met een ordenende vouw over een datumbron (eerste, laatste, minimum of maximum over een"
-                    + " rol), die deze tak alleen in de waarde van een regel vouwt";
+                    + " rol), die deze tak alleen als waarde vouwt (van een regel, de consequentie van een default of de"
+                    + " toekenning van een creatie)";
         return "voorwaarde buiten Phase-B scope";
     }
 
