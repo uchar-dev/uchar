@@ -1,0 +1,315 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "startdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerste late vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal late vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "eerste late vinddag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste late vinddag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De eerste late vinddag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vinddag",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn vinddag"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "sluitdag",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "de sluitdag van de jutter van de Vondst"
+                      },
+                      "path": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "JutterHeeftVondst",
+                          "role": "jutter"
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal late vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal late vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal late vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "vinddag",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn vinddag"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "sluitdag",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "de sluitdag van de jutter van de Vondst"
+                      },
+                      "path": [
+                        {
+                          "node": "RoleBinding",
+                          "factType": "JutterHeeftVondst",
+                          "role": "jutter"
+                        }
+                      ]
+                    },
+                    "source": {
+                      "snippet": "zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "JutterHeeftVondst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "sluitdag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluitdag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De sluitdag van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "startdag",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn startdag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

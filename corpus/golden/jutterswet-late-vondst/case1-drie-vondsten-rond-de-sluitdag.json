@@ -1,0 +1,91 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-02-15"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-20"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "eerste late vinddag",
+      "value": {
+        "date": "2026-03-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "2"
+      }
+    }
+  ]
+}

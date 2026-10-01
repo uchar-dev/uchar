@@ -1,0 +1,145 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-15"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "startdag": {
+            "date": "2026-03-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "eerste late vinddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "sluitdag"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "eerste late vinddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "sluitdag",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J4",
+      "attribute": "eerste late vinddag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "aantal late vondsten",
+      "value": {
+        "number": "0"
+      }
+    }
+  ]
+}

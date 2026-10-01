@@ -1,0 +1,25 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de startdag Datum in dagen;
+    de sluitdag Datum in dagen;
+    de eerste late vinddag Datum in dagen;
+    het aantal late vondsten Numeriek (geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+    de vinddag Datum in dagen;
+
+Feittype JutterHeeftVondst
+    de jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén jutter heeft meerdere vondsten
+
+Regel eerste late vinddag
+    geldig altijd
+        De eerste late vinddag van een Jutter moet berekend worden als de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst.
+
+Regel aantal late vondsten
+    geldig altijd
+        Het aantal late vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst.
+
+Regel sluitdag
+    geldig altijd
+        De sluitdag van een Jutter moet gesteld worden op zijn startdag.

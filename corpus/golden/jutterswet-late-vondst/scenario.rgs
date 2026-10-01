@@ -1,0 +1,44 @@
+Scenario drie vondsten rond de sluitdag
+Gegeven is de volgende situatie:
+een Jutter J
+- de startdag is 01-03-2026
+een Vondst V1
+- de vinddag is 15-02-2026
+- de jutter is J
+een Vondst V2
+- de vinddag is 10-03-2026
+- de jutter is J
+een Vondst V3
+- de vinddag is 20-03-2026
+- de jutter is J
+Met als verwacht resultaat:
+- de sluitdag van J is 01-03-2026
+- de eerste late vinddag van J is 10-03-2026
+- het aantal late vondsten van J is 2
+
+Scenario geen late vondst
+Gegeven is de volgende situatie:
+een Jutter J2
+- de startdag is 01-04-2026
+een Vondst W1
+- de vinddag is 15-03-2026
+- de jutter is J2
+een Vondst W2
+- de vinddag is 01-04-2026
+- de jutter is J2
+een Jutter J3
+een Vondst W3
+- de vinddag is 10-03-2026
+- de jutter is J3
+een Jutter J4
+- de startdag is 01-03-2026
+Met als verwacht resultaat:
+- de sluitdag van J2 is 01-04-2026
+- de eerste late vinddag van J2 is leeg
+- het aantal late vondsten van J2 is 0
+- de sluitdag van J3 is leeg
+- de eerste late vinddag van J3 is leeg
+- het aantal late vondsten van J3 is 0
+- de sluitdag van J4 is 01-03-2026
+- de eerste late vinddag van J4 is leeg
+- het aantal late vondsten van J4 is 0
