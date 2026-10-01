@@ -128,6 +128,9 @@ public final class ExecModelTranspiler {
      *  defaults group under negation, and a rule that reads the characteristic of such a rule under negation in
      *  turn. Keyed by IDENTITY. */
     private final Map<ResolvedRegel, Integer> regelSalience = new java.util.IdentityHashMap<>();
+    /** The salience of an object or fact creation where {@link #groepVolgorde} places it below a producer of what it
+     *  reads that would otherwise fire after it. Keyed by IDENTITY: the creations are records. */
+    private final Map<Object, Integer> creatieSalience = new java.util.IdentityHashMap<>();
     /** The wire's symbolic (feittype, rol) bindings per IR node, riding beside the model
      *  ({@code IrLoader.Loaded.rolBindingen}) because the vendored records cannot carry them: an objectcreatie's
      *  IR-SPEC ch. 3.3 {@code connectingRole} and an aggregation's {@code sourceRole}. Keyed by IDENTITY (the
@@ -328,6 +331,7 @@ public final class ExecModelTranspiler {
             volgorde = List.of();
             groepSalience.clear();
             regelSalience.clear();
+            creatieSalience.clear();
             stapelFout = e;
         }
         // Every construct family runs through meet(), which records the Dekking verdict around the
@@ -7063,7 +7067,11 @@ public final class ExecModelTranspiler {
         if (idemGuard != null) items.add(idemGuard);
         for (Vouwslot v : slots) items.add(v.agg().accItem());
         items.add(consequence);
-        return PatternDSL.rule(kop(oc.naam())).build(items.toArray(new RuleItemBuilder[0]));
+        // below every producer of what it reads that would otherwise fire after it (groepVolgorde)
+        var bouwer = PatternDSL.rule(kop(oc.naam()));
+        Integer salience = creatieSalience.get(oc);
+        if (salience != null) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return bouwer.build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /** §13.4.7 feitcreatie: for each {@code anker} and each {@code doel} ALREADY related to it (the §9.4 path: the
@@ -7191,7 +7199,11 @@ public final class ExecModelTranspiler {
         Block3<org.drools.model.Drools, Object, Object> body = (drools, subj, d) ->
             werkBijReflectief(drools, d, schrijfveld, subj);
         items.add(DSL.on(sVar, (Variable) doelVar).execute(body));
-        return PatternDSL.rule(kop(fc.naam())).attribute(Rule.Attribute.NO_LOOP, true).build(items.toArray(new RuleItemBuilder[0]));
+        // below every producer of what it reads that would otherwise fire after it (groepVolgorde)
+        var bouwer = PatternDSL.rule(kop(fc.naam())).attribute(Rule.Attribute.NO_LOOP, true);
+        Integer salience = creatieSalience.get(fc);
+        if (salience != null) bouwer = bouwer.attribute(Rule.Attribute.SALIENCE, salience);
+        return bouwer.build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /** A null-safe {@code (subject -> value)} reader for a §6.5/§6.6 fout-companion OPERAND, or null when the operand
@@ -8601,11 +8613,14 @@ public final class ExecModelTranspiler {
      *  negated read through a group, which WF-046 and WF-051 exclude, has no order: it is refused by name. */
     private List<Integer> groepVolgorde(List<EffectieveStapel> stapels) {
         List<ResolvedRegel> regels = model.resolvedRegels;
-        int nR = regels.size(), n = nR + stapels.size();
-        // node i < nR is ordinary rule i, node nR + g is group g: what each reads and writes, and where it starts
+        List<dev.uchar.regelspraak.ir.ResolvedObjectCreatie> ocs = model.objectCreaties;
+        List<dev.uchar.regelspraak.ir.ResolvedFeitCreatie> fcs = model.feitCreaties;
+        int nR = regels.size(), n = nR + stapels.size(), nO = ocs.size(), nC = n + nO + fcs.size();
+        // node i < nR is ordinary rule i, node nR + g is group g, node n + j object creation j and node n + nO + k fact
+        // creation k: what each reads and writes, and where it starts
         List<Set<Lezing>> leest = new ArrayList<>();
-        List<Lezing> schrijft = new ArrayList<>();
-        int[] sal = new int[n];
+        List<Set<Lezing>> schrijft = new ArrayList<>();
+        int[] sal = new int[nC];
         for (int i = 0; i < nR; i++) {
             ResolvedRegel r = regels.get(i);
             Expr.AttribuutRef d = r.doel() instanceof Expr.AttribuutRef a ? a : null;
@@ -8616,20 +8631,54 @@ public final class ExecModelTranspiler {
             }
             leest.add(l);
             schrijft.add(d != null && d.attribuut() != null && d.objecttype() != null
-                    ? new Lezing(d.objecttype(), d.attribuut(), false) : null);
+                    ? Set.of(new Lezing(d.objecttype(), d.attribuut(), false)) : Set.of());
             sal[i] = strat.salience(r);
         }
         for (EffectieveStapel st : stapels) {
             Set<Lezing> l = new LinkedHashSet<>();
             for (PrioritizedDefaults lid : st.leden()) verzamelLezingen(lid.defaults(), st.eigenaar(), l);
             leest.add(l);
-            schrijft.add(new Lezing(st.eigenaar(), st.leden().get(0).doel(), false));
+            schrijft.add(Set.of(new Lezing(st.eigenaar(), st.leden().get(0).doel(), false)));
             sal[leest.size() - 1] = defaultsSalience(st.leden(), st.eigenaar());
         }
+        // A creation reads what its condition and its toekenningen read, and the population of its subject; it writes
+        // its toekenningen on the created type, that population and the link (RUNTIME-SEMANTICS ch. 6.1's table).
+        for (dev.uchar.regelspraak.ir.ResolvedObjectCreatie oc : ocs) {
+            Set<Lezing> l = new LinkedHashSet<>(), w = new LinkedHashSet<>();
+            if (oc.subject() != null && oc.nieuwType() != null) {
+                conditieLezingen(oc.voorwaarde(), oc.subject(), false, l);
+                for (var t : oc.toekenningen()) {
+                    exprLezingen(t.waarde(), oc.subject(), false, l);
+                    w.add(new Lezing(oc.nieuwType(), t.attribuut(), false));
+                }
+                l.add(populatie(oc.subject()));
+                w.add(populatie(oc.nieuwType()));
+                String ft = verbindendFeittype(oc);
+                if (ft != null) w.add(relatie(ft));
+            }
+            leest.add(l);
+            schrijft.add(w);
+        }
+        // A fact creation reads its condition (about the anchor, or the target where the check is hosted there), the
+        // population of its anchor and the links of every hop; it writes its link and the target's population.
+        for (dev.uchar.regelspraak.ir.ResolvedFeitCreatie fc : fcs) {
+            Set<Lezing> l = new LinkedHashSet<>(), w = new LinkedHashSet<>();
+            if (fc.anker() != null) {
+                conditieLezingen(fc.voorwaarde(), fc.anker(), false, l);
+                if (fc.doel() != null) conditieLezingen(fc.voorwaarde(), fc.doel(), false, l);
+                l.add(populatie(fc.anker()));
+                for (var stap : fc.tussenstappen()) if (stap.rolBinding() != null) l.add(relatie(stap.rolBinding().feittype()));
+                if (fc.joinRol() != null) l.add(relatie(fc.joinRol().feittype()));
+                if (fc.feittype() != null) w.add(relatie(fc.feittype()));
+                if (fc.doel() != null) w.add(populatie(fc.doel()));
+            }
+            leest.add(l);
+            schrijft.add(w);
+        }
         List<List<Integer>> producenten = new ArrayList<>();
-        for (int c = 0; c < n; c++) {
+        for (int c = 0; c < nC; c++) {
             List<Integer> p = new ArrayList<>();
-            for (int q = 0; q < n; q++) if (q != c && leestWat(leest.get(c), schrijft.get(q))) p.add(q);
+            for (int q = 0; q < nC; q++) if (q != c && leestIets(leest.get(c), schrijft.get(q))) p.add(q);
             producenten.add(p);
         }
         // per rule, the producers of a characteristic it reads under negation, as the stratification reads it: a
@@ -8646,8 +8695,8 @@ public final class ExecModelTranspiler {
             }
             for (int q = 0; q < nR; q++) {
                 ResolvedRegel w = regels.get(q);
-                if (q != c && w.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING && schrijft.get(q) != null
-                        && strat.leestOntkend(r, schrijft.get(q).houder(), schrijft.get(q).naam())) p.add(q);
+                if (q == c || w.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING) continue;
+                for (Lezing k : schrijft.get(q)) if (strat.leestOntkend(r, k.houder(), k.naam())) p.add(q);
             }
             ontkendVan.add(p);
         }
@@ -8661,16 +8710,24 @@ public final class ExecModelTranspiler {
                 vouwOntkend(r.waarde(), d.objecttype(), false, false, neg);
             }
             List<Integer> p = new ArrayList<>();
-            for (int q = 0; q < n; q++) if (q != c && leestWat(neg, schrijft.get(q))) p.add(q);
+            for (int q = 0; q < nC; q++) if (q != c && leestIets(neg, schrijft.get(q))) p.add(q);
             vouwOntkendVan.add(p);
+        }
+        // every node a node waits on, transitively; a creation and a producer that also waits on it lie on one cycle
+        List<Set<Integer>> bereik = new ArrayList<>();
+        for (int c = 0; c < nC; c++) {
+            Set<Integer> b = new LinkedHashSet<>(producenten.get(c));
+            java.util.ArrayDeque<Integer> rij = new java.util.ArrayDeque<>(b);
+            while (!rij.isEmpty()) for (int v : producenten.get(rij.poll())) if (b.add(v)) rij.add(v);
+            bereik.add(b);
         }
         int[] band = sal.clone();
         for (int ronde = 0; ; ronde++) {
             // the band: each node no higher than its own salience or any producer's band
-            for (int c = 0; c < n; c++) band[c] = Math.min(band[c], sal[c]);
+            for (int c = 0; c < nC; c++) band[c] = Math.min(band[c], sal[c]);
             for (boolean bewoog = true; bewoog; ) {
                 bewoog = false;
-                for (int c = 0; c < n; c++)
+                for (int c = 0; c < nC; c++)
                     for (int q : producenten.get(c))
                         if (band[q] < band[c]) { band[c] = band[q]; bewoog = true; }
             }
@@ -8687,8 +8744,19 @@ public final class ExecModelTranspiler {
             for (int c = 0; c < nR; c++)
                 for (int q : vouwOntkendVan.get(c))
                     if (band[q] - 1 < sal[c]) { sal[c] = band[q] - 1; veranderd = true; }
+            // A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and fires once per subject, so it goes after
+            // every node it waits on: strictly below it, or level with it and added before it. Drools fires one
+            // salience in the order the rules were added: the ordinary rules, then the object creations, then the fact
+            // creations, each in declared order, then the groups. A producer on a cycle with the creation (a recursive
+            // creation, ch. 5.5) is ordered by its generations instead.
+            for (int c = n; c < nC; c++)
+                for (int q : bereik.get(c)) {
+                    if (q == c || bereik.get(q).contains(c)) continue;
+                    boolean ervoor = sal[q] > sal[c] || (sal[q] == sal[c] && laadrang(q, nR, n, nC) < laadrang(c, nR, n, nC));
+                    if (!ervoor) { sal[c] = sal[q] - 1; veranderd = true; }
+                }
             if (!veranderd) break;
-            if (ronde > 2 * n + 2)
+            if (ronde > 2 * nC + 2)
                 throw new DefaultsOnvertaalbaar("een ontkende lezing in een kring door een defaultsgroep of een vouw in een"
                         + " voorwaarde: de regels en groepen op die kring hebben geen volgorde (WF-046, WF-051)");
         }
@@ -8701,7 +8769,7 @@ public final class ExecModelTranspiler {
             Set<Integer> gezien = new java.util.HashSet<>(rij);
             while (!rij.isEmpty()) {
                 int q = rij.poll();
-                if (q >= nR && q != nR + g) groepen.add(q - nR);
+                if (q >= nR && q < n && q != nR + g) groepen.add(q - nR);
                 for (int v : producenten.get(q)) if (gezien.add(v)) rij.add(v);
             }
             wachtOp.add(groepen);
@@ -8722,10 +8790,38 @@ public final class ExecModelTranspiler {
         }
         groepSalience.clear();
         regelSalience.clear();
+        creatieSalience.clear();
         for (int g = 0; g < nG; g++) groepSalience.put(stapels.get(g), sal[nR + g]);
         for (int i = 0; i < nR; i++)
             if (sal[i] != strat.salience(regels.get(i))) regelSalience.put(regels.get(i), sal[i]);
+        for (int j = 0; j < nO; j++) if (sal[n + j] != 0) creatieSalience.put(ocs.get(j), sal[n + j]);
+        for (int k = 0; k < fcs.size(); k++) if (sal[n + nO + k] != 0) creatieSalience.put(fcs.get(k), sal[n + nO + k]);
         return volgorde;
+    }
+
+    /** Where node {@code q} of {@link #groepVolgorde} is added to the model: the ordinary rules, then the object and the
+     *  fact creations in declared order, then the groups. */
+    private static int laadrang(int q, int nR, int n, int nC) {
+        return q < nR ? q : q >= n ? q - n + nR : q - nR + nR + (nC - n);
+    }
+
+    /** The fact type whose link an object creation writes: its connectingRole binding, else the one fact type that
+     *  relates its subject and its created type (null where there is none or more than one, which the creation itself
+     *  refuses or faults on). */
+    private String verbindendFeittype(dev.uchar.regelspraak.ir.ResolvedObjectCreatie oc) {
+        RegelSpraakModel.RolBindingRef vr = rolBindingen.get(oc);
+        if (vr != null) return vr.feittype();
+        String gevonden = null;
+        for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
+            List<RegelSpraakModel.Rol> r = ft.rollen;
+            boolean verbindt = r.size() == 2
+                    && (oc.subject().naam.equalsIgnoreCase(r.get(0).objecttypeNaam()) && oc.nieuwType().naam.equalsIgnoreCase(r.get(1).objecttypeNaam())
+                        || oc.subject().naam.equalsIgnoreCase(r.get(1).objecttypeNaam()) && oc.nieuwType().naam.equalsIgnoreCase(r.get(0).objecttypeNaam()));
+            if (!verbindt) continue;
+            if (gevonden != null) return null;
+            gevonden = ft.naam;
+        }
+        return gevonden;
     }
 
     /** What a fold in a rule's condition or value reads negatively, in the polarity of the verifier's dependency walk
@@ -8816,13 +8912,33 @@ public final class ExecModelTranspiler {
      *  {@code ver} marks a read beyond the subject. A write is the same triple, on the type written. */
     private record Lezing(Objecttype houder, String naam, boolean ver) {}
 
-    /** Whether {@code geschreven} is among {@code lezingen}: the same name on the same type, a subtype or a supertype. */
+    /** Whether {@code geschreven} is among {@code lezingen}: the same name on the same type, a subtype or a supertype;
+     *  a link ({@link #relatie}) by its fact type alone. */
     private static boolean leestWat(Set<Lezing> lezingen, Lezing geschreven) {
         if (geschreven == null) return false;
         String naam = defaultsNorm(geschreven.naam());
         for (Lezing l : lezingen)
-            if (defaultsNorm(l.naam()).equals(naam) && verwant(l.houder(), geschreven.houder())) return true;
+            if (defaultsNorm(l.naam()).equals(naam)
+                    && (l.houder() == null ? geschreven.houder() == null : verwant(l.houder(), geschreven.houder()))) return true;
         return false;
+    }
+
+    /** Whether any of {@code geschreven} is among {@code lezingen}. */
+    private static boolean leestIets(Set<Lezing> lezingen, Set<Lezing> geschreven) {
+        for (Lezing w : geschreven) if (leestWat(lezingen, w)) return true;
+        return false;
+    }
+
+    /** The population of {@code type}: a fold or a quantifier over its instances and a creation's subject iteration read
+     *  it, a creation of it writes it. The name carries a character no member name has. */
+    private static Lezing populatie(Objecttype type) {
+        return new Lezing(type, "#populatie", true);
+    }
+
+    /** The links of a fact type: a fold over one of its roles, a navigation through it and a fact creation's hops read
+     *  them, a creation that links over it writes them. Keyed on the fact type alone, without a holder. */
+    private static Lezing relatie(String feittype) {
+        return new Lezing(null, "#rol:" + feittype, true);
     }
 
     private static boolean verwant(Objecttype a, Objecttype b) {
@@ -8848,6 +8964,8 @@ public final class ExecModelTranspiler {
                 KenmerkHop hop = kenmerkHop(k, subject);
                 uit.add(hop != null ? new Lezing(hop.doel(), k.kenmerk(), true)
                         : new Lezing(subject, k.kenmerk(), ver || genavigeerd(k)));
+                List<RegelSpraakModel.RolBindingRef> pad = navigatieBindingen.get(k);
+                if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
             }
             case Conditie.Samengesteld sam -> { for (Conditie d : sam.onderdelen()) conditieLezingen(d, subject, ver, uit); }
             case Conditie.Vergelijking v -> { exprLezingen(v.links(), subject, ver, uit); exprLezingen(v.rechts(), subject, ver, uit); }
@@ -8856,6 +8974,9 @@ public final class ExecModelTranspiler {
             case Conditie.Kwantorvouw kv -> {
                 conditieLezingen(kv.filter(), kv.elementObjecttype(), true, uit);
                 conditieLezingen(kv.toets(), kv.elementObjecttype(), true, uit);
+                if (kv.elementObjecttype() != null) uit.add(populatie(kv.elementObjecttype()));
+                if (kv.bronRol() != null) uit.add(relatie(kv.bronRol().feittype()));
+                if (kv.bronPad() != null) for (RegelSpraakModel.RolBindingRef stap : kv.bronPad()) uit.add(relatie(stap.feittype()));
             }
             default -> { }
         }
@@ -8868,6 +8989,8 @@ public final class ExecModelTranspiler {
             if (a.attribuut() == null) return;
             boolean verweg = ver || !ongenavigeerd(a) || (a.objecttype() != null && a.objecttype() != subject);
             uit.add(new Lezing(a.objecttype() != null ? a.objecttype() : subject, a.attribuut(), verweg));
+            List<RegelSpraakModel.RolBindingRef> pad = navigatieBindingen.get(a);
+            if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
         } else if (e instanceof Expr.Binair b) { exprLezingen(b.links(), subject, ver, uit); exprLezingen(b.rechts(), subject, ver, uit); }
         else if (e instanceof Expr.Afgerond af) { exprLezingen(af.basis(), subject, ver, uit); }
         else if (e instanceof Expr.Begrensd bg) {
@@ -8876,6 +8999,13 @@ public final class ExecModelTranspiler {
             boolean vouw = isInstantievouw(f);
             Objecttype elem = vouw && f.elementObjecttype() != null ? f.elementObjecttype() : subject;
             for (Expr a : f.argumenten()) exprLezingen(a, elem, ver || vouw, uit);
+            if (vouw && f.elementObjecttype() != null) {
+                uit.add(populatie(f.elementObjecttype()));
+                RegelSpraakModel.RolBindingRef bron = rolBindingen.get(f);
+                if (bron != null) uit.add(relatie(bron.feittype()));
+                List<RegelSpraakModel.RolBindingRef> pad = bronPaden.get(f);
+                if (pad != null) for (RegelSpraakModel.RolBindingRef stap : pad) uit.add(relatie(stap.feittype()));
+            }
             if (f.filter() != null) conditieLezingen(f.filter(), elem, true, uit);
             exprLezingen(f.leegwaarde(), subject, ver, uit);
         } else if (e instanceof Expr.DimensieCel dc) { exprLezingen(dc.attribuut(), subject, ver, uit); }
