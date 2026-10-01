@@ -135,13 +135,13 @@ the fact creations take the same test (golden `jutterswet-meldingsketen`, witnes
 Two limits remain, measured 2026-09-28 with `ref` and clingo as the arbiters. The DRL-text branch still writes such
 a test into the subject's pattern, so there the rule never fires on a value derived later on the reached object, or
 fires on the value the object held at insertion (`anchor/jutterswet-kustwacht`, pinned in gate 12's DRL list). A test
-that holds on an empty value, such as a leeg test on a derived attribute, fires on the transient leeg when its rule
-is declared before the rule that writes the value, and the write stays; this holds for an own operand, one read over a
+that holds on an empty value, such as a leeg test on a derived attribute, fired on the transient leeg when its rule
+was declared before the rule that writes the value, and the write stayed; this held for an own operand, one read over a
 role and one over a chain of roles alike (IR-SPEC ch. 5.5, the order-dependent form), while a negated characteristic
-check is stratified and is not affected. The same test inside a fold, in the subselection of a fold or the matrix of a
-quantifier, no longer fires on the transient in the exec-model branch since 2026-09-30: such a rule is placed below the
-writers of what the test reads (the section on a fold whose subselection tests a value derived later); a test outside a
-fold keeps this limit.
+check is stratified and was not affected. The exec-model branch places such a rule after the writers of what the test
+reads: inside a fold, in the subselection of a fold or the matrix of a quantifier, since 2026-09-30 (the section on a
+fold whose subselection tests a value derived later), and anywhere in the condition since 2026-10-01 (the section on a
+reader after the writers of what it reads). The DRL-text branch keeps this limit.
 A condition that reads through a chain of two or more to-one roles takes a far-side join on every object the chain
 passes, in order, and its test goes on the subject bound again after the last join (golden `jutterswet-havenketen`,
 witness `KetenVoorwaardeWitnessTest`, measured 2026-10-01): a relation in the middle of the chain that a fact creation
@@ -264,16 +264,53 @@ links of its hops and writes its link. A creation goes below every node it waits
 — a defaults group, a rule the stratification places lower, a creation declared after it, a fact creation — and a
 recursive creation stays on its generations (ch. 5.5). Before, it fired at salience 0 before such a writer and wrote
 leeg or 0 (`verwacht 15, werkelijk leeg`, `verwacht 1, werkelijk 0`). Witness `CreatieVolgordeWitnessTest`; no golden
-changes its salience. What remains, measured 2026-10-01: a reader of a creation's output that writes irrevocably, such
-as a characteristic assignment over a count of the created objects, can fire before the creation (`kenmerk
-onafgerekend: verwacht afwezig, werkelijk aanwezig`, before and after this change), since the stratification lowers a
-rule only below the writers of a characteristic it reads negated and of what a fold in it reads negatively.
+changes its salience. A reader of a creation's output that writes irrevocably, such as a characteristic assignment over
+a count of the created objects or over the links a fact creation lays, and a leeg test on what a creation writes, fired
+before the creation (`kenmerk onafgerekend: verwacht afwezig, werkelijk aanwezig`); since the same day such a reader
+waits on the creation (the section on a reader after the writers of what it reads).
 
 The DRL-text branch, unchanged otherwise: it orders no creation (a later creation and a fact creation give the same 0;
 it refuses a document with a defaults group), markers a date fold in a toekenning (`TODO aggregatie EERSTE`, `TODO
 datum-rekenkunde`), leaves the creation unfired over an empty source where a toekenning holds a minimum or maximum
 (`verwacht 1, werkelijk leeg`), writes a toekenning without restating it into the member's unit (`verwacht 2000,
 werkelijk 2`), and reads a division by leeg in a toekenning as consistent.
+
+## Recorded: a reader after the writers of what it reads
+
+A read under a leeg or gevuld test is a negative edge in either polarity, and every read but a characteristic's by a
+form whose write is irrevocable — a characteristic assignment, a consistency rule, a creation — is stratum-strict
+(RUNTIME-SEMANTICS ch. 6.1): such a reader evaluates strictly above the producers of what it reads. Measured 2026-10-01
+with `ref` and clingo as the arbiters, the exec-model branch fired such a reader on the transient when its writer came
+later on the agenda — a rule declared after it, a defaults group, a creation, an allocation (all added to the model
+after the ordinary rules) — and the write stayed, for an own operand, one role away and over a chain alike: an attribute
+written where `ref` and clingo answer leeg (`verwacht leeg, werkelijk 2026-09-15`); a characteristic attributed over a
+leeg test, over a comparison with a value derived later, or over the number of created objects or of the links a fact
+creation lays (`kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig`); a violation a consistency rule reported over
+a value a group or a creation writes, and the §6.5 companion of a rule under a leeg test (`verwacht consistent,
+werkelijk inconsistent`). `ExecModelTranspiler.groepVolgorde` now places such a rule after every writer of what it reads
+negatively or stratum-strict and every node that writer waits on: strictly below it, or level with it and added before
+the rule, since Drools fires one salience in the order the rules were added. The writers are the ordinary rules, the
+defaults groups, the object and fact creations and the allocations; an allocation keeps its own place. A consistency
+rule takes the same placement, and the companions of a rule (§6.5 division, §6.6 root, leeg startpunt, gevuurd) take the
+salience of their rule, since they repeat its condition. A leeg or gevuld test on what a writer on a cycle with the rule
+writes, its own target included, has no order (WF-046) and the rule is refused by name (`een leeg- of gevuld-toets op …
+een kring zonder volgorde (WF-046)`); a stratum-strict read on a cycle through a recursive creation keeps its place, its
+generations order it (ch. 5.5). Witness `LezerOnderSchrijverWitnessTest`. No golden changes its status; ten get a lower
+salience for such a reader, the rules and the consistency rules the opgave marker generates among them.
+
+What remains, measured the same day. A comparison in the condition of a rule that writes an attribute reads positively
+(ch. 6.1), and the branch does not order it: with "… indien de afgeleide vergunningsdag van de jutter van de Vondst
+ongelijk is aan 01-03-2026" before its writer the branch writes the vinddag where clingo answers leeg and `ref` writes
+it as well (the recorded residual of ch. 6.1); with two operands derived later ("… ongelijk is aan zijn afgeleide
+controledag") `ref` and clingo both answer leeg and the branch writes the vinddag, since it evaluates the condition
+again after the first writer and before the second. Whether such a read becomes a negative edge is the norm question
+that ch. 6.1 leaves open. An allocation whose source a defaults group writes faults in `ref` (`empty source amount`) and
+in this branch (a ConsequenceException on the empty source) where clingo divides. The DRL-text branch keeps its own
+order: a leeg test, and a comparison in a characteristic assignment, declared before its writer act on the transient; a
+test one role away does not see the far side (the section on a condition that reads through a role); a count of created
+objects or of the links a fact creation lays reads 0, since it orders no creation; a leeg test on what an allocation
+writes fires first; a condition over two roles is refused by its marker and a document with a defaults group at the
+door. A consistency rule over a creation's link plays there.
 
 ## Recorded: a fold whose subselection tests a value derived later
 
@@ -295,10 +332,12 @@ every rule and group that writes what a fold in its condition or value reads neg
 (`vouwOntkend`). Each half alone leaves measured forms wrong: the order alone a comparison whose element leaves the
 subselection after the rule fired (an initialisatie, then a berekening), the revision alone the condition, the emptied
 source and what reads the value. Golden `jutterswet-zwaarste-vondst`, witness `VouwfilterLatereAfleidingWitnessTest`.
-Limits that remain, measured 2026-09-30 with `ref` and clingo as the arbiters: a leeg or gevuld test outside a fold, see
-the section on a condition that reads through a role; a quantifier over two roles with a subselection, which the loader
-refuses in both branches (`Kwantorvouw.bronPad`) and the RegelSpraak frontend does not read. Not measured: a writer
-outside the rules and the groups (an allocation, a creation), which the order does not see, and a sum over a temporal
-attribute of a set with a subselection, which keeps NO_LOOP. The DRL-text branch, whose rules watch what they read,
-revises a fold in a value, but fires a condition on the transient (`verwacht leeg, werkelijk 1`), keeps a maximum whose
-subselection emptied (`verwacht leeg, werkelijk 20`), and refuses a document with a defaults group.
+Limits that remain, measured 2026-09-30 with `ref` and clingo as the arbiters: a quantifier over two roles with a
+subselection, which the loader refuses in both branches (`Kwantorvouw.bronPad`) and the RegelSpraak frontend does not
+read. A leeg or gevuld test outside a fold takes the same order since 2026-10-01, and the creations (2026-10-01) and the
+allocations (the same day) are writers the order sees: "het aantal bergers van de Berging die aan de volgende voorwaarde
+voldoen: zijn bergingsaandeel is leeg groter is dan 0" waited for the allocation only since then (`verwacht leeg,
+werkelijk 1` before); see the section on a reader after the writers of what it reads. Not measured: a sum over a
+temporal attribute of a set with a subselection, which keeps NO_LOOP. The DRL-text branch, whose rules watch what they
+read, revises a fold in a value, but fires a condition on the transient (`verwacht leeg, werkelijk 1`), keeps a maximum
+whose subselection emptied (`verwacht leeg, werkelijk 20`), and refuses a document with a defaults group.
