@@ -660,7 +660,7 @@ class OpgaveMarkeringTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', value = {
             "Tekst                                   | Tekst",
-            "Numeriek (geheel getal) met eenheid €  | Numeriek met eenheid €",
+            "Numeriek (geheel getal) met eenheid €/jr | Numeriek met eenheid €/jr",
             "Percentage (getal met 2 decimalen)      | Percentage",
             "Boolean                                 | Boolean",
             "Datum en tijd in millisecondes          | Datum-tijd"
@@ -676,9 +676,9 @@ class OpgaveMarkeringTest {
             """.formatted(datatype));
         Diagnostic d = enigeFout(m);
         assertEquals("attribuut 'opgave' van Vondst: '(mag opgegeven worden)' staat alleen op een Numeriek attribuut "
-                + "zonder eenheid of een Datum in dagen, en 'opgave' is " + genoemd + " — een defaults-groep op een "
-                + "attribuut van een ander datatype of met een eenheid is nog niet in alle drie de uitvoerders gemeten "
-                + "(dialect §7)", d.message());
+                + "zonder eenheid of met één eenheid, of op een Datum in dagen, en 'opgave' is " + genoemd + " — een "
+                + "defaults-groep op een attribuut van een ander datatype of met een samengestelde eenheid is nog niet in "
+                + "alle drie de uitvoerders gemeten (dialect §7)", d.message());
         assertEquals(5, d.line());
     }
 
