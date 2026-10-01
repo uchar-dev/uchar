@@ -8721,8 +8721,8 @@ public final class ExecModelTranspiler {
         }
         // An allocation reads its source, its condition on the source, the members its ratio, maximum and order name on
         // the recipients, their population and its link; it writes the recipients' target and the source's remainder
-        // (RUNTIME-SEMANTICS ch. 6.1's table). It keeps its own place, an attribute write revised when what it reads
-        // changes; it is a node so that a reader of what it writes waits on it.
+        // (RUNTIME-SEMANTICS ch. 6.1's table). It keeps its own place, an attribute writer on positive edges; it is a node
+        // so that a reader of what it writes waits on it.
         for (ResolvedVerdeling v : vds) {
             Set<Lezing> l = new LinkedHashSet<>(), w = new LinkedHashSet<>();
             if (v.bronType() != null && v.doelType() != null) {
@@ -8984,7 +8984,8 @@ public final class ExecModelTranspiler {
      *  member that joins the range can cost the verdict; every read in its matrix under geen, ten hoogste and precies; and
      *  both under a negation-like composite ({@code neg}). {@code heel}: the part being walked is negative as a whole.
      *  Only a read inside a fold is collected ({@code inVouw}); a leeg or gevuld test anywhere is collected by
-     *  {@link #leegLezingen(Conditie, Objecttype, Set)} as well, which orders by the writer's band and load order.
+     *  {@link #leegLezingen(Conditie, Objecttype, Set)} as well, which places the rule after the writer and what it waits
+     *  on by salience and load order.
      *
      *  <p>{@link #groepVolgorde} places the rule below the writers of what this collects, where {@code ref/} and the ASP
      *  backend evaluate it too. In a condition the fold cannot be revised once its rule has written: a verdict that holds
