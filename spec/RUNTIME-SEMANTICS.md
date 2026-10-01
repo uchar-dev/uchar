@@ -3577,6 +3577,26 @@ implements:
    channel. Engine-internal control facts (creation markers and kin) are
    not part of the observable outcome.
 
+**Divergence by two writers of one target.** Two rules that write one
+attribute and whose conditions both hold on one instance demand, by
+ch. 5.1, that the attribute equal each of their values. Where the values
+differ — a writer that fires with a leeg value writes leeg (ch. 1.2g),
+except a standing writer (ch. 7.8), which writes nothing on leeg — no
+fact base satisfies both equations: there is no fixpoint, and the session
+faults. The fault names the writers, the values they write and the
+attribute and instance; it names no cycle, since the dependency graph has
+none (WF-045). Where at most one of the conditions holds, or the writers
+write the same value, the equations hold together and the document plays.
+WF-079 refuses two unconditional writers statically; a pair with
+conditions is well-formed and is decided here. Worked example
+(`corpus/rood/jutterswet-dubbele-melding`,
+`corpus/golden/jutterswet-melding-naar-aard`): "De meldingsdatum van een
+Vondst moet gesteld worden op zijn vinddatum indien zijn vinddatum gevuld
+is" beside the same rule on its aanspoeldatum; V with vinddatum 04-03-2026
+and aanspoeldatum 01-03-2026 faults, naming both rules and the values
+2026-03-04 and 2026-03-01; V with only one of the two dates gets that
+date; V with both dates on 02-03-2026 gets **02-03-2026**.
+
 `Unresolved` nodes take no part in evaluation and must survive into the
 report (WF-044); an engine that reaches one fails that rule's evaluation
 observably rather than guessing.

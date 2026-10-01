@@ -2513,7 +2513,10 @@ literal `{"boolean": true}` since L4.)
   WF-079 refuses it ahead of the differential square. The chain pair
   behaves the same way (`corpus/negatief/wf079-keten-kale-schrijvers`): ref
   and the Drools exec-model branch find no fixpoint, clingo derives two
-  values, and the DRL-text branch answers by document order. **The
+  values, and the DRL-text branch answers by document order. Since
+  2026-10-01 all four executors fault such a pair by name where both
+  writers apply to one instance (`RUNTIME-SEMANTICS.md` ch. 5.7); WF-079
+  keeps refusing the unconditional pair ahead of evaluation. **The
   initialisation arm.** A (type, attribute) target that carries no defaults
   MUST NOT be written by two **initialisation** versions (`initialisation`
   true) of different forms whose validities overlap either — conditional or
@@ -8940,6 +8943,17 @@ verifier-clean and replay through all three executors. WF-079's chain
 clause (ch. 3.1) asks exactly that of two bare computing versions: outside
 the gate of `RUNTIME-SEMANTICS.md` ch. 7.10 both write a subtype instance,
 inside it the fold makes them one.
+
+For two writers that carry a condition the question is asked at
+evaluation, not statically: two conditional computing writers of one
+target that survive into one instance's effective stack — on one type, or
+on a type and its ancestor outside the gate of `RUNTIME-SEMANTICS.md`
+ch. 7.10 — are well-formed, and where both conditions hold on that
+instance with different values the session faults as a divergence
+(`RUNTIME-SEMANTICS.md` ch. 5.7). Every executor names the two writers and
+the target: `ref/` when its pass budget runs out, the ASP backend in a
+`viol/2` witness per pair of writers that share a concrete type, the
+Drools replay at its fire cap.
 
 - **WF-050** A defaults group MUST carry at least one default and MUST
   target exactly one of a characteristic or an attribute, resolving on its

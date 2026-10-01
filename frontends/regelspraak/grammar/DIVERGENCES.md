@@ -1523,10 +1523,11 @@ writer on T, the grandchild under the tree, the unordered block — the document
 without the marker, measured beside it, gives X the same values where no
 opgave is given. Two plain
 conditional writers on T and on a subtype play where one of them applies to an
-instance; where both apply to one instance, ref and the Drools exec branch
-report no fixpoint and clingo gives the target two values, with and without the
-marker: two computing rules on one target are agenda order (ch. 7.7), and the
-marker does not choose between them. Two unconditional writers on T and on a
+instance; where both apply to one instance with different values, all four
+executors fault by name (two writers of one target, RUNTIME-SEMANTICS ch. 5.7;
+since 2026-10-01 — before, ref and the Drools exec branch reported no fixpoint
+without naming them and clingo gave the target two values), with and without
+the marker: the marker does not choose between them. Two unconditional writers on T and on a
 subtype are refused by the verifier under WF-079, on `berekende X` with the
 marker and on X without it. An `Afwijking van` on T's rule written for the
 subtype is refused by the target refusal of §4, with and without the marker.

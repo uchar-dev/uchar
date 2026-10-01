@@ -503,3 +503,32 @@ toelating van de golden (`scripts/admit.sh`).
     85982ee1 README's: twee schrijvers van één doel in ref, clingo en Drools
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `4aa46870` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates15/`. Alle zestien exit 0: gate 8 42 rode cases, 84
+fragmenten; gate 10 JUnit 1008, 116 rgs-goldens; gate 12 `check-drools:
+PASS`, played 234 (pin 234), DRL 192 (pin 192), JUnit 985; gate 16 23
+scenario-goldens, 82 casebestanden. De fix gelezen in de vier uitvoerders:
+ref speelt bij een opgeraakt budget twee passen vorm voor vorm na en leest
+de schrijfacties van de wereld af (`World.changed_attrs`), zodat de zin de
+schrijvers, hun waarden, het attribuut en de instantie noemt; clingo leidt
+per medeschrijver `wval/4` en `wvuurt/3` af en per paar met een gedeeld
+concreet type één `viol/2`, met de staande schrijver die op leeg niets
+schrijft; de Drools-replay houdt in `Schrijfconflict` de laatste vuringen
+bij en noemt bij de vuurgrens de schrijvers, en de DRL-teksttak kijkt naar
+haar doel waar een andere regel het ook schrijft. Afwijking 1 aanvaard (de
+teksttak geeft de luide fout, en de oude README-hoek q1 valt eronder);
+afwijking 2 aanvaard (twee stille foute antwoorden van vóór de kaart in
+clingo op de typeketen hersteld, ref als maat); afwijkingen 3–5 aanvaard.
+De voorgestelde registertekst is in dit landingscommit gezet in
+`spec/RUNTIME-SEMANTICS.md` ch. 5.7, `spec/IR-SPEC.md` ch. 6.1 en ch. 3.1
+(WF-079), en open punt 5 is meegenomen: `frontends/regelspraak/grammar/
+DIVERGENCES.md` §7 zegt nu dat alle vier uitvoerders benoemd falen. Open
+punt 1 (de statische WF-regel) blijft een normvraag voor de eigenaar; open
+punten 2–4 zijn aantekeningen (de Drools-takken noemen bij drie schrijvers
+ten minste twee; ref noemt geen schrijvers van een tijdlijndoel; het
+staande domein per concreet type is een specvraag); geen kaart.
+Commitkoppen tot 73 tekens aanvaard (ff-only, geen rebase).
