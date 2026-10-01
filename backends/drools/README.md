@@ -288,29 +288,31 @@ leeg test, over a comparison with a value derived later, or over the number of c
 creation lays (`kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig`); a violation a consistency rule reported over
 a value a group or a creation writes, and the §6.5 companion of a rule under a leeg test (`verwacht consistent,
 werkelijk inconsistent`). `ExecModelTranspiler.groepVolgorde` now places such a rule after every writer of what it reads
-negatively or stratum-strict and every node that writer waits on: strictly below it, or level with it and added before
-the rule, since Drools fires one salience in the order the rules were added. The writers are the ordinary rules, the
-defaults groups, the object and fact creations and the allocations; an allocation keeps its own place. A consistency
-rule takes the same placement, and the companions of a rule (§6.5 division, §6.6 root, leeg startpunt, gevuurd) take the
-salience of their rule, since they repeat its condition. A leeg or gevuld test on what a writer on a cycle with the rule
-writes, its own target included, has no order (WF-046) and the rule is refused by name (`een leeg- of gevuld-toets op …
-een kring zonder volgorde (WF-046)`); a stratum-strict read on a cycle through a recursive creation keeps its place, its
-generations order it (ch. 5.5). Witness `LezerOnderSchrijverWitnessTest`. No golden changes its status; ten get a lower
-salience for such a reader, the rules and the consistency rules the opgave marker generates among them.
+negatively or stratum-strict, or in its condition, and every node that writer waits on: strictly below it, or level with
+it and added before the rule, since Drools fires one salience in the order the rules were added. The writers are the
+ordinary rules, the defaults groups, the object and fact creations and the allocations; an allocation keeps its own
+place. A consistency rule takes the same placement, and the companions of a rule (§6.5 division, §6.6 root, leeg
+startpunt, gevuurd) take the salience of their rule, since they repeat its condition. A leeg or gevuld test on what a
+writer on a cycle with the rule writes, its own target included, has no order (WF-046) and the rule is refused by name
+(`een leeg- of gevuld-toets op … een kring zonder volgorde (WF-046)`); a stratum-strict read on a cycle through a
+recursive creation keeps its place, its generations order it (ch. 5.5). Witness `LezerOnderSchrijverWitnessTest`. No
+golden changes its status; ten get a lower salience for such a reader, the rules and the consistency rules the opgave
+marker generates among them.
 
-What remains, measured the same day. A comparison in the condition of a rule that writes an attribute reads positively
-(ch. 6.1), and the branch does not order it: with "… indien de afgeleide vergunningsdag van de jutter van de Vondst
-ongelijk is aan 01-03-2026" before its writer the branch writes the vinddag where clingo answers leeg and `ref` writes
-it as well (the recorded residual of ch. 6.1); with two operands derived later ("… ongelijk is aan zijn afgeleide
-controledag") `ref` and clingo both answer leeg and the branch writes the vinddag, since it evaluates the condition
-again after the first writer and before the second. Whether such a read becomes a negative edge is the norm question
-that ch. 6.1 leaves open. An allocation whose source a defaults group writes faults in `ref` (`empty source amount`) and
-in this branch (a ConsequenceException on the empty source) where clingo divides. The DRL-text branch keeps its own
-order: a leeg test, and a comparison in a characteristic assignment, declared before its writer act on the transient; a
-test one role away does not see the far side (the section on a condition that reads through a role); a count of created
-objects or of the links a fact creation lays reads 0, since it orders no creation; a leeg test on what an allocation
-writes fires first; a condition over two roles is refused by its marker and a document with a defaults group at the
-door. A consistency rule over a creation's link plays there.
+A comparison in the condition of a rule that writes an attribute reads positively (ch. 6.1), and the exec-model branch
+orders it after the writers of what it reads all the same, a finer order than the graph asks for that reaches the same
+fixpoint; on a cycle such a rule keeps its place, without a refusal. Before, with two operands derived later ("…
+ongelijk is aan zijn afgeleide controledag") the branch tested the condition after the first writer and before the
+second and wrote the vinddag where `ref` and clingo answer leeg; with a comparison that holds on an empty operand ("…
+ongelijk is aan 01-03-2026", "het aantal bonnen van de Jutter gelijk is aan 0") before its writer it now answers leeg
+with clingo, where `ref` writes on the transient (the recorded residual of ch. 6.1). What remains, measured the same
+day: an allocation whose source a defaults group writes faults in `ref` (`empty source amount`) and in this branch (a
+ConsequenceException on the empty source) where clingo divides. The DRL-text branch keeps its own order: a leeg test, a
+comparison in a characteristic assignment and one in the condition of any rule, declared before its writer, act on the
+transient; a test one role away does not see the far side (the section on a condition that reads through a role); a
+count of created objects or of the links a fact creation lays reads 0, since it orders no creation; a leeg test on what
+an allocation writes fires first; a condition over two roles is refused by its marker and a document with a defaults
+group at the door. A consistency rule over a creation's link plays there.
 
 ## Recorded: a fold whose subselection tests a value derived later
 
