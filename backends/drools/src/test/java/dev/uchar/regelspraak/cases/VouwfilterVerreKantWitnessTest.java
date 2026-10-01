@@ -31,6 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * in a subselection were refused by name ({@code vouw EERSTE over een setbron die deze tak niet in een waarde vouwt}).
  * A fold with the far member in the case input, a literal bound, a characteristic on the element that a rule derives
  * from the far member, and a rule that updates the element after the writer, played before and play after.
+ *
+ * <p>The DRL-text branch writes such a test into the element pattern of its accumulate or quantifier and does not see
+ * the later write either ({@code verwacht 2, werkelijk 0}); it refuses the form by name.
  */
 class VouwfilterVerreKantWitnessTest {
 
@@ -303,6 +306,26 @@ class VouwfilterVerreKantWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> speel(ir, zaak(DRIE_VONDSTEN, getal("J", "aantal late vondsten", 3))));
         assertTrue(e.getMessage().contains("leest via een rol van het element"), e.getMessage());
+    }
+
+    @Test void de_teksttak_weigert_een_toets_via_de_rol_van_het_element() throws Exception {
+        // The DRL-text branch writes the subselection and the matrix into the element pattern, where a later write on the
+        // far object is not seen (before: verwacht 2, werkelijk 0; verwacht 1, werkelijk leeg); it refuses them by name.
+        String laatklasse = regel("laatklasse", "Jutter", "laatklasse", getalLiteraal(1),
+                vergelijking("greater", telling(LATER_DAN_DE_SLUITDAG), getalLiteraal(0)));
+        String matrix = regel("laatklasse", "Jutter", "laatklasse", getalLiteraal(1), kwantorvouw("atLeast", 1, null,
+                vergelijking("later", eigen("vinddag", "Vondst"), genavigeerd("afgeleide openingsdag", "Haven",
+                        "de afgeleide openingsdag van zijn haven", rolbinding("HavenVanVondst", "haven")))));
+        List<String[]> vormen = List.of(
+                new String[] { document(List.of(SLUITDAG, aantal(LATER_DAN_DE_SLUITDAG))),
+                        zaak(DRIE_VONDSTEN, getal("J", "aantal late vondsten", 2)) },
+                new String[] { document(List.of(laatklasse, SLUITDAG)), zaak(DRIE_VONDSTEN, getal("J", "laatklasse", 1)) },
+                new String[] { document(List.of(matrix, AFGELEIDE_OPENINGSDAG)), zaak(HAVENS, getal("J", "laatklasse", 1)) });
+        for (String[] v : vormen) {
+            assertNull(speel(v[0], v[1]), "de exectak speelt");
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(v[0], v[1]));
+            assertTrue(e.getMessage().contains("via een rol van het element"), e.getMessage());
+        }
     }
 
     // ---------------- documents ----------------
@@ -602,6 +625,11 @@ class VouwfilterVerreKantWitnessTest {
     /** The exec-model branch's verdict on one case: null when every expectation holds. */
     private static String speel(String ir, String zaak) throws Exception {
         return speel(ir, zaak, false);
+    }
+
+    /** The DRL-text branch's verdict on one case. */
+    private static String speelDrl(String ir, String zaak) throws Exception {
+        return speel(ir, zaak, true);
     }
 
     private static String speel(String ir, String zaak, boolean viaDrl) throws Exception {
