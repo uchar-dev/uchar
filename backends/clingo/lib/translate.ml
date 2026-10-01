@@ -9388,7 +9388,9 @@ let init_writers ctx ~ot ~a =
    index in the document (wval/4) and its firing, condition held, under the
    same index (wvuurt/3); [writer_conflicts] closes every pair with a named
    viol/2. A leeg value derives no wval, so a writer that fires without one
-   writes leeg, as ref's write does (ch. 1.2g). The index of a rule that is
+   writes leeg, as ref's write does (ch. 1.2g), unless it is standing
+   (ch. 7.8): a writer on its own type of a chain is the only one of its key,
+   and a standing writer writes nothing on leeg. The index of a rule that is
    no such co-writer is None. *)
 let co_writer ctx (r : resolved_regel) ~ot ~a =
   match r.rr_soort with
@@ -9698,11 +9700,31 @@ let translate_regel ctx (r : resolved_regel) =
                 branches;
               if naast_init then
                 head_body ctx (Printf.sprintf "comp_fires(%s,%s)" subject (str a)) (base :: cond);
+              (* the input stands where no writer of the subject decides: a
+                 standing co-writer on another type of the chain (its own
+                 key, so standing too) displaces it as this rule does *)
+              let co_eff =
+                match writer with
+                | None -> []
+                | Some _ ->
+                    let _, comps, _ = init_writers ctx ~ot ~a in
+                    List.filter_map
+                      (fun (r' : resolved_regel) ->
+                        match r'.doel with
+                        | Some (Attribuut_ref { attribuut = Some a'; objecttype = Some ot'; _ })
+                          when r' != r ->
+                            Option.map
+                              (fun k -> Printf.sprintf "not stand%d_eff(%s)" k subject)
+                              (List.find_index (( = ) (norm ot', norm a'))
+                                 (Ir_v0.Desugar.standing_targets ctx.doc))
+                        | _ -> None)
+                      comps
+              in
               (match eff with
               | Some e ->
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,V)" subject (str a))
-                    [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ]
+                    ([ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ] @ co_eff)
               | None -> ())
           | Some Initialisatie ->
               (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
@@ -11206,11 +11228,17 @@ let writer_conflicts ctx =
   if writers <> [] then begin
     emit ctx "#defined wval/4. #defined wvuurt/3.";
     List.iter
-      (fun (i, _, _, a) ->
-        emit ctx "wgevuld(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
+      (fun (i, _, ot, a) ->
         emit ctx "wschrijft(S,%s,v(V),%d) :- wval(S,%s,V,%d)." (str a) i (str a) i;
-        emit ctx "wschrijft(S,%s,leeg,%d) :- wvuurt(S,%s,%d), not wgevuld(S,%s,%d)." (str a) i (str a) i
-          (str a) i)
+        (* a standing writer (ch. 7.8: the only computing rule of its own
+           key, here a type of the chain) writes nothing where its value is
+           leeg, in ref as here, so only a writer that is not standing
+           writes leeg *)
+        if not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)) then begin
+          emit ctx "wgevuld(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
+          emit ctx "wschrijft(S,%s,leeg,%d) :- wvuurt(S,%s,%d), not wgevuld(S,%s,%d)." (str a) i (str a) i
+            (str a) i
+        end)
       writers;
     List.iter
       (fun (i, (ri : resolved_regel), oti, a) ->
