@@ -1,0 +1,95 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddatum": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "5.01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "aanspoeldatum": {
+            "date": "2026-02-28"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "25.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-02-28"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-03-30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S3",
+      "attribute": "vindersloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "meldingsdatum"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "vindersloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "uiterste afhaaldatum"
+    }
+  ]
+}

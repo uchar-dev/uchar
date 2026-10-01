@@ -1,0 +1,36 @@
+Eenheidsysteem Tijd
+    de dag dg
+
+Objecttype de Vondst (mv: Vondsten)
+    de vinddatum Datum in dagen;
+    de aanspoeldatum Datum in dagen;
+    de meldingsdatum Datum in dagen;
+    de uiterste afhaaldatum Datum in dagen;
+    het gewicht Numeriek (getal met 2 decimalen);
+    het vindersloon Numeriek (getal met 2 decimalen);
+
+Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+
+Regel melding na vinden
+    geldig altijd
+        De meldingsdatum van een Vondst moet gesteld worden op zijn vinddatum
+        indien zijn aanspoeldatum leeg is.
+
+Regel melding na aanspoelen
+    geldig altijd
+        De meldingsdatum van een Strandvondst moet gesteld worden op zijn aanspoeldatum
+        indien zijn aanspoeldatum gevuld is.
+
+Regel loon voor een zware vondst
+    geldig altijd
+        Het vindersloon van een Vondst moet gesteld worden op 25,00
+        indien zijn gewicht groter is dan 5,00.
+
+Regel loon voor een lichte vondst
+    geldig altijd
+        Het vindersloon van een Vondst moet gesteld worden op 10,00
+        indien zijn gewicht kleiner of gelijk is aan 5,00.
+
+Regel afhaaltermijn
+    geldig altijd
+        De uiterste afhaaldatum van een Vondst moet berekend worden als zijn meldingsdatum plus 30 dagen.

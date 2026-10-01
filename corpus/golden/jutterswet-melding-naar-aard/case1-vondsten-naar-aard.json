@@ -1,0 +1,157 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddatum": {
+            "date": "2026-03-04"
+          },
+          "gewicht": {
+            "number": "7.50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "vinddatum": {
+            "date": "2026-03-05"
+          },
+          "aanspoeldatum": {
+            "date": "2026-03-02"
+          },
+          "gewicht": {
+            "number": "5.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vinddatum": {
+            "date": "2026-03-04"
+          },
+          "aanspoeldatum": {
+            "date": "2026-03-01"
+          },
+          "gewicht": {
+            "number": "2.25"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "vinddatum": {
+            "date": "2026-03-06"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-04"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "25.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-04-03"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "meldingsdatum"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "uiterste afhaaldatum"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "vindersloon",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-03-31"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "meldingsdatum",
+      "value": {
+        "date": "2026-03-06"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "vindersloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "uiterste afhaaldatum",
+      "value": {
+        "date": "2026-04-05"
+      }
+    }
+  ]
+}

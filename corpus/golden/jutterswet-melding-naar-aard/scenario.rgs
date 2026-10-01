@@ -1,0 +1,46 @@
+Scenario vondsten naar aard
+Gegeven is de volgende situatie:
+een Vondst V1
+- de vinddatum is 04-03-2026
+- het gewicht is 7,50
+een Vondst V2
+- de vinddatum is 05-03-2026
+- de aanspoeldatum is 02-03-2026
+- het gewicht is 5,00
+een Strandvondst S1
+- de vinddatum is 04-03-2026
+- de aanspoeldatum is 01-03-2026
+- het gewicht is 2,25
+een Strandvondst S2
+- de vinddatum is 06-03-2026
+Met als verwacht resultaat:
+- de meldingsdatum van V1 is 04-03-2026
+- het vindersloon van V1 is 25,00
+- de uiterste afhaaldatum van V1 is 03-04-2026
+- de meldingsdatum van V2 is leeg
+- het vindersloon van V2 is 10,00
+- de uiterste afhaaldatum van V2 is leeg
+- de meldingsdatum van S1 is 01-03-2026
+- het vindersloon van S1 is 10,00
+- de uiterste afhaaldatum van S1 is 31-03-2026
+- de meldingsdatum van S2 is 06-03-2026
+- het vindersloon van S2 is leeg
+- de uiterste afhaaldatum van S2 is 05-04-2026
+
+Scenario grenzen en lege gegevens
+Gegeven is de volgende situatie:
+een Vondst V4
+- de vinddatum is 01-03-2026
+- het gewicht is 5,01
+een Strandvondst S3
+- de aanspoeldatum is 28-02-2026
+een Vondst V5
+Met als verwacht resultaat:
+- het vindersloon van V4 is 25,00
+- de meldingsdatum van V4 is 01-03-2026
+- de meldingsdatum van S3 is 28-02-2026
+- de uiterste afhaaldatum van S3 is 30-03-2026
+- het vindersloon van S3 is leeg
+- de meldingsdatum van V5 is leeg
+- het vindersloon van V5 is leeg
+- de uiterste afhaaldatum van V5 is leeg
