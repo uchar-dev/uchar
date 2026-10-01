@@ -297,9 +297,199 @@ final class ExpressieBouwer {
     }
 
     /** Arithmetic node whose result datatype is taken from the typeringen matrix
-     *  (a type error there yields Onbekend, matching the checker's no-claim path). */
+     *  (a type error there yields Onbekend, matching the checker's no-claim path). A date plus or min a duration is
+     *  judged here, not in {@link #binairExpr}, because its refusal quotes both operands as the author wrote them. */
     private Expr binair(Expr.BinOp op, ExpressieContext l, ExpressieContext r, Bron bron, int line) {
-        return binairExpr(op, bouw(l), bouw(r), bron, line);
+        Expr links = bouw(l), rechts = bouw(r);
+        Expr uit = binairExpr(op, links, rechts, bron, line);
+        if ((op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN) && uit.type() != null && uit.type().isDatum()) {
+            String fout = gebrokenDuurFout(op, links, rechts, bron, src(l), src(r));
+            if (fout != null) {
+                // a re-resolution of the same text (a definition's two passes, a re-read condition) is one defect
+                var d = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, fout, line);
+                if (!model.diagnostics.contains(d)) model.diagnostics.add(d);
+            }
+        }
+        return uit;
+    }
+
+    /** RUNTIME-SEMANTICS ch. 3.8: every executor truncates a fractional duration count toward zero before the
+     *  calendar step. A sentence that adds or subtracts a duration whose count can carry a fraction therefore says
+     *  more than the executors do — "zijn startdag plus 20,5 mnd" lands half a month short — and until 2026-10-01
+     *  the resolver wrote it without a word while ref, the ASP backend and the Drools branches agreed on the
+     *  truncated date. The wire keeps the ch. 3.8 meaning (a hand-written document with a fractional count is
+     *  well-formed and pinned), so the refusal is this producer's own: the duration and its unit as written, the
+     *  truncation, and the forms that say what is meant (grammar/DIVERGENCES.md, "A date plus or min a duration
+     *  that can carry a fraction"). Null when the count is whole by its form. */
+    private String gebrokenDuurFout(Expr.BinOp op, Expr links, Expr rechts, Bron bron, String geschrevenLinks,
+                                    String geschrevenRechts) {
+        Breuk b = breuk(rechts);
+        if (b == null) return null;
+        String opNaam = op == Expr.BinOp.PLUS ? "plus" : "min";
+        String duur = zonderBuitenHaakjes(geschrevenRechts);
+        String eenheid = rechts.type().eenheidOf().weergave();
+        String oorzaak = b.plek() == rechts ? b.reden()
+                : "kan een breuk dragen: '" + b.plek().bron() + "' " + b.reden();
+        String voorbeeld, afkap;
+        if (b.plek() == rechts && rechts instanceof Expr.Literal l) {
+            String heel = afgekapt(l, duur);
+            voorbeeld = duur + " telt als " + heel;
+            afkap = geschrevenLinks + " " + opNaam + " " + heel;
+        } else {
+            voorbeeld = "1,9 " + eenheid + " telt als 1 " + eenheid + " en -1,9 " + eenheid + " als -1 " + eenheid;
+            afkap = geschrevenLinks + " " + opNaam + " (" + duur + " richting nul afgerond op 0 decimalen)";
+        }
+        String kleiner = kleinereEenheid(rechts.type(), links.type());
+        String staart = kleiner != null
+                ? ", of neem het deel in een kleinere eenheid mee ('" + afkap + " " + opNaam + " … " + kleiner + "')"
+                : "; " + geenKleinereEenheid(rechts.type());
+        return "datum " + opNaam + " duur '" + bron + "': de duur '" + duur + "' " + oorzaak
+                + ", en de uitvoerders kappen een gebroken telling in " + eenheid + " naar nul af vóór de kalenderstap "
+                + "(RUNTIME-SEMANTICS ch. 3.8: " + voorbeeld + "); schrijf de afkapping uit als '" + afkap + "'" + staart;
+    }
+
+    /** Where a count can take a fraction in, and why: {@code plek} is the sub-expression that brings it, in the
+     *  author's words. */
+    private record Breuk(Expr plek, String reden) {}
+
+    /** Whether the value of {@code e} can carry a fraction, judged from its form alone (no case value): the first
+     *  place that brings one in, or null when the value is whole by construction. The declared type is not enough
+     *  on its own: it calls a product of two whole numbers fractional (RUNTIME-SEMANTICS ch. 2.3) and a sum whole
+     *  even where a restatement into the left unit makes it fractional ("1 jr plus 6 mnd" is 1,5 jr). Exhaustive
+     *  over the sealed union, so a new node is a compile error here rather than a silent whole. */
+    private Breuk breuk(Expr e) {
+        if (e == null) return null;
+        return switch (e) {
+            case Expr.Literal l -> heeftBreuk(l) ? new Breuk(l, "heeft een breuk") : null;
+            case Expr.Afgerond a -> a.decimalen() > 0
+                    ? new Breuk(a, "is afgerond op " + a.decimalen() + " decimalen") : null;
+            case Expr.Begrensd b -> eerste(breuk(b.basis()), breuk(b.minimum()), breuk(b.maximum()),
+                    omrekening(b.minimum(), b.type()), omrekening(b.maximum(), b.type()));
+            case Expr.Binair b -> switch (b.op()) {
+                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> new Breuk(b, "is een deling");
+                case PERCENTAGE_VAN -> new Breuk(b, "is een percentage");
+                case TOT_DE_MACHT -> new Breuk(b, "is een macht");
+                case PLUS, MIN, VERMINDERD_MET -> eerste(breuk(b.links()), breuk(b.rechts()),
+                        omrekening(b.rechts(), b.type()));
+                case MAAL -> eerste(breuk(b.links()), breuk(b.rechts()), noemerOmrekening(b));
+            };
+            case Expr.Functie f -> switch (f.kind()) {
+                case AANTAL, AANTAL_GEVULDE, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, AANTAL_DAGEN_IN, JAAR_UIT, MAAND_UIT,
+                     DAG_UIT, UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT, EERSTE_PAASDAG, DATUM_MET,
+                     DATUMTIJD_MET, CONCATENATIE -> null;
+                case TOTAAL -> new Breuk(f, "is een totaal over de tijd");
+                case TIJDSEVENREDIG_DEEL -> new Breuk(f, "is een tijdsevenredig deel");
+                case WORTEL -> new Breuk(f, "is een wortel");
+                case SOM, MINIMUM, MAXIMUM, EERSTE, LAATSTE, ABSOLUTE_WAARDE -> {
+                    Breuk uit = null;
+                    for (Expr a : f.argumenten()) uit = eerste(uit, breuk(a), omrekening(a, f.type()));
+                    yield eerste(uit, breuk(f.leegwaarde()), omrekening(f.leegwaarde(), f.type()));
+                }
+            };
+            case Expr.BinderRef r -> {
+                Variabele v = binders.get(variabeleSleutel(r.naam()));
+                yield v != null ? breuk(v.waarde()) : typeBreuk(r);
+            }
+            case Expr.Let l -> breuk(l.body());
+            case Expr.IfThenElse k -> eerste(breuk(k.dan()), breuk(k.anders()),
+                    omrekening(k.dan(), k.type()), omrekening(k.anders(), k.type()));
+            case Expr.AttribuutRef r -> typeBreuk(r);
+            case Expr.ParameterRef r -> typeBreuk(r);
+            case Expr.VariabeleRef r -> typeBreuk(r);
+            case Expr.Constante c -> typeBreuk(c);
+            case Expr.DimensieCel c -> typeBreuk(c);
+            case Expr.TekstReeks ignored -> null;
+            case Expr.InstanceSetUnion ignored -> null;
+            case Expr.Onopgelost ignored -> null;        // no claim: the marker carries its own diagnostic
+        };
+    }
+
+    private static Breuk eerste(Breuk... kandidaten) {
+        for (Breuk b : kandidaten) if (b != null) return b;
+        return null;
+    }
+
+    /** A read takes the fraction its declared type admits: a number with decimals, or the unbounded "getal". */
+    private static Breuk typeBreuk(Expr e) {
+        if (!(e.type() instanceof Datatype.Numeriek n) || n.geheel()) return null;
+        return new Breuk(e, n.decimalen() > 0 ? "is een getal met " + n.decimalen() + " decimalen"
+                : "is een getal zonder vast aantal decimalen");
+    }
+
+    private static boolean heeftBreuk(Expr.Literal l) {
+        if (!(l.type() instanceof Datatype.Numeriek)) return false;
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.Rationaal.van(l.waarde());
+        return r != null && r[0].remainder(r[1]).signum() != 0;
+    }
+
+    /** The literal as written with its number truncated toward zero, the count every executor steps. */
+    private static String afgekapt(Expr.Literal l, String geschreven) {
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.Rationaal.van(l.waarde());
+        String heel = r[0].divide(r[1], 0, java.math.RoundingMode.DOWN).toPlainString();
+        return geschreven.replaceFirst(java.util.regex.Pattern.quote(l.waarde()),
+                java.util.regex.Matcher.quoteReplacement(heel));
+    }
+
+    /** A restatement into {@code naar}'s unit brings a fraction in where one {@code sub} unit is no whole number of
+     *  target units (a mnd is 1/12 jr, a dg 1/7 wk); the reverse direction multiplies and stays whole. */
+    private static Breuk omrekening(Expr sub, Datatype naar) {
+        return sub == null || naar == null ? null : omrekening(sub, naar.eenheidOf());
+    }
+
+    private static Breuk omrekening(Expr sub, Eenheid doel) {
+        Eenheid van = sub.type() == null ? null : sub.type().eenheidOf();
+        if (van == null || doel == null || !van.convertibleNaar(doel)) return null;
+        java.math.BigDecimal[] f = van.exacteHerschaalFactoren(doel);
+        if (f == null || f[0].remainder(f[1]).signum() == 0) return null;
+        // a literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr
+        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.Rationaal.van(l.waarde()) : null;
+        if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
+        return new Breuk(sub, "wordt naar " + doel.weergave() + " omgerekend (een " + van.weergave()
+                + " is een breuk van een " + doel.weergave() + ")");
+    }
+
+    /** A rate times a quantity restates the quantity into the rate's denominator (Typering's product arm). */
+    private static Breuk noemerOmrekening(Expr.Binair b) {
+        Eenheid el = b.links().type() == null ? null : b.links().type().eenheidOf();
+        Eenheid er = b.rechts().type() == null ? null : b.rechts().type().eenheidOf();
+        if (el == null || er == null) return null;
+        if (el.noemer() != null && er.noemer() == null) return omrekening(b.rechts(), el.noemer());
+        if (er.noemer() != null && el.noemer() == null) return omrekening(b.links(), er.noemer());
+        return null;
+    }
+
+    /** The next smaller calendar unit the author can step the rest in, spelled as the language reads it ("min"
+     *  lexes as the operator); null where the date has none below this one. */
+    private static String kleinereEenheid(Datatype duur, Datatype datum) {
+        String eenheid = Tijdrekening.chronoUnit(duur);
+        if (eenheid == null) return null;
+        return switch (eenheid) {
+            case "YEARS", "KWARTAAL" -> "maanden";
+            case "MONTHS", "WEEKS" -> "dagen";
+            case "DAYS" -> datum instanceof Datatype.DatumTijd ? "uur" : null;
+            case "HOURS" -> "minuten";
+            case "MINUTES" -> "seconden";
+            case "SECONDS" -> "milliseconden";
+            default -> null;
+        };
+    }
+
+    private static String geenKleinereEenheid(Datatype duur) {
+        String eenheid = Tijdrekening.chronoUnit(duur);
+        if (eenheid == null) return "een dagsoort kent geen kleinere eenheid";
+        if (eenheid.equals("DAYS")) return "een datum in dagen kent geen eenheid kleiner dan een dag";
+        return "een milliseconde is de kleinste eenheid";
+    }
+
+    /** The written operand without one pair of parentheses around the whole of it, so the rounding can wrap it. */
+    private static String zonderBuitenHaakjes(String t) {
+        if (!t.startsWith("(") || !t.endsWith(")")) return t;
+        int diepte = 0;
+        for (int i = 0; i < t.length(); i++) {
+            if (t.charAt(i) == '(') diepte++;
+            else if (t.charAt(i) == ')' && --diepte == 0 && i < t.length() - 1) return t;
+        }
+        return t.substring(1, t.length() - 1).trim();
     }
 
     /** Arithmetic node over already-built operands (used where the right operand is a
