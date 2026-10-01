@@ -2598,7 +2598,9 @@ the message is the verifier's sentence after a Dutch context prefix (the unit,
 typing, fold-operand and value refusals, and the structural ones: a rule form, a
 group, a declaration, a day-kind definition and what its condition reads, a start
 point, a window's position and bounds, a count's shape, a set reading, a read
-whose name took in a word before 'van', a constant the wire has no node for
+whose name took in a word before 'van', a read whose member is not where its
+roles bring it and the other refusals of "An undeclared attribute read" below,
+a constant the wire has no node for
 ("hij" written as a value, in WF-098's sentence), a unit's conversion factor
 outside the wire's bounds (zero, negative, or past 2^62 - 1 along its chain,
 in the loader's sentence), a role check whose written role names no relation
@@ -2608,7 +2610,8 @@ attribute and a characteristic of its type (WF-022), a written day-kind spelling
 another day kind already carries (WF-017; a derived plural gives way instead), a
 parent-scoped uniqueness whose parent role is to-many (WF-054);
 witnesses `EenheidZinTest`,
-`TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`), and
+`TyperingZinTest`, `VouwOperandZinTest`, `StructuurZinTest`,
+`OngebondenLezingTest`), and
 `LezerszinGrensTest` requires every English fragment of the resolver's and the
 emitter's refusals to stand in the verifier's string literals, so a sentence the
 verifier rewords turns it red. The refusals listed here keep their Dutch words
@@ -2702,18 +2705,76 @@ become an ERROR like the other refusals the verifier shares.
 
 ---
 
-## An undeclared attribute read — refused for one shape
+## An undeclared attribute read — refused where the read names a role or a type
 
 The name of a read runs over every inner `van`, so a phrase the language has no
 function for, "het maximum van de romplengte van de Schuit", reads an attribute
-`maximum van de romplengte` of Schuit. The verifier refuses such a read (WF-034:
-`'maximum van de romplengte' is neither an attribute nor a characteristic of
-'Schuit'`). The resolver refuses it in that sentence where the name is no member
-of the type it is read on and the part behind one of its `van`s is a declared
-attribute of that type, or the written plural of one: the name then took in a
-word before `van` (`StructuurZinTest`, at every position the emitter writes a
-read at). A read of any other undeclared name is written, for the verifier to
-refuse, because the casus of the parity zone reads names that only its replay
-slices declare, and an ERROR would stop its emission; a WARNING would change its
-pinned document. When the parity zone leaves the repository, the refusal can
-cover every undeclared read.
+`maximum van de romplengte` of Schuit, and a navigation the resolver does not
+lay, "de toeslag van de jutter van de Vondst", reads an attribute `toeslag van
+de jutter` of the Vondst. The verifier refuses such a read (WF-034: `'toeslag
+van de jutter' is neither an attribute nor a characteristic of 'Vondst'`). The
+resolver refuses it in three shapes, each in the verifier's sentence for the
+document after a Dutch part in the author's words:
+
+1. The part behind one of its `van`s is a declared attribute of the type it is
+   read on, or the written plural of one: the name took in a word before `van`
+   (`StructuurZinTest`, at every position the emitter writes a read at).
+2. The read reaches a role — by its path, or by a role name or a type name
+   behind one of its `van`s, walked outward from where the read stands as the
+   resolver's chain walk walks it — and its member is not on the filler of the
+   last role (`OngebondenLezingTest`: in a value, a condition, the
+   justification of a default, the subselection of a fold, a consistency, the
+   toekenning of an object creation and a window bound that is an own read;
+   one and two roles far; in the spellings "de toeslag van de jutter van de
+   Vondst", "de toeslag van zijn jutter", "de toeslag van de jutter" and "de
+   toeslag van de Jutter"). The Dutch part names the member, the filler and the
+   role, and where the member does stand. Declared on one subtype of the
+   filler, the sentence is WF-053's for the navigation to that subtype (`the
+   navigation reaches 'Jutter', not the endpoint 'Strandjutter'`); on several
+   subtypes, on another object type, or nowhere, it is WF-034's for the read on
+   the filler (`'rang' is neither an attribute nor a characteristic of
+   'Jutter'`). The same walk refuses a read that names a subtype of the filler
+   by its type name ("de toeslag van de Strandjutter van de Vondst" over a role
+   a Jutter fills) in WF-053's sentence, whichever of the two types declares
+   the member; a characteristic read as a value in WF-080's; a to-many step in
+   WF-053's; and a role or type name that binds no single relation from where
+   the walk stands, or a chain whose member does stand at its end but which
+   the resolver did not lay (from the indefinite subject of a consistency, "De
+   premie van de jutter van een Vondst moet groter zijn dan 2"), in WF-034's
+   sentence for the document the resolver would write. A window bound that
+   navigates stays the window check's refusal (WF-111).
+3. The subject phrase names no role and no type from the subject ("de premie
+   van zijn visser"): the read is refused in WF-034's sentence for the
+   reference without a `subjectType`.
+
+Where the name with its `van`s is itself a declared attribute ("de premie van
+de jutter" declared on the Vondst), the declaration wins: the read is that
+attribute, whether or not the navigation would bind as well, and no diagnostic
+is raised.
+
+What stays with the verifier is an own read — one that reaches no role — of an
+undeclared name with no role or type name behind a `van`: "de rang van de
+Vondst", "de datum van aanmelding van de Vondst", "de premie van de visser van
+de Vondst" where 'visser' names no role. So do an own read through a role the
+subject itself plays ("de rang van de aanmelder" on the Jutter who is the
+aanmelder), an own read of a member that only a subtype of the subject
+declares, and an own read of a characteristic as a value. The casus of the
+parity zone reads undeclared names of the first kind, which only its replay
+slices declare, and an ERROR would stop its emission; a WARNING would change
+its pinned document. When the parity zone leaves the repository, the refusal
+can cover every undeclared read. A fold source whose element lacks the member,
+or whose name took in a role, is no such read: it stays a marker with a
+WARNING, and ref and the ASP backend refuse it loudly.
+
+Measured on 2026-10-01 before the second and third shapes: each such read went
+to disk with `diagnostics: []`. Over 168 generated documents — the member on a
+subtype of the filler, nowhere, on another object type, and a role name that is
+no role, in the four positions, one and two roles far, in three spellings,
+beside the reads that bind — 96 were written without a diagnostic and refused
+by the verifier; 92 of them are now refused here, and the 4 that write the
+wrong role name one role far in full stay the verifier's. The 72 that bind,
+the declared attribute with `van` in its name and the member inherited from a
+supertype of the filler among them, play unchanged in ref and the ASP backend.
+Every rgs golden and the sources of the parity zone re-emit byte-identically
+(gates 10 and 11). Negatief witnesses: `wf053-jutterswet-ongebonden-lezing-subtype`
+and `wf034-jutterswet-ongebonden-lezing-nergens`.
