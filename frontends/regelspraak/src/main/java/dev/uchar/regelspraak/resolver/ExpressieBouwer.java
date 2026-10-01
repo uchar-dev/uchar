@@ -524,7 +524,34 @@ final class ExpressieBouwer {
               : Expr.AfrondModus.REKENKUNDIG;
         int dec = 0;
         if (a.NUMBER() != null) try { dec = Integer.parseInt(a.NUMBER().getText()); } catch (NumberFormatException ignore) {}
+        String fout = afrondingFout(basis, bron, src(a));
+        if (fout != null)
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, fout, bron.line()));
         return new Expr.Afgerond(basis, modus, dec, bron);
+    }
+
+    /** A rounding rounds a number (§13.4.17.26). The rounding binds weakest, so written behind a date sum without the
+     *  parentheses around the duration it rounds the date: until 2026-10-01 that went to disk as a Rounding over a
+     *  Date, which the verifier admits, ref refuses at evaluation, the ASP backend reads as the unrounded date and the
+     *  Drools exec branch crashes on. Null where the value is a number, or no claim is made. */
+    private static String afrondingFout(Expr basis, Bron bron, String afronding) {
+        Datatype t = basis.type();
+        if (t == null || t.isOnbekend() || t.isGetalachtig()) return null;
+        String soort = switch (t) {
+            case Datatype.DatumInDagen d -> "een datum";
+            case Datatype.DatumTijd d -> "een datum-tijd";
+            case Datatype.Tekst x -> "een tekst";
+            case Datatype.Booleaan b -> "waar of onwaar";
+            case Datatype.Enumeratie e -> "een waarde van " + e.domein();
+            default -> t.naam();
+        };
+        String zin = "afronding '" + bron + "': '" + basis.bron() + "' is " + soort + ", en een afronding rondt een "
+                + "getal af";
+        if (basis instanceof Expr.Binair b && b.links().type() != null && b.links().type().isDatum()
+                && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN))
+            zin += "; rond de duur af: '" + b.links().bron() + " " + (b.op() == Expr.BinOp.PLUS ? "plus" : "min")
+                    + " (" + b.rechts().bron() + " " + afronding + ")'";
+        return zin;
     }
 
     /** Emit a §6.1.4 ERROR when a begrenzing bound is not order-comparable with the bounded
