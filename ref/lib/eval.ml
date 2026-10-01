@@ -3878,7 +3878,7 @@ let evaluate env world =
   (* the forms of stratum <= k in the order a pass runs them — rules,
      allocations, defaults groups, fact creations, object creations, each in
      document order — with the name the divergence diagnosis gives a writer *)
-  let named kind name = Printf.sprintf "%s %S" kind (Option.value name ~default:"<naamloos>") in
+  let named kind name = Printf.sprintf "%s \"%s\"" kind (Option.value name ~default:"<naamloos>") in
   let steps ~k =
     List.filter_map
       (fun r ->

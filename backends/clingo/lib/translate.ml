@@ -9379,6 +9379,25 @@ let init_writers ctx ~ot ~a =
   in
   (inits, comps, other)
 
+(* Two or more computing rules on one target whose populations overlap (the
+   co-writers of [init_writers]) diverge wherever two of them apply to one
+   instance and write different values: ref overwrites the one with the
+   other on every pass and faults on its budget (RUNTIME-SEMANTICS ch. 5.1,
+   5.7), while a val/3 head per writer would give the target two values in
+   one model. Such a writer therefore also derives its value under its own
+   index in the document (wval/4) and its firing, condition held, under the
+   same index (wvuurt/3); [writer_conflicts] closes every pair with a named
+   viol/2. A leeg value derives no wval, so a writer that fires without one
+   writes leeg, as ref's write does (ch. 1.2g). The index of a rule that is
+   no such co-writer is None. *)
+let co_writer ctx (r : resolved_regel) ~ot ~a =
+  match r.rr_soort with
+  | Some (Berekening | Gelijkstelling) ->
+      let _, comps, _ = init_writers ctx ~ot ~a in
+      if List.length comps >= 2 then List.find_index (fun r' -> r' == r) ctx.doc.resolved_regels
+      else None
+  | _ -> None
+
 let translate_regel ctx (r : resolved_regel) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
@@ -9455,6 +9474,19 @@ let translate_regel ctx (r : resolved_regel) =
             | Some _, _ | None, None -> []
             | None, Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
           in
+          (* the val head, and on a target with co-writers the writer's own
+             value beside it ([co_writer]) *)
+          let writer = co_writer ctx r ~ot ~a in
+          let write_head term body =
+            head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term) body;
+            match writer with
+            | Some i -> head_body ctx (Printf.sprintf "wval(%s,%s,%s,%d)" subject (str a) term i) body
+            | None -> ()
+          in
+          (match writer with
+          | Some i when not doel_tijdlijn ->
+              head_body ctx (Printf.sprintf "wvuurt(%s,%s,%d)" subject (str a) i) (base :: cond)
+          | _ -> ());
           (match r.rr_soort with
           | Some Kenmerktoekenning ->
               (* ch. 3.11: a temporal characteristic's write is a TIMELINE of
@@ -9485,8 +9517,7 @@ let translate_regel ctx (r : resolved_regel) =
               ctx.rule_guard <- cond;
               let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
-              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                ((base :: cond) @ bindings)
+              write_head term ((base :: cond) @ bindings)
           | Some (Berekening | Gelijkstelling) when attr_struct_typed ctx ~otype:ot ~attr:a ->
               (* ch. 11.1: a StructLiteral write to a struct-typed target. The
                  record term rides straight into the val head — no numeric scale,
@@ -9502,8 +9533,7 @@ let translate_regel ctx (r : resolved_regel) =
               ctx.rule_guard <- cond;
               let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
-              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                ((base :: cond) @ bindings)
+              write_head term ((base :: cond) @ bindings)
           | Some (Berekening | Gelijkstelling) when attr_datetime_typed ctx ~otype:ot ~attr:a ->
               (* ch. 3.8 the millisecond layer: a datum-tijd computed target
                  (datetime ± duration) rides the pair term dt(D, MS) straight
@@ -9520,8 +9550,7 @@ let translate_regel ctx (r : resolved_regel) =
               ctx.rule_guard <- cond;
               let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
-              head_body ctx (Printf.sprintf "val(%s,%s,dt(%s,%s))" subject (str a) dd dm)
-                ((base :: cond) @ atoms)
+              write_head (Printf.sprintf "dt(%s,%s)" dd dm) ((base :: cond) @ atoms)
           | Some (Berekening | Gelijkstelling)
             when (match attr_symbolic_datatype ctx ~otype:ot ~attr:a with
                  | Some (Tekst | Enumeratie _) -> true
@@ -9542,8 +9571,7 @@ let translate_regel ctx (r : resolved_regel) =
               ctx.rule_guard <- cond;
               let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.waarde) in
               ctx.rule_guard <- [];
-              head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                ((base :: cond) @ bindings)
+              write_head term ((base :: cond) @ bindings)
           | Some (Berekening | Gelijkstelling)
             when attr_symbolic_datatype ctx ~otype:ot ~attr:a = Some Booleaan ->
               (* a boolean is a characteristic in v0: rule forms READ it
@@ -9556,6 +9584,13 @@ let translate_regel ctx (r : resolved_regel) =
                  read and a derived val/3 would split; no corpus case)"
                 a
           | Some (Berekening | Gelijkstelling) when attr_temporal ctx ~otype:ot ~attr:a -> (
+              (* a timeline written by two rules has no wval/4 encoding: a
+                 segment list is no single term to compare *)
+              if writer <> None then
+                fault
+                  "two computing rules write the temporal target %S, and a divergence between their \
+                   timelines is not translated (no corpus case)"
+                  a;
               if
                 (not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc)))
                 && case_supplies ctx ~otype:ot ~attr:a
@@ -9654,9 +9689,7 @@ let translate_regel ctx (r : resolved_regel) =
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ bindings in
                   let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
-                  head_body ctx
-                    (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                    (body @ fit_guards);
+                  write_head term (body @ fit_guards);
                   if naast_init then
                     head_body ctx
                       (Printf.sprintf "comp_decides(%s,%s)" subject (str a))
@@ -11154,6 +11187,51 @@ let translate_case ctx (case : Case.t) =
 
 (* --- the program --------------------------------------------------------- *)
 
+(* The pairs of [co_writer]: per writer what it writes on a subject, v(V)
+   for a value and leeg where it fires without one, and per pair of writers
+   that share a concrete type one viol/2 where the two differ on a subject.
+   The pair is named in document order, with the lower of the two target
+   types (the first concrete type both write, as WF-079 reports it). *)
+let writer_conflicts ctx =
+  let writers =
+    List.filter_map
+      (fun (i, (r : resolved_regel)) ->
+        match r.doel with
+        | Some (Attribuut_ref { attribuut = Some a; objecttype = Some ot; _ })
+          when applies ctx r.rr_geldigheid && co_writer ctx r ~ot ~a <> None ->
+            Some (i, r, ot, a)
+        | _ -> None)
+      (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_regels)
+  in
+  if writers <> [] then begin
+    emit ctx "#defined wval/4. #defined wvuurt/3.";
+    List.iter
+      (fun (i, _, _, a) ->
+        emit ctx "wgevuld(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
+        emit ctx "wschrijft(S,%s,v(V),%d) :- wval(S,%s,V,%d)." (str a) i (str a) i;
+        emit ctx "wschrijft(S,%s,leeg,%d) :- wvuurt(S,%s,%d), not wgevuld(S,%s,%d)." (str a) i (str a) i
+          (str a) i)
+      writers;
+    List.iter
+      (fun (i, (ri : resolved_regel), oti, a) ->
+        let _, comps, _ = init_writers ctx ~ot:oti ~a in
+        List.iter
+          (fun (j, (rj : resolved_regel), otj, _) ->
+            if i < j && List.memq rj comps then begin
+              let lower = if Ir_v0.Checks.subtype_of ctx.doc ~sub:otj ~super:oti then otj else oti in
+              let name (r : resolved_regel) = "\"" ^ Option.value r.rr_naam ~default:"<naamloos>" ^ "\"" in
+              emit ctx "viol(%s,S) :- wschrijft(S,%s,X,%d), wschrijft(S,%s,Y,%d), X != Y."
+                (quote
+                   (Printf.sprintf
+                      "two writers of one target disagree: rules %s and %s write different values to the \
+                       attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
+                      (name ri) (name rj) a lower))
+                (str a) i (str a) j
+            end)
+          writers)
+      writers
+  end
+
 let translate (doc : document) (case : Case.t) : string =
   (* WF-007: a presentation tag inside a type annotation, listed by the
      loader, is refused in the verifier's sentence — the same refusal ref
@@ -11240,6 +11318,7 @@ let translate (doc : document) (case : Case.t) : string =
      guard fired *)
   emit ctx ":- viol(_,_).";
   List.iter (translate_regel ctx) doc.resolved_regels;
+  writer_conflicts ctx;
   List.iter (translate_feit_creatie ctx) doc.feit_creaties;
   List.iteri (translate_object_creatie ctx) doc.object_creaties;
   List.iteri (translate_verdeling ctx) doc.verdelingen;
