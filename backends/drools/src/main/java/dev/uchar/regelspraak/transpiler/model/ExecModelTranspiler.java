@@ -6936,7 +6936,8 @@ public final class ExecModelTranspiler {
                 String foutplek = foutplekSoort(t.waarde());
                 if (foutplek != null)
                     return skip("objectcreatie (kanaal-deponerende toekenning (" + foutplek + "): een creatie heeft geen"
-                            + " begeleider die de Fout meldt (ch. 1.2, ch. 5.6): " + snippet(t.waarde().bron()) + "): " + oc.naam());
+                            + " begeleider die de Fout meldt (ch. 1.2, ch. 5.6): " + snippet(t.waarde().bron()) + "): "
+                            + oc.naam());
                 navReden = null;
                 vouwReden = null;
                 WaardeFn wf = scalarWaarde(subject, t.waarde());
@@ -7048,7 +7049,8 @@ public final class ExecModelTranspiler {
             if (g == null) return skip("objectcreatie (niet-geregistreerde global): " + oc.naam());
             vars.add((Variable) g);
         }
-        for (Vouwslot v : slots) vars.addAll(v.variabelen());       // [subject, globals..., per fold its count (when bound) and its result]
+        // [subject, globals..., per fold its count (when bound) and its result]
+        for (Vouwslot v : slots) vars.addAll(v.variabelen());
         RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), body);
         if (consequence == null) return skip("objectcreatie (te veel gebonden variabelen: globals en vouwen): " + oc.naam());
 
