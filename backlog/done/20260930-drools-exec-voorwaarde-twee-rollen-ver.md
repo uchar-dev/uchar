@@ -562,11 +562,12 @@ Tak `vervolg/lezer-onder-schrijver` in een eigen worktree, vanaf uchar main `4f0
 niet gemerged. Gemeten met de uitvoerders van deze kop: `_build/default/ref/bin/runner.exe`,
 `_build/default/backends/clingo/bin/clingo_runner.exe`, `_build/default/spec/verifier/bin/verifier.exe`, de frontend
 (`Resolver --ir … --cases … bron.rgs scenario.rgs`) en de Drools-jar (`java -jar <jar> ir.json case…`, `--drl` voor de
-teksttak). "Vóór" is de jar van de claim `50a90973` (code gelijk aan main), "na" de jar van `454c9ab5` (de laatste
-codecommit). Elke vorm is een eigen Jutterswet-document (bron.rgs + scenario.rgs), door de frontend verlaagd en door een
-meetscript gemeten. Generator, meetscripts, sweep en tabellen staan buiten de repo onder `/tmp/v2/probe/los-bouw/`
-(`maak.py`, `meet.sh`, `meet-alle.sh`, `sweep.sh`, `dump-getuige.sh`, `tool/ToonSalience.java`; tabellen `meting-*.tsv`,
-`sweep-*.tsv`, `salience-*.txt`).
+teksttak). "Vóór" is de jar van de claim `50a90973` (code gelijk aan main), "na" de jar van `454c9ab5` (eerste ronde) en
+van `4ada148f` (tweede ronde, na het besluit van de hoofdsessie over de vergelijking in een gewone regel). Elke vorm is
+een eigen Jutterswet-document (bron.rgs + scenario.rgs), door de frontend verlaagd en door een meetscript gemeten.
+Generator, meetscripts, sweep en tabellen staan buiten de repo onder `/tmp/v2/probe/los-bouw/` (`maak.py`, `meet.sh`,
+`meet-alle.sh`, `sweep.sh`, `dump-getuige.sh`, `tool/ToonSalience.java`; tabellen `meting-*.tsv`, `sweep-*.tsv`,
+`salience-*.txt`).
 
 ### Gat K-c: de leeg/gevuld-toets (en een vergelijking) met de lezer vóór de schrijver
 
@@ -620,9 +621,9 @@ de regel alleen).
 
 Niet gekozen: (1) de band min één, zoals `vouwOntkend` doet (niet gebouwd en niet gemeten; eigen gevolgtrekking: die zet
 een lezer ook onder een schrijver die al vóór hem vuurt, dus zakken meer regels in het corpus); (2) de ordening in
-`Stratificatie`: die delen beide takken, en de teksttak houdt volgens de opdracht haar kanaal; (3) een vergelijking in
-de voorwaarde van een regel die een attribuut schrijft ook ordenen: ch. 6.1 leest die positief, en of zo'n lezing
-negatief wordt is de normvraag die ch. 6.1 openlaat (open punt 1).
+`Stratificatie`: die delen beide takken, en de teksttak houdt volgens de opdracht haar kanaal. Een vergelijking in de
+voorwaarde van een regel die een attribuut schrijft, bleef in de eerste ronde ongeordend (ch. 6.1 leest haar positief);
+de tweede ronde ordent haar ook (zie daar).
 
 #### Vormruimte vóór en na (exectak; DRL-tekst vóór = na op alle vormen)
 
@@ -644,14 +645,14 @@ lezer vóór en na de schrijver. Vijf vondsten, elk operand met een gevulde en l
 | ongelijk | kenmerk | regel | lezer eerst | PASS / PASS | FAIL → PLAYED (3) | FAIL / FAIL / TODO voorwaarde |
 | ongelijk | kenmerk | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
 | ongelijk | kenmerk | groep | beide | PASS / PASS | FAIL → PLAYED (6) | EXCLUDE (defaults) |
-| ongelijk | regel | regel | lezer eerst | `MISMATCH: V.uitkomst = 2026-09-15, expected leeg` / PASS | FAIL → FAIL (3) | FAIL / FAIL / TODO voorwaarde |
+| ongelijk | regel | regel | lezer eerst | `MISMATCH: V.uitkomst = 2026-09-15, expected leeg` / PASS | FAIL → FAIL; tweede ronde PLAYED (3) | FAIL / FAIL / TODO voorwaarde |
 | ongelijk | regel | regel | schrijver eerst | PASS / PASS | PLAYED → PLAYED (3) | PLAYED / FAIL / TODO voorwaarde |
-| ongelijk | regel | groep | beide | `MISMATCH` (idem) / PASS | FAIL → FAIL (6) | EXCLUDE (defaults) |
+| ongelijk | regel | groep | beide | `MISMATCH` (idem) / PASS | FAIL → FAIL; tweede ronde PLAYED (6) | EXCLUDE (defaults) |
 
 De FAIL-zinnen vóór: `verwacht leeg, werkelijk 2026-09-15` (de gewone regel) en `kenmerk gemarkeerd: verwacht afwezig,
 werkelijk aanwezig` (de kenmerktoekenning). De negen ongelijk-vormen met een gewone regel als lezer, de lezer vóór de
 schrijver of een groep als schrijver, hebben geen arbiter: ref schrijft op de tijdelijke leegte (het recorded residual
-van ch. 6.1), clingo niet; de exectak volgt ref, vóór en na.
+van ch. 6.1), clingo niet; de exectak volgde ref in de eerste ronde en volgt clingo (het fixpunt) sinds de tweede.
 
 Raster B (twee operanden), de schrijver na de lezer:
 
@@ -662,11 +663,11 @@ Raster B (twee operanden), de schrijver na de lezer:
 | samengesteld, regel, groep | PASS / PASS | FAIL → PLAYED | EXCLUDE (defaults) |
 | samengesteld, kenmerk, groep | PASS / PASS | FAIL → PLAYED | EXCLUDE (defaults) |
 | twee later afgeleide operanden, kenmerk: "… ongelijk is aan zijn afgeleide controledag" | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
-| twee later afgeleide operanden, regel | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-09-15` → idem | FAIL |
+| twee later afgeleide operanden, regel | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-09-15` → idem; tweede ronde PLAYED | FAIL |
 
-De laatste rij blijft fout: ref en clingo antwoorden hier gelijk, want ref toetst de lezer pas in de volgende ronde na
-beide schrijvers; de exectak toetst opnieuw na de eerste schrijver (één operand gevuld, de andere leeg: ongelijk) en
-schrijft. Een vergelijking in een regel die een attribuut schrijft leest positief (ch. 6.1); open punt 1.
+De laatste rij bleef in de eerste ronde fout: ref en clingo antwoorden hier gelijk, want ref toetst de lezer pas in de
+volgende ronde na beide schrijvers; de exectak toetste opnieuw na de eerste schrijver (één operand gevuld, de andere
+leeg: ongelijk) en schreef. De tweede ronde zet de regel na beide schrijvers.
 
 Raster D (bijzondere vormen):
 
@@ -684,7 +685,7 @@ Raster D (bijzondere vormen):
 
 #### Getuige
 
-`LezerOnderSchrijverWitnessTest` (exectak, negentien rijen, documenten in de klasse op Jutterswet-materiaal). Voor K-c:
+`LezerOnderSchrijverWitnessTest` (exectak, twintig rijen, documenten in de klasse op Jutterswet-materiaal). Voor K-c:
 `een_leegtoets_op_het_eigen_lid_voor_zijn_schrijver` (beide volgordes),
 `een_leegtoets_een_rol_ver_op_een_lid_uit_een_defaultsgroep`, `een_leegtoets_over_een_keten_in_een_kenmerktoekenning`,
 `een_kenmerk_over_een_vergelijking_met_een_later_afgeleide_waarde`, `een_samengestelde_voorwaarde_met_een_leegtoets`,
@@ -734,21 +735,22 @@ de creatie in het document.
 |---|---|---|---|
 | rol: "de afrekendag van de afrekening van de Jutter" leeg, regel en kenmerk (4) | PASS / PASS | FAIL `verwacht leeg, werkelijk 2026-12-31` en `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
 | rol, ongelijk 01-03-2026, kenmerk (2) | PASS / PASS | FAIL → PLAYED | FAIL |
-| rol, ongelijk, regel (2) | `MISMATCH: J.uitkomst = 2026-12-31` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| rol, ongelijk, regel (2) | `MISMATCH: J.uitkomst = 2026-12-31` / PASS | FAIL → FAIL; tweede ronde PLAYED (= clingo) | FAIL |
 | rol, gevuld (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
 | keten: "de afrekendag van de afrekening van de jutter van de Vondst", leeg en ongelijk, kenmerk; leeg, regel (6) | PASS / PASS | FAIL → PLAYED | TODO voorwaarde |
-| keten, ongelijk, regel (2) | `MISMATCH` / PASS | FAIL → FAIL (geen arbiter) | TODO voorwaarde |
+| keten, ongelijk, regel (2) | `MISMATCH` / PASS | FAIL → FAIL; tweede ronde PLAYED (= clingo) | TODO voorwaarde |
 | keten, gevuld (4) | PASS / PASS | PLAYED → PLAYED | TODO voorwaarde |
 | telling: "het aantal bonnen van de Jutter gelijk is aan 0", kenmerk (2) | PASS / PASS | FAIL `kenmerk gemarkeerd: verwacht afwezig, werkelijk aanwezig` → PLAYED | FAIL |
-| telling gelijk aan 0, regel (een gelijkstelling) (2) | `MISMATCH: J3.uitkomst = 2026-12-31` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| telling gelijk aan 0, regel (een gelijkstelling) (2) | `MISMATCH: J3.uitkomst = 2026-12-31` / PASS | FAIL → FAIL; tweede ronde PLAYED (= clingo) | FAIL |
 | telling groter dan 0 (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
 | feit: "het aantal gecontroleerde netten van de Jutter gelijk is aan 0", kenmerk (2) | PASS / PASS | FAIL → PLAYED | FAIL |
-| feit gelijk aan 0, regel (2) | `MISMATCH` / PASS | FAIL → FAIL (geen arbiter) | FAIL |
+| feit gelijk aan 0, regel (2) | `MISMATCH` / PASS | FAIL → FAIL; tweede ronde PLAYED (= clingo) | FAIL |
 | feit groter dan 0 (4) | PASS / PASS | PLAYED → PLAYED | PLAYED |
 | f-lezer-onder-de-creatie (vorige bouwer) | PASS (8) / PASS (8) | FAIL → PLAYED | EXCLUDE (defaults) |
 
 Een gelijkstelling over een telling van de gemaakte objecten schrijft een attribuut en is geen onherroepelijke lezer:
-ref schrijft daar op de tijdelijke 0 en clingo niet, de exectak volgt ref, vóór en na (de normvraag van open punt 1).
+ref schrijft daar op de tijdelijke 0 en clingo niet; de exectak volgde ref in de eerste ronde en volgt clingo sinds de
+tweede.
 
 #### Getuige
 
@@ -778,6 +780,34 @@ regels, vóór de creaties). Een consistentieregel komt na elke schrijver van wa
 wacht (`consistentieSalience`, toegepast in `consistentie()`). Getuigerijen
 `een_consistentie_over_een_lid_uit_een_defaultsgroep`, `een_consistentie_over_de_koppeling_van_een_creatie`,
 `een_leegtoets_op_wat_een_verdeling_schrijft`.
+
+### Tweede ronde: een vergelijking in een gewone regel (besluit hoofdsessie)
+
+Besluit: een fijnere volgorde die hetzelfde fixpunt bereikt, valt binnen RUNTIME-SEMANTICS ch. 6; alleen een kring is
+uitgesloten. Dus ordent de exectak ook een vergelijking in de voorwaarde van een regel die een attribuut schrijft onder
+de schrijvers van haar operanden, en waar dat een kring zou maken, blijft de regel staan zonder weigering.
+
+Getuigerij `twee_later_afgeleide_operanden_in_een_gewone_regel` (de vorm b-twee-operanden-regel), rood in `cbe2bc7e`
+tegen de transpiler van `535c1487`: `Tests run: 20, Failures: 1`, `verwacht leeg, werkelijk 2026-09-15`. Het
+document gemeten: `verifier: PASS`, `oracle: PASS (3 expectations)`, `clingo: PASS (3 expectations)`.
+
+Fix (`4ada148f`): in `groepVolgorde` gaan voor elke regel de lezingen van haar voorwaarde buiten een kenmerk (de vlag
+`kenmerken` onwaar) bij de stratum-strikte lezingen, zodat zij na hun schrijvers en wat die wachten komt; een schrijver
+op een kring met de regel telt niet mee (geen weigering). Voor een kenmerktoekenning blijft daarnaast haar waarde.
+Daarna de klasse 20 van 20 groen, de suite 1020 tests, 0 failures.
+
+Vormruimte, jar van `454c9ab5` tegen die van `4ada148f`, alle 141 vormen: precies 18 veranderen, alle FAIL → PLAYED:
+b-twee-operanden-regel (ref en clingo gelijk) en de 17 vormen zonder arbiter (de negen ongelijk-vormen met een gewone
+regel in raster A, en in raster C rol en keten ongelijk, telling en feit gelijk aan 0 met een gewone regel), waar de
+exectak nu het antwoord van clingo geeft en ref op de tijdelijke stand schrijft. De teksttak is op alle vormen gelijk.
+
+Sweep: alle 578 statusregels gelijk aan die van de claim (exectak PLAYED 234, DRL-tak 192). Twee regels krijgen nog een
+lagere salience, in goldens die al in de tabel onder Sweep staan: jutterswet-havenketen `havendatum` 0 → -1 (vergelijkt
+zijn vinddag met de afgeleide openingsdag over een keten waarvan de werving de relatie legt) en jutterswet-meldingsketen
+`controledatum van een vondst` 0 → -1 (vergelijkt met de erkende meldingsdatum uit een groep). Het blijven tien goldens.
+
+README (`79f2c472`): de alinea "What remains" in de sectie over een lezer na de schrijvers van wat hij leest zegt nu dat
+de exectak de vergelijking ook ordent, fijner dan de graaf vraagt, en wat dat aan de gemeten vormen verandert.
 
 ### Breder nagemeten
 
@@ -821,13 +851,13 @@ een defaultsgroep aan de deur; een consistentieregel over de koppeling van een c
 
 ### Gates
 
-Alle zestien met `/tmp/v2/uchar-gates20/run.sh` op de kop `535c1487` (de laatste commit vóór dit Result; de
-Result-commit raakt alleen de kaart), `dune build` exit 0, elk script onder zijn shebang; logs in
-`/tmp/v2/uchar-gates20/`. Alle zestien exit 0. Eerder ook op `8c220ac8` (vóór de commentaarcommit; logs in
-`/tmp/v2/uchar-gates20/kop-8c220ac8/`), met dezelfde tellingen. Gate 10: `JUnit suite green (1044 tests, floor 173); 116
-rgs golden(s) re-emit byte-identically (floor 80)`. Gate 12: `check-drools: PASS`, `played 234` (pin 234), `DRL-text
-branch played 192` (pin 192), `JUnit 1019 tests, floor 239`. Gate 16: `23 scenario golden(s) (floor 7) regenerate 82
-case file(s) (floor 31) and their ir.json byte-identically`.
+Alle zestien met `/tmp/v2/uchar-gates20/run.sh` op de kop `79f2c472` (de laatste commit vóór dit Result, na de tweede
+ronde; de Result-commit raakt alleen de kaart), `dune build` exit 0, elk script onder zijn shebang; logs in
+`/tmp/v2/uchar-gates20/`. Alle zestien exit 0. Gate 10: `JUnit suite green (1044 tests, floor 173); 116 rgs golden(s)
+re-emit byte-identically (floor 80)`. Gate 12: `check-drools: PASS`, `played 234` (pin 234), `DRL-text branch played
+192` (pin 192), `JUnit 1020 tests, floor 239`. Gate 16: `23 scenario golden(s) (floor 7) regenerate 82 case file(s)
+(floor 31) and their ir.json byte-identically`. Na de eerste ronde ook groen op `535c1487` en op de eerste Result-commit
+`fa116332` (JUnit 1019; logs in `/tmp/v2/uchar-gates20/kop-535c1487/` en `kop-fa116332/`).
 
 ### Golden en pinnen
 
@@ -844,8 +874,9 @@ valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=23
    consistentieregel, na de schrijver van wat zij leest (een groep, een creatie, een feitcreatie), en wat daarop volgt.
    Geen statusregel verschuift. Eigen gevolgtrekking, niet gemeten: met de band min één in plaats van de laadvolgorde
    zouden meer regels zakken.
-3. Een vergelijking in de voorwaarde van een regel die een attribuut schrijft, wordt niet geordend (de polariteit van
-   ch. 6.1); b-twee-operanden-regel blijft daardoor fout waar ref en clingo gelijk antwoorden (open punt 1).
+3. Een vergelijking in de voorwaarde van een regel die een attribuut schrijft, bleef in de eerste ronde ongeordend (de
+   polariteit van ch. 6.1), en b-twee-operanden-regel fout waar ref en clingo gelijk antwoorden. Besluit hoofdsessie:
+   een backendkeuze, geen normvraag; de tweede ronde ordent haar (`4ada148f`).
 4. Een leeg-toets op een kring met de schrijver, of op het eigen doel, weigert nu benoemd; vóór speelden d-kring-leeg en
    d-zelf-alleen in de exectak een antwoord dat ref en clingo niet geven (beide weigert de verifier met WF-046).
 
@@ -859,11 +890,13 @@ valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=23
   declared after it, a defaults group, an object or fact creation, an allocation — strictly below it in salience or
   level with it and added before the rule; a consistency rule takes the same placement, and a rule's companions take the
   rule's salience. A leeg or gevuld test on a cycle with its writer, its own target included, is refused by name
-  (WF-046). A comparison in the condition of an attribute-writing rule reads positively and is not ordered: with two
-  operands derived later, `ref/` and `backends/clingo` answer leeg where the branch writes, since it tests again after
-  the first writer (RUNTIME-SEMANTICS ch. 6.1, conditions that hold on absence). The DRL-text branch keeps the form
-  described here.*" En in de alinea erna, achter "and a salience below the operand's writers for the order-dependent
-  form": "(in the exec-model branch: the far-side join since 2026-09-28, the salience since 2026-10-01)".
+  (WF-046). The exec-model branch orders here more strictly than the graph asks: a comparison in the condition of an
+  attribute-writing rule reads positively (RUNTIME-SEMANTICS ch. 6.1), and the branch places that rule after the writers
+  of its operands as well, a finer order that reaches the same fixpoint (before, with two operands derived later, it
+  wrote where `ref/` and `backends/clingo` answer leeg); on a cycle such a rule keeps its place. The DRL-text branch
+  keeps the form described here.*" En in de alinea erna, achter "and a salience below the operand's writers for the
+  order-dependent form": "(in the exec-model branch: the far-side join since 2026-09-28, the salience since
+  2026-10-01)".
 - `spec/IR-SPEC.md` ch. 5.5, de recorded-alinea van 2026-10-01 (creaties): "What stays open: in the exec-model branch a
   reader of a creation's output that writes irrevocably, … absent); the DRL-text branch orders no creation, so a later
   creation and a fact creation still read 0 there, a coarser order than the graph without a loud refusal." wordt
@@ -884,20 +917,15 @@ valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=23
   creations and allocations as writers), and, in the DRL-text branch only since 2026-09-28, a navigated read in a
   condition does not react to a later far-side write in either order; the DRL-text branch fires an object creation
   before a later creation or a fact creation that writes what it reads, where RUNTIME-SEMANTICS ch. 6.1 places it
-  strictly above them, and a reader of a creation's output before the creation; in the exec-model branch a comparison in
-  the condition of an attribute-writing rule is not ordered, the norm question of RUNTIME-SEMANTICS ch. 6.1 (IR-SPEC ch.
-  5.5)."
+  strictly above them, and a reader of a creation's output before the creation; the exec-model branch orders a
+  comparison in the condition of an attribute-writing rule after its writers too, stricter than the positive edge of
+  RUNTIME-SEMANTICS ch. 6.1 (IR-SPEC ch. 5.5)."
 
 ### Open punten
 
-1. Normvraag voor de eigenaar: een vergelijking in de voorwaarde van een regel die een attribuut schrijft (ook een
-   gelijkstelling over een telling van gemaakte objecten) leest positief (ch. 6.1, "conditions on attribute-writing
-   forms read positively here"), en de exectak ordent haar niet. Twee meetbare gevolgen: (a) met een vergelijking die op
-   leeg waar is ("ongelijk aan", "gelijk aan 0") vóór haar schrijver schrijven ref en de exectak, clingo niet (17 vormen
-   van rasters A en C, geen arbiter); (b) met twee later afgeleide operanden antwoorden ref en clingo gelijk en schrijft
-   de exectak (b-twee-operanden-regel), omdat Drools de lezer na de eerste schrijver opnieuw toetst. Wordt zo'n lezing
-   negatief of stratum-strikt, dan dekt dezelfde ordening haar met één regel in `groepVolgorde` (de lezingen van de
-   voorwaarde van elke regel bij `strikt`); de prijs is een lagere salience voor meer regels in het corpus.
+1. Gesloten in de tweede ronde (besluit hoofdsessie): de vergelijking in de voorwaarde van een regel die een attribuut
+   schrijft. Wat blijft: in de 17 vormen zonder arbiter (rasters A en C) schrijft ref op de tijdelijke leegte of 0, het
+   recorded residual van ch. 6.1; de exectak antwoordt daar nu als clingo.
 2. De DRL-teksttak, ongewijzigd: zie de README-sectie en de DRL-kolommen; herstel zou in die tak een eigen ordening
    vragen (saliences uit haar stratificatie voor leeg-lezers, kenmerktoekenningen, creaties en consistentieregels).
 3. Een verdeling waarvan een defaultsgroep de bron schrijft: ref `EVALUATION FAULT: empty source amount in equal-shares
@@ -917,6 +945,10 @@ valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=23
     454c9ab5 Exectak: verdeling als schrijver, consistentie na haar schrijvers
     8c220ac8 backends/drools/README: een lezer na de schrijvers van wat hij leest
     535c1487 Exectak: commentaar bij de leeg-lezingen en de verdeling als knoop
+    fa116332 Vervolgronde lezer-onder-schrijver: Result
+    cbe2bc7e LezerOnderSchrijverWitnessTest: vergelijking in een gewone regel, rood
+    4ada148f Exectak: een gewone regel wacht ook op wat haar voorwaarde leest
+    79f2c472 backends/drools/README: de vergelijking in een gewone regel geordend
 
-en de commit "Vervolgronde lezer-onder-schrijver: Result", die deze sectie onderaan de done-kaart
-`20260930-drools-exec-voorwaarde-twee-rollen-ver.md` zet. Niet gepusht, niet gemerged.
+en de commit "Vervolgronde lezer-onder-schrijver: Result (2)", die deze sectie onderaan de done-kaart
+`20260930-drools-exec-voorwaarde-twee-rollen-ver.md` bijwerkt. Niet gepusht, niet gemerged.
