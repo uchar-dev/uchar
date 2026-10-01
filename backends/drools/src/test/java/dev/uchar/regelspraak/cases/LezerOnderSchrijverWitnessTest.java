@@ -31,6 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * division the transient let through ({@code verwacht consistent, werkelijk inconsistent}). A leeg test on a cycle with
  * its writer, and one on the rule's own target, played where the verifier refuses the document (WF-046).
  *
+ * <p>A comparison in the condition of a rule that writes an attribute reads positively, and the branch orders it after
+ * the writers of its operands all the same, a finer order that reaches the same fixpoint: with two operands derived later
+ * it was tested after the first writer and before the second ({@code verwacht leeg, werkelijk 2026-09-15}, red on the
+ * commit before its order).
+ *
  * <p>Two flanks of the same order, red on the commit before theirs (measured 2026-10-01): a consistency rule reads its
  * assertion stratum-strict, since its channel is never withdrawn, and was added to the model before the creations and
  * the groups, so it reported a violation on the transient leeg ({@code verwacht consistent, werkelijk inconsistent});
@@ -121,6 +126,21 @@ class LezerOnderSchrijverWitnessTest {
                 vondst("X", "2026-08-15", "J2", ""), vondst("Z", "2026-07-15", "J3", "")),
                 kenmerk("V", false) + "," + kenmerk("X", false) + "," + kenmerk("Z", true));
         assertNull(speel(ir, zaak), "twee later afgeleide operanden");
+    }
+
+    @Test void twee_later_afgeleide_operanden_in_een_gewone_regel() throws Exception {
+        // "De uitkomst van een Vondst moet gesteld worden op zijn vinddag indien de afgeleide vergunningsdag van de jutter
+        // van de Vondst ongelijk is aan zijn afgeleide controledag", before the two rules that derive the operands. The
+        // comparison reads positively (RUNTIME-SEMANTICS ch. 6.1), and the branch orders it after the writers all the
+        // same: tested after the first writer and before the second, it held and the write stayed. ref and clingo: V and
+        // X leeg, Z 15-07-2026.
+        String ir = document(List.of(uitkomstIndien(vergelijking("notEqual", viaJutter("afgeleide vergunningsdag"),
+                eigen("afgeleide controledag"))), AFGELEIDE_VERGUNNINGSDAG, AFGELEIDE_CONTROLEDAG));
+        String zaak = zaak(List.of(jutter("J", "2026-03-01", null, ""), jutter("J2", null, null, ""),
+                jutter("J3", "2026-04-01", null, ""), vondst("V", "2026-09-15", "J", "\"controledag\":{\"date\":\"2026-03-01\"}"),
+                vondst("X", "2026-08-15", "J2", ""), vondst("Z", "2026-07-15", "J3", "")),
+                leeg("V", "uitkomst") + "," + leeg("X", "uitkomst") + "," + dag("Z", "uitkomst", "2026-07-15"));
+        assertNull(speel(ir, zaak), "twee later afgeleide operanden in een gewone regel");
     }
 
     @Test void een_ketting_van_leeglezers() throws Exception {
