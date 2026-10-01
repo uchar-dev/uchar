@@ -110,3 +110,18 @@ golden>/`, `scripts/check-*.sh` (pins, **voorstel**), kaartverplaatsing.
 Niet: `ref/`, `backends/clingo/`, `backends/drools/`, `spec/` (bij het
 alternatief anders, dan eerst een spec-voorstel). NB: geen bouwdatum; te
 wegen zodra een regelset meer dan één zo'n brug draagt.
+
+## Aanvulling (2026-10-01, uit de landing van drools-exec-voorwaarde-twee-rollen-ver)
+
+Een telling over een pad van meer dan één stap kapt de frontend stil af:
+"het aantal havenjutters van de haven van de jutter van de Vondst" komt op
+de draad als een telling met `sourceRole` `JutterHeeftVondst.jutter` en
+argument `jutter`, dus over de jutter van de Vondst; `check` meldt niets
+(geen WARNING meerstapsbereik), de verifier laat het document door, en ref
+en clingo antwoorden 1 waar 2 hoort. Een telling over een bereik van meer
+dan één stap is volgens WF-102 (c) ongeldig. Dat is ernstiger dan de
+weigering hierboven: een stil fout antwoord in drie uitvoerders.
+Reproductie: `/tmp/v2/probe/vtr-bouw/`, vorm x-veel-aantal (gemaakt door
+maak.py; alleen lezen). De acceptatie van deze kaart omvat de vorm: de
+lowering (standaardweg) of, tot die er is, een benoemde weigering in de
+frontend moet ook de telling dekken.

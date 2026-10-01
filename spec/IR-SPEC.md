@@ -8760,12 +8760,25 @@ has two forms.
   WF-046, and a rule whose value folds with a subselection carries no
   NO_LOOP. A leeg or gevuld test outside a fold, and the DRL-text branch,
   keep the form described here.*
+  The exec-model branch's navigated leeg test, over one role and since
+  2026-10-01 over a chain, has this form as well (measured 2026-10-01, card
+  `drools-exec-voorwaarde-twee-rollen-ver`: with the reader first it writes
+  the vinddag where `ref/` and `backends/clingo` answer leeg).
 - On a NAVIGATED operand in a condition it does not depend on the order.
   *Closed in the exec-model branch on 2026-09-28 (card
   `drools-exec-voorwaarde-genavigeerde-afleiding`, golden
   `jutterswet-meldingsketen`): a condition that reads through a to-one
   navigation is tested after a far-side join on the reached object; the
   DRL-text branch keeps the form described here.*
+  *Widened in the exec-model branch on 2026-10-01 (card
+  `drools-exec-voorwaarde-twee-rollen-ver`, golden `jutterswet-havenketen`,
+  witness `KetenVoorwaardeWitnessTest`): a condition that reads through a
+  chain of two or more to-one roles is tested after a far-side join on every
+  object the chain passes, so a relation in the middle of the chain that a
+  fact creation sets while the rules run is seen too; a rule's value over a
+  chain takes the same joins (before, it joined the reached object only and
+  read leeg when the middle relation came later). The DRL-text branch
+  refuses such a condition by its marker and keeps the one join in a value.*
   With a rule deriving the far side's attribute, both branches answer as if
   that attribute were never written, in either order: "de a van het ding is
   leeg" yields 1 where `ref/` and `backends/clingo` give leeg, and the

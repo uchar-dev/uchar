@@ -524,3 +524,34 @@ README in de werkboom, op de code van `800af0af`).
     75d4c42d Exectak: commentaar bij de join op een object onderweg
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `2729d69c` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates13/`. Alle zestien exit 0: gate 10 JUnit 1008, 114
+rgs-goldens; gate 12 `check-drools: PASS`, played 232 (pin 232), DRL 191
+(pin 191), JUnit 960; gate 16 21 scenario-goldens, 78 casebestanden. De fix
+gelezen: `navDoel` vervangt in de genavigeerde bladen de ene rol door de
+keten als functie van het onderwerp; `navJoins` joint elk object dat de
+keten passeert, onder de sleutel van een lezing die daar eindigt;
+`gejoindeLezingen` begrenst de ketenlowering tot de lezingen die de
+voorwaarde joint, en `gejoindeLezer` geeft een datumrekensom met zo'n
+lezing het onderwerp mee; `ketenStappen` en `langsKeten` delen de
+wandeling. Afwijking 1 aanvaard: de waarde van een regel krijgt dezelfde
+joins, want één join op het bereikte object gaf een stil fout antwoord als
+een feitcreatie de tussenrelatie later legt (rood-eerst getuigd, sweep
+ongewijzigd). Afwijkingen 2–4 aanvaard: de kenmerkcheck over twee rollen
+komt niet op de draad (één hop, IR-SPEC ch. 4.5) en de vier bladen die ook
+zonder keten weigeren, blijven buiten deze kaart (open punt 4). De
+voorgestelde registertekst is in dit landingscommit gezet in
+`spec/IR-SPEC.md` ch. 5.5 (beide bullets van de flank) en
+`spec/CONSTRUCTS.md` rij 6. Open punt 3 (de frontend kapt een telling over
+een keten stil af naar één stap; ref en clingo rekenen 1 waar 2 hoort) is
+een stil fout antwoord in de frontend en staat als aanvulling in de kaart
+`frontend-kwantor-over-een-pad` in `backlog/new`. Open punt 1 gelezen: de
+leeg-toets met de lezer vóór de schrijver verruimt de bekende grens van
+één rol naar de keten; de README en de flank zeggen het, de fix blijft een
+plaatsing onder de schrijvers van de operand (open punt 2 van de
+voorganger), kandidaat voor een eigen kaart. Commitkoppen tot 76 tekens
+aanvaard (ff-only, geen rebase). Open punten 2 en 5–8: geen kaart.
