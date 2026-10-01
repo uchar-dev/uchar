@@ -308,6 +308,29 @@ class GebrokenDuurTest {
         assertEquals(zin, fouten(consequentie("zijn startdag plus zijn duur")));
     }
 
+    // ---- found in the form space: the rounding written behind the date sum, the parentheses left out
+
+    @Test void een_afronding_over_een_datum_weigert() {
+        // before: check exit 0 and a Rounding over a Date on the wire, verifier PASS; ref faulted ("afronding: expected
+        // a number"), the ASP backend answered the unrounded date and the Drools exec branch crashed at fire
+        String zonderHaakjes = "zijn startdag plus zijn ronde duur richting nul afgerond op 0 decimalen";
+        assertEquals(List.of("afronding '" + zonderHaakjes + "': 'zijn startdag plus zijn ronde duur' is een datum, en "
+                        + "een afronding rondt een getal af; rond de duur af: 'zijn startdag plus (zijn ronde duur "
+                        + "richting nul afgerond op 0 decimalen)'"),
+                fouten(einddag(zonderHaakjes)));
+        // with a fraction in the duration, the sum inside is refused first, in its own words
+        String gebroken = "zijn startdag plus zijn duur richting nul afgerond op 0 decimalen";
+        assertEquals(List.of(gelezen("plus", "zijn startdag", "zijn duur", "is een getal met 1 decimalen", "mnd",
+                        "dagen"),
+                        "afronding '" + gebroken + "': 'zijn startdag plus zijn duur' is een datum, en een afronding "
+                        + "rondt een getal af; rond de duur af: 'zijn startdag plus (zijn duur richting nul afgerond "
+                        + "op 0 decimalen)'"),
+                fouten(einddag(gebroken)));
+        assertEquals(List.of("afronding 'zijn begintijd naar boven afgerond op 0 decimalen': 'zijn begintijd' is een "
+                        + "datum-tijd, en een afronding rondt een getal af"),
+                fouten(eindtijd("zijn begintijd naar boven afgerond op 0 decimalen")));
+    }
+
     // ---- the forms that keep playing
 
     @Test void een_hele_duur_blijft_spelen() {
