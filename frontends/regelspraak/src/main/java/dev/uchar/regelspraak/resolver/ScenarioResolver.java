@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.ir.ResolvedScenario.*;
 import dev.uchar.regelspraak.model.Datatype;
@@ -352,13 +353,57 @@ public final class ScenarioResolver {
         return gescoped(List.copyOf(vormen));
     }
 
-    /** A scope over {@code vormen}, with the source lines of the blocks whose every form it leaves out. */
-    private Scope gescoped(List<String> vormen) {
+    /** A scope over {@code genoemd} and the defaults groups the stack of each concrete type needs beside them
+     *  ({@link #metStapel}), with the source lines of the blocks whose every form it leaves out. */
+    private Scope gescoped(List<String> genoemd) {
+        List<String> vormen = metStapel(genoemd);
         Set<String> gedragen = new java.util.HashSet<>();
         for (String v : vormen) gedragen.add(norm(v));
         List<Regelbereik> weggelaten = new ArrayList<>();
         for (Blok b : blokken()) weggelaten(b, gedragen, weggelaten);
         return new Scope(vormen, List.copyOf(weggelaten));
+    }
+
+    /** {@code vormen} with the defaults groups RUNTIME-SEMANTICS ch. 7.10 composes with them. The own exceptions of a
+     *  subtype under the base of its supertype are a group of their own on the subtype that holds no base
+     *  (grammar/DIVERGENCES.md §4, the inheritance line: {@code <basis> voor <subtype>}), and the instances of that
+     *  subtype take the base from the supertype's group. A scope that carries the base therefore carries the groups
+     *  that take it, and a scope that carries such a group carries its base and the other groups that take it, so the
+     *  stack of every concrete type is the one of the whole document. Read off the groups — their subject, their
+     *  target and whether a default at their top holds content of its own — not off their names. A subtype's own base
+     *  is a tree of its own, which goes only where a scope names it. */
+    private List<String> metStapel(List<String> vormen) {
+        LinkedHashSet<String> uit = new LinkedHashSet<>(vormen);
+        for (String naam : vormen)
+            for (PrioritizedDefaults g : model.prioritizedDefaults) {
+                if (g.naam() == null || !norm(g.naam()).equals(norm(naam))) continue;
+                PrioritizedDefaults basis = zonderBasis(g) ? basisVan(g) : g;
+                if (basis == null) continue;
+                uit.add(basis.naam());
+                for (PrioritizedDefaults h : model.prioritizedDefaults)
+                    if (h != basis && zonderBasis(h) && basisVan(h) == basis) uit.add(h.naam());
+            }
+        return List.copyOf(uit);
+    }
+
+    /** Whether no default at the top of {@code g} holds a decision or a consequence of its own: the group of a
+     *  subtype's own exceptions under an inherited base (RUNTIME-SEMANTICS ch. 7.9, the group-default). */
+    private static boolean zonderBasis(PrioritizedDefaults g) {
+        return g.defaults().stream().noneMatch(Default::heeftEigenInhoud);
+    }
+
+    /** The group whose base the instances of {@code g}'s subject take: on the nearest strict supertype that has one,
+     *  the group with a base on the same target (WF-105 holds a member name to one type of a line). Null if none. */
+    private PrioritizedDefaults basisVan(PrioritizedDefaults g) {
+        Objecttype onderwerp = model.objecttypeOpNaam(g.onderwerp());
+        if (onderwerp == null) return null;
+        List<Objecttype> keten = onderwerp.keten();
+        for (Objecttype t : keten.subList(1, keten.size()))
+            for (PrioritizedDefaults b : model.prioritizedDefaults)
+                if (!zonderBasis(b) && b.isKenmerk() == g.isKenmerk() && norm(b.doel()).equals(norm(g.doel()))
+                        && model.objecttypeOpNaam(b.onderwerp()) == t)
+                    return b;
+        return null;
     }
 
     /** A source block that yields named forms: a rule or a decision table (its forms carry its name, a table's rows
