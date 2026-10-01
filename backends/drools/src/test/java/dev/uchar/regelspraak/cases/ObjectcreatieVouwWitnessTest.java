@@ -38,7 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the member's unit ({@code verwacht 2000, werkelijk 2}); a division in a toekenning answered consistent where a
  * divisor was leeg, because a creation has no companion that raises the Fout; and a date fold in the creation's
  * condition refused in a sentence that names no form. One row is a flank, green before and after: the number folds
- * in the creation's condition.
+ * in the creation's condition. The division row was a named refusal from that day; it plays with the Fout reported
+ * since the follow-up round of the same day, and was red against the refusal ({@code Excluded … kanaal-deponerende
+ * toekenning (deling)}).
  */
 class ObjectcreatieVouwWitnessTest {
 
@@ -227,28 +229,41 @@ class ObjectcreatieVouwWitnessTest {
 
     // ---------------- what does not go along, by name ----------------
 
-    @Test void een_deling_in_een_toekenning_weigert_met_de_vorm() throws Exception {
+    @Test void een_deling_of_wortel_in_een_toekenning_meldt_de_fout() throws Exception {
         // "… met heffing gelijk aan zijn basis gedeeld door zijn deler", basis 2 for each Jutter and deler 2 for all but
-        // J2: ref and clingo write 1,00, leeg, 1,00 and 1,00 and turn the case inconsistent (ch. 1.2, ch. 5.6). A
-        // creation has no companion that raises the Fout, so the branch refuses the creation by the site's kind rather
-        // than answering consistent; so too "(100 gedeeld door (de som …)) rekenkundig afgerond op 2 decimalen", where
-        // ref and clingo write 9,09, leeg, leeg and 11,11 and turn the case inconsistent.
+        // J2: ref and clingo write 1,00, leeg, 1,00 and 1,00 and turn the case inconsistent (ch. 1.2, ch. 5.6). The
+        // creation evaluates its toekenningen once, when it mints, and reports the Fout of that evaluation itself. Until
+        // 2026-10-01 the creation answered consistent here, and then refused the form by the site's kind.
         String eigen = binair("dividedBy", eigen("basis"), eigen("deler"), ONBEGRENSD, "zijn basis gedeeld door zijn deler");
         List<String> metDeler = new ArrayList<>();
         for (String j : situatie()) metDeler.add(j.replace("\"objectType\":\"Jutter\",\"attributes\":{}",
                 "\"objectType\":\"Jutter\",\"attributes\":{\"basis\":{\"number\":\"2\"}"
                         + (j.contains("\"J2\"") ? "" : ",\"deler\":{\"number\":\"2\"}") + "}"));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(document(false,
-                creatie(null, toekenning("heffing", eigen)), leesTerug("heffing")), zaak(metDeler,
-                perJutter("heffing", getal("1.00"), null, getal("1.00"), getal("1.00")), INCONSISTENT)));
-        assertTrue(e.getMessage().contains("deling"), e.getMessage());
-        String doorSom = "{\"node\":\"Rounding\",\"base\":" + binair("dividedBy", getalLiteraal(100), SOM, ONBEGRENSD,
-                "100 gedeeld door (de som …)") + ",\"mode\":\"halfAwayFromZero\",\"decimals\":2,\"type\":" + TWEE_DECIMALEN
-                + ",\"source\":{\"snippet\":\"(100 gedeeld door (de som …)) rekenkundig afgerond op 2 decimalen\"}}";
-        CaseRunner.Excluded s = assertThrows(CaseRunner.Excluded.class, () -> speel(document(false,
-                creatie(null, toekenning("heffing", doorSom)), leesTerug("heffing")), zaak(situatie(),
-                perJutter("heffing", getal("9.09"), null, null, getal("11.11")), INCONSISTENT)));
-        assertTrue(s.getMessage().contains("deling"), s.getMessage());
+        assertNull(speel(document(false, creatie(null, toekenning("heffing", eigen)), leesTerug("heffing")), zaak(metDeler,
+                perJutter("heffing", getal("1.00"), null, getal("1.00"), getal("1.00")), INCONSISTENT)), "deler leeg");
+        // "(100 gedeeld door (de som …)) rekenkundig afgerond op 2 decimalen": ref and clingo 9,09, leeg, leeg and 11,11,
+        // inconsistent; over J1 and J4 alone, whose sums are filled, consistent.
+        String doorSom = afgerondOp2(binair("dividedBy", getalLiteraal(100), SOM, ONBEGRENSD, "100 gedeeld door (de som …)"));
+        String somIr = document(false, creatie(null, toekenning("heffing", doorSom)), leesTerug("heffing"));
+        assertNull(speel(somIr, zaak(situatie(), perJutter("heffing", getal("9.09"), null, null, getal("11.11")), INCONSISTENT)),
+                "een lege som als deler");
+        List<String> gevuld = new ArrayList<>();
+        for (String i : situatie()) if (!i.contains("\"J2\"") && !i.contains("\"J3\"")) gevuld.add(i);
+        assertNull(speel(somIr, zaak(gevuld, "{\"kind\":\"attributeValue\",\"label\":\"J1\",\"attribute\":\"heffing\",\"value\":"
+                + getal("9.09") + "},{\"kind\":\"attributeValue\",\"label\":\"J4\",\"attribute\":\"heffing\",\"value\":"
+                + getal("11.11") + "}", CONSISTENT)), "elke som gevuld");
+        // "(de som …) gedeeld door 4": a literal divisor never deposits. ref and clingo: 2,75, 0,00, 0,00 and 2,25,
+        // consistent.
+        assertNull(speel(document(false, creatie(null, toekenning("heffing", binair("dividedBy", SOM, getalLiteraal(4),
+                ONBEGRENSD, "(de som …) gedeeld door 4"))), leesTerug("heffing")), zaak(situatie(),
+                perJutter("heffing", getal("2.75"), getal("0.00"), getal("0.00"), getal("2.25")), CONSISTENT)), "gedeeld door 4");
+        // "de wortel van ((de som …) min 10) rekenkundig afgerond op 2 decimalen": J1 1, the others negative. ref: 1,00,
+        // leeg, leeg and leeg, inconsistent; clingo does not translate the rounded root.
+        String wortel = afgerondOp2("{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":["
+                + binair("minus", SOM, getalLiteraal(10), GEHEEL, "(de som …) min 10") + "],\"type\":{\"node\":\"Number\","
+                + "\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"de wortel van …\"}}");
+        assertNull(speel(document(false, creatie(null, toekenning("heffing", wortel)), leesTerug("heffing")), zaak(situatie(),
+                perJutter("heffing", getal("1.00"), null, null, null), INCONSISTENT)), "de wortel van een negatieve som");
     }
 
     @Test void vijf_vouwen_binden_te_veel() throws Exception {
@@ -419,6 +434,12 @@ class ObjectcreatieVouwWitnessTest {
         return binair("plus", links, rechts, type, "… plus …");
     }
 
+    /** &lt;basis&gt; rekenkundig afgerond op 2 decimalen. */
+    private static String afgerondOp2(String basis) {
+        return "{\"node\":\"Rounding\",\"base\":" + basis + ",\"mode\":\"halfAwayFromZero\",\"decimals\":2,\"type\":"
+                + TWEE_DECIMALEN + ",\"source\":{\"snippet\":\"… rekenkundig afgerond op 2 decimalen\"}}";
+    }
+
     /** "&lt;p&gt;% van &lt;operand&gt;". */
     private static String procent(int p, String operand) {
         return binair("percentageOf", getalLiteraal(p), operand, ONBEGRENSD, p + "% van …");
@@ -491,6 +512,7 @@ class ObjectcreatieVouwWitnessTest {
     private static String datum(String iso) { return "{\"date\":\"" + iso + "\"}"; }
 
     private static final String INCONSISTENT = "{\"kind\":\"inconsistent\"}";
+    private static final String CONSISTENT = "{\"kind\":\"consistent\"}";
 
     /** The expectation on {@code lid} of J1 to J4, a null value leeg. */
     private static String perJutter(String lid, String... waarden) {
