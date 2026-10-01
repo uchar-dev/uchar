@@ -6930,14 +6930,6 @@ public final class ExecModelTranspiler {
             vouwslots = slots;
             vouwOnderwerp = sVar;
             for (var t : oc.toekenningen()) {
-                // A §6.5 division or a §6.6 root raises its Fout through a companion, and a creation has none: the
-                // value would degrade to leeg and the case read consistent where ref turns it inconsistent. Fenced as a
-                // default's consequence is (foutplekSoort).
-                String foutplek = foutplekSoort(t.waarde());
-                if (foutplek != null)
-                    return skip("objectcreatie (kanaal-deponerende toekenning (" + foutplek + "): een creatie heeft geen"
-                            + " begeleider die de Fout meldt (ch. 1.2, ch. 5.6): " + snippet(t.waarde().bron()) + "): "
-                            + oc.naam());
                 navReden = null;
                 vouwReden = null;
                 WaardeFn wf = scalarWaarde(subject, t.waarde());
@@ -7003,11 +6995,19 @@ public final class ExecModelTranspiler {
         final List<TkLower> fTks = tks;
         final String fBackRef = backRef; final String fFwdRef = fwdRef; final Class<?> fNieuwClass = nieuwClass;
         final List<String> fG = gList; final int vouwVanaf = 1 + gList.size();
+        final String fqcn = FACTS + ".Inconsistentie";
         java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body = (drools, args) -> {
             Object s = args[0];
             Map<String, BigDecimal> gm = new LinkedHashMap<>();
             vulGlobalMap(gm, fG, args, 1);                           // no BigDecimal cast: the rekendatum slot holds a LocalDate
             vulVouwslots(gm, slots, args, vouwVanaf, s);             // the folds, bound after [subject, globals...]
+            // RUNTIME-SEMANTICS ch. 5.5/5.6: the creation evaluates its toekenningen once, when it mints, and a §6.5
+            // division by leeg or a §6.6 negative root in that evaluation deposits on the channel for the creation and
+            // its subject. A regel needs a companion for this, since it evaluates again on every change; a creation
+            // does not: the probe every §6.5/§6.6 site reports to (Sonde) rides this one evaluation, under the
+            // creation's own guard and before the mint closes it.
+            Sonde sonde = new Sonde();
+            ((Map<String, Object>) (Map) gm).put(Sonde.SLEUTEL, sonde);
             Object newObj = RegelSpraakRuntime.newInstance(fNieuwClass);
             for (TkLower tk : fTks) {
                 Object v = tk.fn().apply(s, gm);
@@ -7028,6 +7028,7 @@ public final class ExecModelTranspiler {
                 RegelSpraakRuntime.set(newObj, tk.attr(), collapseBreuk(v));
             }
             if (fBackRef != null) RegelSpraakRuntime.set(newObj, fBackRef, s);
+            if (sonde.heeftFoutGemeld()) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, ruleNaam, s));
             drools.insert(newObj);
             if (fMarker) drools.insert(new CreationMarker(ruleNaam, s));   // §9 mark this (rule, subject) created
             if (fFwdRef != null) {
