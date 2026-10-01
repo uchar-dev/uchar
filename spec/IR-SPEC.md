@@ -8772,6 +8772,23 @@ has two forms.
   2026-10-01 over a chain, has this form as well (measured 2026-10-01, card
   `drools-exec-voorwaarde-twee-rollen-ver`: with the reader first it writes
   the vinddag where `ref/` and `backends/clingo` answer leeg).
+  *Closed in the exec-model branch on 2026-10-01 for a test anywhere in a
+  condition or a value (witness `LezerOnderSchrijverWitnessTest`): a rule is
+  placed after every writer of what it reads under a leeg or gevuld test,
+  and a characteristic assignment after every writer of what it reads
+  stratum-strict (RUNTIME-SEMANTICS ch. 6.1), with every node such a writer
+  waits on — an ordinary rule declared after it, a defaults group, an object
+  or fact creation, an allocation — strictly below it in salience or level
+  with it and added before the rule; a consistency rule takes the same
+  placement, and a rule's companions take the rule's salience. A leeg or
+  gevuld test on a cycle with its writer, its own target included, is
+  refused by name (WF-046). The exec-model branch orders here more strictly
+  than the graph asks: a comparison in the condition of an attribute-writing
+  rule reads positively (RUNTIME-SEMANTICS ch. 6.1), and the branch places
+  that rule after the writers of its operands as well, a finer order that
+  reaches the same fixpoint (before, with two operands derived later, it
+  wrote where `ref/` and `backends/clingo` answer leeg); on a cycle such a
+  rule keeps its place. The DRL-text branch keeps the form described here.*
 - On a NAVIGATED operand in a condition it does not depend on the order.
   *Closed in the exec-model branch on 2026-09-28 (card
   `drools-exec-voorwaarde-genavigeerde-afleiding`, golden
@@ -8803,7 +8820,8 @@ this date; for the own attribute reader it became negative with the
 leeg/gevuld decision (ch. 5.2). No corpus document has either shape, so
 gate 12 cannot see them. The fix belongs to the backend: far-side
 reactivity for a condition or a named refusal, and a salience below the
-operand's writers for the order-dependent form.
+operand's writers for the order-dependent form (in the exec-model branch:
+the far-side join since 2026-09-28, the salience since 2026-10-01).
 
 *Recorded (measured 2026-10-01, card `drools-exec-objectcreatie-vouw`;
 closed in the exec-model branch the same day, open in the DRL-text branch).*
@@ -8825,14 +8843,15 @@ follow, writes its toekenningen, the created type's population and its
 link, and goes below every node it waits on that would otherwise fire
 after it, a rule the stratification places lower and a creation declared
 after it included; a recursive creation stays on its generations
-(RUNTIME-SEMANTICS ch. 5.5). What stays open: in the exec-model branch a
-reader of a creation's output that writes irrevocably, such as a
-characteristic assignment over a count of the created objects, is not
-placed below the creation and can act on the transient absence (measured:
-a characteristic attributed where `ref/` and `backends/clingo` leave it
-absent); the DRL-text branch orders no creation, so a later creation and a
-fact creation still read 0 there, a coarser order than the graph without a
-loud refusal.
+(RUNTIME-SEMANTICS ch. 5.5). *Closed in the exec-model branch the same day
+(witness `LezerOnderSchrijverWitnessTest`):* a reader of a creation's output
+that writes irrevocably, such as a characteristic assignment over a count of
+the created objects or over the links a fact creation lays, and a leeg test
+on what a creation writes, wait on the creation; before, a characteristic
+was attributed where `ref/` and `backends/clingo` leave it absent. What
+stays open: the DRL-text branch orders no creation, so a later creation and
+a fact creation still read 0 there and a reader of their output acts on
+that 0, a coarser order than the graph without a loud refusal.
 
 *Recorded flank, the ASP backend (measured 2026-09-23, open).* Its `all`
 fold is a double negation (a helper for "some member fails the matrix",

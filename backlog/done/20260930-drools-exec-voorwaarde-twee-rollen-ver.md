@@ -952,3 +952,35 @@ valt erbuiten. Geen voorstel voor `scripts/check-drools.sh`: `EXPECTED_PLAYED=23
 
 en de commit "Vervolgronde lezer-onder-schrijver: Result (2)", die deze sectie onderaan de done-kaart
 `20260930-drools-exec-voorwaarde-twee-rollen-ver.md` bijwerkt. Niet gepusht, niet gemerged.
+
+## Keuring vervolgronde lezer-onder-schrijver (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `f793a64d` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates20/`. Alle zestien exit 0: gate 10 JUnit 1044, 116
+rgs-goldens; gate 12 `check-drools: PASS`, played 234 (pin 234), DRL 192
+(pin 192), JUnit 1020; gate 16 23 scenario-goldens, 82 casebestanden. De
+fix gelezen: `leegLezingen` verzamelt wat een regel onder een leeg- of
+gevuld-toets leest, overal in voorwaarde en waarde; `naSchrijvers` zet een
+regel na elke schrijver daarvan en van wat een kenmerktoekenning
+stratum-strikt leest, met alles waarop die schrijver wacht (salience of
+laadrang); verdelingen zijn knopen, consistentieregels komen na hun
+schrijvers (`consistentieSalience`), begeleiders nemen de salience van hun
+regel; een leeg-toets op een kring met haar schrijver weigert benoemd
+(`kringWeigering`, WF-046); in de tweede ronde ook de vergelijking in de
+voorwaarde van een gewone regel (besluit hoofdsessie: een fijnere volgorde
+binnen ch. 6, op een kring blijft de plaats). Afwijkingen 1 en 4 aanvaard
+(drie verwante gaten in dezelfde laag gedicht; kringvormen weigeren nu
+benoemd waar zij een antwoord gaven dat ref en clingo niet geven);
+afwijking 2 aanvaard (tien goldens een lagere salience, geen statusregel
+verschuift: dat is de bedoelde ordening); afwijking 3 gesloten in de tweede
+ronde. De registertekst is in dit landingscommit gezet: `spec/IR-SPEC.md`
+ch. 5.5 (eerste bullet van de flank, de alinea over de fix, de
+recorded-alinea van de creaties) en `spec/CONSTRUCTS.md` rij 6. Open voor
+de eigenaar, geen kaart: zeventien vormen zonder arbiter waar een
+vergelijking op leeg waar is ('ongelijk aan', 'gelijk aan 0') vóór haar
+schrijver (ref schrijft op de tijdelijke stand, clingo niet, de exec-tak
+volgt nu clingo; ch. 1.2 en ch. 6.1); een verdeling waarvan een
+defaultsgroep de bron schrijft (ref fout, exec NullPointerException, clingo
+rekent: ref en clingo verschillen); de DRL-teksttak ordent niet (kanaal).
+Commitkoppen tot 70 tekens aanvaard.
