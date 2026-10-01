@@ -1,0 +1,31 @@
+Eenheidsysteem Valuta
+    de euro (mv: euros) EUR €
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen) met eenheid €;
+    de bergingskosten Numeriek (getal met 2 decimalen) met eenheid €;
+    de waarde Numeriek (getal met 2 decimalen) met eenheid € (mag opgegeven worden);
+    de verzekerde waarde Numeriek (getal met 2 decimalen) met eenheid €;
+    is ter controle kenmerk (bijvoeglijk);
+
+// Bron: art. 3k lid 1
+Regel waarde
+    geldig altijd
+        De waarde van een Vondst moet berekend worden als zijn taxatie plus zijn bergingskosten
+        indien zijn taxatie gevuld is.
+
+// Bron: art. 3k lid 2
+Regel waarde bij onbekende taxatie
+    geldig altijd
+        De waarde van een Vondst moet geïnitialiseerd worden op 25,00 €.
+
+// Bron: art. 3k lid 4
+Regel controle bij afwijkende waarde
+    geldig altijd
+        Een Vondst is ter controle
+        indien hij afwijkende opgave waarde heeft.
+
+// Bron: art. 3k lid 5
+Regel verzekerde waarde
+    geldig altijd
+        De verzekerde waarde van een Vondst moet berekend worden als zijn waarde plus 2,50 €.

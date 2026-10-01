@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "80.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "waarde",
+      "value": {
+        "number": "80.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "berekende waarde"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave waarde"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "verzekerde waarde",
+      "value": {
+        "number": "82.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

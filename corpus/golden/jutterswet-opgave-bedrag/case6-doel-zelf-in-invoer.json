@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "100.00"
+          },
+          "bergingskosten": {
+            "number": "10.00"
+          },
+          "waarde": {
+            "number": "80.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "waarde",
+      "value": {
+        "number": "110.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "berekende waarde",
+      "value": {
+        "number": "110.00"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V",
+      "characteristic": "afwijkende opgave waarde"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "verzekerde waarde",
+      "value": {
+        "number": "112.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

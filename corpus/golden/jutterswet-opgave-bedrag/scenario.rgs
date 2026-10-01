@@ -1,0 +1,86 @@
+Scenario geen opgave
+Gegeven is de volgende situatie:
+een Vondst V
+- de taxatie is 100,00 €
+- de bergingskosten is 10,00 €
+Met als verwacht resultaat:
+- de waarde van V is 110,00 €
+- de berekende waarde van V is 110,00 €
+- V heeft geen afwijkende opgave waarde
+- V is niet ter controle
+- de verzekerde waarde van V is 112,50 €
+- de gegevens zijn consistent
+
+Scenario opgave gelijk
+Gegeven is de volgende situatie:
+een Vondst V
+- de taxatie is 100,00 €
+- de bergingskosten is 10,00 €
+- de opgegeven waarde is 110,00 €
+Met als verwacht resultaat:
+- de waarde van V is 110,00 €
+- de berekende waarde van V is 110,00 €
+- V heeft geen afwijkende opgave waarde
+- V is niet ter controle
+- de verzekerde waarde van V is 112,50 €
+- de gegevens zijn consistent
+
+Scenario opgave wijkt af
+Gegeven is de volgende situatie:
+een Vondst V
+- de taxatie is 100,00 €
+- de bergingskosten is 10,00 €
+- de opgegeven waarde is 95,00 €
+Met als verwacht resultaat:
+- de waarde van V is 95,00 €
+- de berekende waarde van V is 110,00 €
+- V heeft afwijkende opgave waarde
+- V is ter controle
+- de verzekerde waarde van V is 97,50 €
+- de gegevens zijn inconsistent volgens "controle opgave waarde" voor V
+
+Scenario alleen opgave
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven waarde is 50,00 €
+Met als verwacht resultaat:
+- de waarde van V is 50,00 €
+- de berekende waarde van V is leeg
+- V heeft geen afwijkende opgave waarde
+- V is niet ter controle
+- de verzekerde waarde van V is 52,50 €
+- de gegevens zijn consistent
+
+Scenario niets
+Gegeven is de volgende situatie:
+een Vondst V
+Met als verwacht resultaat:
+- de waarde van V is 25,00 €
+- de berekende waarde van V is leeg
+- V heeft geen afwijkende opgave waarde
+- de verzekerde waarde van V is 27,50 €
+- de gegevens zijn consistent
+
+Scenario doel zelf in invoer
+Gegeven is de volgende situatie:
+een Vondst V
+- de taxatie is 100,00 €
+- de bergingskosten is 10,00 €
+- de waarde is 80,00 €
+Met als verwacht resultaat:
+- de waarde van V is 110,00 €
+- de berekende waarde van V is 110,00 €
+- V heeft geen afwijkende opgave waarde
+- de verzekerde waarde van V is 112,50 €
+- de gegevens zijn consistent
+
+Scenario doel zelf zonder feiten
+Gegeven is de volgende situatie:
+een Vondst V
+- de waarde is 80,00 €
+Met als verwacht resultaat:
+- de waarde van V is 80,00 €
+- de berekende waarde van V is leeg
+- V heeft geen afwijkende opgave waarde
+- de verzekerde waarde van V is 82,50 €
+- de gegevens zijn consistent
