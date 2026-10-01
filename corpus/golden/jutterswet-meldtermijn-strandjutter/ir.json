@@ -1,0 +1,275 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vinddag",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldtermijn",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandjutter",
+        "supertype": "Jutter",
+        "animate": false,
+        "plural": "Strandjutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergunningseinde",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "wk",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 7,
+              "den": 1
+            },
+            "spellings": [
+              "week"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 12,
+              "den": 1
+            },
+            "spellings": [
+              "jaar"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "meldtermijn",
+        "subject": "Jutter",
+        "attribute": "meldtermijn",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn vinddag gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vinddag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vinddag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "6"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Tijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "6 mnd"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "zijn vinddag plus 6 mnd"
+              }
+            },
+            "source": {
+              "snippet": "art. 3h lid 1"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "art. 3h lid 1"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "meldtermijn voor Strandjutter",
+        "subject": "Strandjutter",
+        "attribute": "meldtermijn",
+        "defaults": [
+          {
+            "node": "Default",
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "justification": {
+                        "node": "Predicate",
+                        "kind": "filled",
+                        "operand": {
+                          "node": "AttributeReference",
+                          "attribute": "vergunningseinde",
+                          "subjectType": "Strandjutter",
+                          "source": {
+                            "snippet": "zijn vergunningseinde"
+                          }
+                        },
+                        "negated": false,
+                        "digits": 0,
+                        "source": {
+                          "snippet": "zijn vergunningseinde gevuld is"
+                        }
+                      },
+                      "consequence": {
+                        "node": "AttributeReference",
+                        "attribute": "vergunningseinde",
+                        "subjectType": "Strandjutter",
+                        "source": {
+                          "snippet": "zijn vergunningseinde"
+                        }
+                      },
+                      "source": {
+                        "snippet": "art. 3h lid 2"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Afwijking van meldtermijn"
+                  }
+                }
+              ]
+            },
+            "source": {
+              "snippet": "Afwijking van meldtermijn"
+            }
+          }
+        ],
+        "source": {
+          "snippet": "eigen uitzonderingen van Strandjutter; de basis 'meldtermijn' is ge\u00ebrfd van Jutter"
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,24 @@
+Eenheidsysteem Tijd
+    de dag dg
+    de week wk = 7 dg
+    de maand mnd
+    het jaar jr = 12 mnd
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vinddag Datum in dagen;
+    de meldtermijn Datum in dagen;
+
+Objecttype de Strandjutter is een Jutter (mv: Strandjutters)
+    het vergunningseinde Datum in dagen;
+
+// Bron: art. 3h lid 1
+Regel meldtermijn
+    geldig altijd
+        De meldtermijn van een Jutter moet berekend worden als zijn vinddag plus 6 mnd
+        indien zijn vinddag gevuld is.
+
+// Bron: art. 3h lid 2
+Afwijking van meldtermijn: meldtermijn tot het vergunningseinde
+    geldig altijd
+        De meldtermijn van een Strandjutter moet gesteld worden op zijn vergunningseinde
+        indien zijn vergunningseinde gevuld is.

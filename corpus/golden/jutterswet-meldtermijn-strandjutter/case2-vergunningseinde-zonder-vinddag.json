@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S2",
+        "objectType": "Strandjutter",
+        "attributes": {
+          "vergunningseinde": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S2",
+      "attribute": "meldtermijn",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "meldtermijn"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

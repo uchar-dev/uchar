@@ -1,0 +1,24 @@
+Scenario meldtermijn over de erflijn
+Gegeven is de volgende situatie:
+een Jutter J
+- de vinddag is 10-03-2026
+een Strandjutter S
+- de vinddag is 10-03-2026
+- het vergunningseinde is 01-06-2026
+een Strandjutter T
+- de vinddag is 10-03-2026
+Met als verwacht resultaat:
+- de meldtermijn van J is 10-09-2026
+- de meldtermijn van S is 01-06-2026
+- de meldtermijn van T is 10-09-2026
+- de gegevens zijn consistent
+
+Scenario vergunningseinde zonder vinddag
+Gegeven is de volgende situatie:
+een Strandjutter S2
+- het vergunningseinde is 01-06-2026
+een Jutter J2
+Met als verwacht resultaat:
+- de meldtermijn van S2 is 01-06-2026
+- de meldtermijn van J2 is leeg
+- de gegevens zijn consistent

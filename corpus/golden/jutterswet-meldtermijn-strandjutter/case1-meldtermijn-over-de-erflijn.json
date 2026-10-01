@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J",
+        "objectType": "Jutter",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S",
+        "objectType": "Strandjutter",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          },
+          "vergunningseinde": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "T",
+        "objectType": "Strandjutter",
+        "attributes": {
+          "vinddag": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J",
+      "attribute": "meldtermijn",
+      "value": {
+        "date": "2026-09-10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "meldtermijn",
+      "value": {
+        "date": "2026-06-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T",
+      "attribute": "meldtermijn",
+      "value": {
+        "date": "2026-09-10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
