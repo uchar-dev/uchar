@@ -160,9 +160,12 @@ role, and a navigated operand of a date computation — a date plus or minus a d
 role away or more — lowers as it does without navigation. A chain lowers only where joins cover it: in a condition,
 and since 2026-10-01 in the subselection of a fold and the matrix of a quantifier fold (the section on a fold whose
 subselection tests a value derived later); a consistency rule's assertion over a chain is refused (`schending buiten
-Phase-D scope`) where one over one role plays. A comparison this branch does not
-lower over one role either, such as an own number on the left of a navigated one or a date computation against a date
-parameter, is refused over a chain in the same words. A characteristic check over two roles does not reach this branch:
+Phase-D scope`) where one over one role plays. A date computation against a date
+parameter, which this branch does not lower over one role either, is refused over a chain in the same words. An own
+number on the left of a navigated one ("zijn gewicht groter is dan de afgeleide diepte van de haven van de jutter van de
+Vondst") was refused over one role and over a chain alike, where its mirror and "zijn gewicht maal 1" lowered; since
+2026-10-01 the leaf swaps the operands and reverses the operator, as it does for a literal on the left (witness
+`VergelijkingEigenLinksWitnessTest`). A characteristic check over two roles does not reach this branch:
 the wire's navigated check carries one to-one hop (IR-SPEC ch. 4.5), and the frontend leaves the check unresolved,
 which ref and clingo refuse too. The DRL-text branch refuses a condition over two or more roles with its marker
 `TODO voorwaarde`, and joins a chain in a rule's value at the reached object only, so there a value over a chain whose
