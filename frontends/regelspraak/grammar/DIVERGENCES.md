@@ -586,7 +586,8 @@ which the base never covers. The verifier has no rule to refuse it under, so
 gate 10 pins the frontend's refusal. An initialisation of the target on the
 subtype beside the subtype's group is a second writer on that level and draws the
 single-writer ERROR above; without the block, the fold of ch. 7.10 makes it the
-initialisation default of the subtype's stack.
+initialisation default of the subtype's stack. A scenario's scope carries the base
+and the groups of its subtypes together ("Scenariotoetsen", Lowering).
 
 Measured on 2026-10-01 in ref, clingo and the Drools exec branch: both heads on
 a direct subtype and on a grandchild, two subtypes under one base, an exception
@@ -2509,8 +2510,21 @@ serialiser, so a case file and an IR document share one shape.
   keeps its diagnostics, and so does a diagnostic without a line. A rule is named by its name without a version
   suffix, a decision table by its name (all its rows), a defaults group by
   the name of its base rule, a rule group by its name (its members). A rule
-  group keeps its carried members and disappears without one. Without a
-  scope the document is the production route's.
+  group keeps its carried members and disappears without one. The group of a
+  subtype's own exceptions under the base of its supertype (§4, the
+  inheritance line: `<basisregel> voor <subtype>`) holds no base, and
+  RUNTIME-SEMANTICS ch. 7.10 composes the stack of that subtype from it and
+  the base's group, so the two go together (since 2026-10-01): a scope that
+  carries the base carries every such group that takes it, and a scope that
+  names such a group carries its base and the other groups that take it.
+  They are found in the groups themselves — the subject, the target, and
+  whether a default at the top holds a decision or a consequence of its own
+  — not in their names. A subtype's own base is a tree of its own and goes
+  only where a scope names it, with the groups that take it. Before, a scope
+  that named the base carried its group alone, and a subtype instance got
+  the base's value where the whole document gives it the subtype's exception
+  (`ScenarioErflijnScopeTest`). Without a scope the document is the
+  production route's.
 
 The CLI writes both: `Resolver --ir <out.json> --cases <map> <file.rgs…>`,
 or `make ir FILE="bron.rgs scenario.rgs" OUT=<out.json> CASES=<map>`. The
