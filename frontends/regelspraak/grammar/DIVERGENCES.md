@@ -2668,7 +2668,11 @@ last member over a base that is no group member, where the document is
 well-formed with the block and the rules behind it outside the group; a member
 of an `Uitzonderingen ongeordend` block that writes another target than the
 members before it, since the lowering writes every member on the first member's
-target, a well-formed document. Refusals of the source text itself (syntax, the
+target, a well-formed document; a date plus or min a duration whose count can
+carry a fraction, which RUNTIME-SEMANTICS ch. 3.8 gives the meaning of the
+truncated count (the last section below); a rounding of a value that is no
+number, which the verifier admits while the executors part on it (the same
+section). Refusals of the source text itself (syntax, the
 desugaring of decision tables and exception blocks, the dialect's fences — among
 them a member of an unordered block that is no kenmerktoekenning or
 gelijkstelling, or yields no rule at all — a timeline reference that names no
@@ -2749,8 +2753,12 @@ document after a Dutch part in the author's words:
 
 Where the name with its `van`s is itself a declared attribute ("de premie van
 de jutter" declared on the Vondst), the declaration wins: the read is that
-attribute, whether or not the navigation would bind as well, and no diagnostic
-is raised.
+attribute, whether or not the navigation would bind as well, and where it would —
+a role walked from where the read stands reaches a type that declares the member
+the remaining words name, here the Jutter's 'premie' — a WARNING names both
+readings and says the declaration wins (maintainer decision 2026-10-01,
+`DubbeleLezingTest`; no golden and no fragment of the parity zone reads such a
+name, so no pinned document changed).
 
 What stays with the verifier is an own read — one that reaches no role — of an
 undeclared name with no role or type name behind a `van`: "de rang van de
@@ -2778,3 +2786,77 @@ supertype of the filler among them, play unchanged in ref and the ASP backend.
 Every rgs golden and the sources of the parity zone re-emit byte-identically
 (gates 10 and 11). Negatief witnesses: `wf053-jutterswet-ongebonden-lezing-subtype`
 and `wf034-jutterswet-ongebonden-lezing-nergens`.
+
+---
+
+## A date plus or min a duration that can carry a fraction — refused
+
+Every executor truncates a fractional duration count toward zero before the
+calendar step (RUNTIME-SEMANTICS ch. 3.8: 1,9 maanden steps one month, −1,9
+steps −1), so "zijn startdag plus 20,5 mnd" lands half a month short of what
+the sentence says. The wire keeps that meaning: a document with a fractional
+count is well-formed, and golden `jutterswet-vervaltermijn`, written as IR
+without a `bron.rgs`, pins it (`zijn aangiftedatum min 1,9 maanden`, 31-01-2024
+to 31-12-2023) in ref, the ASP backend and both Drools branches. The verifier
+admits such a document, so the refusal is this producer's own and keeps its
+Dutch words (`GebrokenDuurTest`).
+
+The resolver refuses a date plus or min a duration, at every position it builds
+one — the value of a rule, a condition, the justification and the consequence of
+a default, a cell of a decision table, the toekenning of an object creation, a
+consistency, a variable's definition — where the count can carry a fraction by
+its form, without a case value: a literal with a fraction (`20,5 mnd`, `-2,5
+dg`); a read of an attribute or parameter whose type is not whole (a number with
+decimals, or the unbounded "getal"); and a computation without a whole outcome —
+a quotient, a percentage, a power, a rounding to one decimal or more, a total
+over time, a pro-rata part, a square root, a product with a factor that can
+carry a fraction, and a sum or a minimum, maximum or clamp that restates an
+operand into a larger unit ("1 jr plus 6 mnd" is 1,5 jr, although the typing
+calls the sum whole). The same holds for a day kind as the unit: the walk
+truncates the count as well. Read through a variable, the definition decides.
+
+The refusal names the sum and the duration as written, the unit, the truncation
+with ch. 3.8's example in that unit (for a literal, the literal and its whole
+part), and the forms that say what is meant: the truncation written out —
+`zijn startdag plus (zijn duur richting nul afgerond op 0 decimalen)`, for a
+literal its whole part, `zijn startdag plus 20 mnd` — or the rest in the next
+smaller unit behind it, `… plus … dagen`: months for a year or a quarter, days
+for a month or a week, hours for a day on a date-time, minutes for an hour,
+seconds for a minute, milliseconds for a second. A day on a Datum in dagen, a
+millisecond and a day kind have no smaller unit, and the refusal says so.
+
+What keeps playing is a count that is whole by its form: a whole type, a
+literal without a fraction (`20 mnd`, `20,0 mnd`), a rounding to 0 decimals in
+any mode, a product of whole numbers (typed fractional by ch. 2.3, but whole), a
+sum whose restatement multiplies (`zijn ronde duur plus 1 jr` in months) or
+whose literal restates whole (`1 jr plus 12 mnd`), a tijdsduur and a count.
+Date arithmetic written step by step (`zijn startdag plus 1 jr plus 6 mnd`) is
+two calendar steps and plays.
+
+Found in the same form space and refused beside it: a rounding of a value that
+is no number. The rounding binds weakest, so written behind a date sum without
+the parentheses around the duration it rounds the date; that went to disk as a
+Rounding over a Date, which the verifier admits, while ref refused it at
+evaluation, the ASP backend answered the unrounded date and the Drools exec
+branch crashed. The refusal names the value's kind and, behind a date sum, the
+form with the rounding around the duration.
+
+Measured on 2026-10-01 over 136 generated documents, 1168 forms: ten sources of
+a fraction (an attribute with one decimal, an unbounded attribute, a parameter,
+a positive and a negative literal, a quotient, a percentage, a rounding to one
+decimal, a product with 1,5, a restatement into a larger unit) and seven whole
+forms, each in dg, wk, mnd, kw and jr on a Datum in dagen and in u, minuut, sec
+and ms on a date-time (the restatements where the unit systems declare a
+neighbour), with plus and min, in the four positions above, each with a
+positive and a negative case. Before: every document passed `check` without a
+diagnostic, and ref, the ASP backend and both Drools branches answered the
+truncated date wherever they answered (the ASP backend refuses loudly a
+quotient or percentage with a unit, a restatement between units, a negative
+operand under a rounding down, a case value of an unbounded number that is not
+whole, and a date-time target in a default's consequence; the Drools exec branch
+skips a quotient in a default's consequence, and the DRL-text branch excludes
+the defaults and the computed durations it cannot compile). After: the 80 documents
+with a source of a fraction are refused with one ERROR per form; the 56 with a
+whole form write the same IR byte for byte and play unchanged. Every rgs golden,
+the sources of the parity zone and the scenario goldens re-emit byte-identically
+(gates 10, 11 and 16); no source in the corpus writes a fractional duration.
