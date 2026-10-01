@@ -1156,6 +1156,14 @@ public final class RegelSpraakModel {
      *  join). A filler that names an objecttype directly takes the by-pair role (§13.4.1.2/.3: the
      *  objecttype reading), any other filler the by-name role reading. */
     public KetenHop ketenHop(Objecttype houder, String geschreven) {
+        KetenHop hop = geschrevenHop(houder, geschreven);
+        return hop == null || naarVeelRol(houder, hop.doel(), hop.rol()) ? null : hop;
+    }
+
+    /** The hop {@link #ketenHop} resolves, a to-MANY one included, or null when the filler names no role or
+     *  several. The check of a read that did not bind walks the same hops and must tell a to-many step apart from
+     *  a name that is no role ({@code RuleChecker}). */
+    public KetenHop geschrevenHop(Objecttype houder, String geschreven) {
         if (houder == null || geschreven == null) return null;
         Objecttype alsType = objecttypeOpNaam(geschreven);   // STRICT name match — a role-named filler must take the role reading
         String rol; Objecttype doel;
@@ -1164,8 +1172,7 @@ public final class RegelSpraakModel {
             doel = rolDoeltypeNaarSubject(houder, geschreven);
             rol = doel == null ? null : verbindendeRolViaNaam(houder, doel, geschreven);
         }
-        if (rol == null || doel == null || naarVeelRol(houder, doel, rol)) return null;
-        return new KetenHop(rol, doel);
+        return rol == null || doel == null ? null : new KetenHop(rol, doel);
     }
 
     /** Re-walk a RESOLVED navigation chain (declared role names, subject-outward) from {@code van},

@@ -196,6 +196,35 @@ class OngebondenLezingTest {
                         + "het wadgeld van de melder van de Vondst plus 1.\n"));
     }
 
+    @Test void het_subtype_bij_naam_over_een_rol_van_het_supertype() {
+        // before: a path over 'jutter' with the endpoint Strandjutter, which the verifier refuses (WF-053)
+        String model = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de premie Numeriek (geheel getal);
+
+            Objecttype de Strandjutter is een Jutter (mv: Strandjutters)
+                de toeslag Numeriek (geheel getal);
+
+            Objecttype de Vondst (mv: Vondsten)
+                de bonus Numeriek (geheel getal);
+
+            Feittype JutterHeeftVondst
+                de jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén jutter heeft meerdere vondsten
+
+            Regel bonus
+                geldig altijd
+            """;
+        for (String lezing : List.of("de toeslag van de Strandjutter van de Vondst", "de toeslag van de Strandjutter",
+                "de premie van de Strandjutter van de Vondst", "de rang van de Strandjutter van de Vondst"))
+            assertEquals(List.of("genavigeerde lezing '" + lezing + "' noemt het subtype 'Strandjutter', maar de rol "
+                            + "'jutter' komt uit op 'Jutter': the navigation reaches 'Jutter', not the endpoint "
+                            + "'Strandjutter'"),
+                    fouten(model + "        De bonus van een Vondst moet berekend worden als " + lezing + " plus 1.\n"),
+                    lezing);
+    }
+
     // ---- a role name that is no role
 
     @Test void een_verkeerde_rolnaam() {
@@ -233,6 +262,32 @@ class OngebondenLezingTest {
                         "Strandjutter")),
                 fouten(JUTTERS + "Regel toeslaggrens\n    geldig altijd\n        De toeslag van de jutter van een "
                         + "Vondst moet groter zijn dan 2.\n"));
+    }
+
+    @Test void een_stap_die_geen_relatie_bindt() {
+        // a role or type name in the read's name that binds no single relation; before: an attribute of the Vondst
+        assertEquals(List.of("genavigeerde lezing 'de premie van de beheerder van de Vondst' bindt niet (de rol "
+                        + "'beheerder' wijst vanaf 'Vondst' niet precies één relatie aan), dus zij is gelezen als het "
+                        + "attribuut 'premie van de beheerder' van 'Vondst': 'premie van de beheerder' is neither an "
+                        + "attribute nor a characteristic of 'Vondst'"),
+                fouten(waarde("de premie van de beheerder van de Vondst")));
+        // two relations between Vondst and Jutter: the chain reads 'jutter' as the type, and the pair decides nothing;
+        // the possessive binds by the written role (grammar/DIVERGENCES.md, §13.4.1, case 2)
+        String vinder = JUTTERS + """
+            Feittype VinderVindtVondst
+                de vinder Jutter
+                de gevonden vondst (mv: gevonden vondsten) Vondst
+            Eén vinder vindt meerdere gevonden vondsten
+
+            """;
+        assertEquals(List.of("genavigeerde lezing 'de premie van de jutter van de Vondst' bindt niet ('jutter' leest "
+                        + "als het objecttype 'Jutter', en 2 relaties verbinden 'Vondst' met 'Jutter'), dus zij is gelezen "
+                        + "als het attribuut 'premie van de jutter' van 'Vondst': 'premie van de jutter' is neither an "
+                        + "attribute nor a characteristic of 'Vondst'"),
+                fouten(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden "
+                        + "als de premie van de jutter van de Vondst plus 1.\n"));
+        assertEquals(List.of(), fouten(vinder + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet "
+                + "berekend worden als de premie van zijn jutter plus 1.\n"));
     }
 
     @Test void een_kenmerk_als_waarde_over_een_rol() {
@@ -284,7 +339,7 @@ class OngebondenLezingTest {
 
     @Test void een_eigen_lezing_zonder_rol_in_de_naam_blijft_aan_de_verifier() {
         // the parity zone reads names like these, which only its replay slices declare
-        for (String lezing : List.of("de datum van vertrek van de Vondst", "de rang van de Vondst",
+        for (String lezing : List.of("de datum van aanmelding van de Vondst", "de rang van de Vondst",
                 "de premie van de visser van de Vondst"))
             assertEquals(List.of(), fouten(waarde(lezing)), lezing);
     }

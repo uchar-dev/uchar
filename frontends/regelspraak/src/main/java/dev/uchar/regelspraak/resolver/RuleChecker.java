@@ -739,9 +739,10 @@ final class RuleChecker {
      * {@link dev.uchar.regelspraak.emit.IrEmitter#vouwweigering}); the walk follows the emitter's traversal — after
      * the lift, so the defaults are covered — and each position's subject is the one the emitter writes it from. A
      * read whose binding reaches a to-many role in a slot that takes one value is refused here too, in WF-053's
-     * sentence for that hop: the emitter writes it, and the verifier refuses the document. A set reading and a
+     * sentence for that hop: the emitter writes it, and the verifier refuses the document. A read that binds, but
+     * whose member is not where its roles bring it, is refused here as well ({@link #lidFout}). A set reading and a
      * window bound are left out: the set fence and the window's own check refuse every one of those that navigates,
-     * so one defect keeps one refusal.
+     * so one defect keeps one refusal; a window bound that is an own read is judged for the roles its name took in.
      */
     private void keurNavigatiebindingen() {
         Set<Object> gemeld = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -768,10 +769,11 @@ final class RuleChecker {
      * over every inner 'van', so "het maximum van de romplengte van de Schuit" — no function of the language — became a
      * read of an attribute 'maximum van de romplengte' of Schuit, went to disk with {@code diagnostics: []}, and the
      * verifier refused the document. Refused here, in the verifier's sentence, where the name the emitter writes is no
-     * member of the type it is read on and its part behind a 'van' is a declared attribute of that type. An undeclared
-     * name of any other shape is left to the verifier: the casus of the parity zone reads such names, which only its
-     * replay slices declare, and an ERROR would stop its emission (grammar/DIVERGENCES.md, "Producer refusals
-     * without a reader sentence"). A set reading is the set fence's to refuse; the walk reaches every other written
+     * member of the type it is read on and its part behind a 'van' is a declared attribute of that type. A name whose
+     * part behind a 'van' is a role is {@link #lidFout}'s, in the walk of {@link #keurNavigatiebindingen}. An own read
+     * of an undeclared name with neither in it is left to the verifier: the casus of the parity zone reads such names,
+     * which only its replay slices declare, and an ERROR would stop its emission (grammar/DIVERGENCES.md, "An
+     * undeclared attribute read"). A set reading is the set fence's to refuse; the walk reaches every other written
      * read, window bounds and fold sources included, after the lift, so the defaults are covered.
      */
     private void keurOpgeslokteNamen() {
@@ -871,6 +873,7 @@ final class RuleChecker {
                 if (a.set() || !gemeld.add(a)) return;
                 String fout = dev.uchar.regelspraak.emit.IrEmitter.ongebondenLezing(model, subject, a)
                         ? ongebondenLezingFout(a, subject) : meervoudigeStapFout(a, subject);
+                if (fout == null) fout = lidFout(a, subject, false);
                 if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron().line()));
             }
             case Expr.Functie f -> {
@@ -934,7 +937,11 @@ final class RuleChecker {
                 navigatiebinding(k.filter(), element, gemeld);
                 navigatiebinding(k.toets(), element, gemeld);
             }
-            case Conditie.Periode ignored -> { }       // every bound that navigates is the window check's refusal
+            // every bound that navigates is the window check's refusal; an own read whose name took in a role is not
+            case Conditie.Periode p -> {
+                venstergrensLid(p.vanaf(), subject, gemeld);
+                venstergrensLid(p.tot(), subject, gemeld);
+            }
             case Conditie.Kenmerk ignored -> { }
             case Conditie.Rollidmaatschap r -> rolcheckBinding(r, r.rol(), r.anderTeFiller(), r.bron(), subject, gemeld);
             case Conditie.VerreRollidmaatschap r ->
@@ -991,11 +998,173 @@ final class RuleChecker {
                 dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
         List<String> zinnen = new ArrayList<>();
         for (int i = 0; i < pad.size(); i++)
-            if (teVeel(pad.get(i)))
-                zinnen.add("hop " + i + " reaches the to-many role '" + pad.get(i).rol() + "' in a scalar slot "
-                        + "— a to-many step needs an aggregation, never a silent first pick");
+            if (teVeel(pad.get(i))) zinnen.add(meervoudigeStapZin(i, pad.get(i).rol()));
         return zinnen.isEmpty() ? null
                 : "genavigeerde lezing '" + a.bron() + "' over een meervoudige rol: " + String.join("; ", zinnen);
+    }
+
+    /** WF-053's sentence for hop {@code i} over the to-many role {@code rol} of a read that takes one value. */
+    private static String meervoudigeStapZin(int i, String rol) {
+        return "hop " + i + " reaches the to-many role '" + rol + "' in a scalar slot — a to-many step needs an "
+                + "aggregation, never a silent first pick";
+    }
+
+    /** A window bound that is an own read: {@link #lidFout} for the role its name took in. A bound that navigates is
+     *  the window check's to refuse (WF-111), so one defect keeps one refusal. */
+    private void venstergrensLid(Expr grens, Objecttype subject, Set<Object> gemeld) {
+        if (!(grens instanceof Expr.AttribuutRef a) || a.set() || !gemeld.add(a)) return;
+        String fout = lidFout(a, subject, true);
+        if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron().line()));
+    }
+
+    /**
+     * The refusal of a read whose member is not where its written roles bring it, or null (grammar/DIVERGENCES.md,
+     * "An undeclared attribute read"). The name of a read runs over every inner 'van', so "de toeslag van de jutter van
+     * de Vondst" is read as an attribute 'toeslag van de jutter' of the Vondst where the Jutter has no 'toeslag', and
+     * "de toeslag van zijn jutter" navigates to a Jutter that has none; both went to disk with {@code diagnostics: []},
+     * and every reader refused them. The walk starts where the read stands — its own type, or the type its path
+     * reaches — and takes the roles its name took in, outward, as the resolver's chain walk does
+     * ({@link RegelSpraakModel#geschrevenHop}). Refused where at least one role is walked: a member missing on the
+     * filler the walk ends on, in the verifier's sentence for the document the author wrote (the navigation to the one
+     * subtype that declares the member, WF-053, else the read on the filler, WF-034); a read that names a subtype of
+     * that filler as its endpoint (WF-053); a characteristic read as a value (WF-080); a to-many step (WF-053); and a
+     * chain the resolver did not lay although its member stands at the end of it, or a step that names a role or a type
+     * but binds no single relation, in WF-034's sentence for the document it would write. A read that names no type at
+     * all is refused in WF-034's sentence for the reference without a subject type. An own read with no role or type
+     * name in it — "de datum van aanmelding van de Vondst", where 'aanmelding' names neither — stays the verifier's,
+     * because the casus of the parity zone reads such names, which only its replay slices declare. With
+     * {@code alleenEigen} only an own read is judged: a window bound that navigates is the window check's refusal.
+     */
+    private String lidFout(Expr.AttribuutRef a, Objecttype subject, boolean alleenEigen) {
+        String naam = a.attribuut();
+        if (subject == null || a.set() || naam == null) return null;
+        Objecttype t = a.objecttype();
+        if (t == null) return alleenEigen ? null : zonderTypeFout(a, subject, naam);
+        if (opgeslokteNaamFout(a) != null) return null;
+        List<RegelSpraakModel.RolBindingRef> pad =
+                dev.uchar.regelspraak.emit.IrEmitter.navigatieBindingen(model, subject, a);
+        if (alleenEigen && !pad.isEmpty()) return null;
+        String rol = pad.isEmpty() ? null : pad.get(pad.size() - 1).rol();
+        Objecttype vuller = pad.isEmpty() ? null : rolVuller(pad.get(pad.size() - 1));
+        if (t.attribuut(naam) != null || t.kenmerkNaam(naam) != null) {
+            if (pad.isEmpty()) return null;    // an own read; of a characteristic, the verifier's (WF-080)
+            if (neerwaarts(vuller, t)) return neerwaartsFout(a, t, vuller, rol);
+            return t.attribuut(naam) != null ? null : kenmerkAlsWaardeFout(a, naam, t, rol);
+        }
+        String[] delen = naam.split("\\s+van\\s+");
+        Objecttype cur = t;
+        String lid = naam;
+        int hops = pad.size();
+        for (int i = delen.length - 1; i >= 1; i--) {
+            String stap = stripArtikel(delen[i]);
+            RegelSpraakModel.KetenHop hop = model.geschrevenHop(cur, stap);
+            if (hop == null) {
+                // a role or type name that binds no step from here: the author wrote a navigation, not this name
+                String reden = stapReden(cur, stap);
+                if (reden == null) break;
+                return "genavigeerde lezing '" + a.bron() + "' bindt niet (" + reden + "), dus zij is gelezen als het "
+                        + "attribuut '" + naam + "' van '" + t.naam + "': '" + naam
+                        + "' is neither an attribute nor a characteristic of '" + t.naam + "'";
+            }
+            if (model.naarVeelRol(cur, hop.doel(), hop.rol()))
+                return "genavigeerde lezing '" + a.bron() + "' over een meervoudige rol: "
+                        + meervoudigeStapZin(hops, hop.rol());
+            hops++;
+            vuller = model.rolDoeltypeNaarSubject(cur, hop.rol());
+            cur = hop.doel();
+            rol = hop.rol();
+            lid = String.join(" van ", java.util.Arrays.copyOfRange(delen, 0, i));
+            String attribuut = MeervoudMatcher.vindAttribuut(cur, lid);
+            if (attribuut != null)
+                return neerwaarts(vuller, cur) ? neerwaartsFout(a, cur, vuller, rol)
+                        : "genavigeerde lezing '" + a.bron() + "' is niet als navigatie gelegd: '" + attribuut
+                        + "' staat op '" + cur.naam + "', de vuller van de rol '" + rol + "', maar zij is gelezen als het "
+                        + "attribuut '" + naam + "' van '" + t.naam + "': '" + naam
+                        + "' is neither an attribute nor a characteristic of '" + t.naam + "'";
+        }
+        if (hops == 0) return null;
+        if (neerwaarts(vuller, cur)) return neerwaartsFout(a, cur, vuller, rol);
+        if (cur.kenmerkNaam(lid) != null) return kenmerkAlsWaardeFout(a, lid, cur, rol);
+        return lidOntbreektFout(a, lid, cur, rol);
+    }
+
+    /** Why the step {@code stap} binds no hop from {@code van}, where it names an object type or a role anywhere in
+     *  the model — a word that only stands in a navigation; null where it names neither. A type name is read as the
+     *  type, as {@link RegelSpraakModel#ketenHop} reads it, so the pair decides. */
+    private String stapReden(Objecttype van, String stap) {
+        Objecttype type = model.objecttypeOpNaam(stap);
+        if (type != null) {
+            int n = model.verbindendeRolAantal(van, type);
+            return "'" + stap + "' leest als het objecttype '" + type.naam + "', en " + (n == 0
+                    ? "geen relatie verbindt '" + van.naam + "' met '" + type.naam + "'"
+                    : n + " relaties verbinden '" + van.naam + "' met '" + type.naam + "'");
+        }
+        for (Feittype ft : model.feittypen.values())
+            for (Rol r : ft.rollen)
+                if (r.naam().equalsIgnoreCase(stap) || r.meervoud() != null && r.meervoud().equalsIgnoreCase(stap))
+                    return "de rol '" + stap + "' wijst vanaf '" + van.naam + "' niet precies één relatie aan";
+        return null;
+    }
+
+    /** The declared filler of the role a binding reaches, or null where the binding names none. */
+    private Objecttype rolVuller(RegelSpraakModel.RolBindingRef stap) {
+        Feittype ft = model.feittypen.get(stap.feittype());
+        if (ft == null) return null;
+        for (Rol r : ft.rollen) if (r.naam().equals(stap.rol())) return model.objecttypeOpNaam(r.objecttypeNaam());
+        return null;
+    }
+
+    /** Whether the read names a strict subtype of the filler its last role reaches: by the type's name ("de toeslag van
+     *  de Strandjutter van de Vondst" over a role a Jutter fills), which only the instances of that subtype satisfy. */
+    private static boolean neerwaarts(Objecttype vuller, Objecttype eindpunt) {
+        return vuller != null && eindpunt != vuller && eindpunt.isEen(vuller);
+    }
+
+    private static String neerwaartsFout(Expr.AttribuutRef a, Objecttype eindpunt, Objecttype vuller, String rol) {
+        return "genavigeerde lezing '" + a.bron() + "' noemt het subtype '" + eindpunt.naam + "', maar de rol '" + rol
+                + "' komt uit op '" + vuller.naam + "': the navigation reaches '" + vuller.naam + "', not the endpoint '"
+                + eindpunt.naam + "'";
+    }
+
+    /** A read whose subject phrase names no role and no type from the subject: the emitter writes it without a type. */
+    private static String zonderTypeFout(Expr.AttribuutRef a, Objecttype subject, String naam) {
+        String onderwerp = a.onderwerpBron() == null || a.onderwerpBron().isBlank() ? "haar onderwerp"
+                : "'" + a.onderwerpBron() + "'";
+        return "lezing '" + a.bron() + "': " + onderwerp + " noemt vanaf '" + subject.naam + "' geen rol en geen "
+                + "objecttype: attribute reference '" + naam + "' without a subjectType: it resolves against no "
+                + "declaration";
+    }
+
+    /** A member read on {@code vuller} that neither it nor a supertype declares: where it does stand, and the
+     *  verifier's sentence for the navigation to the one subtype that declares it (WF-053), else for the read on the
+     *  filler (WF-034). */
+    private String lidOntbreektFout(Expr.AttribuutRef a, String lid, Objecttype vuller, String rol) {
+        List<String> subtypen = new ArrayList<>(), andere = new ArrayList<>();
+        for (Objecttype o : model.objecttypen.values())
+            if (o != vuller && declareertLid(o, lid)) (o.isEen(vuller) ? subtypen : andere).add(o.naam);
+        String waar = !subtypen.isEmpty()
+                ? (subtypen.size() == 1 ? ", wel op het subtype " : ", wel op de subtypen ") + opsomming(subtypen)
+                : andere.size() == 1 ? ", wel op " + opsomming(andere) + ", dat geen subtype van '" + vuller.naam + "' is"
+                : !andere.isEmpty() ? ", wel op " + opsomming(andere) + ", die geen subtype van '" + vuller.naam + "' zijn"
+                : ", en op geen ander objecttype";
+        String zin = subtypen.size() == 1
+                ? "the navigation reaches '" + vuller.naam + "', not the endpoint '" + subtypen.get(0) + "'"
+                : "'" + lid + "' is neither an attribute nor a characteristic of '" + vuller.naam + "'";
+        return "genavigeerde lezing '" + a.bron() + "': het lid '" + lid + "' bestaat niet op '" + vuller.naam
+                + "', de vuller van de rol '" + rol + "'" + waar + ": " + zin;
+    }
+
+    private String kenmerkAlsWaardeFout(Expr.AttribuutRef a, String lid, Objecttype vuller, String rol) {
+        return "genavigeerde lezing '" + a.bron() + "': het lid '" + lid + "' van '" + vuller.naam
+                + "', de vuller van de rol '" + rol + "', is een kenmerk en geen attribuut: '" + lid
+                + "' is a characteristic of '" + vuller.naam + "', not an attribute — a characteristic endpoint is "
+                + "ill-formed in a value position";
+    }
+
+    /** Whether {@code o} itself — not a supertype — declares a member {@code lid}, case-insensitively. */
+    private static boolean declareertLid(Objecttype o, String lid) {
+        return o.attributen.keySet().stream().anyMatch(n -> n.equalsIgnoreCase(lid))
+                || o.kenmerken.stream().anyMatch(n -> n.equalsIgnoreCase(lid));
     }
 
     /** The refusal of a fold the wire has no spelling for: what the fold carries, then the reader's sentence for the
