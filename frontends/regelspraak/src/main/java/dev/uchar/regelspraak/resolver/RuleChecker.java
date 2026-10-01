@@ -239,8 +239,11 @@ final class RuleChecker {
      *  and the block with its whole tree stays un-lifted — on each refusal of grammar/DIVERGENCES.md §4: a block
      *  within a Regelgroep's scope or over a group member; an unknown carrier, a cycle of carriers, and a member of
      *  a carrier-less 'Uitzonderingen ongeordend:' block named as a carrier; an 'Afwijking van' under a node that is
-     *  no base rule; a subtype's block under a node of its supertype's tree; a carrier with ordered and unordered
-     *  children, or with two unordered blocks; and, per edge and per member of a carrier-less block, a body that
+     *  no base rule; a subtype's block under a node of its supertype's tree; a subtype's block under its
+     *  supertype's base where a type on its line has a base of its own, where it is a member of an unordered block,
+     *  where it is written before a block for its supertype, or where its group's name is taken; a carrier with
+     *  ordered and unordered children, or with two unordered blocks; and, per edge and per member of a carrier-less
+     *  block, a body that
      *  yields no kenmerktoekenning or gelijkstelling, a rule with more than one version, another validity window,
      *  and another target. After the lift it refuses a negated plain rule and a second writer on a group's target,
      *  and warns once per characteristic target that no group ever attributes. */
@@ -1328,7 +1331,10 @@ final class RuleChecker {
      *  spec/proposals/DIALECT-DEFAULTS-NIET-EN-NESTING.md §5.2): the children of the base are chain positions above
      *  it, the later-written one higher; the children of a node nest in that node's default as one ordered
      *  exception group; the members of an 'Uitzonderingen ongeordend op' block become one exception group each,
-     *  unordered, under a node or as a group-default directly above the base. A refused node keeps its whole tree
+     *  unordered, under a node or as a group-default directly above the base. A child of the base written for a
+     *  strict subtype of the base's subject, on the target the subtype inherits, is the subtype's own exception: per
+     *  subtype one more group, on the subtype, whose group-default holds those children ({@link #subtypeGroep};
+     *  RUNTIME-SEMANTICS ch. 7.10 composes it over the base's group). A refused node keeps its whole tree
      *  un-lifted, as a refused family always stayed; every refusal is one ERROR at the block that makes it. */
     private void boomDefaults(RegelSpraakDocumentContext doc, java.util.Set<ParserRuleContext> geweigerd) {
         List<Knoop> knopen = new ArrayList<>();
@@ -1389,6 +1395,7 @@ final class RuleChecker {
 
         // 3. per tree, in the order its first block was written: the base, then every node top-down
         java.util.Set<String> knoopNamen = knoopNamen(doc);
+        Map<String, String[]> vormen = vormPlekken(doc);
         Map<String, List<Knoop>> perWortel = new LinkedHashMap<>();
         for (Knoop k : knopen) if (!k.fout) perWortel.computeIfAbsent(k.wortel, w -> new ArrayList<>()).add(k);
         java.util.Set<ResolvedRegel> gelift = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1411,19 +1418,38 @@ final class RuleChecker {
             }
             if (!keurKinderen(null, wortel, wortelKinderen, basisRegel, doel, knoopNamen)) continue;
 
+            // the blocks for the base's own type, and per subtype the blocks written for it, in written order
+            List<Knoop> eigenKinderen = new ArrayList<>();
+            Map<Objecttype, List<Knoop>> perSubtype = new LinkedHashMap<>();
+            for (Knoop k : wortelKinderen) {
+                Objecttype o = doelVan(k.regel).onderwerp();
+                if (o == doel.onderwerp()) eigenKinderen.add(k);
+                else perSubtype.computeIfAbsent(o, x -> new ArrayList<>()).add(k);
+            }
+            if (!perSubtype.isEmpty()) {
+                Weigering reden = volgordeFout(wortel, wortelKinderen);
+                if (reden == null) reden = subtypeNaamFout(wortel, perSubtype, vormen);
+                if (reden != null) { fout(reden.line(), reden.tekst()); continue; }
+            }
+
             List<Conditie> basisConjuncten = conjuncten(basisRegel.voorwaarde());
             List<Default> keten = new ArrayList<>();
-            if (wortelKinderen.get(0).soort == Blok.LID)   // one unordered block: a group-default directly above the base
+            if (!eigenKinderen.isEmpty() && eigenKinderen.get(0).soort == Blok.LID)   // one unordered block: a group-default directly above the base
                 keten.add(new Default(null, null, null, false,
-                        uitzonderingenVan(wortelKinderen, basisConjuncten, doel.kenmerk()),
-                        kopTekst(wortelKinderen.get(0).blok)));
+                        uitzonderingenVan(eigenKinderen, basisConjuncten, doel.kenmerk()),
+                        kopTekst(eigenKinderen.get(0).blok)));
             else
-                for (Knoop k : wortelKinderen) keten.add(0, defaultVan(k, basisConjuncten, doel.kenmerk()));
+                for (Knoop k : eigenKinderen) keten.add(0, defaultVan(k, basisConjuncten, doel.kenmerk()));
             keten.add(defaultVan(basisRegel, doel.kenmerk()));
             PrioritizedDefaults groep = defaultsVan(wortel, doel, false, keten, basisRegel.geldigheid(),
                     annotatieTekst(basisRegel.bronAnnotaties()));
             model.prioritizedDefaults.add(groep);
             pdHerkomst.put(groep, new Herkomst(kop.line, kop.kop));
+            for (var s : perSubtype.entrySet()) {
+                PrioritizedDefaults eigen = subtypeGroep(wortel, basisRegel, doel, s.getKey(), s.getValue());
+                model.prioritizedDefaults.add(eigen);
+                pdHerkomst.put(eigen, new Herkomst(s.getValue().get(0).line, s.getValue().get(0).kop));
+            }
             gelift.add(basisRegel);
             for (Knoop k : boom) gelift.add(k.regel);
         }
@@ -1438,8 +1464,12 @@ final class RuleChecker {
     private boolean keurKinderen(Knoop drager, String dragerNaam, List<Knoop> kinderen, ResolvedRegel basis,
                                  DefaultsDoel doel, java.util.Set<String> knoopNamen) {
         boolean goed = true;
-        List<Knoop> geordend = kinderen.stream().filter(k -> k.soort != Blok.LID).toList();
-        List<ParserRuleContext> blokken = kinderen.stream().filter(k -> k.soort == Blok.LID).map(k -> k.blok)
+        // a subtype's own blocks under the base stand above the supertype's in the composition of ch. 7.10, so
+        // only children for the carrier's own type can leave their priority open
+        List<Knoop> eigen = kinderen.stream().filter(k -> onderwerpVan(k) == null
+                || onderwerpVan(k) == doel.onderwerp()).toList();
+        List<Knoop> geordend = eigen.stream().filter(k -> k.soort != Blok.LID).toList();
+        List<ParserRuleContext> blokken = eigen.stream().filter(k -> k.soort == Blok.LID).map(k -> k.blok)
                 .distinct().toList();
         java.util.Set<ParserRuleContext> geweigerdeBlokken =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1462,15 +1492,220 @@ final class RuleChecker {
                 goed = false;
                 continue;
             }
-            if (!keurKinderen(k, k.naam, k.kinderen, basis, doel, knoopNamen)) goed = false;
+            // below a subtype's own block the carrier's target is the subtype's
+            if (!keurKinderen(k, k.naam, k.kinderen, basis, doelVan(k.regel), knoopNamen)) goed = false;
         }
         return goed;
     }
 
+    /** A refusal at a block: its line and its sentence. */
+    private record Weigering(int line, String tekst) {}
+
+    /** Whether the written order of the base's children says what the composition does. Among the children of one
+     *  carrier the later-written block ranks higher; between a block for a type and one for a strict subtype of it,
+     *  RUNTIME-SEMANTICS ch. 7.10 decides instead: the subtype's own exceptions stand above every exception it
+     *  inherits. A block for the subtype written before one for its supertype would read as ranked below it, and on
+     *  the wire it ranks above, so it is refused, at the subtype's block. */
+    private Weigering volgordeFout(String wortel, List<Knoop> kinderen) {
+        for (int i = 0; i < kinderen.size(); i++)
+            for (int j = i + 1; j < kinderen.size(); j++) {
+                Knoop k = kinderen.get(i), later = kinderen.get(j);
+                Objecttype sk = doelVan(k.regel).onderwerp(), sl = doelVan(later.regel).onderwerp();
+                if (sk == sl || !sk.isEen(sl)) continue;
+                return new Weigering(k.line, k.kop + ": " + aanduiding(k) + " voor " + sk.naam + " staat vóór "
+                        + aanduiding(later) + " voor " + sl.naam + " onder '" + wortel + "', en het later geschreven "
+                        + "blok gaat voor; RUNTIME-SEMANTICS ch. 7.10 zet de eigen uitzonderingen van " + sk.naam
+                        + " echter boven de geërfde van " + sl.naam + ", zodat bij een " + sk.naam + " '" + k.naam
+                        + "' vóór '" + later.naam + "' gaat. Schrijf '" + k.naam + "' na '" + later.naam
+                        + "' (dialect §4)");
+            }
+        return null;
+    }
+
+    /** The name of the group that carries a subtype's own blocks under {@code wortel}. */
+    private static String subtypeGroepNaam(String wortel, Objecttype sub) {
+        return wortel + " voor " + sub.naam;
+    }
+
+    /** A generated group name another form already carries (WF-020: a defaults group and a rule share one namespace,
+     *  case aside). Null when every name is free. */
+    private Weigering subtypeNaamFout(String wortel, Map<Objecttype, List<Knoop>> perSubtype,
+                                      Map<String, String[]> vormen) {
+        for (var s : perSubtype.entrySet()) {
+            String naam = subtypeGroepNaam(wortel, s.getKey());
+            String[] plek = vormen.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
+            if (plek == null) continue;
+            Knoop k = s.getValue().get(0);
+            return new Weigering(k.line, k.kop + ": de eigen uitzonderingen van " + s.getKey().naam + " onder '"
+                    + wortel + "' worden de defaults-groep '" + naam + "', en " + plek[0] + " heet al zo (bronregel "
+                    + plek[1] + ") — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld (WF-020) "
+                    + "(dialect §4)");
+        }
+        return null;
+    }
+
+    /** The group of a subtype's own blocks under the base of its supertype (RUNTIME-SEMANTICS ch. 7.9 and 7.10): on
+     *  the subtype, one group-default whose one ordered exception group holds the blocks, the later-written one
+     *  first. A group-default is no base, so the composition keeps the inherited base below the subtype's own
+     *  exceptions and the inherited ones; a block as an ordinary default would be the subtype's own base and replace
+     *  the inherited one. A restrictive block conjoins the base's condition, read on the subtype. The group carries
+     *  the base's window, as the blocks do, and its source says where the base comes from. */
+    private PrioritizedDefaults subtypeGroep(String wortel, ResolvedRegel basis, DefaultsDoel doel, Objecttype sub,
+                                             List<Knoop> kinderen) {
+        List<Conditie> conjuncten = conjuncten(opSubtype(basis.voorwaarde(), doel.onderwerp(), sub));
+        List<Default> keten = new ArrayList<>();
+        for (Knoop k : kinderen) keten.add(0, defaultVan(k, conjuncten, doel.kenmerk()));   // later-written stacks higher
+        List<String> koppen = kinderen.stream().map(k -> kopTekst(k.blok)).distinct().toList();
+        String kop = String.join(" en ", koppen);
+        Default groepDefault = new Default(null, null, null, false,
+                new Default.Excepties(false, List.of(new ExceptionGroup(keten, kop))), kop);
+        return defaultsVan(subtypeGroepNaam(wortel, sub), new DefaultsDoel(sub, doel.kenmerk(), doel.naam()), false,
+                List.of(groepDefault), basis.geldigheid(), "eigen uitzonderingen van " + sub.naam + "; de basis '"
+                        + wortel + "' is geërfd van " + doel.onderwerp().naam);
+    }
+
+    /** {@code c} read on the subtype {@code sub} instead of on {@code sup}: every own read of {@code sup} names
+     *  {@code sub}, as the same text written on {@code sub} resolves (IR-SPEC ch. 4.1a: an own read names the subject
+     *  type, also for an inherited attribute). A restrictive block of a subtype repeats the conjuncts of its base, and
+     *  the base stands on the supertype. Navigated reads, role checks and characteristic checks name no subject type,
+     *  and the emitter derives their walk from the group's subject; what a fold or a quantifier reads per element is
+     *  the element's. A node in which nothing changes is returned itself, so a conjunct that reads no own attribute
+     *  stays the node the base carries. */
+    private static Conditie opSubtype(Conditie c, Objecttype sup, Objecttype sub) {
+        if (c == null) return null;
+        return switch (c) {
+            case Conditie.Vergelijking v -> {
+                Expr l = opSubtype(v.links(), sup, sub), r = opSubtype(v.rechts(), sup, sub);
+                yield l == v.links() && r == v.rechts() ? v
+                        : new Conditie.Vergelijking(v.op(), l, r, v.periode(), v.bron());
+            }
+            case Conditie.Predicaat p -> {
+                Expr o = opSubtype(p.operand(), sup, sub);
+                yield o == p.operand() ? p
+                        : new Conditie.Predicaat(p.soort(), o, p.dagsoort(), p.negatie(), p.cijfers(), p.periode(), p.bron());
+            }
+            case Conditie.Periode p -> {
+                Expr van = opSubtype(p.vanaf(), sup, sub), tot = opSubtype(p.tot(), sup, sub);
+                yield van == p.vanaf() && tot == p.tot() ? p : new Conditie.Periode(van, tot, p.totInclusief(), p.bron());
+            }
+            case Conditie.Samengesteld s -> {
+                List<Conditie> delen = s.onderdelen().stream().map(o -> opSubtype(o, sup, sub)).toList();
+                boolean zelfde = true;
+                for (int i = 0; i < delen.size(); i++) zelfde &= delen.get(i) == s.onderdelen().get(i);
+                yield zelfde ? s : new Conditie.Samengesteld(s.kwantor(), s.drempel(), delen, s.bron());
+            }
+            case Conditie.Kenmerk k -> k.eigenaar() != sup ? k
+                    : new Conditie.Kenmerk(k.kenmerk(), k.navigatie(), k.negatie(), sub, k.periode(), k.bron());
+            // the filter and the test read each element
+            case Conditie.Kwantorvouw k -> k;
+            case Conditie.Rollidmaatschap r -> r;
+            case Conditie.VerreRollidmaatschap r -> r;
+            case Conditie.Regelversie r -> r;
+            case Conditie.Onopgelost o -> o;
+        };
+    }
+
+    private static Expr opSubtype(Expr e, Objecttype sup, Objecttype sub) {
+        if (e == null) return null;
+        return switch (e) {
+            case Expr.AttribuutRef a -> !eigenLezingVan(a, sup) ? a
+                    : new Expr.AttribuutRef(a.attribuut(), sub, a.onderwerpBron(), a.navigatieRol(), a.type(), a.bron(),
+                            a.set(), a.navigatiePad(), a.bereikPad(), a.kwantor(), a.drempel());
+            case Expr.Binair b -> {
+                Expr l = opSubtype(b.links(), sup, sub), r = opSubtype(b.rechts(), sup, sub);
+                yield l == b.links() && r == b.rechts() ? b : new Expr.Binair(b.op(), l, r, b.type(), b.bron());
+            }
+            case Expr.Functie f -> {
+                // a fold's source is read through its range: only a source that is the subject's own read (a
+                // dimension fold, the subject's own total) is the subject's; the filter of a dimension fold reads the
+                // subject's labels, every other filter reads each element
+                boolean vouw = dev.uchar.regelspraak.emit.IrEmitter.isVouwbron(f);
+                List<Expr> args = new ArrayList<>();
+                for (int i = 0; i < f.argumenten().size(); i++) {
+                    Expr x = f.argumenten().get(i);
+                    args.add(vouw && i == 0 && !(x instanceof Expr.AttribuutRef a && eigenLezingVan(a, sup)) ? x
+                            : opSubtype(x, sup, sub));
+                }
+                Expr leeg = opSubtype(f.leegwaarde(), sup, sub);
+                Conditie filter = f.dimensieSelectie() != null ? opSubtype(f.filter(), sup, sub) : f.filter();
+                boolean eigenBron = vouw && !args.isEmpty() && args.get(0) != f.argumenten().get(0);
+                Objecttype element = f.elementObjecttype() == sup && (f.dimensieSelectie() != null || eigenBron) ? sub
+                        : f.elementObjecttype();
+                boolean zelfde = leeg == f.leegwaarde() && filter == f.filter() && element == f.elementObjecttype();
+                for (int i = 0; i < args.size(); i++) zelfde &= args.get(i) == f.argumenten().get(i);
+                yield zelfde ? f : new Expr.Functie(f.kind(), args, element, leeg, filter, f.dimensieSelectie(),
+                        f.type(), f.bron(), f.granulariteit());
+            }
+            case Expr.Afgerond a -> {
+                Expr b = opSubtype(a.basis(), sup, sub);
+                yield b == a.basis() ? a : new Expr.Afgerond(b, a.modus(), a.decimalen(), a.bron());
+            }
+            case Expr.Begrensd b -> {
+                Expr x = opSubtype(b.basis(), sup, sub), min = opSubtype(b.minimum(), sup, sub),
+                        max = opSubtype(b.maximum(), sup, sub);
+                yield x == b.basis() && min == b.minimum() && max == b.maximum() ? b
+                        : new Expr.Begrensd(x, min, max, b.bron());
+            }
+            case Expr.TekstReeks t -> {
+                List<Expr.TekstReeks.Deel> delen = new ArrayList<>();
+                boolean zelfde = true;
+                for (Expr.TekstReeks.Deel d : t.delen()) {
+                    Expr.TekstReeks.Deel n = d;
+                    if (d instanceof Expr.TekstReeks.Ingevoegd i) {
+                        Expr x = opSubtype(i.expr(), sup, sub);
+                        if (x != i.expr()) n = new Expr.TekstReeks.Ingevoegd(x);
+                    }
+                    zelfde &= n == d;
+                    delen.add(n);
+                }
+                yield zelfde ? t : new Expr.TekstReeks(delen, t.bron());
+            }
+            case Expr.DimensieCel c -> {
+                Expr a = opSubtype(c.attribuut(), sup, sub);
+                yield a == c.attribuut() ? c : new Expr.DimensieCel((Expr.AttribuutRef) a, c.labels(), c.bron());
+            }
+            case Expr.Let l -> {
+                Expr v = opSubtype(l.value(), sup, sub), b = opSubtype(l.body(), sup, sub);
+                yield v == l.value() && b == l.body() ? l : new Expr.Let(l.binder(), v, b, l.type(), l.bron());
+            }
+            case Expr.IfThenElse k -> {
+                Conditie c = opSubtype(k.conditie(), sup, sub);
+                Expr dan = opSubtype(k.dan(), sup, sub), anders = opSubtype(k.anders(), sup, sub);
+                yield c == k.conditie() && dan == k.dan() && anders == k.anders() ? k
+                        : new Expr.IfThenElse(c, dan, anders, k.type(), k.bron());
+            }
+            // each selection reads its elements
+            case Expr.InstanceSetUnion u -> u;
+            case Expr.Literal l -> l;
+            case Expr.ParameterRef p -> p;
+            case Expr.VariabeleRef v -> v;
+            case Expr.BinderRef b -> b;
+            case Expr.Constante k -> k;
+            case Expr.Onopgelost o -> o;
+        };
+    }
+
+    /** Whether {@code a} is an own read of {@code type}: no written role or chain, no set, and that type. */
+    private static boolean eigenLezingVan(Expr.AttribuutRef a, Objecttype type) {
+        return a.objecttype() == type && a.navigatieRol() == null && !a.set()
+                && (a.navigatiePad() == null || a.navigatiePad().isEmpty());
+    }
+
+    /** The subject of the one rule a node's body resolves to, or null where it resolves to none or to several (the
+     *  node's own check refuses those). */
+    private Objecttype onderwerpVan(Knoop k) {
+        List<ResolvedRegel> r = resolvedVan(k.naam);
+        DefaultsDoel d = r.size() == 1 ? doelVan(r.get(0)) : null;
+        return d == null ? null : d.onderwerp();
+    }
+
     /** One node's own body and its edge to its carrier: the body resolves to one plain version; an 'Afwijking van'
-     *  hangs directly under the base; a subtype does not write under an inherited node; the window is the group's;
-     *  the target is the group's (WF-050). The checks and their texts at the first level are the first card's.
-     *  {@code knoopNamen} are the rules written as nodes ({@link #knoopNamen}): a rule outside them on the
+     *  hangs directly under the base; a subtype does not write under an inherited node; a block for a subtype
+     *  directly under the base is the subtype's own exception ({@link #subtypeBlokFout}), and no member of an
+     *  unordered block stands among a subtype's own exceptions; the window is the group's; the target is the
+     *  group's (WF-050) or, directly under the base, the one a subtype inherits. The checks and their texts at the
+     *  first level are the first card's. {@code doel} is the carrier's target: below a subtype's own block, the
+     *  subtype's. {@code knoopNamen} are the rules written as nodes ({@link #knoopNamen}): a rule outside them on the
      *  subtype's target is a base the subtype's own exception can hang on. */
     private boolean keurKnoop(Knoop k, Knoop drager, String dragerNaam, ResolvedRegel basis, DefaultsDoel doel,
                               java.util.Set<String> knoopNamen) {
@@ -1496,27 +1731,33 @@ final class RuleChecker {
                     + "'Afwijking van " + k.wortel + ": " + k.naam + "' met de volledige voorwaarde (dialect §4)");
             return false;
         }
-        if (drager != null && eigen.kenmerk() == doel.kenmerk() && eigen.naam().equalsIgnoreCase(doel.naam())
-                && eigen.onderwerp() != doel.onderwerp() && eigen.onderwerp().isEen(doel.onderwerp())) {
+        boolean subtype = eigen.kenmerk() == doel.kenmerk() && eigen.naam().equalsIgnoreCase(doel.naam())
+                && eigen.onderwerp() != doel.onderwerp() && eigen.onderwerp().isEen(doel.onderwerp());
+        Objecttype wortelType = doelVan(basis).onderwerp();
+        if (subtype && drager != null) {
             String sub = eigen.onderwerp().naam, sup = doel.onderwerp().naam;
-            // Without a base of its own the subtype has nothing to hang the exception on, and writing one changes
-            // more than the exception: an own base replaces the inherited one (ch. 7.10), so it has to repeat it.
-            // A direct subtype inherits this tree's base; deeper down an intermediate type may have replaced it.
-            boolean eigenBasis = model.resolvedRegels.stream().anyMatch(b ->
-                    b.soort() != ResolvedRegel.Soort.INITIALISATIE && !knoopNamen.contains(zonderVersie(b.naam()))
-                            && eigen.gelijk(doelVan(b)));
-            String geerfd = eigen.onderwerp().supertype == doel.onderwerp() ? "'" + k.wortel + "'"
-                    : "de basisregel die " + sub + " nu erft";
+            // The subtype's own exception hangs under the base it inherits, which is this tree's unless a type on
+            // its line declares one of its own (ch. 7.10: an own base replaces the inherited one).
+            Basis b = eigenBasisOpLijn(eigen, wortelType, knoopNamen);
+            String naam = b == null ? k.wortel : b.regel();
+            String onder = b == null ? "de basisregel '" + k.wortel + "'"
+                    : b.type() == eigen.onderwerp() ? "zijn eigen basisregel '" + b.regel() + "'"
+                    : "de basisregel '" + b.regel() + "' van " + b.type().naam + ", die " + sub + " erft";
             fout(k.line, k.kop + ": '" + drager.naam + "' is " + soortTekst(drager) + " van " + sup + ", en "
                     + aanduiding(k) + " schrijft voor het subtype " + sub + " — een subtype erft de uitzonderingen van "
                     + "zijn supertype met wat eronder genest is, en adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). "
-                    + "Schrijf een eigen uitzondering van " + sub + " op een basisregel van " + sub + ", met de volledige "
-                    + "voorwaarde van '" + drager.naam + "' en de eigen voorwaarde: de eigen uitzonderingen van " + sub
-                    + " gaan vóór de geërfde, dus zij beslist precies waar beide gelden"
-                    + (eigenBasis ? "" : ". " + sub + " heeft nog geen eigen basisregel voor '" + doel.naam() + "': "
-                            + "schrijf die met de uitkomst en de voorwaarde van " + geerfd + ", want een eigen "
-                            + "basisregel vervangt de geërfde")
-                    + " (dialect §4)");
+                    + "Schrijf haar als eigen uitzondering van " + sub + " onder " + onder + ": 'Afwijking van " + naam
+                    + ": " + k.naam + "', met de volledige voorwaarde van '" + drager.naam + "' en de eigen voorwaarde: "
+                    + "de eigen uitzonderingen van " + sub + " gaan vóór de geërfde, dus zij beslist precies waar beide "
+                    + "gelden (dialect §4)");
+            return false;
+        }
+        if (subtype) {
+            String reden = subtypeBlokFout(k, eigen, wortelType, knoopNamen);
+            if (reden != null) { fout(k.line, reden); return false; }
+        } else if (k.soort == Blok.LID && eigen.onderwerp() != wortelType && eigen.gelijk(doel)) {
+            // a member under a subtype's own block: the subtype's group would carry an unordered block
+            fout(k.line, subtypeLidFout(k, eigen.onderwerp(), wortelType));
             return false;
         }
         // Default carries no per-default geldigheid: mixed windows are unrepresentable on the defaults group, so a
@@ -1526,7 +1767,7 @@ final class RuleChecker {
                     + "defaults-groep draagt één venster; splits per venster of maak de vensters gelijk (§4)");
             return false;
         }
-        if (!doel.gelijk(eigen)) {
+        if (!subtype && !doel.gelijk(eigen)) {
             fout(k.line, k.kop + ": " + aanduiding(k) + " schrijft een ander doel (" + doelTekst(eigen) + ") dan "
                     + (drager == null ? "de basisregel" : (k.soort == Blok.LID ? "zijn" : "haar") + " drager '"
                             + dragerNaam + "'")
@@ -1536,6 +1777,64 @@ final class RuleChecker {
         }
         k.regel = regel;
         return true;
+    }
+
+    /** The base rule a type writes on a target of its own: the rule's name, without a version suffix, and the type. */
+    private record Basis(String regel, Objecttype type) {}
+
+    /** The nearest base on the line from {@code eigen}'s subject up to {@code wortelType}, that type excluded: a plain
+     *  rule — no initialisation, no node of a tree, a tree's base included — that writes {@code eigen}'s target on a
+     *  type of that line. Null where none does, so the subject inherits the base of the tree under
+     *  {@code wortelType} (RUNTIME-SEMANTICS ch. 7.10: an own base replaces the inherited one, and an ordinary rule is
+     *  the base of its level). */
+    private Basis eigenBasisOpLijn(DefaultsDoel eigen, Objecttype wortelType, java.util.Set<String> knoopNamen) {
+        for (Objecttype t = eigen.onderwerp(); t != null && t != wortelType; t = t.supertype) {
+            DefaultsDoel opT = new DefaultsDoel(t, eigen.kenmerk(), eigen.naam());
+            for (ResolvedRegel b : model.resolvedRegels)
+                if (b.soort() != ResolvedRegel.Soort.INITIALISATIE && !geweigerdeDoelen.contains(b)
+                        && !knoopNamen.contains(zonderVersie(b.naam())) && opT.gelijk(doelVan(b)))
+                    return new Basis(zonderVersie(b.naam()), t);
+        }
+        return null;
+    }
+
+    /** Why a block for a subtype directly under the base of its supertype does not lower, or null where it does. It
+     *  lowers as the subtype's own exception without an own base; where the subtype has a base on its line, that base
+     *  replaces the tree's for it, and the block belongs under that one. A member of an unordered block does not
+     *  lower ({@link #subtypeLidFout}). */
+    private String subtypeBlokFout(Knoop k, DefaultsDoel eigen, Objecttype wortelType,
+                                   java.util.Set<String> knoopNamen) {
+        String sub = eigen.onderwerp().naam;
+        Basis b = eigenBasisOpLijn(eigen, wortelType, knoopNamen);
+        if (b != null) {
+            String heeft = b.type() == eigen.onderwerp()
+                    ? sub + " heeft een eigen basisregel '" + b.regel() + "' voor '" + eigen.naam() + "'"
+                    : sub + " erft van " + b.type().naam + " de basisregel '" + b.regel() + "' voor '" + eigen.naam()
+                      + "'";
+            String vorm = switch (k.soort) {
+                case AFWIJKING -> "'Afwijking van " + b.regel() + ": " + k.naam + "'";
+                case UITZONDERING -> "'Uitzondering op " + b.regel() + ": " + k.naam + "' als zij de voorwaarde van '"
+                        + b.regel() + "' erft, of 'Afwijking van " + b.regel() + ": " + k.naam
+                        + "' met de volledige voorwaarde";
+                case LID -> "het blok als 'Uitzonderingen ongeordend op " + b.regel() + ":'";
+            };
+            return k.kop + ": " + aanduiding(k) + " schrijft voor het subtype " + sub + ", en " + heeft + ", die '"
+                    + k.wortel + "' voor " + sub + " vervangt (RUNTIME-SEMANTICS ch. 7.10) — een eigen uitzondering van "
+                    + sub + " hangt onder die basisregel. Schrijf " + vorm + " (dialect §4)";
+        }
+        return k.soort == Blok.LID ? subtypeLidFout(k, eigen.onderwerp(), wortelType) : null;
+    }
+
+    /** A member of an 'Uitzonderingen ongeordend op' block among the own exceptions of a subtype under the base of its
+     *  supertype. Not lowered: the subtype's group would hold the block, and a conflict between its members would be
+     *  keyed on the path of the composed stack (RUNTIME-SEMANTICS ch. 7.9 and 7.10). */
+    private static String subtypeLidFout(Knoop k, Objecttype sub, Objecttype wortelType) {
+        return k.kop + ": groepslid '" + k.naam + "' schrijft voor het subtype " + sub.naam + " onder de basisregel '"
+                + k.wortel + "' van " + wortelType.naam + " — een 'Uitzonderingen ongeordend op'-blok in de eigen "
+                + "uitzonderingen van een subtype onder de basisregel van zijn supertype lowert deze frontend niet: een "
+                + "conflict tussen de leden zou een sleutel van de samengestelde stapel krijgen (RUNTIME-SEMANTICS ch. 7.9 "
+                + "en 7.10). Schrijf de leden als geordende blokken ('Uitzondering op' of 'Afwijking van'), of geef "
+                + sub.naam + " een eigen basisregel en hang het blok daaronder (dialect §4)";
     }
 
     /** The default a node becomes. An 'Uitzondering op' block and a member of an 'Uitzonderingen ongeordend op'

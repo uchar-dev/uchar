@@ -494,8 +494,9 @@ class UitzonderingOpUitzonderingTest {
         assertTrue(d.message().startsWith("Uitzondering op 'uitkering van een betwist strandrecht': 'uitkering van een "
                 + "betwist strandrecht' is een uitzondering van Strandrecht, en uitzondering 'uitkering van een diep "
                 + "wrakrecht' schrijft voor het subtype Wrakrecht"), d.message());
-        assertTrue(d.message().contains("Schrijf een eigen uitzondering van Wrakrecht op een basisregel van Wrakrecht, "
-                + "met de volledige voorwaarde van 'uitkering van een betwist strandrecht'"),
+        assertTrue(d.message().contains("Schrijf haar als eigen uitzondering van Wrakrecht onder de basisregel "
+                + "'uitkering van een strandrecht': 'Afwijking van uitkering van een strandrecht: uitkering van een diep "
+                + "wrakrecht', met de volledige voorwaarde van 'uitkering van een betwist strandrecht'"),
                 () -> "de melding noemt de uitdrukbare vorm niet: " + d.message());
         assertFalse(d.message().contains("ander doel"), "niet de algemene doelmelding");
     }
@@ -529,13 +530,14 @@ class UitzonderingOpUitzonderingTest {
         """;
 
     @Test void een_geerfde_drager_zonder_eigen_basis_noemt_de_basisregel_die_erbij_hoort() {
-        // An own base replaces the inherited one (ch. 7.10): a subtype without one has to write it, repeating the
-        // inherited base, before its own exception has anything to hang on.
+        // A subtype's own exception hangs under the base it inherits (AfwijkingOpSubtypeTest): without a base of its
+        // own the subtype writes none, and the way out names the inherited one.
         Diagnostic d = enigeFout(Resolver.resolve(STRANDRECHT + DIEP_WRAKRECHT));
-        assertTrue(d.message().endsWith("gaan vóór de geërfde, dus zij beslist precies waar beide gelden. Wrakrecht "
-                + "heeft nog geen eigen basisregel voor 'uitkering': schrijf die met de uitkomst en de voorwaarde van "
-                + "'uitkering van een strandrecht', want een eigen basisregel vervangt de geërfde (dialect §4)"),
+        assertTrue(d.message().contains("onder de basisregel 'uitkering van een strandrecht': 'Afwijking van uitkering "
+                + "van een strandrecht: uitkering van een diep wrakrecht'"), d.message());
+        assertTrue(d.message().endsWith("gaan vóór de geërfde, dus zij beslist precies waar beide gelden (dialect §4)"),
                 d.message());
+        assertFalse(d.message().contains("nog geen eigen basisregel"), d.message());
     }
 
     @Test void een_geerfde_drager_met_eigen_basis_noemt_geen_nieuwe_basisregel() {
@@ -545,8 +547,9 @@ class UitzonderingOpUitzonderingTest {
                 geldig altijd
                     De uitkering van een Wrakrecht moet gesteld worden op zijn grondslag maal 2.
             """ + DIEP_WRAKRECHT));
-        assertTrue(d.message().contains("Schrijf een eigen uitzondering van Wrakrecht op een basisregel van Wrakrecht"),
-                d.message());
+        assertTrue(d.message().contains("Schrijf haar als eigen uitzondering van Wrakrecht onder zijn eigen basisregel "
+                + "'uitkering van een wrakrecht': 'Afwijking van uitkering van een wrakrecht: uitkering van een diep "
+                + "wrakrecht'"), d.message());
         assertTrue(d.message().endsWith("dus zij beslist precies waar beide gelden (dialect §4)"), d.message());
         assertFalse(d.message().contains("nog geen eigen basisregel"), d.message());
     }
