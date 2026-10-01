@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A §6.5 division or a §6.6 root in a rule's value whose operand folds over a role: "(100 gedeeld door (de som van het
@@ -29,8 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * basis 2, and deler 2 except J1.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-01 on the transpiler of main, both branches): every row whose case is
- * inconsistent answered {@code verwacht inconsistent, werkelijk consistent}. Two rows are flanks, green before and
- * after: a filled sum deposits nothing, and a count of 0 as the divisor is a fault in every executor, not a deposit.
+ * inconsistent answered {@code verwacht inconsistent, werkelijk consistent}, in the DRL-text branch also the row with
+ * the fold under a Let, which the exec branch already refused. Two rows are flanks, green before and after: a filled
+ * sum deposits nothing, and a count of 0 as the divisor is a fault in every executor, not a deposit.
  */
 class VouwBegeleiderWitnessTest {
 
@@ -105,6 +107,23 @@ class VouwBegeleiderWitnessTest {
                 CONSISTENT);
         assertNull(speel(ir, consistent), "exectak, J3 zonder drempel");
         assertNull(speelDrl(ir, consistent), "DRL-teksttak, J3 zonder drempel");
+    }
+
+    @Test void een_vouw_onder_een_let_naast_een_deling_weigert_in_beide_takken() throws Exception {
+        // "(de vangst gedeeld door zijn deler) rekenkundig afgerond op 2 decimalen. Daarbij geldt: de vangst is de som
+        // …": J1's vangst is 11 over no deler and deposits; a leeg vangst ends the Let before the division (ch. 10.6), so
+        // J2 and J3 deposit nothing. ref and clingo: leeg, leeg, leeg and 4,50, inconsistent. A companion re-reads the
+        // site's need and the need is a fold, which neither branch can read there; both refuse the rule by name.
+        String let = "{\"node\":\"Let\",\"type\":" + TWEE_DECIMALEN + ",\"binder\":\"vangst\",\"value\":" + SOM + ",\"body\":"
+                + afgerond(binair("dividedBy", "{\"node\":\"BinderRef\",\"name\":\"vangst\",\"source\":{\"snippet\":\"de vangst\"}}",
+                        eigen("deler"), ONBEGRENSD)) + ",\"source\":{\"snippet\":\"de vangst is de som …\"}}";
+        String ir = document(regel(let, null));
+        String zaak = zaak(situatie(), heffing(null, null, null, "4.50"), INCONSISTENT);
+        String zin = "een vouw over een setbron en een deling of wortel onder één Let of IfThenElse";
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak));
+        assertTrue(e.getMessage().contains(zin), e.getMessage());
+        CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak));
+        assertTrue(d.getMessage().contains(zin), d.getMessage());
     }
 
     // ---------------- the flanks ----------------
