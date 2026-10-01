@@ -7,6 +7,7 @@ import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ExceptionGroup;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.resolver.Resolver;
 import org.junit.jupiter.api.Test;
 
@@ -128,5 +129,281 @@ class AfwijkingOpSubtypeTest {
         String ir = IrEmitter.emit(m);
         String subtype = ir.substring(ir.indexOf("\"name\": \"meldtermijn voor Strandjutter\""));
         assertFalse(subtype.contains("\"subjectType\": \"Jutter\""), subtype);
+    }
+
+    // ---------------------------------------------------------------------------------- the form space of the card
+
+    /** The model of the measured forms: a grandchild, a sibling, and characteristics to write and to read. */
+    private static final String MODEL = KOP.replace("    de meldtermijn Datum in dagen;\n", """
+                de meldtermijn Datum in dagen;
+                is meldplichtig kenmerk (bijvoeglijk);
+                is gewaarschuwd kenmerk (bijvoeglijk);
+            """) + """
+        Objecttype de Barnsteenjutter is een Strandjutter (mv: Barnsteenjutters)
+            de keurdag Datum in dagen;
+        Objecttype de Wrakjutter is een Jutter (mv: Wrakjutters)
+            de bergdag Datum in dagen;
+        """;
+
+    private static String blok(String kop, String naam, String zin, String indien) {
+        return "\n" + kop + naam + "\n    geldig altijd\n        " + zin
+                + (indien == null ? "." : "\n        indien " + indien + ".") + "\n";
+    }
+
+    private static String afwijking(String basis, String naam, String zin, String indien) {
+        return blok("Afwijking van " + basis + ": ", naam, zin, indien);
+    }
+
+    private static String uitzondering(String drager, String naam, String zin, String indien) {
+        return blok("Uitzondering op " + drager + ": ", naam, zin, indien);
+    }
+
+    private static final String VERGUNNINGSEINDE = afwijking("meldtermijn", "meldtermijn tot het vergunningseinde",
+            "De meldtermijn van een Strandjutter moet gesteld worden op zijn vergunningseinde",
+            "zijn vergunningseinde gevuld is");
+    private static final String WAARSCHUWING = uitzondering("meldtermijn", "meldtermijn bij waarschuwing",
+            "De meldtermijn van een Jutter moet berekend worden als zijn vinddag plus 1 mnd", "hij gewaarschuwd is");
+    private static final String BASIS_STRANDJUTTER = blok("Regel ", "meldtermijn van de strandjutter",
+            "De meldtermijn van een Strandjutter moet berekend worden als zijn vinddag plus 3 mnd",
+            "zijn vinddag gevuld is");
+
+    private static Diagnostic enigeFout(RegelSpraakModel m) {
+        assertEquals(1, m.errors().size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        return m.errors().get(0);
+    }
+
+    private static List<String> namen(RegelSpraakModel m) {
+        return m.prioritizedDefaults.stream().map(PrioritizedDefaults::naam).toList();
+    }
+
+    /** The defaults of the one ordered exception group under the one group-default of a subtype's group. */
+    private static List<Default> eigenUitzonderingen(PrioritizedDefaults g) {
+        assertEquals(1, g.defaults().size());
+        assertNotNull(g.defaults().get(0).excepties());
+        return g.defaults().get(0).excepties().leden().get(0).defaults();
+    }
+
+    @Test void een_kleinkind_onder_de_basis_van_het_supertype() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + BASIS + afwijking("meldtermijn", "meldtermijn tot de keurdag",
+                "De meldtermijn van een Barnsteenjutter moet gesteld worden op zijn keurdag", "zijn keurdag gevuld is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(List.of("meldtermijn", "meldtermijn voor Barnsteenjutter"), namen(m));
+        PrioritizedDefaults g = m.prioritizedDefaults.get(1);
+        assertEquals("Barnsteenjutter", g.onderwerp());
+        assertEquals("eigen uitzonderingen van Barnsteenjutter; de basis 'meldtermijn' is geërfd van Jutter", g.bron());
+        assertEquals(1, eigenUitzonderingen(g).size());
+    }
+
+    @Test void twee_subtypen_elk_een_eigen_groep() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + BASIS + VERGUNNINGSEINDE + afwijking("meldtermijn",
+                "meldtermijn na de bergdag", "De meldtermijn van een Wrakjutter moet berekend worden als zijn bergdag "
+                        + "plus 1 mnd", "zijn bergdag gevuld is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(List.of("meldtermijn", "meldtermijn voor Strandjutter", "meldtermijn voor Wrakjutter"), namen(m));
+        assertEquals(1, m.prioritizedDefaults.get(0).defaults().size(), "de basis alleen");
+    }
+
+    @Test void een_uitzondering_van_het_supertype_blijft_in_zijn_groep() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + BASIS + WAARSCHUWING + VERGUNNINGSEINDE);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(List.of("meldtermijn", "meldtermijn voor Strandjutter"), namen(m));
+        assertEquals(2, m.prioritizedDefaults.get(0).defaults().size(), "de uitzondering van Jutter boven de basis");
+        assertEquals(1, eigenUitzonderingen(m.prioritizedDefaults.get(1)).size());
+    }
+
+    @Test void twee_blokken_voor_een_subtype_het_later_geschrevene_hoger() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + BASIS + VERGUNNINGSEINDE + afwijking("meldtermijn",
+                "meldtermijn bij waarschuwing", "De meldtermijn van een Strandjutter moet berekend worden als zijn "
+                        + "vinddag plus 1 mnd", "hij gewaarschuwd is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        List<Default> eigen = eigenUitzonderingen(m.prioritizedDefaults.get(1));
+        assertEquals(List.of("hij gewaarschuwd is", "zijn vergunningseinde gevuld is"),
+                eigen.stream().map(d -> d.voorwaarde().bron().snippet()).toList());
+    }
+
+    @Test void beide_koppen_voor_een_subtype() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + BASIS + uitzondering("meldtermijn",
+                "meldtermijn tot het vergunningseinde", "De meldtermijn van een Strandjutter moet gesteld worden op "
+                        + "zijn vergunningseinde", "zijn vergunningseinde gevuld is")
+                + afwijking("meldtermijn", "meldtermijn bij waarschuwing", "De meldtermijn van een Strandjutter moet "
+                        + "berekend worden als zijn vinddag plus 1 mnd", "hij gewaarschuwd is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        Default gd = m.prioritizedDefaults.get(1).defaults().get(0);
+        assertEquals("Uitzondering op meldtermijn en Afwijking van meldtermijn", gd.bron());
+        assertEquals(gd.bron(), gd.excepties().leden().get(0).bron());
+    }
+
+    @Test void een_kenmerk_als_doel() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + blok("Regel ", "meldplicht", "Een Jutter is meldplichtig",
+                "zijn vinddag gevuld is") + uitzondering("meldplicht", "vrijstelling met vergunning",
+                "Een Strandjutter is niet meldplichtig", "zijn vergunningseinde gevuld is"));
+        // no 'kent het nooit toe' warning: the group composes with the supertype's
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        PrioritizedDefaults g = m.prioritizedDefaults.get(1);
+        assertEquals("meldplicht voor Strandjutter", g.naam());
+        assertEquals("meldplichtig", g.kenmerk());
+        assertEquals(Boolean.FALSE, eigenUitzonderingen(g).get(0).besluit());
+    }
+
+    @Test void de_voorwaarde_van_de_basis_wordt_op_het_subtype_gelezen() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
+            Objecttype de Haven (mv: Havens)
+                de sluitdag Datum in dagen;
+
+            Feittype thuishaven van een jutter
+                de thuishaven Haven
+                de havenjutter (mv: havenjutters) Jutter
+            Eén thuishaven heeft meerdere havenjutters
+            """ + blok("Regel ", "meldtermijn", "De meldtermijn van een Jutter moet berekend worden als zijn vinddag "
+                + "plus 6 mnd", "hij aan alle volgende voorwaarden voldoet:\n        - zijn vinddag is gevuld\n"
+                + "        - de sluitdag van zijn thuishaven is gevuld\n        - hij is niet gewaarschuwd")
+                + uitzondering("meldtermijn", "meldtermijn tot het vergunningseinde", "De meldtermijn van een "
+                + "Strandjutter moet gesteld worden op zijn vergunningseinde", "zijn vergunningseinde gevuld is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        Conditie.Samengesteld basis = (Conditie.Samengesteld) m.prioritizedDefaults.get(0).defaults().get(0).voorwaarde();
+        Conditie.Samengesteld eigen = (Conditie.Samengesteld) eigenUitzonderingen(m.prioritizedDefaults.get(1)).get(0)
+                .voorwaarde();
+        assertEquals(4, eigen.onderdelen().size(), "drie conjuncten van de basis, dan de eigen voorwaarde");
+        Expr.AttribuutRef vinddag = (Expr.AttribuutRef) ((Conditie.Predicaat) eigen.onderdelen().get(0)).operand();
+        assertEquals("Strandjutter", vinddag.objecttype().naam, "een eigen lezing noemt het subtype");
+        Expr.AttribuutRef sluitdag = (Expr.AttribuutRef) ((Conditie.Predicaat) eigen.onderdelen().get(1)).operand();
+        assertEquals("Haven", sluitdag.objecttype().naam, "een genavigeerde lezing houdt haar eindpunt");
+        assertSame(basis.onderdelen().get(1), eigen.onderdelen().get(1), "geen eigen lezing: dezelfde knoop");
+        assertSame(basis.onderdelen().get(2), eigen.onderdelen().get(2), "een kenmerkcheck noemt geen type");
+        assertNotSame(basis.onderdelen().get(0), eigen.onderdelen().get(0));
+        String ir = IrEmitter.emit(m);
+        String subtype = ir.substring(ir.indexOf("\"name\": \"meldtermijn voor Strandjutter\""));
+        assertFalse(subtype.contains("\"subjectType\": \"Jutter\""), subtype);
+    }
+
+    @Test void de_opgave_markering_verlegt_ook_de_groep_van_het_subtype() {
+        RegelSpraakModel m = Resolver.resolve(MODEL.replace("de meldtermijn Datum in dagen;",
+                "de meldtermijn Datum in dagen (mag opgegeven worden);") + BASIS + VERGUNNINGSEINDE);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        PrioritizedDefaults sub = m.prioritizedDefaults.stream()
+                .filter(g -> g.naam().equals("meldtermijn voor Strandjutter")).findFirst().orElseThrow();
+        assertEquals("berekende meldtermijn", sub.attribuut());
+    }
+
+    @Test void een_eigen_basis_op_het_subtype_blijft_spelen() {
+        // the second shape of the card (R4): an own base on the subtype and the deviation under it, unchanged
+        RegelSpraakModel m = Resolver.resolve(KOP + BASIS + BASIS_STRANDJUTTER + afwijking(
+                "meldtermijn van de strandjutter", "meldtermijn tot het vergunningseinde", "De meldtermijn van een "
+                + "Strandjutter moet gesteld worden op zijn vergunningseinde", "zijn vergunningseinde gevuld is"));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertEquals(List.of("meldtermijn van de strandjutter"), namen(m));
+        assertEquals(1, m.resolvedRegels.size(), "de basis op Jutter blijft een gewone regel");
+    }
+
+    // -------------------------------------------------------------------------------------------------- refusals
+
+    @Test void de_geneste_vorm_weigert_en_noemt_de_basis() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + WAARSCHUWING + uitzondering(
+                "meldtermijn bij waarschuwing", "waarschuwing met vergunning", "De meldtermijn van een Strandjutter "
+                + "moet gesteld worden op zijn vergunningseinde", "zijn vergunningseinde gevuld is")));
+        assertEquals("Uitzondering op 'meldtermijn bij waarschuwing': 'meldtermijn bij waarschuwing' is een "
+                + "uitzondering van Jutter, en uitzondering 'waarschuwing met vergunning' schrijft voor het subtype "
+                + "Strandjutter — een subtype erft de uitzonderingen van zijn supertype met wat eronder genest is, en "
+                + "adresseert er geen (RUNTIME-SEMANTICS ch. 7.10). Schrijf haar als eigen uitzondering van Strandjutter "
+                + "onder de basisregel 'meldtermijn': 'Afwijking van meldtermijn: waarschuwing met vergunning', met de "
+                + "volledige voorwaarde van 'meldtermijn bij waarschuwing' en de eigen voorwaarde: de eigen "
+                + "uitzonderingen van Strandjutter gaan vóór de geërfde, dus zij beslist precies waar beide gelden "
+                + "(dialect §4)", d.message());
+    }
+
+    @Test void een_subtypeblok_voor_een_blok_van_het_supertype_weigert() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + VERGUNNINGSEINDE + WAARSCHUWING));
+        assertEquals("Afwijking van 'meldtermijn': afwijking 'meldtermijn tot het vergunningseinde' voor Strandjutter "
+                + "staat vóór uitzondering 'meldtermijn bij waarschuwing' voor Jutter onder 'meldtermijn', en het later "
+                + "geschreven blok gaat voor; RUNTIME-SEMANTICS ch. 7.10 zet de eigen uitzonderingen van Strandjutter "
+                + "echter boven de geërfde van Jutter, zodat bij een Strandjutter 'meldtermijn tot het vergunningseinde' "
+                + "vóór 'meldtermijn bij waarschuwing' gaat. Schrijf 'meldtermijn tot het vergunningseinde' na "
+                + "'meldtermijn bij waarschuwing' (dialect §4)", d.message());
+    }
+
+    @Test void een_eigen_basis_van_het_subtype_weigert_het_blok_onder_de_basis_van_het_supertype() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + BASIS_STRANDJUTTER + VERGUNNINGSEINDE));
+        assertEquals("Afwijking van 'meldtermijn': afwijking 'meldtermijn tot het vergunningseinde' schrijft voor het "
+                + "subtype Strandjutter, en Strandjutter heeft een eigen basisregel 'meldtermijn van de strandjutter' "
+                + "voor 'meldtermijn', die 'meldtermijn' voor Strandjutter vervangt (RUNTIME-SEMANTICS ch. 7.10) — een "
+                + "eigen uitzondering van Strandjutter hangt onder die basisregel. Schrijf 'Afwijking van meldtermijn van "
+                + "de strandjutter: meldtermijn tot het vergunningseinde' (dialect §4)", d.message());
+        Diagnostic u = enigeFout(Resolver.resolve(MODEL + BASIS + BASIS_STRANDJUTTER + uitzondering("meldtermijn",
+                "meldtermijn tot het vergunningseinde", "De meldtermijn van een Strandjutter moet gesteld worden op "
+                + "zijn vergunningseinde", "zijn vergunningseinde gevuld is")));
+        assertTrue(u.message().endsWith("Schrijf 'Uitzondering op meldtermijn van de strandjutter: meldtermijn tot het "
+                + "vergunningseinde' als zij de voorwaarde van 'meldtermijn van de strandjutter' erft, of 'Afwijking van "
+                + "meldtermijn van de strandjutter: meldtermijn tot het vergunningseinde' met de volledige voorwaarde "
+                + "(dialect §4)"), u.message());
+    }
+
+    @Test void een_eigen_basis_op_een_tussentype_weigert() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + BASIS_STRANDJUTTER + afwijking("meldtermijn",
+                "keuring", "De meldtermijn van een Barnsteenjutter moet gesteld worden op zijn keurdag",
+                "zijn keurdag gevuld is")));
+        assertEquals("Afwijking van 'meldtermijn': afwijking 'keuring' schrijft voor het subtype Barnsteenjutter, en "
+                + "Barnsteenjutter erft van Strandjutter de basisregel 'meldtermijn van de strandjutter' voor "
+                + "'meldtermijn', die 'meldtermijn' voor Barnsteenjutter vervangt (RUNTIME-SEMANTICS ch. 7.10) — een eigen "
+                + "uitzondering van Barnsteenjutter hangt onder die basisregel. Schrijf 'Afwijking van meldtermijn van de "
+                + "strandjutter: keuring' (dialect §4)", d.message());
+    }
+
+    @Test void een_ongeordend_blok_voor_een_subtype_weigert() {
+        String leden = "\nUitzonderingen ongeordend op %s:" + blok("Regel ", "lid vergunning",
+                "De meldtermijn van een Strandjutter moet gesteld worden op zijn vergunningseinde",
+                "zijn vergunningseinde gevuld is") + blok("Regel ", "lid waarschuwing",
+                "De meldtermijn van een Strandjutter moet berekend worden als zijn vinddag plus 1 mnd",
+                "hij gewaarschuwd is");
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + leden.formatted("meldtermijn")));
+        assertEquals("Uitzonderingen ongeordend op 'meldtermijn': groepslid 'lid vergunning' schrijft voor het subtype "
+                + "Strandjutter onder de basisregel 'meldtermijn' van Jutter — een 'Uitzonderingen ongeordend op'-blok "
+                + "in de eigen uitzonderingen van een subtype onder de basisregel van zijn supertype lowert deze frontend "
+                + "niet: een conflict tussen de leden zou een sleutel van de samengestelde stapel krijgen "
+                + "(RUNTIME-SEMANTICS ch. 7.9 en 7.10). Schrijf de leden als geordende blokken ('Uitzondering op' of "
+                + "'Afwijking van'), of geef Strandjutter een eigen basisregel en hang het blok daaronder (dialect §4)",
+                d.message());
+        // under the subtype's own block as well
+        Diagnostic e = enigeFout(Resolver.resolve(MODEL + BASIS + VERGUNNINGSEINDE
+                + leden.formatted("meldtermijn tot het vergunningseinde")));
+        assertTrue(e.message().startsWith("Uitzonderingen ongeordend op 'meldtermijn tot het vergunningseinde': "
+                + "groepslid 'lid vergunning' schrijft voor het subtype Strandjutter onder de basisregel 'meldtermijn' "
+                + "van Jutter"), e.message());
+    }
+
+    @Test void een_bezette_groepsnaam_weigert() {
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS + VERGUNNINGSEINDE + blok("Regel ",
+                "meldtermijn voor Strandjutter", "De vinddag van een Wrakjutter moet gesteld worden op zijn bergdag",
+                null)));
+        assertTrue(d.message().startsWith("Afwijking van 'meldtermijn': de eigen uitzonderingen van Strandjutter onder "
+                + "'meldtermijn' worden de defaults-groep 'meldtermijn voor Strandjutter', en regel 'meldtermijn voor "
+                + "Strandjutter' heet al zo (bronregel "), d.message());
+        assertTrue(d.message().endsWith(") — een vormnaam is uniek in het hele model, hoofdletters niet meegeteld "
+                + "(WF-020) (dialect §4)"), d.message());
+    }
+
+    @Test void de_omgekeerde_richting_houdt_de_doelweigering() {
+        // a block for the supertype under a base of the subtype: WF-050 keeps its sentence
+        Diagnostic d = enigeFout(Resolver.resolve(MODEL + BASIS_STRANDJUTTER + afwijking(
+                "meldtermijn van de strandjutter", "meldtermijn bij waarschuwing",
+                "De meldtermijn van een Jutter moet gesteld worden op zijn vinddag", "hij gewaarschuwd is")));
+        assertEquals("Afwijking van 'meldtermijn van de strandjutter': afwijking 'meldtermijn bij waarschuwing' schrijft "
+                + "een ander doel (Jutter.meldtermijn (attribuut)) dan de basisregel (Strandjutter.meldtermijn "
+                + "(attribuut)) — een afwijking moet hetzelfde onderwerp en kenmerk/attribuut betreffen (§4, WF-050)",
+                d.message());
+    }
+
+    @Test void een_andere_erflijn_en_een_ander_attribuut_houden_de_doelweigering() {
+        Diagnostic zuster = enigeFout(Resolver.resolve(MODEL + BASIS_STRANDJUTTER + afwijking(
+                "meldtermijn van de strandjutter", "meldtermijn na de bergdag",
+                "De meldtermijn van een Wrakjutter moet gesteld worden op zijn bergdag", "zijn bergdag gevuld is")));
+        assertTrue(zuster.message().startsWith("Afwijking van 'meldtermijn van de strandjutter': afwijking 'meldtermijn "
+                + "na de bergdag' schrijft een ander doel (Wrakjutter.meldtermijn (attribuut)) dan de basisregel "
+                + "(Strandjutter.meldtermijn (attribuut))"), zuster.message());
+        Diagnostic attribuut = enigeFout(Resolver.resolve(MODEL + BASIS + afwijking("meldtermijn",
+                "vinddag tot het vergunningseinde", "De vinddag van een Strandjutter moet gesteld worden op zijn "
+                + "vergunningseinde", "zijn vergunningseinde gevuld is")));
+        assertTrue(attribuut.message().startsWith("Afwijking van 'meldtermijn': afwijking 'vinddag tot het "
+                + "vergunningseinde' schrijft een ander doel (Strandjutter.vinddag (attribuut)) dan de basisregel "
+                + "(Jutter.meldtermijn (attribuut))"), attribuut.message());
     }
 }
