@@ -168,11 +168,12 @@ public final class ExecModelTranspiler {
      *  lowers only where a join per hop covers it ({@link #gejoindeLezingen}) or as an operand of a defaults
      *  justification ({@link #rechtvaardigingZijde}); the DRL-text branch keeps its marker for both. */
     private boolean ketenWaardePad;
-    /** Build-time-only: the navigated reads of the voorwaarde {@link #regelVoorwaarde} is lowering, by identity — the
-     *  reads its far-side joins cover, so the test runs again when an object on the way changes. Two readings lower
-     *  only for these: a §13.4.1 chain of to-one hops ({@link #navDoel}, and in {@link #scalarWaarde} beside
-     *  {@link #ketenWaardePad}), and a navigated operand of a date computation ({@link #gejoindeLezer}). Empty outside
-     *  that lowering: an assertion, a quantifier fold or a filter reads without such a join and keeps the refusal. */
+    /** Build-time-only: the navigated reads of the voorwaarde {@link #regelVoorwaarde} is lowering, or of the tests per
+     *  element of a set fold {@link #elementtoets} is lowering, by identity — the reads their far-side joins cover, so
+     *  the test runs again when an object on the way changes. Two readings lower only for these: a §13.4.1 chain of
+     *  to-one hops ({@link #navDoel}, and in {@link #scalarWaarde} beside {@link #ketenWaardePad}), and a navigated
+     *  operand of a date computation ({@link #gejoindeLezer}). Empty outside those lowerings: an assertion reads without
+     *  such a join and keeps the refusal. */
     private Set<Expr.AttribuutRef> gejoindeLezingen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     /** Monotonic within ONE rule (reset per rule) — keeps each rule's declaration NAMES ({@code $e_0}, {@code $inc_1})
      *  unique. Declaration names are per-rule scoped, so they may repeat across rules. */
@@ -1234,6 +1235,17 @@ public final class ExecModelTranspiler {
             if (join == null) return null;          // aggregatieReden set by unieJoin
             Predicate1<Object> filter = null;
             if (t.filter() != null) {
+                // the selections share one element pattern and its test (one tuple per element is the union), so a
+                // read through a role of the element has no join here (elementtoets) and would not see a later write
+                List<Expr.AttribuutRef> verLezingen = new ArrayList<>();
+                List<KenmerkHop> verHops = new ArrayList<>();
+                navRefs(t.filter(), elem, verLezingen, verHops);
+                if (!verLezingen.isEmpty() || !verHops.isEmpty()) {
+                    aggregatieReden = "de deelselectie van een instantie-unie-selectie over '" + elem.naam + "' leest via een"
+                            + " rol van het element; deze tak toetst haar op het elementpatroon, zonder join op het bereikte"
+                            + " object, en zou een latere schrijving daar niet zien (RUNTIME-SEMANTICS ch. 5.1)";
+                    return null;
+                }
                 filter = t.filter() instanceof Conditie.Samengesteld sg ? leafCompound(sg, elem)
                         : leafPredicate(t.filter(), elem);
                 if (filter == null) {
@@ -1255,7 +1267,7 @@ public final class ExecModelTranspiler {
                     return false;
                 });
         Variable resultVar = DSL.declarationOf(Object.class, "$acc_" + (seq++));
-        return new Agg(DSL.accumulate(accBron(src, List.of()),
+        return new Agg(DSL.accumulate(accBron(src, List.of(), List.of()),
                         DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
                 resultVar, null, null, false);
     }
@@ -1317,14 +1329,17 @@ public final class ExecModelTranspiler {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg vouw(Expr.Functie f, Objecttype elem, Expr.AttribuutRef arg, boolean count, boolean temporeel,
             boolean leegCount, Variable elemVar, PatternDSL.PatternDef src, List<PatternDSL.PatternDef> extra) {
+        List<org.drools.model.view.ViewItem<?>> ver = List.of();
         if (f.filter() != null) {                       // §13.4.2 die/dat <predicaat> on the element
-            src = filterSource(src, f.filter(), elem);
-            if (src == null) return null;               // unstructured / unbindable filter -> skip (mirror the DRL marker)
+            Elementtoets t = elementtoets(src, elemVar, elem, f.filter(), null);
+            if (t == null) return null;                 // unstructured / unbindable filter -> skip (mirror the DRL marker)
+            src = t.src();
+            ver = t.ver();
         }
 
         Variable resultVar = DSL.declarationOf(Object.class, "$acc_" + (seq++));
         if (count)
-            return new Agg(DSL.accumulate(accBron(src, extra),
+            return new Agg(DSL.accumulate(accBron(src, ver, extra),
                             DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
                     resultVar, null, null, false);
 
@@ -1341,7 +1356,7 @@ public final class ExecModelTranspiler {
         if (f.kind() == Expr.FunctieKind.AANTAL_GEVULDE) {
             PatternDSL.PatternDef gevuld =
                     src.expr(nextId("nn"), (Predicate1) (e) -> RegelSpraakRuntime.get(e, attr) != null);
-            return new Agg(DSL.accumulate(accBron(gevuld, extra),
+            return new Agg(DSL.accumulate(accBron(gevuld, ver, extra),
                             DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(resultVar)),
                     resultVar, null, null, false);
         }
@@ -1374,7 +1389,7 @@ public final class ExecModelTranspiler {
             PatternDSL.PatternDef src2 = src.expr(nextId("nn"), (Predicate1) (e) -> RegelSpraakRuntime.get(e, attr) != null)
                     .bind(amtVar, (Function1) elemWaarde);
             Variable cntVar = DSL.declarationOf(Object.class, "$cnt_" + (seq++));
-            RuleItemBuilder acc = DSL.accumulate(accBron(src2, extra),
+            RuleItemBuilder acc = DSL.accumulate(accBron(src2, ver, extra),
                     DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(cntVar),
                     DSL.accFunction(accFn("BigDecimalSumAccumulateFunction"), amtVar).as(resultVar));
             return new Agg(acc, resultVar, cntVar, fallback, true);
@@ -1403,23 +1418,125 @@ public final class ExecModelTranspiler {
             // a rule's value (vouwslot) binds the count as well, so the value around it reads the empty fold as leeg;
             // a bare value fold (leegCount=false) keeps the bare accumulate -> an empty one does not fire.
             Variable cntVar = DSL.declarationOf(Object.class, "$cnt_" + (seq++));
-            RuleItemBuilder acc = DSL.accumulate(accBron(src2, extra),
+            RuleItemBuilder acc = DSL.accumulate(accBron(src2, ver, extra),
                     DSL.accFunction(accFn("CountAccumulateFunction"), elemVar).as(cntVar),
                     DSL.accFunction(accClass, amtVar).as(resultVar));
             return new Agg(acc, resultVar, cntVar, null, false);   // countVar set, no fallback, not SOM
         }
-        return new Agg(DSL.accumulate(accBron(src2, extra), DSL.accFunction(accClass, amtVar).as(resultVar)), resultVar, null, null, false);
+        return new Agg(DSL.accumulate(accBron(src2, ver, extra), DSL.accFunction(accClass, amtVar).as(resultVar)), resultVar, null, null, false);
     }
 
-    /** The accumulate SOURCE: the element pattern alone, or — for a WF-102 path whose walk alternates — that
-     *  pattern AND an {@code exists} over the intermediates. The {@code exists} is what makes the flat-union
-     *  reading true in this branch: joined into the source instead, two intermediates reaching one element would
-     *  produce two tuples and the element would contribute twice. */
-    private org.drools.model.view.ViewItem<?> accBron(PatternDSL.PatternDef src, List<PatternDSL.PatternDef> extra) {
-        if (extra.isEmpty()) return src;
-        org.drools.model.view.ViewItemBuilder<?>[] rest =
-                extra.subList(1, extra.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0]);
-        return DSL.and(src, DSL.exists(extra.get(0), rest));
+    /** The accumulate SOURCE: the element pattern alone, or that pattern followed by the far side of its tests
+     *  ({@code ver}, {@link #elementtoets}) and — for a WF-102 path whose walk alternates — an {@code exists} over the
+     *  intermediates. The {@code exists} is what makes the flat-union reading true in this branch: joined into the
+     *  source instead, two intermediates reaching one element would produce two tuples and the element would
+     *  contribute twice. The far side joins one object per element and test, so it adds no tuple. */
+    private org.drools.model.view.ViewItem<?> accBron(PatternDSL.PatternDef src, List<org.drools.model.view.ViewItem<?>> ver,
+                                                     List<PatternDSL.PatternDef> extra) {
+        if (ver.isEmpty() && extra.isEmpty()) return src;
+        List<org.drools.model.view.ViewItemBuilder<?>> delen = new ArrayList<>(ver);
+        if (!extra.isEmpty()) {
+            org.drools.model.view.ViewItemBuilder<?>[] rest =
+                    extra.subList(1, extra.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0]);
+            delen.add(DSL.exists(extra.get(0), rest));
+        }
+        return DSL.and(src, delen.toArray(new org.drools.model.view.ViewItemBuilder<?>[0]));
+    }
+
+    /** A set fold's tests per element on its source: the subselection {@code filter} (RUNTIME-SEMANTICS ch. 3.4a) and,
+     *  for a quantifier fold, the {@code matrix} it asks of every collected element after the accumulate (ch. 3.9a);
+     *  either may be null. Both read with the ELEMENT as subject, and Drools runs a test on the element's pattern when
+     *  the element is inserted or updated, never when an object the test reaches through a role of the element is:
+     *  a value another rule derived there later was not seen, and the fold kept the members it had at insertion (an
+     *  "eerste" that stayed leeg, a count that stayed 0), where ch. 5.1 re-evaluates on every change of what the rule
+     *  reads. So where they read through a role, the source takes a join per object those reads reach ({@link
+     *  #verreJoins}), and the subselection goes on the element bound again FROM its variable after those joins — the
+     *  shape {@link #regelVoorwaarde} gives a condition: that pattern is evaluated again whenever the tuple before it
+     *  changes, an update of a reached object included, and the accumulate revises the element's membership. The
+     *  matrix needs no pattern of its own: a changed tuple in the source makes the accumulate pass its result on
+     *  again. While the subselection lowers, its navigated reads are the {@link #gejoindeLezingen}, so a chain lowers
+     *  there as it does in a condition. A test that reads through no role stays on the element pattern, unchanged.
+     *  null where the subselection does not lower, or a hop has no bean field ({@link #navReden}). */
+    private record Elementtoets(PatternDSL.PatternDef src, List<org.drools.model.view.ViewItem<?>> ver) {}
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Elementtoets elementtoets(PatternDSL.PatternDef src, Variable elemVar, Objecttype elem, Conditie filter,
+                                      Conditie matrix) {
+        List<Expr.AttribuutRef> refs = new ArrayList<>();
+        List<KenmerkHop> hops = new ArrayList<>();
+        navRefs(filter, elem, refs, hops);
+        navRefs(matrix, elem, refs, hops);
+        List<PatternDSL.PatternDef> joins = refs.isEmpty() && hops.isEmpty() ? List.of() : verreJoins(refs, hops, elem, elemVar);
+        if (joins == null) return null;
+        if (joins.isEmpty()) {
+            if (filter == null) return new Elementtoets(src, List.of());
+            PatternDSL.PatternDef gefilterd = filterSource(src, filter, elem);
+            return gefilterd == null ? null : new Elementtoets(gefilterd, List.of());
+        }
+        List<org.drools.model.view.ViewItem<?>> ver = new ArrayList<>();
+        for (PatternDSL.PatternDef j : joins) ver.add(j);
+        if (filter != null) {
+            Variable opnieuw = DSL.declarationOf((Class) elemVar.getType(), "$verelem_" + (seq++), DSL.from(elemVar));
+            Set<Expr.AttribuutRef> buiten = gejoindeLezingen;
+            gejoindeLezingen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            gejoindeLezingen.addAll(refs);
+            PatternDSL.PatternDef toets;
+            try {
+                toets = filterSource(PatternDSL.pattern(opnieuw), filter, elem);
+            } finally {
+                gejoindeLezingen = buiten;
+            }
+            if (toets == null) return null;
+            ver.add(toets);
+        }
+        return new Elementtoets(src, ver);
+    }
+
+    /** One join per object that {@code refs} and {@code hops} reach from the element bound to {@code elemVar}, keyed by
+     *  the reached type and the role path as {@link #navJoins} keys a condition's: a §13.4.1 chain is joined at every
+     *  object it passes, since a relation on the way can be set later too. A condition's join stands beside an
+     *  {@code eval} for the absent relation, and the source of an accumulate cannot hold that OR (Drools builds no
+     *  network for an OR inside a subnetwork), so this join is on {@code Object}: it binds the object the role reaches,
+     *  or the element itself where the role reaches nothing. Each element then keeps exactly one tuple, and a read over
+     *  an absent relation is leeg as before (RUNTIME-SEMANTICS ch. 1.2). An unresolved, own or to-many read takes no
+     *  join; its reader refuses or reads it as before. null when a hop has no bean field ({@link #navReden}). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<PatternDSL.PatternDef> verreJoins(List<Expr.AttribuutRef> refs, List<KenmerkHop> hops, Objecttype elem,
+                                                   Variable elemVar) {
+        java.util.LinkedHashMap<String, java.util.function.Function<Object, Object>> joins = new java.util.LinkedHashMap<>();
+        for (Expr.AttribuutRef a : refs) {
+            if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) continue;   // AFWEZIG -> no join
+            if (keten(a)) {
+                FactModelGenerator.Navigatiewandeling w = keten(a, elem);
+                if (w == null) continue;
+                List<java.util.function.Function<Object, Object>> stappen = ketenStappen(w, elem);
+                if (stappen == null) return null;   // §13.3.9 name-dedup
+                for (int i = 1; i <= stappen.size(); i++) {
+                    List<java.util.function.Function<Object, Object>> deel = List.copyOf(stappen.subList(0, i));
+                    joins.putIfAbsent(w.bereikt().get(i - 1).naam + "|" + String.join(".", w.rollen().subList(0, i)),
+                            e -> langsKeten(deel, e));
+                }
+            } else {
+                if (ongenavigeerd(a)) continue;
+                String rol = wireRol(a, elem);
+                if (rol == null || model.naarVeelRol(elem, a.objecttype(), rol)) continue;   // ONOPGELOST / NAAR_VEEL
+                if (!heeftVeld("genavigeerde lezing", elem, rol, a.objecttype())) return null;   // §13.3.9 name-dedup
+                joins.putIfAbsent(a.objecttype().naam + "|" + rol, typedGetter(factClass(elem), rol));
+            }
+        }
+        for (KenmerkHop h : hops) {
+            if (!heeftVeld("genavigeerde kenmerkcheck", elem, h.rol(), h.doel())) return null;   // §13.3.9 name-dedup
+            joins.putIfAbsent(h.doel().naam + "|" + h.rol(), typedGetter(factClass(elem), h.rol()));
+        }
+        List<PatternDSL.PatternDef> uit = new ArrayList<>();
+        for (java.util.function.Function<Object, Object> bereik : joins.values()) {
+            Variable verVar = DSL.declarationOf(Object.class, "$ver_" + (seq++));
+            uit.add(PatternDSL.pattern(verVar).expr(nextId("verjoin"), elemVar, (Predicate2) (o, e) -> {
+                Object b = bereik.apply(e);
+                return o == (b != null ? b : e);
+            }));
+        }
+        return uit;
     }
 
     /** A WF-102 path lowered to an accumulate source: the element pattern plus whatever the walk needs. */
@@ -1570,9 +1687,12 @@ public final class ExecModelTranspiler {
         Variable elemVar = DSL.declarationOf(elemClass, "$se_" + (seq++));
         PatternDSL.PatternDef src = PatternDSL.pattern(elemVar).expr(nextId("join"), (Variable) subjectVar,
                 (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, backref) == subj);
+        List<org.drools.model.view.ViewItem<?>> ver = List.of();
         if (f.filter() != null) {                       // §13.4.2 die/dat <predicaat> on the element
-            src = filterSource(src, f.filter(), elem);
-            if (src == null) return null;
+            Elementtoets t = elementtoets(src, elemVar, elem, f.filter(), null);
+            if (t == null) return null;
+            src = t.src();
+            ver = t.ver();
         }
         // the accumulate function reads each element's timeline (restated to the doel unit) — collectList gathers them.
         Function1<Object, Object> elemTijdlijn = fFactor == null
@@ -1581,7 +1701,8 @@ public final class ExecModelTranspiler {
         Variable elemTlVar = DSL.declarationOf(List.class, "$setl_" + (seq++));   // per-element timeline (accumulate source)
         Variable tlVar = DSL.declarationOf(List.class, "$stl_" + (seq++));        // collected List<List<Segment>> (accumulate result)
         PatternDSL.PatternDef src2 = src.bind(elemTlVar, (Function1) elemTijdlijn);
-        RuleItemBuilder acc = DSL.accumulate(src2, DSL.accFunction(accFn("CollectListAccumulateFunction"), elemTlVar).as(tlVar));
+        RuleItemBuilder acc = DSL.accumulate(accBron(src2, ver, List.of()),
+                DSL.accFunction(accFn("CollectListAccumulateFunction"), elemTlVar).as(tlVar));
         return new SomAlleSet(acc, tlVar, f.leegwaarde() != null);
     }
 
@@ -2179,8 +2300,8 @@ public final class ExecModelTranspiler {
      *  Reached from the consequence VALUE path (scalarWaarde's chain branch, gated by {@code ketenWaardePad}) and,
      *  on the condition side, by the whole-period leeg/gevuld test ({@link #leegGevuldTijdlijnReader}), by an
      *  operand of a defaults justification ({@link #rechtvaardigingZijde}, which the DRL-text branch does not lower)
-     *  and by a read a rule's voorwaarde joins hop by hop ({@link #gejoindeLezingen}); every other condition keeps the
-     *  refusal, and the DRL-text branch its marker. */
+     *  and by a read a rule's voorwaarde or a fold's test per element joins hop by hop ({@link #gejoindeLezingen});
+     *  every other condition keeps the refusal, and the DRL-text branch its marker. */
     private java.util.function.Function<Object, Object> navKetenReader(Expr.AttribuutRef a, Objecttype subject) {
         if (a.objecttype() == null || !a.objecttype().heeftLid(a.attribuut())) return null;   // AFWEZIG
         FactModelGenerator.Navigatiewandeling w = keten(a, subject);
@@ -2341,9 +2462,9 @@ public final class ExecModelTranspiler {
     /** The object a navigated condition read reaches — over its one to-one hop as {@link #navComparisonRole} resolves
      *  it, or over a §13.4.1 chain of to-one hops — as a function of the subject, which yields null at run time where a
      *  hop reaches nothing (§5.5.5: the operand then reads leeg, as over an absent single relation). A chain lowers
-     *  only for a read the voorwaarde {@link #regelVoorwaarde} is lowering joins hop by hop
-     *  ({@link #gejoindeLezingen}): without those joins no update of an object on the way runs the test again. null
-     *  when the read does not resolve there. */
+     *  only for a read the voorwaarde {@link #regelVoorwaarde} or the test per element {@link #elementtoets} is
+     *  lowering joins hop by hop ({@link #gejoindeLezingen}): without those joins no update of an object on the way
+     *  runs the test again. null when the read does not resolve there. */
     private java.util.function.Function<Object, Object> navDoel(Expr.AttribuutRef a, Objecttype subject) {
         if (!keten(a)) {
             String rol = navComparisonRole(a, subject);
@@ -3357,7 +3478,18 @@ public final class ExecModelTranspiler {
         int toetsCode = 0;      // the rsGeheelPeriode check encoding
         WaardeFn grensFn = null;
         if (gp == null) {
-            statischeMatrix = matrixVertaling(kv.toets(), elem);
+            // the matrix's reads through a role of the element are joined in the source (elementtoets), so a chain
+            // lowers in it as in a condition
+            List<Expr.AttribuutRef> matrixLezingen = new ArrayList<>();
+            navRefs(kv.toets(), elem, matrixLezingen, new ArrayList<>());
+            Set<Expr.AttribuutRef> buiten = gejoindeLezingen;
+            gejoindeLezingen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            gejoindeLezingen.addAll(matrixLezingen);
+            try {
+                statischeMatrix = matrixVertaling(kv.toets(), elem);
+            } finally {
+                gejoindeLezingen = buiten;
+            }
             if (!statischeMatrix.ok())
                 return kvSkip(kv, "een niet-temporele matrix die de per-subject bladvertaling niet draagt: "
                         + statischeMatrix.weigering());
@@ -3430,10 +3562,12 @@ public final class ExecModelTranspiler {
                            : (Predicate2) (e, subj) -> RegelSpraakRuntime.get(e, bwdVeld) == subj);
         // ch. 3.9a: the filter selects WHICH contributors are quantified over, per contributor with the element as
         // subject — the same field, the same reading and the same machinery as Functie.filter (ch. 3.4a).
-        if (kv.filter() != null) {
-            src = filterSource(src, kv.filter(), elem);
-            if (src == null) return kvSkip(kv, "een die/dat-subselectie die deze tak niet op de source kan binden");
-        }
+        // Both read with the element as subject; a read through a role of the element joins the object it reaches
+        // in the source (elementtoets), so the accumulate passes its result on again when that object changes.
+        Elementtoets toetsen = elementtoets(src, elemVar, elem, kv.filter(), kv.toets());
+        if (toetsen == null) return kvSkip(kv, "een die/dat-subselectie die deze tak niet op de source kan binden");
+        src = toetsen.src();
+        final List<org.drools.model.view.ViewItem<?>> ver = toetsen.ver();
 
         // ---- the FOLD, NON-temporal matrix: collect the CONTRIBUTORS and ask the leaf of each ----
         // The same three pieces as the temporal fold below — join+filter source, collectList accumulate,
@@ -3444,7 +3578,7 @@ public final class ExecModelTranspiler {
         // below there is no quantifier to flip: ¬∃ over a negated matrix IS what the wire asked for.
         if (statischeMatrix != null) {
             Variable elemsVar = DSL.declarationOf(List.class, "$kvel_" + (seq++));   // the collected contributors
-            RuleItemBuilder accStatisch = DSL.accumulate(src,
+            RuleItemBuilder accStatisch = DSL.accumulate(accBron(src, ver, List.of()),
                     DSL.accFunction(accFn("CollectListAccumulateFunction"), elemVar).as(elemsVar));
             final Predicate3<Object, BigDecimal, Object> matrix = statischeMatrix.test();
             final Conditie.Kwantor kwS = kv.kwantor();
@@ -3495,7 +3629,8 @@ public final class ExecModelTranspiler {
         Variable elemTlVar = DSL.declarationOf(List.class, "$kvtl_" + (seq++));   // per-contributor timeline
         Variable tlVar = DSL.declarationOf(List.class, "$kvtls_" + (seq++));      // the collected List<List<Segment>>
         PatternDSL.PatternDef src2 = src.bind(elemTlVar, (Function1) (e) -> RegelSpraakRuntime.get(e, attr));
-        RuleItemBuilder accItem = DSL.accumulate(src2, DSL.accFunction(accFn("CollectListAccumulateFunction"), elemTlVar).as(tlVar));
+        RuleItemBuilder accItem = DSL.accumulate(accBron(src2, ver, List.of()),
+                DSL.accFunction(accFn("CollectListAccumulateFunction"), elemTlVar).as(tlVar));
         // the NIET prefix is the MATRIX's, so it flips the quantifier rather than the verdict (see the javadoc).
         final boolean alle = (kv.kwantor() == Conditie.Kwantor.ALLE) != gp.niet();
         // ch. 3.9a's counting quantifiers over this same matrix: what they need is not a witness but the SIZE
@@ -5031,8 +5166,8 @@ public final class ExecModelTranspiler {
             if (a.objecttype() != null && !a.objecttype().dimensiesVan(a.attribuut()).isEmpty()) return null;             // §3.6 gedimensioneerd -> marker
             // §13.4.1 a MULTI-hop chain lowers on the consequence value path (ketenWaardePad, set around the scalar
             // THEN-waarde) and in a CONDITION only where a join per hop covers it (gejoindeLezingen, set by
-            // regelVoorwaarde); elsewhere in a condition it stays refused. The DRL-text branch markers a chain in any
-            // condition (operand/attribuutOperand marker KETEN).
+            // regelVoorwaarde and elementtoets); elsewhere in a condition it stays refused. The DRL-text branch
+            // markers a chain in any condition (operand/attribuutOperand marker KETEN).
             java.util.function.Function<Object, Object> reader = !keten(a) ? navReader(a, valueSubject)
                     : ketenWaardePad || gejoindeLezingen.contains(a) ? navKetenReader(a, valueSubject) : null;
             if (reader == null) return null;
