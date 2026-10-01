@@ -449,3 +449,34 @@ green (floor 23)` en `spec leg — 252 of 289 goldens compared, 183 dependencies
     4fd43491 DIVERGENCES: datum plus een duur die een breuk kan dragen weigert
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `78178a6a` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates17/`. Alle zestien exit 0: gate 4 503 negatief-cases,
+346 op hun arm; gate 10 JUnit 1044, 116 rgs-goldens; gate 12
+`check-drools: PASS`, played 234 (pin 234), DRL 192 (pin 192), JUnit 985;
+gate 16 23 scenario-goldens, 82 casebestanden. De fix gelezen:
+`ExpressieBouwer.binair` keurt na de typering van een datum plus of min een
+duur de rechter operand met `gebrokenDuurFout`; `breuk(Expr)` loopt
+uitputtend over de verzegelde unie en vindt de eerste plek die een breuk
+binnenbrengt, met de omrekening naar een grotere eenheid als eigen bron
+(`1 jr plus 6 mnd`); de zin noemt duur, eenheid, de afkapping van ch. 3.8
+en de twee uitgeschreven vormen; `afrondingFout` weigert een afronding over
+iets dat geen getal is; `RuleChecker.meldDubbeleLezing` geeft de WARNING
+van de eigenaar. Afwijking 1 aanvaard: een negatief-case kan niet, want de
+verifier neemt het IR terecht aan (ch. 3.8 geeft het betekenis); gate 10
+pint de weigering. Afwijkingen 2–4 aanvaard (bredere weigering op dezelfde
+grond; de kleinere eenheid als woord omdat `min` als operator leest; de
+afronding over een datum was een stil uiteenlopen van de uitvoerders en is
+in de ronde gefikst). Afwijking 5: de WARNING volgt het besluit van de
+eigenaar van 2026-10-01; de aangepaste rij in `OngebondenLezingTest` pinde
+het tegendeel. Afwijking 6: `jutterswet-vervaltermijn` heeft geen
+`bron.rgs` en blijft de pin van de afkapping op de draad. De voorgestelde
+registertekst is in dit landingscommit gezet in `spec/RUNTIME-SEMANTICS.md`
+ch. 3.8. Open punt 1 (de verifier neemt een afronding over een niet-getal
+aan; op een handgeschreven IR-document lopen de uitvoerders uiteen) is een
+normkeuze voor de eigenaar, met als advies een WF-arm in de verifier; open
+punt 2 (`min` als eenheid tegenover de operator) idem; 3 en 4 geen kaart.
+Commitkoppen tot 70 tekens aanvaard.

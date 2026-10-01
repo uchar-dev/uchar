@@ -1996,7 +1996,12 @@ its date branch only for a date-left operand, so plus does *not*
 commute. tijdsduur's two operands must be dates of one
 precision (WF-038); mixed precision is ill-formed. A fractional
 duration count **truncates toward zero** before the calendar step (1,9
-maanden steps 1 month; −1,9 truncates to −1). Empty rules: ch. 1.2 —
+maanden steps 1 month; −1,9 truncates to −1). The RegelSpraak frontend
+refuses a source sentence whose duration count can carry a fraction by
+its form, and names this truncation and the forms that write it out
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, "A date plus or min a
+duration that can carry a fraction", 2026-10-01); the wire keeps the
+truncation, and golden `jutterswet-vervaltermijn`, written as IR, pins it. Empty rules: ch. 1.2 —
 a leeg date propagates; a leeg duration counts as 0 (the date passes
 unchanged); a leeg tijdsduur operand propagates, never 0.
 

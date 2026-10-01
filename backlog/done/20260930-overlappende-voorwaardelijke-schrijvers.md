@@ -532,3 +532,9 @@ punten 2–4 zijn aantekeningen (de Drools-takken noemen bij drie schrijvers
 ten minste twee; ref noemt geen schrijvers van een tijdlijndoel; het
 staande domein per concreet type is een specvraag); geen kaart.
 Commitkoppen tot 73 tekens aanvaard (ff-only, geen rebase).
+
+**Besluit van de eigenaar (2026-10-01):** open punt 1 is beslist: de
+statische WF-regel (een verbreding van WF-079 naar een onvoorwaardelijke
+naast een voorwaardelijke schrijver, of twee met letterlijk dezelfde
+voorwaarde) wordt niet gebouwd; de dynamische divergentiefout van ch. 5.7 is
+de afhandeling, exact en al geland. IR-SPEC ch. 3.1 blijft zoals zij is.
