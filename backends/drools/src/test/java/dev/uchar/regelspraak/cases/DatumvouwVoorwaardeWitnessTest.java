@@ -26,13 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * (no sluitdag) J5. J1 (vinddag 10-03-2026, meldtermijn 10-04-2026) found V1 (lading, bergdag 02-04-2026) and V2 (anker,
  * 20-04-2026); J2 (the same dates) found nothing; J3 (vinddag 10-03-2026, meldtermijn 10-05-2026) found V3 (lading,
  * 01-04-2026) and V4 (anker, no bergdag); J4 (no vinddag, meldtermijn 01-04-2026) found V5 (lading, 01-04-2026); J5
- * (vinddag 10-03-2026, no meldtermijn) found V6 (anker, 05-04-2026). The meldduur is 14 dagen.
+ * (vinddag 10-03-2026, no meldtermijn) found V6 (anker, 05-04-2026). The meldduur is 14 dagen, the peildatum
+ * 03-04-2026.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-01 on the transpiler of the claim, exec-model branch): a condition
  * refused the rule ({@code voorwaarde met een ordenende vouw over een datumbron (eerste, laatste, minimum of maximum
  * over een rol), die deze tak alleen als waarde vouwt …}) and a justification the group ({@code rechtvaardiging niet
  * vertaald, een operand die deze tak niet als waarde leest: …}; for a minimum or maximum {@code … een vergelijking van
- * een aggregatie met iets anders dan een getal …}).
+ * een aggregatie met iets anders dan een getal …}). The rows over a date parameter and over a member a later rule
+ * derives came after the fix and were red against the transpiler of the claim in the same sentences.
  */
 class DatumvouwVoorwaardeWitnessTest {
 
@@ -59,6 +61,35 @@ class DatumvouwVoorwaardeWitnessTest {
                 "plus de meldduur");
         assertNull(speel(document(kenmerkRegel("late melding", vgl("earlier", MELDTERMIJN, plusDagen(vouw("first"), 14)))),
                 zaak), "rechts, plus 14 dg");
+    }
+
+    @Test void tegen_een_datumparameter() throws Exception {
+        // "… de laatste van … later is dan de peildatum", a date parameter (03-04-2026): J1 and J5.
+        assertNull(speel(document(kenmerkRegel("late melding", vgl("later", vouw("last"), PEILDATUM))),
+                zaak(kenmerken("late melding", true, false, false, false, true))));
+    }
+
+    @Test void een_lid_dat_een_latere_regel_afleidt() throws Exception {
+        // The fold reads the meldingsdag of a Vondst, which "De meldingsdag van een Vondst moet gesteld worden op zijn
+        // bergdag", declared after the reader, writes. A characteristic is written once and stays, so the reader must
+        // not decide on the transient in which no meldingsdag is written yet (RUNTIME-SEMANTICS ch. 6.1). "… later is
+        // dan zijn meldtermijn": J1. "… leeg is": J2 alone. In a justification, "Uitzondering op meldplicht … geen
+        // meldplicht indien de laatste van de meldingsdag … leeg is": J1, J3 and J5.
+        String meldingsdag = "{\"node\":\"Rule\",\"name\":\"meldingsdag\",\"versions\":[{\"validity\":{\"node\":"
+                + "\"Validity\"},\"target\":" + eigen("meldingsdag", "Vondst") + ",\"value\":" + eigen("bergdag", "Vondst")
+                + ",\"initialisation\":false,\"presentation\":\"equation\"}]}";
+        String later = vgl("later", vouw("last", "meldingsdag"), MELDTERMIJN);
+        assertNull(speel(regels(List.of(kenmerkRegel("late melding", later), meldingsdag)),
+                zaak(kenmerken("late melding", true, false, false, false, false))), "later is dan");
+        String leeg = predicaat("empty", vouw("last", "meldingsdag"));
+        assertNull(speel(regels(List.of(kenmerkRegel("late melding", leeg), meldingsdag)),
+                zaak(kenmerken("late melding", false, true, false, false, false))), "leeg is");
+        String vinddag = predicaat("filled", eigen("vinddag", "Jutter"));
+        String groep = groep("meldplicht", "Jutter", "characteristic", "meldplicht",
+                "{\"node\":\"Default\",\"decision\":false,\"justification\":" + samengesteld("all", 0, vinddag, leeg) + "}",
+                "{\"node\":\"Default\",\"decision\":true,\"justification\":" + vinddag + "}");
+        assertNull(speel(regels(List.of(meldingsdag), groep),
+                zaak(kenmerken("meldplicht", true, false, true, false, true))), "in een rechtvaardiging");
     }
 
     @Test void gelijk_ongelijk_gevuld_en_leeg() throws Exception {
@@ -175,10 +206,15 @@ class DatumvouwVoorwaardeWitnessTest {
     }
 
     private static final String MELDTERMIJN = eigen("meldtermijn", "Jutter");
+    private static final String PEILDATUM = "{\"node\":\"ParameterReference\",\"parameter\":\"peildatum\"}";
 
     /** "de &lt;kind&gt; van de bergdag van alle vondsten van de Jutter" (laatste, eerste, maximale or minimale waarde). */
     private static String vouw(String kind) {
-        return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + eigen("bergdag", "Vondst")
+        return vouw(kind, "bergdag");
+    }
+
+    private static String vouw(String kind, String lid) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + eigen(lid, "Vondst")
                 + "],\"elementType\":\"Vondst\",\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\","
                 + "\"role\":\"vondst\"},\"type\":" + DATUM + "}";
     }
@@ -253,8 +289,13 @@ class DatumvouwVoorwaardeWitnessTest {
                 + (meervoud == null ? ",\"many\":false}" : ",\"plural\":\"" + meervoud + "\",\"many\":true}");
     }
 
-    /** Kustwacht, Jutter and Vondst, KustwachtBewaaktJutter and JutterHeeftVondst, the parameter meldduur (dagen). */
     private static String document(String regel, String... groepen) {
+        return regels(regel == null ? List.of() : List.of(regel), groepen);
+    }
+
+    /** Kustwacht, Jutter and Vondst, KustwachtBewaaktJutter and JutterHeeftVondst, the parameters meldduur (dagen) and
+     *  peildatum. */
+    private static String regels(List<String> regels, String... groepen) {
         String model = "{\"objectTypes\":["
                 + "{\"node\":\"ObjectType\",\"name\":\"Kustwacht\",\"animate\":false,\"plural\":\"Kustwachten\",\"attributes\":["
                 + attribuut("sluitdag", DATUM) + "],\"characteristics\":[" + kenmerk("late post") + "," + kenmerk("open post") + "]},"
@@ -262,16 +303,18 @@ class DatumvouwVoorwaardeWitnessTest {
                 + attribuut("vinddag", DATUM) + "," + attribuut("meldtermijn", DATUM) + "," + attribuut("uitkomst", DATUM)
                 + "],\"characteristics\":[" + kenmerk("late melding") + "," + kenmerk("meldplicht") + "]},"
                 + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":["
-                + attribuut("soort", "{\"node\":\"Text\"}") + "," + attribuut("bergdag", DATUM) + "],\"characteristics\":[]}],"
+                + attribuut("soort", "{\"node\":\"Text\"}") + "," + attribuut("bergdag", DATUM) + ","
+                + attribuut("meldingsdag", DATUM) + "],\"characteristics\":[]}],"
                 + "\"factTypes\":[{\"node\":\"FactType\",\"name\":\"KustwachtBewaaktJutter\",\"reciprocal\":false,\"roles\":["
                 + rol("kustwacht", "Kustwacht", null) + "," + rol("jutter", "Jutter", "jutters") + "]},"
                 + "{\"node\":\"FactType\",\"name\":\"JutterHeeftVondst\",\"reciprocal\":false,\"roles\":["
                 + rol("vinder", "Jutter", null) + "," + rol("vondst", "Vondst", "vondsten") + "]}],"
-                + "\"parameters\":[{\"node\":\"Parameter\",\"name\":\"meldduur\",\"datatype\":" + DAGEN + "}],\"domains\":[],"
+                + "\"parameters\":[{\"node\":\"Parameter\",\"name\":\"meldduur\",\"datatype\":" + DAGEN + "},"
+                + "{\"node\":\"Parameter\",\"name\":\"peildatum\",\"datatype\":" + DATUM + "}],\"domains\":[],"
                 + "\"unitSystems\":[{\"node\":\"UnitSystem\",\"name\":\"Tijd\",\"units\":[{\"node\":\"Unit\",\"abbreviation\":\"dg\","
                 + "\"system\":\"Tijd\",\"canonical\":\"dg\",\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"dag\"]}]}],"
                 + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
-        return "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + (regel == null ? "" : regel)
+        return "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + String.join(",", regels)
                 + "],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],\"uniquenesses\":[],"
                 + "\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[],\"prioritizedDefaults\":["
                 + String.join(",", groepen) + "]},\"diagnostics\":[]}";
@@ -348,7 +391,7 @@ class DatumvouwVoorwaardeWitnessTest {
         List<String> alle = new ArrayList<>(verwacht);
         alle.add("{\"kind\":\"consistent\"}");
         return "{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":[" + String.join(",", SITUATIE)
-                + "],\"parameters\":{\"meldduur\":{\"number\":\"14\"}}},\"expected\":[" + String.join(",", alle) + "]}";
+                + "],\"parameters\":{\"meldduur\":{\"number\":\"14\"},\"peildatum\":{\"date\":\"2026-04-03\"}}},\"expected\":[" + String.join(",", alle) + "]}";
     }
 
     /** The exec-model branch's verdict on one case: null when every expectation holds. */

@@ -269,6 +269,7 @@ public final class ExecModelTranspiler {
     private <T> T meet(String soort, String naam, java.util.function.Supplier<T> emitter) {
         int voor = overgeslagen.size();
         navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
+        vouwReden = null;
         tijdlijnReden = null;
         T res = emitter.get();
         Dekking d = overgeslagen.size() == voor ? Dekking.lowered(soort, naam)
@@ -484,7 +485,7 @@ public final class ExecModelTranspiler {
                 return skip("regel (periodevergelijking op tijdsafhankelijk doel — §8.4.3 clip): " + r.naam());
             Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, doel.objecttype(), sVar, factClass, gejoind);
             // the sharpened §13.3.9 reason where a navigated hop refused (navReden), else the honest scope note
-            if (gate == null) return skip("regel (" + (navReden != null ? navReden
+            if (gate == null) return skip("regel (" + (navReden != null ? navReden : vouwReden != null ? vouwReden
                     : voorwaardeSkipReden(r.voorwaarde())) + "): " + r.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
@@ -1053,9 +1054,9 @@ public final class ExecModelTranspiler {
         return aggregatie(f, subject, subjectVar, leegCount, false);
     }
 
-    /** {@code waarde}: the caller reads the result as an operand of a value ({@link #vouwslot}: a rule's value, a
-     *  default's consequence or a creation's toekenning), the one place that takes a result that is not a number;
-     *  there an ordering fold over a date lowers. */
+    /** {@code waarde}: the caller reads the result from a slot ({@link #vouwslot}), as an operand of a value, a
+     *  condition or a justification, the one place that takes a result that is not a number; there an ordering fold
+     *  over a date lowers. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Agg aggregatie(Expr.Functie f, Objecttype subject, Variable subjectVar, boolean leegCount, boolean waarde) {
         aggregatieReden = null;                      // a stale reason must never be attached to another skip
@@ -1095,14 +1096,13 @@ public final class ExecModelTranspiler {
             return null;
         }
         // An ordering fold over a date (RUNTIME-SEMANTICS ch. 1.2e) selects one contributed date, which vouw binds as
-        // a Comparable. Only a value reads such a result as it is; a condition and a justification compare the result
-        // as a number, so there the fold stays refused, in this branch's words.
+        // a Comparable. A value, a condition and a justification read it from a slot, which asks for it with
+        // `waarde`; an arm that compares an aggregation's result as a number does not, and refuses it here.
         boolean datumOrdening = ordenendeDatumvouw(f);
         if (datumOrdening && !waarde) {
             aggregatieReden = "vouw " + f.kind() + " over de datumbron '" + arg.attribuut() + "' van " + elem.naam
-                    + " buiten een waarde: deze tak vouwt een datum alleen als waarde (van een regel, de consequentie van"
-                    + " een default of de toekenning van een creatie), want een voorwaarde en een rechtvaardiging"
-                    + " vergelijken de uitkomst als getal (§5.8.3)";
+                    + " op een plek die de uitkomst als getal leest; deze tak leest een datumvouw via een slot, als waarde,"
+                    + " in een voorwaarde en in een rechtvaardiging (§5.8.3)";
             return null;
         }
         // The VALUE fold below accumulates in BigDecimal, and a member that is not a number has no
@@ -3653,6 +3653,9 @@ public final class ExecModelTranspiler {
                 overgeslagen.add(vensterWeigering + (snip == null || snip.isEmpty() ? "" : ": " + snip));
                 return null;
             }
+            // a member that folds a date over a set source needs an accumulate, which the fact-only fold below cannot
+            // host: the whole composite is one test over the folds' values
+            if (bevatDatumvouwBlad(s)) return datumvouwVoorwaarde(s, pattern, subject, subjectVar);
             // §13.4.14.4 a SINGLE aggregation bullet under GEEN / "ten minste 1": the quantifier reduces to a plain
             // boolean transform of the one leaf (GEEN = NOT the leaf, ten minste 1 = the leaf). The counting fold below
             // is fact-only (Predicate1) and CANNOT host an aggregation leaf (which needs an accumulate CE), so route it
@@ -3754,6 +3757,9 @@ public final class ExecModelTranspiler {
         // rule SKIPS. It must NOT fall through to the scalar / §5.5.5 navigated-comparison handlers below, which would
         // mis-build the aggregation LEFT into a LIVE crashing rule (review wf_900d3055-a62 F2). The DRL fall-through
         // markers safely, so only the exec needs this guard.
+        // A date folded over a set source as an operand (RUNTIME-SEMANTICS ch. 1.2e), on either side, inside date
+        // arithmetic or under a leeg/gevuld test: before the aggregation arm, which compares a fold as a number.
+        if (isDatumvouwBlad(c)) return datumvouwVoorwaarde(c, pattern, subject, subjectVar);
         if (c instanceof Conditie.Vergelijking cv && heeftAggregatieOperand(cv))
             return aggregatieVoorwaarde(cv, pattern, subject, subjectVar);
         // §8.1.9 / §13.4.15.66 regelpredicaat "regelversie <X> is gevuurd|inconsistent". "is inconsistent"
@@ -4028,6 +4034,190 @@ public final class ExecModelTranspiler {
         Predicate1<Object> lp = leafPredicate(c, subject);
         if (lp != null) return new Gate(pattern.expr(nextId("c"), (Predicate1) lp), List.of());
         return null;
+    }
+
+    /** Whether {@code e} folds a date over a set source anywhere: an ordering fold whose members are dates. */
+    private static boolean bevatDatumvouw(Expr e) {
+        return Expr.bevat(e, x -> x instanceof Expr.Functie f && ordenendeDatumvouw(f));
+    }
+
+    /** A comparison of two dates or a leeg/gevuld test of a date, over no whole period, with an operand that folds a
+     *  date over a set source. A fold in the subselection of a number fold leaves the comparison a number's. */
+    private boolean isDatumvouwBlad(Conditie c) {
+        boolean blad = c instanceof Conditie.Vergelijking v && v.periode() == null && isDatum(v.links()) && isDatum(v.rechts())
+                || c instanceof Conditie.Predicaat p && p.periode() == null && isDatum(p.operand())
+                   && (p.soort() == Conditie.Predicaatsoort.LEEG || p.soort() == Conditie.Predicaatsoort.GEVULD);
+        return blad && Conditie.bevatOperand(c, ExecModelTranspiler::bevatDatumvouw);
+    }
+
+    private boolean isDatum(Expr e) {
+        Datatype t = eff.typeVan(e);
+        return t != null && t.isDatum();
+    }
+
+    /** Whether a member of {@code c}, at any depth of its composites, is a {@link #isDatumvouwBlad}. */
+    private boolean bevatDatumvouwBlad(Conditie c) {
+        return c instanceof Conditie.Samengesteld s ? s.onderdelen().stream().anyMatch(this::bevatDatumvouwBlad)
+                : isDatumvouwBlad(c);
+    }
+
+    /** A condition that tests a date folded over a set source (RUNTIME-SEMANTICS ch. 1.2e): a comparison or a leeg/gevuld
+     *  test with such an operand ("de laatste van de bergdag van alle vondsten van de Jutter later is dan zijn
+     *  meldtermijn"), the fold on either side and inside date arithmetic, or a composite that holds one. Each fold
+     *  becomes an accumulate joined to the subject, as in a rule's value ({@link #vouwslot}); it binds a count, so an
+     *  empty source still gives a row and the fold reads leeg. The condition is then one test over the subject, the
+     *  globals it reads and the values of the folds ({@link #slotToets}), placed after the accumulates
+     *  ({@link #toetsNa}). The accumulate reacts to every element that joins, leaves or changes; the subject pattern is
+     *  left without a test, so {@link #regel} makes it class-reactive. null where a part does not lower, with
+     *  {@link #vouwReden} naming it. */
+    private Gate datumvouwVoorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar) {
+        if (subject == null || subjectVar == null) return null;
+        List<Vouwslot> slots = new ArrayList<>();
+        Set<String> globalNamen = new LinkedHashSet<>();
+        java.util.function.BiPredicate<Object, Map<String, BigDecimal>> test;
+        List<Vouwslot> vorigeSlots = vouwslots;
+        Variable vorigOnderwerp = vouwOnderwerp;
+        vouwReden = null;
+        try {
+            vouwslots = slots;
+            vouwOnderwerp = subjectVar;
+            test = slotToets(c, subject, globalNamen);
+        } finally {
+            vouwslots = vorigeSlots;
+            vouwOnderwerp = vorigOnderwerp;
+        }
+        if (test == null) return null;
+        List<String> gnames = new ArrayList<>(globalNamen);
+        List<Variable> vars = new ArrayList<>();
+        for (String gn : gnames) {
+            // a numeric Parameter, the §5.3 rekendatum pseudo-slot, or a date Parameter the fold is compared with
+            Global<?> g = waardeGlobal(gn);
+            if (g == null) g = datumGlobals.get(gn);
+            if (g == null) g = datumTijdGlobals.get(gn);
+            if (g == null) {
+                vouwReden = "voorwaarde met een datumvouw naast de parameter '" + gn + "', die deze tak hier alleen als getal"
+                        + " of datum leest: " + snippet(c.bron());
+                return null;
+            }
+            vars.add((Variable) g);
+        }
+        List<RuleItemBuilder<?>> extra = new ArrayList<>();
+        for (Vouwslot v : slots) {
+            extra.add(v.agg().accItem());
+            vars.addAll(v.variabelen());
+        }
+        final int vouwVanaf = gnames.size();
+        extra.addAll(toetsNa(subjectVar, vars, (s, w) -> {
+            Map<String, BigDecimal> gm = new LinkedHashMap<>();
+            vulGlobalMap(gm, gnames, w, 0);
+            vulVouwslots(gm, slots, w, vouwVanaf, s);
+            return test.test(s, gm);
+        }));
+        return new Gate(pattern, extra);
+    }
+
+    /** A condition as a test over the subject and the name-to-value map of its globals and folds: a composite folds its
+     *  members with the stop triggers of ch. 5.10 ({@link #vastgesteld}, {@link #telVerdict}); a member with a date fold
+     *  lowers its operands as values do ({@link #scalarWaarde}, with the slots of the caller open) and compares two dates
+     *  by {@link #datumVergelijkTemporal} or tests leeg; any other member is the subject-local predicate
+     *  ({@link #subjectConditie}). {@code globals} receives what the operands read. null where a member does not lower,
+     *  with {@link #vouwReden} naming it. */
+    private java.util.function.BiPredicate<Object, Map<String, BigDecimal>> slotToets(Conditie c, Objecttype subject,
+                                                                                      Set<String> globals) {
+        if (c instanceof Conditie.Samengesteld sam && bevatDatumvouwBlad(sam)) {
+            List<java.util.function.BiPredicate<Object, Map<String, BigDecimal>>> leden = new ArrayList<>();
+            for (Conditie deel : sam.onderdelen()) {
+                java.util.function.BiPredicate<Object, Map<String, BigDecimal>> lid = slotToets(deel, subject, globals);
+                if (lid == null) return null;
+                leden.add(lid);
+            }
+            final Conditie.Kwantor kw = sam.kwantor();
+            final int drempel = sam.drempel();
+            return (s, gm) -> {
+                int hits = 0;
+                for (int i = 0; i < leden.size(); i++) {
+                    Boolean vast = vastgesteld(kw, drempel, hits, i, leden.size() - i);
+                    if (vast != null) return vast;
+                    if (leden.get(i).test(s, gm)) hits++;
+                }
+                return telVerdict(kw, drempel, hits, leden.size());
+            };
+        }
+        if (isDatumvouwBlad(c)) {
+            if (c instanceof Conditie.Predicaat p) {
+                WaardeFn w = vouwOperand(p.operand(), subject, c);
+                if (w == null) return null;
+                globals.addAll(w.globals());
+                final boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
+                final BiFunction<Object, Map<String, BigDecimal>, Object> fn = w.fn();
+                return (s, gm) -> (fn.apply(s, gm) == null) == leeg;
+            }
+            Conditie.Vergelijking v = (Conditie.Vergelijking) c;
+            if (!sameDatumKind(eff.typeVan(v.links()), eff.typeVan(v.rechts())) || !isDatumVergelijkOp(v.op())) {
+                vouwReden = "voorwaarde met een datumvouw in een vergelijking die geen twee datums van één soort vergelijkt: "
+                        + snippet(c.bron());
+                return null;
+            }
+            WaardeFn l = vouwOperand(v.links(), subject, c);
+            if (l == null) return null;
+            WaardeFn r = vouwOperand(v.rechts(), subject, c);
+            if (r == null) return null;
+            globals.addAll(l.globals());
+            globals.addAll(r.globals());
+            final Conditie.Operator op = v.op();
+            final BiFunction<Object, Map<String, BigDecimal>, Object> lf = l.fn(), rf = r.fn();
+            return (s, gm) -> datumVergelijkTemporal(datumWaarde(lf.apply(s, gm)), datumWaarde(rf.apply(s, gm)), op);
+        }
+        Predicate1<Object> lokaal = subjectConditie(c, subject);
+        if (lokaal == null) {
+            vouwReden = "voorwaarde met een datumvouw naast een lid dat deze tak niet op het onderwerp leest: "
+                    + snippet(c.bron());
+            return null;
+        }
+        return (s, gm) -> toets(lokaal, s);
+    }
+
+    /** One operand of a condition with a date fold, as a value: the folds in it become slots of the caller. null where it
+     *  does not lower, with {@link #vouwReden} naming the fold, the navigation or the operand. */
+    private WaardeFn vouwOperand(Expr e, Objecttype subject, Conditie c) {
+        navReden = null;
+        WaardeFn w = scalarWaarde(subject, e);
+        if (w == null && vouwReden == null)
+            vouwReden = "voorwaarde met een datumvouw, " + (navReden != null ? navReden
+                    : "een operand die deze tak niet als waarde leest") + ": " + snippet(c.bron());
+        return w;
+    }
+
+    /** The values a test after the accumulates of a condition reads, as one fact: a from-declaration yields every
+     *  element of an Iterable or an array as a row of its own and no row for null, so the values ride in this holder. */
+    private record Waarden(Object[] rij) {
+        Waarden met(Object w) {
+            Object[] r = java.util.Arrays.copyOf(rij, rij.length + 1);
+            r[rij.length] = w;
+            return new Waarden(r);
+        }
+    }
+
+    /** A test over the subject and the values {@code vars} bind, as rule items after the items that bind them: a chain
+     *  of from-declarations collects the values in order into one {@link Waarden}, each declaration joining one
+     *  variable, and the test rides the last. One variable per declaration keeps every global in a declaration of its
+     *  own (two globals in one exec-model constraint read as the last; {@link #nGlobalGate}) and puts no ceiling on the
+     *  number of values. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<RuleItemBuilder<?>> toetsNa(Variable subjectVar, List<Variable> vars,
+                                             java.util.function.BiPredicate<Object, Object[]> toets) {
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        Variable w = DSL.declarationOf(Waarden.class, "$waarden_" + (seq++),
+                DSL.from((Variable) subjectVar, (Function1) s -> new Waarden(new Object[0])));
+        for (Variable v : vars) {
+            items.add(PatternDSL.pattern(w));
+            Variable vorige = w;
+            w = DSL.declarationOf(Waarden.class, "$waarden_" + (seq++),
+                    DSL.from(vorige, v, (Function2) (a, x) -> ((Waarden) a).met(x)));
+        }
+        items.add(PatternDSL.pattern(w).expr(nextId("dvt"), (Variable) subjectVar,
+                (Predicate2) (a, s) -> toets.test(s, ((Waarden) a).rij())));
+        return items;
     }
 
     /** §5.3/§5.6 TEKST equality with the leegwaarde tables (the String analogue of the datum equality): GELIJK is Tabel 38
@@ -4668,9 +4858,10 @@ public final class ExecModelTranspiler {
         }
     }
 
-    /** The folds of the value {@link #regel} is lowering, of the consequence {@link #compileDefault} is lowering, or of
-     *  the toekenningen {@link #objectCreatie} is lowering, non-null only while it lowers them: build-time state, scoped
-     *  like {@link #ketenWaardePad}, so no other lowering meets a slot. {@link #vouwOnderwerp} is the subject variable
+    /** The folds of the value {@link #regel} is lowering, of the consequence {@link #compileDefault} is lowering, of
+     *  the toekenningen {@link #objectCreatie} is lowering, of the condition {@link #datumvouwVoorwaarde} is lowering, or
+     *  of a date operand {@link #rechtvaardigingZijde} is lowering, non-null only while it lowers them: build-time state,
+     *  scoped like {@link #ketenWaardePad}, so no other lowering meets a slot. {@link #vouwOnderwerp} is the subject variable
      *  their accumulates join to, and {@link #vouwReden} names the first fold that did not lower. */
     private List<Vouwslot> vouwslots;
     private Variable vouwOnderwerp;
@@ -4742,8 +4933,8 @@ public final class ExecModelTranspiler {
         // IR-SPEC ch. 4.10: the Let cluster — all three union nodes.
         if (isLetKnoop(e)) return letWaarde(valueSubject, e);
         // A fold over a set source has no value the consequence can compute: it is an accumulate on the rule's left
-        // side, which only a rule's value, a default's consequence and a creation's toekenning can place (vouwslots is
-        // set there alone).
+        // side, which only a rule's value, a default's consequence, a creation's toekenning and a condition or a
+        // justification with a date fold can place (vouwslots is set there alone).
         if (e instanceof Expr.Functie vf && isInstantievouw(vf))
             return vouwslots == null ? null : vouwslot(valueSubject, vf);
         if (e instanceof Expr.Literal lit && lit.type().isNumeriek()) {
@@ -6965,8 +7156,8 @@ public final class ExecModelTranspiler {
         List<RuleItemBuilder<?>> extra = new ArrayList<>();
         if (oc.voorwaarde() != null) {
             Gate gate = regelVoorwaarde(oc.voorwaarde(), pattern, subject, sVar, subjClass, new LinkedHashSet<>());
-            if (gate == null) return skip("objectcreatie ("
-                    + (navReden != null ? navReden : voorwaardeSkipReden(oc.voorwaarde())) + "): " + oc.naam());
+            if (gate == null) return skip("objectcreatie (" + (navReden != null ? navReden : vouwReden != null ? vouwReden
+                    : voorwaardeSkipReden(oc.voorwaarde())) + "): " + oc.naam());
             pattern = gate.pattern();
             extra.addAll(gate.extra());
         }
@@ -7751,12 +7942,12 @@ public final class ExecModelTranspiler {
     private static String voorwaardeSkipReden(Conditie c) {
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumTijdLexeem)) return "voorwaarde met onleesbaar datum-tijd-lexeem";
         if (Conditie.bevatOperand(c, Literalen::onleesbaarDatumLexeem)) return "voorwaarde met onleesbaar datum-lexeem";
-        // the comparisons of a condition compare numbers with an accumulate's result (aggregatieVoorwaarde); a date
-        // fold is lowered only as a value (vouwslot), and the refusal says so rather than naming a scope
-        if (Conditie.bevatOperand(c, e -> e instanceof Expr.Functie f && ordenendeDatumvouw(f)))
+        // a date fold lowers as an operand of a comparison of two dates or of a leeg/gevuld test of a date
+        // (datumvouwVoorwaarde); elsewhere the refusal says so rather than naming a scope
+        if (Conditie.bevatOperand(c, ExecModelTranspiler::bevatDatumvouw))
             return "voorwaarde met een ordenende vouw over een datumbron (eerste, laatste, minimum of maximum over een"
-                    + " rol), die deze tak alleen als waarde vouwt (van een regel, de consequentie van een default of de"
-                    + " toekenning van een creatie)";
+                    + " rol) op een plek die deze tak niet vouwt: alleen als operand van een vergelijking van twee datums"
+                    + " of van een leeg/gevuld-toets van een datum";
         return "voorwaarde buiten Phase-B scope";
     }
 
@@ -8330,7 +8521,8 @@ public final class ExecModelTranspiler {
                 return telVerdict(kw, drempel, hits, leden.size());
             };
         }
-        if (c instanceof Conditie.Vergelijking v && v.periode() == null && heeftAggregatieOperand(v))
+        // a date folded over a set source compares as a date (scalaireRechtvaardiging), not as a number
+        if (c instanceof Conditie.Vergelijking v && v.periode() == null && heeftAggregatieOperand(v) && !isDatumvouwBlad(v))
             return aggregatieRechtvaardiging(v, subject, bouw);
         Rechtvaardiging r = scalaireRechtvaardiging(c, subject, bouw);
         if (r == null && bouw.weigering == null) bouw.weigering = rechtvaardigingVorm(c) + ": " + snippet(c.bron());
@@ -8427,13 +8619,14 @@ public final class ExecModelTranspiler {
 
     /** One side of a justification's comparison, read when the rule fires: an aggregation through its accumulate (the
      *  fold's result, or the leegwaarde of ch. 1.2e when no element contributes), anything else as the consequence
-     *  reads a value ({@link #scalarWaarde}) — a chain of roles included, null-safely, and a numeric parameter from the
-     *  globals the consequence binds. The chain gate of the value path is opened here, and only here, on the
+     *  reads a value ({@link #scalarWaarde}) — a chain of roles included, null-safely, a numeric parameter from the
+     *  globals the consequence binds, and a date folded over a set source from its slot ({@link #vouwslot}), the date
+     *  arithmetic around it included. The chain gate of the value path is opened here, and only here, on the
      *  condition side: the DRL-text branch has no defaults lowering to stay symmetric with, and the group waits for
      *  the producers of what the chain reads (groepVolgorde). null where the side does not lower, with
      *  {@code bouw.weigering} naming it. */
     private Eval rechtvaardigingZijde(Expr e, Objecttype subject, RechtvaardigingBouw bouw) {
-        if (e instanceof Expr.Functie f && isAggregatieKind(f.kind()) && !isGelisteFold(f)) {
+        if (e instanceof Expr.Functie f && isAggregatieKind(f.kind()) && !isGelisteFold(f) && !ordenendeDatumvouw(f)) {
             Agg agg = aggregatie(f, subject, bouw.subject, true);
             if (agg == null) {
                 bouw.weigering = "een aggregatie die deze tak niet vouwt (" + (aggregatieReden != null ? aggregatieReden
@@ -8449,18 +8642,32 @@ public final class ExecModelTranspiler {
             final WaardeFn leeg = agg.somFallback();
             return (s, gm, a) -> foldLeeg(a[iResultaat], a[iTelling], leeg, s);
         }
-        if (containsAggregatie(e)) {
+        if (containsAggregatie(e) && !bevatDatumvouw(e)) {
             bouw.weigering = "een aggregatie binnen een rekenkundige uitdrukking: " + snippet(e.bron());
             return null;
         }
         WaardeFn w;
         boolean vorig = ketenWaardePad;
+        List<Vouwslot> vorigeSlots = vouwslots;
+        Variable vorigOnderwerp = vouwOnderwerp;
         navReden = null;   // a reason an earlier member's probe left belongs to that member, not to this operand
-        try { ketenWaardePad = true; w = scalarWaarde(subject, e); }
-        finally { ketenWaardePad = vorig; }
+        vouwReden = null;
+        try {
+            ketenWaardePad = true;
+            // only a date fold reaches a slot here: a number aggregation took the arm above, or the refusal before it
+            if (bevatDatumvouw(e)) {
+                vouwslots = bouw.vouwslots;
+                vouwOnderwerp = bouw.subject;
+            }
+            w = scalarWaarde(subject, e);
+        } finally {
+            ketenWaardePad = vorig;
+            vouwslots = vorigeSlots;
+            vouwOnderwerp = vorigOnderwerp;
+        }
         if (w == null) {
-            bouw.weigering = (navReden != null ? navReden : "een operand die deze tak niet als waarde leest") + ": "
-                    + snippet(e.bron());
+            bouw.weigering = (vouwReden != null ? vouwReden : navReden != null ? navReden
+                    : "een operand die deze tak niet als waarde leest") + ": " + snippet(e.bron());
             return null;
         }
         for (String gn : w.globals())
