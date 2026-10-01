@@ -587,3 +587,11 @@ own. Witness `ScenarioErflijnScopeTest` (frontend); the scenario goldens regener
 is niet geraakt. De distributie volgt dezelfde regel al; zij kent deze kop pas na haar submodulepin.
 
 **Commits** van (b): `3ce39c7a` (getuige, rood), `646603ed` (ScenarioResolver), `ffcfd73a` (DIVERGENCES).
+
+## Keuring vervolgronde graaf en defaults (hoofdsessie, 2026-10-01)
+
+Punt (b) gekeurd met de ronde hierboven (gates op `76ece9f7` groen, gate 16
+24 scenario-goldens byte-gelijk): `ScenarioResolver.metStapel` leest de
+erflijn van de groepen zelf en niet van hun naam, dezelfde regel als de
+dienst van de distributie; registertekst in `spec/CONSTRUCTS.md` rij 39
+(Widened). Een scenario hoeft `<basis> voor <subtype>` niet meer te noemen.

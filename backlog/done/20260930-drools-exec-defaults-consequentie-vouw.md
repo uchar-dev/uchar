@@ -809,3 +809,32 @@ alleen de twee done-kaarten), `eval $(opam env)`, `dune build` exit 0, elk scrip
     bdedf518 Vouwwaarde: de exectak draagt een datumvouw ook in voorwaarden
 
 en de commit "Vervolgronde graaf en defaults: Result", die alleen de twee done-kaarten raakt. Niet gepusht, niet gemerged.
+
+## Keuring vervolgronde graaf en defaults (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `76ece9f7` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates21/`. Alle zestien exit 0: gate 10 JUnit 1068, 117
+rgs-goldens; gate 12 `check-drools: PASS`, played 235 (pin 235), DRL 192
+(pin 192), JUnit 1035; gate 16 24 scenario-goldens, 84 casebestanden. De fix
+gelezen: (c) de consequentie van een regel, een groep en een creatie bindt
+voorbij negen variabelen via één gebonden structuur (`Waarden`, `toetsNa`);
+(d) een datumvouw in een voorwaarde of rechtvaardiging wordt een accumulate
+op de regel resp. de reduce-regel en de toets leest de uitkomst uit het slot
+als datum (`datumvouwVoorwaarde`, `slotToets`, `vouwOperand`); (a)
+`ProducentConsument.lezingen` per default met `vormen()` daarop gebouwd, zodat
+de gelijkheid een constructie is; (b) `ScenarioResolver.metStapel` draagt
+`<basis> voor <subtype>` met haar basis mee, uit de groepen gelezen. Afwijking
+1 aanvaard: vier bestaande getuigenrijen pinden precies de weigeringen die
+deze ronde wegneemt en verwachten nu de waarden van ref en clingo met de
+documenten ongewijzigd. Afwijkingen 2–5 aanvaard. De registertekst is in dit
+landingscommit gezet in `spec/CONSTRUCTS.md` rij 39 (Widened) en
+`spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` §5.1; de optionele teksten
+voor CONSTRUCTS rij 6 en RUNTIME-SEMANTICS ch. 6.1 niet. Open punten: 2 (een
+datumparameter in een rechtvaardiging; klein, zelfde laag, volgende ronde
+in deze tak), 3 ("ongelijk" over een later afgeleid lid: ref op de
+tijdelijke waarde, clingo en exec niet; het residu van ch. 6.1, normvraag
+eigenaar), 4 (de frontend weigert "de maximale/minimale waarde van" over een
+datum terwijl WF-038 het toelaat; frontend-typering, volgende frontendronde),
+7 (de naam van een blok op `Default` is een IR-keuze van de eigenaar); 1, 5,
+6 en 8 gelezen, geen kaart. Commitkoppen tot 69 tekens aanvaard.

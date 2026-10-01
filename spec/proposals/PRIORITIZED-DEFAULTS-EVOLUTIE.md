@@ -338,6 +338,13 @@ not lower is refused with the form and the consequence. Witnesses:
 `DefaultsConsequentieVouwWitnessTest`, the golden
 `jutterswet-sluitdag-gemeld`.
 
+Landed 2026-10-01 (exec-model branch): a justification that compares a date
+folded over a set source, or tests it for leeg, reads the fold from the slots
+the group's consequences use, on either side and inside date arithmetic; and
+a group binds any number of variables (the folds, aggregations and globals of
+every default of its stack). Witnesses `DatumvouwVoorwaardeWitnessTest`,
+`BindingVoorbijNegenWitnessTest`.
+
 ### 5.2 Flip inventory and order
 
 Fifteen goldens / 67 cases flip on defaults work alone, risk-ascending:
