@@ -719,6 +719,7 @@ final class ExpressieBouwer {
         if (p.datumMet() != null)       return new Expr.Functie(Expr.FunctieKind.DATUM_MET, args(p.datumMet()), null, null, null, new Datatype.DatumInDagen(), bron);
         if (p.datumTijdMet() != null)   return new Expr.Functie(Expr.FunctieKind.DATUMTIJD_MET, args(p.datumTijdMet()), null, null, null, new Datatype.DatumTijd(), bron);
         if (p.attribuutVanOnderwerp() != null) return bouwAttribuut(p.attribuutVanOnderwerp());
+        if (p.percentageVanHaakjes() != null) return bouwPercentageVanHaakjes(p.percentageVanHaakjes(), bron);
         if (p.expressie() != null)      return bouw(p.expressie()); // ( expressie )
         if (p.onderwerp() != null) {
             Expr poss = possessief(p.onderwerp(), bron); // "zijn <attribuut van het subject>"
@@ -728,6 +729,26 @@ final class ExpressieBouwer {
         return onopgelost(p,
                 "deze primaire expressie bindt geen literal, geen parameter, geen variabele, geen attribuut "
                 + "van een onderwerp en geen functieaanroep (§13.4.17)");
+    }
+
+    /** §13.4.17.12 "het percentage P van ( Y )" without '%' (grammar/DIVERGENCES.md, "The percentage forms"): the
+     *  function the '%' form spells, typed the same way (Y's unit, no decimal claim). Without the sign only a
+     *  Percentage on the left makes the sentence the percentage function: P is read as a name — a parameter or a
+     *  "Daarbij geldt" variable — and any other left operand is refused rather than read as one. */
+    private Expr bouwPercentageVanHaakjes(PercentageVanHaakjesContext h, Bron bron) {
+        String naam = (h.bepaaldLidwoord() != null ? src(h.bepaaldLidwoord()) + " " : "") + src(h.kaleNaamDeel());
+        Expr links = naamRef(naam, false, bron(h.kaleNaamDeel())), rechts = bouw(h.expressie());
+        if (!(links.type() instanceof Datatype.Percentage)) {
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "'" + bron.snippet() + "' leest als de percentagefunctie zonder procentteken (§13.4.17.12), maar '"
+                    + naam + "' is geen parameter of variabele van het type Percentage — schrijf het procentteken "
+                    + "('… % van …') of noem een percentage", h.getStart().getLine()));
+            // the ERROR keeps the document off disk, so the node is typed unknown and never reaches a wire
+            return new Expr.Binair(Expr.BinOp.PERCENTAGE_VAN, links, rechts, onbekend(), bron);
+        }
+        Datatype t = rechts.type() instanceof Datatype.Numeriek n
+                ? new Datatype.Numeriek(false, 0, Datatype.Teken.ONBEPAALD, n.eenheid()) : onbekend();
+        return new Expr.Binair(Expr.BinOp.PERCENTAGE_VAN, links, rechts, t, bron);
     }
 
     /* The RegelSpraak SOURCE readers: the §13.2.19/.21 DATE token as the author wrote it, day-first, the
@@ -2494,20 +2515,23 @@ final class ExpressieBouwer {
                     "de attribuutverwijzing noemt geen attribuutnaam met lidwoord (§13.4.2.9)");
         String attr = src(a.attribuutMetLidwoord().kaleNaam());
         // §13.4.17.12/§6.8 "het percentage P van V" WITHOUT the '%': our grammar requires '%' on percentageVanExpr to
-        // disambiguate from a 'van' navigation (grammar/DIVERGENCES.md), so the no-'%' form parses HERE as a
-        // navigation. But when the leftmost name P is a Percentage-typed PARAMETER (never a real attribuut of any
-        // objecttype), this IS the percentage function, not a navigation — reinterpret it as PERCENTAGE_VAN(P, V) with
-        // V the onderwerp built as a value (V·P/100, §4.8 Tabel 19; leeg telt als 0). A name that is no Percentage
-        // parameter, or a V we cannot build, falls through to the normal navigation (an honest marker, never a wrong gate).
-        // The greedy kaleNaam absorbs an inner 'van' ("korting van de prijs" -> ONE kaleNaam of two delen), so the
-        // percentage P is the LEFTMOST kaleNaamDeel and V is "<remaining deel> van <onderwerp>"; with no inner 'van'
-        // (one deel) V is just the onderwerp built as a value.
+        // disambiguate from a 'van' navigation (grammar/DIVERGENCES.md, "The percentage forms"), so the no-'%' form
+        // parses HERE as a navigation. But when the leftmost name P is a Percentage-typed PARAMETER (never a real
+        // attribuut of any objecttype), this IS the percentage function, not a navigation — reinterpret it as
+        // PERCENTAGE_VAN(P, V) (V·P/100, §4.8 Tabel 19; leeg telt als 0). A name that is no Percentage parameter, or a
+        // V we cannot build, falls through to the normal navigation (an honest marker, never a wrong gate).
+        // The greedy kaleNaam absorbs every inner 'van' ("korting van de prijs" -> ONE kaleNaam of two delen), so the
+        // percentage P is the LEFTMOST kaleNaamDeel and V is the ordinary value read "<every remaining deel> van
+        // <onderwerp>", which walks a chain of to-one steps as any read does ("het taxatiebedrag van de taxatie van
+        // de Vondst"); with no inner 'van' (one deel) V is the onderwerp built as a value, or a "Daarbij geldt"
+        // variable it names. Until 2026-10-02 a V of more than one remaining deel stayed a marker.
         java.util.List<KaleNaamDeelContext> delen = a.attribuutMetLidwoord().kaleNaam().kaleNaamDeel();
         Parameter pct = percentageParameter(src(delen.get(0)));
         if (pct != null) {
-            Expr v = delen.size() == 1 ? onderwerpAlsWaarde(a.onderwerp())
-                   : delen.size() == 2 ? attribuutRef(stripArtikel(src(delen.get(1))), a.onderwerp(), bron)
-                   : null;   // a deeper navigation chain in the V part stays a marker (rare)
+            Expr v = delen.size() == 1 ? percentageGrondslag(a.onderwerp())
+                   : attribuutRef(stripArtikel(String.join(" van ",
+                           delen.subList(1, delen.size()).stream().map(ExpressieBouwer::src).toList())),
+                           a.onderwerp(), bron);
             // §4.8 Tabel 18 requires a NUMERIEK right operand: only reinterpret as the percentage function when V is
             // a getalachtig value. This guards the name collision where the leftmost name is BOTH a Percentage
             // parameter AND a real attribute reachable through the onderwerp ("de korting van zijn bestelling", korting
@@ -2803,12 +2827,26 @@ final class ExpressieBouwer {
     }
 
     /** The {@link Parameter} named {@code naam} (lidwoord-stripped) when it is Percentage-typed — the §13.4.17.12
-     *  "het percentage P van V" left operand. Null otherwise. */
+     *  "het percentage P van V" left operand. Null otherwise. §13.4.17.12 lets a '%' follow P, and the name parts
+     *  take it as a word of their own ("percentage havengeld %"), so a trailing '%' is no part of the name. */
     private Parameter percentageParameter(String naam) {
-        String stripped = stripArtikel(naam);
+        String zonderTeken = naam.replaceFirst("\\s*%$", "");
+        String stripped = stripArtikel(zonderTeken);
         Parameter p = model.parameters.get(stripped);
-        if (p == null) p = model.parameters.get(naam);
+        if (p == null) p = model.parameters.get(zonderTeken);
         return p != null && p.datatype() != null && p.datatype().isPercentage() ? p : null;
+    }
+
+    /** The V of "het percentage P van V" when no name part follows P: the onderwerp built as a value, or a §11
+     *  "Daarbij geldt" variable the onderwerp names ("het percentage havengeld van het getaxeerde bedrag"), read as
+     *  {@link #naamRef} reads it at this position. Null when it is neither (the caller keeps the navigation). */
+    private Expr percentageGrondslag(OnderwerpContext o) {
+        Expr v = onderwerpAlsWaarde(o);
+        if (v != null || o == null) return v;
+        String naam = src(o);
+        String sleutel = variabeleSleutel(naam);
+        boolean variabele = binderModus ? binders.containsKey(sleutel) : zichtbaar.containsKey(sleutel);
+        return variabele ? naamRef(naam, false, bron(o)) : null;
     }
 
     private static String stripArtikel(String naam) {

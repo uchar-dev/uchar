@@ -148,14 +148,34 @@ class PercentageLezingTest {
 
     @Test void een_periode_tussen_haakjes_blijft_een_periode() {
         // "van (A) tot (B)" after a value is the period comparison of §13.4.15.68, as before the parenthesised
-        // percentage form: the form is not read where a 'tot' follows the closing parenthesis
-        RegelSpraakModel m = Resolver.resolve(MODEL.replace("het havengeld Numeriek (getal met 2 decimalen);",
+        // percentage form: that form is primaireExpressie's last alternative, so the reading it had wins
+        RegelSpraakModel m = schoon(MODEL.replace("het havengeld Numeriek (getal met 2 decimalen);",
                 "het havengeld Numeriek (getal met 2 decimalen);\n    de vinddag Datum in dagen;\n    de meldingsdag Datum in dagen;")
                 + "Regel havengeld\n    geldig altijd\n        Het havengeld van een Vondst moet gesteld worden op 5,00"
                 + " van (de vinddag van de Vondst) tot (de meldingsdag van de Vondst).\n");
-        assertTrue(m.errors().stream().noneMatch(d -> d.message().contains("syntaxfout")),
-                () -> "de periode leest niet: " + m.errors());
-        assertTrue(m.errors().stream().noneMatch(d -> d.message().contains("percentage")), () -> m.errors().toString());
+        assertTrue(dev.uchar.regelspraak.emit.IrEmitter.emit(m).contains("\"node\": \"TimeWindow\""));
+    }
+
+    @Test void het_procentteken_voor_haakjes_blijft_de_vorm_met_procentteken() {
+        // "P % van (Y)" and "12,5 % van (Y)" read as the '%' form, as before: the name does not take the sign
+        assertInstanceOf(Expr.AttribuutRef.class, percentageVan(waarde(schoon(havengeld(
+                "het percentage havengeld % van (zijn getaxeerde waarde)")))).rechts());
+        Expr w = waarde(schoon(havengeld("12,5 % van (zijn getaxeerde waarde)")));
+        Expr.Binair b = assertInstanceOf(Expr.Binair.class, assertInstanceOf(Expr.Afgerond.class, w).basis());
+        assertEquals(Expr.BinOp.PERCENTAGE_VAN, b.op());
+        assertInstanceOf(Expr.Literal.class, b.links());
+    }
+
+    @Test void haakjes_na_iets_anders_dan_een_percentage_weigeren() {
+        // before: a syntax error ("no viable alternative at input 'van(zijngetaxeerdewaarde)'")
+        RegelSpraakModel m = Resolver.resolve(MODEL.replace("Objecttype de Vondst",
+                "Parameter de korting : Numeriek (getal met 2 decimalen)\n\nObjecttype de Vondst")
+                + "Regel havengeld\n    geldig altijd\n        Het havengeld van een Vondst moet berekend worden als "
+                + "de korting van (zijn getaxeerde waarde).\n");
+        assertEquals(List.of("'de korting van (zijn getaxeerde waarde)' leest als de percentagefunctie zonder "
+                + "procentteken (§13.4.17.12), maar 'de korting' is geen parameter of variabele van het type Percentage "
+                + "— schrijf het procentteken ('… % van …') of noem een percentage"),
+                m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
     }
 
     @Test void het_product_met_een_percentage_blijft_een_typefout() {

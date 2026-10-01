@@ -1037,7 +1037,15 @@ primaireExpressie
     | onderwerp
     | variabeleNaam
     | LPAREN expressie RPAREN
+    | percentageVanHaakjes
     ;
+// §13.4.17.12 the percentage function without '%' over a parenthesised operand: "het percentage P van ( Y )". The
+// '%' form above needs no name here, and an onderwerp never opens with '(', so no navigation competes. The period
+// comparison of §13.4.15.68 does, after a value ("de korting van ( A ) tot ( B )"), and so does the '%' form where a
+// name takes the sign as a word ("P % van ( Y )"): this alternative is primaireExpressie's LAST, so ANTLR resolves
+// every such ambiguity to the reading the rule had before it existed, and it is taken only where no other reading
+// parses (grammar/DIVERGENCES.md, "The percentage forms"). The resolver demands a Percentage on the left.
+percentageVanHaakjes : bepaaldLidwoord? kaleNaamDeel VAN LPAREN expressie RPAREN ;
 
 // §13.4.17.10-58 named functions and aggregations
 functieAanroep
