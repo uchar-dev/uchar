@@ -42,6 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * since the follow-up round of the same day, and was red against the refusal ({@code Excluded … kanaal-deponerende
  * toekenning (deling)}). The row over five folds pinned a refusal until a consequence bound more than nine variables
  * (2026-10-01); red against that transpiler in {@code te veel gebonden variabelen: globals en vouwen}, it plays since.
+ * The row over a date fold in the creation's condition pinned its refusal by name until that fold became an accumulate
+ * on the creation's rule (2026-10-01); red against that transpiler in {@code voorwaarde met een ordenende vouw over een
+ * datumbron …}, it plays since.
  */
 class ObjectcreatieVouwWitnessTest {
 
@@ -282,18 +285,15 @@ class ObjectcreatieVouwWitnessTest {
         assertNull(speel(ir, zaak));
     }
 
-    @Test void een_datumvouw_in_de_voorwaarde_van_de_creatie_weigert_met_de_vorm() throws Exception {
+    @Test void een_datumvouw_in_de_voorwaarde_van_de_creatie() throws Exception {
         // "Een Jutter heeft een afrekening met telling gelijk aan 5 indien de eerste van de vinddag van alle vondsten van
-        // de Jutter later is dan 01-03-2026": the condition compares a fold's result as a number, so a date fold there
-        // is refused, as in an ordinary rule's condition, in a sentence that names it. ref and clingo: 5, leeg, leeg
-        // and 5.
+        // de Jutter later is dan 01-03-2026": the fold is an accumulate on the creation's rule and the condition reads
+        // it, as in an ordinary rule's condition. ref and clingo: 5, leeg, leeg and 5.
         String voorwaarde = "{\"node\":\"Comparison\",\"op\":\"later\",\"left\":" + EERSTE + ",\"right\":{\"node\":\"Literal\","
                 + "\"value\":{\"date\":\"2026-03-01\"},\"type\":" + DATUM + ",\"source\":{\"snippet\":\"01-03-2026\"}},\"source\":"
                 + "{\"snippet\":\"de eerste van … later is dan 01-03-2026\"}}";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(document(false,
-                creatie(voorwaarde, toekenning("telling", getalLiteraal(5))), leesTerug("telling")),
+        assertNull(speel(document(false, creatie(voorwaarde, toekenning("telling", getalLiteraal(5))), leesTerug("telling")),
                 zaak(situatie(), perJutter("telling", getal("5"), null, null, getal("5")))));
-        assertTrue(e.getMessage().contains("een ordenende vouw over een datumbron"), e.getMessage());
     }
 
     // ---------------- the flank ----------------

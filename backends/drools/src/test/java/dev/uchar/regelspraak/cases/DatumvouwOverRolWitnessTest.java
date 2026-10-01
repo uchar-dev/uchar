@@ -32,7 +32,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fold in a condition refused {@code voorwaarde buiten Phase-B scope}, which names no form, and so did a fold bound by
  * a Let, with or without a division beside it ({@code waarde buiten scope}). The minimum and the maximum over a date,
  * which only a hand-written document spells, refused by the member-type sentence of {@code kern.Vouwwaarde}. One row is a flank, green before and
- * after: the number folds the branch already played.
+ * after: the number folds the branch already played. The row over a date fold in a condition pinned its refusal by name
+ * until the fold there became an accumulate too (2026-10-01); red against that transpiler in {@code voorwaarde met een
+ * ordenende vouw over een datumbron …}, it plays since.
  */
 class DatumvouwOverRolWitnessTest {
 
@@ -186,18 +188,19 @@ class DatumvouwOverRolWitnessTest {
                 "de som verminderd met 1");
     }
 
-    @Test void een_datumvouw_in_een_voorwaarde_weigert_met_de_vorm() throws Exception {
+    @Test void een_datumvouw_in_een_voorwaarde() throws Exception {
         // "Een Jutter is vroeg indien de eerste van de vinddag van alle vondsten van de Jutter eerder is dan
         // 01-03-2026", and the same with the minimum of the vinddag, which only a hand-written document can spell: ref
-        // and clingo answer J4 vroeg. This branch folds a date only in a rule's value, and the refusal must name that
-        // form.
+        // and clingo answer J4 vroeg. Refused by name until the fold in a condition became an accumulate on the rule
+        // whose result the test reads (2026-10-01).
         for (String kind : new String[] { "first", "minimum" }) {
             String ir = document(kenmerkRegel("vroeg", "Jutter",
                     vergelijking("earlier", vouw(kind, "vinddag", null), datumLiteraal("2026-03-01"))));
-            Path p = tijdelijk(ir);
-            JsonNode c = JSON.readTree(zaak(situatie(true, false, null), List.of()));
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false), kind);
-            assertTrue(e.getMessage().contains("een ordenende vouw over een datumbron"), kind + ": " + e.getMessage());
+            List<String> vroeg = new ArrayList<>();
+            for (String j : List.of("J1", "J2", "J3", "J4"))
+                vroeg.add("{\"kind\":\"characteristic" + (j.equals("J4") ? "Present" : "Absent") + "\",\"label\":\"" + j
+                        + "\",\"characteristic\":\"vroeg\"}");
+            assertNull(speel(ir, zaak(situatie(true, false, null), vroeg)), kind);
         }
     }
 
