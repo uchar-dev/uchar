@@ -4473,7 +4473,12 @@ were removed with reason (`corpus/negatief/README.md`, L2).
   hop one; ⊑ through the supertype chain, ch. 2.6), and the last bound
   role's filler is ⊑ the reference's `subjectType` (the endpoint;
   one-sided, since the executors refuse the other direction per
-  instance). A reference WITHOUT bindings is the subject's own read, so
+  instance). A role whose declared filler is a strict supertype of the
+  endpoint is refused (`wf053-jutterswet-ongebonden-lezing-subtype`: the
+  role `jutter` filled by `Jutter`, the endpoint its subtype
+  `Strandjutter`, which alone declares the member read; since 2026-10-01
+  the RegelSpraak resolver refuses that read before the wire, naming the
+  member, the filler and the role). A reference WITHOUT bindings is the subject's own read, so
   its `subjectType` MUST EQUAL the subject type (WF-001 form; equality, not
   ⊑): a foreign type there names what only a navigation reaches
   (`wf053-geleste-vouwoperand-onverbonden-hop`), and a supertype of the

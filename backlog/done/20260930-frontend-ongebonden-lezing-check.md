@@ -417,3 +417,28 @@ tests green (floor 23)` en `spec leg — 252 of 289 goldens compared, 183 depend
     8a90d457 DIVERGENCES: wat de frontend aan een ongedeclareerde lezing weigert
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `78f5e7b0` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates16/`. Alle zestien exit 0: gate 4 503 negatief-cases,
+346 op hun arm; gate 10 JUnit 1025, 116 rgs-goldens; gate 12
+`check-drools: PASS`, played 234 (pin 234), DRL 192 (pin 192), JUnit 985;
+gate 16 23 scenario-goldens, 82 casebestanden. De fix gelezen:
+`RuleChecker.lidFout` loopt vanaf de plek van de lezing de rollen die haar
+naam opnam naar buiten af met `RegelSpraakModel.geschrevenHop` (de hop van
+`ketenHop` zonder het meervoudfilter) en weigert alleen waar ten minste
+één rol bereikt is, in de zin van de verifier na een Nederlands deel in de
+woorden van de auteur; een gedeclareerd attribuut met 'van' in de naam
+wint; een eigen lezing zonder rol- of typenaam blijft aan de verifier
+zolang de pariteitszone zulke namen leest. Afwijkingen 1–3 aanvaard (meer
+spellingen en zes verwante vormen weigeren mee; alle gingen met lege
+diagnostics naar schijf en elke lezer weigerde ze; geen golden of bron van
+de pariteitszone draagt ze); afwijking 4 aanvaard (geen diagnose bij de
+winnende declaratie; open punt 2 is een vraag aan de eigenaar). De
+voorgestelde registertekst is in dit landingscommit gezet in
+`spec/IR-SPEC.md` ch. 4.1a (WF-053, de getuige). Open punten 1 en 3 zijn
+kandidaten voor eigen kaarten op het sein van de eigenaar (de eigen lezing
+na het vertrek van de pariteitszone; binden waar nu geweigerd wordt); 4–6:
+geen kaart. Commitkoppen tot 71 tekens aanvaard.
