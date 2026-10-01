@@ -1,0 +1,36 @@
+Parameter het percentage havengeld : Percentage (getal met 1 decimalen)
+Parameter het percentage kadegeld : Percentage (geheel getal)
+Parameter het percentage toeslag : Percentage (geheel getal)
+Parameter de drempel : Numeriek (getal met 2 decimalen)
+
+Objecttype de Vondst (mv: Vondsten)
+    het havengeld Numeriek (getal met 2 decimalen);
+    het kadegeld Numeriek (getal met 2 decimalen);
+    de toeslag Numeriek (getal met 2 decimalen);
+
+Objecttype de Taxatie (mv: Taxaties)
+    het taxatiebedrag Numeriek (getal met 2 decimalen);
+    het herstelbedrag Numeriek (getal met 2 decimalen);
+
+Feittype VondstHeeftTaxatie
+    de vondst Vondst
+    de taxatie Taxatie
+Eén vondst heeft één taxatie
+
+// Bron: art. 3i lid 1
+Regel havengeld
+    geldig altijd
+        Het havengeld van een Vondst moet berekend worden als (het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst) naar beneden afgerond op 2 decimalen.
+
+// Bron: art. 3i lid 2
+Regel kadegeld
+    geldig altijd
+        Het kadegeld van een Vondst moet berekend worden als (het percentage kadegeld van (het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst)) naar beneden afgerond op 2 decimalen.
+
+// Bron: art. 3i lid 3
+Regel toeslag
+    geldig altijd
+        De toeslag van een Vondst moet berekend worden als (het percentage toeslag van het meerbedrag) naar beneden afgerond op 2 decimalen
+        indien het meerbedrag groter is dan 0.
+        Daarbij geldt:
+            het meerbedrag is het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel.

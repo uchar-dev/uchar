@@ -1,0 +1,530 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "havengeld",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kadegeld",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Taxatie",
+        "animate": false,
+        "plural": "Taxaties",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatiebedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "herstelbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "VondstHeeftTaxatie",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "taxatie",
+            "objectType": "Taxatie",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "percentage havengeld",
+        "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 1,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "percentage kadegeld",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "percentage toeslag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "%",
+            "canonical": "%",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          },
+          "presentation": "percentage"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "drempel",
+        "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "havengeld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havengeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het havengeld van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "percentageOf",
+                "left": {
+                  "node": "ParameterReference",
+                  "parameter": "percentage havengeld",
+                  "source": {
+                    "snippet": "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "taxatiebedrag",
+                  "subjectType": "Taxatie",
+                  "source": {
+                    "snippet": "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "VondstHeeftTaxatie",
+                      "role": "taxatie"
+                    }
+                  ]
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst"
+                }
+              },
+              "mode": "floor",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(het percentage havengeld van het taxatiebedrag van de taxatie van de Vondst) naar beneden afgerond op 2 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3i lid 1"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kadegeld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kadegeld",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het kadegeld van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "percentageOf",
+                "left": {
+                  "node": "ParameterReference",
+                  "parameter": "percentage kadegeld",
+                  "source": {
+                    "snippet": "percentage kadegeld"
+                  }
+                },
+                "right": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatiebedrag",
+                    "subjectType": "Taxatie",
+                    "source": {
+                      "snippet": "het taxatiebedrag van de taxatie van de Vondst"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "VondstHeeftTaxatie",
+                        "role": "taxatie"
+                      }
+                    ]
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "herstelbedrag",
+                    "subjectType": "Taxatie",
+                    "source": {
+                      "snippet": "het herstelbedrag van de taxatie van de Vondst"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "VondstHeeftTaxatie",
+                        "role": "taxatie"
+                      }
+                    ]
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het percentage kadegeld van (het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst)"
+                }
+              },
+              "mode": "floor",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(het percentage kadegeld van (het taxatiebedrag van de taxatie van de Vondst plus het herstelbedrag van de taxatie van de Vondst)) naar beneden afgerond op 2 decimalen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3i lid 2"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "toeslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toeslag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De toeslag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "binder": "meerbedrag",
+              "value": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "taxatiebedrag",
+                  "subjectType": "Taxatie",
+                  "source": {
+                    "snippet": "het taxatiebedrag van de taxatie van de Vondst"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "VondstHeeftTaxatie",
+                      "role": "taxatie"
+                    }
+                  ]
+                },
+                "right": {
+                  "node": "ParameterReference",
+                  "parameter": "drempel",
+                  "source": {
+                    "snippet": "de drempel"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel"
+                }
+              },
+              "body": {
+                "node": "Rounding",
+                "base": {
+                  "node": "Binary",
+                  "op": "percentageOf",
+                  "left": {
+                    "node": "ParameterReference",
+                    "parameter": "percentage toeslag",
+                    "source": {
+                      "snippet": "het percentage toeslag van het meerbedrag"
+                    }
+                  },
+                  "right": {
+                    "node": "BinderRef",
+                    "name": "meerbedrag",
+                    "source": {
+                      "snippet": "het meerbedrag"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "het percentage toeslag van het meerbedrag"
+                  }
+                },
+                "mode": "floor",
+                "decimals": 2,
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "(het percentage toeslag van het meerbedrag) naar beneden afgerond op 2 decimalen"
+                }
+              },
+              "source": {
+                "snippet": "het meerbedrag is het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel."
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "taxatiebedrag",
+                  "subjectType": "Taxatie",
+                  "source": {
+                    "snippet": "het taxatiebedrag van de taxatie van de Vondst"
+                  },
+                  "path": [
+                    {
+                      "node": "RoleBinding",
+                      "factType": "VondstHeeftTaxatie",
+                      "role": "taxatie"
+                    }
+                  ]
+                },
+                "right": {
+                  "node": "ParameterReference",
+                  "parameter": "drempel",
+                  "source": {
+                    "snippet": "de drempel"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het taxatiebedrag van de taxatie van de Vondst verminderd met de drempel"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het meerbedrag groter is dan 0"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3i lid 3"
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

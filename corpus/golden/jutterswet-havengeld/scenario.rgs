@@ -1,0 +1,52 @@
+Parameterset havengelden:
+de parameter het percentage havengeld is 12,5 %
+de parameter het percentage kadegeld is 4 %
+de parameter het percentage toeslag is 20 %
+de parameter de drempel is 100,00
+
+Scenario boven de drempel
+met parameterset havengelden
+Gegeven is de volgende situatie:
+een Vondst V
+een Taxatie T
+- het taxatiebedrag is 120,00
+- het herstelbedrag is 30,00
+- de vondst is V
+Met als verwacht resultaat:
+- het havengeld van V is 15,00
+- het kadegeld van V is 6,00
+- de toeslag van V is 4,00
+
+Scenario onder de drempel met afronding
+met parameterset havengelden
+Gegeven is de volgende situatie:
+een Vondst V
+een Taxatie T
+- het taxatiebedrag is 75,30
+- het herstelbedrag is 12,46
+- de vondst is V
+Met als verwacht resultaat:
+- het havengeld van V is 9,41
+- het kadegeld van V is 3,51
+- de toeslag van V is leeg
+
+Scenario op de drempel zonder herstelbedrag
+met parameterset havengelden
+Gegeven is de volgende situatie:
+een Vondst V
+een Taxatie T
+- het taxatiebedrag is 100,00
+- de vondst is V
+Met als verwacht resultaat:
+- het havengeld van V is 12,50
+- het kadegeld van V is 4,00
+- de toeslag van V is leeg
+
+Scenario zonder taxatie
+met parameterset havengelden
+Gegeven is de volgende situatie:
+een Vondst V
+Met als verwacht resultaat:
+- het havengeld van V is 0,00
+- het kadegeld van V is 0,00
+- de toeslag van V is leeg

@@ -1,0 +1,52 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "percentage havengeld": {
+        "number": "12.5"
+      },
+      "percentage kadegeld": {
+        "number": "4"
+      },
+      "percentage toeslag": {
+        "number": "20"
+      },
+      "drempel": {
+        "number": "100.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "havengeld",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "kadegeld",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V",
+      "attribute": "toeslag"
+    }
+  ]
+}
