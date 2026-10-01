@@ -198,7 +198,7 @@ sentence `voorwaarde buiten Phase-B scope`. The DRL-text branch, whose rules wat
 except two, and refuses those with a defaults group: an aggregation comparison whose own threshold is derived later
 does not fire, and an operand one role away under a fold that holds at insertion is read before its writer ran.
 
-## Recorded: a fold over a set source inside a rule's value
+## Recorded: a fold over a set source inside a rule's value or a creation's toekenning
 
 The exec-model branch lowers a fold over a set source anywhere in a rule's value — the earliest or the latest date
 over a role ("de eerste van de vinddag van alle vondsten van de Jutter"), with a condition on the elements or over a
@@ -210,19 +210,39 @@ RUNTIME-SEMANTICS ch. 1.2. An ordering fold over a date — eerste, laatste, and
 document spells — orders its members through `Min`/`MaxAccumulateFunction` over a `Comparable` (ch. 1.2e), and an
 ordering fold inside a value binds a count, so an empty source reads leeg instead of leaving the rule unfired. Golden
 `jutterswet-vroegste-vondst`, and `jutterswet-vondstvenster` and `jutterswet-vondstbereik` play since; witnesses
-`DatumvouwOverRolWitnessTest` and `DatumSetvouwWitnessTest`. Until 2026-09-30 the branch refused the date folds
+`DatumvouwOverRolWitnessTest` and `DatumSetvouwWitnessTest`. The toekenning of an object creation lowers its folds the
+same way since 2026-10-01, see below. Until 2026-09-30 the branch refused the date folds
 (`waarde buiten scope`, and the member-type sentence of `kern.Vouwwaarde` for the minimum and maximum) and lowered a
 fold inside a computation through an evaluator of its own, `lowerVal`, which refused date arithmetic, a navigated read
 and a clamp, and answered leeg for a percentage of a sum and for the minimum or maximum of an empty source plus 1,
-where `ref` and clingo answer. Three limits remain, measured 2026-09-30 with `ref` and clingo as the arbiters. An
+where `ref` and clingo answer. Two limits remain, measured 2026-09-30 with `ref` and clingo as the arbiters. An
 ordering fold over a date in a condition is refused by name (`voorwaarde met een ordenende vouw over een datumbron`):
 a condition compares the accumulate's result as a number. A fold beside a division or a root under one Let or
 IfThenElse (ch. 4.10) is refused by name, since the path-probe companion of such a §6.5 or §6.6 site evaluates that
-node without the rule's accumulates; a fold bound by a Let alone plays. An object creation still lowers a fold in a
-toekenning through `lowerVal`: a percentage of a sum answers leeg, and over an empty source the minimum plus 1 creates
-no object. The DRL-text branch markers the eerste/laatste fold over a set (`TODO aggregatie EERSTE`), refuses the
-minimum and maximum over a date with the `Vouwwaarde` sentence, which names that branch, and answers leeg for the
-minimum or maximum of an empty source plus 1 and for a date plus the maximum of an empty source.
+node without the rule's accumulates; a fold bound by a Let alone plays. The DRL-text branch markers the eerste/laatste
+fold over a set (`TODO aggregatie EERSTE`), refuses the minimum and maximum over a date with the `Vouwwaarde`
+sentence, which names that branch, and answers leeg for the minimum or maximum of an empty source plus 1 and for a
+date plus the maximum of an empty source.
+
+The toekenning of an object creation ("Een Jutter heeft een afrekening met heffing gelijk aan 10% van de som van het
+gewicht van alle vondsten van de Jutter") goes the same way since 2026-10-01 (`ExecModelTranspiler.objectCreatie`):
+each toekenning is a `scalarWaarde`, the folds of all toekenningen are accumulates on the creation's rule after its
+guard, and the value is restated into the declared unit of the member it is written to (RUNTIME-SEMANTICS ch. 2.4),
+which a toekenning without a fold did not get either (`verwacht 2000, werkelijk 2`). Golden `jutterswet-afrekening`,
+witness `ObjectcreatieVouwWitnessTest`. Until that day the creation lowered a fold through `lowerVal`: a percentage of
+a sum answered leeg, a minimum or maximum over an empty source left the creation unfired, so a constant beside it read
+leeg too, and a date fold, a clamp and a navigated operand were refused. Refused by name: a division or a root in a
+toekenning (`kanaal-deponerende toekenning`), since a creation has no companion that raises the Fout and the case read
+consistent where `ref` turns it inconsistent; more folds than a consequence binds (`te veel gebonden variabelen`); and
+a date fold in the creation's condition, in the sentence of a rule's condition. Measured 2026-10-01 and not repaired:
+a creation fires before a writer of what it reads that comes later on the agenda — a defaults group, a creation
+declared after it, a fact creation — and does not fire again (`verwacht 15, werkelijk leeg`, `verwacht 1, werkelijk
+0`), where RUNTIME-SEMANTICS ch. 6.1 evaluates a creation strictly above the producers of what it reads; a toekenning
+without a fold has the same limit, and so has the DRL-text branch for the later creation and the fact creation (it
+refuses a document with a defaults group). The DRL-text branch, unchanged otherwise: it markers a date fold in a
+toekenning (`TODO aggregatie EERSTE`, `TODO datum-rekenkunde`), leaves the creation unfired over an empty source where
+a toekenning holds a minimum or maximum (`verwacht 1, werkelijk leeg`), writes a toekenning without restating it into
+the member's unit (`verwacht 2000, werkelijk 2`), and reads a division by leeg in a toekenning as consistent.
 
 ## Recorded: a fold whose subselection tests a value derived later
 
