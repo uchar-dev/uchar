@@ -1227,7 +1227,16 @@ EXPECTED_CHANNEL=(
 # error, a variable that names no role); it now lowers each to the percentageOf node the '%' form emits. No source file
 # of this backend changed: the exec branch plays the four cases on the first run, PLAYED 4, with ref's and clingo's
 # values. The DRL-text branch plays the new golden too, PLAYED 4, so EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=237
+# 237 -> 238 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, new, from bron.rgs
+# and scenario.rgs and hand-computed: the maximum, the earliest date and the sum over the jutters of a Ploeg of a member
+# read through to-one steps after the set (two steps under a subselection on the jutter, one step to a date, one step
+# to a boat two jutters share), beside the sum over all boats of all jutters, a two-step sourcePath. The RegelSpraak
+# frontend left the first three folds markers before; it now generates a member on the jutter, set by a generated rule
+# from the chain, and folds over it. No source file of this backend changed: the exec branch plays the two cases on the
+# first run, PLAYED 2, with ref's and clingo's values (the per-jutter sum 240 beside the union 140). The DRL-text branch
+# refuses the new golden on its marker 'TODO aggregatie EERSTE' (class (C) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED does
+# not move.
+EXPECTED_PLAYED=238
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1240,22 +1249,22 @@ EXPECTED_PLAYED=237
 #   FAIL     printed — the golden loads, lowers and fires without faulting, and answers a WRONG VALUE
 #   ERROR    printed — the golden faults AT FIRE; a defect of this branch, not a semantic difference
 #   NOCASE   the sweep's own token, never printed by the branch: no case file, so no run at all
-# Why the reasons are grouped rather than written one by one: ninety-three of the ninety-nine
+# Why the reasons are grouped rather than written one by one: ninety-three of the hundred
 # entries carry one of four class reasons, and a per-golden retelling of the same sentence would be
 # noise around the only thing that is compared, which is the CHANNEL. Each class is explained in the
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 40 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 44 below the exec one: the exec branch grew a
+  # remaining reason of size for this count sitting 45 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
   # toolchain does not have, and DrlTranspiler never did. 39 of the 40 lines refuse on that one
   # sentence; the 40th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
   # the header counts since 2026-09-22. All 39 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 44 is 48 exec-only players — those 39, jutterswet-afrekening, jutterswet-havenketen,
-  # jutterswet-late-vondst, jutterswet-vouwrand, jutterswet-vondstbereik, jutterswet-vondstvenster and
-  # jutterswet-vroegste-vondst of class (C), and
+  # The 45 is 49 exec-only players — those 39, jutterswet-afrekening, jutterswet-havenketen,
+  # jutterswet-late-vondst, jutterswet-vouwrand, jutterswet-vondstbereik, jutterswet-vondstvenster,
+  # jutterswet-vroegste-vondst and jutterswet-zwaarste-weging of class (C), and
   # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
   # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
   # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
@@ -1323,7 +1332,11 @@ DRL_CHANNEL=(
   # is 43 (235 - 192); the six class heads (A 40, B 37, C 13, D 2, E 3, F 3 = 98 lines) were counted against the list.
   # Recounted again the same day (a fold whose subselection reads through a role of the element): jutterswet-late-vondst
   # joins class (C), 13 -> 14 lines, and plays in the exec branch only, so the gap is 44 (236 - 192); the six class heads
-  # (A 40, B 37, C 14, D 2, E 3, F 3 = 99 lines) were counted against the list.
+  # (A 40, B 37, C 14, D 2, E 3, F 3 = 99 lines) were counted against the list. Recounted 2026-10-02 (the percentage of
+  # a navigated read): jutterswet-havengeld plays in both branches and moves neither the gap nor a class head, so the gap
+  # is 44 (237 - 193). Recounted again the same day (a fold over a set followed by to-one steps):
+  # jutterswet-zwaarste-weging joins class (C), 14 -> 15 lines, and plays in the exec branch only, so the gap is 45
+  # (238 - 193); the six class heads (A 40, B 37, C 15, D 2, E 3, F 3 = 100 lines) were counted against the list.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1406,7 +1419,7 @@ DRL_CHANNEL=(
   "synth3-standtarief|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE|loader Refusal: Datatype:StructType"
-  # (C) DrlTranspiler MARKERs — 14, this branch's own per-form refusals, each naming the rule it
+  # (C) DrlTranspiler MARKERs — 15, this branch's own per-form refusals, each naming the rule it
   # could not lower. The count's history, oldest first:
   # Recounted 2026-09-20 (card drools-enumlabel-lezer) against the exec sweep, and the class header
   # was carrying 12 over a list of 13: the v8-enum-emitter addition had not been counted. It went
@@ -1439,10 +1452,13 @@ DRL_CHANNEL=(
   # NEW golden this branch markers by name ('TODO aggregatie EERSTE'; behind it the count over the same subselection,
   # which reads through a role of the element and is refused by name since that day) and the exec branch plays;
   # EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
-  # SEVEN of the fourteen are goldens the exec branch refuses too, on its own wording of the
+  # 14 -> 15 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, a NEW golden this
+  # branch markers by name ('TODO aggregatie EERSTE', the earliest vinddag over a set source) and the exec branch
+  # plays; EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
+  # SEVEN of the fifteen are goldens the exec branch refuses too, on its own wording of the
   # same limit (the many-to-many bean field, the consistency rule, the §8.4.3 clip on a temporal
   # target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
-  # SEVEN are this branch alone, and the exec branch PLAYS them:
+  # EIGHT are this branch alone, and the exec branch PLAYS them:
   #   jutterswet-afrekening (exec PLAYED 2) — the ordering fold over a date set source, in the rule that reads
   #   the zeebrieven back, and behind it in the toekenningen of both creations;
   #   jutterswet-havenketen (exec PLAYED 2) — a TODO voorwaarde on a read over two roles;
@@ -1451,7 +1467,9 @@ DRL_CHANNEL=(
   #   jutterswet-vouwrand (exec PLAYED 1) — a TODO voorwaarde on a conjunction of comparisons;
   #   jutterswet-vondstbereik, jutterswet-vondstvenster and jutterswet-vroegste-vondst (exec PLAYED 2
   #   each) — the ordering fold over a date set source, which the exec branch lowers since 2026-09-30
-  #   and this one refuses (the minimum/maximum) or markers (the eerste/laatste).
+  #   and this one refuses (the minimum/maximum) or markers (the eerste/laatste);
+  #   jutterswet-zwaarste-weging (exec PLAYED 2) — the ordering fold over a date set source, over a member the
+  #   RegelSpraak frontend generates on the element for the to-one steps after the set.
   # Until 2026-09-23 two more stood here, anchor/jutterswet-wachtersketen and
   # synth2-budgetgrens-onder, an OBJECTCREATIE marker on the unresolved back-link to Wachter; they
   # left with card drl-creatie-koppelloos (reason block at EXPECTED_DRL_PLAYED).
@@ -1469,6 +1487,7 @@ DRL_CHANNEL=(
   "jutterswet-vondstvenster|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   "jutterswet-vouwrand|EXCLUDE|MARKER regel: TODO voorwaarde — a conjunction of comparisons"
   "jutterswet-vroegste-vondst|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
+  "jutterswet-zwaarste-weging|EXCLUDE|MARKER regel: TODO aggregatie EERSTE over a set source"
   # (D) The TWO goldens on which this branch still answers wrong values (measured 2026-09-25).
   # jutterswet-initialisatievolgorde: this branch's initialisatie keeps the leeg-guard alone, so a
   # value computed against a read another rule has not yet written stays (0 and 5 where 26 and 18 are
