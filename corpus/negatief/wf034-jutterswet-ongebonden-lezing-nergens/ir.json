@@ -1,0 +1,150 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "JutterHeeftVondst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "bonus",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bonus",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De bonus van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rang",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de rang van de jutter van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "JutterHeeftVondst",
+                    "role": "jutter"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de rang van de jutter van de Vondst plus 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
