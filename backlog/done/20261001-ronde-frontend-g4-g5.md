@@ -228,3 +228,36 @@ elk script onder zijn shebang, direct na de grammaticawijziging van V7
    te veel weigeren zonder eigen meting.
 10. De distributie draait op haar pin en kent deze ronde niet; de pin moet na
     het landen mee.
+
+## Keuring (hoofdsessie, 2026-10-02)
+
+- Gates: `/tmp/v2/uchar-gates23/summary.txt` op de kop f150b29b: dune build en
+  zestien gates "exit 0", `DONE`; ook direct na de grammaticawijziging van V7
+  (8e1efd73) groen. Gate 12 played 239 (pins 236 → 239 door de goldens
+  `jutterswet-havengeld`, `jutterswet-zwaarste-weging`,
+  `jutterswet-opgave-bedrag`), DRL-tekst 193, JUnit 1113. Inertie: 190/190
+  oudere bronnen van de repo en 108/108 van de distributie geven dezelfde IR,
+  uitvoer en exitcode.
+- Gelezen: het Result per vondst (getuigen rood-vóór/groen-na met de
+  letterlijke uitkomsten, de metingen in ref, clingo en beide Drools-takken),
+  de pins en de registertekst. De bijvangst bij V1 (een vouw van één stap gaf
+  door de eerste-treffer-rolbinding 5 waar 9 hoort, stil, in alle vier
+  uitvoerders) is met de fix verdwenen en door `ElementnaamVouwbronTest`
+  gepind; aanvaard dat er geen golden voor is.
+- Twee bestaande tests zijn aangepast omdat zij precies de oude grens
+  vastlegden: in `OpgaveMarkeringTest` de €-rij naar €/jr (een samengestelde
+  eenheid blijft geweigerd), in `GenesteVouwbronTest` de rij
+  `een_keten_die_elders_uitkomt_wordt_benoemd` op een model waar de weigering
+  nog geldt. Beide met meting en reden in het Result; aanvaard, ter kennis van
+  de eigenaar.
+- Registertekst geplaatst (commit "Register: …"): DIVERGENCES, IR-SPEC ch.
+  4.3, CONSTRUCTS rij 1 en 8, de tweede Aanvulling van de kaart
+  frontend-kwantor-over-een-pad.
+- Open punten: 1 (product met een percentage) en 6 ((bijvoeglijk) zonder
+  "is") aanvaard zoals geadviseerd; 2 (clingo en een percentage van een bedrag
+  met eenheid) en 8 (de verifier geeft PASS op `Unresolved`, WF-044 alleen in
+  de uitvoerders) zijn normvragen voor de eigenaar; 3, 4 en 7 aanvaard; 5 (de
+  telling over een pad van meer dan één stap blijft stil afgekapt) en 9 (twee
+  regels met één naam passeren `check` zonder melding) gaan naar een kleine
+  frontend-naronde, samen met de benoemde nuldeler van de exec-ronde; 10
+  aanvaard; 11 (de distributiepin) volgt nu.
