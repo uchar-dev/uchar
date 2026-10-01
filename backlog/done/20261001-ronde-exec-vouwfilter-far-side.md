@@ -266,3 +266,27 @@ met een redenblok; `DRL_CHANNEL` klasse (C) 13 → 14 regels met
    elementen per wijziging. Niet gemeten op grote populaties.
 8. De distributie-CLI draait op de pin `2a0c6d60` en kent deze ronde niet; de
    pin moet na het landen mee.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+- Gates: `/tmp/v2/uchar-gates22/summary.txt` op de laatste codecommit
+  bf453803: dune build en zestien gates "exit 0", `DONE`; gate 12 played 236
+  (pin 235 → 236 door de golden `jutterswet-late-vondst`), DRL-tekst 192,
+  JUnit 1070. Het done-record (f83b2180) raakt alleen `backlog/`.
+- Gelezen: het Result, de drie getuigen (rood-vóór/groen-na met de
+  letterlijke uitkomsten), de vormruimte van V6 inclusief de vormen van open
+  punt 1 van het dossier, de sweep (geen statusregel verschuift), de pins en
+  de registertekst. De afwijking van het standaardantwoord bij V6 (het verre
+  lid gelezen via het opnieuw gebonden element, niet uit de variabele van het
+  patroon; de join op `Object` omdat een accumulate-bron geen OR draagt) is
+  gemotiveerd en gemeten; aanvaard.
+- Registertekst geplaatst in deze commit: IR-SPEC ch. 5.5 (flank-bullet
+  "Widened again"), CONSTRUCTS rij 6 (Landed-alinea en de DRL-tak-zin).
+- Open punten: 1 (clingo meldt een inconsistentie bij een lege deler in een
+  terugvallende default waar ref en ch. 7.1 geen depot laten staan) is een
+  normvraag voor de eigenaar; 2 (de algemene V4-stap) blijft open zonder
+  ronde; 3 (de nuldeler faalt in de exectak met een `ArithmeticException` in
+  plaats van een benoemde fout) krijgt een kleine exec-naronde na de
+  frontend-ronde; 4, 5 en 7 aanvaard; 6 (de matrixlezing via de rol in de
+  frontend) gaat mee in de frontend-ronde als V9; 8 (de distributiepin)
+  volgt nu.

@@ -8804,6 +8804,20 @@ has two forms.
   chain takes the same joins (before, it joined the reached object only and
   read leeg when the middle relation came later). The DRL-text branch
   refuses such a condition by its marker and keeps the one join in a value.*
+  *Widened again in the exec-model branch on 2026-10-01 (golden
+  `jutterswet-late-vondst`, witness `VouwfilterVerreKantWitnessTest`): the
+  subselection of a fold, and the filter and the matrix of a quantifier
+  fold, read with the element as subject (RUNTIME-SEMANTICS ch. 3.4a,
+  3.9a); where such a test reads through a role of the element, the source
+  of the accumulate joins every object the read reaches (every object a
+  chain passes), and the subselection is tested on the element bound again
+  after those joins, so a later write on the reached object revises the
+  fold. Before, the test sat on the element's pattern and the fold kept the
+  members it had at insertion: an earliest date read leeg, a count 0 and a
+  count or quantifier in a condition never fired, where `ref/` and
+  `backends/clingo` read the derived far value. A union selection that
+  reads so is refused by name. The DRL-text branch refuses such a test by
+  name.*
   With a rule deriving the far side's attribute, both branches answer as if
   that attribute were never written, in either order: "de a van het ding is
   leeg" yields 1 where `ref/` and `backends/clingo` give leeg, and the
