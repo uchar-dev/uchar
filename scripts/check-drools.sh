@@ -1192,7 +1192,17 @@ EXPECTED_CHANNEL=(
 # PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both branches: no report
 # line moves. The DRL-text branch refuses the new golden on its marker 'TODO aggregatie LAATSTE' (class (C) of
 # DRL_CHANNEL), so EXPECTED_DRL_PLAYED does not move.
-EXPECTED_PLAYED=233
+# 233 -> 234 (2026-10-01, two writers of one target): jutterswet-melding-naar-aard, new, from bron.rgs and scenario.rgs
+# and hand-computed: two pairs of conditional writers whose conditions exclude each other, the meldingsdatum on a Vondst
+# and on its subtype Strandvondst (the aanspoeldatum leeg or filled) and the vindersloon on a threshold of the gewicht,
+# with a rule that reads the meldingsdatum, over vondsten of both types, a threshold value and a vondst without values.
+# It is the green twin of rood/jutterswet-dubbele-melding, where both conditions hold on one Vondst: there the exec
+# branch ran into its fire cap and reported "geen fixpunt (kringverwijzing?)", a cycle the document does not contain,
+# and the replay now names the two rules, their values and the attribute (cases.Schrijfconflict). The form whose
+# conditions exclude each other played before and plays after, PLAYED 2, with ref's and clingo's values. Measured
+# before and after over ALL goldens in both branches: no report line moves. The DRL-text branch plays the new golden
+# too, PLAYED 2, so EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=234
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1281,7 +1291,9 @@ DRL_CHANNEL=(
   # (A 39, B 37, C 12, D 2, E 3, F 3 = 96 lines) were counted against the list. Recounted again the same day (a fold
   # in the toekenning of an object creation): jutterswet-afrekening joins class (C), 12 -> 13 lines, and plays in the
   # exec branch only, so the gap is 42 (233 - 191); the six class heads (A 39, B 37, C 13, D 2, E 3, F 3 = 97 lines)
-  # were counted against the list.
+  # were counted against the list. Recounted again the same day (two writers of one target): jutterswet-melding-naar-aard
+  # plays in both branches and moves neither the gap nor a class head, so the gap is 42 (234 - 192) and the heads hold
+  # at 97 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1592,7 +1604,11 @@ DRL_CHANNEL=(
 # 190 -> 191 (2026-09-30, the operand under a quantifier condition): jutterswet-sluitdag, new. This branch plays its
 # three cases with no change of its own, PLAYED 3: its rules watch what their value reads. Reason block at
 # EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=191
+# 191 -> 192 (2026-10-01, two writers of one target): jutterswet-melding-naar-aard, new. This branch plays its two cases,
+# PLAYED 2. A computing rule on a target that a second computing rule writes now watches that target, so a write by the
+# one fires the other again where its condition holds; where the conditions exclude each other nothing fires again.
+# Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=192
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
