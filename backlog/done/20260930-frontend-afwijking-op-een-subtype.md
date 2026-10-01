@@ -528,3 +528,62 @@ subtypeblok en een supertypeblok, nu een weigering); 2 is een
 ontwerpkeuze (initialisatie op het subtype naast de groep); 4 bestaand
 (de exec-tak sluit defaults-vensters uit). Commitkoppen tot 68 tekens
 aanvaard.
+
+## Vervolgronde graaf en defaults (2026-10-01, bouwer)
+
+Punt (b) van de vervolgronde graaf en defaults (tak `vervolg/graaf-en-defaults`, van main `b9d3a5e6`; de punten (c), (d)
+en (a) staan onder dezelfde kop in de done-kaart `20260930-drools-exec-defaults-consequentie-vouw.md`, met de sweep, de
+gates en de commits). Een scenario dat met `toetst de regel …` een basisregel noemt, droeg de groepen `<basis> voor
+<subtype>` niet mee.
+
+**Reproductie op deze kop** (`vorm/b-scope-basis`, het document van de getuige met "toetst de regel meldtermijn"; J,
+Strandjutter S met vergunningseinde, Wadjutter W met wadgrens, Strandjutter T zonder): vóór draagt het IR-document alleen
+de groep `meldtermijn`, en ref `MISMATCH: W.meldtermijn = 2026-09-10, expected 2026-05-15`, clingo `MISMATCH:
+W.meldtermijn = [20706], expected 20588`, exectak `FAIL …: attribuut meldtermijn: verwacht 2026-06-01, werkelijk
+2026-09-10; attribuut meldtermijn: verwacht 2026-05-15, werkelijk 2026-09-10`. Na: de groepen `meldtermijn`,
+`meldtermijn voor Strandjutter`, `meldtermijn voor Wadjutter`; ref en clingo `PASS (5 expectations)`, exectak `PLAYED 1`.
+`b-scope-subtypegroep` ("toetst de regel meldtermijn voor Strandjutter"): vóór alleen die groep, ref `MISMATCH:
+T.meldtermijn = leeg, expected 2026-09-10`; na dezelfde drie groepen en PASS/PLAYED. `b-scope-eigen-basis` ("toetst de
+regel meldtermijn van een kustjutter", een eigen basis op Kustjutter met een afwijking voor Duinjutter): vóór ref
+`MISMATCH: D.meldtermijn = 2026-06-10, expected 2026-04-25`; na de groep van Kustjutter en die van Duinjutter, PASS/PLAYED,
+en een gewone Jutter blijft leeg (zijn basis valt buiten de scope).
+
+**Oorzaak.** `ScenarioResolver.vormenVan` zocht de vormen van een scope op naam; de groep `<basis> voor <subtype>` heeft
+een eigen naam die de schrijver niet noemt, en `CaseEmitter.metScope` liet haar weg.
+
+**Fix** (`646603ed`). `gescoped` breidt de genoemde vormen uit met `metStapel`: een groep met een basis (een default
+bovenaan met een besluit of consequentie) draagt elke groep zonder basis waarvan zij de basis is, en een groep zonder
+basis draagt haar basis en de andere groepen van die basis. De basis van een groep zonder basis is, op het dichtstbijzijnde
+strikte supertype van haar onderwerp waar er een is, de groep met een basis op hetzelfde doel (zelfde naam en soort;
+WF-105 houdt een lidnaam bij één type van de lijn). Gelezen uit de groepen, niet uit hun namen. Een eigen basis op de
+erflijn is een eigen boom (ch. 7.10: zij vervangt de geërfde) en gaat alleen mee waar de scope haar noemt, met de groepen
+die haar erven. Omdat het in de resolver gebeurt, lezen ook de peildatum- en parameterpoort en de één-document-toets de
+meegedragen groepen. Verworpen: de uitbreiding in `CaseEmitter.metScope` (dan zien de poorten de groepen niet).
+
+**Getuige.** `ScenarioErflijnScopeTest` (nieuw, `3ce39c7a` rood: 4 van de 5 rijen, bijvoorbeeld `expected: <[meldtermijn,
+meldtermijn voor Strandjutter, meldtermijn voor Wadjutter]> but was: <[meldtermijn]>`): de groepen van het document
+(groen vóór en na), een scope met de basis, een scope met een subtypegroep, een eigen basis op de erflijn (ook samen met de
+basis genoemd), en een document van alleen de basis met haar afwijkingen, waarvan de gescopete IR byte-gelijk is aan de
+productie-IR. Gate 16 na: `24 scenario golden(s) (floor 7) regenerate 84 case file(s) (floor 31) and their ir.json
+byte-identically`; de enige scenario-golden met een scope (`jutterswet-rubriektabel-rgs`) heeft geen defaultsgroep.
+
+**DIVERGENCES** (`ffcfd73a`): in "Scenariotoetsen", Lowering, de alinea over de scope (wat meegaat, waaraan het herkend
+wordt, de eigen basis, de meting van vóór); §4, "The inheritance line", een verwijzing. §7 beschrijft geen scope en is niet
+aangeraakt.
+
+**Gates.** Alle zestien exit 0 op `bdedf518` (`/tmp/v2/uchar-gates21/`): gate 10 `JUnit suite green (1068 tests, floor
+173); 117 rgs golden(s) re-emit byte-identically`, gate 16 `24 scenario golden(s) … regenerate 84 case file(s) … and
+their ir.json byte-identically`.
+
+**Voorgestelde registertekst** (`spec/CONSTRUCTS.md` rij 39, achter de Landed-alinea van 2026-10-01): "**Widened
+(2026-10-01, the scope of a scenario).** A scenario whose scope names the base of a tree carries the groups `<base> voor
+<subtype>` that take that base, and a scope that names such a group carries its base and the other groups that take
+it, read off the groups (subject, target, a default with a decision or consequence of its own) and not off their
+names; RUNTIME-SEMANTICS ch. 7.10 composes a subtype's stack from both, and a scope that dropped the subtype's group
+gave a subtype instance the base's value in all three executors (measured). A subtype's own base stays a tree of its
+own. Witness `ScenarioErflijnScopeTest` (frontend); the scenario goldens regenerate byte-identically (gate 16)."
+
+**Open punt.** Open punt 1 van deze kaart (de padsleutel van een samengestelde stapel in de caselader van ref en clingo)
+is niet geraakt. De distributie volgt dezelfde regel al; zij kent deze kop pas na haar submodulepin.
+
+**Commits** van (b): `3ce39c7a` (getuige, rood), `646603ed` (ScenarioResolver), `ffcfd73a` (DIVERGENCES).

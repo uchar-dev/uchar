@@ -501,3 +501,311 @@ antwoordt en clingo een guard laat vuren) en staan hier als aantekening; 3
 (negen variabelen) en 4 (§13.3.9) zijn benoemde weigeringen; 5 blijft open
 punt 5 van de justificatie-kaart; 6 is het kanaal van de DRL-teksttak; 7
 is de pin die op deze landing volgt.
+
+## Vervolgronde graaf en defaults (2026-10-01, bouwer)
+
+Tak `vervolg/graaf-en-defaults` in de worktree `wt/vervolg-graaf-en-defaults`, afgetakt van uchar main `b9d3a5e6`; niet
+gerebased, niet gepusht, niet gemerged. Gemeten met de eigen uitvoerders van deze repo: `_build/default/ref/bin/runner.exe`,
+`_build/default/backends/clingo/bin/clingo_runner.exe`, `_build/default/spec/verifier/bin/verifier.exe`, de frontend
+(`Resolver --ir … --cases … bron.rgs scenario.rgs`) en de Drools-jar (`java -jar <jar> ir.json case…`, `--drl` voor de
+teksttak). "Vóór" is de jar en de frontend van de claim `afe0c361` (code gelijk aan main), "na" die van de kop
+`bdedf518`. Elke gemeten vorm is een eigen Jutterswet-document (bron.rgs + scenario.rgs), door een generator geschreven
+en door een meetscript gemeten; generatoren, meetscripts, tabellen en sweep staan buiten de repo onder
+`/tmp/v2/probe/gd-bouw/` (`maak_c.py`, `maak_d.py`, `maak_d_flank.py`, `meet.sh`, `alles.sh`, `tabel.py`, `sweep.sh`,
+`graaftest.sh`; per vorm `vorm/<naam>/`; metingen `meting-*.txt`, sweep `sweep-voor.txt`/`sweep-na.txt`). De reproducties
+van de regelsetbouwer zijn alleen gelezen en daarvoor gekopieerd naar `/tmp/v2/probe/gd-bouw/repro/`; niets daarvan staat
+in uchar.
+
+### (c) Meer dan negen gebonden variabelen
+
+**Reproductie op deze kop.** Eigen vorm `c-erflijn` (Jutterswet): `Regel meldtermijn` op Jutter (vinddag plus de
+meldduur, indien vinddag gevuld en het aantal wrakhout-vondsten groter dan 0), op Strandjutter `Afwijking van
+meldtermijn: meldtermijn na de laatste berging` (de laatste bergdag van de lading-vondsten plus de meldduur, onder een
+telling), daaronder `Uitzondering op …: zware lading` (de eerste bergdag plus 1 mnd, indien de som van het gewicht
+groter is dan de gewichtsdrempel) en `Afwijking van meldtermijn: meldtermijn tot het vergunningseinde` (onder een
+telling). De stapel van een Strandjutter bindt dertien variabelen: het onderwerp, vier tellingen, een som met haar
+telling, twee datumvouwen met hun telling en twee parameters. Vóór: `EXCLUDE transpiler SKIP: defaults: defaults
+A:Strandjutter.meldtermijn — defaults (Jutter.meldtermijn): te veel gebonden variabelen (aggregaties, vouwen en
+globals)`; na: `PLAYED 1`; ref `oracle: PASS (7 expectations)`, clingo `clingo: PASS (7 expectations)`. De reproducties
+`a2e-volledig-variabele` en `a2-k1-erflijn` (alleen gedraaid): vóór dezelfde zin, na `PLAYED 14`; ref geeft op 8 van de 14
+scenario's `EVALUATION FAULT: function kind not implemented in this card` en clingo op alle 14 `TRANSLATION FAULT: a
+Clamp minimum bound that is not a ground literal could be empty; …` (zie open punt 1).
+
+**Oorzaak.** `ExecModelTranspiler.consequenceOf` schreef de getypeerde blokken van de DSL uit tot `Block10` (negen
+variabelen) en gaf daarboven `null`. Zeven plekken weigerden daarop: de defaultsgroep (`te veel gebonden variabelen
+(aggregaties, vouwen en globals)`), de waarde van een regel (`regel (THEN-waarde: te veel gebonden globals en vouwen)`),
+het tijdlijntotaal, de objectcreatie (`objectcreatie (te veel gebonden variabelen: globals en vouwen)`), de begeleider en
+de sonde (een IllegalStateException), en een uniciteit over meer dan acht bronnen, die daarom haar tellingen paarsgewijs
+optelde via `DSL.from`. De DSL zelf heeft getypeerde blokken tot 24 variabelen, en `ConsequenceImpl` draagt een `BlockN`
+van elke ariteit, die de engine aanroept met de Drools-handle en de gebonden feiten.
+
+**Fix** (`d41ffee6`). `consequenceOf` houdt de getypeerde blokken tot negen en bindt daarboven via `GebondenN`, een
+subklasse van `ConsequenceBuilder.AbstractValidBuilder` die hetzelfde `BlockN` zet als elke getypeerde `execute`
+(`usingDrools`, het blok over `Drools` en de feiten). Er is geen plafond meer, dus de zeven weigeringen zijn weg, en de
+paarsgewijze telling van de uniciteit ook (die bestond alleen voor die grens; een flank-rij pint negen bronnen, groen
+vóór en na). Verworpen: de getypeerde blokken tot 24 uitschrijven (een plafond blijft), en de slot-uitkomsten via een
+keten van `from`-declaraties bundelen (meer knopen, zelfde resultaat).
+
+**Vormruimte, vóór en na** (`meting-c-na.txt`; ref en clingo PASS op alle negen):
+
+| vorm | gebonden | vóór | na |
+|---|---|---|---|
+| c-erflijn (de vorm hierboven) | 13 | SKIP te veel gebonden variabelen | PLAYED 1 |
+| c-groep-k4 (groep, vier datumvouwen als gelijste vouw) | 9 | PLAYED 1 | PLAYED 1 |
+| c-groep-k4-param (idem, plus de meldduur) | 10 | SKIP te veel gebonden variabelen | PLAYED 1 |
+| c-groep-k5 / c-groep-k5-param | 11 / 12 | SKIP te veel gebonden variabelen | PLAYED 1 |
+| c-regel-k4 (gewone regel) | 9 | PLAYED 1 | PLAYED 1 |
+| c-regel-k4-param, c-regel-k5, c-regel-k5-param | 10–12 | SKIP regel (THEN-waarde: te veel gebonden globals en vouwen) | PLAYED 1 |
+
+DRL-teksttak vóór en na gelijk: `EXCLUDE drl: ch. 7 prioritizedDefaults …` voor de groepen, `MARKER TODO aggregatie
+LAATSTE` / `TODO datum-rekenkunde` voor de regels.
+
+**Getuige.** `BindingVoorbijNegenWitnessTest` (nieuw, `d3902c82` rood): `een_afwijkingsboom_op_de_erflijn_bindt_dertien_variabelen`,
+`vijf_vouwen_in_de_waarde_van_een_regel` en de flank `een_uniciteit_over_negen_bronnen`. Rood op de claim: `Tests run:
+2, Failures: 0, Errors: 2` (`… te veel gebonden variabelen (aggregaties, vouwen en globals)` en `… regel (THEN-waarde:
+te veel gebonden globals en vouwen): meldtermijn`). Twee bestaande rijen die de weigering pinden verwachten nu de waarden
+van ref en clingo: `DefaultsConsequentieVouwWitnessTest.vijf_vouwen_in_een_consequentie` (was
+`…_binden_te_veel`) en `ObjectcreatieVouwWitnessTest.vijf_vouwen` (was `vijf_vouwen_binden_te_veel`), rood op de claim
+met de zin van de groep resp. `objectcreatie (te veel gebonden variabelen: globals en vouwen)`. Elk document is
+verifier-schoon en ref ≡ clingo met de verwachtingen van de rij (gemeten op een dump van de documenten).
+
+### (d) Een datumvouw in een voorwaarde en een rechtvaardiging
+
+**Reproductie op deze kop.** Eigen vormen (`maak_d.py`), bijvoorbeeld `d-p1-regel-kenmerk-c01-laatste-later` ("Een
+Jutter heeft de late melding indien de laatste van de bergdag van alle vondsten van de Jutter later is dan zijn
+meldtermijn"): vóór `EXCLUDE transpiler SKIP: regel: late melding — regel (voorwaarde met een ordenende vouw over een
+datumbron (eerste, laatste, minimum of maximum over een rol), die deze tak alleen als waarde vouwt (van een regel, de
+consequentie van een default of de toekenning van een creatie)): late melding`, na `PLAYED 1`; en
+`d-p3-dflt-uitzondering-c03-plus-dagen` ("Uitzondering op meldplicht … geen meldplicht indien (de laatste van …) plus 14
+dg later is dan zijn meldtermijn"): vóór `… defaults (Jutter.meldplicht): rechtvaardiging niet vertaald, een operand die
+deze tak niet als waarde leest: …`, na `PLAYED 1`. De reproducties `a4-n2-rechtvaardiging` en `a4b-zonder-rekensom`:
+vóór de zin van de rechtvaardiging, na `PLAYED 2`, ref en clingo `PASS (1 expectations)` op beide cases;
+`a6-datumvouw-gewone-regel` (alleen een bron): vóór de zin van de voorwaarde, na lowert hij (`PLAYED 1` op een lege case).
+
+**Oorzaak.** (1) EERSTE en LAATSTE zijn geen aggregatiesoort (`isAggregatieKind`), dus zo'n operand kwam in
+`scalarWaarde`, en daar geeft een vouw alleen een waarde als er slots open staan (`vouwslots`), wat alleen in de waarde van
+een regel, de consequentie van een default en de toekenning van een creatie zo was. (2) Het minimum en maximum over een
+datum zijn wel een aggregatiesoort en gingen naar de arm die de uitkomst als getal vergelijkt (`aggregatieVoorwaarde`,
+`aggregatieRechtvaardiging`); `aggregatie(…, waarde = false)` weigerde ze daar. (3) De voorwaarde van een regel is
+constraints op patronen; een vouw zonder accumulate kon daar niet staan.
+
+**Fix** (`0ad715c4`).
+- Voorwaarde van een regel of creatie: een vergelijking van twee datums of een leeg/gevuld-toets van een datum met een
+  operand die een datum vouwt (`isDatumvouwBlad`), en een samengestelde voorwaarde met zo'n lid (`bevatDatumvouwBlad`),
+  gaat naar `datumvouwVoorwaarde`, vóór de aggregatie-arm. Elke vouw wordt een accumulate met haar telling, zoals in de
+  waarde (`vouwslot`); de operanden zijn `scalarWaarde` met de slots open; `slotToets` maakt er één test van over
+  onderwerp en naam-waardekaart (`datumVergelijkTemporal` met de leegregels van ch. 1.2, een samengestelde voorwaarde met
+  `vastgesteld`/`telVerdict` onder elke kwantor, een onderwerp-lokaal lid via `subjectConditie`). `toetsNa` zet die test
+  na de accumulates: een keten van `from`-declaraties draagt de waarden in één houder (`Waarden`, geen Iterable, nooit
+  null, omdat een `from` elementen van een lijst of array als eigen rijen geeft) naar de test, één variabele per
+  declaratie, zodat geen constraint twee globals leest (`nGlobalGate`) en er geen plafond is. Een numerieke parameter, de
+  rekendatum en een datumparameter gaan mee.
+- Rechtvaardiging: `rechtvaardiging` stuurt een vergelijking met een datumvouw naar `scalaireRechtvaardiging`, en
+  `rechtvaardigingZijde` opent voor een operand met een datumvouw de slots van de groep (`bouw.vouwslots`), die de
+  reduce-regel al vulde voor de consequenties; een datumvouw valt buiten de weigering "een aggregatie binnen een
+  rekenkundige uitdrukking".
+- Zinnen: `voorwaardeSkipReden` zegt nu waar een datumvouw nog geweigerd wordt (`… op een plek die deze tak niet vouwt:
+  alleen als operand van een vergelijking van twee datums of van een leeg/gevuld-toets van een datum`), de verdediging in
+  `aggregatie` noemt de getalplek, `meet()` zet `vouwReden` terug, en `regel`/`objectCreatie` geven `vouwReden` door. De
+  weigerzin van de DRL-teksttak in `kern.Vouwwaarde` noemt de drie plekken waar de exectak de vouw draagt (`bdedf518`).
+- Verworpen: de voorwaarde in de consequentie toetsen (de regel vuurt dan ook als zij niet geldt, wat `regelversie …
+  is gevuurd` en de dekking zou raken), en een predicaat met vaste ariteit op het laatste accumulate (plafond 13, en
+  globals moeten dan vóór de accumulates gebonden worden).
+
+**Vormruimte, vóór en na** (`meting-d-voor.txt`, `meting-df-na-final.txt`). 74 vormen uit `maak_d.py` in zes posities
+(voorwaarde van een kenmerkregel en van een attribuutregel, rechtvaardiging van een uitzondering, van de basis en van een
+afwijking, voorwaarde van een creatie) en 21 varianten van de voorwaarde (P = PLAYED met de waarden van ref en clingo,
+FE = de frontend weigert de vorm):
+
+| voorwaarde | regel-kenmerk | regel-attribuut | dflt-uitzondering | dflt-basis | dflt-afwijking | creatie |
+|---|---|---|---|---|---|---|
+| c01 de laatste … later dan zijn meldtermijn | P | P | P | P | P | P |
+| c02 idem, de vouw rechts | P | P | P | P | P | P |
+| c03 (de laatste …) plus 14 dg | P | P | P | P | P | P |
+| c04 rechts, (de eerste …) plus 14 dg | P |  | P |  |  |  |
+| c05 tegen een datumliteraal | P |  | P |  |  |  |
+| c06 plus de meldduur (parameter) | P | P | P | P | P | P |
+| c07 met een subselectie | P |  | P |  |  |  |
+| c08 / c09 maximale / minimale waarde | FE | FE | FE | FE | FE | FE |
+| c10 twee vouwen (eerste gelijk aan laatste) | P |  | P |  |  |  |
+| c11 / c12 / c13 gelijk / ongelijk / later of gelijk | P |  | P |  |  |  |
+| c14 / c15 gevuld / leeg | P | P (c14) | P | P (c14) | P (c14) | P (c14) |
+| c16 alle / c17 ten minste één / c18 geen van | P | P (c16, c17) | P | P (c16, c17) | P (c16, c17) | P (c16, c17) |
+| k01–k03 twee rollen ver (Kustwacht), ook plus en rechts | P |  | P |  |  |  |
+
+Vóór weigerde de exectak elk van de 66 vormen die de frontend verlaagt: de voorwaarde van een regel en van een creatie
+met de zin hierboven, een rechtvaardiging met `rechtvaardiging niet vertaald, een operand die deze tak niet als waarde
+leest` (een minimum of maximum met `… een vergelijking van een aggregatie met iets anders dan een getal`). Na: 66 `PLAYED
+1`, met ref ≡ clingo op alle 66; 8 FE: de frontend
+weigert "de maximale/minimale waarde van" over een datum (`maximale waarde van vereist numerieke operanden, kreeg Datum
+in dagen`); die vormen staan met de hand geschreven in de getuige (WF-038 laat ze toe; ref, clingo en de exectak spelen
+ze). Elke situatie heeft een lege bron (J2, K3), bijdragers zonder datum (V4) en een lege andere operand (J5, K4).
+Negen flanken (`maak_d_flank.py`, vóór alle negen geweigerd): een lid dat een latere regel afleidt (later dan, leeg,
+ongelijk, en leeg in een rechtvaardiging), een genavigeerde andere operand (in een voorwaarde en een rechtvaardiging) en
+een datumparameter: `PLAYED 1` met de waarden van ref en clingo, behalve de datumparameter in een rechtvaardiging, die met
+de bestaande zin geweigerd blijft (`de parameter 'peildatum', die deze tak in een rechtvaardiging alleen als getal leest`; open punt 2).
+Eén flank verdeelt ref en clingo: een attribuutregel "… gesteld op zijn meldtermijn indien de eerste van de meldingsdag
+… ongelijk is aan zijn meldtermijn" met de meldingsdag afgeleid door een latere regel. ref schrijft J4 01-04-2026 (het
+werkte op de tijdelijke lege meldingsdag), clingo en de exectak leeg. Dat is de vastgelegde rest van RUNTIME-SEMANTICS
+ch. 6.1 ("conditions that hold on absence"; een attribuutregel leest een vergelijking positief); open punt 3. DRL-teksttak
+vóór en na gelijk (`TODO voorwaarde`, of de defaultszin).
+
+**Getuige.** `DatumvouwVoorwaardeWitnessTest` (nieuw, `61d7106d` rood): twaalf rijen, 27 documenten, elk verifier-schoon
+en ref ≡ clingo met de verwachtingen van de rij: links en rechts, datumrekensom met een getal en een parameter, gelijk,
+ongelijk, gevuld en leeg, het minimum en maximum over datums, onder alle, ten minste één en geen van, een regel die een
+attribuut schrijft, twee rollen ver, tegen een datumparameter, een lid dat een latere regel afleidt (ook in een
+rechtvaardiging), de rechtvaardiging van een uitzondering (ook plus 14 dg, onder ten minste één, met het maximum), van de
+basis en van een afwijking, en twee rollen ver in een rechtvaardiging. Rood op de claim: `Tests run: 10, Failures: 0,
+Errors: 10` met de zinnen hierboven; de twee rijen over een datumparameter en een later afgeleid lid kwamen na de fix en
+geven op de jar van de claim dezelfde zinnen (alle 27 documenten gemeten). Twee bestaande rijen die de weigering in een
+voorwaarde pinden spelen nu: `DatumvouwOverRolWitnessTest.een_datumvouw_in_een_voorwaarde` (was
+`…_weigert_met_de_vorm`; J4 vroeg) en `ObjectcreatieVouwWitnessTest.een_datumvouw_in_de_voorwaarde_van_de_creatie` (was
+`…_weigert_met_de_vorm`; 5, leeg, leeg, 5).
+
+### (a) Wat elke default leest
+
+**Oorzaak.** `ProducentConsument.vormen` gaf per defaultsgroep één verzameling `leest`; de wandeling per default
+(`Lezer.dflt`) was privé en voegde rechtvaardiging, consequentie en uitzonderingen samen.
+
+**Fix** (`202626e4`). `public static List<DefaultLezing> lezingen(RegelSpraakModel model, PrioritizedDefaults groep,
+Navigatie navigatie)` met `public record DefaultLezing(List<Integer> pad, Default dflt, Set<ElementSleutel>
+rechtvaardiging, Set<ElementSleutel> consequentie)`, zoals `dienst-scope.md` vraagt: in de volgorde van de groep, per
+default eerst de default en dan die van zijn uitzonderingsgroepen (pre-order), pad `[i]`, `[i, g, j]`, …, elk tegen het
+onderwerp van de groep, met dezelfde `Lezer`. `vormen()` neemt de lezingen van een groep nu daaruit (`leesDefaults`),
+zodat de vereniging per constructie `Vorm.leest()` is; `Lezer.dflt` is weg. De verzamelingen zijn onwijzigbaar, het pad
+ook.
+
+**Getuige.** `GraafDefaultLezingTest` in `src/bronroute` (nieuw, `f9969364` rood: de suite compileerde niet zonder
+`lezingen`): `de_lezingen_samen_zijn_wat_de_groep_leest_op_het_corpus` (een dynamische test per golden met een
+defaultsgroep die de lader leest: 40 van de 41, wire en waar een `bron.rgs` is ook bron; vloer 40; de lader weigert
+`jutterswet-kamerhuishouden-catala` om haar functiedefinities), `rechtvaardiging_en_consequentie_een_en_twee_rollen_ver_en_genest`
+(een kenmerkcheck en een attribuut in de rechtvaardiging, een attribuut in de consequentie, ook van een uitzondering die
+geen basis is, één en twee rollen ver, een genavigeerde kenmerkcheck, een geneste uitzonderingsgroep op pad `[1, 0, 0]`),
+`de_groepdefault_van_een_basis_voor_een_subtype` (`[0] R[] C[]`, `[0, 0, 0]` de afwijking),
+`de_leden_van_uitzonderingen_ongeordend_op` (`[0, 0, 0]`, `[0, 1, 0]`) en `het_pad_wijst_de_default_aan`, alle op beide
+routes. Gate 15: `67 unit tests green (floor 23)` (was 23).
+
+Punt (b), de scope van een scenario over de erflijn, staat onder dezelfde kop in de done-kaart
+`20260930-frontend-afwijking-op-een-subtype.md`.
+
+### Corpussweep
+
+Over alle 287 goldens met cases, elk met al zijn cases, de statusregel per golden en per tak, jar van de claim tegen de
+jar van de kop (`sweep-voor.txt`, `sweep-na.txt`, 574 regels): exectak `PLAYED` 235 → 235, `EXCLUDE` 52 → 52; DRL-tak
+`PLAYED` 192 → 192, `EXCLUDE` 93 → 93, `FAIL` 2 → 2. Eén regel verandert, terecht:
+`jutterswet-vondstbereik drl`, de weigerzin van `kern.Vouwwaarde`, oud "… de exec-modeltak (in de waarde van een regel)
+dragen haar …", nieuw "… de exec-modeltak (als waarde, in een voorwaarde en in een rechtvaardiging) dragen haar …";
+de status (EXCLUDE MARKER) blijft. Geen golden draagt een datumvouw in een voorwaarde of rechtvaardiging of een groep
+boven negen variabelen; geen pin verschuift, geen nieuwe golden (de getuigen pinnen elke vorm).
+
+### README's
+
+`backends/drools/README.md`: de defaults-sectie (een consequentie bindt elk aantal variabelen; `7cca4b5e`), de alinea
+over de creatie, een nieuwe sectie "Recorded: a date fold as an operand of a condition or a justification" en de
+verwijzing in de sectie over vouwen in de waarde (`84fef9c6`), en `lezingen` in de sectie over de regelgraaf
+(`fcfe5f72`).
+
+### Gates
+
+Alle zestien met `/tmp/v2/uchar-gates21/run.sh` op de kop `bdedf518` (de laatste codecommit; de commit met dit Result raakt
+alleen de twee done-kaarten), `eval $(opam env)`, `dune build` exit 0, elk script onder zijn shebang; logs in
+`/tmp/v2/uchar-gates21/`. Alle zestien exit 0:
+
+     1. self-contained: check-self-contained: PASS
+     2. ir-schema: PASS (… 330 file(s) validate and round-trip, floor 192 …)
+     3. case-schema: PASS (schema valid; 92 pattern self-test row(s); 827 case file(s) validate)
+     4. verifier: PASS (330 golden clean; 503 negatief rejected …; 346 on their declared arm …)
+     5. oracle: PASS (ref suite 1152 worked examples, floor 489; 785 cases replayed exactly, floor 427; …)
+     6. clingo: PASS (backend suite 1988 checks, floor 83; 785 cases replay exactly through clingo …)
+     7. noop: PASS (741 cases refute a do-nothing executor; 44 pinned survivors …)
+     8. rood: PASS (42 red cases fault observably in ref and clingo, floor 26; 84 pinned fragments …)
+     9. catala: PASS — frontend suite green (241 checks, floor 201); 12 catala golden(s) …
+    10. regelspraak: PASS — JUnit suite green (1068 tests, floor 173); 117 rgs golden(s) re-emit byte-identically (floor 80)
+    11. toka-parity: PASS (45 .rgs re-emitted byte-identical, floor 45; TOKA suite 27 tests, floor 27)
+    12. drools: PASS — played 235 (pin 235); channel floor 55; DRL-text played 192 (pin 192); DRL-text floor 98; JUnit 1035 tests, floor 239
+    13. reftype-derivation: PASS (41 unit annotations twisted over 23 goldens, floor 38; 106 executor replays …)
+    14. flogic: PASS — frontend suite green (150 checks, floor 81); 2 flogic golden(s) …
+    15. graaf: PASS — spec leg 253 of 290 goldens compared, 183 dependencies equal (floors 234 / 116), 3 listed differences; route leg 117 goldens; 67 unit tests green (floor 23)
+    16. scenario: PASS — 24 scenario golden(s) (floor 7) regenerate 84 case file(s) (floor 31) and their ir.json byte-identically
+
+### Afwijkingen
+
+1. Vier bestaande testrijen gewijzigd (de gebruikersregel "geen testbestanden wijzigen zonder te vragen" stond tegenover
+   de opdracht, die precies de weigeringen wegneemt die deze rijen pinden; zonder wijziging zou de suite rood zijn): de
+   twee rijen over vijf vouwen (c) en de twee rijen over een datumvouw in een voorwaarde (d), elk van "weigert met naam"
+   naar "speelt met de waarden van ref en clingo", met de documenten ongewijzigd; de klasse-javadoc zegt het. Graag
+   bevestiging van de eigenaar.
+2. (c) De paarsgewijze telling van een uniciteit over meer dan acht bronnen is weg (bestond alleen voor de grens van
+   negen); flank-rij erbij, groen vóór en na.
+3. (d) Meer dan de vraag: ook de voorwaarde van een creatie (dezelfde `voorwaarde`), elke kwantor, een datumparameter in
+   een voorwaarde, en het minimum en maximum over datums; en de weigerzin van de DRL-teksttak in `kern.Vouwwaarde`.
+4. (a) `vormen()` leest de groepen nu via `lezingen` en `Lezer.dflt` is weg, in plaats van een tweede wandeling naast de
+   oude: zo is de gelijkheid met `Vorm.leest()` een constructie en niet alleen een test. Gate 15 ongewijzigd groen.
+5. Geen golden en geen pinvoorstel: geen golden verschuift en de getuigen pinnen elke vorm.
+
+### Voorgestelde registertekst (voor de hoofdsessie)
+
+- `spec/IR-SPEC.md` ch. 5.5: geen tekst. De flanken daar gaan over volgorde en leeg/gevuld; de datumvouw in een voorwaarde
+  stond er niet (zij was een benoemde weigering, de tweede houding van ch. 5.5).
+- `spec/CONSTRUCTS.md` rij 39, achter de Landed-alinea van 2026-10-01: "**Widened (2026-10-01, the scope of a scenario).**
+  A scenario whose scope names the base of a tree carries the groups `<base> voor <subtype>` that take that base, and a
+  scope that names such a group carries its base and the other groups that take it, read off the groups (subject,
+  target, a default with a decision or consequence of its own) and not off their names; RUNTIME-SEMANTICS ch. 7.10
+  composes a subtype's stack from both, and a scope that dropped the subtype's group gave a subtype instance the base's
+  value in all three executors (measured). A subtype's own base stays a tree of its own. Witness
+  `ScenarioErflijnScopeTest` (frontend); the scenario goldens regenerate byte-identically (gate 16)."
+- `spec/CONSTRUCTS.md` rij 6, optioneel, achter de conformance-flank: "A date folded over a set source in a condition
+  (since 2026-10-01 lowered in the exec-model branch) reads its members through the same order: a characteristic
+  assignment over a fold of a member a later rule derives waits for that rule, also under a leeg test (witness
+  `DatumvouwVoorwaardeWitnessTest`)."
+- `spec/proposals/PRIORITIZED-DEFAULTS-EVOLUTIE.md` §5.1, na de alinea over de consequentie die vouwt: "Landed
+  2026-10-01 (exec-model branch): a justification that compares a date folded over a set source, or tests it for leeg,
+  reads the fold from the slots the group's consequences use, on either side and inside date arithmetic; and a group binds
+  any number of variables (the folds, aggregations and globals of every default of its stack). Witnesses
+  `DatumvouwVoorwaardeWitnessTest`, `BindingVoorbijNegenWitnessTest`."
+- `spec/RUNTIME-SEMANTICS.md` ch. 6.1, optioneel, bij "The same classes also leave the reference interpreter
+  order-dependent OFF a cycle": een tweede meting van dezelfde klasse, "de eerste van de meldingsdag … ongelijk is aan
+  zijn meldtermijn" in een attribuutregel met de meldingsdag afgeleid door een latere regel: ref schrijft, clingo en de
+  Drools-exectak antwoorden leeg (open punt 3).
+
+### Open punten
+
+1. De reproducties `a2e`/`a2` spelen in de exectak met de waarden van de regelsetbouwer, maar ref en clingo kunnen ze daar
+   niet toetsen: ref weigert 8 van de 14 scenario's (`EVALUATION FAULT: function kind not implemented in this card`, de
+   datum uit jaar, maand en dag) en clingo het document (`TRANSLATION FAULT: a Clamp minimum bound that is not a ground
+   literal could be empty …`, de begrenzing met een parameter als minimum). Buiten deze laag (`ref/`, `backends/clingo/`).
+2. Een datumparameter in een rechtvaardiging of consequentie weigert de exectak met naam, met en zonder vouw (`de
+   parameter '…', die deze tak in een rechtvaardiging alleen als getal leest`); de reduce-regel bindt alleen numerieke
+   globals en de rekendatum. Klein in dezelfde laag, maar het verandert een bestaande weigering zonder vouw; niet gedaan.
+3. Een attribuutregel met "ongelijk" (of een andere vorm die op afwezigheid waar is) over een vouw van een lid dat een
+   latere regel afleidt: ref werkt op de tijdelijke waarde, clingo en de exectak niet. Dezelfde rest als ch. 6.1 al
+   vastlegt; normvraag voor de eigenaar.
+4. De frontend weigert "de maximale/minimale waarde van" over een datum (`… vereist numerieke operanden, kreeg Datum in
+   dagen`), terwijl WF-038 het toelaat en de drie uitvoerders het spelen; buiten deze ronde (`frontends/regelspraak`,
+   typering).
+5. Een datumvouw in de matrix of het filter van een kwantorvouw, in de subselectie van een vouw of in een periodegrens
+   blijft een benoemde weigering (`voorwaardeSkipReden`); niet gemeten.
+6. De DRL-teksttak markeert een voorwaarde met een datumvouw (`TODO voorwaarde`) en heeft geen defaults-lowering;
+   ongewijzigd.
+7. (a) De dienst kan een default nu bij pad en brontekst noemen; bij de naam van zijn blok ("late berging") kan zij hem
+   pas noemen als `Default` die naam draagt, een keuze over de IR.
+8. De distributie draait op haar eigen submodulepin en kent deze ronde pas als die pin deze kop bevat.
+
+### Commits
+
+    afe0c361 claim: vervolg graaf en defaults
+    d3902c82 Getuige: meer dan negen gebonden variabelen spelen, rood
+    d41ffee6 Exectak: een consequentie bindt meer dan negen variabelen
+    7cca4b5e backends/drools/README: een consequentie bindt voorbij negen
+    61d7106d Getuige: een datumvouw in een voorwaarde en een rechtvaardiging, rood
+    0ad715c4 Exectak: een datumvouw in een voorwaarde en een rechtvaardiging
+    84fef9c6 backends/drools/README: een datumvouw als operand van een toets
+    f9969364 Graaf: getuige voor wat elke default leest, rood
+    202626e4 Graaf: ProducentConsument.lezingen, wat elke default leest
+    fcfe5f72 backends/drools/README: wat elke default van een groep leest
+    3ce39c7a ScenarioErflijnScopeTest: de scope over een erflijn, rood
+    646603ed ScenarioResolver: een scope draagt de groepen van een erflijn mee
+    ffcfd73a DIVERGENCES: de scope van een scenario over de erflijn
+    bdedf518 Vouwwaarde: de exectak draagt een datumvouw ook in voorwaarden
+
+en de commit "Vervolgronde graaf en defaults: Result", die alleen de twee done-kaarten raakt. Niet gepusht, niet gemerged.
