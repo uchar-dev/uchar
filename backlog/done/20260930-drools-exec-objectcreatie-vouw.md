@@ -760,3 +760,32 @@ re-emit byte-identically`. Gate 12: `check-drools: PASS`, `played 234` (pin 234)
     e7b683ec Exectak: commentaar bij de sonde van een creatie en bij groepVolgorde
 
 en de commit "Vervolgronde objectcreatie-vouw: Result", die deze sectie toevoegt. Niet gepusht, niet gemerged.
+
+## Keuring vervolgronde (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `4e7892ac` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates19/`. Alle zestien exit 0: gate 10 JUnit 1044, 116
+rgs-goldens; gate 12 `check-drools: PASS`, played 234 (pin 234), DRL 192
+(pin 192), JUnit 1000; gate 16 23 scenario-goldens, 82 casebestanden. De
+fix gelezen: `vouwCompanion` in beide takken verlaagt de operanden van een
+§6.5/§6.6-plek zoals de gastregel haar waarde, met de telling gebonden
+zodat een lege bron leeg leest, en een deler 0 blijft een fout bij het
+vuren; de creatie meldt de Fout van haar eigen toekenningen via een sonde
+in haar ene evaluatie (afwijking 1 aanvaard: geen aparte begeleider nodig,
+de creatie rekent één keer); de object- en feitcreaties zijn knopen in
+`groepVolgorde` met populatie- en relatielezingen, `creatieSalience` zet een
+creatie onder elke producent die anders na haar vuurt (`laadrang`), een
+kring blijft de recursieve creatie op haar generaties. Afwijking 2
+aanvaard: de teksttak weigert benoemd een Let of IfThenElse met een vouw en
+een deling; één vorm van PLAYED naar weigering, geen golden draagt haar.
+De agent liep tegen zijn venster (980k) en herschreef drie te lange
+commitkoppen lokaal; inhoud gelijk, vóór de ff. De voorgestelde
+registertekst is in dit landingscommit gezet: de recorded-alinea in
+`spec/IR-SPEC.md` ch. 5.5 en de zin in `spec/CONSTRUCTS.md` rij 6 zeggen
+nu wat gesloten is en wat open blijft. Open, naar de volgende ronde (verse
+agent, samen met de leeg-toets met de lezer vóór de schrijver): een lezer
+van creatie-uitvoer die onherroepelijk schrijft (een kenmerktoekenning
+over een telling van de gemaakte objecten) kan nog vóór de creatie
+beslissen. De DRL-teksttak ordent geen creatie en meldt geen Fout van een
+creatie: haar kanaal.

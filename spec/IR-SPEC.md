@@ -8805,19 +8805,34 @@ gate 12 cannot see them. The fix belongs to the backend: far-side
 reactivity for a condition or a named refusal, and a salience below the
 operand's writers for the order-dependent form.
 
-*Recorded (measured 2026-10-01, card `drools-exec-objectcreatie-vouw`,
-open).* A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1): it
-evaluates strictly above the producers of what its condition and its
-toekenningen read. Both Drools branches fire an object creation once per
-subject, at the default salience, after the ordinary rules and before the
-fact creations and (in the exec-model branch) the defaults groups, so a
-producer that comes later on the agenda is not seen: with a toekenning that
-reads a value a defaults group writes, the exec-model branch writes leeg
-where `ref/` and `backends/clingo` write 7 and 15; with a count over the
-objects a creation declared after it mints, or over a relation a fact
-creation lays, both branches write 0 where they write 1. Neither branch
-refuses these documents, so on this flank the backend realises a coarser
-order than the graph without a loud refusal.
+*Recorded (measured 2026-10-01, card `drools-exec-objectcreatie-vouw`;
+closed in the exec-model branch the same day, open in the DRL-text branch).*
+A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1): it evaluates
+strictly above the producers of what its condition and its toekenningen
+read. Both Drools branches fired an object creation once per subject, at
+the default salience, after the ordinary rules and before the fact
+creations and (in the exec-model branch) the defaults groups, so a producer
+later on the agenda was not seen: with a toekenning that reads a value a
+defaults group writes, the exec-model branch wrote leeg where `ref/` and
+`backends/clingo` write 7 and 15; with a count over the objects a creation
+declared after it mints, or over a relation a fact creation lays, both
+branches wrote 0 where they write 1. *Closed in the exec-model branch on
+2026-10-01 (witness `CreatieVolgordeWitnessTest`):* the object and the
+fact creations are nodes of the order that already placed the defaults
+groups; a creation reads its condition, its toekenningen, the population
+of its subject and the links its folds, quantifiers, navigations and hops
+follow, writes its toekenningen, the created type's population and its
+link, and goes below every node it waits on that would otherwise fire
+after it, a rule the stratification places lower and a creation declared
+after it included; a recursive creation stays on its generations
+(RUNTIME-SEMANTICS ch. 5.5). What stays open: in the exec-model branch a
+reader of a creation's output that writes irrevocably, such as a
+characteristic assignment over a count of the created objects, is not
+placed below the creation and can act on the transient absence (measured:
+a characteristic attributed where `ref/` and `backends/clingo` leave it
+absent); the DRL-text branch orders no creation, so a later creation and a
+fact creation still read 0 there, a coarser order than the graph without a
+loud refusal.
 
 *Recorded flank, the ASP backend (measured 2026-09-23, open).* Its `all`
 fold is a double negation (a helper for "some member fails the matrix",
