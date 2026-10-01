@@ -328,7 +328,8 @@ class OngebondenLezingTest {
                 + "Regel bonus\n    geldig altijd\n        De bonus van een Vondst moet berekend worden als de premie van "
                 + "de jutter van de Vondst plus 1.\n";
         RegelSpraakModel m = Resolver.resolve(bron);
-        assertEquals(List.of(), m.diagnostics);
+        // no refusal; the WARNING that names both readings (maintainer decision 2026-10-01) is DubbeleLezingTest's
+        assertEquals(List.of(), m.errors());
         Expr.AttribuutRef a = (Expr.AttribuutRef) ((Expr.Binair) m.resolvedRegels.get(0).waarde()).links();
         assertEquals("premie van de jutter", a.attribuut());
         assertEquals("Vondst", a.objecttype().naam);

@@ -875,6 +875,7 @@ final class RuleChecker {
                         ? ongebondenLezingFout(a, subject) : meervoudigeStapFout(a, subject);
                 if (fout == null) fout = lidFout(a, subject, false);
                 if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron().line()));
+                else meldDubbeleLezing(a);
             }
             case Expr.Functie f -> {
                 boolean vouwbron = dev.uchar.regelspraak.emit.IrEmitter.isVouwbron(f);
@@ -1015,6 +1016,35 @@ final class RuleChecker {
         if (!(grens instanceof Expr.AttribuutRef a) || a.set() || !gemeld.add(a)) return;
         String fout = lidFout(a, subject, true);
         if (fout != null) model.diagnostics.add(new Diagnostic(Severity.ERROR, fout, a.bron().line()));
+        else meldDubbeleLezing(a);
+    }
+
+    /** A declared attribute with 'van' in its name wins over the navigation the same words spell — "de premie van de
+     *  jutter van de Vondst" reads the Vondst's 'premie van de jutter', not the 'premie' of its jutter — and until
+     *  2026-10-01 the author was not told (maintainer decision: a WARNING, the declaration keeps winning). The walk is
+     *  {@link #lidFout}'s: from the type the read stands on, over the roles its name took in, outward; it warns where a
+     *  role is walked and the type it reaches declares the member the remaining words name. A to-many step ends the
+     *  walk: that navigation is no read of one value. */
+    private void meldDubbeleLezing(Expr.AttribuutRef a) {
+        String naam = a.attribuut();
+        Objecttype t = a.objecttype();
+        if (a.set() || naam == null || t == null || t.attribuut(naam) == null) return;
+        String[] delen = naam.split("\\s+van\\s+");
+        Objecttype cur = t;
+        for (int i = delen.length - 1; i >= 1; i--) {
+            RegelSpraakModel.KetenHop hop = model.geschrevenHop(cur, stripArtikel(delen[i]));
+            if (hop == null || model.naarVeelRol(cur, hop.doel(), hop.rol())) return;
+            cur = hop.doel();
+            String lid = MeervoudMatcher.vindAttribuut(cur, String.join(" van ", java.util.Arrays.copyOfRange(delen, 0, i)));
+            if (lid != null) {
+                var d = new Diagnostic(Severity.WARNING, "lezing '" + a.bron() + "': het gedeclareerde attribuut '"
+                        + naam + "' van '" + t.naam + "' wint; dezelfde woorden lezen ook als het attribuut '" + lid
+                        + "' van '" + cur.naam + "' over de rol '" + hop.rol() + "', en die lezing geldt hier niet",
+                        a.bron() == null ? 0 : a.bron().line());
+                if (!model.diagnostics.contains(d)) model.diagnostics.add(d);
+                return;
+            }
+        }
     }
 
     /**
