@@ -38,6 +38,18 @@ private static boolean isJaar(org.antlr.v4.runtime.Token t) {
     for (int i = 0; i < 4; i++) if (s.charAt(i) < '0' || s.charAt(i) > '9') return false;
     return true;
 }
+// §13.3.1.1: a line end bounds an object-type head. The lexer skips every line end, so objectTypeNaam asks the token
+// lines: the next word belongs to the name only where it stands on the line the previous word ends on
+// (grammar/DIVERGENCES.md, "Namen in declaratiekoppen"). A multi-word token may run over a line end, so the previous
+// word ends on its start line plus the line ends inside it.
+private boolean opRegelVanVorigWoord() {
+    org.antlr.v4.runtime.Token vorig = _input.LT(-1), volgend = _input.LT(1);
+    if (vorig == null || volgend == null) return true;
+    int eind = vorig.getLine();
+    String tekst = vorig.getText();
+    if (tekst != null) for (int i = 0; i < tekst.length(); i++) if (tekst.charAt(i) == '\n') eind++;
+    return volgend.getLine() == eind;
+}
 }
 
 // ====================================================================
@@ -370,7 +382,12 @@ vrijeNaam : naamWoordAny+ ;
 // neighbour ('Vondst-van-eb'). A member without an article that opens with a preposition on the head's own line
 // is now read into the name (the loop is greedy); the resolver refuses a member that begins on the line where the
 // head ended, so that reading is loud (grammar/DIVERGENCES.md, "Namen in declaratiekoppen").
-objectTypeNaam : UPPER_ID ( UPPER_ID | LOWER_ID | OP | BIJ | IN | VOOR | OVER | TOT | TOT_EN_MET | PER | MET )* ;
+// A word on the NEXT physical line is never read into the name: a line end bounds the head (§13.3.1.1), so a member
+// without an article of two words or more after the head begins on its own line (opRegelVanVorigWoord). Until
+// 2026-10-02 the loop took the first word of such a member as well, and the line check refused the rest.
+objectTypeNaam
+    : UPPER_ID ( {opRegelVanVorigWoord()}? ( UPPER_ID | LOWER_ID | OP | BIJ | IN | VOOR | OVER | TOT | TOT_EN_MET | PER | MET ) )*
+    ;
 domeinNaam     : UPPER_ID ( UPPER_ID | LOWER_ID )* ;
 // A plural runs up to its closing parenthesis, so it takes every word rule text reads in a name: '(mv: Rechten op
 // premie)', '(mv: rechten op premie)'. The parenthesis bounds it, so no reading of what follows changes
