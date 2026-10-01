@@ -228,9 +228,10 @@ same way since 2026-10-01, see below. Until 2026-09-30 the branch refused the da
 (`waarde buiten scope`, and the member-type sentence of `kern.Vouwwaarde` for the minimum and maximum) and lowered a
 fold inside a computation through an evaluator of its own, `lowerVal`, which refused date arithmetic, a navigated read
 and a clamp, and answered leeg for a percentage of a sum and for the minimum or maximum of an empty source plus 1,
-where `ref` and clingo answer. Two limits remain, measured 2026-09-30 with `ref` and clingo as the arbiters. An
-ordering fold over a date in a condition is refused by name (`voorwaarde met een ordenende vouw over een datumbron`):
-a condition compares the accumulate's result as a number. A fold beside a division or a root under one Let or
+where `ref` and clingo answer. Two limits were measured 2026-09-30 with `ref` and clingo as the arbiters. An
+ordering fold over a date in a condition was refused by name (`voorwaarde met een ordenende vouw over een datumbron`),
+since a condition compared the accumulate's result as a number; it plays since 2026-10-01 (the next section). A fold
+beside a division or a root under one Let or
 IfThenElse (ch. 4.10) is refused by name, since the path-probe companion of such a §6.5 or §6.6 site evaluates that
 node without the rule's accumulates; a fold bound by a Let alone plays. The DRL-text branch refuses the same rule in
 the same sentence since 2026-10-01. The DRL-text branch markers the eerste/laatste fold over a set (`TODO aggregatie
@@ -257,8 +258,30 @@ leeg too, and a date fold, a clamp and a navigated operand were refused. A divis
 the creation evaluates its toekenningen once, when it mints, and the probe every §6.5/§6.6 site reports to rides that
 evaluation, so the creation raises the Inconsistentie for itself and its subject where `ref` deposits (ch. 5.5, 5.6);
 for one round of the same day it was refused by name (`kanaal-deponerende toekenning`). Five folds, eleven bound
-variables, were refused by that count until a consequence bound more than nine (see the defaults section above).
-Refused by name: a date fold in the creation's condition, in the sentence of a rule's condition.
+variables, were refused by that count until a consequence bound more than nine (see the defaults section above). A
+date fold in the creation's condition plays as in a rule's condition (the next section); until 2026-10-01 it was
+refused by name, in the sentence of a rule's condition.
+
+## Recorded: a date fold as an operand of a condition or a justification
+
+Since 2026-10-01 the exec-model branch lowers a comparison of two dates, and a leeg/gevuld test of a date, whose operand
+folds a date over a set source ("de laatste van de bergdag van alle vondsten van de Jutter later is dan zijn
+meldtermijn"; eerste, laatste, and the minimum and maximum a hand-written document spells), with the fold on either
+side, inside date arithmetic with a literal duration or a parameter, one role away or over a path. Each fold becomes an
+accumulate with its count, as in a rule's value (`vouwslot`), so an empty source, or one whose contributors have no
+date, reads leeg, and the comparison is the one of a date operand elsewhere (`datumVergelijkTemporal`, the empty
+operand of RUNTIME-SEMANTICS ch. 1.2). In the condition of a rule or a creation (`ExecModelTranspiler.datumvouwVoorwaarde`)
+the condition is one test after the accumulates: a chain of from-declarations carries the subject's globals and the
+folds' values to it, one variable per declaration, so no constraint reads two globals and there is no ceiling on their
+number; a composite with such a member is that one test under any quantifier, its subject-local members read from the
+subject. A date parameter beside the fold plays there. In a justification (`rechtvaardigingZijde`) the reduce-rule
+reads the fold from the slots its consequences use. A member a rule declared later derives is read after that rule
+(`groepVolgorde`), also under a leeg test. Witness `DatumvouwVoorwaardeWitnessTest`; the rows that pinned the refusal in
+`DatumvouwOverRolWitnessTest` and `ObjectcreatieVouwWitnessTest` play since. Refused by name: a date fold elsewhere in a
+condition, such as in the matrix of a quantifier fold or a subselection (`… op een plek die deze tak niet vouwt …`), and
+a date parameter in a justification (`de parameter '…', die deze tak in een rechtvaardiging alleen als getal leest`),
+as before and with or without a fold. The DRL-text branch markers such a condition (`TODO voorwaarde`) and has no
+defaults lowering.
 
 A creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1) and mints once. Since 2026-10-01 the object and the fact
 creations are nodes of `groepVolgorde` beside the rules and the groups: a creation reads its condition, its
