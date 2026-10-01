@@ -91,18 +91,23 @@ class OverlappendeSchrijversWitnessTest {
     // ---------------- the form space ----------------
 
     @Test void drie_schrijvers_met_drie_waarden() throws Exception {
-        // Three writers, each with its own date: every one keeps changing the target.
+        // Three writers, each with its own date. ref names all three; in the engine two of them can keep firing each
+        // other while the third waits on the agenda, so a branch names at least two, each with its own value.
         String ir = document(objecttype("Vondst", "Vondsten", null, "", DATUMS),
                 meldingOp("melding op vinddag", "Vondst", "vinddatum"),
                 meldingOp("melding op aanspoeldag", "Vondst", "aanspoeldatum"),
                 meldingOp("melding op bergdag", "Vondst", "bergdatum"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-04", "2026-03-01", "2026-03-06")),
                 datumVerwacht("V", "meldingsdatum", "2026-03-01"));
-        for (boolean drl : TAKKEN)
-            meldtSchrijvers(speel(ir, zaak, drl), tak(drl), "drie schrijvers van één doel geven verschillende waarden",
-                    "\"melding op vinddag\" schrijft 2026-03-04",
-                    "\"melding op aanspoeldag\" schrijft 2026-03-01", "\"melding op bergdag\" schrijft 2026-03-06",
+        for (boolean drl : TAKKEN) {
+            String uit = speel(ir, zaak, drl);
+            meldtSchrijvers(uit, tak(drl), "schrijvers van één doel geven verschillende waarden",
                     "in het attribuut meldingsdatum van V, een Vondst");
+            long genoemd = java.util.stream.Stream.of("de regel \"melding op vinddag\" schrijft 2026-03-04",
+                    "de regel \"melding op aanspoeldag\" schrijft 2026-03-01",
+                    "de regel \"melding op bergdag\" schrijft 2026-03-06").filter(uit::contains).count();
+            assertTrue(genoemd >= 2, tak(drl) + " noemt ten minste twee schrijvers met hun waarde: " + uit);
+        }
     }
 
     @Test void een_schrijver_die_leeg_uitrekent_tegenover_een_die_een_waarde_schrijft() throws Exception {

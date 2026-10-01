@@ -294,10 +294,10 @@ public final class CaseRunner {
             runner.spiegelWederkerigeRollen();
             runner.zetGlobals(sessie, c);
             for (Object bean : runner.labelNaarBean.values()) sessie.insert(bean);
-            int n = sessie.fireAllRules(100_000);
+            String geenFixpunt = runner.vuurTotFixpunt(sessie);
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
             // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
-            if (n >= 100_000) throw new IllegalStateException("geen fixpunt (kringverwijzing?)");
+            if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
             return new NaFire(new LinkedHashMap<>(runner.labelNaarBean), new ArrayList<>(sessie.getObjects()));
         } finally {
             sessie.dispose();
@@ -362,9 +362,10 @@ public final class CaseRunner {
      *  that names no day, corpus/rood/asofdate-kalender), and equally a CRASH while the case is read — measured
      *  2026-09-23: meldwaarde written as a boolean gives "IllegalArgumentException: argument type mismatch", an
      *  undeclared characteristic a failed setter call. A run that hits the fire cap without a fixpoint is a FAULT
-     *  too, and raises no exception ("geen fixpunt (kringverwijzing?)"). Gate 8 therefore pins only this backend's
-     *  own sentence, never platform text, since a pin on a JDK message would pin a crash; for a refusal while the
-     *  case is read, that sentence names position and lexeme. */
+     *  too, and raises no exception: two writers of one attribute that kept overwriting each other are named
+     *  ({@link #vuurTotFixpunt}), any other run says "geen fixpunt (kringverwijzing?)". Gate 8 therefore pins only
+     *  this backend's own sentence, never platform text, since a pin on a JDK message would pin a crash; for a
+     *  refusal while the case is read, that sentence names position and lexeme. */
     public static RoodResult runRood(Path irPath, Path casePath) {
         CaseRunner runner;
         try {
@@ -412,8 +413,7 @@ public final class CaseRunner {
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
             for (Object bean : labelNaarBean.values()) sessie.insert(bean);
-            int n = sessie.fireAllRules(100_000);
-            return n >= 100_000 ? "geen fixpunt (kringverwijzing?)" : null;
+            return vuurTotFixpunt(sessie);
         } finally {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
@@ -467,8 +467,8 @@ public final class CaseRunner {
             zetGlobals(sessie, c);
             if (w != null) sessie.addEventListener(luisteraar(w));
             for (Object bean : labelNaarBean.values()) sessie.insert(bean);
-            int n = sessie.fireAllRules(100_000);
-            if (n >= 100_000) return naam + ": geen fixpunt (kringverwijzing?)";
+            String geenFixpunt = vuurTotFixpunt(sessie);
+            if (geenFixpunt != null) return naam + ": " + geenFixpunt;
             List<String> mis = new ArrayList<>();
             int positie = 0;
             for (JsonNode v : c.get("expected")) {
@@ -483,6 +483,18 @@ public final class CaseRunner {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
         }
+    }
+
+    /** Fires {@code sessie} under the replay's cap and returns null at a fixpoint. At the cap the run has none
+     *  (RUNTIME-SEMANTICS ch. 5.7): the sentence names the writers of one attribute that kept overwriting each other
+     *  with different values in the last firings ({@link Schrijfconflict}), and where those show none it says only
+     *  that the cap was reached. */
+    private String vuurTotFixpunt(KieSession sessie) {
+        Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
+        sessie.addEventListener(schrijvers);
+        if (sessie.fireAllRules(100_000) < 100_000) return null;
+        String conflict = schrijvers.conflict(this::labelVanBean);
+        return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
     }
 
     private Object beanVoor(JsonNode i) {
