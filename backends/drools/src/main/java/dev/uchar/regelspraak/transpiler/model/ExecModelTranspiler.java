@@ -126,7 +126,8 @@ public final class ExecModelTranspiler {
     /** The salience of an ordinary rule where {@link #groepVolgorde} places it below the stratum
      *  {@link dev.uchar.regelspraak.transpiler.Stratificatie} derives: a rule that reads the characteristic of a
      *  defaults group under negation, and a rule that reads the characteristic of such a rule under negation in
-     *  turn; a rule after the writers of what it reads negatively or, as a characteristic assignment, stratum-strict.
+     *  turn; a rule after the writers of what it reads negatively, in its condition, or, as a characteristic assignment,
+     *  stratum-strict.
      *  Keyed by IDENTITY. */
     private final Map<ResolvedRegel, Integer> regelSalience = new java.util.IdentityHashMap<>();
     /** The salience of an object or fact creation where {@link #groepVolgorde} places it below a producer of what it
@@ -8638,7 +8639,8 @@ public final class ExecModelTranspiler {
      *  <p>A rule that reads a value under a leeg or gevuld test, a negative read in either polarity, and a characteristic
      *  assignment, whose write is irrevocable, for every value but a characteristic it reads (stratum-strict,
      *  RUNTIME-SEMANTICS ch. 6.1), fire after every writer of what they read and every node that writer waits on:
-     *  strictly below it, or level with it and added before the rule. Before, such a rule declared before its writer, or
+     *  strictly below it, or level with it and added before the rule. A rule that writes an attribute fires after the
+     *  writers of what its condition reads too, a finer order than the positive edge of ch. 6.1 asks for. Before, such a rule declared before its writer, or
      *  reading what a defaults group or a creation writes (both added to the model after the rules), fired on the
      *  transient leeg or 0, and a written value or characteristic stayed. A leeg or gevuld test on what a writer on a
      *  cycle with the rule writes, its own target included, has no order and the rule is refused by name (WF-046); a
@@ -8788,9 +8790,12 @@ public final class ExecModelTranspiler {
         // per rule, the nodes it fires after (RUNTIME-SEMANTICS ch. 6.1): the writers of what it reads under a leeg or
         // gevuld test, a negative read in either polarity, and for a characteristic assignment, whose write is
         // irrevocable, the writers of every value it reads but a characteristic, a stratum-strict read; each writer with
-        // every node it waits on in turn, since a writer fires again when one of those writes later. A writer on a cycle
-        // with the rule is left out: a negative read there has no order and the rule is refused by name (WF-046), its
-        // own target included; a stratum-strict one is discharged by the generations of a recursive creation.
+        // every node it waits on in turn, since a writer fires again when one of those writes later. A rule that writes
+        // an attribute waits on the writers of what its condition reads as well: ch. 6.1 reads such a comparison
+        // positively, and a finer order reaches the same fixpoint, but a condition tested on a transient value and held
+        // there keeps its write, since nothing withdraws it. A writer on a cycle with the rule is left out: a negative read
+        // there has no order and the rule is refused by name (WF-046), its own target included; any other read keeps its
+        // place, discharged by the generations of a recursive creation or positive.
         kringWeigering.clear();
         List<Set<Integer>> naSchrijvers = new ArrayList<>();
         for (int c = 0; c < nR; c++) {
@@ -8799,10 +8804,9 @@ public final class ExecModelTranspiler {
             if (r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null) {
                 leegLezingen(r.voorwaarde(), d.objecttype(), neg);
                 leegLezingen(r.waarde(), d.objecttype(), neg);
-                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING) {
-                    conditieLezingen(r.voorwaarde(), d.objecttype(), false, false, strikt);
+                conditieLezingen(r.voorwaarde(), d.objecttype(), false, false, strikt);
+                if (r.soort() == ResolvedRegel.Soort.KENMERKTOEKENNING)
                     exprLezingen(r.waarde(), d.objecttype(), false, false, strikt);
-                }
             }
             if (leestIets(neg, schrijft.get(c))) kringWeigering.put(r, leegKring(neg, schrijft.get(c), "deze regel zelf"));
             Set<Integer> na = new LinkedHashSet<>();
