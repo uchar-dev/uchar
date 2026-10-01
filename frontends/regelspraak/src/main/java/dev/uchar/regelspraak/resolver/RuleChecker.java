@@ -5353,8 +5353,68 @@ final class RuleChecker {
         // element IS the subject there, which is also why no set reading is left for the fence to find.
         Expr.AttribuutRef eigen = new Expr.AttribuutRef(zet.attribuut(), elem, zet.onderwerpBron(), null,
                 zet.type(), zet.bron(), false, List.of(), List.of(), null);
-        return new Conditie.Kwantorvouw(q, drempel, elem, filter, metOperand(c, zet, eigen), bronRol,
-                List.of(), bron);
+        Conditie matrix = elementlezing(metOperand(c, zet, eigen), eigen, elem,
+                c instanceof Conditie.Vergelijking v && v.links() == zet ? rhsCtx : lhsCtx, bron);
+        return new Conditie.Kwantorvouw(q, drempel, elem, filter, matrix, bronRol, List.of(), bron);
+    }
+
+    /**
+     * §13.4.1 / RUNTIME-SEMANTICS ch. 3.9a: the matrix of a quantifier fold reads with the element as subject, but the
+     * operand beside the quantified one was built with the rule subject. A read there that names the element by its
+     * type ("de sluitdag van de jutter van de Vondst") then walked nothing — from the rule subject the element is a
+     * to-many step — and was refused as a read not laid as a navigation, where "de sluitdag van zijn jutter" bound and
+     * the same read binds in a subselection. Such an operand is built again with the element as subject, and replaces
+     * the first build only where that left a read of a member the element does not have on the element and the second
+     * build leaves none; every operand that bound stays as it was. The comparison is typed again over the new operand,
+     * since the first typing saw an unresolved one.
+     */
+    private Conditie elementlezing(Conditie matrix, Expr eigen, Objecttype elem, ExpressieContext anderCtx, Bron bron) {
+        if (!(matrix instanceof Conditie.Vergelijking v) || anderCtx == null) return matrix;
+        boolean eigenLinks = v.links() == eigen;
+        Expr ander = eigenLinks ? v.rechts() : v.links();
+        if (!leestOnbekendLidVan(ander, elem)) return matrix;
+        Objecttype vorig = bouwer.subject();
+        bouwer.setSubject(elem);
+        Expr opnieuw;
+        try {
+            opnieuw = bouwer.bouw(anderCtx);
+        } finally {
+            bouwer.setSubject(vorig);
+        }
+        if (leestOnbekendLidVan(opnieuw, elem)) return matrix;
+        Expr links = eigenLinks ? eigen : opnieuw, rechts = eigenLinks ? opnieuw : eigen;
+        meldVergelijk(naarCmpOp(v.op()), links.type(), rechts.type(), false, false, bron.line(), null, null);
+        return ExpressieBouwer.vergelijking(v.op(), links, rechts, v.periode(), v.bron());
+    }
+
+    /** Whether {@code e} reads, on {@code elem} itself, a member {@code elem} does not have — the read a chain that
+     *  starts at the element leaves when it is walked from another subject. Arithmetic, a rounding and a clamp are
+     *  looked into; another shape is no such read. */
+    private static boolean leestOnbekendLidVan(Expr e, Objecttype elem) {
+        if (e instanceof Expr.AttribuutRef a)
+            return a.objecttype() == elem && a.attribuut() != null && !elem.heeftLid(a.attribuut());
+        if (e instanceof Expr.Binair b) return leestOnbekendLidVan(b.links(), elem) || leestOnbekendLidVan(b.rechts(), elem);
+        if (e instanceof Expr.Afgerond a) return leestOnbekendLidVan(a.basis(), elem);
+        if (e instanceof Expr.Begrensd b)
+            return leestOnbekendLidVan(b.basis(), elem) || leestOnbekendLidVan(b.minimum(), elem)
+                    || leestOnbekendLidVan(b.maximum(), elem);
+        return false;
+    }
+
+    /** The typing operator of a condition operator, {@link #naarOperator} inverted. */
+    private static Typering.CmpOp naarCmpOp(Conditie.Operator op) {
+        return switch (op) {
+            case KLEINER -> Typering.CmpOp.KLEINER;
+            case KLEINER_OF_GELIJK -> Typering.CmpOp.KLEINER_OF_GELIJK;
+            case GROTER -> Typering.CmpOp.GROTER;
+            case GROTER_OF_GELIJK -> Typering.CmpOp.GROTER_OF_GELIJK;
+            case GELIJK -> Typering.CmpOp.GELIJK;
+            case ONGELIJK -> Typering.CmpOp.ONGELIJK;
+            case EERDER -> Typering.CmpOp.EERDER;
+            case EERDER_OF_GELIJK -> Typering.CmpOp.EERDER_OF_GELIJK;
+            case LATER -> Typering.CmpOp.LATER;
+            case LATER_OF_GELIJK -> Typering.CmpOp.LATER_OF_GELIJK;
+        };
     }
 
     /**
