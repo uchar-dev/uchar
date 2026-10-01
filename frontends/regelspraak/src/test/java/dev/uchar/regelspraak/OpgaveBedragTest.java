@@ -80,7 +80,7 @@ class OpgaveBedragTest {
         assertEquals(List.of("taxatie", "bergingskosten", "waarde", "opgegeven waarde", "berekende waarde",
                 "verzekerde waarde"), List.copyOf(v.attributen.keySet()));
         Datatype x = v.attributen.get("waarde");
-        assertEquals("€", x.eenheidOf().afkorting());
+        assertEquals("EUR", x.eenheidOf().afkorting());
         assertEquals(x, v.attributen.get("opgegeven waarde"));
         assertEquals(x, v.attributen.get("berekende waarde"));
 
@@ -99,7 +99,7 @@ class OpgaveBedragTest {
         assertTrue(init.initialisatie(), "de initialisatie is de laagste default");
         Expr.Literal bedrag = assertInstanceOf(Expr.Literal.class, init.consequentie());
         assertEquals("25,00", bedrag.waarde());
-        assertEquals("€", bedrag.type().eenheidOf().afkorting());
+        assertEquals("EUR", bedrag.type().eenheidOf().afkorting());
 
         // 4 and 5: the characteristic compares the two amounts, the consistency asserts it absent
         Conditie.Samengesteld alle = assertInstanceOf(Conditie.Samengesteld.class,
@@ -123,10 +123,13 @@ class OpgaveBedragTest {
         for (Object t : (List<?>) ((java.util.Map<?, ?>) ((java.util.Map<?, ?>) Verslag.json(ir)).get("model")).get("objectTypes"))
             for (Object a : (List<?>) ((java.util.Map<?, ?>) t).get("attributes"))
                 datatypen.put(String.valueOf(((java.util.Map<?, ?>) a).get("name")), ((java.util.Map<?, ?>) a).get("datatype"));
-        assertTrue(String.valueOf(datatypen.get("waarde")).contains("abbreviation=€"), () -> datatypen.toString());
+        assertTrue(String.valueOf(datatypen.get("waarde")).contains("abbreviation=EUR"), () -> datatypen.toString());
         assertEquals(datatypen.get("waarde"), datatypen.get("opgegeven waarde"));
         assertEquals(datatypen.get("waarde"), datatypen.get("berekende waarde"));
-        assertTrue(ir.contains("\"snippet\": \"25,00 €\""), () -> "de initialisatiedefault draagt het bedrag niet:\n" + ir);
+        // the initialisation default's consequence is the amount with its unit
+        assertTrue(ir.replaceAll("\\s+", "").contains("{\"node\":\"Literal\",\"value\":{\"number\":\"25.00\"},\"type\":"
+                + "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
+                + "\"abbreviation\":\"EUR\""), () -> "de initialisatiedefault draagt het bedrag niet:\n" + ir);
     }
 
     @Test void een_samengestelde_eenheid_weigert() {
