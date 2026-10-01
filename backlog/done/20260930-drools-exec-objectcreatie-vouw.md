@@ -527,3 +527,236 @@ zijn stille foute antwoorden en kandidaten voor eigen kaarten op het sein
 van de eigenaar; de keuze ordenen of weigeren voor punt 1 ligt bij hem.
 Open punten 3–6: geen kaart. Commitkoppen tot 73 tekens aanvaard (ff-only,
 geen rebase).
+
+## Vervolgronde (2026-10-01, bouwer)
+
+Eén afgebakende ronde op drie vondsten van dit Result: open punt 2 (tweede helft, dan eerste helft) en open punt 1. Tak
+`vervolg/objectcreatie-vouw` in een nieuwe worktree, afgetakt van main `98d79e12` (deze kaart geland als `b784bd98`,
+daarna overlappende-voorwaardelijke-schrijvers en twee frontendkaarten); niet gerebased, niet gepusht, niet gemerged.
+Gemeten met de eigen uitvoerders van deze repo (ref, clingo, verifier, frontend, Drools-jar, `--drl` voor de
+teksttak). "Vóór" is de jar van `98d79e12`, "na" de jar van de kop. Metingen, generatoren en hulpmiddelen staan onder
+`/tmp/v2/probe/ocv-vervolg/` (`maak1.py` en `p1/` voor punt 1, `maak.py` en `vorm/` voor de vormruimte van de kaart met
+de nieuwe flanken, `dump-getuige.sh` voor de documenten van de getuigen, `tool/ToonSalience.java` voor de saliences);
+de reproductie van punt 1 is `/tmp/v2/probe/ocv-vervolg/extra/r-deling-door-lege-som` (kopie van die onder
+`ocv-bouw`). Elke rij van de drie getuigen is naast de getuige gemeten: verifier-schoon, ref het verwachte antwoord,
+clingo hetzelfde behalve waar het staat.
+
+### Punt 1: een deling of wortel met een vouw als operand in een regelwaarde
+
+Oorzaak. Een §6.5-deling of §6.6-wortel in een regelwaarde meldt haar Fout via een begeleider: een aparte regel die
+toetst of het deeltal gevuld en de deler leeg is (of de radicand negatief). In beide takken kwalificeerde een operand
+alleen als eigen of genavigeerd attribuut (`ExecModelTranspiler.kwalificeertOperand`/`companionOperand`,
+`DrlTranspiler.companionDeel`); een vouw, ook in een samengestelde operand, kreeg geen begeleider en de case bleef
+`consistent` waar ref en clingo de Fout op het kanaal zetten (een lege som of een leeg minimum is leeg, ch. 1.2e).
+
+Fix. Exectak (`a7ef6b8c`): `vouwCompanion` voor een plek buiten elke ch. 4.10-knoop waarvan een operand een vouw
+draagt. De begeleider verlaagt de operanden zoals de gastregel (`scalarWaarde` met vouwslots: elke vouw een eigen
+accumulate met de telling gebonden, lege bron leeg, telling 0), met de joins die de gastregel voor een genavigeerde
+lezing neemt, onder de voorwaarde en het geldigheidsvenster van de gastregel, en beslist in zijn consequentie (gevuld
+deeltal en lege deler; radicand kleiner dan 0). Hij rekent de operanden en niet de deling, dus een deler 0 blijft de
+fout van de gastregel bij het vuren (ref: `division by numeric zero`, clingo dezelfde guard). DRL-teksttak
+(`36d2aea2`): dezelfde begeleider in tekst: de vouw als accumulate in de eigen when van de begeleider (de telling
+gebonden via `Acc.telLeeg`, zodat ook een leeg minimum een rij geeft), de toets in een `eval`, `@watch` op de eigen
+lezingen. Een deling of wortel onder een Let of keuze die ook een vouw draagt, weigert de teksttak met de zin van de
+exectak (`regel (een vouw over een setbron en een deling of wortel onder één Let of IfThenElse, ch. 4.10)`): haar
+begeleider leest behoeften en takken als patroon en een vouw heeft geen patroonvorm; de exectak weigerde die vorm al.
+
+| vorm (regel "heffing") | ref | clingo | exectak vóór → na | DRL-tekst vóór → na |
+|---|---|---|---|---|
+| r-som-deler: (100 gedeeld door (de som …)) afgerond | `PASS (5)` | `PASS (5)` | FAIL `verwacht inconsistent, werkelijk consistent` → `PLAYED 1` | idem → `PLAYED 1` |
+| r-min-deler: 100 gedeeld door het minimum | `PASS (5)` | `PASS (5)` | FAIL (idem) → `PLAYED 1` | FAIL (idem) → `PLAYED 1` |
+| r-som-deeltal: (de som …) gedeeld door zijn deler | `PASS (5)` | `PASS (5)` | FAIL (idem) → `PLAYED 1` | FAIL (idem) → `PLAYED 1` |
+| r-som-vm-deler: 100 gedeeld door ((de som …) verminderd met 1) | `PASS (5)` | `PASS (5)` | FAIL (idem) → `PLAYED 1` | FAIL (idem) → `PLAYED 1` |
+| r-wortel-som: de wortel van ((de som …) min 10) | `PASS (5)` | `TRANSLATION FAULT` (afgeronde wortel) | FAIL (idem) → `PLAYED 1` | FAIL (idem) → `PLAYED 1` |
+| r-som-deler-voorwaarde (J2 met drempel) | `PASS (5)` | `PASS (5)` | FAIL (idem) → `PLAYED 1` | FAIL (idem) → `PLAYED 1` |
+| r-som-deler-voorwaarde-consistent (J2 weg) | `PASS (4)` | `PASS (4)` | `PLAYED 1` → `PLAYED 1` | `PLAYED 1` → `PLAYED 1` |
+| r-som-deler-gevuld (alleen J1, J4) | `PASS (3)` | `PASS (3)` | `PLAYED 1` → `PLAYED 1` | `PLAYED 1` → `PLAYED 1` |
+| r-aantal-deler: 100 gedeeld door het aantal (J2: 0) | `EVALUATION FAULT: division by numeric zero` | `UNSATISFIABLE … viol("division by numeric zero","J2")` | `ERROR … ArithmeticException: Breuk deling door 0` → idem | `ERROR … cannot invoke method: rsWaarde` → idem |
+| r-let-som-deler: Daarbij geldt: de vangst is de som; 100 gedeeld door de vangst | `PASS (5)`, consistent | `PASS (5)` | SKIP (Let-zin) → idem | `PLAYED 1` → MARKER (Let-zin) |
+| r-let-som-deeltal: … de vangst gedeeld door zijn deler | `PASS (5)`, inconsistent | `PASS (5)` | SKIP (Let-zin) → idem | FAIL (idem) → MARKER (Let-zin) |
+
+Bij r-let-som-deler is de case consistent: een lege vangst beëindigt de Let vóór de deling (ch. 10.6), dus ref zet
+niets op het kanaal; de teksttak speelde haar goed en weigert haar nu mee, want zij kan r-let-som-deeltal (gevulde
+vangst, lege deler) niet onderscheiden en antwoordde daar consistent.
+
+Getuige: `VouwBegeleiderWitnessTest` (negen rijen, beide takken): de lege som en het lege minimum als deler, de som als
+deeltal, een vouw in een samengestelde deler, de wortel van een negatieve som (ref alleen), de voorwaarde van de
+gastregel (inconsistent met J2, consistent zonder), de Let-weigering in beide takken, en twee flanken (een gevulde som
+meldt niets; een deler 0 faalt in elke uitvoerder). Rood op main (`040f287d`): `Tests run: 8, Failures: 6`, elk
+`verwacht inconsistent, werkelijk consistent`; de flanken groen. De Let-rij (`827d72a8`) kwam pas na de fix van de
+teksttak en is rood gemeten tegen de teksttak van `a7ef6b8c`: `Expected … Excluded to be thrown, but nothing was
+thrown`.
+
+### Punt 2: een deling of wortel in de toekenning van een objectcreatie
+
+Oorzaak. Een creatie had geen begeleider, en de kaart weigerde daarom een deling of wortel in een toekenning met naam
+(`kanaal-deponerende toekenning`), ook waar de deler een literaal of een gevulde som is.
+
+Fix (`bac200db`). Geen aparte begeleiderregel: een creatie rekent haar toekenningen één keer, in de consequentie die
+munt, onder haar eigen idempotentiewacht. Die evaluatie krijgt de sonde (`Sonde`) die de deling- en wortelarm van
+`scalarWaarde` al voeden; meldt een plek een Fout, dan voegt dezelfde consequentie de inconsistentie in voor de
+creatie en haar subject, zoals ref (`World.insert_error` met de creatie als regel). Zo geldt de melding precies onder
+de wacht en in dezelfde vuring die de wacht onwaar maakt. De omheining met `foutplekSoort` is weg uit `objectCreatie`.
+
+| vorm (vormruimte van de kaart) | ref | clingo | exectak vóór → na | DRL-tekst (vóór = na) |
+|---|---|---|---|---|
+| h-deling-eigen-door-leeg | `PASS (5)` | `PASS (5)` | SKIP (kanaal-deponerende toekenning) → `PLAYED 1` | FAIL `verwacht inconsistent, werkelijk consistent` |
+| h-deling-door-lege-som | `PASS (5)` | `PASS (5)` | SKIP → `PLAYED 1` | FAIL (idem) |
+| h-deling-door-lege-som-consistent | `PASS (3)` | `PASS (3)` | SKIP → `PLAYED 1` | `PLAYED 1` |
+| h-wortel-van-een-negatieve-som | `PASS (5)` | `TRANSLATION FAULT` (afgeronde wortel) | SKIP → `PLAYED 1` | FAIL (idem) |
+| b-gedeeld-som: (de som …) gedeeld door 4 | `PASS (4)` | `PASS (4)` | SKIP → `PLAYED 1` | `PLAYED 1` |
+| b-afgerond: ((de som …) gedeeld door 3) afgerond | `PASS (4)` | `PASS (4)` | SKIP → `PLAYED 1` | `PLAYED 1` |
+
+Getuige: in `ObjectcreatieVouwWitnessTest` is de rij `een_deling_in_een_toekenning_weigert_met_de_vorm` vervangen door
+`een_deling_of_wortel_in_een_toekenning_meldt_de_fout` (lege deler, lege som, gevulde som, literaal, wortel; ref en
+clingo, de wortel ref alleen), en de klassecommentaar zegt dat. Rood tegen de omheining (`4f50cd9a`): `Tests run: 15,
+Errors: 1` met `Excluded … kanaal-deponerende toekenning (deling)`. Een gepinde uitkomst van de eigen getuige die
+terecht verandert; geen golden droeg de vorm.
+
+### Punt 3: een creatie vóór een latere schrijver van wat zij leest
+
+Oorzaak. Een creatie leest stratum-strict (RUNTIME-SEMANTICS ch. 6.1) en munt één keer. De exectak voegde de
+creaties toe na de regels en vóór de feitcreaties en de defaultsgroepen, zonder salience; Drools vuurt één salience in
+de volgorde waarin de regels zijn toegevoegd. Een defaultsgroep (salience 0 of lager, later toegevoegd), een regel die
+de stratificatie lager zet (een ontkenning), een later gedeclareerde creatie en een feitcreatie vuurden daardoor na de
+creatie, en de creatie schreef wat zij toen las: leeg of 0.
+
+Fix (`963094c7`). De object- en feitcreaties zijn knopen in `groepVolgorde`, naast de regels en de groepen. Een
+objectcreatie leest haar voorwaarde, haar toekenningen en de populatie van haar onderwerp, en schrijft haar
+toekenningen op het gemaakte type, de populatie daarvan en haar koppeling (de connectingRole, anders het ene
+verbindende feittype); een feitcreatie leest haar voorwaarde (over anker en doel), de populatie van haar anker en de
+koppelingen van haar hops, en schrijft haar koppeling en de populatie van het doel (de tabel van ch. 6.1). De
+lezingen kregen daarvoor twee soorten: `populatie(type)` (een vouw of kwantor over de instanties, de iteratie van een
+creatie) en `relatie(feittype)` (een vouw over een rol, een navigatie, een kenmerk over een rol, een hop); alleen
+creaties schrijven ze, dus in een document zonder creatie verandert niets. Een creatie zakt onder elke knoop waarop
+zij (transitief) wacht en die anders na haar vuurt: lager in salience, of gelijk en later toegevoegd (`laadrang`). Een
+knoop op een kring met de creatie (een recursieve creatie, ch. 5.5) telt niet mee; die blijft op haar generaties. Een
+groep of regel die leest wat een creatie schrijft, wacht via de band en de negatieve vouwlezingen op haar. De
+salience komt op de regel van de creatie (`creatieSalience`).
+
+| flank (vormruimte) | ref | clingo | exectak vóór → na | DRL-tekst (vóór = na) |
+|---|---|---|---|---|
+| f-eigen-door-default: telling = zijn basis, basis uit een defaultsgroep | `PASS (4)` | `PASS (4)` | FAIL `verwacht 7, werkelijk leeg` (+3) → `PLAYED 1` | EXCLUDE (defaults) |
+| f-lid-door-default: de som van het nettogewicht uit een groep | `PASS (4)` | `PASS (4)` | FAIL `verwacht 15, werkelijk leeg` (+2) → `PLAYED 1` | EXCLUDE (defaults) |
+| f-lid-door-ontkenning: het aantal lichte vondsten, licht = niet zwaar | `PASS (4)` | `PASS (4)` | FAIL `verwacht 2, werkelijk 0` (+1) → `PLAYED 1` | FAIL (idem) |
+| f-creatie-keten: het aantal netten, gemunt door een latere creatie | `PASS (4)` | `PASS (4)` | FAIL `verwacht 1, werkelijk 0` (+3) → `PLAYED 1` | FAIL (idem) |
+| f-feitcreatie-keten: het aantal gecontroleerde netten uit een feitcreatie | `PASS (4)` | `PASS (4)` | FAIL `verwacht 1, werkelijk 0` (+3) → `PLAYED 1` | FAIL (idem) |
+| f-lid-later-afgeleid (flank): een gewone regel na de creatie | `PASS (4)` | `PASS (4)` | `PLAYED 1` → `PLAYED 1` | `PLAYED 1` |
+| f-lezer-onder-de-creatie: een kenmerk over het aantal afrekeningen | `PASS (8)` | `PASS (8)` | FAIL `kenmerk onafgerekend: verwacht afwezig, werkelijk aanwezig` (+3) → idem | EXCLUDE (defaults) |
+
+Getuige: `CreatieVolgordeWitnessTest` (zes rijen, exectak): de vijf rode flanken en de gewone regel na de creatie als
+flank. Rood op main (`86d80904`): `Tests run: 6, Failures: 5`, met de zinnen hierboven; de flank groen.
+
+De saliences van alle regels van de 27 goldens met een object- of feitcreatie zijn vóór en na gelijk
+(`tool/ToonSalience.java` op beide jars; vier van de 27 bouwen in beide niet, met dezelfde weigering): geen golden
+krijgt een andere volgorde.
+
+### Sweep en pinnen
+
+Over alle 289 goldens van main, elke golden met al zijn cases, statusregel per golden en per tak, jar van `98d79e12`
+tegen de jar na elk punt (na punt 1, na punt 2, na punt 3): alle 578 regels gelijk, exectak PLAYED 234, DRL-tak PLAYED
+192. Geen golden draagt een deling of wortel met een vouw als operand (in een regel, kaal of onder een Let), geen golden
+een deling in een toekenning, en geen golden krijgt een andere salience. De pinnen blijven `EXPECTED_PLAYED=234` en
+`EXPECTED_DRL_PLAYED=192`; er is geen voorstel voor `scripts/check-drools.sh` en geen nieuwe golden (de drie punten
+zijn met getuigen gepind; zie open punt 4).
+
+### README (`8d21b311`)
+
+`backends/drools/README.md`, sectie "Recorded: a fold over a set source inside a rule's value or a creation's
+toekenning": een alinea over de begeleider met een vouw als operand in beide takken en de Let-weigering in de teksttak;
+in de alinea over de creatie speelt een deling of wortel nu met de Fout-melding; een nieuwe alinea zegt dat een creatie
+in `groepVolgorde` onder de schrijvers van wat zij leest staat en wat open blijft; de alinea over de DRL-teksttak zegt
+dat die tak geen creatie ordent.
+
+### Gates
+
+Alle zestien in de volgorde van `gates.yml` met `/tmp/v2/uchar-gates19/run.sh` op de kop `e7b683ec` (de laatste
+codecommit; de commit met dit Result raakt alleen de kaart), `dune build` exit 0, elk script onder zijn shebang; logs in
+`/tmp/v2/uchar-gates19/`. Alle zestien exit 0. Gate 10: `JUnit suite green (1044 tests, floor 173); 116 rgs golden(s)
+re-emit byte-identically`. Gate 12: `check-drools: PASS`, `played 234` (pin 234), `DRL-text branch played 192` (pin
+192), `JUnit 1000 tests, floor 239`. Gate 16: `23 scenario golden(s) (floor 7) regenerate 82 case file(s)`.
+
+### Afwijkingen van de opdracht
+
+1. Punt 2 bouwt geen aparte begeleiderregel maar laat de creatie de Fout van haar eigen evaluatie melden, met de sonde
+   die de deling- en wortelarm al voeden. Een aparte regel zou precies vóór de creatie moeten vuren, onder dezelfde
+   wacht; de creatie zelf rekent die toekenningen één keer en is daarmee precies de evaluatie die ref doet.
+2. Punt 1 in de teksttak weigert een deling of wortel onder een Let of keuze die ook een vouw draagt, met de zin van
+   de exectak. Eén vorm die de teksttak goed speelde, gaat daardoor van `PLAYED` naar een benoemde weigering
+   (r-let-som-deler, consistent omdat een lege vangst de Let beëindigt); de tak kan haar niet onderscheiden van
+   r-let-som-deeltal, waar zij consistent antwoordde en ref inconsistent zegt. Geen golden draagt de vorm.
+3. De rij die de omheining van de kaart pinde (`een_deling_in_een_toekenning_weigert_met_de_vorm`) is vervangen door
+   de rij die de Fout-melding pint: een gepinde uitkomst die de fix terecht verandert.
+4. De Let-rij van `VouwBegeleiderWitnessTest` kwam na de fix van de teksttak en is daarna rood gemeten tegen de
+   teksttak van de commit ervoor; de overige rijen zijn vóór hun fix rood gecommit.
+5. Drie commitkoppen waren langer dan 72 tekens en zijn vóór dit Result herschreven met `git filter-branch
+   --msg-filter` (niet gepusht; boom ongewijzigd, `git diff` tussen oud en nieuw leeg); de hashes hieronder zijn de
+   nieuwe.
+
+### Wat open blijft, en waarom
+
+1. Exectak: een lezer van de uitvoer van een creatie die onherroepelijk schrijft — een kenmerktoekenning over het
+   aantal gemaakte objecten — wordt niet onder de creatie gezet en kan op de voorlopige afwezigheid handelen
+   (f-lezer-onder-de-creatie: `kenmerk onafgerekend: verwacht afwezig, werkelijk aanwezig`, vóór en na gelijk). De
+   stratificatie zet een regel alleen onder de schrijvers van een kenmerk dat zij ontkend leest en van wat een vouw in
+   haar negatief leest; een kenmerktoekenning die een telling positief leest valt daarbuiten, ook zonder creatie.
+   Herstel is een ordening van de kenmerktoekenningen als stratum-strikte lezers (ch. 6.1) in `groepVolgorde`, buiten
+   de drie punten van deze ronde.
+2. DRL-teksttak, ongewijzigd: zij ordent geen creatie (f-creatie-keten, f-feitcreatie-keten en f-lid-door-ontkenning
+   antwoorden 0 waar ref 1 en 2 geeft; een document met een defaultsgroep weigert zij), en een deling door leeg in de
+   toekenning van een creatie leest zij als consistent (h-deling-*). Beide vragen in die tak wat de exectak nu doet:
+   saliences voor de creaties uit haar eigen stratificatie, en een melding in de `then` van de creatie.
+3. De begeleider met een vouw dekt een plek buiten elke ch. 4.10-knoop; onder een Let of keuze met een vouw weigeren
+   beide takken benoemd (punt 1). Een samengestelde operand zonder vouw (een parameter, een genest product) kwalificeert
+   nog steeds niet voor een begeleider: dat is de bestaande, in `kwalificeertOperand` vastgelegde grens.
+4. Geen golden in deze ronde: elk van de drie punten is gepind door een getuige met de waarden van ref (en clingo,
+   behalve de afgeronde wortel), en een golden zou `EXPECTED_PLAYED` laten stijgen. Een golden met een deling door een
+   lege vouw in een regel en een creatie die op een defaultsgroep wacht, speelt in ref, clingo en de exectak (gemeten op
+   de vormen hierboven) en kan bij de landing volgen als de eigenaar dat wil.
+5. De distributie-CLI draait op een oudere pin; de pin moet na het landen mee.
+
+### Voorgestelde registertekst (voor de hoofdsessie)
+
+- `spec/IR-SPEC.md` ch. 5.5, de alinea "*Recorded (measured 2026-10-01, card `drools-exec-objectcreatie-vouw`,
+  open).*" vóór "*Recorded flank, the ASP backend …*" wordt: "*Recorded (measured 2026-10-01, card
+  `drools-exec-objectcreatie-vouw`; closed in the exec-model branch the same day, open in the DRL-text branch).* A
+  creation reads stratum-strict (RUNTIME-SEMANTICS ch. 6.1): it evaluates strictly above the producers of what its
+  condition and its toekenningen read. Both Drools branches fired an object creation once per subject, at the default
+  salience, after the ordinary rules and before the fact creations and (in the exec-model branch) the defaults groups,
+  so a producer later on the agenda was not seen: with a toekenning that reads a value a defaults group writes, the
+  exec-model branch wrote leeg where `ref/` and `backends/clingo` write 7 and 15; with a count over the objects a
+  creation declared after it mints, or over a relation a fact creation lays, both branches wrote 0 where they write 1.
+  *Closed in the exec-model branch on 2026-10-01 (witness `CreatieVolgordeWitnessTest`):* the object and the fact
+  creations are nodes of the order that already placed the defaults groups; a creation reads its condition, its
+  toekenningen, the population of its subject and the links its folds, quantifiers, navigations and hops follow, writes
+  its toekenningen, the created type's population and its link, and goes below every node it waits on that would
+  otherwise fire after it, a rule the stratification places lower and a creation declared after it included; a
+  recursive creation stays on its generations (RUNTIME-SEMANTICS ch. 5.5). What stays open: in the exec-model branch a
+  reader of a creation's output that writes irrevocably, such as a characteristic assignment over a count of the
+  created objects, is not placed below the creation and can act on the transient absence (measured: a characteristic
+  attributed where `ref/` and `backends/clingo` leave it absent); the DRL-text branch orders no creation, so a later
+  creation and a fact creation still read 0 there, a coarser order than the graph without a loud refusal."
+- `spec/CONSTRUCTS.md` rij 6, "Recorded open": het deel "; and both Drools branches fire an object creation before a
+  later writer of what it reads — a defaults group (exec-model branch; the DRL-text branch refuses the document), a
+  creation declared after it, a fact creation — where RUNTIME-SEMANTICS ch. 6.1 places it strictly above them (IR-SPEC
+  ch. 5.5)." wordt "; the DRL-text branch fires an object creation before a later creation or a fact creation that
+  writes what it reads, where RUNTIME-SEMANTICS ch. 6.1 places it strictly above them, and in the exec-model branch,
+  which places a creation below those writers since 2026-10-01, a reader of a creation's output that writes
+  irrevocably can still act before the creation (IR-SPEC ch. 5.5)."
+- Voor punt 1 en 2 geen registertekst: RUNTIME-SEMANTICS ch. 1.2 en 5.6 schrijven de melding voor; de README van de
+  Drools-backend legt vast hoe de takken haar dragen.
+
+### Commits
+
+    040f287d VouwBegeleiderWitnessTest: deling door een lege vouw in een regel, rood
+    a7ef6b8c Exectak: een begeleider leest een vouw als operand van een deling
+    36d2aea2 DRL-teksttak: een begeleider leest een vouw als operand van een deling
+    827d72a8 VouwBegeleiderWitnessTest: een vouw onder een Let naast een deling
+    4f50cd9a ObjectcreatieVouwWitnessTest: deling in toekenning meldt de Fout, rood
+    bac200db Exectak: een creatie meldt de Fout van haar eigen toekenning
+    86d80904 CreatieVolgordeWitnessTest: creatie vóór een latere schrijver, rood
+    963094c7 Exectak: een creatie wacht op de schrijvers van wat zij leest
+    8d21b311 backends/drools/README: vouw in begeleiders, Fout en volgorde creaties
+    e7b683ec Exectak: commentaar bij de sonde van een creatie en bij groepVolgorde
+
+en de commit "Vervolgronde objectcreatie-vouw: Result", die deze sectie toevoegt. Niet gepusht, niet gemerged.
