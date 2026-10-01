@@ -497,3 +497,33 @@ README in de werkboom, op de code van `4916cc6b`).
     bc65caa4 Exectak: twee lange regels in de lowering van de creatie gebroken
 
 en de commit die de kaart met dit Result naar `backlog/done/` verplaatst. Niet gepusht, niet gemerged.
+
+## Keuring (hoofdsessie, 2026-10-01)
+
+Eigen run van de zestien gates op `9fe4956a` in de volgorde van `gates.yml`
+(bash waar de shebang dat zegt), `dune build` vooraf; logs in
+`/tmp/v2/uchar-gates14/`. Alle zestien exit 0: gate 10 JUnit 1008, 115
+rgs-goldens; gate 12 `check-drools: PASS`, played 233 (pin 233), DRL 191
+(pin 191), JUnit 975; gate 16 22 scenario-goldens, 80 casebestanden. De fix
+gelezen: `objectCreatie` verlaagt elke toekenning met `scalarWaarde` terwijl
+`vouwslots` en `vouwOnderwerp` aan staan, de vouwen van alle toekenningen
+in één lijst, hun accumulates na de idempotentiewacht en `vulVouwslots`
+vóór het rekenen; `lowerVal` en de aggregatiehelft van `TkLower` zijn weg.
+Afwijking 1 aanvaard: de herschaling op de schrijfgrens voor elke
+toekenning is de weg van een regelwaarde en haalt een stil fout antwoord
+weg (2 waar 2000 g hoort). Afwijking 2 aanvaard met aantekening: een
+deling of wortel in een toekenning weigert nu benoemd, omdat een creatie
+geen begeleider heeft die de Fout meldt; drie vormen die met de goede
+waarde speelden weigeren mee, geen golden of getuige droeg ze; een
+begeleider voor de creatie is een vervolg (open punt 2). Afwijking 3
+aanvaard. De voorgestelde registertekst is in dit landingscommit gezet in
+`spec/IR-SPEC.md` ch. 5.5 (eigen recorded-alinea vóór de flank van de
+ASP-backend) en `spec/CONSTRUCTS.md` rij 6. Open punt 1 (een creatie vuurt
+vóór een latere schrijver van wat zij leest: een defaultsgroep, een later
+gedeclareerde creatie, een feitcreatie; leeg of 0 waar ref een waarde
+geeft; van vóór deze kaart) en open punt 2 (een deling door een lege vouw
+in een gewone regelwaarde meldt de inconsistentie in geen van beide takken)
+zijn stille foute antwoorden en kandidaten voor eigen kaarten op het sein
+van de eigenaar; de keuze ordenen of weigeren voor punt 1 ligt bij hem.
+Open punten 3–6: geen kaart. Commitkoppen tot 73 tekens aanvaard (ff-only,
+geen rebase).
