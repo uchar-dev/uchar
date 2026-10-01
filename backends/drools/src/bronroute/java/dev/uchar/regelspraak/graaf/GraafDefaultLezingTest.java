@@ -68,14 +68,23 @@ class GraafDefaultLezingTest {
         try (Stream<Path> s = Files.walk(CORPUS)) {
             documenten = s.filter(p -> p.getFileName().toString().equals("ir.json")).sorted().toList();
         }
-        List<Path> metGroepen = new ArrayList<>();
-        for (Path ir : documenten)
-            if (JSON.readTree(Files.readString(ir)).path("rules").path("prioritizedDefaults").size() > 0) metGroepen.add(ir);
-        // measured 2026-10-01: 32 goldens carry a defaults group; none is refused by the loader
-        assertTrue(metGroepen.size() >= 32, "maar " + metGroepen.size() + " goldens met een defaultsgroep gevonden");
-        return metGroepen.stream().map(ir -> DynamicTest.dynamicTest(CORPUS.relativize(ir.getParent()).toString(), () -> {
+        // A golden the loader refuses has no model to read; like gate 15 this compares the others, and their number has
+        // a floor: measured 2026-10-01, 41 goldens carry a defaults group (nine of them anchors) and the loader refuses
+        // one of them (jutterswet-kamerhuishouden-catala, for its function definitions).
+        List<Path> vergelijkbaar = new ArrayList<>();
+        for (Path ir : documenten) {
             JsonNode doc = JSON.readTree(Files.readString(ir));
-            IrLoader.Loaded w = IrLoader.loadAll(doc);
+            if (doc.path("rules").path("prioritizedDefaults").size() == 0) continue;
+            try {
+                IrLoader.loadAll(doc);
+                vergelijkbaar.add(ir);
+            } catch (IrLoader.Refusal geweigerd) {
+                // not comparable: no model
+            }
+        }
+        assertTrue(vergelijkbaar.size() >= 40, "maar " + vergelijkbaar.size() + " goldens met een defaultsgroep vergelijkbaar");
+        return vergelijkbaar.stream().map(ir -> DynamicTest.dynamicTest(CORPUS.relativize(ir.getParent()).toString(), () -> {
+            IrLoader.Loaded w = IrLoader.loadAll(JSON.readTree(Files.readString(ir)));
             vereniging(w.model(), w.prioritizedDefaults(), ProducentConsument.wireNavigatie(w), ir + " (wire)");
             Path rgs = ir.resolveSibling("bron.rgs");
             if (Files.exists(rgs)) {

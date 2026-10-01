@@ -200,12 +200,65 @@ public final class ProducentConsument {
             RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(p.onderwerp());
             Set<ElementSleutel> schrijft = new LinkedHashSet<>();
             if (p.doel() != null) schrijft.add(elementVan(onderwerp, p.doel(), p.isKenmerk()));
-            Lezer l = new Lezer(navigatie, new LinkedHashSet<>());
-            for (Default d : p.defaults()) l.dflt(d, onderwerp);
+            // the group reads what its defaults read, so the per-default reading and this one cannot drift apart
+            Set<ElementSleutel> leest = new LinkedHashSet<>();
+            for (DefaultLezing d : leesDefaults(model, p, navigatie)) {
+                leest.addAll(d.rechtvaardiging());
+                leest.addAll(d.consequentie());
+            }
             uit.add(new Vorm(Vormsoort.DEFAULTSGROEP,
-                    p.naam() != null ? basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, schrijft, l.uit()));
+                    p.naam() != null ? basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, schrijft, leest));
         }
         return uit;
+    }
+
+    /** What one default of a defaults group reads. {@code pad} is its place in the tree: [i] for the i-th default of
+     *  the group, [i, g, j] for the j-th default of the g-th exception group of default i, and so on. {@code
+     *  rechtvaardiging} is what its justification reads, {@code consequentie} what its consequence reads; a
+     *  group-default has neither (RUNTIME-SEMANTICS ch. 7.9). */
+    public record DefaultLezing(List<Integer> pad, Default dflt, Set<ElementSleutel> rechtvaardiging,
+                                Set<ElementSleutel> consequentie) {}
+
+    /**
+     * What every default of {@code groep} reads, in the order of the group (highest priority first) and per default the
+     * default itself before the defaults of its exception groups, all against the subject of the group (RUNTIME-SEMANTICS
+     * ch. 7.9: a descendant's read is the group's read). The walk is that of {@link #vormen}, which takes the group's
+     * reads from here, so the union of every justification and consequence set is exactly that group's
+     * {@link Vorm#leest()}. A consumer that names the default where a read falls outside a scope reads the default's own
+     * source text ({@code Default.bron()}, or that of its justification or consequence) beside the path.
+     */
+    public static List<DefaultLezing> lezingen(RegelSpraakModel model, PrioritizedDefaults groep, Navigatie navigatie) {
+        return leesDefaults(model, groep, java.util.Objects.requireNonNull(navigatie, "navigatie"));
+    }
+
+    /** The reading behind {@link #lezingen}; without {@code navigatie} every set is empty, as in {@link #lees}. */
+    private static List<DefaultLezing> leesDefaults(RegelSpraakModel model, PrioritizedDefaults groep, Navigatie navigatie) {
+        RegelSpraakModel.Objecttype onderwerp = model.objecttypeOpNaam(groep.onderwerp());
+        List<DefaultLezing> uit = new ArrayList<>();
+        for (int i = 0; i < groep.defaults().size(); i++)
+            lezingen(groep.defaults().get(i), List.of(i), onderwerp, navigatie, uit);
+        return uit;
+    }
+
+    private static void lezingen(Default d, List<Integer> pad, RegelSpraakModel.Objecttype onderwerp,
+                                 Navigatie navigatie, List<DefaultLezing> uit) {
+        Lezer rechtvaardiging = new Lezer(navigatie, new LinkedHashSet<>());
+        rechtvaardiging.conditie(d.voorwaarde(), onderwerp);
+        Lezer consequentie = new Lezer(navigatie, new LinkedHashSet<>());
+        consequentie.expr(d.consequentie(), onderwerp);
+        uit.add(new DefaultLezing(pad, d, java.util.Collections.unmodifiableSet(rechtvaardiging.uit()),
+                java.util.Collections.unmodifiableSet(consequentie.uit())));
+        if (d.excepties() == null) return;
+        List<ExceptionGroup> groepen = d.excepties().leden();
+        for (int g = 0; g < groepen.size(); g++) {
+            List<Default> leden = groepen.get(g).defaults();
+            for (int j = 0; j < leden.size(); j++) {
+                List<Integer> sub = new ArrayList<>(pad);
+                sub.add(g);
+                sub.add(j);
+                lezingen(leden.get(j), List.copyOf(sub), onderwerp, navigatie, uit);
+            }
+        }
     }
 
     /**
@@ -280,10 +333,10 @@ public final class ProducentConsument {
         return uit;
     }
 
-    /** The one walk behind {@link #verbruikt} and {@link #vormen}, over a condition or an expression with the
-     *  subject a kenmerk check without an owner of its own is evaluated against, and from which a navigated check's
-     *  hop starts. Only a kenmerk check asks for the subject; an attribuut read names its type itself. Without a
-     *  {@code navigatie} it reads nothing (see {@link #lees}). */
+    /** The one walk behind {@link #verbruikt}, {@link #vormen} and {@link #lezingen}, over a condition or an
+     *  expression with the subject a kenmerk check without an owner of its own is evaluated against, and from which a
+     *  navigated check's hop starts. Only a kenmerk check asks for the subject; an attribuut read names its type
+     *  itself. Without a {@code navigatie} it reads nothing (see {@link #lees}). */
     private record Lezer(Navigatie navigatie, Set<ElementSleutel> uit) {
 
         /** A member a form names outright rather than through an expression: an allocation's source amount or
@@ -291,16 +344,6 @@ public final class ProducentConsument {
         void lid(RegelSpraakModel.Objecttype houder, String naam, boolean kenmerk) {
             if (navigatie == null || naam == null) return;
             uit.add(elementVan(houder, naam, kenmerk));
-        }
-
-        /** A default's justification and consequence, and those of every default in its nested exception groups,
-         *  all against the group's subject (RUNTIME-SEMANTICS ch. 7.9: a descendant's read is the group's read). */
-        void dflt(Default d, RegelSpraakModel.Objecttype onderwerp) {
-            conditie(d.voorwaarde(), onderwerp);
-            expr(d.consequentie(), onderwerp);
-            if (d.excepties() != null)
-                for (ExceptionGroup g : d.excepties().leden())
-                    for (Default sub : g.defaults()) dflt(sub, onderwerp);
         }
 
         void conditie(Conditie c, RegelSpraakModel.Objecttype subject) {
