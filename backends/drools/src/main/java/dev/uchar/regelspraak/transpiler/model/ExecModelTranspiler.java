@@ -661,7 +661,6 @@ public final class ExecModelTranspiler {
                 vulGlobalMap(gm, fgn, args, 1);
                 werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
-            if (consequence == null) return skip("regel (totaal: te veel gebonden globals): " + r.naam());
         } else if (isAggregatieWaarde(r) && r.waarde() instanceof Expr.Functie fx && !isGelisteFold(fx)
                 && !ordenendeDatumvouw(fx)) {   // a date result is no BigDecimal: the scalar path reads it from a slot
             // (a ≥2-operand MINIMUM/MAXIMUM is a §5.8.3 LISTED concatenation fold, not an instance accumulate — it
@@ -752,8 +751,8 @@ public final class ExecModelTranspiler {
             if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING)
                 wf = wf.herschaald(effType(r.waarde()), effType(doel), "een §4 schrijfgrens naar het doel");
             // resolve the referenced globals; an unregistered one (e.g. a temporal parameter) -> honest skip. The
-            // consequence binds [subject, g0, g1, ...] via consequenceOf (up to Block10 = 9 vars); the body rebuilds
-            // the name->value map. >1 distinct global is now supported (e.g. a value of two parameters).
+            // consequence binds [subject, g0, g1, ...] via consequenceOf; the body rebuilds the name->value map. >1
+            // distinct global is now supported (e.g. a value of two parameters).
             List<String> gnames = new ArrayList<>(wf.globals());
             List<Variable> vars = new ArrayList<>();
             vars.add(sVar);
@@ -777,7 +776,6 @@ public final class ExecModelTranspiler {
                 vulVouwslots(gm, slots, args, vouwVanaf, s);
                 werkBij(drools, s, doelGetter, doelSetter, fn.apply(s, gm), staandScalairDoel);
             });
-            if (consequence == null) return skip("regel (THEN-waarde: te veel gebonden globals en vouwen): " + r.naam());
         }
 
         // The subject pattern first (binds $subject), then far-side exists/not joins and any accumulate (which
@@ -5458,7 +5456,9 @@ public final class ExecModelTranspiler {
     }
 
     /** Build the consequence binding {@code v} (subject, then optional global, then the accumulate result vars) and
-     *  invoking {@code body} with the matched fact array. Switches on arity (Block2..Block10); null if too many vars. */
+     *  invoking {@code body} with the matched fact array. Switches on arity (Block2..Block10), and binds more variables
+     *  through {@link GebondenN}: a defaults group binds what every default of its stack reads, so a tree with counts,
+     *  sums, folds and parameters in its justifications and consequences passes nine, as five folds in one value do. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private RuleItemBuilder<?> consequenceOf(Variable[] v, java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body) {
         return switch (v.length) {
@@ -5471,8 +5471,21 @@ public final class ExecModelTranspiler {
             case 7 -> DSL.on(v[0], v[1], v[2], v[3], v[4], v[5], v[6]).execute((Block8<org.drools.model.Drools, Object, Object, Object, Object, Object, Object, Object>) (d, a0, a1, a2, a3, a4, a5, a6) -> body.accept(d, new Object[]{a0, a1, a2, a3, a4, a5, a6}));
             case 8 -> DSL.on(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]).execute((Block9<org.drools.model.Drools, Object, Object, Object, Object, Object, Object, Object, Object>) (d, a0, a1, a2, a3, a4, a5, a6, a7) -> body.accept(d, new Object[]{a0, a1, a2, a3, a4, a5, a6, a7}));
             case 9 -> DSL.on(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]).execute((Block10<org.drools.model.Drools, Object, Object, Object, Object, Object, Object, Object, Object, Object>) (d, a0, a1, a2, a3, a4, a5, a6, a7, a8) -> body.accept(d, new Object[]{a0, a1, a2, a3, a4, a5, a6, a7, a8}));
-            default -> null;
+            default -> new GebondenN(v, body);
         };
+    }
+
+    /** A consequence over any number of bound variables. Each typed {@code execute} of the DSL sets its builder's block
+     *  to a {@link org.drools.model.functions.BlockN} over the Drools handle and the bound facts, in that order, and the
+     *  engine calls that block whatever its arity; this builder sets the same block directly, so the arity is not
+     *  limited by the typed blocks this file spells out or by the 24 of the DSL. */
+    private static final class GebondenN
+            extends org.drools.model.consequences.ConsequenceBuilder.AbstractValidBuilder<GebondenN> {
+        GebondenN(Variable[] v, java.util.function.BiConsumer<org.drools.model.Drools, Object[]> body) {
+            super(v);
+            usingDrools = true;
+            block = args -> body.accept((org.drools.model.Drools) args[0], java.util.Arrays.copyOfRange(args, 1, args.length));
+        }
     }
 
     /** Extends {@link #scalarWaarde} with §13.4.17.25 afronding (an Afgerond wrapper) and §13.4.17.13 wortel (a scalar
@@ -6415,40 +6428,17 @@ public final class ExecModelTranspiler {
                     .expr(nextId("uig"), (Predicate1) i -> naam.equals(RegelSpraakRuntime.get(i, "regel")))
                     .expr(nextId("uig"), (Variable) sVar, (Predicate2) (i, ss) -> RegelSpraakRuntime.get(i, "subject") == ss);
             items.add(DSL.not(guard));
-            // consequence: sum the per-source counts; insert iff > 1 (insert-only -> NO no-loop). consequenceOf binds
-            // at most 9 vars (Block10), so [subject + one count per source] overflows past 8 sources. To stay general
-            // over ANY source count (DRL's string sum has no ceiling — keeping the differential faithful) WITHOUT
-            // changing the ≤8-source form, FOLD the counts pairwise into one running total via DSL.from: each fold var
-            // is a from-sourced declaration ($sum = from($prev, $cj, (p,c) -> p+c)) matched by a bare pattern, so the
-            // consequence then binds only [subject, total]. from(...) gives the fold var a real binding source the
-            // consequence can resolve (a re-bound accumulate result cannot).
+            // consequence: sum the per-source counts; insert iff > 1 (insert-only -> NO no-loop). It binds the subject
+            // and one count per source, for any number of sources, as DRL's string sum has no ceiling either.
             List<Variable> vars = new ArrayList<>();
             vars.add(sVar);
-            RuleItemBuilder<?> consequence;
-            if (countVars.size() + 1 <= 9) {
-                vars.addAll(countVars);
-                final int nC = countVars.size();
-                consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
-                    int sum = 0;
-                    for (int c = 0; c < nC; c++) sum += ((Number) args[1 + c]).intValue();
-                    if (sum > 1) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, naam, args[0]));
-                });
-            } else {
-                Variable runningSum = countVars.get(0);            // seed with the first count (already a bound Number)
-                for (int j = 1; j < countVars.size(); j++) {
-                    final Variable prev = runningSum;
-                    Variable sumVar = DSL.declarationOf(Object.class,
-                            DSL.from((Variable) prev, (Variable) countVars.get(j),
-                                    (Function2) (p, c) -> ((Number) p).intValue() + ((Number) c).intValue()));
-                    items.add(PatternDSL.pattern(sumVar));
-                    runningSum = sumVar;
-                }
-                vars.add(runningSum);
-                consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
-                    if (((Number) args[1]).intValue() > 1) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, naam, args[0]));
-                });
-            }
-            if (consequence == null) { overgeslagen.add("uniciteit-unie (te veel bronnen): " + u.naam()); return rules; }
+            vars.addAll(countVars);
+            final int nC = countVars.size();
+            RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
+                int sum = 0;
+                for (int c = 0; c < nC; c++) sum += ((Number) args[1 + c]).intValue();
+                if (sum > 1) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, naam, args[0]));
+            });
             items.add(consequence);
             rules.add(PatternDSL.rule(kop(naam + " (" + subj.type().naam + " " + (s + 1) + ")")).build(items.toArray(new RuleItemBuilder[0])));
         }
@@ -7074,7 +7064,6 @@ public final class ExecModelTranspiler {
         // [subject, globals..., per fold its count (when bound) and its result]
         for (Vouwslot v : slots) vars.addAll(v.variabelen());
         RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), body);
-        if (consequence == null) return skip("objectcreatie (te veel gebonden variabelen: globals en vouwen): " + oc.naam());
 
         // the folds' accumulates join the related elements to $subject, so they follow the subject pattern + idempotence
         // guard (as a rule's follow its doel pattern). Order: pattern; extra; idemGuard; the folds; consequence.
@@ -7588,9 +7577,6 @@ public final class ExecModelTranspiler {
             for (int i = 0; i < w.length; i++) w[i] = fns.get(i).apply(s, gm);
             if (fout.test(w)) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
         });
-        if (consequence == null)
-            throw new IllegalStateException(compNaam + ": te veel gebonden variabelen voor de begeleider, meer dan de"
-                    + " gastregel kon binden");
         return companionRule(compNaam, hostNaam, incClass, sVar, pattern, extra, consequence, stratificatieSalience(r));
     }
 
@@ -7666,9 +7652,6 @@ public final class ExecModelTranspiler {
             fn.apply(s, gm);   // the value is discarded: only whether the path faulted matters
             if (sonde.heeftFoutGemeld()) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
         });
-        if (consequence == null)
-            throw new IllegalStateException(compNaam + ": te veel gebonden globals voor de sonde (" + gnames.size()
-                    + "), meer dan de gastregel kon binden");
         return consequence;
     }
 
@@ -8180,8 +8163,6 @@ public final class ExecModelTranspiler {
                 default -> { /* UNDECIDED: no write — the target keeps what the fact base holds */ }
             }
         });
-        if (consequence == null) return skipList("defaults (" + targetForm + "): te veel gebonden variabelen"
-                + " (aggregaties, vouwen en globals)");
 
         List<RuleItemBuilder<?>> items = new ArrayList<>();
         items.add(pattern);

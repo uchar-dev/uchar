@@ -96,6 +96,32 @@ class BindingVoorbijNegenWitnessTest {
         assertNull(speel(document(List.of(regel)), zaak));
     }
 
+    @Test void een_uniciteit_over_negen_bronnen() throws Exception {
+        // "Het vondstnummer van Strandvondst verenigd met Wrakvondst, …, Plankvondst moeten uniek zijn": per source
+        // a count of the instances of every source with the same number, so the consequence binds the subject and
+        // nine counts. ref and clingo: S1 and P1 share 7 and are inconsistent; W1 (8) is not. A flank, green before and
+        // after: past eight sources the counts were folded pairwise into one running total, which this binding replaces.
+        List<String> soorten = List.of("Strandvondst", "Wrakvondst", "Ankervondst", "Netvondst", "Tonvondst", "Kistvondst",
+                "Flesvondst", "Touwvondst", "Plankvondst");
+        List<String> typen = new ArrayList<>(), bronnen = new ArrayList<>();
+        for (String t : soorten) {
+            typen.add("{\"node\":\"ObjectType\",\"name\":\"" + t + "\",\"animate\":false,\"plural\":\"" + t + "en\","
+                    + "\"attributes\":[" + attribuut("vondstnummer", GEHEEL) + "],\"characteristics\":[]}");
+            bronnen.add("{\"node\":\"Source\",\"objectType\":\"" + t + "\",\"keys\":[\"vondstnummer\"]}");
+        }
+        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + String.join(",", typen) + "],\"factTypes\":[],"
+                + "\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]},"
+                + "\"rules\":{\"rules\":[],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],"
+                + "\"consistencies\":[],\"uniquenesses\":[{\"node\":\"Uniqueness\",\"name\":\"eenmalig vondstnummer\","
+                + "\"versions\":[{\"sources\":[" + String.join(",", bronnen) + "],\"validity\":{\"node\":\"Validity\"}}]}],"
+                + "\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[],\"prioritizedDefaults\":[]},"
+                + "\"diagnostics\":[]}";
+        String zaak = zaak(List.of(genummerd("S1", "Strandvondst", 7), genummerd("W1", "Wrakvondst", 8),
+                        genummerd("P1", "Plankvondst", 7)), "",
+                List.of(inconsistent("S1"), inconsistent("P1")));
+        assertNull(speel(ir, zaak));
+    }
+
     // ---------------- documents ----------------
 
     private static final String DATUM = "{\"node\":\"Date\",\"precision\":\"day\"}";
@@ -215,6 +241,15 @@ class BindingVoorbijNegenWitnessTest {
         return "{\"label\":\"" + label + "\",\"objectType\":\"Vondst\",\"attributes\":{\"soort\":{\"text\":\"" + soort + "\"}"
                 + (bergdag == null ? "" : ",\"bergdag\":{\"date\":\"" + bergdag + "\"}") + ",\"gewicht\":{\"number\":\""
                 + gewicht + "\"}},\"roles\":{\"jutter\":[\"" + jutter + "\"]},\"characteristics\":[]}";
+    }
+
+    private static String genummerd(String label, String type, int nummer) {
+        return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{\"vondstnummer\":{\"number\":\""
+                + nummer + "\"}},\"roles\":{},\"characteristics\":[]}";
+    }
+
+    private static String inconsistent(String label) {
+        return "{\"kind\":\"inconsistent\",\"rule\":\"eenmalig vondstnummer\",\"label\":\"" + label + "\"}";
     }
 
     private static String datum(String label, String attribuut, String iso) {
