@@ -157,9 +157,10 @@ witness `KetenVoorwaardeWitnessTest`, measured 2026-10-01): a relation in the mi
 sets while the rules run is seen, which a join on the reached object alone does not see; a rule's value that reads a
 chain takes the same joins. A comparison, a leeg or gevuld test and a date computation lower over a chain as over one
 role, and a navigated operand of a date computation — a date plus or minus a duration, also a duration parameter, one
-role away or more — lowers as it does without navigation. A chain lowers only where the condition's joins cover it: in
-the matrix or the subselection of a fold it keeps the fold's named refusal, and a consistency rule's assertion over a
-chain is refused (`schending buiten Phase-D scope`) where one over one role plays. A comparison this branch does not
+role away or more — lowers as it does without navigation. A chain lowers only where joins cover it: in a condition,
+and since 2026-10-01 in the subselection of a fold and the matrix of a quantifier fold (the section on a fold whose
+subselection tests a value derived later); a consistency rule's assertion over a chain is refused (`schending buiten
+Phase-D scope`) where one over one role plays. A comparison this branch does not
 lower over one role either, such as an own number on the left of a navigated one or a date computation against a date
 parameter, is refused over a chain in the same words. A characteristic check over two roles does not reach this branch:
 the wire's navigated check carries one to-one hop (IR-SPEC ch. 4.5), and the frontend leaves the check unresolved,
@@ -379,3 +380,22 @@ werkelijk 1` before); see the section on a reader after the writers of what it r
 temporal attribute of a set with a subselection, which keeps NO_LOOP. The DRL-text branch, whose rules watch what they
 read, revises a fold in a value, but fires a condition on the transient (`verwacht leeg, werkelijk 1`), keeps a maximum
 whose subselection emptied (`verwacht leeg, werkelijk 20`), and refuses a document with a defaults group.
+
+A subselection, or the matrix of a quantifier fold, that reads through a role of the element ("die aan de volgende
+voorwaarde voldoen: zijn vinddag is later dan de sluitdag van de jutter van de Vondst") reads another object than the
+element. The exec-model branch tested it on the element's pattern, which runs when the element is inserted or updated
+and not when the reached object is, so a value another rule, a defaults group or an allocation wrote there later was not
+seen: measured 2026-10-01 with `ref` and clingo as the arbiters, the earliest such vinddag read leeg, a count 0, a sum and
+a maximum leeg, a leeg test on the far member counted every vondst, and a count or a quantifier in a condition never
+fired; a chain of two roles and a date computation with the far member in a subselection were refused by name. Now the
+source of the accumulate takes a join per object those reads reach (for a chain, per object it passes), and the
+subselection goes on the element bound again after those joins (`ExecModelTranspiler.elementtoets`, `verreJoins`), the
+shape a condition over a role has; a quantifier fold collects its elements over the same joins, so its matrix is asked
+again when a reached object changes. The join is on `Object` and binds the element itself where the role reaches
+nothing, since the source of an accumulate carries no OR beside the join; every element keeps one tuple, and a read
+over an absent relation is leeg. A union selection that reads through a role of the element is refused by name: its
+selections share one element pattern. Golden `jutterswet-late-vondst`, witness `VouwfilterVerreKantWitnessTest`. A rule
+that updates the element after the writer (a characteristic on the element, an object creation that links the reached
+object to it) played before as well. The DRL-text branch writes such a test into the element pattern of its accumulate
+or quantifier and answered with the members it had at insertion (`verwacht 2, werkelijk 0`); it refuses the form by name
+(`een subselectie of matrix die via een rol van het element leest`), also where the answer happened to hold.
