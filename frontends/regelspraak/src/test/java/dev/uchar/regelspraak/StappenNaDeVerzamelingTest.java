@@ -195,6 +195,30 @@ class StappenNaDeVerzamelingTest {
                 m.errors().stream().map(RegelSpraakModel.Diagnostic::message).toList());
     }
 
+    @Test void een_vouw_over_een_subtype_en_een_over_zijn_supertype_delen_het_lid_in_elke_volgorde() {
+        // the member stands on the filler of the first step's other role (Jutter), so the fold over the strandjutters
+        // reads it inherited, whether it comes before or after the fold over the jutters
+        String model = MODEL.replace("Objecttype de Vondst (mv: Vondsten)",
+                "Objecttype de Strandjutter is een Jutter (mv: Strandjutters)\n    de vergunning Datum in dagen;\n\n"
+                + "Objecttype de Vondst (mv: Vondsten)")
+                + "Feittype PloegHeeftStrandjutter\n    de strandploeg Ploeg\n    de strandjutter (mv: strandjutters) "
+                + "Strandjutter\nEén strandploeg heeft meerdere strandjutters\n\n";
+        String strand = "Regel strand\n    geldig altijd\n        Het zwaarste gewicht van een Ploeg moet berekend worden "
+                + "als de maximale waarde van het gewicht van de weging van de vondst van alle strandjutters van de Ploeg.\n\n";
+        String alle = "Regel alle\n    geldig altijd\n        Het vondstgewicht van een Ploeg moet berekend worden als de "
+                + "som van het gewicht van de weging van de vondst van alle jutters van de Ploeg.\n\n";
+        for (String bron : List.of(model + strand + alle, model + alle + strand)) {
+            RegelSpraakModel m = schoon(bron);
+            assertNotNull(m.objecttypen.get("Jutter").attributen.get("gewicht via vondst en weging"));
+            assertNull(m.objecttypen.get("Strandjutter").attributen.get("gewicht via vondst en weging"));
+            assertEquals(1, m.resolvedRegels.stream().filter(r -> r.naam().equals("gewicht via vondst en weging")).count());
+            Expr.AttribuutRef a = assertInstanceOf(Expr.AttribuutRef.class,
+                    assertInstanceOf(Expr.Functie.class, regel(m, "strand").waarde()).argumenten().get(0));
+            assertEquals("gewicht via vondst en weging", a.attribuut());
+            assertEquals("Strandjutter", a.objecttype().naam);
+        }
+    }
+
     // ---- what stays as it was
 
     @Test void een_lezing_van_dezelfde_keten_buiten_de_vouw_blijft_een_keten() {

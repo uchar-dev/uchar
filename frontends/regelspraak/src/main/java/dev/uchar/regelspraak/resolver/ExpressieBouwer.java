@@ -821,13 +821,15 @@ final class ExpressieBouwer {
      * the member "gewicht van de weging van de vondst" of the element type, which no type declares. The steps are
      * walked from the element type as {@link #attribuutRef} walks a chain from the subject (fewest steps first, each a
      * to-one role, the rest of the name a declared attribute of the type reached); where they reach a scalar member,
-     * the element type gets a generated member "&lt;lid&gt; via &lt;rol 1&gt;, … en &lt;rol n&gt;" of that member's
-     * datatype, set by a generated rule from the chain ({@link RuleChecker#hulpregels}), and the fold ranges over it,
-     * a subselection staying on the element. The wire, the verifier and the executors see the document an author
-     * writes by hand with such a member. Two folds over the same steps share one member; a member of that name in the
-     * element's inheritance line refuses the lowering with an ERROR. A step that is no to-one role, a member that is
-     * time-dependent or dimensioned, and every other shape keep the arguments as they are, and with them the refusal
-     * of an undeclared member below.
+     * a generated member "&lt;lid&gt; via &lt;rol 1&gt;, … en &lt;rol n&gt;" of that member's datatype is declared,
+     * set by a generated rule from the chain ({@link RuleChecker#hulpregels}), and the fold ranges over it, a
+     * subselection staying on the element. The member stands on the type that fills the other role of the first
+     * step's fact type, where the element type is that type or a subtype of it and the steps read the same from it:
+     * a fold over a subtype and one over its supertype then share one member, whatever their order in the document.
+     * The wire, the verifier and the executors see the document an author writes by hand with such a member. Two
+     * folds over the same steps share one member; a member of that name in the inheritance line refuses the lowering
+     * with an ERROR. A step that is no to-one role, a member that is time-dependent or dimensioned, and every other
+     * shape keep the arguments as they are, and with them the refusal of an undeclared member below.
      */
     private List<Expr> stappenNaDeVerzameling(Expr.FunctieKind kind, List<Expr> argumenten, FunctieAanroepContext f) {
         boolean waardevouw = switch (kind) {
@@ -841,12 +843,13 @@ final class ExpressieBouwer {
         Objecttype element = sa.objecttype();
         String[] delen = sa.attribuut().split("\\s+van\\s+");
         List<String> rollen = new ArrayList<>();
-        Objecttype cur = element;
+        Objecttype cur = element, eersteDoel = null;
         for (int i = delen.length - 1; i >= 1; i--) {
             RegelSpraakModel.KetenHop hop = model.ketenHop(cur, stripArtikel(delen[i]).trim());
             if (hop == null) return argumenten;
             rollen.add(hop.rol());
             cur = hop.doel();
+            if (eersteDoel == null) eersteDoel = cur;
             String prefix = String.join(" van ", java.util.Arrays.copyOfRange(delen, 0, i));
             String lid = cur.attribuutNaam(prefix);
             if (lid == null) {
@@ -855,7 +858,7 @@ final class ExpressieBouwer {
             }
             if (lid == null) continue;
             if (cur.granulariteitVan(lid) != null || !cur.dimensiesVan(lid).isEmpty()) return argumenten;
-            Hulplid h = hulplid(element, lid, cur, rollen, sa, f);
+            Hulplid h = hulplid(drager(element, eersteDoel, rollen, cur), lid, cur, rollen, sa, f);
             if (h == null) return argumenten;
             return List.of(new Expr.AttribuutRef(h.naam(), element, sa.onderwerpBron(), sa.navigatieRol(), h.type(),
                     sa.bron(), true, sa.navigatiePad(), sa.bereikPad(), sa.kwantor(), sa.drempel()));
@@ -863,10 +866,25 @@ final class ExpressieBouwer {
         return argumenten;
     }
 
-    /** The member {@link #stappenNaDeVerzameling} folds over: the one generated for the same steps on the element
-     *  type or an ancestor, or a new one declared on the element type. Null, with an ERROR at the fold, when a member
-     *  of that name stands anywhere in the element's inheritance line — declared by the author, or generated on a
-     *  subtype by an earlier fold (one instance would carry two members of one name, WF-105). */
+    /** The type a generated member stands on: the filler of the other role of the first step's fact type, where the
+     *  element type is that type or a subtype of it and the steps reach the same type from it; else the element type
+     *  itself (a reciprocal fact type, a first step that binds no unique role from the element). */
+    private Objecttype drager(Objecttype element, Objecttype eersteDoel, List<String> rollen, Objecttype doel) {
+        RegelSpraakModel.RolBindingRef b = model.verbindendeRolViaNaamBinding(element, eersteDoel, rollen.get(0));
+        RegelSpraakModel.Feittype ft = b == null ? null : model.feittypen.get(b.feittype());
+        if (ft == null || ft.rollen.size() != 2) return element;
+        RegelSpraakModel.Rol ander = ft.rollen.get(0).naam().equals(b.rol()) ? ft.rollen.get(1) : ft.rollen.get(0);
+        if (ander.naam().equals(b.rol())) return element;
+        Objecttype vuller = model.objecttypeOpNaam(ander.objecttypeNaam());
+        if (vuller == null || vuller == element || !element.isEen(vuller)) return element;
+        List<Objecttype> bereikt = model.volgKeten(vuller, rollen);
+        return bereikt != null && !bereikt.isEmpty() && bereikt.get(bereikt.size() - 1) == doel ? vuller : element;
+    }
+
+    /** The member {@link #stappenNaDeVerzameling} folds over, on {@code element}, the type {@link #drager} chose: the
+     *  one generated for the same steps on that type or an ancestor, or a new one declared on it. Null, with an ERROR
+     *  at the fold, when a member of that name stands anywhere in that type's inheritance line — declared by the
+     *  author, or generated on a subtype (one instance would carry two members of one name, WF-105). */
     private Hulplid hulplid(Objecttype element, String lid, Objecttype doel, List<String> rollen,
                             Expr.AttribuutRef sa, FunctieAanroepContext f) {
         String naam = lid + " via " + (rollen.size() == 1 ? rollen.get(0)
