@@ -4405,6 +4405,15 @@ public final class ExecModelTranspiler {
                 && !(vlit.rechts() instanceof Expr.Literal))
             return leafPredicate(new Conditie.Vergelijking(Operatoren.omkeren(vlit.op()), vlit.rechts(), vlit.links(),
                     vlit.periode(), vlit.bron()), subject);
+        // §8.1.1 the same normalisation for an OWN number on the left of a NAVIGATED one ("zijn gewicht groter is dan de
+        // afgeleide diepte van de haven van de jutter van de Vondst"): the numeric arm below keys on the navigated read
+        // on the LEFT, so this sentence declined where its mirror ("… kleiner is dan zijn gewicht") and "zijn gewicht
+        // maal 1 groter is dan …" lowered. After the swap the own read sits on the right, so it cannot re-trigger.
+        if (c instanceof Conditie.Vergelijking vom && vom.links() instanceof Expr.AttribuutRef ol && ongenavigeerd(ol)
+                && vom.rechts() instanceof Expr.AttribuutRef nr && !ongenavigeerd(nr) && isNumeriekOp(vom.op())
+                && eff.typeVan(ol).isNumeriek() && eff.typeVan(nr).isNumeriek())
+            return leafPredicate(new Conditie.Vergelijking(Operatoren.omkeren(vom.op()), vom.rechts(), vom.links(),
+                    vom.periode(), vom.bron()), subject);
         // §8.1.8 kenmerkcheck — an own kenmerk (boolean property == !negatie) or a to-one navigated one
         // ("zijn partner heeft een <k>"), read null-safely through the reference (a null relation never matches).
         if (c instanceof Conditie.Kenmerk k) {
