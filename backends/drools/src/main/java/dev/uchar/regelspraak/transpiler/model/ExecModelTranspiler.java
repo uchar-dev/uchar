@@ -7267,11 +7267,23 @@ public final class ExecModelTranspiler {
         // the HOST rule name and the subject — and a separate suffix space for path-probed sites would make a
         // bare site's name depend on which OTHER sites lower. Recorded as an open point on the card.
         List<Plek<Expr.Binair>> kwalificeren = new ArrayList<>();
+        List<Expr.Binair> vouwplekken = new ArrayList<>();
         for (Plek<Expr.Binair> p : delingen)
             if (kwalificeertOperand(p.site().links(), p.drager(), subject) && kwalificeertOperand(p.site().rechts(), p.drager(), subject))
                 kwalificeren.add(p);
+            else if (p.drager() == null && (bevatVouw(p.site().links()) || bevatVouw(p.site().rechts())))
+                vouwplekken.add(p.site());
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
+        // §6.5 with a fold operand: a filled dividend over a leeg divisor, both read from the operands as the host
+        // reads them (vouwCompanion).
+        for (int i = 0; i < vouwplekken.size(); i++) {
+            Expr.Binair d = vouwplekken.get(i);
+            Rule companion = vouwCompanion(r, subject, factClass, incClass, naam + " (deling door een lege vouw"
+                    + (vouwplekken.size() > 1 ? " " + (i + 1) : "") + ")", List.of(d.links(), d.rechts()),
+                    w -> w[0] != null && w[1] == null);
+            if (companion != null) companions.add(companion);
+        }
         for (int i = 0; i < kwalificeren.size(); i++) {
             Plek<Expr.Binair> plek = kwalificeren.get(i);
             Expr.Binair d = plek.site();
@@ -7309,11 +7321,23 @@ public final class ExecModelTranspiler {
         // Collect the QUALIFYING wortels (radicand a re-readable own OR to-one navigated attribute), so the
         // companion-name suffix indexes over the SAME filtered list as DRL's wortelNegatiefFout `guards`.
         List<Plek<Expr.Functie>> kwalificeren = new ArrayList<>();
+        List<Expr> vouwradicanden = new ArrayList<>();
         for (Plek<Expr.Functie> p : wortels)
             if (p.site().argumenten().size() == 1 && kwalificeertOperand(p.site().argumenten().get(0), p.drager(), subject))
                 kwalificeren.add(p);
+            else if (p.site().argumenten().size() == 1 && p.drager() == null && bevatVouw(p.site().argumenten().get(0)))
+                vouwradicanden.add(p.site().argumenten().get(0));
         List<Rule> companions = new ArrayList<>();
         String naam = r.naam();
+        // §6.6 with a fold in the radicand: a negative radicand, read as the host reads it (vouwCompanion).
+        for (int i = 0; i < vouwradicanden.size(); i++) {
+            Rule companion = vouwCompanion(r, subject, factClass, incClass, naam + " (wortel van een negatieve vouw"
+                    + (vouwradicanden.size() > 1 ? " " + (i + 1) : "") + ")", List.of(vouwradicanden.get(i)), w -> {
+                        BigDecimal getal = RegelSpraakRuntime.toBd(w[0]);
+                        return getal != null && getal.signum() < 0;
+                    });
+            if (companion != null) companions.add(companion);
+        }
         for (int i = 0; i < kwalificeren.size(); i++) {
             Plek<Expr.Functie> plek = kwalificeren.get(i);
             // null-safe reader for the radicand — own attribute or a to-one navigated read (null relation -> leeg);
@@ -7445,6 +7469,94 @@ public final class ExecModelTranspiler {
             verzamelWortels(g.minimum(), drager, uit);   // mirror DRL verzamelWortels — a wortel inside a min/max bound
             verzamelWortels(g.maximum(), drager, uit);
         }
+    }
+
+    /** Whether {@code e} holds a fold over a set source ({@link #isInstantievouw}), whose value only an accumulate gives. */
+    private static boolean bevatVouw(Expr e) {
+        return Expr.bevat(e, x -> x instanceof Expr.Functie f && isInstantievouw(f));
+    }
+
+    /** A §6.5/§6.6 companion for a site OUTSIDE every ch. 4.10 node whose operand holds a fold over a set source: a sum
+     *  or a minimum as the divisor, a fold inside a compound operand, the radicand of a root. {@link #companionOperand}
+     *  reads no fold, so such a site had no companion, and the case read consistent where ref deposits (RUNTIME-SEMANTICS
+     *  ch. 1.2: an empty sum or minimum is leeg). The companion lowers the site's operands as the host lowers its value —
+     *  each fold an accumulate on the companion's own left side, read back from its slot ({@link #vouwslot}), so an
+     *  empty source reads leeg and a count reads 0 — with the joins the host takes for a navigated read, and decides the
+     *  insert in its consequence: {@code fout} over the operand values. It evaluates the operands and not the site, so a
+     *  divisor of 0 stays the host's fault at fire and never becomes a deposit (ref: "division by numeric zero"). The
+     *  host lowered the same operands with the same folds and globals, so a lowering that fails here is an invariant
+     *  violation and fails fast; null only where the host's condition does not lower, as {@link #padCompanion}. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Rule vouwCompanion(ResolvedRegel r, Objecttype subject, Class<?> factClass, Class<?> incClass, String compNaam,
+                               List<Expr> operanden, java.util.function.Predicate<Object[]> fout) {
+        seq = 0;
+        Variable sVar = DSL.declarationOf(factClass, "$subject");
+        PatternDSL.PatternDef pattern = PatternDSL.pattern(sVar);
+        List<RuleItemBuilder<?>> extra = new ArrayList<>();
+        Set<String> gejoind = new LinkedHashSet<>();
+        if (r.voorwaarde() != null) {                       // the site only runs when the host's condition holds
+            Gate gate = regelVoorwaarde(r.voorwaarde(), pattern, subject, sVar, factClass, gejoind);
+            if (gate == null) return null;
+            pattern = gate.pattern();
+            extra.addAll(gate.extra());
+        }
+        pattern = geldigGuard(pattern, r.geldigheid());   // §4.2 the companion only flags inside the host's window
+        // The freshness idiom: an own operand beside the fold re-runs the companion when the subject changes.
+        pattern = pattern.expr(nextId("fresh"), (Predicate1) (s -> true));
+        List<Vouwslot> slots = new ArrayList<>();
+        List<BiFunction<Object, Map<String, BigDecimal>, Object>> fns = new ArrayList<>();
+        Set<String> globals = new LinkedHashSet<>();
+        boolean prev = ketenWaardePad;
+        try {
+            ketenWaardePad = true;
+            vouwslots = slots;
+            vouwOnderwerp = sVar;
+            for (Expr o : operanden) {
+                WaardeFn wf = scalarWaarde(subject, o);
+                if (wf == null)
+                    throw new IllegalStateException(compNaam + ": een operand van de §6.5/§6.6-plek lowert niet, terwijl de"
+                            + " gastregel lowerde — bron: " + o.bron());
+                fns.add(wf.fn());
+                globals.addAll(wf.globals());
+                List<RuleItemBuilder<?>> navWatch = navReactiviteit(o, subject, sVar, gejoind);
+                if (navWatch == null)
+                    throw new IllegalStateException(compNaam + ": " + navReden + ", terwijl de gastregel lowerde");
+                extra.addAll(navWatch);
+            }
+        } finally {
+            ketenWaardePad = prev;
+            vouwslots = null;
+            vouwOnderwerp = null;
+        }
+        List<String> gnames = new ArrayList<>(globals);
+        List<Variable> vars = new ArrayList<>();
+        vars.add(sVar);
+        for (String gn : gnames) {
+            Global<?> g = waardeGlobal(gn);
+            if (g == null)
+                throw new IllegalStateException(compNaam + ": een operand leest de niet-geregistreerde global " + gn
+                        + " die de gastregel wel bond");
+            vars.add((Variable) g);
+        }
+        for (Vouwslot v : slots) {
+            extra.add(v.agg().accItem());
+            vars.addAll(v.variabelen());
+        }
+        final int vouwVanaf = 1 + gnames.size();
+        String fqcn = FACTS + ".Inconsistentie", hostNaam = r.naam();
+        RuleItemBuilder<?> consequence = consequenceOf(vars.toArray(new Variable[0]), (drools, args) -> {
+            Object s = args[0];
+            Map<String, BigDecimal> gm = new LinkedHashMap<>();
+            vulGlobalMap(gm, gnames, args, 1);
+            vulVouwslots(gm, slots, args, vouwVanaf, s);
+            Object[] w = new Object[fns.size()];
+            for (int i = 0; i < w.length; i++) w[i] = fns.get(i).apply(s, gm);
+            if (fout.test(w)) drools.insert(RegelSpraakRuntime.newInconsistentie(fqcn, hostNaam, s));
+        });
+        if (consequence == null)
+            throw new IllegalStateException(compNaam + ": te veel gebonden variabelen voor de begeleider, meer dan de"
+                    + " gastregel kon binden");
+        return companionRule(compNaam, hostNaam, incClass, sVar, pattern, extra, consequence);
     }
 
     /** One §6.5/§6.6 companion rule over the host's own gate (voorwaarde + §4.2 window). A site OUTSIDE every
