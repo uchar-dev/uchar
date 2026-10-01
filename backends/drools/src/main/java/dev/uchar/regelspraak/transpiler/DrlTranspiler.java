@@ -2584,6 +2584,29 @@ public final class DrlTranspiler {
         return !navigatieBindingen.containsKey(a);
     }
 
+    /** The refusal of a test per element that reads through a role of the element (see {@link #leestViaElementrol}). */
+    private static final String ELEMENTROL_REDEN = "een subselectie of matrix die via een rol van het element leest: deze"
+            + " tak schrijft haar in het elementpatroon, en een latere schrijving op het bereikte object toetst haar niet"
+            + " opnieuw (IR-SPEC ch. 5.5)";
+
+    /** Whether {@code c}, a test per element of a set fold — the subselection of a fold or of a union selection, or the
+     *  matrix of a quantifier fold, read with the element as subject (RUNTIME-SEMANTICS ch. 3.4a, 3.9a) — reads through
+     *  a role of the element: an attribute over a navigation, or a navigated characteristic check. This branch writes
+     *  such a test into the element pattern of its accumulate or quantifier, where it runs when the element is inserted
+     *  or updated and not when the object it reaches is, so a value another rule writes there later went unseen
+     *  (measured 2026-10-01: a count 0 where ref and clingo count 2, a condition that never fired). The exec-model
+     *  branch joins the reached object in the source; this branch refuses the form by name ({@link #ELEMENTROL_REDEN}). */
+    private boolean leestViaElementrol(Conditie c) {
+        if (c == null) return false;
+        if (Conditie.bevatOperand(c, x -> x instanceof Expr.AttribuutRef a && !ongenavigeerd(a))) return true;
+        return switch (c) {
+            case Conditie.Kenmerk k -> genavigeerd(k);
+            case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(this::leestViaElementrol);
+            case Conditie.Kwantorvouw kv -> leestViaElementrol(kv.filter()) || leestViaElementrol(kv.toets());
+            default -> false;
+        };
+    }
+
     /** A read whose bindings walk more than one hop: the §13.4.1 chain. */
     private boolean keten(Expr.AttribuutRef a) {
         return navigatieBindingen.containsKey(a) && navigatieBindingen.get(a).size() > 1;
@@ -3761,6 +3784,7 @@ public final class DrlTranspiler {
         String ev = "$e" + n, var = "$tl" + n;
         String filterScope = ident(rol, false) + " == " + SUBJECT;
         if (f.filter() != null) {
+            if (leestViaElementrol(f.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, f.filter(), elem);                 // §13.4.2 die/dat subselectie on the element
             if (fc.marker()) return null;                              // unstructured filter -> marker
             filterScope = filterScope + ", " + fc.text();
@@ -4186,6 +4210,7 @@ public final class DrlTranspiler {
         java.util.List<String> bereik = new ArrayList<>();
         if (plan == null) bereik.add(scope.text());
         if (f.filter() != null) {
+            if (leestViaElementrol(f.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, f.filter(), elem);  // Kenmerk -> bare element property; Onopgelost -> marker
             if (fc.marker()) return null;
             bereik.add(fc.text());
@@ -4296,6 +4321,7 @@ public final class DrlTranspiler {
             String join = unieScope(elem, subject, t.bronRol());
             if (join == null) return null;          // navReden set by unieScope
             if (t.filter() == null) { delen.add("(" + join + ")"); continue; }
+            if (leestViaElementrol(t.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, t.filter(), elem);
             if (fc.marker()) return null;
             delen.add("(" + join + " && " + fc.text() + ")");
@@ -5066,6 +5092,7 @@ public final class DrlTranspiler {
                     : "geen verbindende rol tussen " + subject.naam + " en " + elem.naam);
         if (!navVeld("kwantorvouw-bereik", elem, rol, subject))
             return kvMarker(kv, "de bereik-join heeft geen beanveld — " + navReden);
+        if (leestViaElementrol(kv.filter()) || leestViaElementrol(kv.toets())) return kvMarker(kv, ELEMENTROL_REDEN);
         final int mark = acc.clausules.size();
         StringJoiner delen = new StringJoiner(", ");
         delen.add(ident(rol, false) + " == " + SUBJECT);
