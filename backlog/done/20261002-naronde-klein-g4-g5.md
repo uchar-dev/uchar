@@ -271,3 +271,146 @@ record raakt alleen `backlog/`); zeventien regels `exit 0` en `DONE`:
   volgende kleine exec-ronde; 2, 3 en 4 aanvaard zoals geadviseerd (geen
   bestaande zinnen verleggen zonder besluit van de eigenaar); 6 (de
   distributiepin) volgt nu.
+
+## Vervolg: de handler weg (2026-10-02)
+
+*Opdracht van de hoofdsessie van 2026-10-02 (`uchar-fix-nuldelingmelder`),
+gebouwd vanaf uchar `385b36a5` op de tak `fix/nuldelingmelder`. Metingen en
+meetscripts in `/tmp/v2/fix-nuldelingmelder/` (meting/, tool/), de distributie
+gemeten in een eigen worktree zonder commits.*
+
+**Aanleiding.** De distributie op uchar `385b36a5` (tak vanaf distributie
+`98cf0f9`): `mvn -B -o verify` rood in de Quarkus-adapter, `GoldenOverQuarkusTest`
+`Tests run: 30, Failures: 27`. Elk van de 26 gespeelde scenario's kreeg 500 met
+
+    java.lang.ClassCastException: class dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder
+    cannot be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler
+    (dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder is in unnamed module of loader 'app';
+    org.kie.api.runtime.rule.ConsequenceExceptionHandler is in unnamed module of loader
+    io.quarkus.bootstrap.classloading.QuarkusClassLoader @7945b206)
+
+op `DefaultAgenda.<init>(DefaultAgenda.java:153)` ←
+`StatefulKnowledgeSessionImpl.<init>` ← `SessionsAwareKnowledgeBase.newKieSession`
+← `Uitvoerder.vuur(Uitvoerder.java:62)`; de 27e failure is de slottelling.
+Drools neemt een consequentiehandler op klassenaam
+(`ConsequenceExceptionHandlerOption`) en maakt hem aan in elke nieuwe sessie; in
+die test laadde de app-lader de handler en de QuarkusClassLoader het
+kie-interface. Nagemeten op dezelfde commit: in de verpakte Quarkus-dienst
+(`quarkus-run.jar`) en in de JDK-dienst opende elke sessie en noemde het log de
+benoemde `DelingDoorNul` van de handler. De breuk zat in de klassenlading van de
+Quarkus-test, die `make poorten` draait; de pin op `385b36a5` bleef daardoor
+ongezet.
+
+**Wat er landde.** Commit `435e80b9`: beide takken bouwen hun KieBase weer
+zonder optie, dus met de standaardhandler van Drools, en
+`DroolsBackend.Nuldelingmelder` is weg. Nieuw is de publieke
+`static RuntimeException DroolsBackend.benoem(ConsequenceException e)`: staat er
+een `Breuk.DelingDoorNul` in de oorzaakketen, dan geeft zij
+`nul.inDeRegel(e.getRule().getName(), e.getCause())`, dezelfde benoemde fout met
+dezelfde zin en dezelfde oorzaak (wat de consequentie gooide) als de handler gaf;
+elke andere `ConsequenceException` geeft zij ongewijzigd terug.
+`CaseRunner.vuurTotFixpunt`, de enige plek in `backends/drools` die een sessie
+vuurt (de replay van `DroolsBackendMain` en de getuigennaden via `runCase`, het
+scenariorapport via `rapport`, de rode route via `fireRood`, en `naFire`), vangt
+de `ConsequenceException` en gooit `DroolsBackend.benoem(e)`. Een afnemer die
+zelf vuurt, zoals de dienst, krijgt de `ConsequenceException` van Drools, met de
+regelnaam en `DelingDoorNul` ("Breuk deling door 0") in de oorzaakketen (op de
+exectak, die de dienst bouwt, als directe oorzaak), en kan `benoem` net zo
+aanroepen. README, sectie "Recorded: a division by a numeric zero": de
+benoeming na de fire, waarom geen handler op klassenaam, de hulpmethode. Commit
+`331967de` zet in README en javadoc waar de cast faalde (de Quarkus-test, niet
+de verpakte dienst). `NuldelerWitnessTest` is ongewijzigd:
+zij loopt via `CaseRunner` en steunt op de zin, niet op de handler; 7 van 7
+groen. Commit `69ed2ec3` voegt de getuige `NuldelerAfnemerWitnessTest` toe (3
+rijen): een KieBase van `DroolsBackend` die vuurt zoals de dienst geeft op beide
+takken de `ConsequenceException` van Drools met de regel en de deling in de
+keten; `benoem` geeft de zin van de replay, met dezelfde oorzaak als de
+`ConsequenceException`; een andere fout gaat ongewijzigd door. Rood op de backend van `385b36a5`: `Tests run: 3,
+Failures: 2, Errors: 1` (`expected: <…ConsequenceException> but was:
+<…Breuk.DelingDoorNul>`, op elk van beide takken, en `NoSuchMethodException` op
+`benoem`). Commit `437fdd12` maakt README en javadoc precies over de DRL-tak (de
+deling zit daar dieper in de keten, onder de uitzondering van MVEL) en over de
+defaults (alleen de exectak).
+
+**Metingen.** Jar vóór = bouw van `385b36a5`, na = bouw van `435e80b9`
+(`331967de`, `69ed2ec3` en `437fdd12` raken alleen commentaar, README en een
+test).
+
+- De nuldeler in `cases` en `scenario`: de zeven probes van de naronde
+  (`/tmp/v2/naronde-g4-g5/probe/nuldeler/`) en de case v4
+  (`/tmp/v2/probe/g4-g5-exec/v4/`), elk door `DroolsBackendMain` (exec en
+  `--drl`), `DroolsRoodMain` en `CaseRunner.rapport`: vóór en na byte-gelijk.
+  Bijvoorbeeld de gewone regel: `ERROR DelingDoorNul: deling door nul in de regel
+  "verhouding": 60 gedeeld door 0 — …`, in het rapport `FAIL case1-…: ERROR
+  DelingDoorNul: …`, op de rode route `FAULT DelingDoorNul: … <- DelingDoorNul:
+  Breuk deling door 0`; de deling in een voorwaarde blijft
+  `ConstraintEvaluationException`, de lege teller PLAYED en PASS.
+- Rode route: alle 42 rode cases door `DroolsRoodMain`, vóór en na gelijk.
+- Sweep: de 291 goldens met cases door beide takken, 582 statusregels, vóór en
+  na gelijk; exectak PLAYED 239, DRL-tak 193; de pins 239/193 ongewijzigd.
+- De distributie (gedraaid: `bash scripts/check-pin.sh`, `mvn -B -o verify`,
+  `bash scripts/check-tweelingen.sh`, `bash scripts/check-dienst-replay.sh`,
+  `make scenario-test`, elk los; niet `make poorten`, dat op check-pin stopt
+  omdat de submodule niet op de vastgelegde commit staat):
+
+  | | uchar `385b36a5` | uchar `437fdd12` |
+  |---|---|---|
+  | reactor | BUILD FAILURE (Quarkus-adapter) | BUILD SUCCESS |
+  | backend / frontend / service | 1077 / 121 / 235, 0 failures | 1080 / 121 / 235, 0 failures |
+  | `GoldenOverQuarkusTest` | 30 tests, 27 failures (ClassCastException) | 30 tests, 0 failures |
+  | service-quarkus | 43 tests, 27 failures | 43 tests, 0 failures |
+  | check-tweelingen | PASS (18 cases) | PASS (18 cases) |
+  | check-dienst-replay | PASS, 212 goldens, 568 cases | PASS, 212 goldens, 568 cases |
+  | scenario-test | 29 ok, 3 uitgesloten, 0 mismatch | 29 ok, 3 uitgesloten, 0 mismatch |
+
+  Op `435e80b9` en `331967de` dezelfde uitkomst, met 1077 backendtests, en op
+  `69ed2ec3` dezelfde als op `437fdd12`.
+- De dienst op een nuldeler (de zeven probes als verzoek, met de descriptor die
+  `scripts/dienst_replay.py` schrijft; vóór op `385b36a5`, na op `435e80b9`): de
+  JDK-dienst antwoordt vóór en na 500
+  `{"fout":"interne fout"}`; het log noemde vóór de benoemde `DelingDoorNul`
+  ("deling door nul in de regel "verhouding": 60 gedeeld door 0 — …"), na
+  `Exception executing consequence for rule "verhouding" in defaultpkg:
+  dev.uchar.regelspraak.runtime.Breuk$DelingDoorNul: Breuk deling door 0` (de
+  regel genoemd, de operanden niet). De verpakte Quarkus-dienst antwoordt vóór en
+  na 500 met een error id en logt hetzelfde; vóór zonder ClassCastException. De
+  lege teller geeft in beide 200, de deling in een voorwaarde in beide
+  `ConstraintEvaluationException`.
+
+**Gates.** De zestien van `/tmp/v2/uchar-gates25/run.sh`, `dune build` vooraf,
+elk script onder zijn shebang, op de kop `437fdd12` (de laatste commit buiten
+`backlog/`; de commit met dit vervolg raakt alleen `backlog/`); zeventien regels
+`exit 0` en `DONE 04:54:03` (op `69ed2ec3` eerder ook, `DONE 04:39:58`):
+
+     1. check-self-contained: PASS
+     2. check-ir-schema: PASS (… 334 file(s) validate and round-trip, floor 192)
+     3. check-case-schema: PASS (… 842 case file(s) validate)
+     4. check-verifier: PASS (334 golden clean; 503 negatief rejected …)
+     5. check-oracle: PASS (ref suite 1152 worked examples, floor 489; 800 cases replayed exactly, floor 427 …)
+     6. check-clingo: PASS (backend suite 1988 checks, floor 83; 800 cases replay exactly through clingo …)
+     7. check-noop: PASS (756 cases refute a do-nothing executor; 44 pinned survivors …)
+     8. check-rood: PASS (42 red cases fault observably in ref and clingo, floor 26 …; Drools leg 14 fault-pinned, 28 not-carried with reason)
+     9. check-catala: PASS (241 checks, floor 201; 12 catala golden(s) …)
+    10. check-regelspraak: PASS (JUnit 1152 tests, floor 173; 121 rgs golden(s) re-emit byte-identically, floor 80)
+    11. check-toka-parity: PASS
+    12. check-drools: PASS (played 239, pin 239; DRL-text branch played 193, pin 193; JUnit 1080 tests, floor 239)
+    13. check-reftype-derivation: PASS (43 unit annotations twisted over 24 goldens, floor 38 …)
+    14. check-flogic: PASS (150 checks, floor 81 …)
+    15. check-graaf: PASS
+    16. check-scenario: PASS (28 scenario golden(s) regenerate 99 case file(s) …)
+
+**Open punten.**
+
+1. De distributie vuurt zelf (`Uitvoerder.vuur`, `CaseSessie`,
+   `RegelSpraakEngine`) en krijgt nu de `ConsequenceException` van Drools: luid,
+   met de regelnaam, zonder de operanden; het HTTP-antwoord blijft "interne fout"
+   of een error id. Wie de zin wil, roept `DroolsBackend.benoem(e)` aan rond
+   `fireAllRules`; werk voor de distributie, niet gedaan.
+2. De javadoc van `NuldelerWitnessTest` zegt nog dat "every consumer of the
+   KieBase" de zin leest; dat geldt nu voor de replay, de rode route en het
+   scenariorapport. Het testbestand is niet aangeraakt.
+3. Het alternatief, de handler houden en in de dienst de klassenlader
+   gelijktrekken, is niet gebouwd: een handler op klassenaam hangt af van de
+   klassenlading van elke afnemer, `benoem` niet.
+4. De nuldeler in een voorwaarde (open punt 1 hierboven) is ongewijzigd.
+5. De pin van de distributie volgt na de merge.
