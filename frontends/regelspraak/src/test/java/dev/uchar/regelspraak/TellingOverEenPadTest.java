@@ -16,16 +16,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * A count whose written source walks more than the one relation it counts: "het aantal havenjutters van de haven van
  * de jutter van de Vondst" (to-one, to-one, to the set). The count's range is one relation from the rule subject
  * (IR-SPEC ch. 4.3, WF-102 (c): a path is the range of a VALUE fold's set source only), and no lowering of a count over
- * a path exists, so the frontend refuses it by name, with the number of steps and the steps themselves, and writes
- * nothing.
+ * a path exists, so where the emitter would still write a range — the head's role by name, or the one relation between
+ * the subject and the counted type — the frontend refuses the count by name, with the number of steps and the steps
+ * themselves, and writes nothing. A union selection takes its range from its head alone, so there every written step
+ * beyond it is refused.
  *
- * <p><b>Red before the refusal</b> (measured 2026-10-02 on the frontend of {@code da03d480}): where the subject and the
- * counted type are joined by one relation, the count went out silently as a count over that relation —
- * {@code sourceRole JutterHeeftVondst.jutter}, {@code diagnostics: []}, in a rule's value, in a condition, under a
- * subselection, behind a possessive anchor, by the type's plural, under "plus", in a default's justification and
- * consequence, and as a selection of a union — and ref and clingo then answer 1 where the path reaches 2. Where no
- * relation joins them the count was refused, as a fold without a range ("zonder bereik"), and over a set step ("van alle
- * havenjutters van de Haven") it stayed a marker with a WARNING: loud, in words that did not name the path.
+ * <p><b>Red before the refusal</b> (measured 2026-10-02 on the frontend of {@code da03d480}): the count went out
+ * silently as a count over that one relation — {@code sourceRole JutterHeeftVondst.jutter}, {@code diagnostics: []} —
+ * in a rule's value, in a condition, in a characteristic's condition, under a subselection, behind a possessive anchor,
+ * by the type's plural, under "plus", in a default's justification and consequence, with an anchor that is not the
+ * subject, and as a selection of a union; ref and clingo then answer 1 where the path reaches 2. Where no such range
+ * exists the count was refused already, as a fold without a range or with a written step, and over a set step ("van
+ * alle havenjutters van de Haven") it stayed a marker with a WARNING: those keep their refusal.
  */
 class TellingOverEenPadTest {
 
@@ -91,14 +93,14 @@ class TellingOverEenPadTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', value = {
-            "drie stappen in een waarde|het aantal havenjutters van de haven van de jutter van de Vondst",
-            "met een subselectie|het aantal havenjutters van de haven van de jutter van de Vondst die gemarkeerd zijn",
-            "achter een bezittelijk anker|het aantal havenjutters van de haven van zijn jutter",
-            "met het meervoud van het type|het aantal Jutters van de haven van de jutter van de Vondst",
-            "onder een optelling|het aantal havenjutters van de haven van de jutter van de Vondst plus 1",
+            "drie stappen in een waarde|het aantal havenjutters van de haven van de jutter van de Vondst|havenjutters",
+            "met een subselectie|het aantal havenjutters van de haven van de jutter van de Vondst die gemarkeerd zijn|havenjutters",
+            "achter een bezittelijk anker|het aantal havenjutters van de haven van zijn jutter|havenjutters",
+            "met het meervoud van het type|het aantal Jutters van de haven van de jutter van de Vondst|Jutters",
+            "onder een optelling|het aantal havenjutters van de haven van de jutter van de Vondst plus 1|havenjutters",
     })
-    void een_stille_afkapping_over_drie_stappen_wordt_geweigerd(String vorm, String telling) {
-        geweigerd(waarde("Vondst", "aantal havengenoten", telling), 3, "jutter, haven, havenjutters");
+    void een_stille_afkapping_over_drie_stappen_wordt_geweigerd(String vorm, String telling, String laatste) {
+        geweigerd(waarde("Vondst", "aantal havengenoten", telling), 3, "jutter, haven, " + laatste);
     }
 
     @Test void in_een_voorwaarde() {
@@ -127,36 +129,48 @@ class TellingOverEenPadTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', value = {
-            "twee stappen vanaf de Jutter|Jutter|aantal havengenoten|het aantal havenjutters van de haven van de Jutter|haven, havenjutters",
-            "bezittelijk, twee stappen|Jutter|aantal havengenoten|het aantal havenjutters van zijn haven|haven, havenjutters",
-            "twee stappen vanaf de Vondst|Vondst|aantal havengenoten|het aantal vondsten van de jutter van de Vondst|jutter, vondsten",
-            "van alle … van de …|Haven|aantal havenvondsten|het aantal vondsten van alle havenjutters van de Haven|havenjutters, vondsten",
-            "van alle … met een subselectie|Haven|aantal havenvondsten|het aantal vondsten van alle havenjutters van de Haven die gemarkeerd zijn|havenjutters, vondsten",
-            "van de … van de … als meervoud|Haven|aantal havenvondsten|het aantal vondsten van de havenjutters van de Haven|havenjutters, vondsten",
-            "twee verzamelingen|Kustwacht|aantal bewaakte jutters|het aantal havenjutters van alle bewaakte havens van de Kustwacht|bewaakte havens, havenjutters",
+            "een anker van een ander type|het aantal havenjutters van de Haven|Haven, havenjutters",
+            "het type van de rol als anker|het aantal havenjutters van de Jutter|Jutter, havenjutters",
     })
-    void een_luide_vorm_over_twee_stappen_krijgt_dezelfde_weigering(String vorm, String type, String doel, String telling,
-                                                                   String namen) {
-        geweigerd(waarde(type, doel, telling), 2, namen);
+    void een_anker_dat_niet_het_onderwerp_is_wordt_geweigerd(String vorm, String telling, String namen) {
+        geweigerd(waarde("Vondst", "aantal havengenoten", telling), 2, namen);
     }
 
-    @Test void drie_verzamelingen() {
-        geweigerd(waarde("Kustwacht", "aantal bewaakte vondsten",
-                "het aantal vondsten van alle havenjutters van alle bewaakte havens van de Kustwacht"), 3,
-                "bewaakte havens, havenjutters, vondsten");
-    }
-
-    @Test void een_selectie_van_een_unie() {
-        // the union took the second selection's range from the type pair, the first selection's relation again
-        RegelSpraakModel m = Resolver.resolve(MODEL + waarde("Jutter", "aantal eigen vondsten",
-                "het aantal vondsten van de Jutter en vondsten van de havenjutters van de haven van de Jutter"));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', value = {
+            "een stap in de naam|het aantal vondsten van de Jutter en vondsten van de havenjutters van de haven van de Jutter|2|vondsten van de havenjutters van de haven van de Jutter|3|haven, havenjutters, vondsten",
+            "een anker van een ander type|het aantal vondsten van de Jutter en vondsten van de Haven|2|vondsten van de Haven|2|Haven, vondsten",
+            "een bezittelijk anker|het aantal vondsten van zijn haven en vondsten van de Jutter|1|vondsten van zijn haven|2|haven, vondsten",
+    })
+    void een_selectie_van_een_unie(String vorm, String telling, int selectie, String bron, int stappen, String namen) {
+        // the union took the selection's range from its head, the relation of the other selection again
+        RegelSpraakModel m = Resolver.resolve(MODEL + waarde("Jutter", "aantal eigen vondsten", telling));
         List<Diagnostic> ds = padfouten(m);
         assertEquals(1, ds.size(), () -> "verwacht één padweigering, kreeg: " + m.diagnostics);
         assertEquals(Severity.ERROR, ds.get(0).severity());
-        assertTrue(ds.get(0).message().contains("geen unie van selecties: selectie 2 ('vondsten van de havenjutters van "
-                + "de haven van de Jutter') is een telling over een pad van 3 stappen (haven, havenjutters, vondsten): een "
-                + "selectie telt over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e)); schrijf de telling op "
-                + "het bereikte object of noem één relatie"), ds.get(0)::message);
+        assertTrue(ds.get(0).message().contains("geen unie van selecties: selectie " + selectie + " ('" + bron + "') is een "
+                + "telling over een pad van " + stappen + " stappen (" + namen + "): een selectie telt over één relatie "
+                + "vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e)); schrijf de telling op het bereikte object of noem "
+                + "één relatie"), ds.get(0)::message);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', value = {
+            "twee stappen vanaf de Jutter|Jutter|aantal havengenoten|het aantal havenjutters van de haven van de Jutter|zonder bereik",
+            "bezittelijk, twee stappen|Jutter|aantal havengenoten|het aantal havenjutters van zijn haven|zonder bereik",
+            "twee stappen vanaf de Vondst|Vondst|aantal havengenoten|het aantal vondsten van de jutter van de Vondst|zonder bereik",
+            "van de … van de … als meervoud|Haven|aantal havenvondsten|het aantal vondsten van de havenjutters van de Haven|zonder bereik",
+            "van alle … van de …|Haven|aantal havenvondsten|het aantal vondsten van alle havenjutters van de Haven|is geen (meervoud van een) gedeclareerd attribuut",
+            "van alle … met een subselectie|Haven|aantal havenvondsten|het aantal vondsten van alle havenjutters van de Haven die gemarkeerd zijn|is geen (meervoud van een) gedeclareerd attribuut",
+            "twee verzamelingen|Kustwacht|aantal bewaakte jutters|het aantal havenjutters van alle bewaakte havens van de Kustwacht|is geen (meervoud van een) gedeclareerd attribuut",
+            "drie verzamelingen|Kustwacht|aantal bewaakte vondsten|het aantal vondsten van alle havenjutters van alle bewaakte havens van de Kustwacht|is geen (meervoud van een) gedeclareerd attribuut",
+    })
+    void een_vorm_zonder_bereik_houdt_haar_eigen_weigering(String vorm, String type, String doel, String telling,
+                                                          String melding) {
+        // no range to write, so the fold fences speak, as they did before: loud, and not this refusal
+        RegelSpraakModel m = Resolver.resolve(MODEL + waarde(type, doel, telling));
+        assertTrue(padfouten(m).isEmpty(), () -> "onverwachte padweigering: " + m.diagnostics);
+        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains(melding)), () -> m.diagnostics.toString());
     }
 
     @ParameterizedTest(name = "{0}")
