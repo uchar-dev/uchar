@@ -296,3 +296,24 @@ commit met dit record raakt alleen `backlog/`); zeventien regels `exit 0` en
 7. De distributie draait op haar pin en kent deze ronde niet; de pin moet na het
    landen mee. Daarna geeft haar `check` exit 1 op een kring die de verifier
    weigert, buiten de twee grenzen van punt 3.
+
+## Keuring (hoofdsessie, 2026-10-02)
+
+- Gates: `/tmp/v2/uchar-gates26/summary.txt` op de laatste codecommit 1dbeacc7:
+  dune build en zestien gates "exit 0", `DONE`; pins 239/193 ongewijzigd; de
+  sweep (582 regels) gelijk. Het done-record (dfcd2620) raakt alleen `backlog/`.
+- Gelezen: het Result per vondst (getuigen rood-vóór/groen-na), de twee
+  bewuste grenzen van de kringtoets (een kring op het eigen onderwerp houdt
+  haar WARNING; een kring door een objectcreatie buiten een recursieve groep
+  krijgt geen ERROR), beide door bestaande tests vastgelegd en daarom niet
+  verlegd zonder besluit van de eigenaar; aanvaard. De exec-tak speelt een
+  WF-045-kring stil tot een fixpunt (open punt 2): aanvaard zolang de frontend
+  zulke bronnen vóór de bouw weigert.
+- Registertekst geplaatst in deze commit: IR-SPEC ch. 5.5 (Recorded-alinea),
+  CONSTRUCTS rij 6 (Landed-alinea), DIVERGENCES §7 (drie zinnen) en de nieuwe
+  sectie "Kringen: WF-045 en WF-051 in check".
+- Open punt 1 (de kenmerkcheck over een keten) is een besluit over de draad
+  voor de eigenaar: (a) een `path` op `CharacteristicCheck` door alle lagen
+  (advies van de bouwer), (b) een gegenereerd hulpkenmerk in de frontend (de
+  standaardweg van de kaart kwantor-over-een-pad). Tot dat besluit blijft het
+  hulplid van de regelset.

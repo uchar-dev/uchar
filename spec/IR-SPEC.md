@@ -8896,6 +8896,15 @@ document the walk refused before the decision and admits after it. A
 corpus document has the shape. The fix belongs to the backend: a monotone
 encoding of the `all` fold (a count) or a named refusal.
 
+*Recorded (measured 2026-10-02, ronde klein 2, open).* The exec-model branch plays a document whose dependency
+graph has a cycle that WF-045 refuses to a fixpoint, without a word: a value of one object read from the same value
+of another object of its type over a role, the same through a defaults group (WF-046 and WF-051 as well), and a
+count over a characteristic that reads the count over a role. `ref/` refuses each under WF-045; the ASP backend
+answers the first two and finds no stable model for the third. The branch refuses by name only a leeg or gevuld
+test on a cycle (WF-046). The RegelSpraak frontend refuses such a document before it is written since the same day,
+in the verifier's sentences (WF-045, WF-051; `grammar/DIVERGENCES.md`), except a cycle its own warning names on a
+rule's own subject and a cycle through an object creation outside a recursive group.
+
 ---
 
 ## 6. Defaults and defeasibility

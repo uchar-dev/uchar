@@ -1955,7 +1955,8 @@ which is the measurement above stated as a property.
   WF-051 speak as well. Measured 2026-09-25. The frontend gives both the same
   WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
   — …` for the direct self-read, in the author's names, and still writes the
-  document, as it does for every cycle (witness: `ZelflezingKringTest`). The
+  document, as it does for every cycle on a rule's own subject (witness:
+  `ZelflezingKringTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
   under WF-045 as well (measured the same day). The frontend's graph mirrors the
@@ -1986,14 +1987,21 @@ which is the measurement above stated as a property.
   2026-09-25 on `x` of a Klok computed from its `y` and `y` of a Ding, its
   supertype, computed from its `x`, the verifier gives `WF-045 … zet x -> zet y
   -> zet x` and the frontend says nothing. A cycle only these close is refused
-  by the verifier and not warned by the frontend. A writer on a subtype makes
+  since 2026-10-02 in the verifier's sentence (section "Kringen: WF-045 en
+  WF-051 in check"), unless it runs through an object creation. A writer on a
+  subtype makes
   one of them: a computation on the subtype that reads `afwijkende opgave X`
   closes a cycle through the generated rule, which stands on T. Measured
   2026-09-30 on a rule on the Strandvondst writing `meldingsdatum` "indien hij
   afwijkende opgave meldingsdatum heeft": the verifier refuses it under WF-045
   and WF-046 and the frontend gives no WARNING, where the same rule on the
   Vondst gets `kringverwijzing tussen berekeningen: Vondst.berekende
-  meldingsdatum -> Vondst.afwijkende opgave meldingsdatum -> …`. A computation
+  meldingsdatum -> Vondst.afwijkende opgave meldingsdatum -> …`. Since
+  2026-10-02 both are refused with an ERROR in the verifier's sentence
+  (measured: `regel 'zet x' hangt via een kring van zichzelf af; … (WF-045):
+  dependency cycle through no recursive creation: zet x -> zet y -> zet x`,
+  and `regel 'melding op vinddag' … melding op vinddag -> afwijking opgave
+  meldingsdatum -> melding op vinddag`). A computation
   on the subtype that reads the `berekende X` it writes stays on one type and
   is warned (`Strandvondst.berekende meldingsdatum -> Strandvondst.berekende
   meldingsdatum`).
@@ -2955,6 +2963,26 @@ volgens` expectation). Together they carry
 every expectation kind of the case format.
 
 ---
+
+## Kringen: WF-045 en WF-051 in check
+
+`check` runs no verifier. The frontend repeats rules of the verifier as an ERROR in the verifier's sentence where
+the document it would write breaks them — among them WF-020, WF-022, WF-033, WF-050, WF-053, WF-111 and WF-112 — and
+since 2026-10-02 the two cycle rules WF-045 and WF-051. `resolver/Afhankelijkheden` reads the dependency graph of
+IR-SPEC ch. 5 over the written document as the verifier reads it (the forms in `dep_forms` order, their reads and
+writes, the edges in reading order, the depth-first walk of WF-045 that names the first cycle it meets, and the
+reach test of WF-051); `RuleChecker.keurAfhankelijkheidskringen`, the last check, refuses each cycle at the head of
+the form the verifier reports: "regel 'restgewicht' hangt via een kring van zichzelf af; de afhankelijkheden zijn
+kringvrij buiten een recursieve creatie (WF-045): dependency cycle through no recursive creation: restgewicht ->
+bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring
+door een defaults-groep heeft geen strata (WF-051): …". Measured 2026-10-02: before, a value of one object read from
+the same value of another object of its type over a role passed `check` without a diagnostic; the edges equal
+`verifier --dependency-edges` on 883 documents of the corpus zones, and the WF-045 and WF-051 lines equal the
+verifier's, in its order. Two bounds, pinned by tests: a cycle the warning "kringverwijzing tussen berekeningen"
+names on a rule's own subject keeps that WARNING alone (`RecursieTest`, `ZelflezingKringTest`), and a cycle through
+an object creation outside a recursive group gets no ERROR (`CreatieRolTest`, `SetlezingZonderVouwTest`). WF-046 is
+not repeated. Witness: `AfhankelijkheidskringTest`.
+
 
 ## Producer refusals without a reader sentence
 
