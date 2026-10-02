@@ -414,3 +414,21 @@ elk script onder zijn shebang, op de kop `437fdd12` (de laatste commit buiten
    klassenlading van elke afnemer, `benoem` niet.
 4. De nuldeler in een voorwaarde (open punt 1 hierboven) is ongewijzigd.
 5. De pin van de distributie volgt na de merge.
+
+## Keuring van het vervolg (hoofdsessie, 2026-10-02)
+
+- Gates: `/tmp/v2/uchar-gates25/summary.txt` op 437fdd12 (de laatste codecommit;
+  d9ed2fa0 raakt alleen `backlog/`): dune build en zestien gates "exit 0",
+  `DONE`; pins 239/193 ongewijzigd; de sweep verschuift geen statusregel.
+- De dienst onder Quarkus in de meetworktree: `GoldenOverQuarkusTest` vóór de
+  fix 30 tests, 27 failures met de ClassCastException; na de fix 0 failures en
+  het hele reactorproject groen. De getuige `NuldelerWitnessTest` ongewijzigd
+  7/7; de extra getuige `NuldelerAfnemerWitnessTest` (een afnemer die zelf
+  vuurt krijgt Drools' fout, en `benoem` benoemt haar) aanvaard en behouden.
+- In deze commit alleen de javadoc van `NuldelerWitnessTest` bijgewerkt (de zin
+  over "every consumer of the KieBase" gold niet meer); geen testgedrag
+  gewijzigd.
+- Open: de distributie kan `DroolsBackend.benoem` in `Uitvoerder.vuur`
+  aanroepen voor een leesbare melding met operanden (kleine distributieronde,
+  niet nodig voor de poorten); de nuldeler in een voorwaarde blijft luid
+  zonder regelnaam (volgende kleine exec-ronde).

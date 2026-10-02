@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * hard fault of the mirror until the v1 delta to the §9.5 channel lands in every executor at once (the red case
  * {@code division-by-numeric-zero}); ref faults with "division by numeric zero" and clingo with its fail-fast guard, on
  * the subject V3. This backend faults as well, and names it: the rule the division ran in and the operands, in a
- * sentence of its own, where the replay, the scenario report and every consumer of the KieBase read it. A leeg divisor
+ * sentence of its own, where the replay and the scenario report read it; a consumer that fires the KieBase itself
+ * gets Drools' ConsequenceException and names it through {@code DroolsBackend.benoem} (since 2026-10-02, no handler
+ * on a class name: {@code NuldelerAfnemerWitnessTest}). A leeg divisor
  * stays leeg with its §9.5 deposit, and a leeg dividend over a zero divisor stays 0 (ch. 1.2). Every document is authored
  * here on Jutterswet material, with the outcomes ref and clingo give it.
  *
