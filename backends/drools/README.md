@@ -154,13 +154,14 @@ constraint (the DRL-text branch names both). Witness `NuldelerWitnessTest`.
 
 The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this
-backend are loaded by different class loaders, as in the distribution's decision service under Quarkus, the instance
-does not cast to the kie interface and no session opens (measured 2026-10-02, when this backend set such a handler:
-`ClassCastException: class dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder cannot be cast to class
-org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request). The KieBases
-`DroolsBackend` builds therefore keep Drools' default handler. A consumer that fires a KieBase itself gets Drools'
-`ConsequenceException`, which names the rule and carries `DelingDoorNul` as its cause, and can name it the same way:
-`DroolsBackend.benoem(e)` is public for that.
+backend are loaded by different class loaders, the instance does not cast to the kie interface and no session opens.
+Measured 2026-10-02, when this backend set such a handler, in the distribution's Quarkus test of its decision service
+(`GoldenOverQuarkusTest`): `ClassCastException: class dev.uchar.regelspraak.cases.DroolsBackend$Nuldelingmelder cannot
+be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request;
+the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
+keep Drools' default handler. A consumer that fires a KieBase itself gets Drools' `ConsequenceException`, which names
+the rule and carries `DelingDoorNul` as its cause, and can name it the same way: `DroolsBackend.benoem(e)` is public
+for that.
 
 ## Recorded: a condition that reads through a role
 

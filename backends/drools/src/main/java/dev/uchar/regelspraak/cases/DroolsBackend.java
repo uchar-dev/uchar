@@ -251,8 +251,8 @@ public final class DroolsBackend {
      *
      *  <p>The KieBases built here keep Drools' default consequence handler on purpose. Drools takes a handler by class
      *  name and instantiates it in every new session; where the kie API and this backend are loaded by different
-     *  class loaders (the distribution's decision service under Quarkus) that instance does not cast to the kie
-     *  interface, and every {@code newKieSession} threw a {@code ClassCastException} (2026-10-02). */
+     *  class loaders (the distribution's Quarkus test of its decision service) that instance does not cast to the kie
+     *  interface, and every {@code newKieSession} there threw a {@code ClassCastException} (2026-10-02). */
     public static RuntimeException benoem(ConsequenceException e) {
         for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
             if (t instanceof Breuk.DelingDoorNul nul) return nul.inDeRegel(e.getRule().getName(), e.getCause());
