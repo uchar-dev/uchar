@@ -95,7 +95,7 @@ public final class Breuk extends Number implements Comparable<Breuk> {
      * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does
      * (gate 8 pins that message). Out of a consequence it leaves the fire in the cause chain of Drools'
      * {@code ConsequenceException}, which {@code DroolsBackend.benoem} turns into a second one naming the rule it ran in
-     * ({@link #inDeRegel}), with the first as its cause.
+     * ({@link #inDeRegel}), with the first in its cause chain.
      */
     public static final class DelingDoorNul extends ArithmeticException {
         private static final long serialVersionUID = 1L;

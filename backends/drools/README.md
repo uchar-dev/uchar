@@ -144,13 +144,14 @@ subject. Since 2026-10-02 this backend names it as well. `Breuk.delen` throws `B
 leaves the fire in the cause chain of Drools' `ConsequenceException`, and `DroolsBackend.benoem`, which `CaseRunner`
 calls where it fires a session, turns that into a second `DelingDoorNul` naming the rule and the operands, with what
 the consequence threw as its cause: "deling door nul in de regel "verhouding": 60 gedeeld door 0 — een numerieke nul
-als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)". So on both branches, in a rule's value and in a
-default's justification or consequence alike, the replay (`ERROR DelingDoorNul: …`), the red path and the scenario
-report read the sentence; a defaults group carries the name this backend gives it (`defaults A:Vondst.verhouding`). Any
-other `ConsequenceException` passes `benoem` unchanged. The red path keeps its pinned fragments, since the cause chain
-still carries "Breuk deling door 0". A division in a condition is evaluated outside a consequence and still leaves the
-fire as Drools' `ConstraintEvaluationException`, which on the exec-model branch names neither the rule nor the
-constraint (the DRL-text branch names both). Witness `NuldelerWitnessTest`.
+als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)". So the replay (`ERROR DelingDoorNul: …`), the
+red path and the scenario report read the sentence, in a rule's value on both branches and in a default's
+justification or consequence on the exec-model branch (the DRL-text branch has no defaults lowering); a defaults group
+carries the name this backend gives it (`defaults A:Vondst.verhouding`). Any other `ConsequenceException` passes
+`benoem` unchanged. The red path keeps its pinned fragments, since the cause chain still carries "Breuk deling door 0".
+A division in a condition is evaluated outside a consequence and still leaves the fire as Drools'
+`ConstraintEvaluationException`, which on the exec-model branch names neither the rule nor the constraint (the
+DRL-text branch names both). Witness `NuldelerWitnessTest`.
 
 The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this
@@ -160,8 +161,8 @@ Measured 2026-10-02, when this backend set such a handler, in the distribution's
 be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `DefaultAgenda.<init>`, on every request;
 the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
 keep Drools' default handler. A consumer that fires a KieBase itself gets Drools' `ConsequenceException`, which names
-the rule and carries `DelingDoorNul` as its cause, and can name it the same way: `DroolsBackend.benoem(e)` is public
-for that. Witness `NuldelerAfnemerWitnessTest`.
+the rule and carries `DelingDoorNul` in its cause chain, and can name it the same way: `DroolsBackend.benoem(e)` is
+public for that. Witness `NuldelerAfnemerWitnessTest`.
 
 ## Recorded: a condition that reads through a role
 
