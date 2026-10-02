@@ -147,13 +147,27 @@ Open blijven, gemeten op de kop van de ronde (`126c71cd`):
   dezelfde vorm als het lid van de ronde.
 - De telling over een pad van meer dan één stap (de vorm van de eerste
   Aanvulling, "het aantal havenjutters van de haven van de jutter van de
-  Vondst"): nog steeds STIL afgekapt tot een telling over
+  Vondst"): op de kop van de ronde nog STIL afgekapt tot een telling over
   `JutterHeeftVondst.jutter` (gemeten op de reproductie
   `/tmp/v2/probe/vtr-bouw/proef/veel-aantal/`: `check exit=3` alleen om de
   exectak, de telling op de draad met `sourceRole`
   `JutterHeeftVondst.jutter`). Een telling telt exemplaren, dus het lid
-  van de ronde past er niet op; tot een lowering er is, een benoemde
-  weigering in de frontend.
+  van de ronde past er niet op. **Luid sinds de naronde van 2026-10-02**
+  (`backlog/done/20261002-naronde-klein-g4-g5.md`): waar de emitter nog
+  een bereik zou schrijven (de kop op naam, of het typepaar van onderwerp
+  en element) en de geschreven bron verder loopt, weigert de frontend met
+  een ERROR die het pad noemt ("… is een telling over een pad van 3
+  stappen (jutter, haven, havenjutters): deze frontend telt alleen over
+  één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c)); schrijf
+  de telling op het bereikte object of noem één relatie"), `check` exit 1;
+  ook een anker van een ander type ("het aantal havenjutters van de
+  Haven" op een Vondst) en een selectie van een unie met een stap na haar
+  kop, die eveneens stil afkapten. Waar geen bereik te schrijven is,
+  houden de vormen hun eerdere luide weigering (een vouw zonder bereik,
+  een geschreven stap, de marker met WARNING bij "van alle …"). De
+  lowering van een telling over een pad (een lid per element telt hier
+  niet; een vlakke vereniging onder `count` is op de draad niet
+  uitdrukbaar, WF-102 (c)) blijft open met deze kaart.
 - Een vouw over een to-many stap NA de verzameling ("de inhoud van de
   kisten van de vondst van alle jutters"): de oude WARNING en marker
   (luid).
