@@ -1565,6 +1565,49 @@ Witness: `TypemeervoudTellingTest`.
 
 ---
 
+### A count over a written path — refused (2026-10-02)
+
+The name of a read runs over every inner `van`, so in "het aantal havenjutters van
+de haven van de jutter van de Vondst" the count received one name, `havenjutters van
+de haven van de jutter`, read on the Vondst. A count's range is one relation from
+the rule subject (`spec/IR-SPEC.md` ch. 4.3, WF-102 (c): a path is the range of a
+value fold's set source only), and the emitter takes it from the head of the name,
+by the role it names, or from the type pair of subject and element
+(`IrEmitter.vouwbereik`). The other steps fell away without a word: measured
+2026-10-02 on the frontend of `da03d480`, the count went out as a count over
+`JutterHeeftVondst.jutter` with `diagnostics: []`, verifier-clean, and ref and
+clingo answered 1 where the path reaches 2. So did a count in a condition, in a
+characteristic's condition, under a subselection, behind a possessive anchor ("van
+de haven van zijn jutter"), by the type's plural, under "plus", in a default's
+justification and consequence, and with an anchor of another type than the subject
+("het aantal havenjutters van de Haven" on a Vondst); and a selection of a §5.7
+union, which takes its range from its head alone, so that "het aantal vondsten van
+de Jutter en vondsten van de havenjutters van de haven van de Jutter" went out with
+both selections over one relation and counted the Jutter's own vondsten alone.
+
+`ExpressieBouwer.bouwFunctie` refuses a count whose written source walks more than
+one relation wherever the emitter would still write a range: the parts of its name
+at every `van` (a name that names a role or an object type as a whole is one part),
+then those of its onderwerp, the anchor dropped where it denotes the subject
+(ch. 4.1a; the noun after "zijn" is a step). The ERROR names the path:
+`telling '<zin>' is een telling over een pad van <n> stappen (<stap>, …): deze
+frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102
+(c)); schrijf de telling op het bereikte object of noem één relatie`. A union
+selection over more than one step refuses the union, in the union's own refusal
+(`… geen unie van selecties: selectie <i> ('<bron>') is een telling over een pad
+van <n> stappen (…): een selectie telt over één relatie vanaf het onderwerp
+(IR-SPEC ch. 4.3, WF-110 (e)); …`). Where the emitter writes no range, the fold
+fences speak as before: a fold without a range, a written step on the source, the
+set reading, and "van alle …", a marker with its WARNING. A count over a path has
+no lowering: a member per element (the section "A fold over a set and to-one steps
+after it") does not count instances, and the flat union under `count` is not
+expressible on the wire (WF-102 (c)); the card `frontend-kwantor-over-een-pad`
+carries it. All 196 RegelSpraak sources of the repository, the 28 scenario goldens
+as test documents and the 108 sources of the distribution emit the same IR,
+diagnostics, case files and exit code before and after. Witness
+`TellingOverEenPadTest`.
+
+
 ## The percentage forms — "het percentage P van Y", with and without the '%'
 
 Not a dialect extension: the reading this frontend gives §13.4.17.12, whose
@@ -2412,6 +2455,21 @@ of the fact type's name (`de rolnaam '<r>' bevat een lidwoord (de/het) na een
 zelfstandig woord …`, a WARNING) stays beside the line check: that check names
 the line and the word, the guess names the likely cause, and the guess alone
 sees a swallow that runs on over the next line.
+
+Two named forms with one name are refused since 2026-10-02 (WF-020: the rules, the
+other forms of ch. 3 and the defaults groups share one namespace, compared as the
+verifier compares them, case and whitespace aside). The forms are read after the
+lift as the emitter writes them, and the ERROR stands on the second 'Regel' head or
+decision-table row that carries the name, naming the line of the first, in the
+verifier's sentence: `regel '<naam>' is al gedeclareerd op regel <n>; vormnamen
+zijn uniek (WF-020): duplicate name '<naam>' in rules`, or `… name '<naam>'
+collides with '<naam>' in <lijst> (unique across all named forms)` across two
+lists. The name of an 'Uitzondering op' or 'Afwijking van' block does not reach the
+wire — its default joins the group of its base — and is not judged here; the lift
+refuses two such blocks of one name in its own words. Before: such a document
+passed `check` without a diagnostic, the verifier refused it, ref and clingo played
+it, and the Drools exec branch kept one of the two rules. No source of the corpora
+carries two heads of one name. Witness `DubbeleVormnaamTest`.
 
 ### Emission
 

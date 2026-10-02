@@ -261,7 +261,7 @@ record raakt alleen `backlog/`); zeventien regels `exit 0` en `DONE`:
   standaardantwoord bij de telling (de zin verwijst naar ch. 4.3/WF-102 (c);
   vormen die al luid weigerden houden hun zin) — beide aanvaard, want geen
   bestaande test hoefde te wijzigen en de stille vormen zijn nu luid.
-- Registertekst geplaatst in deze commit: DIVERGENCES §13.4.17.47 (de
+- Registertekst geplaatst in de commit na de Keuring (de Keuring-commit 21d530b4 miste haar door een afgebroken script): DIVERGENCES §13.4.17.47 (de
   subsectie "A count over a written path — refused") en "Namen in
   declaratiekoppen", "Fail-fast refusals" (de alinea over twee vormen met één
   naam); RUNTIME-SEMANTICS en IR-SPEC ongewijzigd (de tekst zegt het al).
