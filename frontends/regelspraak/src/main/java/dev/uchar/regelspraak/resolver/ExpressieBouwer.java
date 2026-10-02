@@ -1111,6 +1111,26 @@ final class ExpressieBouwer {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     waardevouw + ": value fold with fewer than two operands", f.getStart().getLine()));
         Expr functie = new Expr.Functie(kind, argumenten, elem, leegwaarde, filter, null, type, bron, operatorGran);
+        // A count whose written source walks further than the one relation it counts, where the emitter would still
+        // write a range: by the head's name or by the type pair of subject and element (IrEmitter.vouwbereik), the
+        // other steps dropped without a word ("het aantal havenjutters van de haven van de jutter van de Vondst" went
+        // out as a count over the jutter of the Vondst). A count's range is one relation from the subject (IR-SPEC
+        // ch. 4.3, WF-102 (c)), so until a count over a path has a lowering it is refused, naming the path. Where the
+        // emitter writes no range, the fold fences refuse the count in their own words; a set reading is the set
+        // fence's.
+        if (kind == Expr.FunctieKind.AANTAL && elem != null && f instanceof AantalFuncContext af
+                && af.primaireExpressie().size() == 1 && argumenten.get(0) instanceof Expr.AttribuutRef bronlezing
+                && !bronlezing.set()
+                && dev.uchar.regelspraak.emit.IrEmitter.vouwweigering(model, huidigSubject, (Expr.Functie) functie) == null) {
+            List<String> stappen = telbronStappen(af.primaireExpressie(0));
+            if (stappen != null && stappen.size() > 1) {
+                RegelSpraakModel.Diagnostic fout = new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                        "telling '" + bron.snippet() + "' is " + telpad(stappen,
+                                "deze frontend telt alleen over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-102 (c))"),
+                        f.getStart().getLine());
+                if (!model.diagnostics.contains(fout)) model.diagnostics.add(fout);
+            }
+        }
         // §13.4.17.13: the wortel's afronding is MANDATORY and rounds the ROOT (it is a sibling of the
         // radicand, not inside it). It was parsed but dropped; wrap the function so the rounding survives.
         if (f instanceof WortelFuncContext w) return afgerond(functie, w.afronding(), bron);
@@ -1876,6 +1896,13 @@ final class ExpressieBouwer {
                         + " subtypelattice die de deduplicatie zou moeten beantwoorden (WF-110 (d))";
                 return null;
             }
+            // a selection over a written path would take its range from the type pair below, dropping its steps
+            List<String> stappen = op instanceof PrimaireExpressieContext pe ? telbronStappen(pe) : null;
+            if (stappen != null && stappen.size() > 1) {
+                unieWeigering = "selectie " + (i + 1) + " ('" + src((ParserRuleContext) op) + "') is " + telpad(stappen,
+                        "een selectie telt over één relatie vanaf het onderwerp (IR-SPEC ch. 4.3, WF-110 (e))");
+                return null;
+            }
             String woord = geschrevenElementWoord(op);
             RegelSpraakModel.RolBindingRef rb =
                     huidigSubject == null || woord == null ? null : model.elementRolBinding(huidigSubject, woord);
@@ -1929,6 +1956,53 @@ final class ExpressieBouwer {
                 && pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam() != null)
             return src(pe.attribuutVanOnderwerp().attribuutMetLidwoord().kaleNaam());
         return null;
+    }
+
+    /** The relations the written source of a count operand walks outward from the rule subject: the parts of its name
+     *  at every 'van', then those of its onderwerp, the anchor dropped where it denotes the subject (ch. 4.1a, as in
+     *  {@link #ankertHetOnderwerp}); a possessive's noun is a step, "zijn" being the subject. One part is the one
+     *  relation a count counts. Null where the operand is no "&lt;naam&gt; van &lt;onderwerp&gt;" phrase this walk
+     *  reads, or no subject is bound. */
+    private List<String> telbronStappen(PrimaireExpressieContext pe) {
+        AttribuutVanOnderwerpContext a = pe.attribuutVanOnderwerp();
+        if (huidigSubject == null || a == null || a.attribuutMetLidwoord() == null
+                || a.attribuutMetLidwoord().kaleNaam() == null || a.onderwerp() == null) return null;
+        List<String> delen = new ArrayList<>();
+        naamdelen(src(a.attribuutMetLidwoord().kaleNaam()), delen);
+        boolean bezittelijk = false;
+        for (OnderwerpContext rest = a.onderwerp(); rest != null; rest = rest.onderwerp()) {
+            String kn = rest.kaleNaam() != null ? src(rest.kaleNaam()) : primaireNaam(rest);
+            if (kn == null) return null;
+            naamdelen(kn, delen);
+            bezittelijk = rest.kaleNaam() == null && bezittelijk(rest.onderwerpKeten());
+        }
+        if (!bezittelijk && ankertHetOnderwerp(delen.get(delen.size() - 1))) delen.remove(delen.size() - 1);
+        java.util.Collections.reverse(delen);
+        return delen;
+    }
+
+    /** The parts of a written name at every 'van', without articles; a name that names a role or an object type as a
+     *  whole stays one part. */
+    private void naamdelen(String naam, List<String> uit) {
+        String heel = stripArtikel(naam).trim();
+        if (model.navigatieRolNaam(heel) != null || model.objecttypeOpNaam(heel) != null) {
+            uit.add(heel);
+            return;
+        }
+        for (String deel : heel.split("\\s+van\\s+")) uit.add(stripArtikel(deel).trim());
+    }
+
+    /** Whether an onderwerp chain is the possessive "zijn &lt;naam&gt;", under a subselection or not. */
+    private static boolean bezittelijk(OnderwerpKetenContext k) {
+        if (k == null) return false;
+        if (k.ZIJN() != null) return true;
+        return k.onderwerpKeten() != null && bezittelijk(k.onderwerpKeten());
+    }
+
+    /** The refusal of a count over a written path, after "is": the steps, and {@code norm}, what counts and where. */
+    private static String telpad(List<String> stappen, String norm) {
+        return "een telling over een pad van " + stappen.size() + " stappen (" + String.join(", ", stappen) + "): " + norm
+                + "; schrijf de telling op het bereikte object of noem één relatie";
     }
 
     /** The first "die/dat &lt;predicaat&gt;" subselectie anywhere in an operand subtree. */
