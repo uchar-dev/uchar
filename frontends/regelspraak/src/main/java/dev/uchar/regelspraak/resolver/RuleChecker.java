@@ -124,6 +124,72 @@ final class RuleChecker {
         keurOpgeslokteNamen();      // a read whose name took in a word before 'van' and a declared attribute
         keurConstanten();           // a constant the wire has no node for ("hij" as a value)
         keurVormnamen(doc);         // WF-020, over the named forms as the emitter writes them
+        keurAfhankelijkheidskringen(doc);   // WF-045 and WF-051, over the document the emitter writes
+    }
+
+    /** What a form of the dependency graph is called in a refusal, by the list it comes from. */
+    private static final Map<String, String> VORMSOORT = Map.of("rules", "regel", "allocations", "verdeling",
+            "consistencies", "consistentieregel", "uniquenesses", "uniciteitsregel", "objectCreations", "objectcreatie",
+            "factCreations", "feitcreatie", "prioritizedDefaults", "defaults-groep");
+
+    /**
+     * WF-045 and WF-051, the verifier's two cycle rules, over the document the emitter writes, in the verifier's own
+     * reading of IR-SPEC ch. 5 ({@link Afhankelijkheden}): a dependency cycle that passes through no creation of a
+     * recursive rule group, and a cycle through a defaults group, are refused in the verifier's sentence, at the head of
+     * the form the verifier reports. {@code check} runs no verifier, and such a document passed it without a word: a
+     * value of one object that depends on the same value of another object of its type, over a role, is a cycle of the
+     * graph (one node per object type and member, ch. 5.1), and the warning below sees only the reads on a rule's own
+     * subject. Two kinds of cycle stay as they were, the frontend writing the document and the verifier refusing it:
+     * a cycle that warning names already — every form on it a rule or a defaults group whose target the warning
+     * counted — keeps that WARNING, the posture {@code RecursieTest} and {@code ZelflezingKringTest} pin; and a cycle
+     * through an object creation outside a recursive group (a creation of its own subject's type reads the population
+     * it grows), which {@code CreatieRolTest} and {@code SetlezingZonderVouwTest} pin without an error. One violation
+     * is refused once, where the verifier reports it twice over two edges of one pair. Runs last, on a model without an
+     * ERROR: a model the emitter refuses has no document to judge, and that refusal is reported where the document is
+     * written.
+     */
+    private void keurAfhankelijkheidskringen(RegelSpraakDocumentContext doc) {
+        if (!model.isOk()) return;
+        String ir;
+        try {
+            ir = dev.uchar.regelspraak.emit.IrEmitter.emit(model);
+        } catch (IllegalStateException | UnsupportedOperationException e) {
+            return;
+        }
+        Map<String, String[]> plekken = vormPlekken(doc);
+        Set<String> gemeld = new java.util.HashSet<>();
+        for (Afhankelijkheden.Kring k : Afhankelijkheden.kringen(ir)) {
+            if (alGewaarschuwd(k) || k.vormen().stream().anyMatch(v -> v.soort().equals("objectCreations"))) continue;
+            if (!gemeld.add(k.wf() + " " + k.at() + " " + k.zin())) continue;
+            Afhankelijkheden.Vorm vorm = k.vormen().get(0);
+            String naam = Afhankelijkheden.zonderVersie(vorm.naam());
+            String[] plek = plekken.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
+            fout(plek == null ? 0 : Integer.parseInt(plek[1]), VORMSOORT.get(vorm.soort()) + " '" + naam + "' "
+                    + ("WF-045".equals(k.wf())
+                        ? "hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie"
+                        : "ligt op een afhankelijkheidskring, en een kring door een defaults-groep heeft geen strata")
+                    + " (" + k.wf() + "): " + k.zin());
+        }
+    }
+
+    /** Whether the warning of {@link #keurKringverwijzingen} names {@code k} already: every form on it writes a target
+     *  that warning counted, a moved 'berekende X' counted as the X it computes. */
+    private boolean alGewaarschuwd(Afhankelijkheden.Kring k) {
+        Set<String> gewaarschuwd = new java.util.HashSet<>();
+        for (Leesknoop kn : kringknopen)
+            gewaarschuwd.add(dev.uchar.regelspraak.emit.IrEmitter.norm(kn.type()) + "\u0000" + kn.naam() + "\u0000" + kn.kenmerk());
+        for (Afhankelijkheden.Vorm v : k.vormen()) {
+            Afhankelijkheden.Doel d = v.doel();
+            if (d == null) return false;
+            String type = dev.uchar.regelspraak.emit.IrEmitter.norm(d.type());
+            String naam = dev.uchar.regelspraak.emit.IrEmitter.norm(d.lid());
+            for (Opgave o : gelowerd)
+                if (!d.kenmerk() && dev.uchar.regelspraak.emit.IrEmitter.norm(o.type().naam).equals(type)
+                        && dev.uchar.regelspraak.emit.IrEmitter.norm(o.berekende()).equals(naam))
+                    naam = dev.uchar.regelspraak.emit.IrEmitter.norm(o.attribuut());
+            if (!gewaarschuwd.contains(type + "\u0000" + naam + "\u0000" + d.kenmerk())) return false;
+        }
+        return true;
     }
 
     /** The arrays of named forms in the order the verifier reports a collision between two of them (WF-020). */
@@ -2807,10 +2873,11 @@ final class RuleChecker {
      *  the clamp idiom "x = x, met een maximum van y", a condition reading the target) is the cycle of one node:
      *  the verifier refuses it under WF-045 as it refuses a longer cycle (measured 2026-09-25), so the Drools
      *  no-loop that makes a single writer terminate is no ground to pass it in silence. Outside this graph, and so
-     *  unwarned where the verifier refuses them: a navigated read, a read in the filter or test of a fold, a role
-     *  check, a channel test, the forms that are no rule (an allocation, a creation, a consistency), and a cycle over
-     *  a supertype and a subtype — a node belongs to the type the rule is written on, where the verifier lets a
-     *  write reach every comparable type of the inheritance line (WF-045). This pass runs over the authored forms,
+     *  unwarned here: a navigated read, a read in the filter or test of a fold, a role check, a channel test, the forms
+     *  that are no rule (an allocation, a creation, a consistency), and a cycle over a supertype and a subtype — a node
+     *  belongs to the type the rule is written on, where the verifier lets a write reach every comparable type of the
+     *  inheritance line (WF-045); such a cycle is refused in the verifier's sentence by
+     *  {@link #keurAfhankelijkheidskringen}, unless it runs through an object creation. This pass runs over the authored forms,
      *  before the defaults lowering, so a warning names what the author wrote; where the opgave marker lowered an
      *  attribute, {@link #keurKringverwijzingenNaOpgave} runs the graph once more over the lowered forms. */
     private void keurKringverwijzingen() {
