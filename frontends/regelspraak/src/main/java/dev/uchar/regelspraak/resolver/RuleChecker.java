@@ -123,6 +123,72 @@ final class RuleChecker {
         keurNavigatiebindingen();   // a read or a fold the emitter could write only with a binding none supplies
         keurOpgeslokteNamen();      // a read whose name took in a word before 'van' and a declared attribute
         keurConstanten();           // a constant the wire has no node for ("hij" as a value)
+        keurVormnamen(doc);         // WF-020, over the named forms as the emitter writes them
+    }
+
+    /** The arrays of named forms in the order the verifier reports a collision between two of them (WF-020). */
+    private static final List<String> VORMLIJSTEN = List.of("consistencies", "factCreations", "objectCreations",
+            "prioritizedDefaults", "rules", "uniquenesses", "allocations");
+
+    /**
+     * WF-020: two named forms with one name, compared as the verifier compares them ({@link
+     * dev.uchar.regelspraak.emit.IrEmitter#norm}). The forms are read off the model after the lift, as the emitter writes
+     * them, so a name that does not reach the wire is not judged: the name of an 'Uitzondering op' or 'Afwijking van'
+     * block, whose default joins the group of its base, and a declaration that lowers to nothing. A form with versions is
+     * one form, its entries named "&lt;naam&gt; #1" … "#n" in a row, so a second "#1" begins a second form. The refusal
+     * stands on the second of the 'Regel' heads and decision-table rows that carry the name and names the line of the
+     * first, in the verifier's sentence; a collision with a generated form is refused where that form is generated.
+     */
+    private void keurVormnamen(RegelSpraakDocumentContext doc) {
+        Map<String, List<String>> lijsten = new java.util.LinkedHashMap<>();   // name identity -> the array of each form
+        java.util.function.BiConsumer<String, List<String>> vormen = (lijst, namen) -> {
+            for (int i = 0; i < namen.size(); i++) {
+                String naam = namen.get(i);
+                if (naam == null) continue;
+                String kaal = zonderVersie(naam);
+                boolean vervolg = !kaal.equals(naam) && !naam.endsWith(" #1") && i > 0
+                        && namen.get(i - 1) != null && zonderVersie(namen.get(i - 1)).equals(kaal);
+                if (!vervolg) lijsten.computeIfAbsent(dev.uchar.regelspraak.emit.IrEmitter.norm(kaal),
+                        k -> new ArrayList<>()).add(lijst);
+            }
+        };
+        vormen.accept("rules", model.resolvedRegels.stream().map(ResolvedRegel::naam).toList());
+        vormen.accept("objectCreations", model.objectCreaties.stream().map(o -> o.naam()).toList());
+        vormen.accept("allocations", model.verdelingen.stream()
+                .filter(v -> v.methode() != ResolvedVerdeling.Methode.COMPLEX).map(v -> v.naam()).toList());
+        vormen.accept("consistencies", model.consistenties.stream().map(c -> c.naam()).toList());
+        vormen.accept("uniquenesses", java.util.stream.Stream.concat(model.uniciteiten.stream().map(u -> u.naam()),
+                model.uniciteitUnies.stream().map(u -> u.naam())).toList());
+        vormen.accept("factCreations", model.feitCreaties.stream().map(f -> f.naam()).toList());
+        vormen.accept("prioritizedDefaults", model.prioritizedDefaults.stream().map(g -> g.naam()).toList());
+        // the authored heads, in document order: a 'Regel' head is {name, line}, a table row {name, line, table}
+        List<String[]> koppen = new ArrayList<>();
+        for (RegelContext r : DefinitionResolver.alleRegels(doc))
+            koppen.add(new String[] {src(r.regelNaam()), String.valueOf(r.getStart().getLine()), null});
+        for (var e : rijRegels.entrySet())
+            for (String rij : e.getValue())
+                koppen.add(new String[] {rij, String.valueOf(e.getKey().getStart().getLine()),
+                        src(e.getKey().beslistabelNaam())});
+        koppen.sort(java.util.Comparator.comparingInt(k -> Integer.parseInt(k[1])));
+        for (var e : lijsten.entrySet()) {
+            if (e.getValue().size() < 2) continue;
+            List<String[]> dragers = koppen.stream()
+                    .filter(k -> dev.uchar.regelspraak.emit.IrEmitter.norm(k[0]).equals(e.getKey())).toList();
+            if (dragers.size() < 2) continue;
+            String[] eerste = dragers.get(0);
+            List<String> arrays = e.getValue().stream().distinct()
+                    .sorted(java.util.Comparator.comparingInt(VORMLIJSTEN::indexOf)).toList();
+            String verifier = arrays.size() == 1
+                    ? "duplicate name '" + eerste[0] + "' in " + arrays.get(0)
+                    : "name '" + eerste[0] + "' collides with '" + dragers.get(1)[0] + "' in " + arrays.get(1)
+                            + " (unique across all named forms)";
+            for (String[] volgende : dragers.subList(1, dragers.size()))
+                fout(Integer.parseInt(volgende[1]), "regel '" + volgende[0] + "'"
+                        + (volgende[2] == null ? "" : " van beslistabel '" + volgende[2] + "'")
+                        + " is al gedeclareerd op regel " + eerste[1]
+                        + (eerste[2] == null ? "" : ", als rij van beslistabel '" + eerste[2] + "'")
+                        + "; vormnamen zijn uniek (WF-020): " + verifier);
+        }
     }
 
     /**
