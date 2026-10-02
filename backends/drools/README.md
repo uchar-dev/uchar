@@ -161,7 +161,7 @@ be cast to class org.kie.api.runtime.rule.ConsequenceExceptionHandler`, at `Defa
 the packaged Quarkus service and the JDK service opened their sessions. The KieBases `DroolsBackend` builds therefore
 keep Drools' default handler. A consumer that fires a KieBase itself gets Drools' `ConsequenceException`, which names
 the rule and carries `DelingDoorNul` as its cause, and can name it the same way: `DroolsBackend.benoem(e)` is public
-for that.
+for that. Witness `NuldelerAfnemerWitnessTest`.
 
 ## Recorded: a condition that reads through a role
 
