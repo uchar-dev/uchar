@@ -93,8 +93,9 @@ public final class Breuk extends Number implements Comparable<Breuk> {
      * A division whose divisor is a numeric zero. RUNTIME-SEMANTICS ch. 1.4, point 4 keeps it a fault, where a leeg
      * divisor gives leeg and a §9.5 inconsistency; ref and clingo fault on it too. {@link #delen} throws it with the
      * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does
-     * (gate 8 pins that message). Out of a consequence it reaches the KieBase's consequence handler, which throws a
-     * second one naming the rule it ran in ({@link #inDeRegel}), with the first as its cause.
+     * (gate 8 pins that message). Out of a consequence it leaves the fire in the cause chain of Drools'
+     * {@code ConsequenceException}, which {@code DroolsBackend.benoem} turns into a second one naming the rule it ran in
+     * ({@link #inDeRegel}), with the first as its cause.
      */
     public static final class DelingDoorNul extends ArithmeticException {
         private static final long serialVersionUID = 1L;

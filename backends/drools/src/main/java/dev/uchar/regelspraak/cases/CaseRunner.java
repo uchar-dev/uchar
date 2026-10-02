@@ -25,6 +25,7 @@ import org.kie.api.KieBase;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.rule.ConsequenceException;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -488,11 +489,18 @@ public final class CaseRunner {
     /** Fires {@code sessie} under the replay's cap and returns null at a fixpoint. At the cap the run has none
      *  (RUNTIME-SEMANTICS ch. 5.7): the sentence names the writers of one attribute that kept overwriting each other
      *  with different values in the last firings ({@link Schrijfconflict}), and where those show none it says only
-     *  that the cap was reached. */
+     *  that the cap was reached. A consequence that throws leaves the fire as {@link DroolsBackend#benoem} names it;
+     *  every replay, red path and report of this class fires here, on either branch. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);
-        if (sessie.fireAllRules(100_000) < 100_000) return null;
+        int gevuurd;
+        try {
+            gevuurd = sessie.fireAllRules(100_000);
+        } catch (ConsequenceException e) {
+            throw DroolsBackend.benoem(e);
+        }
+        if (gevuurd < 100_000) return null;
         String conflict = schrijvers.conflict(this::labelVanBean);
         return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
     }

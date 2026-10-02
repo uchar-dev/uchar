@@ -22,10 +22,6 @@ import org.drools.modelcompiler.KieBaseBuilder;
 import org.kie.api.KieBase;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.ConsequenceException;
-import org.kie.api.runtime.rule.ConsequenceExceptionHandler;
-import org.kie.api.runtime.rule.Match;
-import org.kie.api.runtime.rule.RuleRuntime;
-import org.kie.internal.conf.ConsequenceExceptionHandlerOption;
 import org.kie.internal.utils.KieHelper;
 
 import java.io.IOException;
@@ -58,7 +54,7 @@ import java.util.function.Predicate;
  * <p>Firing stays with the consumer, as the replay does it: a fresh {@link org.kie.api.runtime.KieSession} per
  * case, the fact beans instantiated from {@link Build#beanLoader()} while that loader is the thread's context
  * class loader, the parameters and the evaluation date as globals, and on the DRL-text branch also
- * {@link Build#dagsoortGlobalen()}.
+ * {@link Build#dagsoortGlobalen()}; a {@code ConsequenceException} out of the fire is named by {@link #benoem}.
  */
 public final class DroolsBackend {
 
@@ -200,8 +196,7 @@ public final class DroolsBackend {
         for (Dekking d : et.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model(),
-                ConsequenceExceptionHandlerOption.get(Nuldelingmelder.class));
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
         return new Build(loaded.model(), cl, et, null, List.copyOf(et.dekking()), kieBase);
     }
 
@@ -238,7 +233,7 @@ public final class DroolsBackend {
         helper.addContent(t.drl(), ResourceType.DRL);
         KieBase kieBase;
         try {
-            kieBase = helper.build(ConsequenceExceptionHandlerOption.get(Nuldelingmelder.class));
+            kieBase = helper.build();
         } catch (RuntimeException e) {
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
             throw new Excluded("drl compile: " + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
@@ -246,17 +241,21 @@ public final class DroolsBackend {
         return new Build(loaded.model(), cl, null, t, List.copyOf(t.dekking()), kieBase);
     }
 
-    /** The consequence handler of every KieBase built here. A division by a numeric zero in a consequence (a rule's
-     *  value, a default's justification or consequence) leaves the fire as {@link Breuk.DelingDoorNul} naming the rule
-     *  and the operands, so the replay, the scenario report and every consumer that fires the KieBase read one sentence
-     *  instead of Drools' wrapper; any other exception leaves it exactly as Drools' default handler throws it. A
-     *  division in a condition is evaluated outside a consequence and does not come here. Public, with the implicit
-     *  constructor, because Drools instantiates it by class. */
-    public static final class Nuldelingmelder implements ConsequenceExceptionHandler {
-        @Override public void handleException(Match match, RuleRuntime runtime, Exception e) {
-            for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
-                if (t instanceof Breuk.DelingDoorNul nul) throw nul.inDeRegel(match.getRule().getName(), e);
-            throw new ConsequenceException(e, runtime, match);
-        }
+    /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
+     *  throws: a division by a numeric zero in a consequence (a rule's value, a default's justification or consequence)
+     *  becomes {@link Breuk.DelingDoorNul} naming the rule and the operands, with what the consequence threw as its
+     *  cause; any other {@code e} is returned unchanged. {@link CaseRunner} calls it where it fires, so the replay, the
+     *  red path and the scenario report read the sentence; a consumer that fires a KieBase itself gets Drools'
+     *  {@code ConsequenceException}, which names the rule, and can call this the same way. A division in a condition
+     *  is evaluated outside a consequence and does not come here.
+     *
+     *  <p>The KieBases built here keep Drools' default consequence handler on purpose. Drools takes a handler by class
+     *  name and instantiates it in every new session; where the kie API and this backend are loaded by different
+     *  class loaders (the distribution's decision service under Quarkus) that instance does not cast to the kie
+     *  interface, and every {@code newKieSession} threw a {@code ClassCastException} (2026-10-02). */
+    public static RuntimeException benoem(ConsequenceException e) {
+        for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
+            if (t instanceof Breuk.DelingDoorNul nul) return nul.inDeRegel(e.getRule().getName(), e.getCause());
+        return e;
     }
 }
