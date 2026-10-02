@@ -16,9 +16,16 @@ import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 
+import dev.uchar.regelspraak.runtime.Breuk;
+
 import org.drools.modelcompiler.KieBaseBuilder;
 import org.kie.api.KieBase;
 import org.kie.api.io.ResourceType;
+import org.kie.api.runtime.rule.ConsequenceException;
+import org.kie.api.runtime.rule.ConsequenceExceptionHandler;
+import org.kie.api.runtime.rule.Match;
+import org.kie.api.runtime.rule.RuleRuntime;
+import org.kie.internal.conf.ConsequenceExceptionHandlerOption;
 import org.kie.internal.utils.KieHelper;
 
 import java.io.IOException;
@@ -193,7 +200,8 @@ public final class DroolsBackend {
         for (Dekking d : et.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model(),
+                ConsequenceExceptionHandlerOption.get(Nuldelingmelder.class));
         return new Build(loaded.model(), cl, et, null, List.copyOf(et.dekking()), kieBase);
     }
 
@@ -230,11 +238,25 @@ public final class DroolsBackend {
         helper.addContent(t.drl(), ResourceType.DRL);
         KieBase kieBase;
         try {
-            kieBase = helper.build();
+            kieBase = helper.build(ConsequenceExceptionHandlerOption.get(Nuldelingmelder.class));
         } catch (RuntimeException e) {
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
             throw new Excluded("drl compile: " + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
         }
         return new Build(loaded.model(), cl, null, t, List.copyOf(t.dekking()), kieBase);
+    }
+
+    /** The consequence handler of every KieBase built here. A division by a numeric zero in a consequence (a rule's
+     *  value, a default's justification or consequence) leaves the fire as {@link Breuk.DelingDoorNul} naming the rule
+     *  and the operands, so the replay, the scenario report and every consumer that fires the KieBase read one sentence
+     *  instead of Drools' wrapper; any other exception leaves it exactly as Drools' default handler throws it. A
+     *  division in a condition is evaluated outside a consequence and does not come here. Public, with the implicit
+     *  constructor, because Drools instantiates it by class. */
+    public static final class Nuldelingmelder implements ConsequenceExceptionHandler {
+        @Override public void handleException(Match match, RuleRuntime runtime, Exception e) {
+            for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
+                if (t instanceof Breuk.DelingDoorNul nul) throw nul.inDeRegel(match.getRule().getName(), e);
+            throw new ConsequenceException(e, runtime, match);
+        }
     }
 }

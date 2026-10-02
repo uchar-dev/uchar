@@ -85,8 +85,40 @@ public final class Breuk extends Number implements Comparable<Breuk> {
         return van(teller.multiply(a.teller), noemer.multiply(a.noemer));
     }
     public Breuk delen(Breuk a) {
-        if (a.teller.signum() == 0) throw new ArithmeticException("Breuk deling door 0");
+        if (a.teller.signum() == 0) throw new DelingDoorNul(this);
         return van(teller.multiply(a.noemer), noemer.multiply(a.teller));
+    }
+
+    /**
+     * A division whose divisor is a numeric zero. RUNTIME-SEMANTICS ch. 1.4, point 4 keeps it a fault, where a leeg
+     * divisor gives leeg and a §9.5 inconsistency; ref and clingo fault on it too. {@link #delen} throws it with the
+     * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does
+     * (gate 8 pins that message). Out of a consequence it reaches the KieBase's consequence handler, which throws a
+     * second one naming the rule it ran in ({@link #inDeRegel}), with the first as its cause.
+     */
+    public static final class DelingDoorNul extends ArithmeticException {
+        private static final long serialVersionUID = 1L;
+        private final transient Breuk deeltal;
+
+        DelingDoorNul(Breuk deeltal) {
+            super("Breuk deling door 0");
+            this.deeltal = deeltal;
+        }
+
+        private DelingDoorNul(String zin, Breuk deeltal, Throwable oorzaak) {
+            super(zin);
+            this.deeltal = deeltal;
+            initCause(oorzaak);
+        }
+
+        /** The same division, named: the rule {@code regel} it ran in and its operands, with {@code oorzaak} (what
+         *  the consequence threw) as its cause. */
+        public DelingDoorNul inDeRegel(String regel, Throwable oorzaak) {
+            String getal = deeltal.isTerminerend() ? deeltal.naarDecimal().toPlainString()
+                    : deeltal.teller + "/" + deeltal.noemer;
+            return new DelingDoorNul("deling door nul in de regel \"" + regel + "\": " + getal + " gedeeld door 0 — een "
+                    + "numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)", deeltal, oorzaak);
+        }
     }
 
     /** Exact sign-aware comparison by cross-multiplication (both denominators are positive, so no sign flip). */

@@ -135,6 +135,23 @@ answered the initialisatie's value. Writers whose conditions exclude each other,
 both branches (golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witness
 `OverlappendeSchrijversWitnessTest`).
 
+## Recorded: a division by a numeric zero
+
+A division whose divisor is a numeric zero is a fault (RUNTIME-SEMANTICS ch. 1.4, point 4; the red case
+`division-by-numeric-zero`): `ref` faults with "division by numeric zero" and clingo with its fail-fast guard on the
+subject. Since 2026-10-02 this backend names it as well. `Breuk.delen` throws `Breuk.DelingDoorNul`, an
+`ArithmeticException` with the message it always had ("Breuk deling door 0") and the dividend, and every KieBase
+`DroolsBackend` builds, on both branches, carries a consequence handler (`DroolsBackend.Nuldelingmelder`) that turns it
+into a second `DelingDoorNul` naming the rule and the operands, with the first in its cause chain: "deling door nul in
+de regel "verhouding": 60 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch.
+1.4, punt 4)". That exception leaves the fire in place of Drools' `ConsequenceException`, in a rule's value and in a
+default's justification or consequence alike, so the replay (`ERROR DelingDoorNul: …`), the scenario report and every
+consumer that fires the KieBase read the sentence; a defaults group carries the name this backend gives it (`defaults
+A:Vondst.verhouding`). The red path keeps its pinned fragments, since the cause chain still carries "Breuk deling door
+0". A division in a condition is evaluated outside a consequence and still leaves the fire as Drools'
+`ConstraintEvaluationException`, which on the exec-model branch names neither the rule nor the constraint (the DRL-text
+branch names both). Witness `NuldelerWitnessTest`.
+
 ## Recorded: a condition that reads through a role
 
 The exec-model branch tests a condition that reads through a to-one navigation — an attribute or a characteristic
