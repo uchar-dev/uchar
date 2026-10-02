@@ -249,3 +249,25 @@ record raakt alleen `backlog/`); zeventien regels `exit 0` en `DONE`:
    DRL-tak haar heeft.
 6. De distributie draait op haar pin en kent deze naronde niet; de pin moet na het
    landen mee.
+
+## Keuring (hoofdsessie, 2026-10-02)
+
+- Gates: `/tmp/v2/uchar-gates24/summary.txt` op de laatste codecommit 460fbcb1:
+  dune build en zestien gates "exit 0", `DONE`; gate 12 played 239, DRL-tekst
+  193, JUnit 1077; pins ongewijzigd. Het done-record (64b97045) raakt alleen
+  `backlog/`.
+- Gelezen: het Result per vondst (getuigen rood-vóór/groen-na, de sweep over
+  de goldens en de inertie over 332 bronnen), de twee afwijkingen van het
+  standaardantwoord bij de telling (de zin verwijst naar ch. 4.3/WF-102 (c);
+  vormen die al luid weigerden houden hun zin) — beide aanvaard, want geen
+  bestaande test hoefde te wijzigen en de stille vormen zijn nu luid.
+- Registertekst geplaatst in deze commit: DIVERGENCES §13.4.17.47 (de
+  subsectie "A count over a written path — refused") en "Namen in
+  declaratiekoppen", "Fail-fast refusals" (de alinea over twee vormen met één
+  naam); RUNTIME-SEMANTICS en IR-SPEC ongewijzigd (de tekst zegt het al).
+- Open punten: 1 (de nuldeler in een voorwaarde faalt luid maar niet
+  benoemd) en 5 (twee gelijknamige regels spelen de exec-tak stil fout; de
+  frontend en de verifier weigeren zo'n document nu) gaan samen naar een
+  volgende kleine exec-ronde; 2, 3 en 4 aanvaard zoals geadviseerd (geen
+  bestaande zinnen verleggen zonder besluit van de eigenaar); 6 (de
+  distributiepin) volgt nu.
