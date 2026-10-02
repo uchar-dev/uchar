@@ -196,8 +196,22 @@ public final class DroolsBackend {
         for (Dekking d : et.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
+        weigerDubbeleRegelnaam(et.model());
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
         return new Build(loaded.model(), cl, et, null, List.copyOf(et.dekking()), kieBase);
+    }
+
+    /** Two rules of one name in one package: the KieBase keeps one rule per name, so the second would replace the first
+     *  and the document would play without it (measured 2026-10-02 on two forms of one name, which WF-020 forbids and a
+     *  hand-written document can still carry). The DRL-text branch's compiler refuses the same document with
+     *  "Duplicate rule name"; this branch refuses it in those words before the KieBase is built. */
+    private static void weigerDubbeleRegelnaam(org.drools.model.Model model) {
+        java.util.Set<String> namen = new java.util.HashSet<>();
+        for (org.drools.model.Rule r : model.getRules())
+            if (!namen.add(r.getFullName()))
+                throw new Excluded("exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
+                        + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
+                        + "zou vervangen (vormnamen zijn uniek, WF-020)");
     }
 
 

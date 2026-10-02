@@ -45,7 +45,12 @@ every golden through it, so gate 12 fires the KieBase a consumer gets, and it re
 sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). Each transpiler has one build,
 and it takes every side table the loader returns beside the model: a build that left one out still produced a
 KieBase — a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker said
-so, which is why there is no shorter way in.
+so, which is why there is no shorter way in. A document whose lowering holds two rules of one name in one package —
+two forms of one name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches
+before the KieBase is built: the KieBase keeps one rule per name, and the exec-model branch played such a document
+with the second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig, werkelijk
+afwezig"). The DRL-text branch's compiler refuses it with "Duplicate rule name: actief", the exec-model branch with
+"exec-model: Duplicate rule name: actief — …" (witness `DubbeleRegelnaamWitnessTest`).
 
 ## Build (the shaded runtime uber-jar — decision V2-B)
 
