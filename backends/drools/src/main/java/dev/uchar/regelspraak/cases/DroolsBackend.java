@@ -19,6 +19,7 @@ import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 import dev.uchar.regelspraak.runtime.Breuk;
 
 import org.drools.modelcompiler.KieBaseBuilder;
+import org.drools.modelcompiler.constraints.ConstraintEvaluationException;
 import org.kie.api.KieBase;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.ConsequenceException;
@@ -263,7 +264,7 @@ public final class DroolsBackend {
      *  cause; any other {@code e} is returned unchanged. {@link CaseRunner} calls it where it fires, so the replay, the
      *  red path and the scenario report read the sentence; a consumer that fires a KieBase itself gets Drools'
      *  {@code ConsequenceException}, which names the rule, and can call this the same way. A division in a condition
-     *  is evaluated outside a consequence and does not come here.
+     *  is evaluated outside a consequence: see {@link #benoem(ConstraintEvaluationException)}.
      *
      *  <p>The KieBases built here keep Drools' default consequence handler on purpose. Drools takes a handler by class
      *  name and instantiates it in every new session; where the kie API and this backend are loaded by different
@@ -272,6 +273,19 @@ public final class DroolsBackend {
     public static RuntimeException benoem(ConsequenceException e) {
         for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
             if (t instanceof Breuk.DelingDoorNul nul) return nul.inDeRegel(e.getRule().getName(), e.getCause());
+        return e;
+    }
+
+    /** Names the fault behind {@code e}, the exception Drools throws out of the fire when a constraint throws, on the
+     *  exec-model branch: a condition is tested in a constraint and not in a consequence. Its predicates carry their
+     *  rule (the transpiler's {@code BenoemdeToets}), so Drools' message names the rule and the condition, and a
+     *  division by a numeric zero in it is in the cause chain already named after the rule, with the operands: that
+     *  {@link Breuk.DelingDoorNul} is returned, with the division as {@link Breuk#delen} threw it as its cause. Any
+     *  other {@code e} is returned unchanged. The DRL-text branch throws Drools' own MVEL exception, which names the
+     *  rule and the condition, and does not come here. */
+    public static RuntimeException benoem(ConstraintEvaluationException e) {
+        for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
+            if (t instanceof Breuk.DelingDoorNul nul && nul.regel() != null) return nul;
         return e;
     }
 }

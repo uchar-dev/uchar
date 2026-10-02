@@ -154,9 +154,22 @@ red path and the scenario report read the sentence, in a rule's value on both br
 justification or consequence on the exec-model branch (the DRL-text branch has no defaults lowering); a defaults group
 carries the name this backend gives it (`defaults A:Vondst.verhouding`). Any other `ConsequenceException` passes
 `benoem` unchanged. The red path keeps its pinned fragments, since the cause chain still carries "Breuk deling door 0".
-A division in a condition is evaluated outside a consequence and still leaves the fire as Drools'
-`ConstraintEvaluationException`, which on the exec-model branch names neither the rule nor the constraint (the
-DRL-text branch names both). Witness `NuldelerWitnessTest`.
+Witness `NuldelerWitnessTest`.
+
+A division in a condition is tested in a constraint and not in a consequence, and leaves the fire as Drools'
+`ConstraintEvaluationException`. On the exec-model branch that exception named neither the rule nor the condition
+("Error evaluating constraint '' in  and in more rules", measured 2026-10-02), because a lambda carries no
+`PredicateInformation`. Since then the predicates of a condition's constraints carry their rule and the condition's
+source text (`transpiler.model.BenoemdeToets`: a rule's condition, a counting composite, a comparison with a parameter,
+an aggregation compared, a fold's subselection, a quantifier fold, a consistency's assertion, a fact creation's guard
+on its target), so Drools' message reads "Error evaluating constraint 'zijn gewogen gewicht gedeeld door zijn
+geschatte gewicht groter is dan 1' in [Rule "zwaar" in dev.uchar.regelspraak.generated]", for any fault in the test.
+A division by a numeric zero there is named by the predicate itself, after its rule and with its operands, and
+`DroolsBackend.benoem(ConstraintEvaluationException)`, which `CaseRunner` calls beside the consequence arm, hands that
+`DelingDoorNul` on: the replay, the red path and the scenario report read "deling door nul in de regel "zwaar": 60
+gedeeld door 0 — …", and a consumer that fires a KieBase itself gets Drools' exception with the named division in its
+cause chain. The DRL-text branch throws Drools' MVEL exception, which names the rule and the condition in DRL, as
+before. Witness `NuldelerVoorwaardeWitnessTest`.
 
 The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this

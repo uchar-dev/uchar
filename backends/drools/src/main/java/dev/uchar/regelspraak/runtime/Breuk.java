@@ -95,31 +95,39 @@ public final class Breuk extends Number implements Comparable<Breuk> {
      * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does
      * (gate 8 pins that message). Out of a consequence it leaves the fire in the cause chain of Drools'
      * {@code ConsequenceException}, which {@code DroolsBackend.benoem} turns into a second one naming the rule it ran in
-     * ({@link #inDeRegel}), with the first in its cause chain.
+     * ({@link #inDeRegel}), with the first in its cause chain. Out of a condition the predicate that tested it names it
+     * already, and Drools' {@code ConstraintEvaluationException} carries the named one.
      */
     public static final class DelingDoorNul extends ArithmeticException {
         private static final long serialVersionUID = 1L;
         private final transient Breuk deeltal;
+        private final String regel;
 
         DelingDoorNul(Breuk deeltal) {
             super("Breuk deling door 0");
             this.deeltal = deeltal;
+            this.regel = null;
         }
 
-        private DelingDoorNul(String zin, Breuk deeltal, Throwable oorzaak) {
+        private DelingDoorNul(String zin, String regel, Breuk deeltal, Throwable oorzaak) {
             super(zin);
             this.deeltal = deeltal;
+            this.regel = regel;
             initCause(oorzaak);
         }
 
         /** The same division, named: the rule {@code regel} it ran in and its operands, with {@code oorzaak} (what
-         *  the consequence threw) as its cause. */
+         *  the consequence or the condition threw) as its cause. */
         public DelingDoorNul inDeRegel(String regel, Throwable oorzaak) {
             String getal = deeltal.isTerminerend() ? deeltal.naarDecimal().toPlainString()
                     : deeltal.teller + "/" + deeltal.noemer;
             return new DelingDoorNul("deling door nul in de regel \"" + regel + "\": " + getal + " gedeeld door 0 — een "
-                    + "numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)", deeltal, oorzaak);
+                    + "numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)", regel, deeltal,
+                    oorzaak);
         }
+
+        /** The rule a named division ran in; null where {@link Breuk#delen} threw it and nothing named it yet. */
+        public String regel() { return regel; }
     }
 
     /** Exact sign-aware comparison by cross-multiplication (both denominators are positive, so no sign flip). */

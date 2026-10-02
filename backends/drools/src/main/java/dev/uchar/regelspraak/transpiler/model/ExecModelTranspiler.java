@@ -272,12 +272,43 @@ public final class ExecModelTranspiler {
         navReden = null;   // a reason belongs to the construct that produced it; never carried into the next one
         vouwReden = null;
         tijdlijnReden = null;
-        T res = emitter.get();
+        String buiten = regelInBouw;
+        regelInBouw = kop(naam);
+        T res;
+        try {
+            res = emitter.get();
+        } finally {
+            regelInBouw = buiten;
+        }
         Dekking d = overgeslagen.size() == voor ? Dekking.lowered(soort, naam)
                 : Dekking.skip(soort, naam, String.join("; ", overgeslagen.subList(voor, overgeslagen.size())));
         dekking.add(d);
         d.meld(model);
         return res;
+    }
+
+    /** The rule the construct being lowered is named by in the KieBase ({@link #meet}), which the predicates of its
+     *  conditions carry ({@link BenoemdeToets}); null outside a construct. */
+    private String regelInBouw;
+
+    /** {@code p} as the constraint of the condition {@code c} of the rule being lowered: Drools names the rule and the
+     *  condition when it throws, and a division by a numeric zero in it leaves named ({@link BenoemdeToets}). */
+    private <A> Predicate1<A> benoemd(Conditie c, Predicate1<A> p) { return BenoemdeToets.een(p, regelInBouw, PKG, c); }
+    private <A, B> Predicate2<A, B> benoemd(Conditie c, Predicate2<A, B> p) { return BenoemdeToets.twee(p, regelInBouw, PKG, c); }
+    private <A, B, C> Predicate3<A, B, C> benoemd(Conditie c, Predicate3<A, B, C> p) {
+        return BenoemdeToets.drie(p, regelInBouw, PKG, c);
+    }
+    private <A, B, C, D> Predicate4<A, B, C, D> benoemd(Conditie c, Predicate4<A, B, C, D> p) {
+        return BenoemdeToets.vier(p, regelInBouw, PKG, c);
+    }
+    private <A, B, C, D, E> Predicate5<A, B, C, D, E> benoemd(Conditie c, Predicate5<A, B, C, D, E> p) {
+        return BenoemdeToets.vijf(p, regelInBouw, PKG, c);
+    }
+
+    /** {@code pattern.expr(id, a, t)} with {@code t} carrying the condition {@code c} ({@link #benoemd}). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private PatternDSL.PatternDef toets(PatternDSL.PatternDef pattern, String id, Variable a, Conditie c, Predicate2 t) {
+        return pattern.expr(id, a, benoemd(c, t));
     }
 
     @SuppressWarnings("rawtypes")
@@ -1796,23 +1827,23 @@ public final class ExecModelTranspiler {
                     Object aggVal = ((Number) cnt).longValue() == 0L ? (fb == null ? null : fb.fn().apply(subj, Map.of())) : sum;
                     return neg != RegelSpraakRuntime.rsAggVergelijk(aggVal, RegelSpraakRuntime.toBd(rfn.apply(subj, Map.of())), opStr);
                 };
-                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) agg.countVar(), (Variable) subjectVar, (Predicate3) pred);
+                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) agg.countVar(), (Variable) subjectVar, (Predicate3) benoemd(v, pred));
             } else {
                 Predicate4<Object, Object, Object, Object> pred = (sum, cnt, subj, gv) -> {   // + the bound global
                     Object aggVal = ((Number) cnt).longValue() == 0L ? (fb == null ? null : fb.fn().apply(subj, Map.of())) : sum;
                     return neg != RegelSpraakRuntime.rsAggVergelijk(aggVal, RegelSpraakRuntime.toBd(rfn.apply(subj, bindGlobal(globalNaam, gv))), opStr);
                 };
-                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) agg.countVar(), (Variable) subjectVar, (Variable) global, (Predicate4) pred);
+                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) agg.countVar(), (Variable) subjectVar, (Variable) global, (Predicate4) benoemd(v, pred));
             }
         } else {                                                // count / totaal / min / max: the result var IS the agg value
             if (global == null) {
                 Predicate2<Object, Object> pred = (res, subj) ->
                         neg != RegelSpraakRuntime.rsAggVergelijk(res, RegelSpraakRuntime.toBd(rfn.apply(subj, Map.of())), opStr);
-                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) subjectVar, (Predicate2) pred);
+                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) subjectVar, (Predicate2) benoemd(v, pred));
             } else {
                 Predicate3<Object, Object, Object> pred = (res, subj, gv) ->
                         neg != RegelSpraakRuntime.rsAggVergelijk(res, RegelSpraakRuntime.toBd(rfn.apply(subj, bindGlobal(globalNaam, gv))), opStr);
-                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) subjectVar, (Variable) global, (Predicate3) pred);
+                resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) subjectVar, (Variable) global, (Predicate3) benoemd(v, pred));
             }
         }
         extra.add(resultPat);
@@ -1871,13 +1902,13 @@ public final class ExecModelTranspiler {
                         RegelSpraakRuntime.toBd(rfn.apply(subj, gmap(List.of(n0, n1), unwrapGlobal(o0), unwrapGlobal(o1)))), opStr);
             };
             resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) agg.countVar(),
-                    (Variable) subjectVar, (Variable) dv1, (Variable) dv0, (Predicate5) pred);
+                    (Variable) subjectVar, (Variable) dv1, (Variable) dv0, (Predicate5) benoemd(v, pred));
         } else {
             Predicate4<Object, Object, Object, Object> pred = (res, subj, o0, o1) ->
                     neg != RegelSpraakRuntime.rsAggVergelijk(res,
                             RegelSpraakRuntime.toBd(rfn.apply(subj, gmap(List.of(n0, n1), unwrapGlobal(o0), unwrapGlobal(o1)))), opStr);
             resultPat = PatternDSL.pattern(agg.resultVar()).expr(nextId("aggcmp"), (Variable) subjectVar,
-                    (Variable) dv1, (Variable) dv0, (Predicate4) pred);
+                    (Variable) dv1, (Variable) dv0, (Predicate4) benoemd(v, pred));
         }
         extra.add(resultPat);
         return new Gate(pattern, extra);
@@ -1912,19 +1943,19 @@ public final class ExecModelTranspiler {
         if (!c1 && !c2) {                                       // count / totaal both sides: the result var IS each value
             Predicate3<Object, Object, Object> p = (res2, res1, subj) ->
                     neg != RegelSpraakRuntime.rsAggVergelijk(res1, RegelSpraakRuntime.toBd(res2), opStr);
-            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) subjectVar, (Predicate3) p);
+            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) subjectVar, (Predicate3) benoemd(v, p));
         } else if (c1 && !c2) {
             Predicate4<Object, Object, Object, Object> p = (res2, res1, cnt1, subj) ->
                     neg != RegelSpraakRuntime.rsAggVergelijk(foldLeeg(res1, cnt1, fb1, subj), RegelSpraakRuntime.toBd(res2), opStr);
-            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a1.countVar(), (Variable) subjectVar, (Predicate4) p);
+            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a1.countVar(), (Variable) subjectVar, (Predicate4) benoemd(v, p));
         } else if (!c1 && c2) {
             Predicate4<Object, Object, Object, Object> p = (res2, res1, cnt2, subj) ->
                     neg != RegelSpraakRuntime.rsAggVergelijk(res1, RegelSpraakRuntime.toBd(foldLeeg(res2, cnt2, fb2, subj)), opStr);
-            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a2.countVar(), (Variable) subjectVar, (Predicate4) p);
+            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a2.countVar(), (Variable) subjectVar, (Predicate4) benoemd(v, p));
         } else {                                                // both count-bound (SOM / empty MIN·MAX): resolve each leeg
             Predicate5<Object, Object, Object, Object, Object> p = (res2, res1, cnt1, cnt2, subj) ->
                     neg != RegelSpraakRuntime.rsAggVergelijk(foldLeeg(res1, cnt1, fb1, subj), RegelSpraakRuntime.toBd(foldLeeg(res2, cnt2, fb2, subj)), opStr);
-            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a1.countVar(), (Variable) a2.countVar(), (Variable) subjectVar, (Predicate5) p);
+            rp = PatternDSL.pattern(r2).expr(nextId("aggcmp"), (Variable) r1, (Variable) a1.countVar(), (Variable) a2.countVar(), (Variable) subjectVar, (Predicate5) benoemd(v, p));
         }
         extra.add(rp);
         return new Gate(pattern, extra);
@@ -2014,23 +2045,23 @@ public final class ExecModelTranspiler {
             };
             if (bound == null) {
                 Predicate1<Object> p1 = e -> fold.test(e, null);   // no global -> a plain fact-only count fold
-                return src.expr(nextId("filter"), (Predicate1) p1);
+                return src.expr(nextId("filter"), (Predicate1) benoemd(filter, p1));
             }
             Predicate2<Object, Object> p2 = (e, gv) -> fold.test(e, (BigDecimal) gv);
-            return src.expr(nextId("filter"), (Variable) bound, (Predicate2) p2);
+            return src.expr(nextId("filter"), (Variable) bound, (Predicate2) benoemd(filter, p2));
         }
         if (filter instanceof Conditie.Periode per) {   // ch. 3.10: the window, read per candidate
             Predicate2<Object, Object> venster = rekendatumGlobal == null ? null : vensterToets(per, elem);
             return venster == null ? null
-                    : src.expr(nextId("filter"), (Variable) rekendatumGlobal, (Predicate2) venster);
+                    : src.expr(nextId("filter"), (Variable) rekendatumGlobal, (Predicate2) benoemd(filter, venster));
         }
         GlobalVergelijking gb = globalBullet(filter, elem);   // §5.6 a getalachtig Parameter-global comparison source filter
         if (gb != null) {
             Predicate2<Object, Object> p2 = (e, gv) -> gb.test().test(e, (BigDecimal) gv);
-            return src.expr(nextId("filter"), (Variable) gb.global(), (Predicate2) p2);
+            return src.expr(nextId("filter"), (Variable) gb.global(), (Predicate2) benoemd(filter, p2));
         }
         Predicate1<Object> fp = leafPredicate(filter, elem);
-        return fp == null ? null : src.expr(nextId("filter"), (Predicate1) fp);
+        return fp == null ? null : src.expr(nextId("filter"), (Predicate1) benoemd(filter, fp));
     }
 
     /** A §5.6/§13.4.13.4 numeric/percentage Parameter-GLOBAL comparison bullet ("zijn leeftijd is kleiner dan de
@@ -2975,7 +3006,7 @@ public final class ExecModelTranspiler {
      *  globalName-&gt;value map, null for a leeg global) and decides the comparison via the same scalarWaarde fns as the
      *  single-global path (which carry the §6/§5 leegwaarde rules). DRL reads each global as a free mvel name. */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Gate nGlobalGate(List<String> gns, PatternDSL.PatternDef subjectPattern, Variable subjectVar,
+    private Gate nGlobalGate(List<String> gns, PatternDSL.PatternDef subjectPattern, Variable subjectVar, Conditie c,
                              java.util.function.BiFunction<Object, Map<String, BigDecimal>, Boolean> eval) {
         int n = gns.size();
         if (n < 2 || n > 3) return null;   // 1 -> single-global path; >3 -> honest skip (rare)
@@ -2994,11 +3025,13 @@ public final class ExecModelTranspiler {
         if (n == 2) {
             Variable d0 = dvs.get(0);
             extra.add(PatternDSL.pattern(last).expr(nextId("c"), (Variable) subjectVar, (Variable) d0,
-                (Predicate3) (lo, subj, o0) -> eval.apply(subj, gmap(gns, unwrapGlobal(o0), unwrapGlobal(lo)))));
+                (Predicate3) benoemd(c, (Predicate3<Object, Object, Object>) (lo, subj, o0) ->
+                        eval.apply(subj, gmap(gns, unwrapGlobal(o0), unwrapGlobal(lo))))));
         } else {   // n == 3
             Variable d0 = dvs.get(0), d1 = dvs.get(1);
             extra.add(PatternDSL.pattern(last).expr(nextId("c"), (Variable) subjectVar, (Variable) d0, (Variable) d1,
-                (Predicate4) (lo, subj, o0, o1) -> eval.apply(subj, gmap(gns, unwrapGlobal(o0), unwrapGlobal(o1), unwrapGlobal(lo)))));
+                (Predicate4) benoemd(c, (Predicate4<Object, Object, Object, Object>) (lo, subj, o0, o1) ->
+                        eval.apply(subj, gmap(gns, unwrapGlobal(o0), unwrapGlobal(o1), unwrapGlobal(lo))))));
         }
         return new Gate(subjectPattern, extra);
     }
@@ -3606,20 +3639,20 @@ public final class ExecModelTranspiler {
             PatternDSL.PatternDef checkStatisch;
             if (grensGlobal == null && rdGlobal == null) {
                 Predicate1<Object> evStatisch = leden -> tel.test(leden, null, null);
-                checkStatisch = PatternDSL.pattern(elemsVar).expr(nextId("kv"), (Predicate1) evStatisch);
+                checkStatisch = PatternDSL.pattern(elemsVar).expr(nextId("kv"), (Predicate1) benoemd(kv, evStatisch));
             } else if (rdGlobal == null) {
                 Predicate2<Object, Object> evStatisch = (leden, gv) -> tel.test(leden, (BigDecimal) gv, null);
                 checkStatisch = PatternDSL.pattern(elemsVar)
-                        .expr(nextId("kv"), (Variable) grensGlobal, (Predicate2) evStatisch);
+                        .expr(nextId("kv"), (Variable) grensGlobal, (Predicate2) benoemd(kv, evStatisch));
             } else if (grensGlobal == null) {
                 Predicate2<Object, Object> evStatisch = (leden, rd) -> tel.test(leden, null, rd);
                 checkStatisch = PatternDSL.pattern(elemsVar)
-                        .expr(nextId("kv"), (Variable) rdGlobal, (Predicate2) evStatisch);
+                        .expr(nextId("kv"), (Variable) rdGlobal, (Predicate2) benoemd(kv, evStatisch));
             } else {
                 Predicate3<Object, Object, Object> evStatisch =
                         (leden, gv, rd) -> tel.test(leden, (BigDecimal) gv, rd);
                 checkStatisch = PatternDSL.pattern(elemsVar)
-                        .expr(nextId("kv"), (Variable) grensGlobal, (Variable) rdGlobal, (Predicate3) evStatisch);
+                        .expr(nextId("kv"), (Variable) grensGlobal, (Variable) rdGlobal, (Predicate3) benoemd(kv, evStatisch));
             }
             return new Gate(pattern, List.of(accStatisch, checkStatisch));
         }
@@ -3656,7 +3689,7 @@ public final class ExecModelTranspiler {
                 return alle ? RegelSpraakRuntime.rsGeheelPeriodeAlle((List<? extends List<?>>) tls, fGran, fToets, grens)
                             : RegelSpraakRuntime.rsGeheelPeriodeGeen((List<? extends List<?>>) tls, fGran, fToets, grens);
             };
-            PatternDSL.PatternDef check = PatternDSL.pattern(tlVar).expr(nextId("kv"), (Predicate1) ev);
+            PatternDSL.PatternDef check = PatternDSL.pattern(tlVar).expr(nextId("kv"), (Predicate1) benoemd(kv, ev));
             return new Gate(pattern, List.of(accItem, check));
         }
         if (gGlobals.size() == 1) {
@@ -3674,7 +3707,7 @@ public final class ExecModelTranspiler {
                 return alle ? RegelSpraakRuntime.rsGeheelPeriodeAlle((List<? extends List<?>>) tls, fGran, fToets, grens)
                             : RegelSpraakRuntime.rsGeheelPeriodeGeen((List<? extends List<?>>) tls, fGran, fToets, grens);
             };
-            PatternDSL.PatternDef check = PatternDSL.pattern(tlVar).expr(nextId("kv"), (Variable) gg, (Predicate2) ev);
+            PatternDSL.PatternDef check = PatternDSL.pattern(tlVar).expr(nextId("kv"), (Variable) gg, (Predicate2) benoemd(kv, ev));
             return new Gate(pattern, List.of(accItem, check));
         }
         return kvSkip(kv, "een matrixgrens die meer dan één parameter-global leest");
@@ -3839,7 +3872,7 @@ public final class ExecModelTranspiler {
                     default          -> false;   // unreachable (alle/de handled above)
                 };
             };
-            return new Gate(pattern.expr(nextId("q"), (Predicate1) combined), List.of());
+            return new Gate(pattern.expr(nextId("q"), (Predicate1) benoemd(s, combined)), List.of());
         }
         // IR-SPEC ch. 4.5 / RUNTIME-SEMANTICS ch. 3.9a the QUANTIFIER FOLD — Samengesteld's first-order sibling,
         // quantifying over INSTANCES instead of over the bullets of one subject. Placed here so the two read
@@ -3859,7 +3892,7 @@ public final class ExecModelTranspiler {
             if (rekendatumGlobal == null) return null;   // defensive: heeftTijdgebonden registers it
             Predicate2<Object, Object> venster = vensterToets(per, subject);
             if (venster == null) return null;
-            return new Gate(pattern.expr(nextId("per"), (Variable) rekendatumGlobal, (Predicate2) venster), List.of());
+            return new Gate(pattern.expr(nextId("per"), (Variable) rekendatumGlobal, (Predicate2) benoemd(per, venster)), List.of());
         }
         // §8.2 / §13.4.15.70 "gedurende de/het gehele jaar|maand": a whole-period check over a tijdsafhankelijk
         // onderwerp. A literal/own-attr grens (0 globals) is a fact-only leaf (handled in leafPredicate, reached by
@@ -3870,14 +3903,14 @@ public final class ExecModelTranspiler {
             Gp82 g = geheelPeriode82(c, gp82, subject);
             if (g == null) return null;
             Predicate1<Object> leaf = geheelPeriodeLeaf(g);
-            if (leaf != null) return new Gate(pattern.expr(nextId("c"), (Predicate1) leaf), List.of());
+            if (leaf != null) return new Gate(pattern.expr(nextId("c"), (Predicate1) benoemd(c, leaf)), List.of());
             if (g.grens() != null && g.grens().globals().size() == 1) {
                 String gn = g.grens().globals().iterator().next();
                 Global<BigDecimal> gg = globals.get(gn);
                 if (gg == null) return null;
                 java.util.function.Function<Object, Object> tl = g.timeline(); WaardeFn gf = g.grens();
                 int toets = g.toets(); String gran = g.gran(); boolean niet = g.niet();
-                return new Gate(pattern.expr(nextId("c"), (Variable) gg, (Predicate2) (s, gv) -> {
+                return new Gate(toets(pattern, nextId("c"), (Variable) gg, c, (Predicate2) (s, gv) -> {
                     BigDecimal grens = RegelSpraakRuntime.toBd(gf.fn().apply(s, bindGlobal(gn, gv)));
                     boolean b = RegelSpraakRuntime.rsGeheelPeriode((List<?>) tl.apply(s), gran, toets, grens);
                     return niet ? !b : b;
@@ -3984,7 +4017,7 @@ public final class ExecModelTranspiler {
                     : (Variable) datumGlobals.get(globalNaam(pr.parameter().naam()));
             if (lf != null && g != null) {
                 Conditie.Operator op = v.op();
-                return new Gate(pattern.expr(nextId("c"), g, (Predicate2) (s, gv) ->
+                return new Gate(toets(pattern, nextId("c"), g, c, (Predicate2) (s, gv) ->
                         datumVergelijkTemporal(lf.apply(s), gv, op)), List.of());
             }
             return null;   // unresolvable nav -> honest skip (symmetric with DRL marker)
@@ -4000,7 +4033,7 @@ public final class ExecModelTranspiler {
             java.util.function.Function<Object, Object> lf = datumTemporeelLezer(la, subject);
             if (lf == null || rekendatumGlobal == null) return null;   // unresolvable nav -> honest skip
             Conditie.Operator op = v.op();
-            return new Gate(pattern.expr(nextId("c"), (Variable) rekendatumGlobal, (Predicate2) (s, rd) ->
+            return new Gate(toets(pattern, nextId("c"), (Variable) rekendatumGlobal, c, (Predicate2) (s, rd) ->
                     datumVergelijkTemporal(lf.apply(s), rd instanceof java.time.LocalDate d ? d : null, op)), List.of());
         }
         // §5.3 a TEKST/enumeratiewaarde equality (GELIJK/ONGELIJK) of an OWN or to-one NAVIGATED attribute vs a Tekst
@@ -4020,12 +4053,12 @@ public final class ExecModelTranspiler {
             java.util.function.UnaryOperator<Object> n = gelijkheidsLezing(eff.typeVan(la), pr.parameter().datatype());
             if (ongenavigeerd(la)) {
                 if (subject == null || !subject.heeftLid(attr)) return null;
-                return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
+                return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) ->
                         tekstVergelijk(n.apply(RegelSpraakRuntime.get(s, attr)), n.apply(gv), gelijk)), List.of());
             }
             java.util.function.Function<Object, Object> doel = navDoel(la, subject);
             if (doel == null) return null;
-            return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
+            return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) -> {
                 Object rel = doel.apply(s);
                 return tekstVergelijk(n.apply(rel == null ? null : RegelSpraakRuntime.get(rel, attr)), n.apply(gv), gelijk);   // §5.5.5 null relation -> leeg
             }), List.of());
@@ -4043,7 +4076,7 @@ public final class ExecModelTranspiler {
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
             BigDecimal[] f = restatement(effType(la), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
-            return new Gate(pattern.expr(nextId("c"), (Variable) g,
+            return new Gate(toets(pattern, nextId("c"), (Variable) g, c,
                     (Predicate2) (s, gv) -> vergelijk(scale(num(s, attr), f[0]), scale((BigDecimal) gv, f[1]), op)), List.of());
         }
         // §8.1.1 a to-ONE NAVIGATED numeric comparison vs a Parameter-GLOBAL — the §12 "de duur van
@@ -4060,7 +4093,7 @@ public final class ExecModelTranspiler {
             String attr = la.attribuut();
             Conditie.Operator op = v.op();
             BigDecimal[] f = restatement(effType(la), pr.parameter().datatype());  // §5.1 Tabel 32 unit restatement
-            return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
+            return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) -> {
                 // §5.5.5 an ABSENT relation reads the navigated attribute as LEEG (null), then vergelijk's §5 leegwaarde
                 // tables decide — NOT a blanket short-circuit-to-false (which was WRONG for ONGELIJK: leeg != global is
                 // WAAR, §5.6 Tabel 44). Ordering / GELIJK of a leeg operand stay onwaar (Tabel 33-42); only ONGELIJK
@@ -4096,7 +4129,7 @@ public final class ExecModelTranspiler {
                         BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));   // §5.1 Tabel 32 unit restatement
                         BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
                         Conditie.Operator op = v.op();
-                        return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
+                        return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) ->
                                 vergelijk(scale((BigDecimal) lfn.apply(s, bindGlobal(gn, gv)), f[0]),
                                           scale((BigDecimal) rfn.apply(s, bindGlobal(gn, gv)), f[1]), op)), List.of());
                     }
@@ -4107,7 +4140,7 @@ public final class ExecModelTranspiler {
                     BigDecimal[] f = restatement(effType(v.links()), effType(v.rechts()));
                     BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
                     Conditie.Operator op = v.op();
-                    Gate g = nGlobalGate(new ArrayList<>(gset), pattern, subjectVar, (s, gm) ->
+                    Gate g = nGlobalGate(new ArrayList<>(gset), pattern, subjectVar, c, (s, gm) ->
                             vergelijk(scale((BigDecimal) lfn.apply(s, gm), f[0]), scale((BigDecimal) rfn.apply(s, gm), f[1]), op));
                     if (g != null) return g;   // >3 globals / a non-numeric global -> fall through -> skip
                 }
@@ -4133,7 +4166,7 @@ public final class ExecModelTranspiler {
                     if (g != null) {
                         BiFunction<Object, Map<String, BigDecimal>, Object> lfn = lw.fn(), rfn = rw.fn();
                         Conditie.Operator op = v.op();
-                        return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) ->
+                        return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) ->
                                 datumVergelijkTemporal(lfn.apply(s, bindGlobal(gn, gv)), rfn.apply(s, bindGlobal(gn, gv)), op)), List.of());
                     }
                 }
@@ -4159,7 +4192,7 @@ public final class ExecModelTranspiler {
                 if (g != null && pred != null) {
                     BiFunction<Object, Map<String, BigDecimal>, Object> fn = wf.fn();
                     boolean neg = dp.negatie();   // §8.1.5 + Tabel 16 "is geen <dagsoort>"
-                    return new Gate(pattern.expr(nextId("c"), (Variable) g, (Predicate2) (s, gv) -> {
+                    return new Gate(toets(pattern, nextId("c"), (Variable) g, c, (Predicate2) (s, gv) -> {
                             java.time.LocalDate ld = asDag(fn.apply(s, bindGlobal(gn, gv))); return neg != (ld != null && pred.test(ld)); }), List.of());
                 }
             }
@@ -4167,7 +4200,7 @@ public final class ExecModelTranspiler {
         }
         // every other supported condition is a fact-only leaf.
         Predicate1<Object> lp = leafPredicate(c, subject);
-        if (lp != null) return new Gate(pattern.expr(nextId("c"), (Predicate1) lp), List.of());
+        if (lp != null) return new Gate(pattern.expr(nextId("c"), (Predicate1) benoemd(c, lp)), List.of());
         return null;
     }
 
@@ -6161,12 +6194,12 @@ public final class ExecModelTranspiler {
         Predicate1<Object> schending = schending(c.assertie(), subject);
         Predicate2<Object, Object> vensterSchending = schending == null ? schendingMetVenster(c.assertie(), subject) : null;
         if (schending != null) {
-            pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Predicate1) schending);
+            pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Predicate1) benoemd(c.assertie(), schending));
         } else if (vensterSchending != null) {
             // ch. 3.10: a window in the assertion reads the rekendatum, which rides as a pattern variable exactly as
             // it does on a rule's condition.
             pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Variable) rekendatumGlobal,
-                    (Predicate2) vensterSchending);
+                    (Predicate2) benoemd(c.assertie(), vensterSchending));
         } else {
             // §9.5 a vs-PARAMETER assertie ("X moet kleiner zijn dan de <parameter>") needs the global bound as a
             // pattern variable (a 2-var expr) — schending returns a fact-only Predicate1, so it cannot carry it.
@@ -6175,7 +6208,7 @@ public final class ExecModelTranspiler {
             Global<BigDecimal> g = globals.get(sg.global());
             java.util.function.BiPredicate<Object, BigDecimal> pred = sg.pred();
             pattern = PatternDSL.pattern(sVar).expr(nextId("schending"), (Variable) g,
-                    (Predicate2) (s, gv) -> pred.test(s, (BigDecimal) gv));
+                    (Predicate2) benoemd(c.assertie(), (Predicate2<Object, Object>) (s, gv) -> pred.test(s, (BigDecimal) gv)));
         }
         pattern = geldigGuard(pattern, c.geldigheid());   // §4.2 window
         // idempotency guard: not Inconsistentie( regel == naam, subject == $subject )
@@ -7531,7 +7564,7 @@ public final class ExecModelTranspiler {
         Variable laatste = vorige;
         PatternDSL.PatternDef doelPat = PatternDSL.pattern(doelVar).expr(nextId("djoin"), (Variable) laatste,
                 (Predicate2) (d, p) -> RegelSpraakRuntime.get(d, koppelveld) == p);
-        if (doelGuard != null) doelPat = doelPat.expr(nextId("dg"), (Predicate1) doelGuard);
+        if (doelGuard != null) doelPat = doelPat.expr(nextId("dg"), (Predicate1) benoemd(fc.voorwaarde(), doelGuard));
         items.add(doelPat);
 
         // create the relation: set the anker-role reference on $doel; NO_LOOP (the modify must not re-fire the rule),
