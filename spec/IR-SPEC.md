@@ -8902,8 +8902,10 @@ of another object of its type over a role, the same through a defaults group (WF
 count over a characteristic that reads the count over a role. `ref/` refuses each under WF-045; the ASP backend
 answers the first two and finds no stable model for the third. The branch refuses by name only a leeg or gevuld
 test on a cycle (WF-046). The RegelSpraak frontend refuses such a document before it is written since the same day,
-in the verifier's sentences (WF-045, WF-051; `grammar/DIVERGENCES.md`), except a cycle its own warning names on a
-rule's own subject and a cycle through an object creation outside a recursive group.
+in the verifier's sentences (WF-045, WF-051; `grammar/DIVERGENCES.md`), except a cycle through an object creation
+outside a recursive group. A cycle its own warning names on a rule's own subject was excepted as well until
+2026-10-06; since then it is refused like any other, the refusal naming WF-046 too where a negative edge lies between
+two forms of the cycle (negatief `wf046-kenmerken-lezen-elkaars-ontkenning`).
 
 ---
 
