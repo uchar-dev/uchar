@@ -57,6 +57,9 @@ public final class DrlTranspiler {
      *  (a POJO per objecttype, with the getters/setters this transpiler assumes) is
      *  the contract between the generated rules and the runtime. */
     public static final String FACT_PACKAGE = "dev.uchar.regelspraak.facts";
+    /** The package the generated DRL declares. The build hands Drools the text under a path of the same folders,
+     *  because a file whose folder differs from its package draws a warning from Drools' KieBuilder. */
+    public static final String DRL_PACKAGE = "dev.uchar.regelspraak.generated";
     private final RegelSpraakModel model;
     /** RUNTIME-SEMANTICS ch. 2.10: the §4 EFFECTIVE-unit derivation — declarations plus the ch. 2.6 join rules,
      *  the ONE source every unit restatement below consults instead of a node's own wire annotation. Since this
@@ -209,7 +212,7 @@ public final class DrlTranspiler {
     private String run() {
         strat = Stratificatie.bereken(model.resolvedRegels, this::genavigeerd);
         gevuurdReferenties = model.gevuurdReferenties();   // §8.1.9 opt-in: only these rules mark their firing
-        out.append("package dev.uchar.regelspraak.generated;\n\n");
+        out.append("package ").append(DRL_PACKAGE).append(";\n\n");
         // Import the fact class for each object type so Drools resolves the patterns.
         for (Objecttype ot : model.objecttypen.values())
             out.append("import ").append(FACT_PACKAGE).append('.').append(ident(ot.naam, true)).append(";\n");

@@ -21,7 +21,6 @@ import dev.uchar.regelspraak.runtime.Breuk;
 import org.drools.modelcompiler.KieBaseBuilder;
 import org.drools.modelcompiler.constraints.ConstraintEvaluationException;
 import org.kie.api.KieBase;
-import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.rule.ConsequenceException;
 import org.kie.internal.utils.KieHelper;
 
@@ -247,7 +246,9 @@ public final class DroolsBackend {
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
         KieHelper helper = new KieHelper();
         helper.setClassLoader(cl);
-        helper.addContent(t.drl(), ResourceType.DRL);
+        // Without a name KieHelper files the text as file0.drl in the resource root, and KieBuilder warns that a
+        // file in folder '' declares DRL_PACKAGE. The path's folders follow the package; the extension gives the type.
+        helper.addContent(t.drl(), DrlTranspiler.DRL_PACKAGE.replace('.', '/') + "/regels.drl");
         KieBase kieBase;
         try {
             kieBase = helper.build();
