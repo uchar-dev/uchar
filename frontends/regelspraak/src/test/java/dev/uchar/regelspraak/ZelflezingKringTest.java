@@ -32,6 +32,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * covered the lowered forms, the frontend said nothing on all three witnesses below and the verifier refused each
  * under WF-045: "waardering -> waardering", "waardering -> afwijking opgave waarde -> waardering" (with WF-046 twice)
  * and "waardering -> premieregel -> waardering".
+ *
+ * <p>Every one of these cycles is refused, the WARNING standing beside the ERROR in the verifier's sentence, which
+ * names WF-046 too where a negative edge lies on the cycle. Measured before that change, on the frontend of
+ * {@code b3861896}: each row below drew its WARNING and nothing else, so {@code check} passed a document the verifier
+ * refuses; "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd
+ * indien hij niet uitgesloten is" was one, with two stable models in the ASP backend.
  */
 class ZelflezingKringTest {
 
@@ -45,11 +51,29 @@ class ZelflezingKringTest {
         return "\nRegel " + naam + "\n    geldig altijd\n        " + zin + "\n";
     }
 
-    private static Diagnostic enigeWaarschuwing(RegelSpraakModel m) {
-        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose, kreeg: " + m.diagnostics);
+    /** The diagnostics of one cycle: first its WARNING, which is returned, then exactly the ERRORs {@code fouten}. */
+    private static Diagnostic waarschuwingEnFouten(RegelSpraakModel m, String... fouten) {
+        assertEquals(1 + fouten.length, m.diagnostics.size(),
+                () -> "verwachtte de WARNING en " + fouten.length + " ERROR(s), kreeg: " + m.diagnostics);
         Diagnostic d = m.diagnostics.get(0);
-        assertEquals(Severity.WARNING, d.severity(), () -> "verwachtte een WARNING: " + d);
+        assertEquals(Severity.WARNING, d.severity(), () -> "verwachtte eerst de WARNING: " + d);
+        List<Diagnostic> rest = m.diagnostics.subList(1, m.diagnostics.size());
+        assertTrue(rest.stream().allMatch(Diagnostic::isError), () -> "verwachtte daarna alleen ERRORs: " + rest);
+        assertEquals(List.of(fouten), rest.stream().map(Diagnostic::message).toList());
         return d;
+    }
+
+    private static final String HANGT = " hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij "
+            + "buiten een recursieve creatie (WF-045)";
+    private static final String NEGATIEF = ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)";
+    private static final String KRINGZIN = ": dependency cycle through no recursive creation: ";
+
+    private static String weigering(String regel, String kring) {
+        return "regel '" + regel + "'" + HANGT + KRINGZIN + kring;
+    }
+
+    private static String negatieveWeigering(String regel, String kring) {
+        return "regel '" + regel + "'" + HANGT + NEGATIEF + KRINGZIN + kring;
     }
 
     private static List<String> kringmeldingen(RegelSpraakModel m) {
@@ -65,51 +89,57 @@ class ZelflezingKringTest {
             " — herberekening bereikt mogelijk geen fixpunt (de engine begrenst het aantal activaties)";
 
     @Test void een_directe_zelflezing_krijgt_de_melding_van_de_kring() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING
-                + regel("ophoog x", "De x van een Ding moet berekend worden als de x van de Ding plus 1.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING
+                + regel("ophoog x", "De x van een Ding moet berekend worden als de x van de Ding plus 1.")),
+                weigering("ophoog x", "ophoog x -> ophoog x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
         assertEquals(0, d.line(), "zoals de melding van de kring over twee attributen: zonder regel");
     }
 
     @Test void een_zelflezing_door_een_variabelendeel_heen_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + """
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + """
 
             Regel ophoog x
                 geldig altijd
                     De x van een Ding moet gesteld worden op de hulp plus 1.
                     Daarbij geldt:
                         de hulp is de x van de Ding.
-            """));
+            """),
+                weigering("ophoog x", "ophoog x -> ophoog x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
     @Test void een_begrenzing_van_iets_anders_dan_het_doel_zelf_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("begrens x",
-                "De x van een Ding moet gesteld worden op de x van de Ding plus 1, met een maximum van de y van de Ding.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + regel("begrens x",
+                "De x van een Ding moet gesteld worden op de x van de Ding plus 1, met een maximum van de y van de Ding.")),
+                weigering("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
     @Test void een_grens_die_het_doel_leest_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("begrens x",
-                "De x van een Ding moet gesteld worden op de y van de Ding, met een maximum van de x van de Ding.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + regel("begrens x",
+                "De x van een Ding moet gesteld worden op de y van de Ding, met een maximum van de x van de Ding.")),
+                weigering("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
     @Test void het_begrenzingsidioom_krijgt_de_melding() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("begrens x",
-                "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + regel("begrens x",
+                "De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.")),
+                weigering("begrens x", "begrens x -> begrens x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
     @Test void een_zelflezing_in_de_voorwaarde_krijgt_de_melding() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + regel("zet x",
-                "De x van een Ding moet gesteld worden op 5 indien de x van de Ding groter is dan 3.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + regel("zet x",
+                "De x van een Ding moet gesteld worden op 5 indien de x van de Ding groter is dan 3.")),
+                weigering("zet x", "zet x -> zet x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
         assertEquals(0, d.line());
     }
 
     @Test void een_zelflezing_in_een_samengestelde_voorwaarde_krijgt_de_melding() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING + """
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING + """
 
             Regel zet x
                 geldig altijd
@@ -117,7 +147,8 @@ class ZelflezingKringTest {
                     indien hij aan alle volgende voorwaarden voldoet:
                     - zijn y is kleiner dan 2
                     - zijn x is groter dan 3.
-            """));
+            """),
+                weigering("zet x", "zet x -> zet x"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.x" + STAART, d.message());
     }
 
@@ -128,36 +159,41 @@ class ZelflezingKringTest {
     }
 
     @Test void een_kring_door_een_voorwaarde_over_een_ander_attribuut_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING
                 + regel("a", "De x van een Ding moet gesteld worden op 5 indien de y van de Ding groter is dan 3.")
-                + regel("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1.")));
+                + regel("b", "De y van een Ding moet berekend worden als de x van de Ding plus 1.")),
+                weigering("a", "a -> b -> a"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.x -> Ding.y -> Ding.x" + STAART, d.message());
     }
 
     @Test void een_kenmerkregel_die_haar_eigen_kenmerk_leest_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
-                + regel("oud", "Een Ding is oud indien hij oud is.")));
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING_KENMERK
+                + regel("oud", "Een Ding is oud indien hij oud is.")),
+                weigering("oud", "oud -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.oud" + STAART, d.message());
     }
 
     @Test void een_kring_over_twee_kenmerken_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING_KENMERK
                 + regel("oud", "Een Ding is oud indien hij versleten is.")
-                + regel("versleten", "Een Ding is versleten indien hij oud is.")));
+                + regel("versleten", "Een Ding is versleten indien hij oud is.")),
+                weigering("oud", "oud -> versleten -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + STAART, d.message());
     }
 
     @Test void een_kring_over_twee_ontkende_kenmerken_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING_KENMERK
                 + regel("oud", "Een Ding is oud indien hij niet versleten is.")
-                + regel("versleten", "Een Ding is versleten indien hij niet oud is.")));
+                + regel("versleten", "Een Ding is versleten indien hij niet oud is.")),
+                negatieveWeigering("oud", "oud -> versleten -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.versleten -> Ding.oud" + STAART, d.message());
     }
 
     @Test void een_kring_over_een_kenmerk_en_een_attribuut_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(DING_KENMERK
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(DING_KENMERK
                 + regel("oud", "Een Ding is oud indien zijn x groter is dan 3.")
-                + regel("x", "De x van een Ding moet gesteld worden op 5 indien hij oud is.")));
+                + regel("x", "De x van een Ding moet gesteld worden op 5 indien hij oud is.")),
+                weigering("oud", "oud -> x -> oud"));
         assertEquals("kringverwijzing tussen berekeningen: Ding.oud -> Ding.x -> Ding.oud" + STAART, d.message());
     }
 
@@ -186,9 +222,13 @@ class ZelflezingKringTest {
                 geldig altijd
                     De waarde van een Vondst moet berekend worden als de waarde van de Vondst plus 1.
             """);
-        Diagnostic d = enigeWaarschuwing(m);
+        Diagnostic d = waarschuwingEnFouten(m,
+                negatieveWeigering("waardering", "waardering -> opgave boven berekening waarde -> waardering"),
+                "defaults-groep 'opgave boven berekening waarde' ligt op een afhankelijkheidskring, en een kring door "
+                        + "een defaults-groep heeft geen strata (WF-051): a dependency cycle passes through defaults group "
+                        + "'opgave boven berekening waarde' — its displacement reads are negative edges; no strata exist");
         assertEquals("kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde" + STAART, d.message());
-        assertEquals(1, m.prioritizedDefaults.size(), "de melding is een WARNING: de markering wordt gewoon gelowerd");
+        assertEquals(1, m.prioritizedDefaults.size(), "de markering is gelowerd vóór de kringtoets over het document");
     }
 
     private static final String VONDST_GEMARKEERD = """
@@ -201,26 +241,29 @@ class ZelflezingKringTest {
     @Test void een_berekening_die_haar_eigen_berekende_waarde_leest_wordt_gemeld() {
         RegelSpraakModel m = Resolver.resolve(VONDST_GEMARKEERD + regel("waardering",
                 "De waarde van een Vondst moet berekend worden als de berekende waarde van de Vondst plus 1."));
-        Diagnostic d = enigeWaarschuwing(m);
+        Diagnostic d = waarschuwingEnFouten(m,
+                weigering("waardering", "waardering -> waardering"));
         assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.berekende waarde" + STAART,
                 d.message());
         assertEquals(0, d.line());
-        assertEquals(1, m.prioritizedDefaults.size(), "de melding is een WARNING: de markering wordt gewoon gelowerd");
+        assertEquals(1, m.prioritizedDefaults.size(), "de markering is gelowerd vóór de kringtoets over het document");
     }
 
     @Test void een_voorwaarde_op_het_gegenereerde_kenmerk_sluit_een_kring() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(VONDST_GEMARKEERD + regel("waardering",
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(VONDST_GEMARKEERD + regel("waardering",
                 "De waarde van een Vondst moet berekend worden als de taxatie van de Vondst "
-                + "indien hij geen afwijkende opgave waarde heeft.")));
+                + "indien hij geen afwijkende opgave waarde heeft.")),
+                negatieveWeigering("waardering", "waardering -> afwijking opgave waarde -> waardering"));
         assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.afwijkende opgave waarde "
                 + "-> Vondst.berekende waarde" + STAART, d.message());
     }
 
     @Test void een_kring_via_een_ander_attribuut_door_de_berekende_waarde_wordt_gemeld() {
-        Diagnostic d = enigeWaarschuwing(Resolver.resolve(VONDST_GEMARKEERD
+        Diagnostic d = waarschuwingEnFouten(Resolver.resolve(VONDST_GEMARKEERD
                 + regel("waardering", "De waarde van een Vondst moet berekend worden als de premie van de Vondst plus 1.")
                 + regel("premieregel",
-                        "De premie van een Vondst moet berekend worden als de berekende waarde van de Vondst.")));
+                        "De premie van een Vondst moet berekend worden als de berekende waarde van de Vondst.")),
+                weigering("waardering", "waardering -> premieregel -> waardering"));
         assertEquals("kringverwijzing tussen berekeningen: Vondst.berekende waarde -> Vondst.premie "
                 + "-> Vondst.berekende waarde" + STAART, d.message());
     }

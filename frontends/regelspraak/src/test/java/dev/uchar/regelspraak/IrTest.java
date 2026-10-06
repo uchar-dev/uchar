@@ -210,9 +210,10 @@ class IrTest {
             Parameter de grens : Numeriek (geheel getal)
             Objecttype de Reis
                 de prijs Numeriek (geheel getal);
+                de toeslag Numeriek (geheel getal);
             Regel duur
                 geldig altijd
-                    De prijs van een Reis moet gesteld worden op 100
+                    De toeslag van een Reis moet gesteld worden op 100
                     indien de prijs van een Reis groter is dan de grens.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
@@ -228,10 +229,11 @@ class IrTest {
         String src = """
             Objecttype de Reis
                 de prijs Numeriek (geheel getal);
+                de toeslag Numeriek (geheel getal);
                 is duurzaam kenmerk (bijvoeglijk);
             Regel meervoud
                 geldig altijd
-                    De prijs van een Reis moet gesteld worden op 1
+                    De toeslag van een Reis moet gesteld worden op 1
                     indien de Reis aan alle volgende voorwaarden voldoet:
                         - de prijs van een Reis groter is dan 0
                         - de prijs van een Reis kleiner is dan 100.

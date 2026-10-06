@@ -7,12 +7,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * §9.10 recursie — the DECIDED posture (see docs/grammar-divergences.md): a read-write cycle
- * between berekeningen is a WARNING (never the "in principe afgekeurd" hard ERROR — the spec
- * itself says cyclic-vs-recursive is not reliably automatable, and v2.3.0 gives no regelgroep
- * syntax to legitimize recursion with), and a same-instance self-derivation (the begrenzing/
- * clamp idiom) is such a cycle too, of one node: the verifier refuses it under WF-045, and it gets
- * the same WARNING.
+ * §9.10 recursie: a read-write cycle between berekeningen is refused with an ERROR, as WF-045
+ * refuses a dependency cycle that passes through no recursive creation; the WARNING that names
+ * the cycle in the members the author wrote stays beside it. A same-instance self-derivation (the
+ * begrenzing/clamp idiom) is such a cycle too, of one node. Until 2026-10-06 the posture was a
+ * WARNING alone, because v2.3.0 calls cyclic-vs-recursive not reliably automatable; uchar's
+ * Regelgroep extension ("is recursief") marks the recursion WF-045 admits, so a cycle outside it is
+ * an error of the document (grammar/DIVERGENCES.md, "Kringen: WF-045 en WF-051 in check").
  */
 class RecursieTest {
 
@@ -22,7 +23,7 @@ class RecursieTest {
             de y Numeriek (geheel getal);
         """;
 
-    @Test void kringverwijzing_is_een_warning_geen_error() {
+    @Test void kringverwijzing_is_een_error_met_de_warning_ernaast() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel a
                 geldig altijd
@@ -31,20 +32,25 @@ class RecursieTest {
                 geldig altijd
                     De y van een Ding moet berekend worden als de x van de Ding plus 1.
             """);
-        assertTrue(m.errors().isEmpty(), () -> "§9.10 posture: cyclisch = WARNING, nooit ERROR: " + m.errors());
-        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("kringverwijzing")),
+        assertEquals(1, m.errors().size(), () -> "de kring weigert met één ERROR: " + m.diagnostics);
+        assertTrue(m.errors().get(0).message().endsWith("(WF-045): dependency cycle through no recursive creation: "
+                + "a -> b -> a"), () -> "de weigering noemt WF-045 en de kring: " + m.errors());
+        assertEquals(4, m.errors().get(0).line(), "de kop van de regel waar de kring begint");
+        assertTrue(m.diagnostics.stream().anyMatch(d -> !d.isError() && d.message().contains("kringverwijzing")),
                 () -> "de kringverwijzing-WARNING ontbreekt: " + m.diagnostics);
     }
 
-    @Test void zelfde_instantie_zelfafleiding_clamp_idioom_is_een_kring_met_warning() {
+    @Test void zelfde_instantie_zelfafleiding_clamp_idioom_is_een_kring_die_weigert() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel begrens x
                 geldig altijd
                     De x van een Ding moet gesteld worden op de x van de Ding, met een maximum van de y van de Ding.
             """);
-        assertTrue(m.errors().isEmpty(), () -> "onverwachte errors: " + m.errors());
-        // the verifier refuses this self-read under WF-045 like every dependency cycle, so the frontend warns here too
-        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("kringverwijzing")),
+        // the verifier refuses this self-read under WF-045 like every dependency cycle, and so does the frontend
+        assertEquals(1, m.errors().size(), () -> "de kring van één knoop weigert met één ERROR: " + m.diagnostics);
+        assertTrue(m.errors().get(0).message().endsWith("(WF-045): dependency cycle through no recursive creation: "
+                + "begrens x -> begrens x"), () -> "de weigering noemt WF-045 en de kring: " + m.errors());
+        assertTrue(m.diagnostics.stream().anyMatch(d -> !d.isError() && d.message().contains("kringverwijzing")),
                 () -> "een zelf-lezing is een kring van één knoop en krijgt de kringmelding: " + m.diagnostics);
     }
 }

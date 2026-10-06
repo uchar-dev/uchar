@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * without a diagnostic, while the verifier gave {@code WF-045 FAIL /rules/rules/0/versions/0: dependency cycle through
  * no recursive creation: restgewicht -> bergingsgewicht -> restgewicht} and, through the defaults group,
  * {@code WF-051 FAIL /rules/prioritizedDefaults/0: a dependency cycle passes through defaults group 'meldtermijn' — …}.
- * A cycle on a rule's own subject keeps the WARNING it had, and only that ({@code RecursieTest},
- * {@code ZelflezingKringTest}).
+ * A cycle on a rule's own subject is refused the same way, beside the WARNING it had ({@code RecursieTest},
+ * {@code ZelflezingKringTest}); until 2026-10-06 it kept that WARNING alone.
  */
 class AfhankelijkheidskringTest {
 
@@ -95,8 +95,9 @@ class AfhankelijkheidskringTest {
             """);
         assertEquals(List.of(
                 "regel 'restermijn' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een "
-                        + "recursieve creatie (WF-045): dependency cycle through no recursive creation: restermijn -> "
-                        + "verlenging -> meldtermijn -> restermijn",
+                        + "recursieve creatie (WF-045), en een kring draagt geen negatieve rand, zoals een ontkenning "
+                        + "(WF-046): dependency cycle through no recursive creation: restermijn -> verlenging -> "
+                        + "meldtermijn -> restermijn",
                 "defaults-groep 'meldtermijn' ligt op een afhankelijkheidskring, en een kring door een defaults-groep "
                         + "heeft geen strata (WF-051): a dependency cycle passes through defaults group 'meldtermijn' — its "
                         + "displacement reads are negative edges; no strata exist"),
@@ -132,9 +133,9 @@ class AfhankelijkheidskringTest {
                 + "zwaar -> zwaartetal"), fouten(m).stream().map(Diagnostic::message).toList());
     }
 
-    @Test void een_kring_op_het_eigen_onderwerp_houdt_alleen_haar_waarschuwing() {
-        // RecursieTest and ZelflezingKringTest pin this posture: the frontend warns a cycle on a rule's own subject and
-        // writes the document, which the verifier then refuses under WF-045
+    @Test void een_kring_op_het_eigen_onderwerp_weigert_naast_haar_waarschuwing() {
+        // the verifier refuses this document under WF-045; the frontend refuses it too, and keeps the WARNING that
+        // names the cycle in the members the author wrote
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Ding
                 de x Numeriek (geheel getal);
@@ -148,10 +149,14 @@ class AfhankelijkheidskringTest {
                 geldig altijd
                     De y van een Ding moet berekend worden als de x van de Ding plus 1.
             """);
-        assertEquals(1, m.diagnostics.size(), () -> "verwachtte één diagnose, kreeg: " + m.diagnostics);
+        assertEquals(2, m.diagnostics.size(), () -> "verwachtte twee diagnoses, kreeg: " + m.diagnostics);
         assertEquals(Severity.WARNING, m.diagnostics.get(0).severity());
         assertTrue(m.diagnostics.get(0).message().startsWith("kringverwijzing tussen berekeningen: Ding.x -> Ding.y"),
                 m.diagnostics.get(0).message());
+        assertEquals(List.of("regel 'a' hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten "
+                + "een recursieve creatie (WF-045): dependency cycle through no recursive creation: a -> b -> a"),
+                fouten(m).stream().map(Diagnostic::message).toList());
+        assertEquals(5, fouten(m).get(0).line(), "de kop van de regel waar de kring begint");
     }
 
     @Test void een_lezing_over_een_rol_zonder_kring_meldt_niets() {
