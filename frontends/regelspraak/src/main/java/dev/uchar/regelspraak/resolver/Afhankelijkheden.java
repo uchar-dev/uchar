@@ -525,7 +525,12 @@ final class Afhankelijkheden {
                     String r = tekst(n, "regel");
                     return r == null ? acc : voor(new Lezing(chanKnoop(r), NEG), acc);
                 }
-                default -> { return acc; }   // RoleMembership, Unresolved
+                case "RoleMembership" -> {
+                    // the link set of the named relation; negated, the check holds on absence
+                    String soort = neg || Boolean.TRUE.equals(n.get("negated")) ? NEG : POS;
+                    return voor(new Lezing(relKnoop(tekst(n, "factType")), soort), acc);
+                }
+                default -> { return acc; }   // Unresolved
             }
         }
 
@@ -694,10 +699,8 @@ final class Afhankelijkheden {
                 List<Lezing> leest = new ArrayList<>();
                 for (Map<String, Object> hop : pad) leest.add(new Lezing(relKnoop(tekst(hop, "factType")), POS));
                 leest.addAll(conditie(tekst(k, "anchor"), k.get("condition")));
-                List<String> schrijft = new ArrayList<>();
-                String doel = doelvuller(tekst(k, "factType"), tekst(k, "targetRole"));
-                if (doel != null) schrijft.add(popKnoop(doel));
-                schrijft.add(relKnoop(tekst(k, "factType")));
+                // the created relation and no population: a fact creation links instances that exist
+                List<String> schrijft = List.of(relKnoop(tekst(k, "factType")));
                 uit.add(new Vorm(v.at(), naam, "factCreations", recursief.contains(norm(zonderVersie(naam))), schrijft,
                         strikt(leest)));
             }
@@ -727,19 +730,6 @@ final class Afhankelijkheden {
                 for (Map<String, Object> eg : lijst(obj(d.get("exceptions")), "members"))
                     for (Map<String, Object> sub : lijst(eg, "defaults")) uit.addAll(standaardLezingen(onderwerp, sub));
             return uit;
-        }
-
-        /** The declared filler of the target role of a created fact type, null where it does not resolve. */
-        private String doelvuller(String feittype, String rol) {
-            Map<String, Object> ft = feittype(feittype);
-            if (ft == null || rol == null) return null;
-            List<Map<String, Object>> rollen = lijst(ft, "roles");
-            if (rollen.size() != 2) return null;
-            boolean a = norm(tekst(rollen.get(0), "name")).equals(norm(rol));
-            boolean b = norm(tekst(rollen.get(1), "name")).equals(norm(rol));
-            if (a && !b) return tekst(rollen.get(0), "objectType");
-            if (b && !a) return tekst(rollen.get(1), "objectType");
-            return null;
         }
 
         /** {@code absorbing_types}: the types at or below {@code ot} whose chain declares a defaults group on the

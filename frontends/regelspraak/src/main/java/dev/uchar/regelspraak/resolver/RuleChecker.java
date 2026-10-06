@@ -141,13 +141,13 @@ final class RuleChecker {
      * graph (one node per object type and member, ch. 5.1), and the warning below sees only the reads on a rule's own
      * subject. A cycle that warning names is refused here as well, and the WARNING stays beside the ERROR: it names the
      * cycle in the members the author wrote, where the verifier's sentence names forms. Where a negative edge (ch. 5.2)
-     * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. One kind
-     * of cycle stays as it was, the frontend writing the document and the verifier refusing it: a cycle through an
-     * object creation outside a recursive group (a creation of its own subject's type reads the population it grows),
-     * which {@code CreatieRolTest} and {@code SetlezingZonderVouwTest} pin without an error. The walk never enters a
-     * creation of a recursive group, so every cycle this skips is one WF-045 refuses. One violation is refused once,
-     * where the verifier reports it twice over two edges of one pair. Runs last, on a model without an ERROR: a model
-     * the emitter refuses has no document to judge, and that refusal is reported where the document is written.
+     * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. A cycle
+     * through an object creation outside a recursive group is refused like any other since 2026-10-06; until then it was
+     * let through, because a fact creation wrote the population of its target type in the graph and so closed a cycle
+     * that does not exist with an object creation that counts members of that type (the casus of the parity zone). One
+     * violation is refused once, where the verifier reports it twice over two edges of one pair. Runs last, on a model
+     * without an ERROR: a model the emitter refuses has no document to judge, and that refusal is reported where the
+     * document is written.
      */
     private void keurAfhankelijkheidskringen(RegelSpraakDocumentContext doc) {
         if (!model.isOk()) return;
@@ -160,7 +160,6 @@ final class RuleChecker {
         Map<String, String[]> plekken = vormPlekken(doc);
         Set<String> gemeld = new java.util.HashSet<>();
         for (Afhankelijkheden.Kring k : Afhankelijkheden.kringen(ir)) {
-            if (k.vormen().stream().anyMatch(v -> v.soort().equals("objectCreations"))) continue;
             if (!gemeld.add(k.wf() + " " + k.at() + " " + k.zin())) continue;
             Afhankelijkheden.Vorm vorm = k.vormen().get(0);
             String naam = Afhankelijkheden.zonderVersie(vorm.naam());
