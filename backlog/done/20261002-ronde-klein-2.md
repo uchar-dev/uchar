@@ -292,6 +292,15 @@ commit met dit record raakt alleen `backlog/`); zeventien regels `exit 0` en
    casus is dan niet opnieuw te schrijven) en de dienst van de distributie, die
    die casus serveert (17 servicetests). Daarom is het een vraag aan de spec: is
    WF-045 op dit punt strenger dan RegelSpraak bedoelt?
+   **(b) opgelost op 2026-10-06**, record `20261006-feitcreatie-zonder-populatie.md`:
+   de kring in de TOKA-casus bestond niet. Een feitcreatie schreef in de graaf
+   de populatie van het type in haar doelrol, als proxy, en de objectcreatie
+   van het contingent telt de passagiers van de vlucht; zonder die proxy heeft
+   de casus geen kring. De proxy is weg uit de spec (RUNTIME-SEMANTICS ch. 6.1),
+   de verifier en `Afhankelijkheden`, en daarmee de grens: `check` weigert elke
+   kring die WF-045 weigert, ook die door een objectcreatie. `CreatieRolTest`
+   en `SetlezingZonderVouwTest` leggen die weigering vast. WF-045 was dus niet
+   strenger dan RegelSpraak bedoelt; de graaf had een rand te veel.
 4. **WF-046 herhaalt check niet.** Een negatieve rand op een kring door een
    recursieve creatie (WF-045 laat die kring toe) gaat door `check`; de exectak
    weigert een leeg-toets op een kring benoemd. Advies: zo laten tot een
