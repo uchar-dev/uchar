@@ -228,7 +228,8 @@ creation's population proxy, which drew a false cycle in the casus of the parity
 zone, left the graph (golden `jutterswet-premiepot`); since the same day a role
 check reads the relation it names, negated as a negative edge (negatief
 `wf046-ontkende-rolcheck-recursieve-creatie`)". Dit vervangt ook het voorstel van
-`20261006-kringtoets-volgt-wf045.md`.
+`20261006-kringtoets-volgt-wf045.md`. Besluit gevraagd in kaart
+`20261006-besluit-registertekst-constructs-rij-6.md`.
 
 ## Open punten
 
@@ -236,6 +237,7 @@ check reads the relation it names, negated as a negative edge (negatief
    een kring door een recursieve creatie gaat door `check`, nu ook een ontkende
    rolcheck op de relatie die de creatie legt (het nieuwe negatief schrijft het
    frontend zonder melding; de verifier en ref weigeren het onder WF-046).
+   Kaart: `20261006-check-wf046-door-recursieve-creatie.md`.
 2. Bronvolgorde, niet veranderd: (a) welke vorm of declaratie een weigering als
    eerste noemt (de WF-045-wandeling, de botsing van twee dagsoortdefinities of
    regelnamen, de keuze van de eigen basis in de hersteladviezen van de
@@ -247,7 +249,11 @@ check reads the relation it names, negated as a negative edge (negatief
    enkelvoudige consistentieregel haar uitdrukking vóór `zetVariabelen`, dus met
    de variabelen en het onderwerp van de vorige regel; geen geaccepteerde zin
    gevonden die daardoor een ander document krijgt, niet gemeten.
+   Kaart: `20261006-bronvolgorde-restpunten.md`, punten (a)–(d).
 3. De distributie noemt in `RegelSpraakEngine.Session.fire` en `Uitvoerder` nog
    "de resolver-WARNING" als bron van een kring zonder fixpunt (open punt 3 van
-   `20261006-kringtoets-volgt-wf045.md`); ongewijzigd.
-4. De pin volgt in de distributie en de werkbank.
+   `20261006-kringtoets-volgt-wf045.md`); ongewijzigd. Kaart:
+   `20261006-bronvolgorde-restpunten.md`, punt (e).
+4. De pin volgt in de distributie en de werkbank. **Gebeurd op 2026-10-06**:
+   regelspraak-toolchain `f9fc44c` pint uchar `0a378588`, de werkbank `e504fda`
+   pint de toolchain op `f9fc44c`.

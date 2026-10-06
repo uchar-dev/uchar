@@ -306,6 +306,9 @@ commit met dit record raakt alleen `backlog/`); zeventien regels `exit 0` en
    weigert een leeg-toets op een kring benoemd. Advies: zo laten tot een
    regelset er een raakt; het patroon is er (`Afhankelijkheden` kent de
    randsoorten).
+   Kaart: `20261006-check-wf046-door-recursieve-creatie.md` (2026-10-06;
+   sinds die dag valt ook een ontkende rolcheck op de relatie die de creatie
+   legt eronder).
 5. **Twee naamloze regels** in het exec-model (naamloze vormen, ongeldig onder
    WF-107) blijven buiten de naamtoets; de exectak speelt ze. Advies: zo laten,
    WF-107 en de frontend weigeren zo'n document.

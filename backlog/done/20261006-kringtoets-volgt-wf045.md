@@ -160,7 +160,9 @@ door: "except a cycle through an object creation outside a recursive group
 (pinned by existing frontend tests; the casus of the parity zone carries one);
 since 2026-10-06 a cycle on a rule's own subject is refused as well, naming
 WF-046 too where a negative edge lies between two forms of the cycle (negatief
-`wf046-kenmerken-lezen-elkaars-ontkenning`)".
+`wf046-kenmerken-lezen-elkaars-ontkenning`)". Vervangen door het voorstel in
+`20261006-feitcreatie-zonder-populatie.md`; besluit gevraagd in kaart
+`20261006-besluit-registertekst-constructs-rij-6.md`.
 
 ## Open punten
 
@@ -176,10 +178,11 @@ WF-046 too where a negative edge lies between two forms of the cycle (negatief
    dit punt strenger dan RegelSpraak bedoelt?
 2. Open punt 4 van ronde klein 2 blijft: een negatieve rand op een kring door
    een recursieve creatie (WF-045 laat die kring toe, WF-046 niet) gaat door
-   `check`.
+   `check`. Kaart: `20261006-check-wf046-door-recursieve-creatie.md`.
 3. De distributie noemt in de begrenzing van `RegelSpraakEngine.Session.fire`
    en in `Uitvoerder` nog "de resolver-WARNING" als bron van een kring zonder
    fixpunt. Een bron met een kring op het eigen onderwerp bereikt de engine
-   niet meer; de tekst is niet aangepast.
+   niet meer; de tekst is niet aangepast. Kaart:
+   `20261006-bronvolgorde-restpunten.md`, punt (e).
 4. v1 `dagloon-ww` draagt twee positieve WF-045-kringen achter de twee ERRORs
    `1/dg`; wie die ERRORs oplost, krijgt de kringen als ERROR.
