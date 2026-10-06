@@ -1244,7 +1244,13 @@ EXPECTED_CHANNEL=(
 # changed: the exec branch plays the seven cases on the first run, PLAYED 7, with ref's and clingo's values. The
 # DRL-text branch refuses the new golden on its defaults sentence (class (A) of DRL_CHANNEL), so EXPECTED_DRL_PLAYED
 # does not move.
-EXPECTED_PLAYED=239
+# 239 -> 240 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new, from bron.rgs and
+# scenario.rgs and hand-computed: an object creation gives every Haven a Premiepot whose pot counts its havenjutters,
+# a fact creation links those Jutters to the Premiepot, and a role check reads the link. The verifier and ref refused
+# the document under WF-045 before, through the fact creation's population proxy (RUNTIME-SEMANTICS ch. 6.1); this
+# backend played it all along. No source file of this backend changed: the exec branch plays the case, PLAYED 1, with
+# ref's and clingo's values. The DRL-text branch plays it too, PLAYED 1, so EXPECTED_DRL_PLAYED moves by one as well.
+EXPECTED_PLAYED=240
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1679,7 +1685,9 @@ DRL_CHANNEL=(
 # Reason block at EXPECTED_PLAYED above.
 # 192 -> 193 (2026-10-02, the percentage of a navigated read): jutterswet-havengeld, new. This branch plays its four
 # cases with no change of its own, PLAYED 4. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=193
+# 193 -> 194 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new. This branch plays its
+# case with no change of its own, PLAYED 1. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=194
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
