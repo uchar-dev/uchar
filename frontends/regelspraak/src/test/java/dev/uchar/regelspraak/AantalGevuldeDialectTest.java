@@ -149,10 +149,11 @@ class AantalGevuldeDialectTest {
 
     @Test void de_die_subselectie_versmalt_de_bijdragers() {
         // ch. 3.4a's per-contributor narrowing reaches this kind through the shared aggregatieFilter
-        // path; without it a subselectie would be dropped and the count would answer over everything.
+        // path; without it a subselectie would be dropped and the count would answer over everything. The
+        // characteristic comes in an extension: a second head of the model's Vondst is a WF-001 refusal.
         RegelSpraakModel m = resolve("""
 
-            Objecttype de Vondst (mv: Vondsten)
+            Extensie van objecttype de Vondst
                 is gekeurd kenmerk (bijvoeglijk);
 
             Regel aantal gewogen vondsten

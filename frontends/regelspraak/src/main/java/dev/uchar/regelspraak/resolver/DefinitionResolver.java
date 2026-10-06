@@ -35,6 +35,7 @@ public final class DefinitionResolver {
     private final RegelSpraakModel model = new RegelSpraakModel();
 
     public RegelSpraakModel build(RegelSpraakDocumentContext doc) {
+        weigerDubbeleNamen(doc);
         for (DefinitieContext d : definities(doc)) {        // pass 1: domains + units + timelines
             if (d.domeinDefinition() != null) domein(d.domeinDefinition());
             if (d.eenheidsysteemDefinition() != null) eenheidsysteem(d.eenheidsysteemDefinition());
@@ -295,6 +296,55 @@ public final class DefinitionResolver {
                     + "exemplaar zou twee declaraties van die naam dragen, en welke een lezer vindt bepaalt "
                     + "datatype, dimensies en tijdlijnfacet van elke lezing ervan)", regel);
             return;                                      // one report per member, at its nearest declarant
+        }
+    }
+
+    /**
+     * WF-001: within each namespace of the model a declared name is unique, case not counted. Two declarations of one
+     * name were taken together here without a word: a second object type head added its members to the first and
+     * replaced a member of the same name, a second domain, parameter, unit system, fact type or dimension replaced the
+     * first, and the IR carried one declaration, so the verifier never saw the second. Which one the model kept depended
+     * on which stood last in the source or in the files put together, and two day kinds of one name stopped the emitter.
+     * A second declaration is refused at its own line, naming the line of the first, in the verifier's sentence. An
+     * extension adds members to a declared type and is no declaration of the name (weigerHerdeclaraties); timelines are
+     * WF-015's. A definition the parser recovered inside is left alone: its syntax error is the one to act on.
+     */
+    private void weigerDubbeleNamen(RegelSpraakDocumentContext doc) {
+        java.util.Map<String, String[]> eerder = new java.util.HashMap<>();   // namespace + name identity -> {name, line}
+        for (DefinitieContext d : definities(doc)) {
+            String[] soort = null;   // {how the refusal names the kind, the verifier's namespace, the name}
+            ParserRuleContext ctx = null;
+            if (d.objectTypeDefinition() != null) {
+                ctx = d.objectTypeDefinition();
+                soort = new String[] {"objecttype", "objectTypes", src(d.objectTypeDefinition().objectTypeNaam())};
+            } else if (d.domeinDefinition() != null) {
+                ctx = d.domeinDefinition();
+                soort = new String[] {"domein", "domains", src(d.domeinDefinition().domeinNaam())};
+            } else if (d.parameterDefinition() != null) {
+                ctx = d.parameterDefinition();
+                soort = new String[] {"parameter", "parameters", src(d.parameterDefinition().parameterNaam())};
+            } else if (d.eenheidsysteemDefinition() != null) {
+                ctx = d.eenheidsysteemDefinition();
+                soort = new String[] {"eenheidsysteem", "unitSystems",
+                        src(d.eenheidsysteemDefinition().eenheidsysteemNaam())};
+            } else if (d.feitTypeDefinition() != null) {
+                ctx = d.feitTypeDefinition();
+                soort = new String[] {"feittype", "factTypes", src(d.feitTypeDefinition().feitTypeNaam())};
+            } else if (d.dimensieDefinition() != null) {
+                ctx = d.dimensieDefinition();
+                soort = new String[] {"dimensie", "dimensions", src(d.dimensieDefinition().dimensieNaam())};
+            } else if (d.dagsoortDefinition() != null) {
+                ctx = d.dagsoortDefinition();
+                soort = new String[] {"dagsoort", "dayKinds", naam(d.dagsoortDefinition().lowerNaam())};
+            }
+            if (soort == null || hersteld(ctx)) continue;
+            int regel = ctx.getStart().getLine();
+            String[] eerste = eerder.putIfAbsent(soort[1] + "\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(soort[2]),
+                    new String[] {soort[2], String.valueOf(regel)});
+            if (eerste == null) continue;
+            fout(soort[0] + " '" + soort[2] + "' is al gedeclareerd (bronregel " + eerste[1] + "); een naam komt in "
+                    + "zijn soort declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace '" + soort[1]
+                    + "': names '" + eerste[0] + "' and '" + soort[2] + "' collide case-insensitively", regel);
         }
     }
 
