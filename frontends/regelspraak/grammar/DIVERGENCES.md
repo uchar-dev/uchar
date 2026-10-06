@@ -2980,12 +2980,16 @@ bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een a
 door een defaults-groep heeft geen strata (WF-051): …". Measured 2026-10-02: before, a value of one object read from
 the same value of another object of its type over a role passed `check` without a diagnostic; the edges equal
 `verifier --dependency-edges` on 883 documents of the corpus zones, and the WF-045 and WF-051 lines equal the
-verifier's, in its order. One bound, pinned by tests: a cycle through an object creation outside a recursive group
-gets no ERROR (`CreatieRolTest`, `SetlezingZonderVouwTest`). The walk never enters a creation of a recursive group, so
-every cycle this bound passes is one WF-045 refuses. The bound stays because the casus of the parity zone, without its
-two held-out fragments, carries one such cycle: refusing it (measured 2026-10-06) refuses the casus, so gate 11 can no
-longer re-emit it and the distribution's decision service, which serves that casus, no longer starts. Whether WF-045
-is stricter on this point than RegelSpraak means is an open question to the spec.
+verifier's, in its order. Until 2026-10-06 one bound stood, pinned by tests: a cycle through an object creation
+outside a recursive group got no ERROR, because the casus of the parity zone, without its two held-out fragments,
+carried one, and refusing it refused the casus. That cycle did not exist. A fact creation wrote the population of its
+target role's filler in the graph, a proxy from before every fold named its relation, and an object creation that
+counts members of a role over that type read that population; the fact creation that links those members to the
+created object closed the cycle (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`). The proxy went the same
+day, in the verifier and in `Afhankelijkheden`, and the bound with it: the casus has no cycle, and a cycle through an
+object creation — a creation of its own subject's type reads the population it grows — is refused like any other
+(`CreatieRolTest`, `SetlezingZonderVouwTest`). Since that day a role check reads the relation it names as well,
+negated as a negative edge (`resolver/FeitcreatieRandenTest`).
 
 A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
 2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
@@ -3001,6 +3005,41 @@ draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle thro
 documents of the corpus zones and the parity zone, five of them with a negative edge (2026-10-06). A negative edge
 on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `AfhankelijkheidskringTest`,
 `ZelflezingKringTest`, and the negatief `wf046-kenmerken-lezen-elkaars-ontkenning`.
+
+
+## Bronvolgorde: what one rule reads of another does not depend on the order
+
+RegelSpraak is declarative: the frontend writes the same document, the forms of a list in their own source order
+aside, whatever the order of the rules in the source and of the files a model is put together from. The rules are
+resolved one by one in source order, so a rule may read nothing another rule puts in the model while the rules are
+resolved. Until 2026-10-06 three places did, as the toolchain's resolver did before it.
+
+- A fact creation whose path walks through the back-link of an object creation ("de premiehaven van de verdeelde
+  premiepot") takes the side of that step from the object creation. Only an object creation earlier in the source
+  counted; written above it, the fact creation was dropped with the WARNING "feitcreatie wordt nog niet naar IR/DRL
+  omgezet … referentieveld-zijde voor tussenstap … niet af te leiden". The casus of the parity zone has the shape
+  (its object creation and fact creation over the contingent), and the files of the distribution put the object
+  creation first. A pass before the rules now reads the object creations of the whole document off the parse tree.
+- A start point determination declares the anchor member `startpunt <tijdlijn>` on its subject, and did so when
+  its rule came up: a rule above it that reads the anchor became an unresolved marker. A pass before the rules now
+  declares it; the determination is judged and written as before.
+- Two declarations of one name — two heads of one object type, two parameters, domains, unit systems, fact types,
+  dimensions or day kinds — were taken together, the last one winning, and the IR carried one declaration, so the
+  verifier never saw the collision WF-001 refuses. They are refused at the second, in the verifier's sentence:
+  "objecttype 'Jutter' is al gedeclareerd (bronregel 1); een naam komt in zijn soort declaratie één keer voor,
+  hoofdletters niet meegeteld (WF-001): namespace 'objectTypes': names 'Jutter' and 'Jutter' collide
+  case-insensitively". An extension adds members and declares no name; timelines are WF-015's, which the verifier
+  sees.
+
+Measured 2026-10-06 with the files of every multi-file source in reverse order and the blocks of every golden
+source rearranged (declarations after the rules, the rules reversed), on 368 sources and source chains: after the
+fix no document differs beyond the order of a list. What still depends on the order is recorded, not changed: the
+order of the forms within a list; which form a refusal names first (the WF-045 walk names the first cycle it meets,
+the verifier the same, and a duplicate day kind or rule name is reported at the second); which fold's written text
+the rule of a generated member (section "A fold over a set and to-one steps after it") takes as its source snippet
+when two folds generate one member; and, by design, the order of the blocks of `Uitzondering op`, where the one
+written later stands higher (§4). Blocks that group the rules after them (`Regelgroep`, `Uitzonderingen ongeordend`)
+are syntax. Witness: `BronvolgordeTest`.
 
 
 ## Producer refusals without a reader sentence

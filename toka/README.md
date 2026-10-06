@@ -82,19 +82,24 @@ purpose.
   writes; every executor replays the slice. The holdout fails when it goes
   stale in either direction: when the slice turns clean, or when it draws any
   other report.
-- **The casus dump is not a well-formed program, and is not meant to be.** As
-  one document it draws 15 reports, one per pointer and sentence: since the
-  card `verifier-allocatie-keten` (the same day) WF-026 no longer repeats one
-  sentence at one pointer, which made 18 lines before. Its scenarios each
-  write the same targets in their own way, legitimate per scenario and not as
-  one program (3 × WF-026, 1 × WF-079), and one dependency cycle closes only
-  across scenarios (1 × WF-045; the slice that carries the creation is
-  clean). It also uses four attributes and one characteristic that it does
-  not declare and the slices, cut in the scoping of the toolchain's own
-  scenario tests, do (8 × WF-034: seven references to those attributes and
-  the one derived position their absence leaves untyped; 1 × WF-022, a rule
-  writing that characteristic). The last report, WF-099, sits at the very
-  rule `toka-24` carries. Its role is the parity object of the byte-identical
+- **The casus dump is not a well-formed program, and is not meant to be.**
+  As one document it draws 14 reports, one per pointer and sentence: since
+  the card `verifier-allocatie-keten` (the same day) WF-026 no longer
+  repeats one sentence at one pointer, which made 18 lines before. Its
+  scenarios each write the same targets in their own way, legitimate per
+  scenario and not as one program (3 × WF-026, 1 × WF-079). Until
+  2026-10-06 a dependency cycle through the object creation of the
+  contingent and the fact creation of the passengers with a right to train
+  miles made a fifteenth (1 × WF-045). It did not exist: the fact creation
+  wrote the population of Natuurlijk persoon as a proxy, and the creation
+  counts the passengers of the flight; the proxy went that day
+  (RUNTIME-SEMANTICS ch. 6.1, golden `jutterswet-premiepot`). It also uses
+  four attributes and one characteristic that it does not declare and the
+  slices, cut in the scoping of the toolchain's own scenario tests, do (8
+  × WF-034: seven references to those attributes and the one derived
+  position their absence leaves untyped; 1 × WF-022, a rule writing that
+  characteristic). The last report, WF-099, sits at the very rule
+  `toka-24` carries. Its role is the parity object of the byte-identical
   re-emission, so gate 11 keeps it out of the well-formedness leg.
 
 ## Deliberate divergences from the toolchain emission

@@ -114,12 +114,14 @@ is_holdout() { local base=$1 h; for h in "${HOLDOUTS[@]}"; do [ "$base" = "$h" ]
 #             unitless bound unitless for the verifier to adopt; every executor replays the slice.
 # The casus dump (toka/casus/ir.json) is outside the leg altogether. As one document it is
 # overdetermined by nature: its scenarios each write the same targets in their own way, legitimate per
-# scenario and not as one program (the competing writes of WF-026 and WF-079, and a WF-045 cycle that
-# closes only across scenarios). It also declares less than the slices, which carry the scenario test
-# model: every name-carrying WF-034 in it, and its one WF-022, names an attribute or a characteristic
-# the slices declare and the casus uses without declaring. Measured 2026-09-25: 15 reports, one per
-# pointer and sentence (WF-026 drops its repeats since the card verifier-allocatie-keten; 18 lines
-# before). Its role is the parity object of obligation 2, not a well-formed program.
+# scenario and not as one program (the competing writes of WF-026 and WF-079). It also declares less
+# than the slices, which carry the scenario test model: every name-carrying WF-034 in it, and its one
+# WF-022, names an attribute or a characteristic the slices declare and the casus uses without
+# declaring. Measured 2026-09-25: 15 reports, one per pointer and sentence (WF-026 drops its repeats
+# since the card verifier-allocatie-keten; 18 lines before). 14 since 2026-10-06: the WF-045 cycle
+# through the contingent's object creation and fact creation was the fact creation's population
+# proxy (RUNTIME-SEMANTICS ch. 6.1), which went that day. Its role is the parity object of
+# obligation 2, not a well-formed program.
 VERIFIER_HOLDOUTS=(
   'toka-24 WF-099 /rules/rules/0/versions/0/value/base/minimum'
 )
