@@ -7443,7 +7443,13 @@ and dep_cond ctx ~subject ~neg acc (c : conditie) =
       | Some ot -> (n_char ot k, kind) :: acc
       | None -> acc)
   | Kenmerk_check _ -> acc
-  | Role_membership _ -> acc
+  | Role_membership { fact_type; negated; _ } ->
+      (* the role check reads the link set of the relation it names
+         (ch. 6.1), so it sits above the creations that write it. Until
+         2026-10-06 it read nothing and its relation was input to the
+         analysis. Negated, it holds on absence, and a later link can make
+         it false: a negative edge, as a negated characteristic is *)
+      (n_rel fact_type, if neg || negated then Dep_neg else Dep_pos) :: acc
   | Periode_conditie { vanaf; tot; _ } -> dep_opt ctx ~subject (dep_opt ctx ~subject acc vanaf) tot
   | Samengesteld { kwantor; onderdelen; _ } ->
       let neg' =
@@ -7723,7 +7729,13 @@ let dep_forms ctx : dep_form list =
         let name = Option.value f.fc_naam ~default:at in
         (* the creation writes the created relation's link set and reads
            the link set of every hop it traverses (ch. 6.1) — the edge that
-           orders creation-after-creation *)
+           orders creation-after-creation. It writes no population: it
+           mints no instance, it links instances that exist. Until
+           2026-10-06 it wrote the population of its target role's filler
+           as a proxy, from before every fold and allocation named its
+           relation (B12); that proxy closed a false cycle with an object
+           creation that counts the members of a role over that type
+           (golden jutterswet-premiepot) *)
         let rel_writes = [ n_rel f.fc_feittype ] in
         let hop_reads =
           List.map (fun (t : tussenstap) -> (n_rel t.ts_rol.rb_feittype, Dep_pos)) f.tussenstappen
@@ -7736,8 +7748,7 @@ let dep_forms ctx : dep_form list =
              rule group (idempotent, no guard needed) — WF-045 removes
              recursive-group creation members of either kind *)
           df_recursive_creation = List.mem (norm (strip_version name)) recursive_members;
-          df_writes =
-            (match f.fc_doel with Some d -> [ n_pop d ] | None -> []) @ rel_writes;
+          df_writes = rel_writes;
           df_reads =
             strict_unless_char (hop_reads @ cond ~subject:f.anker f.fc_voorwaarde);
         })
