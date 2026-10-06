@@ -8,6 +8,8 @@ import dev.uchar.regelspraak.resolver.ScenarioResolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundel;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -23,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * omgezet … referentieveld-zijde voor tussenstap 'premiehaven' niet af te leiden". The casus of the parity zone has the
  * shape, and the files of its toolchain put the object creation first. And the anchor member a startpuntbepaling
  * declares ("startpunt penningjaar") was declared when its rule came up, so a rule above it that reads the anchor
- * became an unresolved marker.
+ * became an unresolved marker. A third place took two declarations of one name together, the last one winning: two
+ * heads of one object type, or two parameters, domains, unit systems, fact types or dimensions of one name, which
+ * WF-001 makes ill-formed and the IR, carrying one declaration, kept from the verifier.
  */
 class BronvolgordeTest {
 
@@ -171,6 +175,38 @@ class BronvolgordeTest {
         assertTrue(eerstLezer.replaceAll("\\s+", "").contains(lezing), eerstLezer);
         // the rules list stands in source order; the rest of the document is the same
         assertEquals(zonderRegels(eerstBepaling), zonderRegels(eerstLezer));
+    }
+
+    private static final String KOP_GETAL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de waarde Numeriek (geheel getal);
+
+        Parameter de drempel : Numeriek (geheel getal)
+
+        """;
+
+    private static final String KOP_TEKST = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            de waarde Tekst;
+
+        Parameter de drempel : Tekst
+
+        """;
+
+    @Test void twee_declaraties_van_een_naam_weigeren_in_beide_volgordes() {
+        // until the refusal the last head and the last parameter won: the model read 'waarde' and 'drempel' as text
+        // in one order and as a number in the other, and wrote a document the verifier passed
+        for (String[] volgorde : List.of(new String[] {KOP_GETAL, KOP_TEKST}, new String[] {KOP_TEKST, KOP_GETAL})) {
+            RegelSpraakModel m = Resolver.resolve(volgorde[0] + volgorde[1]);
+            assertEquals(List.of(
+                    "ERROR 6 objecttype 'Jutter' is al gedeclareerd (bronregel 1); een naam komt in zijn soort "
+                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace 'objectTypes': "
+                            + "names 'Jutter' and 'Jutter' collide case-insensitively",
+                    "ERROR 9 parameter 'drempel' is al gedeclareerd (bronregel 4); een naam komt in zijn soort "
+                            + "declaratie één keer voor, hoofdletters niet meegeteld (WF-001): namespace 'parameters': "
+                            + "names 'drempel' and 'drempel' collide case-insensitively"),
+                    m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
+        }
     }
 
     /** The document without its list of rules, the one list the two orders above write in another order. */
