@@ -4610,8 +4610,9 @@ Value nodes, identified up to name normalisation:
   and object creation grows.
 - **relation** — declared fact type: its link set — written by the fact
   creations that create it (ch. 5.5), read by every symbolic hop that
-  traverses it and by every fold or allocation that names it in a role
-  binding (from either end; the link is written on both).
+  traverses it, by every fold or allocation that names it in a role
+  binding (from either end; the link is written on both) and by every
+  role check that names it (ch. 5.8a).
 
 Each rule form reads and writes nodes:
 
@@ -4622,7 +4623,7 @@ Each rule form reads and writes nodes:
 | allocation | target attribute; declared remainder attribute | source amount; ratio, maximum and ordering attributes; condition reads; population(target type) |
 | consistency / uniqueness | channel(own name) | assertion operands / key attributes; a union reads every source's key attributes; a scoped uniqueness also reads relation(scope hop), named by its `scope` binding (`scopeRol` until L4; since L2 the only spelling of the scope, B8; until L2 a scope without a binding was derived from the written scope field) |
 | object creation | the attributes and characteristics its `initialisations` set on the created type; population(created type); relation(the uniquely-derivable connecting fact type — the back-link, ch. 5.5) | condition and toekenning-value reads on the anchor; population(subject type) — iterating the subjects is a read: it orders creation-after-creation, and a self-typed creation becomes a WF-045 cycle instead of a diverging fixpoint or an unbounded grounding |
-| relation creation | population(target-role filler type); relation(created fact type) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
+| relation creation | relation(created fact type) — no population: it mints no instance, it links instances that exist (since 2026-10-06; below) | condition reads on the anchor; relation(each hop of the join-chain traversal, `IR-SPEC.md` ch. 3.4) |
 
 Edges run producer → consumer — from every form that writes a node to
 every form that reads it — in three kinds:
@@ -4650,21 +4651,42 @@ every form that reads it — in three kinds:
   quantifier fold (ch. 3.9a) under *alle*, *geen*, *ten hoogste* or
   *precies* and in its matrix under *geen*, *ten hoogste* or *precies*
   (both since 2026-09-23; the maintainer decisions are quoted in
-  `IR-SPEC.md` ch. 5.2), or a channel test (regelversie, ch. 5.6). Once
+  `IR-SPEC.md` ch. 5.2), a negated role check (since 2026-10-06, below),
+  or a channel test (regelversie, ch. 5.6). Once
   negative, conservatively negative — a double negation does not cancel.
   Negative edges are stratum-strict *and* forbidden on any cycle (WF-046).
 
 Parameters and input-only nodes (nodes no form writes) contribute no
 edges.
 
-*Scope narrowing, recorded:* relation membership read by a *condition*
-(the role check, `RoleMembership`) is treated as input. Only reads that
-name the relation in a role binding, and the creation's own hops, carry
-relation-node edges (the creation-after-creation ordering demanded
-this); since L2 every allocation, instance fold and quantifier fold names
-its relation so (B12), and an allocation and an instance fold read the
-population proxy beside it. Day-kind definitions read only input dates
-and contribute no edges. *History until L2:* a bindingless allocation
+*Relation reads.* A read that names a relation carries a relation-node
+edge: a role binding of a fold or an allocation, a creation's own hops
+(the creation-after-creation ordering demanded this), a navigation's hops
+(below) and, since 2026-10-06, the role check (`RoleMembership`, ch.
+5.8a), which reads relation(its `factType`). The role check reads it
+positively, and negatively where it is negated or sits under a
+negation-like quantifier: "hij is geen …" holds on absence, and a link a
+later creation lays makes it false. Since L2 every allocation, instance
+fold and quantifier fold names its relation so (B12), and an allocation
+and an instance fold read the population proxy beside it. Day-kind
+definitions read only input dates and contribute no edges. *History until
+2026-10-06:* relation membership read by a condition was treated as input,
+a recorded scope narrowing; and a relation creation wrote
+population(target-role filler type) beside its relation, a proxy from
+before every fold and allocation named its relation. With the binding
+there the proxy ordered nothing the relation edge did not order, and it
+drew a cycle that does not exist: an object creation that counts the
+members of a role over that type reads the population, and a relation
+creation that links those members to the created object reads the
+creation's back-link. WF-045 refused such a document and the reference
+interpreter with it, while the ASP backend and both Drools branches
+answered it (golden `jutterswet-premiepot`; WV-6.4-h). Measured that day
+over 1171 documents (the corpus zones, the parity zone, and the examples,
+the rule sets and the demonstrations the RegelSpraak frontend's consumers
+carry): the proxy edges left 24 of them, only the parity zone's casus lost
+a WF-045 report, no role check read a relation that a form writes, and
+1186 replays through the reference interpreter and the ASP backend were
+unchanged. *History until L2:* a bindingless allocation
 kept the population proxy alone; a bindingless fold read the population
 proxy and, beside it, the relation derived best-effort — for an instance
 fold the fact type of the role its source named, for a quantifier fold
@@ -4858,6 +4880,19 @@ many strata as the chain is deep.
   *geen*, *ten hoogste* and *precies* and the range of every fold but
   *ten minste*. A creation condition and a characteristic rule did not
   move, because they already read stratum-strict.
+- A relation creation that links instances which exist to the object a
+  creation made — "een premiejutter van een verdeelde premiepot is een
+  havenjutter van de premiehaven van de verdeelde premiepot", beside "een
+  Haven heeft de premiepot met pot gelijk aan het aantal havenjutters van
+  de Haven" — writes the relation it creates and no population, so the
+  creation, which counts the havenjutters, does not read what the
+  relation creation writes, and the two make no cycle. A role check on
+  the created relation, "een Jutter is premiegerechtigd indien hij een
+  premiejutter is", reads it stratum-strict. Strata: the creation 0, the
+  relation creation 1 (it reads the creation's back-link), the role check
+  2. Input H1 with havenjutters J1 and J2, and J3 without a haven: J1 and
+  J2 premiegerechtigd, J3 not (WV-6.4-h). Until 2026-10-06 this was a
+  WF-045 cycle through the relation creation's population proxy (ch. 6.1).
 - Ill-formed: `a ← b + 1` and `b ← a + 1` on one object type is a
   WF-045 cycle through no creation (negatief case
   `wf045-cyclic-attribute-dependency`). A recursive creation whose
@@ -4905,6 +4940,13 @@ many strata as the chain is deep.
   Post) and the ASP reading has no stable model; where only the matrix
   closed it, the two executors split without either failing (the
   reference interpreter minted for W1, the ASP backend did not).
+  So, too, since 2026-10-06, is a recursive creation guarded by a negated
+  role check on the relation it creates: "een Wachter heeft een opvolger
+  … indien hij geen voorganger is" reads `opvolging` negatively and lays
+  the link that makes it false (negatief case
+  `wf046-ontkende-rolcheck-recursieve-creatie`). Before the role check
+  read its relation the reference interpreter answered it in pass order
+  and the ASP backend found no stable model.
 - Well-formed, the monotone parts of the same fold on the same kind of
   cycle (golden `jutterswet-opvolgerquorum`): the creation mints while
   "ten minste 1 opvolger heeft een rang groter dan 3" and "alle
