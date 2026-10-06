@@ -2982,7 +2982,10 @@ the same value of another object of its type over a role passed `check` without 
 `verifier --dependency-edges` on 883 documents of the corpus zones, and the WF-045 and WF-051 lines equal the
 verifier's, in its order. One bound, pinned by tests: a cycle through an object creation outside a recursive group
 gets no ERROR (`CreatieRolTest`, `SetlezingZonderVouwTest`). The walk never enters a creation of a recursive group, so
-every cycle this bound passes is one WF-045 refuses.
+every cycle this bound passes is one WF-045 refuses. The bound stays because the casus of the parity zone, without its
+two held-out fragments, carries one such cycle: refusing it (measured 2026-10-06) refuses the casus, so gate 11 can no
+longer re-emit it and the distribution's decision service, which serves that casus, no longer starts. Whether WF-045
+is stricter on this point than RegelSpraak means is an open question to the spec.
 
 A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
 2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
@@ -2990,7 +2993,7 @@ members the author wrote (`RecursieTest`, `ZelflezingKringTest`). Measured befor
 "Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd indien hij
 niet uitgesloten is" passed `check` with that WARNING alone, the verifier refused the document under WF-045 and twice
 under WF-046, and the ASP backend found two stable models for a Jutter without input. No golden, no source of the
-the parity zone or of the distribution's examples carried such a cycle. WF-046 is not repeated as a rule of its own:
+parity zone or of the distribution's examples carried such a cycle. WF-046 is not repeated as a rule of its own:
 where a negative edge runs between two forms of a WF-045 cycle, the refusal names it — "regel 'uitsluiting' hangt via
 een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie (WF-045), en een kring
 draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive creation: uitsluiting
