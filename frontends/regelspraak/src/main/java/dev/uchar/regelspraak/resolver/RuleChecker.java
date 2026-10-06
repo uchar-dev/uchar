@@ -98,6 +98,9 @@ final class RuleChecker {
         domeinReferenties(doc);
         // before any rule resolves: a rule may read the members the opgave marker generates (dialect §7)
         opgaveDeclaraties(doc);
+        // before any rule resolves: what a rule reads of another rule's form must not depend on which stands first
+        aangemaakteObjecten(doc);
+        startpuntAnkers(doc);
         // §9.10 Regelgroep (DOCUMENTED EXTENSION): a grouped rule resolves EXACTLY as an ungrouped one, so the
         // whole rule pipeline runs over the flattened list (top-level + group members, in document order).
         for (RegelContext r : DefinitionResolver.alleRegels(doc)) regelVersies(r);
@@ -4119,8 +4122,7 @@ final class RuleChecker {
         if (namen.isEmpty()) return;
 
         String[] rolEnAttr = src(namen.get(0)).split("(?i)\\s+met\\s+", 2);
-        Objecttype nieuwType = bouwer != null
-                ? model.resolveObjecttype(stripArtikel(rolEnAttr[0])) : null;
+        Objecttype nieuwType = nieuwTypeVan(oc);
         // the noun that names the created object may name the role it fills: that role is the back-link
         // (IR-SPEC ch. 3.3), where the type pair alone may relate the two twice or, self-typed, ambiguously
         RegelSpraakModel.RolBindingRef verbindendeRol =
@@ -4368,9 +4370,58 @@ final class RuleChecker {
 
     /** True when an objectcreatie creates {@code houder} linked to {@code doelwit} ("Een doelwit heeft een
      *  houder"), so — by the convention objectCreatie sets the reference on the new object — {@code houder}
-     *  holds the reference field to {@code doelwit}. (Source-order: an objectcreatie earlier in the document.) */
+     *  holds the reference field to {@code doelwit}. Any objectcreatie of the document counts, wherever it stands
+     *  ({@link #aangemaakteObjecten}); until 2026-10-06 only one earlier in the document did, so a feitcreatie
+     *  written above the objectcreatie it walks through was dropped with a WARNING. */
     private boolean aangemaaktNaar(Objecttype houder, Objecttype doelwit) {
-        return model.objectCreaties.stream().anyMatch(oc -> oc.nieuwType() == houder && oc.subject() == doelwit);
+        return aangemaakt.stream().anyMatch(p -> p[0] == houder && p[1] == doelwit);
+    }
+
+    /** The objectcreaties of the document as (created type, subject) pairs, read off every rule version before any
+     *  rule resolves, with the resolution {@link #objectcreatie} gives both. */
+    private final List<Objecttype[]> aangemaakt = new ArrayList<>();
+
+    private void aangemaakteObjecten(RegelSpraakDocumentContext doc) {
+        for (ResultaatDeelContext rd : resultaatDelen(doc)) {
+            ObjectCreatieContext oc = rd.objectCreatie();
+            if (oc == null || oc.kaleNaam().isEmpty()) continue;
+            aangemaakt.add(new Objecttype[] { nieuwTypeVan(oc), bouwer.objecttypeVanKeten(oc.onderwerpKeten()) });
+        }
+    }
+
+    /** The result parts of every rule version of the document, ordinary rules and exception blocks, in document
+     *  order — what a pass before the rule loop reads. */
+    private static List<ResultaatDeelContext> resultaatDelen(RegelSpraakDocumentContext doc) {
+        List<RegelVersieContext> versies = new ArrayList<>();
+        for (RegelContext r : DefinitionResolver.alleRegels(doc)) versies.addAll(r.regelVersie());
+        for (UitzonderingRegelContext u : DefinitionResolver.alleUitzonderingen(doc)) versies.addAll(u.regelVersie());
+        List<ResultaatDeelContext> uit = new ArrayList<>();
+        for (RegelVersieContext v : versies)
+            if (v.regelSpraakRegel() != null && v.regelSpraakRegel().resultaatDeel() != null)
+                uit.add(v.regelSpraakRegel().resultaatDeel());
+        return uit;
+    }
+
+    /** §9.9: the anchor member every startpuntbepaling declares on its subject, declared before any rule resolves, so
+     *  a rule that reads it ("zijn startpunt penningjaar") resolves the same wherever the startpuntbepaling stands.
+     *  Until 2026-10-06 {@link #startpunt} declared it when its own rule came up, and a reader written above that rule
+     *  became an unresolved marker. {@link #startpunt} still judges every declaration and writes the rule; this pass
+     *  declares only what that would declare, and leaves an author's own member of that name to its refusal. */
+    private void startpuntAnkers(RegelSpraakDocumentContext doc) {
+        for (ResultaatDeelContext rd : resultaatDelen(doc)) {
+            StartpuntBepalingContext sb = rd.startpuntBepaling();
+            if (sb == null) continue;
+            String tijdlijnNaam = RegelSpraakModel.normaliseerTijdlijnNaam(src(sb.tijdlijnNaam()));
+            Objecttype subject = model.resolveObjecttype(src(sb.universeelOnderwerp().kaleNaam()));
+            if (model.tijdlijnOpNaam(tijdlijnNaam) == null || subject == null) continue;
+            subject.attributen.putIfAbsent("startpunt " + tijdlijnNaam, new Datatype.DatumInDagen());
+        }
+    }
+
+    /** The type an objectcreatie creates: the noun before its 'met', resolved as a type or as a role it fills. */
+    private Objecttype nieuwTypeVan(ObjectCreatieContext oc) {
+        String[] rolEnAttr = src(oc.kaleNaam(0)).split("(?i)\\s+met\\s+", 2);
+        return model.resolveObjecttype(stripArtikel(rolEnAttr[0]));
     }
 
     /** §13.4.7 voorwaarde hosting. A feitcreatie guard is built with the ANKER as subject; a guard that
