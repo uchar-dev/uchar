@@ -124,7 +124,13 @@ class CreatieRolTest {
                 m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
     }
 
-    @Test void een_zelfgetypeerde_creatie_zonder_relatie_blijft_koppelloos() {
+    /** A creation of its own subject's type reads the population it grows (RUNTIME-SEMANTICS ch. 6.1): a cycle through
+     *  no recursive creation, which WF-045 refuses. Until 2026-10-06 the frontend let a cycle through an object creation
+     *  pass and these two rows pinned the document without an error. */
+    private static final String KRING = "hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten "
+            + "een recursieve creatie (WF-045): dependency cycle through no recursive creation: ";
+
+    @Test void een_zelfgetypeerde_creatie_zonder_relatie_weigert_als_kring() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Wachter (mv: Wachters) (bezield)
                 de rang Numeriek (geheel getal);
@@ -142,11 +148,14 @@ class CreatieRolTest {
                     Een Wachter heeft een Wachter met rang gelijk aan 1
                     indien de rang van de Wachter kleiner is dan 1.
             """);
-        assertTrue(m.errors().isEmpty(), () -> "geen feittype verbindt Wachter met Wachter, dus er is niets te "
-                + "koppelen en niets te weigeren: " + m.errors());
+        // no fact type relates Wachter to Wachter, so there is nothing to link and the sentence names no role it
+        // should; the one refusal is the cycle
+        assertEquals(List.of("ERROR 12 objectcreatie 'werf een wachter' " + KRING
+                        + "werf een wachter -> werf een wachter"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
     }
 
-    @Test void een_zelfgetypeerde_creatie_over_een_wederkerig_feittype_koppelt_zonder_rolnaam() {
+    @Test void een_zelfgetypeerde_creatie_over_een_wederkerig_feittype_weigert_als_kring() {
         RegelSpraakModel m = Resolver.resolve("""
             Objecttype de Jutter (mv: Jutters) (bezield)
                 de rang Numeriek (geheel getal);
@@ -160,8 +169,10 @@ class CreatieRolTest {
                     Een Jutter heeft een Jutter met rang gelijk aan 1
                     indien de rang van de Jutter kleiner is dan 1.
             """);
-        assertTrue(m.errors().isEmpty(), () -> "over één wederkerig feittype leidt het typenpaar de koppeling af: "
-                + m.errors());
+        // over one reciprocal fact type the type pair derives the link, so the sentence needs no role name; the one
+        // refusal is the cycle
+        assertEquals(List.of("ERROR 8 objectcreatie 'werf een maat' " + KRING + "werf een maat -> werf een maat"),
+                m.diagnostics.stream().map(d -> d.severity() + " " + d.line() + " " + d.message()).toList());
     }
 
     @Test void een_zin_die_het_type_noemt_schrijft_geen_rol() {

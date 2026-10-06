@@ -1318,6 +1318,290 @@ let () =
     (fun () -> run (doc ~in_creatie:(toets Leeg false merk) ~in_regel:(toets Gevuld false opvolger_rang)))
     "WF-046 at /rules/objectCreations/0/versions/0: negative dependency edge on a cycle"
 
+(* WV-6.4-h (ch. 6.1, since 2026-10-06): a fact creation writes the relation
+   it creates and no population, and a role check reads the relation it
+   names. The object creation "premiepot" gives every Haven a Premiepot whose
+   pot counts the havenjutters of the Haven; the fact creation "premiejutters"
+   links those Jutters, which exist, to the Premiepot the creation made;
+   "premiegerechtigd" holds for a Jutter that fills the role the fact creation
+   creates. Strata: the creation 0, the fact creation 1 (it reads the
+   creation's back-link stratum-strict), premiegerechtigd 2 (it reads the
+   created relation stratum-strict). H1 with havenjutters J1 and J2, J3
+   without a haven: J1 and J2 premiegerechtigd, J3 not. Until that date the
+   fact creation wrote population(Jutter) as a proxy, the count read it, and
+   the verifier and ref/ refused the document under WF-045 (premiepot ->
+   premiejutters -> premiepot), while the ASP backend answered these values;
+   the role check read nothing. The shape of
+   corpus/golden/jutterswet-premiepot, without its parameter, its readers of
+   the pot and the source snippets. *)
+let () =
+  let ir =
+    {|
+    {
+      "format": "uchar-ir-v1",
+      "model": {
+        "objectTypes": [
+          {
+            "node": "ObjectType",
+            "name": "Haven",
+            "animate": false,
+            "plural": "Havens",
+            "attributes": [],
+            "characteristics": []
+          },
+          {
+            "node": "ObjectType",
+            "name": "Jutter",
+            "animate": true,
+            "plural": "Jutters",
+            "attributes": [],
+            "characteristics": [
+              {"node": "Characteristic", "name": "premiegerechtigd", "kind": "adjectival"}
+            ]
+          },
+          {
+            "node": "ObjectType",
+            "name": "Premiepot",
+            "animate": false,
+            "plural": "Premiepotten",
+            "attributes": [
+              {
+                "node": "Attribute",
+                "name": "pot",
+                "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}
+              }
+            ],
+            "characteristics": []
+          }
+        ],
+        "factTypes": [
+          {
+            "node": "FactType",
+            "name": "HavenHeeftJutter",
+            "reciprocal": false,
+            "roles": [
+              {"node": "Role", "name": "haven", "objectType": "Haven", "many": false},
+              {
+                "node": "Role",
+                "name": "havenjutter",
+                "objectType": "Jutter",
+                "plural": "havenjutters",
+                "many": true
+              }
+            ]
+          },
+          {
+            "node": "FactType",
+            "name": "HavenHeeftPremiepot",
+            "reciprocal": false,
+            "roles": [
+              {"node": "Role", "name": "premiehaven", "objectType": "Haven", "many": false},
+              {"node": "Role", "name": "premiepot", "objectType": "Premiepot", "many": false}
+            ]
+          },
+          {
+            "node": "FactType",
+            "name": "PremiepotVoorJutters",
+            "reciprocal": false,
+            "roles": [
+              {
+                "node": "Role",
+                "name": "verdeelde premiepot",
+                "objectType": "Premiepot",
+                "many": false
+              },
+              {
+                "node": "Role",
+                "name": "premiejutter",
+                "objectType": "Jutter",
+                "plural": "premiejutters",
+                "many": true
+              }
+            ]
+          }
+        ],
+        "parameters": [],
+        "domains": [],
+        "unitSystems": [],
+        "dimensions": [],
+        "timelines": [],
+        "dayKinds": []
+      },
+      "rules": {
+        "rules": [
+          {
+            "node": "Rule",
+            "name": "premiegerechtigd",
+            "versions": [
+              {
+                "validity": {"node": "Validity"},
+                "target": {
+                  "node": "AttributeReference",
+                  "attribute": "premiegerechtigd",
+                  "subjectType": "Jutter"
+                },
+                "value": {
+                  "node": "Literal",
+                  "value": {"boolean": true},
+                  "type": {"node": "Boolean"}
+                },
+                "condition": {
+                  "node": "RoleMembership",
+                  "factType": "PremiepotVoorJutters",
+                  "role": "premiejutter",
+                  "negated": false
+                },
+                "initialisation": false
+              }
+            ]
+          }
+        ],
+        "dayKindDefinitions": [],
+        "objectCreations": [
+          {
+            "node": "ObjectCreation",
+            "name": "premiepot",
+            "versions": [
+              {
+                "createdType": "Premiepot",
+                "subject": "Haven",
+                "initialisations": [
+                  {
+                    "node": "MemberInit",
+                    "member": "pot",
+                    "value": {
+                      "node": "Aggregation",
+                      "kind": "count",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "havenjutters",
+                          "subjectType": "Haven"
+                        }
+                      ],
+                      "elementType": "Jutter",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "HavenHeeftJutter",
+                        "role": "havenjutter"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      }
+                    },
+                    "characteristic": false
+                  }
+                ],
+                "validity": {"node": "Validity"},
+                "connectingRole": {
+                  "node": "RoleBinding",
+                  "factType": "HavenHeeftPremiepot",
+                  "role": "premiepot"
+                }
+              }
+            ]
+          }
+        ],
+        "allocations": [],
+        "consistencies": [],
+        "uniquenesses": [],
+        "factCreations": [
+          {
+            "node": "FactCreation",
+            "name": "premiejutters",
+            "versions": [
+              {
+                "factType": "PremiepotVoorJutters",
+                "anchorRole": "verdeelde premiepot",
+                "targetRole": "premiejutter",
+                "anchor": "Premiepot",
+                "path": [
+                  {"node": "RoleBinding", "factType": "HavenHeeftPremiepot", "role": "premiehaven"},
+                  {"node": "RoleBinding", "factType": "HavenHeeftJutter", "role": "havenjutter"}
+                ],
+                "validity": {"node": "Validity"}
+              }
+            ]
+          }
+        ],
+        "startPointDeterminations": [],
+        "ruleGroups": []
+      },
+      "diagnostics": []
+    }
+|}
+  and zaak =
+    {|
+    {
+      "format": "uchar-case-v0",
+      "asOfDate": null,
+      "input": {
+        "instances": [
+          {
+            "label": "H1",
+            "objectType": "Haven",
+            "attributes": {},
+            "roles": {},
+            "characteristics": []
+          },
+          {
+            "label": "J1",
+            "objectType": "Jutter",
+            "attributes": {},
+            "roles": {"haven": ["H1"]},
+            "characteristics": []
+          },
+          {
+            "label": "J2",
+            "objectType": "Jutter",
+            "attributes": {},
+            "roles": {"haven": ["H1"]},
+            "characteristics": []
+          },
+          {
+            "label": "J3",
+            "objectType": "Jutter",
+            "attributes": {},
+            "roles": {},
+            "characteristics": []
+          }
+        ],
+        "parameters": {}
+      },
+      "expected": [
+        {"kind": "characteristicPresent", "label": "J1", "characteristic": "premiegerechtigd"},
+        {"kind": "characteristicPresent", "label": "J2", "characteristic": "premiegerechtigd"},
+        {"kind": "characteristicAbsent", "label": "J3", "characteristic": "premiegerechtigd"}
+      ]
+    }
+|}
+  in
+  let schrijf suffix tekst =
+    let f = Filename.temp_file "ref-wv64h" suffix in
+    let oc = open_out f in
+    output_string oc tekst;
+    close_out oc;
+    f
+  in
+  let irf = schrijf ".ir.json" ir and casef = schrijf ".case.json" zaak in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      check "WV-6.4-h-verifier-schoon"
+        (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf) = []);
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      let final =
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+          c.world
+      in
+      check "WV-6.4-h-rolcheck-na-de-feitcreatie" (Case.check c final = []))
+
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
    attribute defaults). Only y applicable and x justified must yield y, never a

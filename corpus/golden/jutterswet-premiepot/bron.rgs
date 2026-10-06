@@ -1,0 +1,52 @@
+Parameter de premie per havenjutter : Numeriek (geheel getal)
+
+Objecttype de Haven (mv: Havens)
+    het premietotaal Numeriek (geheel getal);
+    het premietal Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is premiegerechtigd kenmerk (bijvoeglijk);
+
+Objecttype de Premiepot (mv: Premiepotten)
+    de pot Numeriek (geheel getal);
+    het jutteraantal Numeriek (geheel getal);
+
+Feittype HavenHeeftJutter
+    de haven Haven
+    de havenjutter (mv: havenjutters) Jutter
+Eén haven heeft meerdere havenjutters
+
+Feittype HavenHeeftPremiepot
+    de premiehaven Haven
+    de premiepot Premiepot
+Eén premiehaven heeft één premiepot
+
+Feittype PremiepotVoorJutters
+    de verdeelde premiepot Premiepot
+    de premiejutter (mv: premiejutters) Jutter
+Eén verdeelde premiepot heeft meerdere premiejutters
+
+Regel premiepot
+    geldig altijd
+        Een Haven heeft de premiepot met pot gelijk aan het aantal havenjutters van de Haven maal de premie per havenjutter.
+
+Regel premiejutters
+    geldig altijd
+        Een premiejutter van een verdeelde premiepot is een havenjutter van de premiehaven van de verdeelde premiepot.
+
+Regel jutteraantal
+    geldig altijd
+        Het jutteraantal van een Premiepot moet berekend worden als het aantal premiejutters van de Premiepot.
+
+Regel premietotaal
+    geldig altijd
+        Het premietotaal van een Haven moet berekend worden als de pot van de premiepot van de Haven.
+
+Regel premietal
+    geldig altijd
+        Het premietal van een Haven moet berekend worden als het jutteraantal van de premiepot van de Haven.
+
+Regel premiegerechtigd
+    geldig altijd
+        Een Jutter is premiegerechtigd
+        indien hij een premiejutter is.

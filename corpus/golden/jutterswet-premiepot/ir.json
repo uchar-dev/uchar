@@ -1,0 +1,436 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Haven",
+        "animate": false,
+        "plural": "Havens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "premietotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "premietal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "premiegerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Premiepot",
+        "animate": false,
+        "plural": "Premiepotten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "pot",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jutteraantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "HavenHeeftJutter",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "haven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "havenjutter",
+            "objectType": "Jutter",
+            "plural": "havenjutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "HavenHeeftPremiepot",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "premiehaven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "premiepot",
+            "objectType": "Premiepot",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "PremiepotVoorJutters",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "verdeelde premiepot",
+            "objectType": "Premiepot",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "premiejutter",
+            "objectType": "Jutter",
+            "plural": "premiejutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "premie per havenjutter",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "jutteraantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jutteraantal",
+              "subjectType": "Premiepot",
+              "source": {
+                "snippet": "Het jutteraantal van een Premiepot"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "premiejutters",
+                  "subjectType": "Premiepot",
+                  "source": {
+                    "snippet": "premiejutters van de Premiepot"
+                  }
+                }
+              ],
+              "elementType": "Jutter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "PremiepotVoorJutters",
+                "role": "premiejutter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal premiejutters van de Premiepot"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premietotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premietotaal",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "Het premietotaal van een Haven"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "pot",
+              "subjectType": "Premiepot",
+              "source": {
+                "snippet": "de pot van de premiepot van de Haven"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "HavenHeeftPremiepot",
+                  "role": "premiepot"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premietal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premietal",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "Het premietal van een Haven"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "jutteraantal",
+              "subjectType": "Premiepot",
+              "source": {
+                "snippet": "het jutteraantal van de premiepot van de Haven"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "HavenHeeftPremiepot",
+                  "role": "premiepot"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "premiegerechtigd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "premiegerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is premiegerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "PremiepotVoorJutters",
+              "role": "premiejutter",
+              "negated": false,
+              "source": {
+                "snippet": "hij een premiejutter is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "premiepot",
+        "versions": [
+          {
+            "createdType": "Premiepot",
+            "subject": "Haven",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "pot",
+                "value": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "count",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "havenjutters",
+                        "subjectType": "Haven",
+                        "source": {
+                          "snippet": "havenjutters van de Haven"
+                        }
+                      }
+                    ],
+                    "elementType": "Jutter",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "HavenHeeftJutter",
+                      "role": "havenjutter"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "het aantal havenjutters van de Haven"
+                    }
+                  },
+                  "right": {
+                    "node": "ParameterReference",
+                    "parameter": "premie per havenjutter",
+                    "source": {
+                      "snippet": "de premie per havenjutter"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "het aantal havenjutters van de Haven maal de premie per havenjutter"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "HavenHeeftPremiepot",
+              "role": "premiepot"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "premiejutters",
+        "versions": [
+          {
+            "factType": "PremiepotVoorJutters",
+            "anchorRole": "verdeelde premiepot",
+            "targetRole": "premiejutter",
+            "anchor": "Premiepot",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "HavenHeeftPremiepot",
+                "role": "premiehaven"
+              },
+              {
+                "node": "RoleBinding",
+                "factType": "HavenHeeftJutter",
+                "role": "havenjutter"
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

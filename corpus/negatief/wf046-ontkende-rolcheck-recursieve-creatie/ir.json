@@ -1,0 +1,190 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "voorganger",
+            "objectType": "Wachter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opvolger",
+            "objectType": "Wachter",
+            "plural": "opvolgers",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "werf de opvolger",
+        "versions": [
+          {
+            "createdType": "Wachter",
+            "subject": "Wachter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "rang",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "RoleMembership",
+                  "factType": "opvolging",
+                  "role": "voorganger",
+                  "negated": true,
+                  "source": {
+                    "snippet": "hij is geen voorganger"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "zijn rang"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "3"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn rang is kleiner dan 3"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is geen voorganger - zijn rang is kleiner dan 3."
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "opvolging",
+              "role": "opvolger"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
+      {
+        "node": "RuleGroup",
+        "name": "estafette",
+        "recursive": true,
+        "members": [
+          "werf de opvolger"
+        ],
+        "source": {
+          "snippet": "estafette",
+          "line": 9
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,24 @@
+Scenario twee havens
+Gegeven is de volgende situatie:
+de parameter de premie per havenjutter is 50
+een Haven H1
+een Haven H2
+een Haven H3
+een Jutter J1
+- de haven is H1
+een Jutter J2
+- de haven is H1
+een Jutter J3
+- de haven is H2
+een Jutter J4
+Met als verwacht resultaat:
+- het premietotaal van H1 is 100
+- het premietal van H1 is 2
+- het premietotaal van H2 is 50
+- het premietal van H2 is 1
+- het premietotaal van H3 is 0
+- het premietal van H3 is 0
+- J1 is premiegerechtigd
+- J2 is premiegerechtigd
+- J3 is premiegerechtigd
+- J4 is niet premiegerechtigd

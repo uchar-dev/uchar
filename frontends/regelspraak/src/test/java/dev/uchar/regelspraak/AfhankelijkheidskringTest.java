@@ -23,7 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * no recursive creation: restgewicht -> bergingsgewicht -> restgewicht} and, through the defaults group,
  * {@code WF-051 FAIL /rules/prioritizedDefaults/0: a dependency cycle passes through defaults group 'meldtermijn' — …}.
  * A cycle on a rule's own subject is refused the same way, beside the WARNING it had ({@code RecursieTest},
- * {@code ZelflezingKringTest}); until 2026-10-06 it kept that WARNING alone.
+ * {@code ZelflezingKringTest}); until 2026-10-06 it kept that WARNING alone. A cycle through an object creation outside
+ * a recursive group is refused too since that day ({@code CreatieRolTest}); until then it passed, because a fact
+ * creation wrote the population of its target type in the graph and so made a cycle that does not exist with an object
+ * creation that counts members of that type (the last row, and {@code resolver.FeitcreatieRandenTest}).
  */
 class AfhankelijkheidskringTest {
 
@@ -169,6 +172,53 @@ class AfhankelijkheidskringTest {
             Regel bergingsgewicht
                 geldig altijd
                     Het bergingsgewicht van een Vondst moet gesteld worden op het restgewicht van de vorige vondst van de Vondst.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+    }
+
+    @Test void een_feitcreatie_die_bestaande_objecten_aan_een_gemaakt_object_koppelt_maakt_geen_kring() {
+        // the shape of corpus/golden/jutterswet-premiepot: the creation counts the havenjutters of a Haven, the fact
+        // creation links those Jutters, which exist, to the Premiepot the creation made; it creates no Jutter
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Haven (mv: Havens)
+                het premietal Numeriek (geheel getal);
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+
+            Objecttype de Premiepot (mv: Premiepotten)
+                de pot Numeriek (geheel getal);
+                het jutteraantal Numeriek (geheel getal);
+
+            Feittype HavenHeeftJutter
+                de haven Haven
+                de havenjutter (mv: havenjutters) Jutter
+            Eén haven heeft meerdere havenjutters
+
+            Feittype HavenHeeftPremiepot
+                de premiehaven Haven
+                de premiepot Premiepot
+            Eén premiehaven heeft één premiepot
+
+            Feittype PremiepotVoorJutters
+                de verdeelde premiepot Premiepot
+                de premiejutter (mv: premiejutters) Jutter
+            Eén verdeelde premiepot heeft meerdere premiejutters
+
+            Regel premiepot
+                geldig altijd
+                    Een Haven heeft de premiepot met pot gelijk aan het aantal havenjutters van de Haven.
+
+            Regel premiejutters
+                geldig altijd
+                    Een premiejutter van een verdeelde premiepot is een havenjutter van de premiehaven van de verdeelde premiepot.
+
+            Regel jutteraantal
+                geldig altijd
+                    Het jutteraantal van een Premiepot moet berekend worden als het aantal premiejutters van de Premiepot.
+
+            Regel premietal
+                geldig altijd
+                    Het premietal van een Haven moet berekend worden als het jutteraantal van de premiepot van de Haven.
             """);
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
     }

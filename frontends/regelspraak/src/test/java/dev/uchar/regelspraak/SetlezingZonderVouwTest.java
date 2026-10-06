@@ -175,13 +175,20 @@ class SetlezingZonderVouwTest {
         // kind's voorwaarde passes through — not on the rule carrier alone. The same holds for a
         // verdeling, a feitcreatie, a dagsoortdefinitie and a startpuntbepaling. Until 2026-09-19 it
         // witnessed the WF-096 ERROR there; it now witnesses the lowering there, which is the same
-        // claim about the same one place.
-        geenEnkeleDiagnose("""
+        // claim about the same one place. Since 2026-10-06 the document is refused for another reason: the creation
+        // mints the vondsten its condition reads under "alle", a cycle through no recursive creation with a negative
+        // edge (WF-045, WF-046), which the frontend let through until then; the set reading itself draws nothing.
+        RegelSpraakModel m = Resolver.resolve(MODEL + """
                 Regel nieuwe vondst
                     geldig altijd
                         Een Jutter heeft een Vondst met het gewicht gelijk aan 3 kg
                         indien het gewicht van alle vondsten van de Jutter gelijk is aan 5 kg.
                 """);
+        assertEquals(List.of("objectcreatie 'nieuwe vondst' hangt via een kring van zichzelf af; de afhankelijkheden "
+                        + "zijn kringvrij buiten een recursieve creatie (WF-045), en een kring draagt geen negatieve "
+                        + "rand, zoals een ontkenning (WF-046): dependency cycle through no recursive creation: nieuwe "
+                        + "vondst -> nieuwe vondst"),
+                m.diagnostics.stream().map(Diagnostic::message).toList());
     }
 
     @Test void setlezing_in_een_consistentieregel_wordt_benoemd() {

@@ -1,0 +1,144 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H2",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H3",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "haven": [
+            "H1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "haven": [
+            "H1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "haven": [
+            "H2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "premie per havenjutter": {
+        "number": "50"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "premietotaal",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H1",
+      "attribute": "premietal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "premietotaal",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H2",
+      "attribute": "premietal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H3",
+      "attribute": "premietotaal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "H3",
+      "attribute": "premietal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J3",
+      "characteristic": "premiegerechtigd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "premiegerechtigd"
+    }
+  ]
+}
