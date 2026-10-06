@@ -253,8 +253,11 @@ public final class DroolsBackend {
         try {
             kieBase = helper.build();
         } catch (RuntimeException e) {
+            // Drools' message opens with a header that carries the path above, 127 characters up to "text=" on the
+            // first message, and only then the error itself (line, column, what failed). The bound has to leave that
+            // text standing; at 200, 73 characters of it remained.
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            throw new Excluded("drl compile: " + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
+            throw new Excluded("drl compile: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m));
         }
         return new Build(loaded.model(), cl, null, t, List.copyOf(t.dekking()), kieBase);
     }
