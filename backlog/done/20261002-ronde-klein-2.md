@@ -282,6 +282,16 @@ commit met dit record raakt alleen `backlog/`); zeventien regels `exit 0` en
    van de eigenaar beide grenzen weghalen en die tests aanpassen; dan geeft
    `check` op elke kring die de verifier weigert exit 1. Zolang zij staan ziet
    een poort die `check` draait deze twee soorten niet.
+   **(a) opgelost in `a7210c19`**, record `20261006-kringtoets-volgt-wf045.md`:
+   een kring op het eigen onderwerp krijgt de ERROR van WF-045 in de zin van de
+   verifier, met WF-046 erbij waar een negatieve rand tussen twee vormen van de
+   kring ligt, en de WARNING blijft ernaast; `RecursieTest` en
+   `ZelflezingKringTest` leggen de weigering vast. **(b) blijft open**, met een
+   vondst van 2026-10-06: de TOKA-casus (zonder toka-23 en toka-45) bevat een
+   kring door een niet-recursieve objectcreatie. Weigeren breekt poort 11 (de
+   casus is dan niet opnieuw te schrijven) en de dienst van de distributie, die
+   die casus serveert (17 servicetests). Daarom is het een vraag aan de spec: is
+   WF-045 op dit punt strenger dan RegelSpraak bedoelt?
 4. **WF-046 herhaalt check niet.** Een negatieve rand op een kring door een
    recursieve creatie (WF-045 laat die kring toe) gaat door `check`; de exectak
    weigert een leeg-toets op een kring benoemd. Advies: zo laten tot een
@@ -293,6 +303,9 @@ commit met dit record raakt alleen `backlog/`); zeventien regels `exit 0` en
 6. De commentaarzin bij `keurKringverwijzingen` ("The spec does not forbid the
    writing, so this is a WARNING") zegt nog wat vóór WF-045 gold; de WARNING
    staat door punt 3 (a). Niet aangepast, omdat de houding zelf vastligt.
+   **Opgelost in `a7210c19`**: het commentaar zegt nu dat WF-045 het schrijven
+   verbiedt en dat de WARNING naast de ERROR van `keurAfhankelijkheidskringen`
+   staat.
 7. De distributie draait op haar pin en kent deze ronde niet; de pin moet na het
    landen mee. Daarna geeft haar `check` exit 1 op een kring die de verifier
    weigert, buiten de twee grenzen van punt 3.
