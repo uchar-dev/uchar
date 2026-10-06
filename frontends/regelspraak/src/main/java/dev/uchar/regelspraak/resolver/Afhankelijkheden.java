@@ -29,13 +29,8 @@ final class Afhankelijkheden {
 
     /** A form of the graph: its pointer, its name (a version of a form with several is "&lt;naam&gt; #i"), whether it
      *  is a creation in a recursive rule group, what it writes and what it reads; {@code soort} is the list it comes
-     *  from, {@code doel} the member a rule version or a defaults group writes on its own type (null otherwise). */
-    record Vorm(String at, String naam, String soort, boolean recursieveCreatie, List<String> schrijft, List<Lezing> leest,
-                Doel doel) {}
-
-    /** The member a rule version or a defaults group writes: its declared owner, its name, and whether it is a
-     *  characteristic. */
-    record Doel(String type, String lid, boolean kenmerk) {}
+     *  from. */
+    record Vorm(String at, String naam, String soort, boolean recursieveCreatie, List<String> schrijft, List<Lezing> leest) {}
 
     /** One read: the node and its edge kind (positive, strict, negative; ch. 5.2). */
     record Lezing(String knoop, String soort) {}
@@ -64,6 +59,17 @@ final class Afhankelijkheden {
             uit.add(String.join("\t", r.soort(), m1Root(p.at()), p.naam(), r.knoop(), m1Root(c.at()), c.naam()));
         }
         return new ArrayList<>(uit);
+    }
+
+    /** Whether a negative edge (ch. 5.2) runs from one form of the cycle {@code k} to another, or from a form to itself.
+     *  Every form of a cycle reaches every other, so such an edge lies on a cycle and the verifier refuses it under
+     *  WF-046 as well ({@code wf045_046}); a negative edge from a form outside {@code k} is not looked for. */
+    static boolean draagtNegatieveRand(Kring k) {
+        for (Vorm c : k.vormen())
+            for (Lezing l : c.leest())
+                if (NEG.equals(l.soort()) && k.vormen().stream().anyMatch(p -> p.schrijft().contains(l.knoop())))
+                    return true;
+        return false;
     }
 
     /** {@code naam} without the " #i" of a version of a form with several ({@code strip_version}). */
@@ -603,8 +609,7 @@ final class Afhankelijkheden {
                 List<Lezing> leest = leesExpr(ot, conditie(ot, v.knoop().get("condition")), v.knoop().get("value"));
                 if (kenmerk) leest = strikt(leest);
                 else if (!absorberendeTypen(ot, a).isEmpty()) leest = negatief(leest);
-                uit.add(new Vorm(v.at(), v.naam() == null ? v.at() : v.naam(), "rules", false, schrijft, leest,
-                        new Doel(ot, a, kenmerk)));
+                uit.add(new Vorm(v.at(), v.naam() == null ? v.at() : v.naam(), "rules", false, schrijft, leest));
             }
             // the allocations
             for (Versie v : versies("allocations")) {
@@ -620,13 +625,13 @@ final class Afhankelijkheden {
                 for (String veld : List.of("ratioAttribute", "maximumAttribute", "orderingAttribute"))
                     if (tekst(k, veld) != null) leest.add(new Lezing(attrKnoop(dt, tekst(k, veld)), POS));
                 leest.addAll(conditie(tekst(k, "sourceType"), k.get("condition")));
-                uit.add(new Vorm(v.at(), v.naam() == null ? v.at() : v.naam(), "allocations", false, schrijft, leest, null));
+                uit.add(new Vorm(v.at(), v.naam() == null ? v.at() : v.naam(), "allocations", false, schrijft, leest));
             }
             // the consistencies
             for (Versie v : versies("consistencies")) {
                 String naam = v.naam() == null ? v.at() : v.naam();
                 uit.add(new Vorm(v.at(), naam, "consistencies", false, List.of(chanKnoop(naam)),
-                        strikt(conditie(tekst(v.knoop(), "subject"), v.knoop().get("assertion"))), null));
+                        strikt(conditie(tekst(v.knoop(), "subject"), v.knoop().get("assertion")))));
             }
             // the uniquenesses of one source, then those of several
             List<Versie> uniek = versies("uniquenesses");
@@ -640,7 +645,7 @@ final class Afhankelijkheden {
                     leest.add(new Lezing(relKnoop(tekst(obj(v.knoop().get("scope")), "factType")), STRIKT));
                 for (Object sleutel : rauw(bronnen.get(0), "keys"))
                     leest.add(new Lezing(attrKnoop(subj, sleutel instanceof String s ? s : ""), STRIKT));
-                uit.add(new Vorm(v.at(), naam, "uniquenesses", false, List.of(chanKnoop(naam)), leest, null));
+                uit.add(new Vorm(v.at(), naam, "uniquenesses", false, List.of(chanKnoop(naam)), leest));
             }
             for (Versie v : uniek) {
                 List<Map<String, Object>> bronnen = lijst(v.knoop(), "sources");
@@ -652,7 +657,7 @@ final class Afhankelijkheden {
                     if (t == null) continue;
                     for (Object sleutel : rauw(b, "keys")) leest.add(new Lezing(attrKnoop(t, sleutel instanceof String s ? s : ""), STRIKT));
                 }
-                uit.add(new Vorm(v.at(), naam, "uniquenesses", false, List.of(chanKnoop(naam)), leest, null));
+                uit.add(new Vorm(v.at(), naam, "uniquenesses", false, List.of(chanKnoop(naam)), leest));
             }
             // the object creations
             for (Versie v : versies("objectCreations")) {
@@ -679,7 +684,7 @@ final class Afhankelijkheden {
                 for (Map<String, Object> t : lijst(k, "initialisations")) waarden = leesExpr(subject, waarden, t.get("value"));
                 leest.addAll(waarden);
                 uit.add(new Vorm(v.at(), naam, "objectCreations", recursief.contains(norm(zonderVersie(naam))), schrijft,
-                        strikt(leest), null));
+                        strikt(leest)));
             }
             // the fact creations
             for (Versie v : versies("factCreations")) {
@@ -694,7 +699,7 @@ final class Afhankelijkheden {
                 if (doel != null) schrijft.add(popKnoop(doel));
                 schrijft.add(relKnoop(tekst(k, "factType")));
                 uit.add(new Vorm(v.at(), naam, "factCreations", recursief.contains(norm(zonderVersie(naam))), schrijft,
-                        strikt(leest), null));
+                        strikt(leest)));
             }
             // the defaults groups
             List<Map<String, Object>> groepen = lijst(regels, "prioritizedDefaults");
@@ -706,16 +711,11 @@ final class Afhankelijkheden {
                 List<Lezing> leest = new ArrayList<>();
                 for (Map<String, Object> d : lijst(l, "defaults")) leest.addAll(standaardLezingen(onderwerp, d));
                 List<String> schrijft = new ArrayList<>();
-                Doel doel = null;
-                if (tekst(l, "characteristic") != null) {
+                if (tekst(l, "characteristic") != null)
                     schrijft.addAll(lidSchrijft(onderwerp, tekst(l, "characteristic"), true, false));
-                    doel = new Doel(onderwerp, tekst(l, "characteristic"), true);
-                }
-                if (tekst(l, "attribute") != null) {
+                if (tekst(l, "attribute") != null)
                     schrijft.addAll(lidSchrijft(onderwerp, tekst(l, "attribute"), false, false));
-                    doel = new Doel(onderwerp, tekst(l, "attribute"), false);
-                }
-                uit.add(new Vorm(at, naam, "prioritizedDefaults", false, schrijft, negatief(leest), doel));
+                uit.add(new Vorm(at, naam, "prioritizedDefaults", false, schrijft, negatief(leest)));
             }
             return uit;
         }

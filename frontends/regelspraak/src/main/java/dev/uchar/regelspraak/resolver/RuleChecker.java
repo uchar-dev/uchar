@@ -139,14 +139,15 @@ final class RuleChecker {
      * the form the verifier reports. {@code check} runs no verifier, and such a document passed it without a word: a
      * value of one object that depends on the same value of another object of its type, over a role, is a cycle of the
      * graph (one node per object type and member, ch. 5.1), and the warning below sees only the reads on a rule's own
-     * subject. Two kinds of cycle stay as they were, the frontend writing the document and the verifier refusing it:
-     * a cycle that warning names already — every form on it a rule or a defaults group whose target the warning
-     * counted — keeps that WARNING, the posture {@code RecursieTest} and {@code ZelflezingKringTest} pin; and a cycle
-     * through an object creation outside a recursive group (a creation of its own subject's type reads the population
-     * it grows), which {@code CreatieRolTest} and {@code SetlezingZonderVouwTest} pin without an error. One violation
-     * is refused once, where the verifier reports it twice over two edges of one pair. Runs last, on a model without an
-     * ERROR: a model the emitter refuses has no document to judge, and that refusal is reported where the document is
-     * written.
+     * subject. A cycle that warning names is refused here as well, and the WARNING stays beside the ERROR: it names the
+     * cycle in the members the author wrote, where the verifier's sentence names forms. Where a negative edge (ch. 5.2)
+     * runs between two forms of a WF-045 cycle the refusal names WF-046 too, the rule the verifier adds for it. One kind
+     * of cycle stays as it was, the frontend writing the document and the verifier refusing it: a cycle through an
+     * object creation outside a recursive group (a creation of its own subject's type reads the population it grows),
+     * which {@code CreatieRolTest} and {@code SetlezingZonderVouwTest} pin without an error. The walk never enters a
+     * creation of a recursive group, so every cycle this skips is one WF-045 refuses. One violation is refused once,
+     * where the verifier reports it twice over two edges of one pair. Runs last, on a model without an ERROR: a model
+     * the emitter refuses has no document to judge, and that refusal is reported where the document is written.
      */
     private void keurAfhankelijkheidskringen(RegelSpraakDocumentContext doc) {
         if (!model.isOk()) return;
@@ -159,37 +160,21 @@ final class RuleChecker {
         Map<String, String[]> plekken = vormPlekken(doc);
         Set<String> gemeld = new java.util.HashSet<>();
         for (Afhankelijkheden.Kring k : Afhankelijkheden.kringen(ir)) {
-            if (alGewaarschuwd(k) || k.vormen().stream().anyMatch(v -> v.soort().equals("objectCreations"))) continue;
+            if (k.vormen().stream().anyMatch(v -> v.soort().equals("objectCreations"))) continue;
             if (!gemeld.add(k.wf() + " " + k.at() + " " + k.zin())) continue;
             Afhankelijkheden.Vorm vorm = k.vormen().get(0);
             String naam = Afhankelijkheden.zonderVersie(vorm.naam());
             String[] plek = plekken.get(dev.uchar.regelspraak.emit.IrEmitter.norm(naam));
+            boolean wf045 = "WF-045".equals(k.wf());
             fout(plek == null ? 0 : Integer.parseInt(plek[1]), VORMSOORT.get(vorm.soort()) + " '" + naam + "' "
-                    + ("WF-045".equals(k.wf())
+                    + (wf045
                         ? "hangt via een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie"
                         : "ligt op een afhankelijkheidskring, en een kring door een defaults-groep heeft geen strata")
-                    + " (" + k.wf() + "): " + k.zin());
+                    + " (" + k.wf() + ")"
+                    + (wf045 && Afhankelijkheden.draagtNegatieveRand(k)
+                        ? ", en een kring draagt geen negatieve rand, zoals een ontkenning (WF-046)" : "")
+                    + ": " + k.zin());
         }
-    }
-
-    /** Whether the warning of {@link #keurKringverwijzingen} names {@code k} already: every form on it writes a target
-     *  that warning counted, a moved 'berekende X' counted as the X it computes. */
-    private boolean alGewaarschuwd(Afhankelijkheden.Kring k) {
-        Set<String> gewaarschuwd = new java.util.HashSet<>();
-        for (Leesknoop kn : kringknopen)
-            gewaarschuwd.add(dev.uchar.regelspraak.emit.IrEmitter.norm(kn.type()) + "\u0000" + kn.naam() + "\u0000" + kn.kenmerk());
-        for (Afhankelijkheden.Vorm v : k.vormen()) {
-            Afhankelijkheden.Doel d = v.doel();
-            if (d == null) return false;
-            String type = dev.uchar.regelspraak.emit.IrEmitter.norm(d.type());
-            String naam = dev.uchar.regelspraak.emit.IrEmitter.norm(d.lid());
-            for (Opgave o : gelowerd)
-                if (!d.kenmerk() && dev.uchar.regelspraak.emit.IrEmitter.norm(o.type().naam).equals(type)
-                        && dev.uchar.regelspraak.emit.IrEmitter.norm(o.berekende()).equals(naam))
-                    naam = dev.uchar.regelspraak.emit.IrEmitter.norm(o.attribuut());
-            if (!gewaarschuwd.contains(type + "\u0000" + naam + "\u0000" + d.kenmerk())) return false;
-        }
-        return true;
     }
 
     /** The arrays of named forms in the order the verifier reports a collision between two of them (WF-020). */
@@ -2864,8 +2849,11 @@ final class RuleChecker {
 
     /** A read-write dependency CYCLE (x = y+1; y = x+1) never reaches a fixpoint under the freshness semantics
      *  (each write re-fires the other reader with a CHANGED value — the engine caps the run-away instead of
-     *  hanging, and both back-ends would diverge forever). The spec does not forbid the writing, so this is a
-     *  WARNING, not an ERROR: a voorwaarde may break the cycle at runtime (statically undecidable). The graph
+     *  hanging, and both back-ends would diverge forever). WF-045 forbids the writing, and
+     *  {@link #keurAfhankelijkheidskringen} refuses each such cycle with an ERROR in the verifier's sentence, which
+     *  names forms; this WARNING stays beside it and names the cycle in the members the author wrote. It is the only
+     *  notice of the cycle in a model that carries another ERROR, because that refusal judges only a document the
+     *  emitter can write. The graph
      *  mirrors the reads of RUNTIME-SEMANTICS ch. 5.1 and 6.1 as far as they stay on the rule's own subject: a
      *  node is an own attribute or characteristic of the subject's type, the two kinds kept apart and names
      *  compared as the verifier compares them; the edges run from what a rule's value AND condition read —

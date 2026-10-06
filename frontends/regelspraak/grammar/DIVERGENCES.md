@@ -1954,8 +1954,10 @@ which is the measurement above stated as a property.
   with the marker the cycle runs through the generated group and WF-046 and
   WF-051 speak as well. Measured 2026-09-25. The frontend gives both the same
   WARNING, `kringverwijzing tussen berekeningen: Vondst.waarde -> Vondst.waarde
-  — …` for the direct self-read, in the author's names, and still writes the
-  document, as it does for every cycle on a rule's own subject (witness:
+  — …` for the direct self-read, in the author's names. Until 2026-10-06 it
+  still wrote the document, as it did for every cycle on a rule's own subject;
+  since then it refuses it beside the WARNING with an ERROR in the verifier's
+  sentence (section "Kringen: WF-045 en WF-051 in check"; witness:
   `ZelflezingKringTest`). The
   clamp idiom "x = x, met een maximum van y" is such a self-read too, and so is
   a computation whose condition reads its own target: the verifier refuses both
@@ -2004,7 +2006,7 @@ which is the measurement above stated as a property.
   meldingsdatum -> melding op vinddag`). A computation
   on the subtype that reads the `berekende X` it writes stays on one type and
   is warned (`Strandvondst.berekende meldingsdatum -> Strandvondst.berekende
-  meldingsdatum`).
+  meldingsdatum`), and since 2026-10-06 refused as well.
 - The semantic variant — a per-target marking on the wire that moves the input
   default of ch. 7.8 above the ordinary defaults — is the recorded alternative
   (the proposal's §5.9), not built.
@@ -2978,10 +2980,24 @@ bergingsgewicht -> restgewicht", and "defaults-groep 'meldtermijn' ligt op een a
 door een defaults-groep heeft geen strata (WF-051): …". Measured 2026-10-02: before, a value of one object read from
 the same value of another object of its type over a role passed `check` without a diagnostic; the edges equal
 `verifier --dependency-edges` on 883 documents of the corpus zones, and the WF-045 and WF-051 lines equal the
-verifier's, in its order. Two bounds, pinned by tests: a cycle the warning "kringverwijzing tussen berekeningen"
-names on a rule's own subject keeps that WARNING alone (`RecursieTest`, `ZelflezingKringTest`), and a cycle through
-an object creation outside a recursive group gets no ERROR (`CreatieRolTest`, `SetlezingZonderVouwTest`). WF-046 is
-not repeated. Witness: `AfhankelijkheidskringTest`.
+verifier's, in its order. One bound, pinned by tests: a cycle through an object creation outside a recursive group
+gets no ERROR (`CreatieRolTest`, `SetlezingZonderVouwTest`). The walk never enters a creation of a recursive group, so
+every cycle this bound passes is one WF-045 refuses.
+
+A cycle the warning "kringverwijzing tussen berekeningen" names on a rule's own subject kept that WARNING alone until
+2026-10-06; since then it is refused like any other, and the WARNING stays beside the ERROR, naming the cycle in the
+members the author wrote (`RecursieTest`, `ZelflezingKringTest`). Measured before, on the frontend of `b3861896`:
+"Een Jutter is uitgesloten indien hij niet penninggerechtigd is" beside "Een Jutter is penninggerechtigd indien hij
+niet uitgesloten is" passed `check` with that WARNING alone, the verifier refused the document under WF-045 and twice
+under WF-046, and the ASP backend found two stable models for a Jutter without input. No golden, no source of the
+the parity zone or of the distribution's examples carried such a cycle. WF-046 is not repeated as a rule of its own:
+where a negative edge runs between two forms of a WF-045 cycle, the refusal names it — "regel 'uitsluiting' hangt via
+een kring van zichzelf af; de afhankelijkheden zijn kringvrij buiten een recursieve creatie (WF-045), en een kring
+draagt geen negatieve rand, zoals een ontkenning (WF-046): dependency cycle through no recursive creation: uitsluiting
+-> penningrecht -> uitsluiting" — measured equal to the verifier's WF-046 lines on the eleven WF-045 cycles in the 868
+documents of the corpus zones and the parity zone, five of them with a negative edge (2026-10-06). A negative edge
+on a cycle WF-045 admits, through a recursive creation, still passes `check`. Witnesses: `AfhankelijkheidskringTest`,
+`ZelflezingKringTest`, and the negatief `wf046-kenmerken-lezen-elkaars-ontkenning`.
 
 
 ## Producer refusals without a reader sentence
