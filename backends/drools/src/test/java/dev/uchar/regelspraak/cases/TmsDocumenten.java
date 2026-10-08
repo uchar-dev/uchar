@@ -61,11 +61,18 @@ final class TmsDocumenten {
 
     /** The document of {@code model} with {@code regels} and {@code consistenties}, each in its order. */
     static Path document(String model, List<String> regels, List<String> consistenties) throws Exception {
+        return document(model, regels, consistenties, List.of());
+    }
+
+    /** The document of {@code model} with {@code regels}, {@code consistenties} and the prioritized-defaults groups
+     *  {@code defaults}, each in its order. */
+    static Path document(String model, List<String> regels, List<String> consistenties, List<String> defaults)
+            throws Exception {
         String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + String.join(",", regels)
                 + "],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":["
                 + String.join(",", consistenties) + "],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[],"
-                + "\"prioritizedDefaults\":[]},\"diagnostics\":[]}";
+                + "\"prioritizedDefaults\":[" + String.join(",", defaults) + "]},\"diagnostics\":[]}";
         Path tmp = Files.createTempFile("tms-getuige", ".json");
         tmp.toFile().deleteOnExit();
         return Files.writeString(tmp, ir);
@@ -255,6 +262,56 @@ final class TmsDocumenten {
                 + naam + "\"}}]}";
     }
 
+    /** An object type that is a {@code supertype} (IR-SPEC ch. 2.2), with attributes and characteristics of its own. */
+    static String subtype(String naam, String supertype, List<String> attributen, List<String> kenmerken) {
+        String t = objecttype(naam, attributen, kenmerken);
+        return t.replace("\"name\":\"" + naam + "\",", "\"name\":\"" + naam + "\",\"supertype\":\"" + supertype + "\",");
+    }
+
+    // ---------------- prioritized defaults ----------------
+
+    /** A defaults group on attribute {@code attribuut} of {@code type}, its {@code defaults} highest first. */
+    static String attribuutgroep(String naam, String type, String attribuut, List<String> defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type + "\",\"attribute\":\""
+                + attribuut + "\",\"defaults\":[" + String.join(",", defaults) + "],\"validity\":{\"node\":\"Validity\"}}";
+    }
+
+    /** A defaults group on characteristic {@code kenmerk} of {@code type}, its {@code defaults} highest first. */
+    static String kenmerkgroep(String naam, String type, String kenmerk, List<String> defaults) {
+        return "{\"node\":\"PrioritizedDefaults\",\"name\":\"" + naam + "\",\"subject\":\"" + type
+                + "\",\"characteristic\":\"" + kenmerk + "\",\"defaults\":[" + String.join(",", defaults)
+                + "],\"validity\":{\"node\":\"Validity\"}}";
+    }
+
+    /** An attribute default: its justification and its consequence. */
+    static String standaard(String rechtvaardiging, String consequentie) {
+        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequentie + "}";
+    }
+
+    /** A characteristic default: its justification and its decision, attribute or do-not-attribute. */
+    static String besluit(String rechtvaardiging, boolean besluit) {
+        return "{\"node\":\"Default\",\"decision\":" + besluit + ",\"justification\":" + rechtvaardiging + "}";
+    }
+
+    /** A form-a default with exception groups: its own justification and consequence, and the members, each a chain of
+     *  defaults highest first, reconciled as a declared-unordered group (RUNTIME-SEMANTICS ch. 7.9). */
+    static String metUitzonderingen(String rechtvaardiging, String consequentie, List<List<String>> leden) {
+        return "{\"node\":\"Default\",\"justification\":" + rechtvaardiging + ",\"consequence\":" + consequentie
+                + ",\"exceptions\":" + uitzonderingen(leden) + "}";
+    }
+
+    /** A group-default: exception groups and no content of its own. */
+    static String groepsdefault(List<List<String>> leden) {
+        return "{\"node\":\"Default\",\"exceptions\":" + uitzonderingen(leden) + "}";
+    }
+
+    private static String uitzonderingen(List<List<String>> leden) {
+        List<String> m = new ArrayList<>();
+        for (List<String> lid : leden)
+            m.add("{\"node\":\"ExceptionGroup\",\"defaults\":[" + String.join(",", lid) + "]}");
+        return "{\"unordered\":true,\"members\":[" + String.join(",", m) + "]}";
+    }
+
     /** "regelversie {@code regel} is inconsistent": a test of the §9.5 channel of the named form. */
     static String kanaaltoets(String regel) {
         return "{\"node\":\"Regelversie\",\"regel\":\"" + regel + "\",\"inconsistent\":true,\"source\":{\"snippet\":"
@@ -295,6 +352,53 @@ final class TmsDocumenten {
         b.tmsTranspiler().model().getGlobals().forEach(m::addGlobal);
         return org.drools.modelcompiler.KieBaseBuilder.createKieBaseFromModel(m,
                 org.kie.api.conf.EqualityBehaviorOption.EQUALITY);
+    }
+
+    /** Fires {@code bonen} through the rules of {@code b} added in {@code volgorde}: {@code voor} sees the session before
+     *  the fire (to add a listener), the fire must reach its fixpoint below the cap, the derivations are written back,
+     *  and {@code na} sees the session before it is disposed. */
+    static void vuur(DroolsBackend.Build b, List<org.drools.model.Rule> volgorde, List<Object> bonen,
+                     java.util.function.Consumer<org.kie.api.runtime.KieSession> voor,
+                     java.util.function.Consumer<org.kie.api.runtime.KieSession> na) {
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(b.beanLoader());
+        org.kie.api.runtime.KieSession sessie = kieBase(b, volgorde).newKieSession();
+        try {
+            voor.accept(sessie);
+            for (Object boon : bonen) sessie.insert(boon);
+            int vuringen = sessie.fireAllRules(100_000);
+            if (vuringen >= 100_000)
+                throw new AssertionError("geen fixpunt in volgorde "
+                        + volgorde.stream().map(org.drools.model.Rule::getName).toList());
+            DroolsBackend.zetAfgeleideWaarden(b, sessie);
+            na.accept(sessie);
+        } finally {
+            sessie.dispose();
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
+    /** The §9.5 facts of {@code sessie} as "rule @ label", sorted, with {@code labels} naming the beans. */
+    static List<String> inconsistenties(org.kie.api.runtime.KieSession sessie, Map<Object, String> labels) {
+        List<String> uit = new ArrayList<>();
+        for (Object f : sessie.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie"))) {
+            try {
+                Object regel = f.getClass().getMethod("getRegel").invoke(f);
+                Object subject = f.getClass().getMethod("getSubject").invoke(f);
+                uit.add(regel + " @ " + labels.getOrDefault(subject, String.valueOf(subject)));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        uit.sort(null);
+        return uit;
+    }
+
+    /** The names of the rules of a document, in their order, for a message that names the order that failed. */
+    static List<String> regelnamen(List<String> regels) throws Exception {
+        List<String> uit = new ArrayList<>();
+        for (String r : regels) uit.add(JSON.readTree(r).path("name").asText());
+        return uit;
     }
 
     /** Every order of {@code l}. */

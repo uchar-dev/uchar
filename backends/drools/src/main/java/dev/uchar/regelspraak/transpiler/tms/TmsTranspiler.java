@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedConsistentie;
@@ -99,13 +100,15 @@ import java.util.function.UnaryOperator;
  *
  * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject that
  * is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
- * initialisation, the desugaring domain of ch. 7.7); an initialisation (ch. 5.4), the only one on its target; and a
- * consistency, whose violation is a logical §9.5 inconsistency. Each always valid, with the §6.5 deposit of a division
- * by leeg, whose condition or assertion is built from characteristic checks (own or over a path, negated or not),
- * comparisons, leeg and gevuld tests, tests of the channel of a consistency or of a rule that deposits, and
- * {@code Compound}s of those under any quantifier, and whose value is a literal, a read of an attribute (own or over a
- * path of roles), a parameter, or a sum, difference, product or quotient of those, or a date plus or minus a
- * duration. Every other form is in the coverage
+ * initialisation, the desugaring domain of ch. 7.7); an initialisation (ch. 5.4), the only one on its target; a
+ * consistency, whose violation is a logical §9.5 inconsistency; and a prioritized-defaults group, as the effective
+ * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
+ * ordinary rule on an ancestor's level folds, so that it does not fire on that type. Each always valid, with the §6.5
+ * deposit of a division by leeg (a default carries no division at all), whose condition, assertion or justification
+ * is built from characteristic checks (own or over a path, negated or not), comparisons, leeg and gevuld tests, tests
+ * of the channel of a consistency or of a rule that deposits, and {@code Compound}s of those under any quantifier, and
+ * whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, or a sum, difference,
+ * product or quotient of those, or a date plus or minus a duration. Every other form is in the coverage
  * manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the first
  * such entry.
  */
@@ -137,10 +140,13 @@ public final class TmsTranspiler {
     private final Map<ElementSleutel, List<ResolvedRegel>> initialisaties = new LinkedHashMap<>();
     /** The members a defaults group writes, on their declaring type. */
     private final Set<ElementSleutel> defaultsdoelen = new LinkedHashSet<>();
+    /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
+    private Stapels stapels;
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified as the
      *  other two branches classify them. */
     private StaandeDoelen staandeDoelen;
     private final List<Dekking> dekking = new ArrayList<>();
+    private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -191,6 +197,17 @@ public final class TmsTranspiler {
 
     /** The coverage manifest: one verdict per form, the rules in document order, then every other family. */
     public List<Dekking> dekking() { return dekking; }
+
+    /**
+     * The size of the lowering of one effective defaults stack, counted when it is built: {@code naam} as the manifest
+     * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
+     * root) or the simple one, the number of Drools rules it consists of, and the kinds of control fact those rules
+     * insert ({@link Stuurfeit}). The standing rules of the target are shared with every other reader and not counted.
+     */
+    public record Defaultsgroep(String naam, boolean algemeen, int regels, List<String> stuurfeiten) {}
+
+    /** One entry per effective stack the branch lowered, in the order of the model. */
+    public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
 
     /**
      * Writes every derivation of this model in {@code sessie} onto its bean: {@code setX(true)} for each
@@ -269,6 +286,16 @@ public final class TmsTranspiler {
             if (p.doel() != null)
                 defaultsdoelen.add(ProducentConsument.elementVan(model.objecttypeOpNaam(p.onderwerp()), p.doel(),
                         p.isKenmerk()));
+        // composed before the rules, since a rule the fold takes into a stack must not fire on the stack's type
+        stapels = new Stapels(model, defaults);
+        List<Stapels.Stapel> effectief;
+        String samenstelling = null;
+        try {
+            effectief = stapels.stapels();
+        } catch (Stapels.Onsamenstelbaar o) {
+            effectief = List.of();
+            samenstelling = o.getMessage();
+        }
         List<Rule> regels = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) regels.addAll(meet("regel", naamOf(r.naam()), () -> regel(r)));
         for (ResolvedConsistentie c : model.consistenties)
@@ -283,9 +310,8 @@ public final class TmsTranspiler {
             weiger("feitcreatie", naamOf(f.naam()), "een FactCreation: " + BUITEN);
         for (ResolvedUniciteitUnie u : model.uniciteitUnies)
             weiger("uniciteit-unie", naamOf(u.naam()), "een Uniqueness over meer bronnen: " + BUITEN);
-        for (int i = 0; i < defaults.size(); i++)
-            weiger("defaults", defaults.get(i).naam() != null ? defaults.get(i).naam() : "/rules/prioritizedDefaults/" + i,
-                    "een PrioritizedDefaults: " + NOG_NIET);
+        if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
+        for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
         for (ResolvedStartpunt sp : model.resolvedStartpunten)
             weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: tijdlijnen zijn " + BUITEN);
         for (ResolvedDagsoort d : model.resolvedDagsoorten)
@@ -397,22 +423,31 @@ public final class TmsTranspiler {
             throw new Weigering("twee of meer rekenende regels op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
                     + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList()) + "): hun"
                     + " v0-betekenis is de volgorde op de agenda (RUNTIME-SEMANTICS ch. 7.7, WF-079)");
-        if (defaultsdoelen.contains(sleutel)) throw defaultsdoel(lid);
+        Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
         // the consequence below writes nothing for a computed leeg, which is the semantics on a standing target only;
         // off that domain a computed leeg empties the target, and no fact of this branch says so
         if (!staandeDoelen.staandScalair(r))
             throw new Weigering("een rekenende regel op een doel buiten het staande domein ('" + lid.naam() + "' van "
                     + lid.declarant().naam + "), waar een berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch."
                     + " 7.8): " + NOG_NIET);
-        return schrijfregel(r, doel.objecttype(), lid, null);
+        return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd);
     }
 
-    /** A target a defaults group writes, directly or through the fold of RUNTIME-SEMANTICS ch. 7.10: the key is the
-     *  declaring type's, so a group on any type that has the attribute meets a rule on any other, a sibling subtype
-     *  included, where the fold stacks nothing. */
-    private static Weigering defaultsdoel(Lid lid) {
-        return new Weigering("een doel dat ook een defaultsgroep schrijft ('" + lid.naam() + "' van " + lid.declarant().naam
-                + "): " + NOG_NIET);
+    /**
+     * The bean classes of the concrete types on which the fold of RUNTIME-SEMANTICS ch. 7.10 took the rule writing
+     * {@code doel} into an effective stack, as its base or as its initialisation default: there the stack writes the
+     * target and the rule must not also fire, so its subject pattern leaves them out. Empty for a target no defaults
+     * group writes. A rule beside a group its own type declares on the same target is no fold but two writers of one
+     * target (WF-050), which this branch refuses by name: the fold leaves such a rule alone, and both would write.
+     */
+    private Set<Class<?>> geabsorbeerd(Expr.AttribuutRef doel, Lid lid) {
+        if (!defaultsdoelen.contains(lid.sleutel())) return Set.of();
+        if (stapels.eigenGroep(doel.objecttype(), doel.attribuut()))
+            throw new Weigering("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel ('" + lid.naam()
+                    + "' van " + doel.objecttype().naam + "): een doel heeft één schrijver, de groep of de regel (WF-050)");
+        Set<Class<?>> uit = new LinkedHashSet<>();
+        for (Objecttype t : stapels.geabsorbeerdOp(doel.objecttype(), doel.attribuut())) uit.add(bonenklasse(t));
+        return uit;
     }
 
     /**
@@ -436,8 +471,7 @@ public final class TmsTranspiler {
     private Rule initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         ElementSleutel sleutel = lid.sleutel();
-        // a target with a defaults group is not WF-079's to speak about: the fold stacks the initialisation below it
-        if (defaultsdoelen.contains(sleutel)) throw defaultsdoel(lid);
+        Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
         List<ResolvedRegel> schrijvend = initialisaties.get(sleutel);
         if (schrijvend.size() > 1)
             throw new Weigering("twee of meer initialisaties op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
@@ -452,7 +486,7 @@ public final class TmsTranspiler {
             return DSL.not(PatternDSL.pattern(w)
                     .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
                     .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o));
-        });
+        }, geabsorbeerd);
     }
 
     /**
@@ -460,12 +494,15 @@ public final class TmsTranspiler {
      * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
      * reads, the {@code blokkade} the form adds (null for none), and a consequence that computes the value from the
      * values it binds and inserts a {@link Waarde} logically, with the form's name as the writer, when the value is
-     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes.
+     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes. Objects of a class in {@code geabsorbeerd} do not
+     * match: an effective stack writes the target there ({@link #geabsorbeerd}).
      */
     private Rule schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                              Function<Lezingen, RuleItemBuilder<?>> blokkade) {
+                              Function<Lezingen, RuleItemBuilder<?>> blokkade, Set<Class<?>> geabsorbeerd) {
         ElementSleutel sleutel = lid.sleutel();
         Lezingen lez = new Lezingen(subject);
+        if (!geabsorbeerd.isEmpty())
+            lez.onderwerp.expr(id("niet-in-een-stapel"), o -> !geabsorbeerd.contains(o.getClass()));
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         lez.stop();
@@ -595,6 +632,406 @@ public final class TmsTranspiler {
                 DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
                         drools.logicalInsert(new KanaalStand(producent, false))));
         return List.of(inconsistent, consistent);
+    }
+
+    // ---------------- prioritized defaults ----------------
+
+    /** The name of an effective stack, as the exec-model branch names the rule of the group: the kind-discriminated
+     *  target on the stack's owner, so two types that share one inherited target name two stacks. */
+    private static String stapelnaam(Stapels.Stapel st) {
+        PrioritizedDefaults l0 = st.leden().get(0);
+        return "defaults " + (l0.isKenmerk() ? "K:" : "A:") + st.eigenaar().naam + "." + l0.doel();
+    }
+
+    /**
+     * One default of a stack where the lowering places it: the level it is read on, its chain and its position there,
+     * a label for the names of its rules, the key of a conflict among its exception groups (RUNTIME-SEMANTICS ch. 7.9:
+     * the target form and the default indices from the root, member indices left out), and, where it has exception
+     * groups, their chains, numbered consecutively from {@code eersteLid}.
+     */
+    private record Knoop(Default d, Objecttype niveau, int keten, int positie, String label, String sleutel,
+                         List<List<Knoop>> leden, int eersteLid) {
+        boolean heeftLeden() { return leden != null; }
+    }
+
+    /** What a decision or a reconciliation does with its outcome, from the values its rule bound. */
+    @FunctionalInterface
+    private interface Afloop {
+        void voer(org.drools.model.Drools drools, Object onderwerp, Object waarde);
+    }
+
+    /** What the rules of one stack share while they are built. */
+    private static final class Stapelbouw {
+        final String naam;
+        final Lid lid;
+        final boolean kenmerk;
+        /** The bean class of the stack's owner: the stack runs on instances of exactly that type (ch. 7.10). */
+        final Class<?> klasse;
+        /** The bare ch. 7.2 conflict key, the target on the type that declares it. */
+        final String doelvorm;
+        final List<Lezingen> lezingen = new ArrayList<>();
+        final Set<String> stuurfeiten = new LinkedHashSet<>();
+        int volgendeKeten;
+
+        Stapelbouw(String naam, Lid lid, boolean kenmerk, Class<?> klasse, String doelvorm, int wortelketens) {
+            this.naam = naam;
+            this.lid = lid;
+            this.kenmerk = kenmerk;
+            this.klasse = klasse;
+            this.doelvorm = doelvorm;
+            this.volgendeKeten = wortelketens;
+        }
+    }
+
+    /**
+     * The rules of one effective stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.8-7.10), each default lowered on its own
+     * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link Stuurfeit}) where
+     * the exec-model branch walks the stack in one consequence ({@code DefaultsRun}). One chain without exception groups
+     * takes the simple form ({@link #eenvoudigeVorm}); exception groups, or more than one group at the root, the
+     * general form ({@link #algemeneVorm}). A deciding default writes the target: a {@link Waarde} with the stack as the
+     * writer, which replaces the input on an attribute, or a {@link HeeftKenmerk} for an attribution, beside which the
+     * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key.
+     *
+     * <p>Refused as the exec-model branch refuses them: a characteristic target that shares its name with an attribute,
+     * a group with a dated validity, an initialisation default on a characteristic, a deciding default without a
+     * justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a division
+     * anywhere in a default ({@link #delingInDefault}).
+     */
+    private List<Rule> stapelregels(Stapels.Stapel st) {
+        PrioritizedDefaults l0 = st.leden().get(0);
+        Objecttype eigenaar = st.eigenaar();
+        boolean kenmerk = l0.isKenmerk();
+        String doel = l0.doel();
+        if (kenmerk && eigenaar.attribuut(doel) != null)
+            throw new Weigering("een kenmerkdoel met de naam van een attribuut ('" + doel + "' van " + eigenaar.naam
+                    + "): de boon draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
+                    + " en niet te onderscheiden is");
+        for (PrioritizedDefaults l : st.leden())
+            if (l.geldigheid() != null && !l.geldigheid().altijd())
+                throw new Weigering("een defaultsgroep met een gedateerde geldigheid ('" + naamOf(l.naam()) + "'): "
+                        + NOG_NIET);
+        Lid lid = lid(eigenaar, doel, kenmerk);
+        Objecttype declarant = eigenaar.declarantVan(doel);
+        Stapelbouw b = new Stapelbouw(stapelnaam(st), lid, kenmerk, bonenklasse(eigenaar),
+                (declarant != null ? declarant.naam : l0.onderwerp()) + "." + doel, st.leden().size());
+        List<List<Knoop>> wortel = new ArrayList<>();
+        for (int m = 0; m < st.leden().size(); m++)
+            wortel.add(keten(b, st.leden().get(m).defaults(), m, null, eigenaar, List.of(),
+                    st.leden().size() == 1 ? "" : m + ":"));
+        boolean algemeen = wortel.size() > 1 || wortel.stream().flatMap(List::stream).anyMatch(Knoop::heeftLeden);
+        List<Rule> regels = algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0));
+        // registered only once every default of the stack lowered, as a single rule registers its reads
+        for (Lezingen lez : b.lezingen) lez.vastleggen();
+        afgeleid.put(lid.sleutel(), lid);
+        defaultsgroepen.add(new Defaultsgroep(b.naam, algemeen, regels.size(), List.copyOf(b.stuurfeiten)));
+        return regels;
+    }
+
+    /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#niveau}), an
+     *  exception group's defaults on the level of the default that carries them ({@code drager}). */
+    private List<Knoop> keten(Stapelbouw b, List<Default> ds, int id, Objecttype drager, Objecttype eigenaar,
+                              List<Integer> pad, String voorvoegsel) {
+        List<Knoop> uit = new ArrayList<>();
+        for (int i = 0; i < ds.size(); i++) {
+            Default d = ds.get(i);
+            Objecttype niveau = drager != null ? drager : stapels.niveau(d, eigenaar);
+            controleer(b, d);
+            List<Integer> eigenPad = new ArrayList<>(pad);
+            eigenPad.add(i);
+            String label = voorvoegsel + i;
+            StringBuilder sleutel = new StringBuilder(b.doelvorm);
+            for (int p : eigenPad) sleutel.append('/').append(p);
+            List<List<Knoop>> leden = null;
+            int eerste = -1;
+            if (d.excepties() != null) {
+                List<dev.uchar.regelspraak.ir.ExceptionGroup> groepen = d.excepties().leden();
+                eerste = b.volgendeKeten;
+                b.volgendeKeten += groepen.size();
+                leden = new ArrayList<>();
+                for (int m = 0; m < groepen.size(); m++)
+                    leden.add(keten(b, groepen.get(m).defaults(), eerste + m, niveau, eigenaar, eigenPad,
+                            label + "." + m + "."));
+            }
+            uit.add(new Knoop(d, niveau, id, i, label, sleutel.toString(), leden, eerste));
+        }
+        return uit;
+    }
+
+    /** The refusals per default. */
+    private void controleer(Stapelbouw b, Default d) {
+        if (d.initialisatie() && b.kenmerk)
+            throw new Weigering("een initialisatiedefault op een kenmerkdoel ('" + b.lid.naam() + "' van "
+                    + b.lid.declarant().naam + "): een kenmerk kent geen initialisatie (WF-075)");
+        if (!d.initialisatie() && d.voorwaarde() == null && d.heeftEigenInhoud())
+            throw new Weigering("een beslissende default zonder rechtvaardiging ('" + (d.bron() != null ? d.bron()
+                    : "zonder bron") + "', doel '" + b.lid.naam() + "')");
+        String deling = delingInDefault(d);
+        if (deling != null)
+            throw new Weigering("een deling in een default ('" + deling + "'): deze tak rekent een default uit zodra wat"
+                    + " hij leest staat, ook een die een hogere default verdringt, en een deling door nul geeft daar een"
+                    + " fout waar de referentie, die alleen tot de beslissende default komt, geen geeft (RUNTIME-SEMANTICS"
+                    + " ch. 7.1, speculatieve evaluatie)");
+    }
+
+    /** The snippet of the first division in the justification or the consequence of {@code d}, or null. The exec-model
+     *  branch refuses a division below the top of a consequence, whose deposit would persist; here the evaluation
+     *  itself is speculative, as a default is evaluated whenever its reads stand, so every division is refused. */
+    private static String delingInDefault(Default d) {
+        String c = d.voorwaarde() == null ? null : deling(d.voorwaarde());
+        return c != null ? c : deling(d.consequentie());
+    }
+
+    private static String deling(Conditie c) {
+        return switch (c) {
+            case Conditie.Vergelijking v -> deling(v.links()) != null ? deling(v.links()) : deling(v.rechts());
+            case Conditie.Predicaat p -> deling(p.operand());
+            case Conditie.Samengesteld s -> s.onderdelen().stream().map(TmsTranspiler::deling)
+                    .filter(Objects::nonNull).findFirst().orElse(null);
+            default -> null;
+        };
+    }
+
+    private static String deling(Expr e) {
+        if (!(e instanceof Expr.Binair b)) return null;
+        if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return snippet(b.bron());
+        String l = deling(b.links());
+        return l != null ? l : deling(b.rechts());
+    }
+
+    /** Whether {@code d} decides anything itself: a decision on a characteristic, a consequence on an attribute. */
+    private static boolean beslistZelf(Stapelbouw b, Default d) {
+        return b.kenmerk ? d.besluit() != null : d.consequentie() != null;
+    }
+
+    /**
+     * The simple form, variant M of the trial's A10: one rule per default that decides anything itself, with its reads
+     * bound, its justification as the test and {@code not Beslist} over every higher index; the consequence computes
+     * the value from what the rule bound and, where it decides, inserts the write and, where a lower default has a rule,
+     * {@link Beslist}. A leeg consequence inserts nothing, so the lower defaults decide (ch. 7.1); the initialisation
+     * default matches only where the target is empty on the bean, which holds the input (ch. 7.3). A do-not-attribute
+     * decision with no attribution below it has nothing to displace and gets no rule.
+     */
+    private List<Rule> eenvoudigeVorm(Stapelbouw b, List<Knoop> keten) {
+        List<Knoop> beslissend = new ArrayList<>(keten.stream().filter(k -> beslistZelf(b, k.d())).toList());
+        while (b.kenmerk && !beslissend.isEmpty()
+                && Boolean.FALSE.equals(beslissend.get(beslissend.size() - 1).d().besluit()))
+            beslissend.remove(beslissend.size() - 1);
+        String naam = b.naam;
+        ElementSleutel sleutel = b.lid.sleutel();
+        boolean kenmerk = b.kenmerk;
+        List<Rule> uit = new ArrayList<>();
+        for (int j = 0; j < beslissend.size(); j++) {
+            Knoop k = beslissend.get(j);
+            int i = k.positie();
+            boolean hoger = j > 0, lager = j < beslissend.size() - 1;
+            if (lager) b.stuurfeiten.add("Beslist");
+            uit.add(eigenRegel(b, k, naam + ": default " + k.label(),
+                    s -> hoger ? List.of(geenBeslist(naam, i, s)) : List.of(),
+                    (drools, o, v) -> {
+                        if (!kenmerk) drools.logicalInsert(new Waarde(o, sleutel, v, naam));
+                        else if (Boolean.TRUE.equals(v)) drools.logicalInsert(new HeeftKenmerk(o, sleutel));
+                        if (lager) drools.logicalInsert(new Beslist(o, naam, i));
+                    }));
+        }
+        return uit;
+    }
+
+    /**
+     * The general form: an {@link Uitkomst} per default that settles. A default without exception groups settles by
+     * its own decision; a default with them reconciles the outcomes of their chains ({@link #verzoening}) and, with
+     * content of its own, falls back to its own decision where no member settles. Every rule of a default carries
+     * {@code not Uitkomst} over the positions above it in its chain, so a lower default is displaced with whatever it
+     * would settle, a conflict included (ch. 7.9). At the root the groups of the stack reconcile once more, by the same
+     * rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
+     */
+    private List<Rule> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
+        List<Rule> uit = new ArrayList<>();
+        for (List<Knoop> keten : wortel) ketenregels(b, keten, uit);
+        String naam = b.naam;
+        ElementSleutel sleutel = b.lid.sleutel();
+        boolean kenmerk = b.kenmerk;
+        verzoening(b, 0, wortel.size(), wortel.stream().anyMatch(TmsTranspiler::kanConflicteren), b.doelvorm, "wortel",
+                o -> List.of(),
+                (drools, o, s) -> drools.logicalInsert(
+                        RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, (String) s, o)),
+                (drools, o, v) -> drools.logicalInsert(
+                        kenmerk ? new HeeftKenmerk(o, sleutel) : new Waarde(o, sleutel, v, naam)),
+                kenmerk, false, uit);
+        return uit;
+    }
+
+    private void ketenregels(Stapelbouw b, List<Knoop> keten, List<Rule> uit) {
+        String naam = b.naam;
+        for (Knoop k : keten) {
+            int id = k.keten(), i = k.positie();
+            Function<Variable<Object>, List<RuleItemBuilder<?>>> nietHoger =
+                    o -> i > 0 ? List.of(geenUitkomst(naam, id, i, o)) : List.of();
+            Afloop beslist = (drools, o, v) ->
+                    drools.logicalInsert(new Uitkomst(o, naam, id, i, Uitkomst.Soort.BESLIST, v, null));
+            if (!k.heeftLeden()) {
+                if (!beslistZelf(b, k.d())) continue;
+                b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
+                uit.add(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, beslist));
+                continue;
+            }
+            for (List<Knoop> lid : k.leden()) ketenregels(b, lid, uit);
+            int eerste = k.eersteLid(), tot = eerste + k.leden().size();
+            verzoening(b, eerste, k.leden().size(), k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren),
+                    k.sleutel(), k.label(), nietHoger,
+                    (drools, o, s) -> drools.logicalInsert(
+                            new Uitkomst(o, naam, id, i, Uitkomst.Soort.CONFLICT, null, (String) s)),
+                    beslist, false, true, uit);
+            if (beslistZelf(b, k.d()))
+                uit.add(eigenRegel(b, k, naam + ": terugval " + k.label(), o -> {
+                    List<RuleItemBuilder<?>> wacht = new ArrayList<>();
+                    wacht.add(DSL.not(uitkomsten(naam, eerste, tot, null, o)));
+                    wacht.addAll(nietHoger.apply(o));
+                    return wacht;
+                }, beslist));
+        }
+    }
+
+    /** Whether a chain can end in a conflict: some default in it reconciles two or more members, or a member that can. */
+    private static boolean kanConflicteren(List<Knoop> keten) {
+        for (Knoop k : keten)
+            if (k.heeftLeden() && (k.leden().size() > 1 || k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren)))
+                return true;
+        return false;
+    }
+
+    /**
+     * The reconciliation of RUNTIME-SEMANTICS ch. 7.2, applied at every level by ch. 7.9, over the outcomes of the
+     * member chains {@code [eerste, eerste + aantal)}, as {@code DefaultsRun.reconcile} reads them: the first conflict
+     * in member order passes on unchanged; else the first deciding member's decision, which is a conflict under
+     * {@code sleutel} where another member decides differently (numbers by value), and the decision otherwise. A rule
+     * per outcome, each under {@code wacht}; the rules that cannot match are left out (a conflict among members that
+     * cannot conflict, a difference among one member). {@code alleenWaar} restricts the decision to an attribution, the
+     * one decision on a characteristic that writes; {@code tussen} says the outcomes are control facts, not the write.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void verzoening(Stapelbouw b, int eerste, int aantal, boolean ledenConflicteren, String sleutel, String label,
+                            Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop bijConflict,
+                            Afloop bijBesluit, boolean alleenWaar, boolean tussen, List<Rule> uit) {
+        String naam = b.naam;
+        int tot = eerste + aantal;
+        if (ledenConflicteren) {
+            Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$conflict");
+            Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
+            Variable<Object> s = DSL.declarationOf(Object.class, "$sleutel");
+            List<RuleItemBuilder<?>> items = new ArrayList<>();
+            items.add(PatternDSL.pattern(u).expr(id("lid-conflict"), x -> x.stapel().equals(naam) && x.conflict()
+                    && x.keten() >= eerste && x.keten() < tot).bind(o, Uitkomst::onderwerp).bind(s, Uitkomst::sleutel));
+            if (aantal > 1) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)
+                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
+            items.addAll(wacht.apply(o));
+            items.add(DSL.on(o, s).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, oo, ss) ->
+                    bijConflict.voer(drools, oo, ss)));
+            uit.add(PatternDSL.rule(PKG, naam + ": doorgeven " + label).build(items.toArray(new RuleItemBuilder[0])));
+            if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
+        }
+        if (aantal > 1) {
+            Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$besluit");
+            Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
+            List<RuleItemBuilder<?>> items = new ArrayList<>();
+            items.add(PatternDSL.pattern(u).expr(id("lid-besluit"), x -> x.stapel().equals(naam) && !x.conflict()
+                    && x.keten() >= eerste && x.keten() < tot).bind(o, Uitkomst::onderwerp));
+            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
+                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
+            if (ledenConflicteren) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)));
+            items.add(DSL.exists(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
+                    .expr(id("ander-besluit"), u, (x, y) -> !Uitkomst.gelijk(x.waarde(), y.waarde()))));
+            items.addAll(wacht.apply(o));
+            items.add(DSL.on(o).execute((Block2<org.drools.model.Drools, Object>) (drools, oo) ->
+                    bijConflict.voer(drools, oo, sleutel)));
+            uit.add(PatternDSL.rule(PKG, naam + ": verschil " + label).build(items.toArray(new RuleItemBuilder[0])));
+            if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
+        }
+        Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$besluit");
+        Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
+        Variable<Object> v = DSL.declarationOf(Object.class, "$waarde");
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        items.add(PatternDSL.pattern(u).expr(id("lid-besluit"), x -> x.stapel().equals(naam) && !x.conflict()
+                && x.keten() >= eerste && x.keten() < tot && (!alleenWaar || Boolean.TRUE.equals(x.waarde())))
+                .bind(o, Uitkomst::onderwerp).bind(v, Uitkomst::waarde));
+        if (aantal > 1) {
+            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
+                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
+            if (ledenConflicteren) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)));
+            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
+                    .expr(id("ander-besluit"), u, (x, y) -> !Uitkomst.gelijk(x.waarde(), y.waarde()))));
+        }
+        items.addAll(wacht.apply(o));
+        items.add(DSL.on(o, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, oo, vv) ->
+                bijBesluit.voer(drools, oo, vv)));
+        uit.add(PatternDSL.rule(PKG, naam + ": eens " + label).build(items.toArray(new RuleItemBuilder[0])));
+        if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
+    }
+
+    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for {@code onderwerp}, of {@code soort}, or of
+     *  either where it is null. */
+    private PatternDSL.PatternDef<Uitkomst> uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort,
+                                                      Variable<Object> onderwerp) {
+        Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$uitkomst_" + idSeq);
+        return PatternDSL.pattern(x).expr(id("uitkomst"), y -> y.stapel().equals(naam) && y.keten() >= van
+                        && y.keten() < tot && (soort == null || y.soort() == soort))
+                .expr(id("uitkomst-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo);
+    }
+
+    /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}. */
+    private RuleItemBuilder<?> geenUitkomst(String naam, int keten, int positie, Variable<Object> onderwerp) {
+        Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$hoger_" + idSeq);
+        return DSL.not(PatternDSL.pattern(x).expr(id("hoger-uitkomst"), y -> y.stapel().equals(naam)
+                        && y.keten() == keten && y.positie() < positie)
+                .expr(id("hoger-uitkomst-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo));
+    }
+
+    /** {@code not Beslist} over the indices above {@code index} in the stack. */
+    private RuleItemBuilder<?> geenBeslist(String naam, int index, Variable<Object> onderwerp) {
+        Variable<Beslist> x = DSL.declarationOf(Beslist.class, "$hoger_" + idSeq);
+        return DSL.not(PatternDSL.pattern(x).expr(id("hoger-beslist"), y -> y.stapel().equals(naam) && y.index() < index)
+                .expr(id("hoger-beslist-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo));
+    }
+
+    /**
+     * The rule of a default's own decision: the subject pattern on the default's level, restricted to the stack's
+     * owner, with the input test of an initialisation default; the reads of its justification and its consequence bound
+     * as any rule binds them; {@code wacht}, the control-fact patterns, before the test of the justification; and a
+     * consequence that hands the decision to {@code besluit}: a characteristic's decision as declared, an attribute's
+     * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1).
+     */
+    private Rule eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
+                            Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {
+        Default d = k.d();
+        Lezingen lez = new Lezingen(k.niveau());
+        Class<?> klasse = b.klasse;
+        lez.onderwerp.expr(id("concreet-type"), o -> o.getClass() == klasse);
+        if (d.initialisatie()) {
+            Function<Object, Object> invoer = Accessors.getter(b.lid.klasse(), b.lid.naam());
+            lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
+        }
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
+        lez.stop();
+        List<RuleItemBuilder<?>> items;
+        if (b.kenmerk) {
+            items = lez.linkerkant(toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            Boolean beslissing = d.besluit();
+            items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
+                    besluit.voer(drools, o, beslissing)));
+        } else {
+            Set<Integer> gebruik = lez.volg();
+            Waardefunctie waarde = waarde(d.consequentie(), lez);
+            lez.stop();
+            eenheden(eff.eenheidVan(d.consequentie()), b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
+            items = lez.linkerkant(toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            int n = lez.variabelen.size();
+            items.add(gevolg(lez, posities(gebruik), (drools, o, w) -> {
+                Object v = collapse(waarde.van(w));
+                if (v != null) besluit.voer(drools, o, v);
+            }, n));
+        }
+        b.lezingen.add(lez);
+        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here, as at
@@ -1007,10 +1444,18 @@ public final class TmsTranspiler {
          *  bindings, the parameter declarations, the standing patterns, and the test of {@code voorwaarde} over the
          *  values at {@code gelezen}. */
         List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde) {
+            return linkerkant(toets, gelezen, voorwaarde, List.of());
+        }
+
+        /** As {@link #linkerkant(Toets, Set, Conditie)}, with {@code stuur} between the standing patterns and the test:
+         *  the control-fact patterns of a default, so that a default a higher one displaced is not tested at all. */
+        List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
+                                            List<RuleItemBuilder<?>> stuur) {
             List<RuleItemBuilder<?>> items = new ArrayList<>();
             items.add(onderwerp);
             items.addAll(parameters);
             items.addAll(standen);
+            items.addAll(stuur);
             if (toets != null) items.add(test(this, posities(gelezen), toets, voorwaarde));
             return items;
         }

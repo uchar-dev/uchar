@@ -4,9 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,8 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * The goldens of the truth-maintenance trial's proefset, replayed through the branch as the CLI's {@code --tms} flag
  * replays them, against the expectations gates 5, 6 and 12 pin. The branch is in no gate, so this witness, which the
- * suite runs, is what holds it against regression: a golden the branch carries must play every case, and one it does not
- * carry yet must stay refused, so that a step that makes another golden play moves it here by name.
+ * suite runs, is what holds it against regression: every golden of the proefset must play every case. Until the step
+ * that lowered the defaults groups, the goldens the branch did not carry yet were pinned here by their refusal, so that
+ * a step that made one play moved it by name; the measurements below are from that time.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step, which carried characteristic
  * attributions only). The first row failed on "anchor/jutterswet-kustwacht: Result[status=EXCLUDE, reason=tms-transpiler
@@ -42,42 +41,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * "jutterswet-opgave-boven-berekening ==&gt; expected: &lt;tms-transpiler SKIP: defaults: opgave boven berekening
  * waarde — een PrioritizedDefaults: …&gt; but was: &lt;tms-transpiler SKIP: consistentie: controle opgave waarde — een
  * Consistency: de truth-maintenance-tak draagt deze vorm nog niet&gt;".
+ *
+ * <p><b>Red before the defaults</b> (measured 2026-10-08 on the branch's fourth step and its fix of the parameters): the
+ * row failed on its first golden with a defaults group, "jutterswet-meldingsketen: Result[status=EXCLUDE,
+ * reason=tms-transpiler SKIP: defaults: erkende meldingsdatum — een PrioritizedDefaults: de truth-maintenance-tak draagt
+ * deze vorm nog niet, caseFailures=[], casesPlayed=0] ==&gt; expected: &lt;PLAYED&gt; but was: &lt;EXCLUDE&gt;".
  */
 class TmsProefsetWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    @Test void de_goldens_die_de_tak_draagt_spelen_elke_case() throws Exception {
+    @Test void de_goldens_van_de_proefset_spelen_elke_case() throws Exception {
         speelt("anchor/jutterswet-kustwacht", 2);
         speelt("jutterswet-initialisatievolgorde", 4);
         speelt("jutterswet-voorwaardelijke-initialisatie", 4);
+        speelt("jutterswet-meldingsketen", 3);
+        speelt("jutterswet-wrakinitialisatie", 4);
+        speelt("anchor/jutterswet-nestdiepte", 3);
+        speelt("anchor/jutterswet-nestuitzondering", 9);
+        speelt("jutterswet-opgave-boven-berekening", 12);
     }
-
-    /** Each by the first form its manifest refuses. The manifest lists the rules before every other family, so a golden
-     *  refused on a later family has every rule lowered. */
-    @Test void de_goldens_die_de_tak_nog_niet_draagt_blijven_geweigerd() throws Exception {
-        Map<String, String> weigering = new LinkedHashMap<>();
-        weigering.put("jutterswet-meldingsketen",
-                "tms-transpiler SKIP: defaults: erkende meldingsdatum — een PrioritizedDefaults: " + NOG_NIET);
-        // the initialisation on the supertype folds into the subtype's defaults stack (RUNTIME-SEMANTICS ch. 7.10)
-        weigering.put("jutterswet-wrakinitialisatie", "tms-transpiler SKIP: regel: standaardbergloon — een doel dat ook"
-                + " een defaultsgroep schrijft ('bergloon' van Vondst): " + NOG_NIET);
-        weigering.put("anchor/jutterswet-nestdiepte",
-                "tms-transpiler SKIP: defaults: heffing van een jutter (nestdiepte) — een PrioritizedDefaults: " + NOG_NIET);
-        weigering.put("anchor/jutterswet-nestuitzondering",
-                "tms-transpiler SKIP: defaults: heffing van een jutter — een PrioritizedDefaults: " + NOG_NIET);
-        weigering.put("jutterswet-opgave-boven-berekening",
-                "tms-transpiler SKIP: defaults: opgave boven berekening waarde — een PrioritizedDefaults: " + NOG_NIET);
-        for (Map.Entry<String, String> e : weigering.entrySet()) {
-            String g = e.getKey();
-            CaseRunner.Result r = CaseRunner.viaTruthMaintenance(GOLDEN.resolve(g).resolve("ir.json"), zaken(g));
-            assertEquals("EXCLUDE", r.status(), () -> g + ": " + r);
-            assertEquals(e.getValue(), r.reason(), g);
-        }
-    }
-
-    private static final String NOG_NIET = "de truth-maintenance-tak draagt deze vorm nog niet";
 
     private static void speelt(String golden, int cases) throws Exception {
         CaseRunner.Result r = CaseRunner.viaTruthMaintenance(GOLDEN.resolve(golden).resolve("ir.json"), zaken(golden));

@@ -11,18 +11,19 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Every golden of the corpus with case files, replayed through the truth-maintenance branch as the CLI's {@code --tms}
  * flag replays it, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused with a
  * reason: a document the branch carries but computes wrong is a silent wrong value, the one outcome the branch may
- * never give, and no gate sweeps this branch. The count of played goldens is pinned as an equality, so that a golden
- * that starts or stops playing shows here; a step that moves one updates it on purpose.
+ * never give, and no gate sweeps this branch. The count of played goldens is held to a floor, so that a step that
+ * makes the branch drop goldens it played fails here by number.
  *
  * <p>The refusals are counted per family and reported, not pinned: the kind of form the manifest refuses first
  * ({@code tms-transpiler SKIP: <family>: …}), a cycle refused before the build ({@code tms}), the loader's refusal
  * ({@code loader}), or two names on one bean member ({@code beannaambotsing}). The reasons themselves name forms and
- * snippets; the proefset witness pins the ones that matter.
+ * snippets.
  *
  * <p><b>Red before the fix of the parameters</b> (measured 2026-10-08 on the branch's fourth step): two goldens
  * played with wrong values, "jutterswet-aanvoergeld: Result[status=FAIL, reason=, caseFailures=[case.json: attribuut
@@ -36,10 +37,12 @@ class TmsCorpusWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
-    /** The goldens the branch plays, an equality (measured 2026-10-08 at the fix of the parameters): a golden that
-     *  starts or stops playing changes it. The refusals per family are reported in the message and not pinned, since
-     *  every golden a corpus card adds would move one of them; this count moves only where the branch carries it. */
-    private static final int EXPECTED_PLAYED = 41;
+    /** The floor of the goldens the branch plays, measured 2026-10-08 at the lowering of the defaults groups, until
+     *  which it was an equality. An equality makes every corpus card that adds a golden the branch plays change this
+     *  test, and parallel cards would then share one registry, which WAY-OF-WORKING §1 forbids. The floor catches the
+     *  branch shrinking; what the witness is for stays the same: no golden FAILs. The refusals per family are reported
+     *  in the message and not pinned, since every golden a corpus card adds would move one of them. */
+    private static final int EXPECTED_MIN_PLAYED = 66;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
@@ -65,8 +68,8 @@ class TmsCorpusWitnessTest {
         }
         assertEquals(List.of(), fout, "goldens die de tak draagt maar verkeerd uitrekent");
         int gespeeld = telling.getOrDefault("PLAYED", 0), zonder = zonderCases;
-        assertEquals(EXPECTED_PLAYED, gespeeld, () -> "gespeelde goldens; per familie " + telling + ", zonder cases "
-                + zonder);
+        assertTrue(gespeeld >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + gespeeld + " onder de vloer "
+                + EXPECTED_MIN_PLAYED + "; per familie " + telling + ", zonder cases " + zonder);
     }
 
     /** The family of a refusal: the kind of form the manifest refuses first, a cycle, or the loader. */
