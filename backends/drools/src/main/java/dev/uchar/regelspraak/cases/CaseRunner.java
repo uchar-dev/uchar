@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
 
 import org.kie.api.KieBase;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
@@ -28,14 +29,19 @@ import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The uchar case runner for the Drools backend: it loads an {@code ir.json} off the wire (via
@@ -304,7 +310,7 @@ public final class CaseRunner {
             for (JsonNode i : instances) runner.zetRollen(i);
             runner.spiegelWederkerigeRollen();
             runner.zetGlobals(sessie, c);
-            for (Object bean : runner.labelNaarBean.values()) sessie.insert(bean);
+            runner.voegInvoerIn(sessie);
             String geenFixpunt = runner.vuurTotFixpunt(sessie);
             // The sister runCase path reports the cap as a case failure; this seam has no verdict to return, so
             // a run that never reached a fixpoint must not hand back a half-fired fact base as if it had settled.
@@ -358,6 +364,7 @@ public final class CaseRunner {
     Meting meet(JsonNode c) {
         labelNaarBean.clear();
         labelType.clear();
+        lijsten.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -369,7 +376,7 @@ public final class CaseRunner {
             for (JsonNode i : instances) zetRollen(i);
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
-            for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+            voegInvoerIn(sessie);
             long begin = System.nanoTime();
             String geenFixpunt = vuurTotFixpunt(sessie);
             long nanos = System.nanoTime() - begin;
@@ -458,6 +465,7 @@ public final class CaseRunner {
     private String fireRood(JsonNode c) {
         labelNaarBean.clear();
         labelType.clear();
+        lijsten.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -470,7 +478,7 @@ public final class CaseRunner {
             for (JsonNode i : instances) zetRollen(i);
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
-            for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+            voegInvoerIn(sessie);
             return vuurTotFixpunt(sessie);
         } finally {
             sessie.dispose();
@@ -498,6 +506,9 @@ public final class CaseRunner {
 
     private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
     private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
+    /** The to-many lists of the case input per holder bean and per reference field of their members, as
+     *  {@link #zetRollen} writes them: what {@link #voegInvoerIn} states as {@link Lijstplaats} facts. */
+    private final Map<Object, Map<String, Lijst>> lijsten = new IdentityHashMap<>();
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
      *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
     private LocalDate rekendatum;
@@ -514,6 +525,7 @@ public final class CaseRunner {
     private String runCase(String naam, JsonNode c, Waarneming w) {
         labelNaarBean.clear();
         labelType.clear();
+        lijsten.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -527,7 +539,7 @@ public final class CaseRunner {
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
             if (w != null) sessie.addEventListener(luisteraar(w));
-            for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+            voegInvoerIn(sessie);
             String geenFixpunt = vuurTotFixpunt(sessie);
             if (geenFixpunt != null) return naam + ": " + geenFixpunt;
             List<String> mis = new ArrayList<>();
@@ -708,6 +720,7 @@ public final class CaseRunner {
                 if (rolIL != null && !model.naarVeelRol(tI, tL, rolIL)) {
                     naamdelingsPoort(tI, rolIL, tL, e.getKey());
                     zetToOne(bean, rolIL, doel);
+                    lijst(doel, rolIL).gespiegeld.putIfAbsent(i.get("label").asText(), bean);
                     // RUNTIME-SEMANTICS ch. 5.7a, the 1:1 arm: a supplied link ESTABLISHES the relation and
                     // BOTH roles read it. With the sister role ALSO to-one the relation owns TWO bean fields —
                     // one per direction — so the forward write above leaves the far side reading a spuriously
@@ -749,9 +762,45 @@ public final class CaseRunner {
                                     : "neither direction of the type pair derives a to-one role"));
                     naamdelingsPoort(tL, rolLI, tI, e.getKey());
                     zetToOne(doel, rolLI, bean);
+                    Lijst l = lijst(bean, rolLI);
+                    if (l.geschreven.stream().noneMatch(x -> x == doel)) l.geschreven.add(doel);
                 }
             }
         }
+    }
+
+    /** One to-many list of the case input: the members the case wrote under the holder, in the order it wrote them,
+     *  and the members whose own link to the holder the reverse leg mirrors into it (RUNTIME-SEMANTICS ch. 5.7a), by
+     *  label in ref's order, plain byte order. */
+    private static final class Lijst {
+        final List<Object> geschreven = new ArrayList<>();
+        final TreeMap<String, Object> gespiegeld = new TreeMap<>(
+                Comparator.comparing((String l) -> l.getBytes(StandardCharsets.UTF_8), Arrays::compareUnsigned));
+    }
+
+    private Lijst lijst(Object houder, String rol) {
+        return lijsten.computeIfAbsent(houder, k -> new LinkedHashMap<>())
+                .computeIfAbsent(Namen.ident(rol, false), k -> new Lijst());
+    }
+
+    /**
+     * Inserts the case input into {@code sessie}: the beans, and where the model reads it, the place of every member
+     * of a to-many list ({@link Lijstplaats}). The bean model keeps a to-many role as a reference field on each member
+     * and no order, while the truth-maintenance branch names the first member in fold order whose filter faults
+     * (RUNTIME-SEMANTICS ch. 5.11). The places are those of the list the reference interpreter folds over: the written
+     * members first, in the order the case wrote them, then the members whose own link the loader mirrors into the
+     * list, in ascending label order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was written.
+     */
+    private void voegInvoerIn(KieSession sessie) {
+        for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+        if (bouw.tmsTranspiler() == null || !bouw.tmsTranspiler().leestLijstplaatsen()) return;
+        for (Map<String, Lijst> perVeld : lijsten.values())
+            for (Map.Entry<String, Lijst> e : perVeld.entrySet()) {
+                List<Object> leden = new ArrayList<>(e.getValue().geschreven);
+                for (Object lid : e.getValue().gespiegeld.values())
+                    if (leden.stream().noneMatch(x -> x == lid)) leden.add(lid);
+                for (int k = 0; k < leden.size(); k++) sessie.insert(new Lijstplaats(leden.get(k), e.getKey(), k));
+            }
     }
 
     /** Whether {@code rol} is one of the reference fields {@link FactModelGenerator#leden} DERIVES on

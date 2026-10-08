@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import org.drools.model.Rule;
@@ -391,7 +392,9 @@ class TmsAggregatieWitnessTest {
             Object v2 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
             zetRol(v1, "aanmelder", j1);
             zetRol(v2, "aanmelder", j1);
-            assertEquals(zin, TmsFoutWitnessTest.vuur(b, volgorde, List.of(j1, v1, v2), new DefaultAgendaEventListener() {},
+            // the places of the list the case would write, which a fold whose filter can fault reads
+            List<Object> invoer = List.of(j1, v1, v2, new Lijstplaats(v1, "aanmelder", 0), new Lijstplaats(v2, "aanmelder", 1));
+            assertEquals(zin, TmsFoutWitnessTest.vuur(b, volgorde, invoer, new DefaultAgendaEventListener() {},
                     new TmsFoutWitnessTest.Foutfeiten()), () -> "volgorde " + namen);
             volgordes++;
         }

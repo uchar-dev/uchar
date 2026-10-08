@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.runtime.Breuk;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -15,10 +16,17 @@ import java.util.Objects;
  * fold while one stands, that evaluation faults as a division in it would; the {@link Fout} is that rule's, justified
  * by its activation.
  *
- * <p>Compared as {@link Bijdrage} is: the fold's key by value, the subject and the member by identity, and the fault by
- * its kind and its sentence, so one member reached along two routes is one fact. Ordered by the sentence, which names
- * the dividend: where the filter faults for several members, the reading rule names the least, whatever the order of
- * the firings.
+ * <p>{@code plaats} is the member's place in the fold order (RUNTIME-SEMANTICS ch. 5.11: the filter per member, members
+ * in fold order): the number of the selection of an instance-set union, 0 for any other fold, and then, per to-many
+ * step of the route from the fold's subject, the place of the step's member in its list ({@link Lijstplaats}). The
+ * reference interpreter walks a multi-step range step by step, each instance's list in its order, and keeps the first
+ * reach of a member reached twice (ch. 3.4b): the least place of a member over its routes is that first reach, and
+ * the least place over the members whose filter faults is the member at which the reference interpreter stops. Ordered
+ * by the place, compared element by element; the reading rule names the least, whatever the order of the firings.
+ *
+ * <p>Compared as {@link Bijdrage} is, with the place beside it: the fold's key by value, the subject and the member by
+ * identity, the fault by its kind and its sentence, and the place by value. One member reached along two routes is
+ * therefore one fact per route, each with that route's place, so the least of them stays the member's first reach.
  */
 public final class Filterfout implements Comparable<Filterfout> {
 
@@ -26,13 +34,16 @@ public final class Filterfout implements Comparable<Filterfout> {
     private final Object onderwerp;
     private final Object element;
     private final Breuk.DelingDoorNul fout;
+    private final List<Integer> plaats;
     private final String zin;
 
-    public Filterfout(String vouw, Object onderwerp, Object element, Breuk.DelingDoorNul fout) {
+    public Filterfout(String vouw, Object onderwerp, Object element, Breuk.DelingDoorNul fout, List<Integer> plaats) {
         this.vouw = Objects.requireNonNull(vouw, "vouw");
         this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
         this.element = Objects.requireNonNull(element, "element");
         this.fout = Objects.requireNonNull(fout, "fout");
+        this.plaats = List.copyOf(plaats);
+        if (this.plaats.isEmpty()) throw new IllegalArgumentException("een plaats in de vouwvolgorde begint met de selectie");
         // the division named after the fold: the sentence carries the dividend, which the exception does not expose
         this.zin = fout.inDeRegel(vouw, fout).getMessage();
     }
@@ -46,21 +57,32 @@ public final class Filterfout implements Comparable<Filterfout> {
     /** The division as the filter raised it, unnamed: the rule whose evaluation reaches the fold names it. */
     public Breuk.DelingDoorNul fout() { return fout; }
 
+    /** The member's place in the fold order: the selection, then its place per to-many step of its route. */
+    public List<Integer> plaats() { return plaats; }
+
     @Override public int compareTo(Filterfout o) {
-        return zin.compareTo(o.zin);
+        for (int i = 0; i < Math.min(plaats.size(), o.plaats.size()); i++) {
+            int c = Integer.compare(plaats.get(i), o.plaats.get(i));
+            if (c != 0) return c;
+        }
+        // two routes of one selection have equally many to-many steps, so a tie here is one member along one route,
+        // whose filter gives one fault; the sentence only keeps the order total
+        int c = Integer.compare(plaats.size(), o.plaats.size());
+        return c != 0 ? c : zin.compareTo(o.zin);
     }
 
     @Override public boolean equals(Object o) {
         return o instanceof Filterfout f && f.onderwerp == onderwerp && f.element == element && f.vouw.equals(vouw)
-                && f.fout.getClass() == fout.getClass() && f.zin.equals(zin);
+                && f.fout.getClass() == fout.getClass() && f.zin.equals(zin) && f.plaats.equals(plaats);
     }
 
     @Override public int hashCode() {
         return Objects.hash(vouw, System.identityHashCode(onderwerp), System.identityHashCode(element),
-                fout.getClass().getName(), zin);
+                fout.getClass().getName(), zin, plaats);
     }
 
     @Override public String toString() {
-        return "Filterfout(" + Feitnamen.object(onderwerp) + ", " + Feitnamen.object(element) + ", " + zin + ")";
+        return "Filterfout(" + Feitnamen.object(onderwerp) + ", " + Feitnamen.object(element) + ", " + plaats + ", "
+                + zin + ")";
     }
 }

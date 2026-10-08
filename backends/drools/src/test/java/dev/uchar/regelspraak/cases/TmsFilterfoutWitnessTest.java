@@ -2,6 +2,8 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
+
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
@@ -21,7 +23,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.TELLING;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.aggregatie;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuutgroep;
-import static dev.uchar.regelspraak.cases.TmsDocumenten.binair;
+import static dev.uchar.regelspraak.cases.TmsDocumenten.bronpad;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.bronrol;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.check;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.consistent;
@@ -31,6 +33,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.instantieMetRollen;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.kenmerkregel;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.lezing;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.rekenregel;
+import static dev.uchar.regelspraak.cases.TmsDocumenten.rolbinding;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.samengesteld;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.standaard;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
@@ -61,6 +64,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       J1 is not druk; with J1 actief the fault, named after that rule. A fold in a branch that is not taken is this
  *       branch's only such shape: an IfThenElse it refuses, and every operand of a Binary, a Comparison and a
  *       Predicate is evaluated, by the reference interpreter as here.</li>
+ *   <li>Where the filter faults for two members, the evaluation stops at the first in fold order and names its
+ *       division (RUNTIME-SEMANTICS ch. 5.11): in a list the case writes, in the order it writes it; in a list the
+ *       loader mirrors from the members' own links, in ascending label order, plain byte order (ch. 5.7a, "member
+ *       ORDER"); over a path of two steps, at the first reach of a member that two routes reach (ch. 3.4b). In each
+ *       document the first member divides 9 and the other 4, so the least sentence, the labels and the last reach
+ *       would all name 4.</li>
  *   <li>A filter that faults on the way only: deelnemers from a defaults group, higher "op 3 indien hij erkend is",
  *       lower "op 0 indien hij gemeld is", and "Een Vondst is erkend indien hij gemeld is"; the filter guards its
  *       division with "zijn deelnemers is gevuld". Where the lower default decides first the filter divides by the
@@ -69,7 +78,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The reference interpreter's runner and the ASP runner passed both documents where J1 is not actief, faulted on
  * both where J1 is actief ("division by numeric zero"), and passed the last document in both orders (measured
- * 2026-10-08). The exec-model branch and the DRL-text branch fault where J1 is not actief as well, the exec-model branch
+ * 2026-10-08). The four documents of the fold order pass the verifier (the quotient carries the fractional type a
+ * quotient derives, WF-091); the reference interpreter faults on each with "division by numeric zero", a sentence
+ * without the operands, and with its dividend added for the measurement only (not committed) it named 9 on all four,
+ * the member this class pins; the ASP runner reports a violation per member, without an order (measured 2026-10-08). The exec-model branch and the DRL-text branch fault where J1 is not actief as well, the exec-model branch
  * with this class's sentence and the DRL-text branch in a constraint of its accumulate: that is theirs, and not this
  * class's business.
  *
@@ -82,6 +94,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * regel "zware vondsten" (2×): deling door nul in de regel "zware vondsten": 4 gedeeld door 0 — …; deling door nul in
  * de regel "zware vondsten": 9 gedeeld door 0 — …&gt;", where the evaluation faults once. The rows where J1 is actief
  * and the filter that faults on the way only were green before: they pin what stays.
+ *
+ * <p><b>Red before the fold order</b> (measured 2026-10-08 on the branch after its creation step, {@code 2907fa91},
+ * where the reading rule took the least {@code Filterfout} by its sentence): all four documents of the fold order,
+ * "expected: &lt;DelingDoorNul: deling door nul in de regel "zware vondsten": 9 gedeeld door 0 — …&gt; but was:
+ * &lt;DelingDoorNul: deling door nul in de regel "zware vondsten": 4 gedeeld door 0 — …&gt;", and for the path "… in de
+ * regel "bootlengte": 4 gedeeld door 0 …". Mutants, each caught: the mirrored list in descending label order (the
+ * mirrored list), and a {@code Filterfout} compared without its place, so that the two routes to one Boot merge into
+ * whichever fact came first (the path).
  *
  * <p><b>Red by mutation</b> (measured the same day, not committed). With the {@code Filterfout} inserted by
  * {@code insert} instead of {@code logicalInsert}, the record of the transient 0 stayed and the rule faulted at the
@@ -102,10 +122,19 @@ class TmsFilterfoutWitnessTest {
     private static final String VONDSTEN = "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
             + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}";
 
+    /** The fractional type a quotient derives (WF-091). */
+    static final String BREUK = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
+
+    /** "{@code links} gedeeld door {@code rechts}", typed as a quotient derives its type. */
+    static String quotient(String links, String rechts) {
+        return "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + links + ",\"right\":" + rechts + ",\"type\":"
+                + BREUK + ",\"source\":{\"snippet\":\"dividedBy\"}}";
+    }
+
     /** The fold, a new node on every call, so each form reads a fold of its own. */
     static String zwaar() {
         return aggregatie("count", VONDSTEN, "Vondst", bronrol("aanmelding", "vondst"),
-                vergelijking("greater", binair("dividedBy", lezing("gewicht", "Vondst"), lezing("deelnemers", "Vondst")),
+                vergelijking("greater", quotient(lezing("gewicht", "Vondst"), lezing("deelnemers", "Vondst")),
                         getal("2")), "null", TELLING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde"
                         + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
     }
@@ -131,8 +160,13 @@ class TmsFilterfoutWitnessTest {
     }
 
     private static String fout(String regel) {
-        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": 9 gedeeld door 0 — een numerieke nul als"
-                + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+        return fout(regel, "9");
+    }
+
+    /** The fault of rule {@code regel} where the filter divides {@code deeltal} by 0. */
+    private static String fout(String regel, String deeltal) {
+        return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + deeltal + " gedeeld door 0 — een"
+                + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
     }
 
     // ---------------- a fold under a condition that does not hold ----------------
@@ -155,35 +189,150 @@ class TmsFilterfoutWitnessTest {
         assertEquals(List.of(), fixpuntfouten(ZWARE, true, fout("zware vondsten")));
     }
 
-    /** With V3 beside them (gewicht 4, deelnemers 0) the filter faults for two members, and the evaluation of the fold
-     *  faults once, as the reference interpreter's does. The rule names the least {@code Filterfout} by its sentence,
-     *  4 before 9, in every order of the generated rules. */
-    @Test void bij_twee_falende_leden_noemt_de_regel_steeds_dezelfde_deling() throws Exception {
-        String zin = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 4 gedeeld door 0 — een numerieke nul"
-                + " als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    // ---------------- the first member in fold order whose filter faults ----------------
+
+    /** J1 actief, reporting {@code vondsten} as the case writes them, and the Vondsten {@code getallen} (gewicht,
+     *  deelnemers) by label, each with {@code rollen} of its own. */
+    private static JsonNode zaak(Map<String, List<String>> vondsten, Map<String, List<String>> getallen,
+                                 Map<String, Map<String, List<String>>> rollen) throws Exception {
+        List<String> instanties = new ArrayList<>();
+        instanties.add(instantieMetRollen("J1", "Jutter", Map.of(), List.of("actief"), vondsten));
+        getallen.forEach((label, g) -> instanties.add(instantieMetRollen(label, "Vondst",
+                Map.of("gewicht", g.get(0), "deelnemers", g.get(1)), List.of(), rollen.getOrDefault(label, Map.of()))));
+        return TmsDocumenten.zaak(instanties, List.of(consistent()));
+    }
+
+    /** V1 (10 by 2), V2 (9 by 0) and V3 (4 by 0), written under J1 in that order: the filter faults for V2 and V3, and
+     *  the evaluation of the fold stops at V2, the first in fold order (RUNTIME-SEMANTICS ch. 5.11), as the reference
+     *  interpreter's does: "9 gedeeld door 0", where the least sentence would name V3's 4. */
+    @Test void bij_twee_falende_leden_noemt_de_regel_het_eerste_in_de_vouwvolgorde() throws Exception {
+        java.util.LinkedHashMap<String, List<String>> getallen = new java.util.LinkedHashMap<>();
+        getallen.put("V1", List.of("10", "2"));
+        getallen.put("V2", List.of("9", "0"));
+        getallen.put("V3", List.of("4", "0"));
+        assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE),
+                zaak(Map.of("vondsten", List.of("V1", "V2", "V3")), getallen, Map.of()),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
+                List.of("9", "0"), List.of("4", "0")), List.of(0, 1, 2)), fout("zware vondsten")));
+    }
+
+    /** The same members written under J1 as V1, V3, V2, with V3 dividing 9 and V2 4: the order the case writes counts,
+     *  not the order of the labels, which would put V2 first. */
+    @Test void in_een_geschreven_lijst_telt_de_volgorde_van_de_case() throws Exception {
+        java.util.LinkedHashMap<String, List<String>> getallen = new java.util.LinkedHashMap<>();
+        getallen.put("V1", List.of("10", "2"));
+        getallen.put("V2", List.of("4", "0"));
+        getallen.put("V3", List.of("9", "0"));
+        assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE),
+                zaak(Map.of("vondsten", List.of("V1", "V3", "V2")), getallen, Map.of()),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
+                List.of("4", "0"), List.of("9", "0")), List.of(0, 2, 1)), fout("zware vondsten")));
+    }
+
+    /** No list under J1: V9 (4 by 0) and V10 (9 by 0) each name J1 as their aanmelder, in that order in the case. The
+     *  loader mirrors those links into J1's list in ascending label order, plain byte order (RUNTIME-SEMANTICS ch. 5.7a,
+     *  "member ORDER"): V10 before V9, so 9, where the order of the case and a numeric order of the labels give 4. */
+    @Test void in_een_gespiegelde_lijst_telt_de_labelvolgorde() throws Exception {
+        java.util.LinkedHashMap<String, List<String>> getallen = new java.util.LinkedHashMap<>();
+        getallen.put("V9", List.of("4", "0"));
+        getallen.put("V10", List.of("9", "0"));
+        assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak(Map.of(), getallen,
+                Map.of("V9", Map.of("aanmelder", List.of("J1")), "V10", Map.of("aanmelder", List.of("J1")))),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("4", "0"),
+                List.of("9", "0")), List.of(1, 0)), fout("zware vondsten")));
+    }
+
+    /** The beans of a Vondst document: J1 actief and a Vondst per entry of {@code getallen}, each linked to J1, and the
+     *  {@code Lijstplaats} of entry {@code k} under the field aanmelder at {@code plaatsen.get(k)}. */
+    private static List<Object> vondsten(DroolsBackend.Build b, List<List<String>> getallen, List<Integer> plaatsen)
+            throws Exception {
+        Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
+        List<Object> invoer = new ArrayList<>(List.of(j1));
+        for (int k = 0; k < getallen.size(); k++) {
+            Object v = TmsDocumenten.boon(b.beanLoader(), "Vondst",
+                    Map.of("gewicht", getallen.get(k).get(0), "deelnemers", getallen.get(k).get(1)), List.of());
+            zetRol(v, "aanmelder", j1);
+            invoer.add(v);
+            invoer.add(new Lijstplaats(v, "aanmelder", plaatsen.get(k)));
+        }
+        return invoer;
+    }
+
+    // a fold over two steps, a to-many one and then a to-one one, so that one Boot is reached along two routes
+
+    static final String HAVENMODEL = TmsDocumenten.model(List.of(
+            TmsDocumenten.objecttype("Haven", List.of(attribuut("bootlengte", GEHEEL)), List.of()),
+            TmsDocumenten.objecttype("Jutter", List.of(), List.of()),
+            TmsDocumenten.objecttype("Boot", List.of(attribuut("lengte", GEHEEL), attribuut("breedte", GEHEEL)),
+                    List.of())), List.of(
+            feittypeEenNaarVeel("ligplaats", "haven", "Haven", "jutter", "Jutter", "jutters"),
+            feittypeEenNaarVeel("bootgebruik", "boot", "Boot", "gebruiker", "Jutter", "gebruikers")));
+
+    static final List<String> BOOTLENGTE = List.of(rekenregel("bootlengte", "BEREKENING", "Haven", "bootlengte",
+            aggregatie("sum", lezing("lengte", "Boot"), "Boot", bronpad(List.of(rolbinding("ligplaats", "jutter"),
+                    rolbinding("bootgebruik", "boot"))), vergelijking("greater", quotient(
+                    lezing("lengte", "Boot"), lezing("breedte", "Boot")), getal("2")), getal("0"), GEHEEL,
+                    "de som van de lengte van alle boten van alle jutters van de Haven die aan de volgende voorwaarde"
+                            + " voldoen: zijn lengte gedeeld door zijn breedte is groter dan 2, of 0 als die er niet"
+                            + " zijn"), "null"));
+
+    /** H1 writes the jutters J1, J2, J3; J1 and J3 use B2 (9 by 0), J2 uses B1 (4 by 0). The reference interpreter walks
+     *  the path step by step, J1's boot, J2's, J3's: B2, B1, B2, and keeps the first reach of B2 (RUNTIME-SEMANTICS
+     *  ch. 3.4b), so the filter faults first for B2, 9. The last reach would put B1 first, and so would the labels and
+     *  the least sentence: 4. */
+    @Test void over_meer_stappen_telt_het_eerste_bereik_van_een_lid() throws Exception {
         JsonNode zaak = TmsDocumenten.zaak(List.of(
-                instantieMetRollen("J1", "Jutter", Map.of(), List.of("actief"), Map.of("vondsten", List.of("V1", "V2", "V3"))),
-                instantieMetRollen("V1", "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of(), Map.of()),
-                instantieMetRollen("V2", "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of(), Map.of()),
-                instantieMetRollen("V3", "Vondst", Map.of("gewicht", "4", "deelnemers", "0"), List.of(), Map.of())),
+                instantieMetRollen("H1", "Haven", Map.of(), List.of(), Map.of("jutters", List.of("J1", "J2", "J3"))),
+                instantieMetRollen("J1", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B2"))),
+                instantieMetRollen("J2", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B1"))),
+                instantieMetRollen("J3", "Jutter", Map.of(), List.of(), Map.of("boot", List.of("B2"))),
+                instantieMetRollen("B1", "Boot", Map.of("lengte", "4", "breedte", "0"), List.of(), Map.of()),
+                instantieMetRollen("B2", "Boot", Map.of("lengte", "9", "breedte", "0"), List.of(), Map.of())),
                 List.of(consistent()));
-        assertEquals(zin, TmsFoutWitnessTest.speel(document(ZWARE), zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(document(ZWARE), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<String> afwijkend = new ArrayList<>();
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
-            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
-            List<Object> bonen = new ArrayList<>(List.of(j1));
-            for (Map<String, String> getallen : List.of(Map.of("gewicht", "10", "deelnemers", "2"),
-                    Map.of("gewicht", "9", "deelnemers", "0"), Map.of("gewicht", "4", "deelnemers", "0"))) {
-                Object v = TmsDocumenten.boon(b.beanLoader(), "Vondst", getallen, List.of());
-                zetRol(v, "aanmelder", j1);
-                bonen.add(v);
+        Path ir = TmsDocumenten.document(HAVENMODEL, BOOTLENGTE);
+        assertEquals(fout("bootlengte"), TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals(List.of(), afwijkendeVolgordes(ir, b -> {
+            Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
+            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Boot", Map.of("lengte", "4", "breedte", "0"), List.of());
+            Object b2 = TmsDocumenten.boon(b.beanLoader(), "Boot", Map.of("lengte", "9", "breedte", "0"), List.of());
+            List<Object> invoer = new ArrayList<>(List.of(h1, b1, b2));
+            List<Object> boten = List.of(b2, b1, b2);
+            for (int k = 0; k < 3; k++) {
+                Object j = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+                zetRol(j, "haven", h1);
+                zetRol(j, "boot", boten.get(k));
+                invoer.add(j);
+                invoer.add(new Lijstplaats(j, "haven", k));
             }
-            String uitkomst = TmsFoutWitnessTest.vuur(b, volgorde, bonen, new DefaultAgendaEventListener() {},
+            return invoer;
+        }, fout("bootlengte")));
+    }
+
+    /** The outcome of the write-back in the orders of the rules the branch generates for {@code ir} (every order up to
+     *  six rules, else the order of the model, its reverse and a hundred shuffles), each over fresh beans and places
+     *  from {@code invoer}: the orders whose outcome differs from {@code zin}, each with what it gave. */
+    private static List<String> afwijkendeVolgordes(Path ir, Invoer invoer, String zin) throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        List<Rule> regels = b.tmsTranspiler().model().getRules();
+        List<String> afwijkend = new ArrayList<>();
+        int volgordes = 0;
+        for (List<Rule> volgorde : regels.size() <= 6 ? TmsDocumenten.permutaties(regels)
+                : TmsDocumenten.steekproef(regels, 20261008L, 100)) {
+            String uitkomst = TmsFoutWitnessTest.vuur(b, volgorde, invoer.van(b), new DefaultAgendaEventListener() {},
                     new TmsFoutWitnessTest.Foutfeiten());
             if (!zin.equals(uitkomst)) afwijkend.add(volgorde.stream().map(Rule::getName).toList() + ": " + uitkomst);
+            volgordes++;
         }
-        assertEquals(List.of(), afwijkend);
+        assertTrue(volgordes > 1, "één volgorde van de gegenereerde regels");
+        return afwijkend;
+    }
+
+    @FunctionalInterface
+    private interface Invoer {
+        List<Object> van(DroolsBackend.Build b) throws Exception;
     }
 
     // ---------------- a fold in a member of a composite that is not read ----------------
@@ -211,7 +360,8 @@ class TmsFilterfoutWitnessTest {
             Object v2 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
             zetRol(v1, "aanmelder", j1);
             zetRol(v2, "aanmelder", j1);
-            String uitkomst = TmsFoutWitnessTest.vuur(b, volgorde, List.of(j1, v1, v2), new DefaultAgendaEventListener() {},
+            String uitkomst = TmsFoutWitnessTest.vuur(b, volgorde, List.of(j1, v1, v2, new Lijstplaats(v1, "aanmelder", 0),
+                    new Lijstplaats(v2, "aanmelder", 1)), new DefaultAgendaEventListener() {},
                     new TmsFoutWitnessTest.Foutfeiten());
             if (!java.util.Objects.equals(verwacht, uitkomst))
                 afwijkend.add(volgorde.stream().map(Rule::getName).toList() + ": " + uitkomst);
@@ -234,7 +384,7 @@ class TmsFilterfoutWitnessTest {
     static String bewaaktZwaar() {
         return aggregatie("count", VONDSTEN, "Vondst", bronrol("aanmelding", "vondst"),
                 samengesteld("all", 0, List.of(TmsDocumenten.predicaat("filled", lezing("deelnemers", "Vondst")),
-                        vergelijking("greater", binair("dividedBy", lezing("gewicht", "Vondst"),
+                        vergelijking("greater", quotient(lezing("gewicht", "Vondst"),
                                 lezing("deelnemers", "Vondst")), getal("2")))), "null", TELLING,
                 "het aantal vondsten van de Jutter die aan alle volgende voorwaarden voldoen: zijn deelnemers is"
                         + " gevuld; zijn gewicht gedeeld door zijn deelnemers is groter dan 2");
@@ -281,8 +431,8 @@ class TmsFilterfoutWitnessTest {
             zetRol(v2, "aanmelder", j1);
             Foutsporen sporen = new Foutsporen();
             try {
-                TmsDocumenten.vuur(b, volgorde, List.of(j1, v1, v2), sessie -> sessie.addEventListener(sporen),
-                        sessie -> { });
+                TmsDocumenten.vuur(b, volgorde, List.of(j1, v1, v2, new Lijstplaats(v1, "aanmelder", 0),
+                        new Lijstplaats(v2, "aanmelder", 1)), sessie -> sessie.addEventListener(sporen), sessie -> { });
             } catch (RuntimeException e) {
                 throw new AssertionError("volgorde " + namen + ": " + e, e);
             }
