@@ -41,8 +41,12 @@ class TmsCorpusWitnessTest {
      *  which it was an equality. An equality makes every corpus card that adds a golden the branch plays change this
      *  test, and parallel cards would then share one registry, which WAY-OF-WORKING §1 forbids. The floor catches the
      *  branch shrinking; what the witness is for stays the same: no golden FAILs. The refusals per family are reported
-     *  in the message and not pinned, since every golden a corpus card adds would move one of them. */
-    private static final int EXPECTED_MIN_PLAYED = 66;
+     *  in the message and not pinned, since every golden a corpus card adds would move one of them.
+     *
+     *  <p>Raised from 66 to 120 on purpose (card tms-aggregaties-creatie-en-fouten, acceptance (b)), measured
+     *  2026-10-08 through this test after the branch took on aggregations, object and fact creation and faults as
+     *  facts: 120 of the 292 goldens with cases play, none FAILs. */
+    private static final int EXPECTED_MIN_PLAYED = 120;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
