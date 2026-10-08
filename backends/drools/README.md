@@ -132,6 +132,24 @@ common fixpoint and fail with a sentence that names both writers (ch. 5.7); the 
 branches the call does nothing, so a consumer that fires a KieBase itself can call it after every fire. The session
 must not fire again afterwards: the beans then hold values the network never saw arrive.
 
+**Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
+and a fault, like a value, belongs to the fixpoint (ch. 5.2). This branch has no strata and passes intermediate states
+the reference interpreter does not see, such as a divisor a lower default set to 0 before a higher one decides, and a
+fault thrown out of the fire there could not be withdrawn when the state passes. So no consequence throws an
+evaluation fault: the consequence that computes a value inserts the fault logically as a `Fout`, in place of the value,
+and the fault goes when a read it rested on changes. A condition is tested in the left-hand side, where Drools cannot
+take an exception as a fact; there the test answers that the condition does not hold where it faults, and a rule of the
+form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and the test that the condition faults,
+inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one as the
+`DelingDoorNul` the exec-model branch's fire gives through `DroolsBackend.benoem`, with the same sentence ("deling door
+nul in de regel "aandeel": 100 gedeeld door 0 — …"), two or more as `Evaluatiefouten`, ordered by the name of the form
+and then by the sentence, so the report does not depend on the order of the rules. A consumer that fires a KieBase of
+this branch itself meets the fault at `zetAfgeleideWaarden`, not out of `fireAllRules`. Witnesses `TmsFoutWitnessTest`
+and `TmsVoorwaardefoutWitnessTest`. Other exceptions are no evaluation fault and still leave the fire: a broken
+contract, a bug, and also a date step past the range of `java.time`, which the shared runtime throws as a
+`DateTimeException`; that range is not the one RUNTIME-SEMANTICS ch. 3.8 names, so the branch does not take it for the
+fault of that chapter.
+
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
@@ -144,9 +162,11 @@ built, never as a silent fall:
   settles by agenda order (WF-079); a rule beside a defaults group of its type on its target (WF-050); a computing
   rule on a target outside the standing domain, where a computed leeg would have to empty the target (ch. 7.8); and a
   division in a default, or in the condition or the value of an initialisation whose target has another writer, which
-  ch. 7.7 reads as the lowest default beside it, since the branch computes every default whose reads stand, also one
-  another default displaces, and a division by zero there would fail where the reference never evaluates it
-  (ch. 5.4, 7.1, 7.7);
+  ch. 7.7 reads as the lowest default beside it: the branch computes every default whose reads stand, also one another
+  default displaces, so a division by zero there is a fault on an intermediate state, which the branch withdraws once
+  the default is displaced; whether such a fault counts waits on a decision of the norm (ch. 5.2, 5.4, 7.1, 7.7; card
+  `fout-op-tussenstand`, where the reference interpreter gives the fault or the value of an initialisation beside
+  another writer depending on the order of the rules);
 - every cycle among what the forms read and write, negated or not, refused by `Kringen` with a `tms:` sentence
   (WF-045): under truth maintenance a positive cycle sustains itself, an even negative cycle settles by model order,
   and an odd one changes until the fire cap.

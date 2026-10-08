@@ -11,6 +11,7 @@ import org.kie.api.runtime.rule.ConsequenceException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +33,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code 385b36a5}, whose KieBases carried
  * {@code DroolsBackend.Nuldelingmelder}): the direct fire threw the named {@code DelingDoorNul} out of that handler
  * instead of Drools' exception, on both branches, and {@code benoem} did not exist.
+ *
+ * <p>The truth-maintenance branch is not asked here since 2026-10-08: its fire does not throw an evaluation fault but
+ * inserts it as a fact, and {@code DroolsBackend.zetAfgeleideWaarden} throws the named {@code DelingDoorNul} at the
+ * fixpoint, the sentence the replay gives ({@code TmsFoutWitnessTest}).
  */
 class NuldelerAfnemerWitnessTest {
 
@@ -40,8 +45,12 @@ class NuldelerAfnemerWitnessTest {
     private static final String ZIN = "deling door nul in de regel \"verhouding\": 60 gedeeld door 0 — een numerieke nul als "
             + "deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
+    /** The branches whose fire throws a fault out of a consequence. */
+    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
+            DroolsBackend.Branch.DRL_TEXT);
+
     @Test void zelf_vuren_geeft_de_uitzondering_van_drools_met_de_regel() throws Exception {
-        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+        for (DroolsBackend.Branch tak : TAKKEN) {
             ConsequenceException e = assertInstanceOf(ConsequenceException.class, vuurZelf(tak), tak::name);
             assertEquals("verhouding", e.getRule().getName(), tak::name);
             Breuk.DelingDoorNul nul = deling(e);
@@ -51,7 +60,7 @@ class NuldelerAfnemerWitnessTest {
     }
 
     @Test void benoem_geeft_de_zin_van_de_replay() throws Exception {
-        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
+        for (DroolsBackend.Branch tak : TAKKEN) {
             ConsequenceException e = assertInstanceOf(ConsequenceException.class, vuurZelf(tak), tak::name);
             RuntimeException benoemd = benoem(e);
             assertInstanceOf(Breuk.DelingDoorNul.class, benoemd, tak::name);

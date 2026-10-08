@@ -344,8 +344,9 @@ class TmsInitialisatieWitnessTest {
             + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'bergloon' van Vondst wordt ook"
             + " geschreven door \"bergloon\"): naast een andere schrijver is een initialisatie de laagste default"
             + " (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak rekent haar uit zodra wat zij leest staat, ook waar de"
-            + " andere schrijver haar later verdringt; een deling door nul geeft daar een fout waar de referentie, die"
-            + " alleen de beslissende default uitrekent, geen geeft (speculatieve evaluatie, ch. 7.1)";
+            + " andere schrijver haar later verdringt; een deling door nul daar is een fout op een tussenstand, die deze"
+            + " tak intrekt zodra de andere schrijver beslist, waar de referentie afhankelijk van de volgorde van de"
+            + " regels een fout of de waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)";
 
     /**
      * "Een Vondst is erkend indien hij gemeld is", "Het bergloon van een Vondst moet gesteld worden op zijn taxatie,
@@ -361,6 +362,12 @@ class TmsInitialisatieWitnessTest {
      * into the fault, the first "[erkenning, bergloon, standaardbergloon] DelingDoorNul: deling door nul in de regel
      * "standaardbergloon": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS
      * ch. 1.4, punt 4)", and the other five the same.
+     *
+     * <p>Since the evaluation fault is a fact that counts at the fixpoint ({@link TmsFoutWitnessTest}), the fault there is
+     * withdrawn when the computation displaces the initialisation, and with the refusal switched off every order played
+     * bergloon 30 (measured 2026-10-08, not committed). The reference interpreter gives that value in one order of the
+     * rules and the fault in the other, so whether a fault on an intermediate state counts waits on a decision of the
+     * norm, and the refusal stays until then; its reason says so.
      */
     @Test void een_deling_in_een_initialisatie_naast_een_andere_schrijver_wordt_geweigerd() throws Exception {
         JsonNode zaak = TmsDocumenten.zaak(

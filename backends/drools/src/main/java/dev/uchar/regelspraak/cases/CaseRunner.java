@@ -551,9 +551,9 @@ public final class CaseRunner {
      *  with different values in the last firings ({@link Schrijfconflict}), and where those show none it says only
      *  that the cap was reached. A consequence that throws, and on the exec-model branch a condition, leaves the fire
      *  as {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any
-     *  branch. At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them
-     *  ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the other branches); without a fixpoint nothing is written
-     *  back, since the replay reports the cap and reads no bean. */
+     *  branch. At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them,
+     *  or the evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
+     *  other branches); without a fixpoint nothing is written back, since the replay reports the cap and reads no bean. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);

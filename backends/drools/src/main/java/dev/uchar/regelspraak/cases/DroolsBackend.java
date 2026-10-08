@@ -59,8 +59,9 @@ import java.util.function.Predicate;
  * case, the fact beans instantiated from {@link Build#beanLoader()} while that loader is the thread's context
  * class loader, the parameters and the evaluation date as globals, and on the DRL-text branch also
  * {@link Build#dagsoortGlobalen()}; a {@code ConsequenceException} out of the fire is named by {@link #benoem}, and a
- * fire that reached its fixpoint is followed by {@link #zetAfgeleideWaarden}, which puts what the truth-maintenance
- * branch derived on the beans and does nothing on the other two.
+ * fire that reached its fixpoint is followed by {@link #zetAfgeleideWaarden}, which on the truth-maintenance branch
+ * throws the evaluation faults that stand at the fixpoint and otherwise puts what that branch derived on the beans, and
+ * does nothing on the other two.
  */
 public final class DroolsBackend {
 
@@ -266,6 +267,13 @@ public final class DroolsBackend {
      * <p>The write-back tells the engine nothing, so the session must not be fired again afterwards: the beans then hold
      * values the network never saw arrive, and a rule that reads the bean pattern would be evaluated against a state
      * that no propagation produced.
+     *
+     * <p>On the truth-maintenance branch an evaluation fault, a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4,
+     * point 4), is a fact the fire inserts logically, not an exception out of the fire, so that a fault on an
+     * intermediate state goes again when that state passes. Before anything is written, this throws the faults that
+     * stand at the fixpoint: one as the {@link Breuk.DelingDoorNul} the exec-model branch's fire gives through
+     * {@link #benoem}, naming the rule and the operands, and two or more as {@code Evaluatiefouten}, in an order that does
+     * not depend on the order of the rules ({@code TmsTranspiler.zetAfgeleideWaarden}).
      */
     public static void zetAfgeleideWaarden(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");

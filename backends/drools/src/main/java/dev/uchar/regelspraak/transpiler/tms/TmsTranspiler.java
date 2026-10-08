@@ -111,6 +111,14 @@ import java.util.function.UnaryOperator;
  * product or quotient of those, or a date plus or minus a duration. Every other form is in the coverage
  * manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the first
  * such entry.
+ *
+ * <p>An evaluation fault, a division by a numeric zero in a value or a condition (RUNTIME-SEMANTICS ch. 1.4, point 4),
+ * is a {@link Fout} inserted logically and never an exception out of the fire: the branch passes intermediate states
+ * the reference interpreter does not see, and a fault thrown there could not be withdrawn when the state passes. The
+ * consequence that computes a value inserts the fault instead of the value. A condition is tested in the left-hand
+ * side, where Drools cannot take an exception as a fact, so its test answers that it does not hold where it faults,
+ * and a rule of the form's own inserts the fault ({@link #voorwaardefoutregel}). Only the faults that stand at the
+ * fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back.
  */
 public final class TmsTranspiler {
 
@@ -225,10 +233,22 @@ public final class TmsTranspiler {
      * see a value the network never propagated. Input on a characteristic stays, since nothing writes {@code false};
      * input on an attribute stays where no rule derived a value for it.
      *
+     * <p>An evaluation fault that stands at the fixpoint ({@link Fout}) means the session has no answer, so before it
+     * writes anything this throws the faults that stand: one as the exception it is, named after its rule as the
+     * exec-model branch names it out of its fire, two or more as {@link Evaluatiefouten}, ordered by the name of the
+     * form and then by the sentence, so that the report does not depend on the order of the rules or of the firings.
+     *
      * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7), and
      * this does not choose between them: it fails, naming both writers and both values. Equal values are no conflict.
      */
     public void zetAfgeleideWaarden(KieSession sessie) {
+        List<Fout> fouten = new ArrayList<>();
+        for (Object f : sessie.getObjects(o -> o instanceof Fout)) fouten.add((Fout) f);
+        if (!fouten.isEmpty()) {
+            fouten.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
+            if (fouten.size() == 1) throw fouten.get(0).fout();
+            throw new Evaluatiefouten(fouten.stream().map(Fout::fout).toList());
+        }
         for (Object f : sessie.getObjects(o -> o instanceof HeeftKenmerk)) {
             HeeftKenmerk h = (HeeftKenmerk) f;
             Lid lid = lidVan(h, h.kenmerk());
@@ -308,7 +328,7 @@ public final class TmsTranspiler {
         List<Rule> regels = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) regels.addAll(meet("regel", naamOf(r.naam()), () -> regel(r)));
         for (ResolvedConsistentie c : model.consistenties)
-            regels.addAll(meet("consistentie", naamOf(c.naam()), () -> List.of(consistentieRegel(c))));
+            regels.addAll(meet("consistentie", naamOf(c.naam()), () -> consistentieRegels(c)));
         for (ResolvedUniciteit u : model.uniciteiten)
             weiger("uniciteit", naamOf(u.naam()), "een Uniqueness: " + BUITEN);
         for (ResolvedVerdeling v : model.verdelingen)
@@ -377,20 +397,21 @@ public final class TmsTranspiler {
         if (navigatieBindingen.containsKey(doel)) throw new Weigering("een regel op een genavigeerd doel");
         if (r.geldigheid() != null && !r.geldigheid().altijd())
             throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
-        return List.of(switch (r.soort()) {
+        return switch (r.soort()) {
             case KENMERKTOEKENNING -> kenmerkRegel(r, doel);
             case GELIJKSTELLING, BEREKENING -> rekenRegel(r, doel);
             case INITIALISATIE -> initialisatieRegel(r, doel);
-        });
+        };
     }
 
     /**
      * A characteristic attribution: the subject pattern with the reads its condition binds there, the standing patterns
      * of what it reads elsewhere, one test over every value its condition reads, and a consequence that inserts the
      * {@link HeeftKenmerk} logically. Its justification is the whole match, so a standing the condition read that is
-     * later retracted takes the characteristic with it, also when the condition read it negated.
+     * later retracted takes the characteristic with it, also when the condition read it negated. Beside it, where the
+     * condition can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private Rule kenmerkRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Rule> kenmerkRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         // the loader refuses any other value (WF-022); asked again because this rule writes true whatever it says
         if (!(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde()) && l.type() instanceof Datatype.Booleaan))
             throw new Weigering("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
@@ -398,14 +419,18 @@ public final class TmsTranspiler {
         Lezingen lez = new Lezingen(doel.objecttype());
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        boolean kanFalen = lez.kanFalen();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(toets, gelezen, r.voorwaarde());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
         ElementSleutel sleutel = lid.sleutel();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(new HeeftKenmerk(o, sleutel))));
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
-        return PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0]));
+        List<Rule> uit = new ArrayList<>();
+        uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0])));
+        if (kanFalen) uit.add(voorwaardefoutregel(r.naam(), doel.objecttype(), r.voorwaarde(), Set.of(), null));
+        return uit;
     }
 
     /**
@@ -414,17 +439,17 @@ public final class TmsTranspiler {
      * value is gevuld. A computed leeg writes nothing, so the input on the target stands, or the initialisation beside the
      * rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is its
      * target's only computing writer, beside at most one unconditional initialisation, which this method demands). A
-     * division by a numeric zero leaves the consequence as the fault it is, a {@code ConsequenceException} that names the
-     * rule. A division of a filled dividend by a leeg divisor inserts the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2
-     * from the same consequence, for the divisions the exec-model branch gives a companion (both operands a read of an
-     * attribute, of the subject or one role away), under the rule's name: the condition of the rule holds there by
-     * construction.
+     * division by a numeric zero is an evaluation fault: the consequence inserts it logically as a {@link Fout} in place
+     * of the value, named after the rule. A division of a filled dividend by a leeg divisor inserts the §9.5
+     * inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the same consequence, for the divisions the exec-model branch gives
+     * a companion (both operands a read of an attribute, of the subject or one role away), under the rule's name: the
+     * condition of the rule holds there by construction.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
      * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
      */
-    private Rule rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         ElementSleutel sleutel = lid.sleutel();
         List<ResolvedRegel> schrijvend = rekenregels.get(sleutel);
@@ -479,11 +504,14 @@ public final class TmsTranspiler {
      *
      * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default
      * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
-     * writer displaces it later, so a division in its condition or its value is refused there, with the predicate of a
-     * division in a default: a division by zero would fail where the reference interpreter never evaluates it
+     * writer displaces it later. A division by zero there is a fault on an intermediate state: this branch inserts it as
+     * a {@link Fout}, which goes when the other writer displaces the initialisation, and answers the other writer's
+     * value, where the reference interpreter faults or answers the value depending on the order of the rules. Whether
+     * such a fault counts waits on a decision of the norm, so a division in the condition or the value of an
+     * initialisation beside another writer stays refused, with the predicate of a division in a default
      * ({@code TmsInitialisatieWitnessTest}). Without another writer nothing displaces it and the division stays carried.
      */
-    private Rule initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+    private List<Rule> initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         ElementSleutel sleutel = lid.sleutel();
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
@@ -502,8 +530,9 @@ public final class TmsTranspiler {
                     + String.join(", ", anderen.stream().map(x -> "\"" + x + "\"").toList()) + "): naast een andere"
                     + " schrijver is een initialisatie de laagste default (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak"
                     + " rekent haar uit zodra wat zij leest staat, ook waar de andere schrijver haar later verdringt; een"
-                    + " deling door nul geeft daar een fout waar de referentie, die alleen de beslissende default"
-                    + " uitrekent, geen geeft (speculatieve evaluatie, ch. 7.1)");
+                    + " deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de andere"
+                    + " schrijver beslist, waar de referentie afhankelijk van de volgorde van de regels een fout of de"
+                    + " waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)");
         Function<Object, Object> invoer = Accessors.getter(lid.klasse(), lid.naam());
         String naam = r.naam();
         return schrijfregel(r, doel.objecttype(), lid, lez -> {
@@ -520,17 +549,18 @@ public final class TmsTranspiler {
      * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
      * reads, the {@code blokkade} the form adds (null for none), and a consequence that computes the value from the
      * values it binds and inserts a {@link Waarde} logically, with the form's name as the writer, when the value is
-     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes. Objects of a class in {@code geabsorbeerd} do not
-     * match: an effective stack writes the target there ({@link #geabsorbeerd}).
+     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes. Where the value faults, the consequence inserts the
+     * {@link Fout} instead, and neither the value nor a deposit. Objects of a class in {@code geabsorbeerd} do not
+     * match: an effective stack writes the target there ({@link #geabsorbeerd}). Beside it, where the condition can
+     * fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private Rule schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                              Function<Lezingen, RuleItemBuilder<?>> blokkade, Set<Class<?>> geabsorbeerd) {
+    private List<Rule> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
+                                    Function<Lezingen, RuleItemBuilder<?>> blokkade, Set<Class<?>> geabsorbeerd) {
         ElementSleutel sleutel = lid.sleutel();
-        Lezingen lez = new Lezingen(subject);
-        if (!geabsorbeerd.isEmpty())
-            lez.onderwerp.expr(id("niet-in-een-stapel"), o -> !geabsorbeerd.contains(o.getClass()));
+        Lezingen lez = lezingen(subject, geabsorbeerd);
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
+        boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
         Waardefunctie waarde = waarde(r.waarde(), lez);
@@ -539,13 +569,20 @@ public final class TmsTranspiler {
         lez.stop();
         // the write boundary: the value in the target's declared unit (RUNTIME-SEMANTICS ch. 2.4)
         eenheden(eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
-        List<RuleItemBuilder<?>> items = lez.linkerkant(toets, gelezen, r.voorwaarde());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
         if (blokkade != null) items.add(blokkade.apply(lez));
         String naam = r.naam();
+        String regelnaam = model.geëmitteerdeRegelNaam(naam);
         int[] posities = posities(gebruik);
         int n = lez.variabelen.size();
         items.add(gevolg(lez, posities, (drools, onderwerp, w) -> {
-            Object v = collapse(waarde.van(w));
+            Object v;
+            try {
+                v = collapse(waarde.van(w));
+            } catch (Breuk.DelingDoorNul nul) {
+                drools.logicalInsert(new Fout(onderwerp, naam, nul.inDeRegel(regelnaam, nul)));
+                return;
+            }
             for (Deling d : delingen)
                 if (w[d.deeltal()] != null && w[d.deler()] == null) {
                     drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, onderwerp));
@@ -555,7 +592,75 @@ public final class TmsTranspiler {
         }, n));
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
-        return PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0]));
+        List<Rule> uit = new ArrayList<>();
+        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, subject, r.voorwaarde(), geabsorbeerd, blokkade));
+        return uit;
+    }
+
+    /** The reads of a rule on {@code subject}, whose subject pattern leaves out the objects of a class in
+     *  {@code geabsorbeerd}: an effective stack writes the target there ({@link #geabsorbeerd}). */
+    private Lezingen lezingen(Objecttype subject, Set<Class<?>> geabsorbeerd) {
+        Lezingen lez = new Lezingen(subject);
+        if (!geabsorbeerd.isEmpty())
+            lez.onderwerp.expr(id("niet-in-een-stapel"), o -> !geabsorbeerd.contains(o.getClass()));
+        return lez;
+    }
+
+    // ---------------- an evaluation fault in a condition ----------------
+
+    /**
+     * The rule that inserts the fault of a condition that can fault, beside the rule of the form {@code vorm} that tests
+     * the condition. A condition is tested in the left-hand side, and an exception there leaves the fire, where truth
+     * maintenance cannot withdraw it when the reads it rested on change; the form's own rule therefore tests the
+     * condition through {@link #zonderFout}, which does not hold where it faults, and this rule, whose left-hand side is
+     * the form's own built again over fresh declarations, with the same subject pattern ({@code geabsorbeerd}), the same
+     * {@code blokkade} after the test and the test that the condition faults, inserts the named {@link Fout} logically.
+     * It fires exactly where the form's rule tests the condition and the test faults, and the fault goes when a read it
+     * rested on changes. The sentence names the rule as the exec-model branch names a fault in a condition.
+     */
+    private Rule voorwaardefoutregel(String vorm, Objecttype subject, Conditie c, Set<Class<?>> geabsorbeerd,
+                                     Function<Lezingen, RuleItemBuilder<?>> blokkade) {
+        Lezingen lez = lezingen(subject, geabsorbeerd);
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = voorwaarde(c, lez);
+        lez.stop();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, c);
+        if (blokkade != null) items.add(blokkade.apply(lez));
+        String regelnaam = model.geëmitteerdeRegelNaam(vorm);
+        items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
+            Breuk.DelingDoorNul nul = fout(toets, w);
+            if (nul == null)
+                throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
+                        + " gevolg, over dezelfde gebonden waarden");
+            drools.logicalInsert(new Fout(onderwerp, vorm, nul.inDeRegel(regelnaam, nul)));
+        }, lez.variabelen.size()));
+        lez.vastleggen();
+        return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /** {@code toets} where it answers, and not holding where it faults: the fault is the fault rule's
+     *  ({@link #voorwaardefoutregel}). */
+    private static Toets zonderFout(Toets toets) {
+        return w -> {
+            try {
+                return toets.test(w);
+            } catch (Breuk.DelingDoorNul nul) {
+                return false;
+            }
+        };
+    }
+
+    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. The one evaluation fault the
+     *  forms this branch lowers can raise is a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4); any
+     *  other exception is a broken contract or a bug and leaves the fire as it is. */
+    private static Breuk.DelingDoorNul fout(Toets toets, Object[] w) {
+        try {
+            toets.test(w);
+            return null;
+        } catch (Breuk.DelingDoorNul nul) {
+            return nul;
+        }
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -570,9 +675,10 @@ public final class TmsTranspiler {
      * read is bound to a total standing, so a subject has one activation and the channel one error fact per form and
      * subject, without the guard the exec-model branch needs. A violation found against a transient value goes when
      * that value changes, where the exec-model branch orders the consistency after the writers of what it reads and
-     * never withdraws one; the fixpoint is the same.
+     * never withdraws one; the fixpoint is the same. An assertion that faults is no violation: beside the rule, where the
+     * assertion can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
-    private Rule consistentieRegel(ResolvedConsistentie c) {
+    private List<Rule> consistentieRegels(ResolvedConsistentie c) {
         // the rule is named by the form, and the channel test reads the error facts by that name
         if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
         if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
@@ -581,13 +687,19 @@ public final class TmsTranspiler {
         Lezingen lez = new Lezingen(c.subject());
         Set<Integer> gelezen = lez.volg();
         Toets houdt = voorwaarde(c.assertie(), lez);
+        boolean kanFalen = lez.kanFalen();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> !houdt.test(w), gelezen, c.assertie());
+        Toets geschonden = w -> !houdt.test(w);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(geschonden) : geschonden, gelezen,
+                c.assertie());
         String naam = c.naam();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, o))));
         lez.vastleggen();
-        return PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0]));
+        List<Rule> uit = new ArrayList<>();
+        uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, c.subject(), c.assertie(), Set.of(), null));
+        return uit;
     }
 
     /**
@@ -808,16 +920,19 @@ public final class TmsTranspiler {
         String deling = deling(d.voorwaarde(), d.consequentie());
         if (deling != null)
             throw new Weigering("een deling in een default ('" + deling + "'): deze tak rekent een default uit zodra wat"
-                    + " hij leest staat, ook een die een hogere default verdringt, en een deling door nul geeft daar een"
-                    + " fout waar de referentie, die alleen tot de beslissende default komt, geen geeft (RUNTIME-SEMANTICS"
-                    + " ch. 7.1, speculatieve evaluatie)");
+                    + " hij leest staat, ook een die een hogere default verdringt; een deling door nul daar is een fout op"
+                    + " een tussenstand, die deze tak intrekt zodra de hogere default beslist: of zo'n fout telt, wacht op"
+                    + " een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)");
     }
 
     /** The snippet of the first division in {@code voorwaarde} or {@code waarde}, or null: in the justification or the
      *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
      *  ch. 7.7 reads as the lowest default ({@link #initialisatieRegel}). The exec-model branch refuses a division below
      *  the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a default is
-     *  evaluated whenever its reads stand, so every division is refused. */
+     *  evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault on an
+     *  intermediate state, which this branch would withdraw ({@link Fout}); whether such a fault counts waits on a
+     *  decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
+     *  no evaluation fault ({@link #eigenRegel}). */
     private static String deling(Conditie voorwaarde, Expr waarde) {
         String c = voorwaarde == null ? null : deling(voorwaarde);
         return c != null ? c : deling(waarde);
@@ -1039,7 +1154,9 @@ public final class TmsTranspiler {
      * owner, with the input test of an initialisation default; the reads of its justification and its consequence bound
      * as any rule binds them; {@code wacht}, the control-fact patterns, before the test of the justification; and a
      * consequence that hands the decision to {@code besluit}: a characteristic's decision as declared, an attribute's
-     * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1).
+     * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). A default carries no
+     * division ({@link #controleer}), so neither its test nor its consequence raises an evaluation fault, and neither
+     * catches one as a rule does ({@link #schrijfregel}, {@link #voorwaardefoutregel}).
      */
     private Rule eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
                             Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {
@@ -1171,6 +1288,9 @@ public final class TmsTranspiler {
             default -> throw new Weigering("een Binary " + Spelling.BINARY_OP.spelling(op) + " ('" + snippet(b.bron())
                     + "'): " + NOG_NIET);
         }
+        // a division faults on a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4): a condition that holds one carries the
+        // rule that inserts its fault (voorwaardefoutregel)
+        if (op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS) lez.markeerFalen();
         Waardefunctie l = waarde(b.links(), lez), r = waarde(b.rechts(), lez);
         // a sum or a difference restates its right operand into the left one's unit; a product and a quotient do not
         if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET)
@@ -1312,8 +1432,8 @@ public final class TmsTranspiler {
     }
 
     /** A composite folds its members in wire order and stops at the first member after which the verdict stands
-     *  (RUNTIME-SEMANTICS ch. 5.10), so a member that would throw, a comparison with a division by zero, is not read
-     *  where an earlier member settled the verdict. */
+     *  (RUNTIME-SEMANTICS ch. 5.10), so a member that would fault, a comparison with a division by zero, is not read
+     *  where an earlier member settled the verdict, and the composite faults only where it reads such a member. */
     private Toets samengesteld(Conditie.Samengesteld s, Lezingen lez) {
         List<Toets> leden = new ArrayList<>();
         for (Conditie deel : s.onderdelen()) leden.add(voorwaarde(deel, lez));
@@ -1474,6 +1594,8 @@ public final class TmsTranspiler {
         private final Set<String> kanaalnamen = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> gebruik;
+        /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault. */
+        private boolean falen;
 
         @SuppressWarnings("unchecked")
         Lezingen(Objecttype subject) {
@@ -1504,10 +1626,18 @@ public final class TmsTranspiler {
 
         Set<Integer> volg() {
             gebruik = new TreeSet<>();
+            falen = false;
             return gebruik;
         }
 
         void stop() { gebruik = null; }
+
+        /** Records that the expression being compiled can raise an evaluation fault. */
+        void markeerFalen() { falen = true; }
+
+        /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault: a condition that
+         *  can is tested through {@link #zonderFout}, beside the rule that inserts its fault. */
+        boolean kanFalen() { return falen; }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
          *  standings it needs. */
