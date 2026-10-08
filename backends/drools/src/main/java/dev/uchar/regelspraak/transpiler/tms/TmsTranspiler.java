@@ -1090,7 +1090,7 @@ public final class TmsTranspiler {
             case Expr.Let l -> throw nietBerekend("Let", l.bron(), BUITEN);
             case Expr.BinderRef b -> throw nietBerekend("BinderRef", b.bron(), BUITEN);
             case Expr.IfThenElse i -> throw nietBerekend("IfThenElse", i.bron(), BUITEN);
-            case Expr.Constante c -> throw nietBerekend("een contextwaarde (" + c.naam() + ")", c.bron(), BUITEN);
+            case Expr.Constante c -> throw nietBerekend("contextwaarde (" + c.naam() + ")", c.bron(), BUITEN);
             case Expr.Onopgelost o -> throw nietBerekend("Unresolved", o.bron(), BUITEN);
         };
     }
