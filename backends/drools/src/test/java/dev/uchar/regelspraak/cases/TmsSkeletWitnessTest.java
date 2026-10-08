@@ -38,10 +38,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * every side table the loader returns. Every document is written here, on Jutterswet material.
  *
  * <p><b>Red on the skeleton</b> (measured 2026-10-08), whose manifest listed every characteristic attribution as not
- * lowered: the build row was refused by that entry, and the two-names row and the predicate row got the manifest's
- * sentence instead of their own ("but was: &lt;tms-transpiler SKIP: regel: actief — de verlaging van een
- * kenmerktoekenning is nog niet gebouwd&gt;"). The attribute-target row and the side-table row were green from the
- * start: the frame they pin was written before them.
+ * lowered: the build row was refused by that entry, and the two-names row got the manifest's sentence instead of its
+ * own ("but was: &lt;tms-transpiler SKIP: regel: actief — de verlaging van een kenmerktoekenning is nog niet
+ * gebouwd&gt;"). The side-table row was green from the start: the frame it pins was written before it.
+ *
+ * <p>Two rows of the first step pinned the refusal of an attribute target and of a leeg or gevuld test; the second
+ * step lowers both, and their rows now pin a value and a condition outside the trial, an Aggregation and a
+ * QuantifierFold. <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
+ * "but was: &lt;tms-transpiler SKIP: regel: lampental — een attribuutdoel (berekening van 'lampental' van Vuurtoren): de
+ * truth-maintenance-tak leidt nog alleen kenmerken af&gt;" and "but was: &lt;tms-transpiler SKIP: regel: helder — een
+ * QuantifierFold in de voorwaarde ('de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5'): de
+ * truth-maintenance-tak leest nog alleen kenmerken van het eigen onderwerp, ook ontkend en in een Compound&gt;".
  */
 class TmsSkeletWitnessTest {
 
@@ -63,37 +70,54 @@ class TmsSkeletWitnessTest {
         assertEquals(RuleBaseConfiguration.AssertBehaviour.IDENTITY, gelijkheid(exec.kieBase()));
     }
 
-    @Test void een_attribuutdoel_wordt_geweigerd_met_de_vorm() throws Exception {
-        String model = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":"
-                + "\"Jutters\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"gewicht\",\"datatype\":" + GEHEEL + "}],"
-                + "\"characteristics\":[]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],"
-                + "\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
-        String gewicht = IrPad.regel("gewicht", "GELIJKSTELLING", "{\"node\":\"AttributeReference\",\"attribute\":"
-                + "\"gewicht\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"Het gewicht van een Jutter\"}}",
-                IrPad.literal("3", GEHEEL, "3"), "null");
-        Path ir = TmsDocumenten.document(model, List.of(gewicht));
+    /** "Het lampental van een Vuurtoren moet berekend worden als het aantal lampen van de Vuurtoren": an Aggregation,
+     *  outside the trial. */
+    @Test void een_waarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
+        String aantal = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"AttributeReference\","
+                + "\"attribute\":\"lampen\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"lampen van de Vuurtoren\"}}],"
+                + "\"elementType\":\"Lamp\",\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"torenindeling\",\"role\":"
+                + "\"lamp\"},\"type\":" + GEHEEL + ",\"source\":{\"snippet\":\"het aantal lampen van de Vuurtoren\"}}";
+        String lampental = IrPad.regel("lampental", "BEREKENING", "{\"node\":\"AttributeReference\",\"attribute\":"
+                + "\"lampental\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Het lampental van een Vuurtoren\"}}",
+                aantal, "null");
+        Path ir = TmsDocumenten.document(VUURTOREN, List.of(lampental));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: gewicht — een attribuutdoel (gelijkstelling van 'gewicht' van Jutter):"
-                + " de truth-maintenance-tak leidt nog alleen kenmerken af", e.getMessage());
+        assertEquals("tms-transpiler SKIP: regel: lampental — een Aggregation in een waarde ('het aantal lampen van de"
+                + " Vuurtoren'): buiten de proef van de truth-maintenance-tak", e.getMessage());
     }
 
-    @Test void een_voorwaarde_buiten_de_kenmerkchecks_wordt_geweigerd_met_de_knoop() throws Exception {
-        String model = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Jutter\",\"animate\":true,\"plural\":"
-                + "\"Jutters\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"startdag\",\"datatype\":{\"node\":\"Date\","
-                + "\"precision\":\"day\"}}],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"actief\",\"kind\":"
-                + "\"adjectival\"}]}],\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
-                + "\"timelines\":[],\"dayKinds\":[]}";
-        String gevuld = "{\"node\":\"Predicate\",\"kind\":\"filled\",\"operand\":{\"node\":\"AttributeReference\","
-                + "\"attribute\":\"startdag\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"zijn startdag\"}},"
-                + "\"negated\":false,\"digits\":0,\"source\":{\"snippet\":\"zijn startdag gevuld is\"}}";
-        Path ir = TmsDocumenten.document(model, List.of(kenmerkregel("actief", "actief", gevuld)));
+    /** "Een Vuurtoren is helder indien de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5": a
+     *  QuantifierFold, outside the trial. */
+    @Test void een_voorwaarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
+        String snippet = "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5";
+        String vouw = "{\"node\":\"QuantifierFold\",\"quantifier\":\"atLeast\",\"threshold\":2,\"elementType\":\"Lamp\","
+                + "\"test\":{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":{\"node\":\"AttributeReference\",\"attribute\":"
+                + "\"sterkte\",\"subjectType\":\"Lamp\",\"source\":{\"snippet\":\"de sterkte van ten minste 2 van de lampen van"
+                + " de Vuurtoren\"}},\"right\":" + IrPad.literal("5", GEHEEL, "5") + ",\"source\":{\"snippet\":\"" + snippet
+                + "\"}},\"source\":{\"snippet\":\"" + snippet + "\"},\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":"
+                + "\"torenindeling\",\"role\":\"lamp\"}}";
+        String helder = IrPad.regel("helder", "KENMERKTOEKENNING", "{\"node\":\"AttributeReference\",\"attribute\":"
+                + "\"helder\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Een Vuurtoren is helder\"}}",
+                IrPad.literal("waar", "{\"node\":\"Boolean\"}", "waar"), vouw);
+        Path ir = TmsDocumenten.document(VUURTOREN, List.of(helder));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: actief — een Predicate in de voorwaarde ('zijn startdag gevuld is'): de"
-                + " truth-maintenance-tak leest nog alleen kenmerken van het eigen onderwerp, ook ontkend en in een"
-                + " Compound", e.getMessage());
+        assertEquals("tms-transpiler SKIP: regel: helder — een QuantifierFold in de voorwaarde ('" + snippet + "'): buiten"
+                + " de proef van de truth-maintenance-tak", e.getMessage());
     }
+
+    /** A Vuurtoren with its lampen over a role to many, as the jutterswet-vuurtoren golden declares them. */
+    private static final String VUURTOREN = "{\"objectTypes\":[{\"node\":\"ObjectType\",\"name\":\"Vuurtoren\",\"animate\":"
+            + "false,\"plural\":\"Vuurtorens\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"lampental\",\"datatype\":"
+            + "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}}],\"characteristics\":[{\"node\":"
+            + "\"Characteristic\",\"name\":\"helder\",\"kind\":\"adjectival\"}]},{\"node\":\"ObjectType\",\"name\":\"Lamp\","
+            + "\"animate\":false,\"plural\":\"Lampen\",\"attributes\":[{\"node\":\"Attribute\",\"name\":\"sterkte\",\"datatype\":"
+            + "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}}],\"characteristics\":[]}],"
+            + "\"factTypes\":[{\"node\":\"FactType\",\"name\":\"torenindeling\",\"reciprocal\":false,\"roles\":[{\"node\":"
+            + "\"Role\",\"name\":\"toren\",\"objectType\":\"Vuurtoren\",\"many\":false},{\"node\":\"Role\",\"name\":\"lamp\","
+            + "\"objectType\":\"Lamp\",\"plural\":\"lampen\",\"many\":true}]}],\"parameters\":[],\"domains\":[],"
+            + "\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
 
     @Test void twee_regels_van_een_naam_weigert_de_tak_benoemd() throws Exception {
         Path ir = TmsDocumenten.document(TmsDocumenten.model(KENMERKEN),
