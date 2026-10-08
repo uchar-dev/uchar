@@ -43,6 +43,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * werkelijk afwezig", the derived document added "kenmerk erkend: verwacht aanwezig, werkelijk afwezig", and the sample
  * failed on "J1 bevoegd … expected: &lt;true&gt; but was: &lt;false&gt;": the derivations stood in the session and no
  * bean carried them.
+ *
+ * <p><b>Red by mutation</b> (measured 2026-10-08 on the lowering, not committed): what the rows catch is a derivation
+ * that stays when its condition stops holding. With the characteristic rule inserting its {@code HeeftKenmerk} plainly
+ * instead of logically, 3 of the 6 orders of the document with erkend as input ended wrong, the three with "bevoegd
+ * indien niet onvergund" before "onvergund indien niet vergund", the first of them failing "volgorde [vergund indien
+ * erkend, bevoegd indien niet onvergund, onvergund indien niet vergund] ==&gt; expected: &lt;null&gt; but was:
+ * &lt;case: kenmerk bevoegd: verwacht afwezig, werkelijk aanwezig&gt;"; 20 of the 24 orders with erkend derived ended
+ * wrong, some also with "kenmerk onvergund: verwacht afwezig, werkelijk aanwezig"; and of the 102 orders of the
+ * generated rules 72 and 92 ended wrong, failing "J2 bevoegd in volgorde […] ==&gt; expected: &lt;false&gt; but was:
+ * &lt;true&gt;". With the onwaar standing inserted plainly instead, the same 3 and 20 document orders ended wrong, and 86
+ * and 98 of the 102 generated orders, failing "J1 onvergund in volgorde […] ==&gt; expected: &lt;false&gt; but was:
+ * &lt;true&gt;". Every row of this witness failed on both mutants.
  */
 class TmsOntkenningsketenWitnessTest {
 

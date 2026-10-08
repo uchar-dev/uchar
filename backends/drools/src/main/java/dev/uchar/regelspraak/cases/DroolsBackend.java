@@ -233,10 +233,13 @@ public final class DroolsBackend {
     }
 
     /** The truth-maintenance branch: {@link TmsTranspiler} lowers the forms it carries to an executable model that
-     *  derives with logical inserts, and the KieBase runs in EQUALITY mode, so that two rules that derive the same fact
-     *  insert one fact with two justifications rather than two facts. A form the transpiler does not lower is refused
-     *  from its manifest, as on the exec-model branch; a cycle among what the forms read and write is refused before
-     *  the KieBase is built, since truth maintenance gives a cycle no single fixpoint ({@code Kringen}). */
+     *  derives with logical inserts. The KieBase runs in EQUALITY mode, as the branch's design requires: there a fact
+     *  inserted as stated takes over an equal logical fact, where IDENTITY mode keeps the two as two facts on one key
+     *  and ignores a delete of the stated one in some states. Equal logical facts merge into one fact with a
+     *  justification per rule in either mode; that merge rests on the equals and hashCode of the branch's fact classes.
+     *  A form the transpiler does not lower is refused from its manifest, as on the exec-model branch; a cycle among what
+     *  the forms read and write is refused before the KieBase is built, since truth maintenance gives a cycle no single
+     *  fixpoint ({@code Kringen}). */
     private static Build tmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
                 loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());

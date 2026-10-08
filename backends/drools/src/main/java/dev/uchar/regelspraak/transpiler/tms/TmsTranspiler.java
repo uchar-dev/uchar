@@ -455,8 +455,8 @@ public final class TmsTranspiler {
      * The three generic rules that keep one {@link KenmerkStand} per object of the declaring type: waar from the input,
      * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation, {@code not
      * HeeftKenmerk}, and reads the input in its left-hand side, so a derivation that appears later retracts the onwaar
-     * standing and every conclusion that read it. When both sources hold, the two waar standings are one fact with two
-     * justifications (EQUALITY).
+     * standing and every conclusion that read it. When both sources hold, the two waar standings are equal, and truth
+     * maintenance keeps them as one fact with a justification each.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> standregels(Kenmerklid lid) {

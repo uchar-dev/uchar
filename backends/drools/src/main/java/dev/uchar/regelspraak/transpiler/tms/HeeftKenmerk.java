@@ -14,8 +14,9 @@ import java.util.Objects;
  * <p>The characteristic is keyed on the type that declares it ({@code ProducentConsument.elementVan}), so a rule that
  * attributes it on a subtype and a check that reads it on the supertype meet on one key. The subject is compared by
  * identity: the generated beans keep Object's identity, and two objects of a case that look alike are two objects.
- * Equality is what the KieBase works with in EQUALITY mode: two rules that derive the same characteristic for the
- * same object insert one fact with two justifications, and it stays while either holds.
+ * Truth maintenance merges equal logical facts by this equality, whatever the KieBase's equality mode: two rules that
+ * derive the same characteristic for the same object insert one fact with a justification each, and it stays while
+ * either holds.
  */
 public record HeeftKenmerk(Object onderwerp, ElementSleutel kenmerk) {
 
