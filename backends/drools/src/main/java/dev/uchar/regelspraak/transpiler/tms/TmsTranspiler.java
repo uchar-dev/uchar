@@ -29,6 +29,7 @@ import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.kern.Bronpad;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid;
 import dev.uchar.regelspraak.transpiler.kern.Eenheidsconflict;
@@ -74,6 +75,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -107,10 +110,16 @@ import java.util.function.UnaryOperator;
  * deposit of a division by leeg (a default carries no division at all), whose condition, assertion or justification
  * is built from characteristic checks (own or over a path, negated or not), comparisons, leeg and gevuld tests, tests
  * of the channel of a consistency or of a rule that deposits, and {@code Compound}s of those under any quantifier, and
- * whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, or a sum, difference,
- * product or quotient of those, or a date plus or minus a duration. Every other form is in the coverage
- * manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the first
- * such entry.
+ * whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, an aggregation, or a
+ * sum, difference, product or quotient of those, or a date plus or minus a duration. Every other form is in the
+ * coverage manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the
+ * first such entry.
+ *
+ * <p>An aggregation over a set source is an accumulate in the left-hand side of the rule that reads it, over the
+ * {@link Bijdrage} facts its contribution rules insert logically, one per member of its range ({@link #vouw}); a
+ * contribution rule binds the member's value and the reads of the fold's filter in its own left-hand side, so a member
+ * whose value or filter reading changes takes its contribution along. A listed fold is computed from its operands'
+ * bound values ({@link #gelijsteVouw}).
  *
  * <p>An evaluation fault, a division by a numeric zero in a value or a condition (RUNTIME-SEMANTICS ch. 1.4, point 4),
  * is a {@link Fout} inserted logically and never an exception out of the fire: the branch passes intermediate states
@@ -138,6 +147,19 @@ public final class TmsTranspiler {
     private final ClassLoader beanLoader;
     private final List<PrioritizedDefaults> defaults;
     private final Map<Object, List<RolBindingRef>> navigatieBindingen;
+    /** The one-step range of a fold ({@code sourceRole}), by node. */
+    private final Map<Object, RolBindingRef> rolBindingen;
+    /** The multi-step range of a fold ({@code sourcePath}), by node. */
+    private final Map<Object, List<RolBindingRef>> bronPaden;
+    /** The folds lowered so far, per node and fold subject: a node read again, by a rule's fault rule or by a default
+     *  that two effective stacks share, reads the contributions already made for it. */
+    private final Map<Expr.Functie, Map<Objecttype, Vouw>> vouwen = new IdentityHashMap<>();
+    /** The contribution rules of the folds the lowered forms read, by the fold's key. */
+    private final Map<String, List<Rule>> bijdrageregels = new LinkedHashMap<>();
+    private int vouwteller;
+    /** The name of the form being lowered, as the manifest shows it: the key of its folds starts with it, and a fault in
+     *  a fold's filter is named after it. */
+    private String vorm;
     /** The datatype and unit of an expression as the other branches derive them (RUNTIME-SEMANTICS ch. 2.10). */
     private final EffectieveEenheid eff;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
@@ -173,11 +195,14 @@ public final class TmsTranspiler {
     private Model model0;
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
-                          Map<Object, List<RolBindingRef>> navigatieBindingen, EffectieveEenheid eff) {
+                          Map<Object, List<RolBindingRef>> navigatieBindingen, Map<Object, RolBindingRef> rolBindingen,
+                          Map<Object, List<RolBindingRef>> bronPaden, EffectieveEenheid eff) {
         this.model = model;
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
         this.navigatieBindingen = navigatieBindingen;
+        this.rolBindingen = rolBindingen;
+        this.bronPaden = bronPaden;
         this.eff = eff;
     }
 
@@ -196,7 +221,8 @@ public final class TmsTranspiler {
         Objects.requireNonNull(navigatieBindingen, "side table 'navigatieBindingen' is null — pass an empty map for a document without one");
         // copied by identity: the loader keys its tables on the nodes, which are records with value equality
         Map<Object, List<RolBindingRef>> nav = new IdentityHashMap<>(navigatieBindingen);
-        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new EffectieveEenheid(lets));
+        TmsTranspiler t = new TmsTranspiler(m, beanLoader, defaults, nav, new IdentityHashMap<>(rolBindingen),
+                new IdentityHashMap<>(bronPaden), new EffectieveEenheid(lets));
         t.model0 = t.run();
         return t;
     }
@@ -345,6 +371,8 @@ public final class TmsTranspiler {
             weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: tijdlijnen zijn " + BUITEN);
         for (ResolvedDagsoort d : model.resolvedDagsoorten)
             weiger("dagsoortdefinitie", d.naam(), "een DayKindDefinition: dagsoorten zijn " + BUITEN);
+        // the contributions of the folds the lowered forms read; a fold of a refused form left none here
+        for (List<Rule> rs : bijdrageregels.values()) regels.addAll(rs);
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
         List<Rule> standen = new ArrayList<>();
@@ -366,6 +394,7 @@ public final class TmsTranspiler {
 
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
     private List<Rule> meet(String soort, String naam, Supplier<List<Rule>> bouw) {
+        vorm = naam;
         try {
             List<Rule> rules = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
@@ -429,7 +458,9 @@ public final class TmsTranspiler {
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen) uit.add(voorwaardefoutregel(r.naam(), doel.objecttype(), r.voorwaarde(), Set.of(), null));
+        if (kanFalen)
+            uit.add(voorwaardefoutregel(r.naam(), model.geëmitteerdeRegelNaam(r.naam()),
+                    () -> new Lezingen(doel.objecttype()), r.voorwaarde(), null, Lezingen::vastleggen));
         return uit;
     }
 
@@ -594,7 +625,9 @@ public final class TmsTranspiler {
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, subject, r.voorwaarde(), geabsorbeerd, blokkade));
+        if (kanFalen)
+            uit.add(voorwaardefoutregel(naam, regelnaam, () -> lezingen(subject, geabsorbeerd), r.voorwaarde(), blokkade,
+                    Lezingen::vastleggen));
         return uit;
     }
 
@@ -610,32 +643,35 @@ public final class TmsTranspiler {
     // ---------------- an evaluation fault in a condition ----------------
 
     /**
-     * The rule that inserts the fault of a condition that can fault, beside the rule of the form {@code vorm} that tests
-     * the condition. A condition is tested in the left-hand side, and an exception there leaves the fire, where truth
-     * maintenance cannot withdraw it when the reads it rested on change; the form's own rule therefore tests the
-     * condition through {@link #zonderFout}, which does not hold where it faults, and this rule, whose left-hand side is
-     * the form's own built again over fresh declarations, with the same subject pattern ({@code geabsorbeerd}), the same
-     * {@code blokkade} after the test and the test that the condition faults, inserts the named {@link Fout} logically.
-     * It fires exactly where the form's rule tests the condition and the test faults, and the fault goes when a read it
-     * rested on changes. The sentence names the rule as the exec-model branch names a fault in a condition.
+     * The rule that inserts the fault of a condition that can fault, beside the rule {@code regelnaam} of the form
+     * {@code vorm} that tests the condition. A condition is tested in the left-hand side, and an exception there leaves
+     * the fire, where truth maintenance cannot withdraw it when the reads it rested on change; the form's own rule
+     * therefore tests the condition through {@link #zonderFout}, which does not hold where it faults, and this rule,
+     * whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw} sets up the subject
+     * pattern and what precedes it), with the same {@code blokkade} after the test and the test that the condition
+     * faults, inserts the named {@link Fout} logically, on the subject of the form: the fold's subject where the
+     * condition is a fold's filter ({@link Lezingen#drager}). It fires exactly where the form's rule tests the condition
+     * and the test faults, and the fault goes when a read it rested on changes. The sentence names the form's rule as
+     * the exec-model branch names a fault in a condition. {@code vastleggen} registers what the rule reads: at once for
+     * a form, with the form for a fold's contribution rule.
      */
-    private Rule voorwaardefoutregel(String vorm, Objecttype subject, Conditie c, Set<Class<?>> geabsorbeerd,
-                                     Function<Lezingen, RuleItemBuilder<?>> blokkade) {
-        Lezingen lez = lezingen(subject, geabsorbeerd);
+    private Rule voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
+                                     Function<Lezingen, RuleItemBuilder<?>> blokkade, Consumer<Lezingen> vastleggen) {
+        Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = voorwaarde(c, lez);
         lez.stop();
         List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, c);
         if (blokkade != null) items.add(blokkade.apply(lez));
-        String regelnaam = model.geëmitteerdeRegelNaam(vorm);
-        items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
+        String zinregel = model.geëmitteerdeRegelNaam(vorm);
+        items.add(gevolg(lez, lez.foutonderwerp(), posities(gelezen), (drools, onderwerp, w) -> {
             Breuk.DelingDoorNul nul = fout(toets, w);
             if (nul == null)
                 throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
                         + " gevolg, over dezelfde gebonden waarden");
-            drools.logicalInsert(new Fout(onderwerp, vorm, nul.inDeRegel(regelnaam, nul)));
+            drools.logicalInsert(new Fout(onderwerp, vorm, nul.inDeRegel(zinregel, nul)));
         }, lez.variabelen.size()));
-        lez.vastleggen();
+        vastleggen.accept(lez);
         return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
     }
 
@@ -698,7 +734,9 @@ public final class TmsTranspiler {
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, c.subject(), c.assertie(), Set.of(), null));
+        if (kanFalen)
+            uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), () -> new Lezingen(c.subject()),
+                    c.assertie(), null, Lezingen::vastleggen));
         return uit;
     }
 
@@ -949,6 +987,21 @@ public final class TmsTranspiler {
     }
 
     private static String deling(Expr e) {
+        if (e instanceof Expr.Functie f) {
+            for (Expr a : f.argumenten()) {
+                String d = deling(a);
+                if (d != null) return d;
+            }
+            String d = f.leegwaarde() == null ? null : deling(f.leegwaarde());
+            return d != null || f.filter() == null ? d : deling(f.filter());
+        }
+        if (e instanceof Expr.InstanceSetUnion u) {
+            for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+                String d = t.filter() == null ? null : deling(t.filter());
+                if (d != null) return d;
+            }
+            return null;
+        }
         if (!(e instanceof Expr.Binair b)) return null;
         if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return snippet(b.bron());
         String l = deling(b.links());
@@ -1216,8 +1269,7 @@ public final class TmsTranspiler {
             case Expr.ParameterRef p -> { int i = lez.parameter(p.parameter()); yield w -> w[i]; }
             case Expr.Binair b -> binair(b, lez);
             case Expr.TekstReeks t -> throw nietBerekend("TextComposition", t.bron(), NOG_NIET);
-            case Expr.Functie f -> throw nietBerekend(f.elementObjecttype() != null ? "Aggregation" : "BuiltinCall",
-                    f.bron(), BUITEN);
+            case Expr.Functie f -> functie(f, lez);
             case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), BUITEN);
             case Expr.Afgerond a -> throw nietBerekend("Rounding", a.bron(), NOG_NIET);
             case Expr.Begrensd b -> throw nietBerekend("Clamp", b.bron(), NOG_NIET);
@@ -1339,6 +1391,360 @@ public final class TmsTranspiler {
         if (van != null && naar != null && van.convertibleNaar(naar) && van.vereistOmrekening(naar))
             throw new Weigering(plek + " over eenheden die herrekend moeten worden (" + van.afkorting() + " naar "
                     + naar.afkorting() + "): " + NOG_NIET);
+    }
+
+    // ---------------- aggregations ----------------
+
+    /** A fold this branch lowers: the key its contributions carry ({@link Bijdrage#vouw}), its contribution rules (one
+     *  per range, beside the fault rule of a filter that can fault), and the reads of those rules, registered when a
+     *  form that reads the fold lowers ({@link Lezingen#vastleggen}). */
+    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen) {}
+
+    /** The kinds of an aggregation, as against the builtins that share the node. */
+    private static boolean isVouw(Expr.FunctieKind k) {
+        return switch (k) {
+            case SOM, TOTAAL, AANTAL, AANTAL_GEVULDE, MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true;
+            default -> false;
+        };
+    }
+
+    /** The listed fold, "de eerste van A en B": two or more operands and no filter, as against a fold over a set
+     *  source; told apart by the shape, as RUNTIME-SEMANTICS ch. 1.2e does, since the element type the producer stamps
+     *  on it is vestigial. */
+    private static boolean isGelisteVouw(Expr.Functie f) {
+        boolean ordenend = switch (f.kind()) { case MINIMUM, MAXIMUM, EERSTE, LAATSTE -> true; default -> false; };
+        return ordenend && f.argumenten().size() >= 2 && f.filter() == null;
+    }
+
+    /** An aggregation, listed or over a set source; every other function node is a builtin, which this branch does not
+     *  compute yet, and so is a fold over a dimension selection, which reads a dimensioned attribute. */
+    private Waardefunctie functie(Expr.Functie f, Lezingen lez) {
+        if (!isVouw(f.kind())) throw nietBerekend("BuiltinCall", f.bron(), BUITEN);
+        if (f.dimensieSelectie() != null)
+            throw nietBerekend("Aggregation over een dimensieselectie", f.bron(), "gedimensioneerde attributen zijn " + BUITEN);
+        return isGelisteVouw(f) ? gelijsteVouw(f, lez) : vouw(f, lez);
+    }
+
+    /**
+     * A listed fold (RUNTIME-SEMANTICS ch. 1.2e): minimum and eerste keep the least operand value, maximum and laatste
+     * the greatest; a leeg operand is skipped, an all-leeg fold is leeg, and a tie takes the later operand. The operands
+     * are computed from the values the rule binds, in wire order; an operand that would need a restatement into the
+     * first one's unit is refused, as everywhere in this branch.
+     */
+    private Waardefunctie gelijsteVouw(Expr.Functie f, Lezingen lez) {
+        boolean kleinste = f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.EERSTE;
+        Eenheid eerste = eff.eenheidVan(f.argumenten().get(0));
+        List<Waardefunctie> operanden = new ArrayList<>();
+        for (int i = 0; i < f.argumenten().size(); i++) {
+            Expr a = f.argumenten().get(i);
+            if (i > 0) eenheden(eff.eenheidVan(a), eerste, "een §5.8.3 operand van een gelijste vouw");
+            operanden.add(waarde(a, lez));
+        }
+        return w -> {
+            Object acc = null;
+            for (Waardefunctie op : operanden) {
+                Object x = op.van(w);
+                if (x == null) continue;
+                if (acc == null) { acc = x; continue; }
+                int c = vergelijk(acc, x);
+                acc = kleinste ? (c < 0 ? acc : x) : (c > 0 ? acc : x);
+            }
+            return acc;
+        };
+    }
+
+    /** The order of two values a fold compares: numbers exactly, a rational among them included; dates as they order. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static int vergelijk(Object a, Object b) {
+        if (a instanceof Number x && b instanceof Number y) return Breuk.van(x).compareTo(Breuk.van(y));
+        return ((Comparable) a).compareTo(b);
+    }
+
+    /**
+     * A fold over a set source (RUNTIME-SEMANTICS ch. 1.2 "Aggregations", ch. 3.4a-d): an accumulate in this rule's
+     * left-hand side over the contributions ({@link Bijdrage}) that the fold's contribution rules insert for this rule's
+     * subject, one per member of the range that passes the filter ({@link #bijdrageregels}). A contribution rule binds the
+     * member's value and every read of the filter in its own left-hand side, so a member, or a value derived for it, that
+     * changes takes its contribution along, and the accumulate here follows; this rule computes only with what the
+     * accumulate binds. A value fold skips a leeg member, which therefore contributes nothing, and a count counts every
+     * member. Over no contribution a sum is leeg or its fallback, which is computed whether it is used or not
+     * (ch. 5.11), a total 0, both counts 0 and an ordering fold leeg; eerste and laatste are the least and the greatest
+     * value. A count over an instance-set union counts the members its selections select together ({@link #unievouw}).
+     *
+     * <p>Refused by name: a total without a range, which reads the subject's own timeline, and a fold over a member on
+     * a timeline; the timelines are of a later card.
+     */
+    private Waardefunctie vouw(Expr.Functie f, Lezingen lez) {
+        Expr.FunctieKind kind = f.kind();
+        if (kind == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
+                && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
+            int[] i = lez.vouw(unievouw(f, u, lez.subject), null);
+            return w -> aantal(w[i[0]]);
+        }
+        Objecttype elem = f.elementObjecttype();
+        if (elem == null) throw new Weigering("een Aggregation " + kind + " zonder elementtype ('" + snippet(f.bron()) + "')");
+        if (f.argumenten().size() != 1)
+            throw new Weigering("een Aggregation " + kind + " over " + f.argumenten().size() + " operanden met een"
+                    + " elementtype ('" + snippet(f.bron()) + "'): een vouw over een bereik heeft één argument (WF-037)");
+        if (f.leegwaarde() != null && kind != Expr.FunctieKind.SOM)
+            throw new Weigering("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
+                    + " een som heeft er een (WF-037)");
+        boolean telling = kind == Expr.FunctieKind.AANTAL;
+        Expr.AttribuutRef arg = null;
+        if (!telling) {
+            if (!(f.argumenten().get(0) instanceof Expr.AttribuutRef a) || a.attribuut() == null)
+                throw new Weigering("een Aggregation " + kind + " over iets anders dan een attribuut van het element ('"
+                        + snippet(f.bron()) + "')");
+            arg = a;
+        }
+        boolean metBereik = bronPaden.containsKey(f) || rolBindingen.containsKey(f);
+        if (kind == Expr.FunctieKind.TOTAAL && !metBereik)
+            throw nietBerekend("Aggregation total over de eigen tijdlijn", f.bron(), "tijdlijnen zijn " + BUITEN);
+        if (arg != null && Namen.bevatNaam(elem.granulariteitLeden(), arg.attribuut()))
+            throw nietBerekend("Aggregation " + kind + " over het tijdsafhankelijke attribuut '" + arg.attribuut() + "'",
+                    f.bron(), "tijdlijnen zijn " + BUITEN);
+        if (!metBereik)
+            throw new Weigering("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
+                    + " eist een sourceRole of sourcePath");
+        Expr.AttribuutRef lid = arg;
+        Vouw v = vouwVoor(f, lez.subject, (sleutel, naam) -> {
+            List<Lezingen> lezingen = new ArrayList<>();
+            List<Rule> regels = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem),
+                    f.filter(), lid, lezingen);
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen));
+        });
+        if (arg != null && f.leegwaarde() != null)
+            eenheden(eff.eenheidVan(f.leegwaarde()), eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
+        Class<?> functie = switch (kind) {
+            case SOM, TOTAAL -> accumulatiefunctie("BigDecimalSumAccumulateFunction");
+            case MINIMUM, EERSTE -> accumulatiefunctie("MinAccumulateFunction");
+            case MAXIMUM, LAATSTE -> accumulatiefunctie("MaxAccumulateFunction");
+            default -> null;
+        };
+        int[] i = lez.vouw(v, functie);
+        Waardefunctie terugval = f.leegwaarde() == null ? null : waarde(f.leegwaarde(), lez);
+        return switch (kind) {
+            case AANTAL, AANTAL_GEVULDE -> w -> aantal(w[i[0]]);
+            case SOM -> w -> {
+                Object t = terugval == null ? null : terugval.van(w);
+                return leeg(w[i[0]]) ? t : w[i[1]];
+            };
+            case TOTAAL -> w -> leeg(w[i[0]]) ? BigDecimal.ZERO : w[i[1]];
+            default -> w -> leeg(w[i[0]]) ? null : w[i[1]];
+        };
+    }
+
+    private static BigDecimal aantal(Object telling) {
+        return BigDecimal.valueOf(((Number) telling).longValue());
+    }
+
+    private static boolean leeg(Object telling) {
+        return ((Number) telling).longValue() == 0;
+    }
+
+    private static Class<?> accumulatiefunctie(String naam) {
+        try {
+            return Class.forName("org.drools.core.base.accumulators." + naam);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("de Drools-accumulatiefunctie " + naam + " ontbreekt op het classpath", e);
+        }
+    }
+
+    /** The fold of {@code f} on {@code subject}, built by {@code bouw} from its key and its name the first time it is
+     *  read. */
+    private Vouw vouwVoor(Expr.Functie f, Objecttype subject, BiFunction<String, String, Vouw> bouw) {
+        Map<Objecttype, Vouw> perOnderwerp = vouwen.computeIfAbsent(f, k -> new IdentityHashMap<>());
+        Vouw v = perOnderwerp.get(subject);
+        if (v == null) {
+            String naam = "vouw " + vouwteller++;
+            v = bouw.apply(vorm + ": " + naam, naam);
+            perOnderwerp.put(subject, v);
+        }
+        return v;
+    }
+
+    /** The count over an instance-set union (RUNTIME-SEMANTICS ch. 3.4d): a contribution rule per selection, each with
+     *  its own relation and its own filter, all under one key; a member two selections select gives two equal
+     *  contributions, which merge into one fact, so the count is that of the union. */
+    private Vouw unievouw(Expr.Functie f, Expr.InstanceSetUnion u, Objecttype subject) {
+        return vouwVoor(f, subject, (sleutel, naam) -> {
+            List<Rule> regels = new ArrayList<>();
+            List<Lezingen> lezingen = new ArrayList<>();
+            for (int k = 0; k < u.takken().size(); k++) {
+                Expr.InstanceSetUnion.Tak t = u.takken().get(k);
+                if (t.elementType() == null)
+                    throw new Weigering("een selectie zonder elementtype in een InstanceSetUnion ('" + snippet(t.bron()) + "')");
+                regels.addAll(bijdrageregels(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
+                        t.elementType(), eenstapsbereik(t.bronRol(), subject, t.elementType(), snippet(t.bron())),
+                        t.filter(), null, lezingen));
+            }
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen));
+        });
+    }
+
+    /**
+     * The contribution rule of one range of the fold {@code sleutel}: the fold's subject bound first, the member's
+     * pattern joined to it through {@code bereik}, the member's reads, the {@code filter} as the test (the member is the
+     * filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
+     * logically: for a count the member; for a filled count the member where its value is gevuld; for the other folds
+     * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2). Beside it, where the filter can
+     * fault, the rule that inserts the fault on the fold's subject, named after the form that reads the fold. The reads
+     * of the rules go into {@code lezingen}, to be registered with the form.
+     */
+    private List<Rule> bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
+                                      Objecttype elem, Bereik bereik, Conditie filter, Expr.AttribuutRef arg,
+                                      List<Lezingen> lezingen) {
+        Supplier<Lezingen> nieuw = () -> bijdragelezingen(subject, elem, bereik);
+        Lezingen lez = nieuw.get();
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = filter == null ? null : voorwaarde(filter, lez);
+        boolean kanFalen = lez.kanFalen();
+        lez.stop();
+        Set<Integer> gebruik = lez.volg();
+        int lid = lez.lid();
+        int waarde = arg == null ? -1 : lez.eigen(lid(elem, arg.attribuut(), false));
+        lez.stop();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, filter);
+        boolean telling = kind == Expr.FunctieKind.AANTAL, gevuld = kind == Expr.FunctieKind.AANTAL_GEVULDE;
+        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
+            if (telling) {
+                drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], null));
+                return;
+            }
+            Object v = w[waarde];
+            if (v != null) drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], gevuld ? null : collapse(v)));
+        }, lez.variabelen.size()));
+        String regelnaam = model.geëmitteerdeRegelNaam(vorm) + ": bijdrage aan " + naam;
+        List<Rule> uit = new ArrayList<>();
+        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        lezingen.add(lez);
+        if (kanFalen) uit.add(voorwaardefoutregel(vorm, regelnaam, nieuw, filter, null, lezingen::add));
+        return uit;
+    }
+
+    /** The reads of a contribution rule: the member is the subject, the fold's subject is bound before it, and the
+     *  range joins the two. */
+    @SuppressWarnings("unchecked")
+    private Lezingen bijdragelezingen(Objecttype subject, Objecttype elem, Bereik bereik) {
+        Lezingen lez = new Lezingen(elem);
+        lez.drager = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$vouwonderwerp");
+        lez.kop.add(PatternDSL.pattern(lez.drager));
+        bereik.koppel(lez);
+        return lez;
+    }
+
+    /** How a contribution rule joins the member, its subject, to the fold's subject, its {@link Lezingen#drager}: the
+     *  join on the member's pattern, and the intermediates a multi-step range needs right after it. */
+    @FunctionalInterface
+    private interface Bereik {
+        void koppel(Lezingen lid);
+    }
+
+    /** The range of the fold {@code f} from {@code subject} to {@code elem}: its multi-step path, or its one step. */
+    private Bereik bereik(Expr.Functie f, Objecttype subject, Objecttype elem) {
+        List<RolBindingRef> pad = bronPaden.get(f);
+        if (pad != null) return padbereik(pad, subject, elem, snippet(f.bron()));
+        return eenstapsbereik(rolBindingen.get(f), subject, elem, snippet(f.bron()));
+    }
+
+    /**
+     * The one-step range of a fold (IR-SPEC ch. 4.3, {@code sourceRole}), derived from its binding as the exec-model
+     * branch derives it: the bound role is the member's and its sibling the subject's, and §13.3.9 stores the relation in
+     * one scalar bean field on whichever end is the one side. A to-many member role keeps it on the member, named after
+     * the subject's role; a to-one member role keeps it on the subject, named after the member's role. Refused as that
+     * branch refuses them: a binding that names no role pair, a to-one member role whose sibling is to-many (one field
+     * carries both directions there, and that branch keeps refusing the shape until a card of its own measures it), and
+     * a join the bean model gives no field.
+     */
+    private Bereik eenstapsbereik(RolBindingRef rb, Objecttype subject, Objecttype elem, String wat) {
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
+        if (paar == null) throw new Weigering("het bereik van '" + wat + "' noemt geen rolpaar (IR-SPEC ch. 4.3)");
+        String elemRol = paar[0].naam(), terug = paar[1].naam();
+        boolean voorwaarts = !model.naarVeelRol(subject, elem, elemRol);
+        if (voorwaarts && model.naarVeelRol(elem, subject, terug))
+            throw new Weigering("een Aggregation over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
+                    + terug + "' meervoudig is ('" + wat + "'): dat feittype heeft één beanveld voor beide richtingen, en"
+                    + " de exec-modeltak weigert deze vorm voorzichtig tot een eigen kaart haar meet (§13.3.9"
+                    + " opslagrichting)");
+        Objecttype drager = voorwaarts ? subject : elem, doel = voorwaarts ? elem : subject;
+        String rol = voorwaarts ? elemRol : terug;
+        if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel))
+            throw new Weigering("de aggregatie-join van '" + wat + "' heeft geen beanveld — "
+                    + FactModelGenerator.geenJoinveldReden(model, drager, rol, doel) + " (§13.3.9 opslagrichting)");
+        Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
+        return lid -> lid.onderwerp.expr(id("bereik"), lid.drager, voorwaarts
+                ? (e, s) -> veld.apply(s) == e
+                : (e, s) -> veld.apply(e) == s);
+    }
+
+    /**
+     * The multi-step range of a fold (IR-SPEC ch. 4.3, {@code sourcePath}; RUNTIME-SEMANTICS ch. 3.4b), on the plan the
+     * shared {@link Bronpad} derives, lowered as the exec-model branch lowers it: where the walk down from the subject
+     * and the walk up from the member meet, one constraint on the member's pattern; otherwise the intermediates neither
+     * walk determines go into one {@code exists} after the member's pattern, so a member that two intermediates reach
+     * still matches once. Two matches would give two equal contributions, which merge into one fact as well.
+     */
+    private Bereik padbereik(List<RolBindingRef> pad, Objecttype subject, Objecttype elem, String wat) {
+        Bronpad.Plan plan = Bronpad.ontleed(model, subject, pad, elem);
+        if (plan.weigering() != null) throw new Weigering(plan.weigering() + " ('" + wat + "')");
+        if (plan.ontmoet()) {
+            int m = plan.ontmoeting();
+            List<String> vanafLid = plan.ketenVanafElement(m), vanafOnderwerp = plan.ketenVanafOnderwerp(m);
+            return lid -> lid.onderwerp.expr(id("pad"), lid.drager, (e, s) -> {
+                Object a = wandel(e, vanafLid), b = wandel(s, vanafOnderwerp);
+                return a != null && a == b;
+            });
+        }
+        return lid -> {
+            Map<Integer, Variable<Object>> tussen = new LinkedHashMap<>();
+            for (int i : plan.tussenknopen()) tussen.put(i, tussenknoop(plan.knoopTypen().get(i)));
+            List<PatternDSL.PatternDef<Object>> patronen = new ArrayList<>();
+            int laatste = plan.achterwaartsVanaf() - 1;
+            for (Map.Entry<Integer, Variable<Object>> e : tussen.entrySet()) {
+                int i = e.getKey();
+                PatternDSL.PatternDef<Object> p = koppel(PatternDSL.pattern(e.getValue()), plan, i, i, tussen, lid);
+                if (i == laatste) p = koppel(p, plan, plan.achterwaartsVanaf(), i, tussen, lid);
+                patronen.add(p);
+            }
+            lid.bereik.add(DSL.exists(patronen.get(0),
+                    patronen.subList(1, patronen.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0])));
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private Variable<Object> tussenknoop(Objecttype t) {
+        return (Variable<Object>) DSL.declarationOf(bonenklasse(t), "$tussen_" + id("pad"));
+    }
+
+    /** Constrains {@code p}, the pattern of node {@code dit} of {@code plan}, with hop {@code stap}, which connects nodes
+     *  {@code stap - 1} and {@code stap}; its other end is read through whichever walk determines it: the subject's
+     *  (a forward prefix), the member's (a backward suffix) or an intermediate declared before it. */
+    private PatternDSL.PatternDef<Object> koppel(PatternDSL.PatternDef<Object> p, Bronpad.Plan plan, int stap, int dit,
+                                                Map<Integer, Variable<Object>> tussen, Lezingen lid) {
+        int ander = stap - 1 == dit ? stap : stap - 1;
+        boolean ditIsDoel = ander == stap - 1;
+        List<String> keten = ander <= plan.voorwaarts() ? plan.ketenVanafOnderwerp(ander)
+                : ander >= plan.achterwaartsVanaf() ? plan.ketenVanafElement(ander) : List.of();
+        Variable<Object> anderVar = ander <= plan.voorwaarts() ? lid.drager
+                : ander >= plan.achterwaartsVanaf() ? lid.s : tussen.get(ander);
+        String veld = plan.stappen().get(stap - 1).beanveld();
+        boolean achterwaarts = plan.stappen().get(stap - 1).achterwaarts();
+        return p.expr(id("pad"), anderVar, (t, o) -> {
+            Object x = wandel(o, keten);
+            if (x == null || t == null) return false;
+            Object bron = ditIsDoel ? x : t, doel = ditIsDoel ? t : x;
+            return achterwaarts ? RegelSpraakRuntime.get(doel, veld) == bron : RegelSpraakRuntime.get(bron, veld) == doel;
+        });
+    }
+
+    /** A chain of to-one reference fields, leeg-safe: a broken link reads as null, and the member drops out. */
+    private static Object wandel(Object start, List<String> velden) {
+        Object cur = start;
+        for (String v : velden) {
+            if (cur == null) return null;
+            cur = RegelSpraakRuntime.get(cur, v);
+        }
+        return cur;
     }
 
     /** A division whose dividend and divisor are bound reads: the indices of the two. */
@@ -1596,12 +2002,31 @@ public final class TmsTranspiler {
         private Set<Integer> gebruik;
         /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault. */
         private boolean falen;
+        /** In a contribution rule of a fold ({@link #bijdrageregels}), the fold's subject, bound before the subject
+         *  pattern, which is the member's; null in every other rule. */
+        Variable<Object> drager;
+        /** The patterns before the subject pattern: the fold subject's in a contribution rule. */
+        final List<RuleItemBuilder<?>> kop = new ArrayList<>();
+        /** The patterns right after the subject pattern: the existential intermediates of a multi-step range. */
+        final List<RuleItemBuilder<?>> bereik = new ArrayList<>();
+        /** The folds this rule reads, registered with it ({@link #vastleggen}). */
+        private final List<Vouw> vouwen = new ArrayList<>();
 
         @SuppressWarnings("unchecked")
         Lezingen(Objecttype subject) {
             this.subject = subject;
             this.s = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$onderwerp");
             this.onderwerp = PatternDSL.pattern(s);
+        }
+
+        /** The object a fault of this rule's condition stands on: the subject of the form, which in a contribution
+         *  rule is the fold's subject and not the member. */
+        Variable<Object> foutonderwerp() { return drager != null ? drager : s; }
+
+        /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
+        int lid() {
+            int bekend = bestaand("onderwerp zelf");
+            return bekend >= 0 ? bekend : nieuw("onderwerp zelf", s);
         }
 
         /** The left-hand side of the rule, once its condition and its value are compiled: the subject pattern with its
@@ -1615,8 +2040,9 @@ public final class TmsTranspiler {
          *  the control-fact patterns of a default, so that a default a higher one displaced is not tested at all. */
         List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
                                             List<RuleItemBuilder<?>> stuur) {
-            List<RuleItemBuilder<?>> items = new ArrayList<>();
+            List<RuleItemBuilder<?>> items = new ArrayList<>(kop);
             items.add(onderwerp);
+            items.addAll(bereik);
             items.addAll(parameters);
             items.addAll(standen);
             items.addAll(stuur);
@@ -1640,7 +2066,7 @@ public final class TmsTranspiler {
         boolean kanFalen() { return falen; }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
-         *  standings it needs. */
+         *  standings it needs, and the contribution rules of its folds with what those read. */
         void vastleggen() {
             gelezen.putAll(afgeleid);
             for (Padlezing p : paden.values()) {
@@ -1648,6 +2074,38 @@ public final class TmsTranspiler {
                 gelezen.putIfAbsent(p.lid().sleutel(), p.lid());
             }
             kanalen.addAll(kanaalnamen);
+            for (Vouw v : vouwen) {
+                bijdrageregels.putIfAbsent(v.sleutel(), v.regels());
+                for (Lezingen l : v.lezingen()) l.vastleggen();
+            }
+        }
+
+        /**
+         * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
+         * accumulate over them that counts them and, where {@code functie} names an accumulate function, folds their
+         * values with it. Returns the index of the count and that of the folded value (-1 without one). An accumulate
+         * over no contribution still binds a row, through the count, so the rule reads an empty fold as well.
+         */
+        int[] vouw(Vouw v, Class<?> functie) {
+            vouwen.add(v);
+            String sleutel = v.sleutel();
+            int bekend = bestaand("vouw " + sleutel);
+            if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel)};
+            Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
+            PatternDSL.PatternDef<Bijdrage> p = PatternDSL.pattern(b).expr(id("vouw"), x -> x.vouw().equals(sleutel))
+                    .expr(id("vouw-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+            Variable<Object> aantal = DSL.declarationOf(Object.class, "$aantal_" + id("vouw"));
+            if (functie == null) {
+                standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
+                        .as(aantal)));
+                return new int[]{nieuw("vouw " + sleutel, aantal), -1};
+            }
+            Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
+            Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
+            p.bind(bijdragewaarde, Bijdrage::waarde);
+            standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b).as(aantal),
+                    DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
+            return new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst)};
         }
 
         /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:
@@ -1844,10 +2302,15 @@ public final class TmsTranspiler {
     }
 
     /** A consequence over the subject and the values at {@code pos}, of any number. */
-    @SuppressWarnings("rawtypes")
     private static RuleItemBuilder<?> gevolg(Lezingen lez, int[] pos, Gevolgfunctie f, int n) {
+        return gevolg(lez, lez.s, pos, f, n);
+    }
+
+    /** A consequence over {@code onderwerp} and the values at {@code pos}, of any number. */
+    @SuppressWarnings("rawtypes")
+    private static RuleItemBuilder<?> gevolg(Lezingen lez, Variable<?> onderwerp, int[] pos, Gevolgfunctie f, int n) {
         Variable[] v = new Variable[pos.length + 1];
-        v[0] = lez.s;
+        v[0] = onderwerp;
         for (int j = 0; j < pos.length; j++) v[j + 1] = lez.variabelen.get(pos[j]);
         return new Gevolg(v, (drools, args) -> {
             Object[] w = new Object[n];

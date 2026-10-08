@@ -160,6 +160,64 @@ final class TmsDocumenten {
                 + "\",\"objectType\":\"" + typeB + "\",\"many\":false}]}";
     }
 
+    /** A fact type of a to-one role {@code rolEen} played by {@code typeEen} and a to-many role {@code rolVeel}, plural
+     *  {@code meervoud}, played by {@code typeVeel}: each {@code typeVeel} relates to at most one {@code typeEen}. */
+    static String feittypeEenNaarVeel(String naam, String rolEen, String typeEen, String rolVeel, String typeVeel,
+                                      String meervoud) {
+        return "{\"node\":\"FactType\",\"name\":\"" + naam + "\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\",\"name\":\""
+                + rolEen + "\",\"objectType\":\"" + typeEen + "\",\"many\":false},{\"node\":\"Role\",\"name\":\"" + rolVeel
+                + "\",\"objectType\":\"" + typeVeel + "\",\"plural\":\"" + meervoud + "\",\"many\":true}]}";
+    }
+
+    /** A RoleBinding: the role {@code rol} of fact type {@code feittype}. */
+    static String rolbinding(String feittype, String rol) {
+        return "{\"node\":\"RoleBinding\",\"factType\":\"" + feittype + "\",\"role\":\"" + rol + "\"}";
+    }
+
+    static final String TELLING = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
+
+    /** An Aggregation over a set source: {@code kind} in its wire spelling ({@code count}, {@code sum}, …), its one
+     *  {@code argument}, the {@code elementType}, the range as {@code "sourceRole":…} or {@code "sourcePath":[…]}, a
+     *  {@code filter} and an {@code emptyFallback} (each "null" for none), and the result {@code type}. */
+    static String aggregatie(String kind, String argument, String elementType, String bereik, String filter,
+                             String terugval, String type, String bron) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + argument + "],\"elementType\":\""
+                + elementType + "\"" + (filter.equals("null") ? "" : ",\"filter\":" + filter)
+                + (terugval.equals("null") ? "" : ",\"emptyFallback\":" + terugval) + "," + bereik + ",\"type\":" + type
+                + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    }
+
+    /** The range of a fold over one relation step. */
+    static String bronrol(String feittype, String rol) {
+        return "\"sourceRole\":" + rolbinding(feittype, rol);
+    }
+
+    /** The range of a fold over two or more relation steps, each a RoleBinding. */
+    static String bronpad(List<String> stappen) {
+        return "\"sourcePath\":[" + String.join(",", stappen) + "]";
+    }
+
+    /** A listed fold, "de eerste/laatste/minimale/maximale van A en B …", over the {@code operanden}. */
+    static String gelijsteVouw(String kind, List<String> operanden, String type, String bron) {
+        return "{\"node\":\"Aggregation\",\"kind\":\"" + kind + "\",\"arguments\":[" + String.join(",", operanden)
+                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    }
+
+    /** An instance of the case whose roles may link several instances each, by role name. */
+    static String instantieMetRollen(String label, String type, Map<String, String> getallen, List<String> kenmerken,
+                                     Map<String, List<String>> rollen) {
+        List<String> a = new ArrayList<>(), k = new ArrayList<>(), r = new ArrayList<>();
+        getallen.forEach((naam, lexeem) -> a.add("\"" + naam + "\":{\"number\":\"" + lexeem + "\"}"));
+        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
+        rollen.forEach((rol, doelen) -> {
+            List<String> d = new ArrayList<>();
+            for (String doel : doelen) d.add("\"" + doel + "\"");
+            r.add("\"" + rol + "\":[" + String.join(",", d) + "]");
+        });
+        return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
+                + "},\"roles\":{" + String.join(",", r) + "},\"characteristics\":[" + String.join(",", k) + "]}";
+    }
+
     static String model(List<String> objecttypen, List<String> feittypen) {
         return model(objecttypen, feittypen, List.of());
     }

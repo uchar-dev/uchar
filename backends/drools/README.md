@@ -150,12 +150,32 @@ contract, a bug, and also a date step past the range of `java.time`, which the s
 `DateTimeException`; that range is not the one RUNTIME-SEMANTICS ch. 3.8 names, so the branch does not take it for the
 fault of that chapter.
 
+**Aggregations.** A fold over a set source (`count`, `filledCount`, `sum` with its `emptyFallback`, a `total` over
+members that are not time-dependent, `minimum`, `maximum`, `first`, `last`) is an accumulate in the left-hand side of
+the rule that reads it, over `Bijdrage` facts: one per member of the range that passes the fold's filter, inserted
+logically by a contribution rule of the fold. That rule binds the fold's subject, the member joined to it through the
+range (`sourceRole`, or `sourcePath` on the plan of `transpiler/kern/Bronpad`, with the intermediates in an `exists`),
+the member's value and every read of the filter, with the member as the filter's subject; a member whose value or
+filter reading changes gives up its contribution and makes the new one, and the accumulate follows. A value fold skips
+a leeg member, a count counts every member, and over no contribution a sum is leeg or its fallback, a total 0, a count
+0 and an ordering fold leeg, since the accumulate always binds the count beside the folded value; `first` and `last`
+are the least and the greatest value. Equal contributions merge into one fact, so a member that a multi-step range
+reaches along two routes, or that two selections of an `InstanceSetUnion` select, contributes once (RUNTIME-SEMANTICS
+ch. 3.4b, 3.4d). When the result of an accumulate changes, the activation that read it fires again and Drools
+withdraws the logical facts its earlier firing inserted and did not insert again: one `Waarde` stays for the target.
+A listed fold ("de eerste van A en B") is computed from its operands' bound values. A fault in a fold's filter is a
+fault fact on the fold's subject, named after the rule that reads the fold. Witness `TmsAggregatieWitnessTest`.
+
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them aggregations, built-in calls and quantifier folds, role membership, `Let`
-  and `IfThenElse`, object and fact creation, allocation, uniqueness, day kinds, timelines, time windows and
-  dimensions;
+- the forms outside the trial, among them built-in calls and quantifier folds, role membership, `Let` and
+  `IfThenElse`, object and fact creation, allocation, uniqueness, day kinds, timelines (a total over the subject's own
+  timeline or over a time-dependent member among them), time windows and dimensions (a fold over a dimension selection
+  among them);
+- the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
+  a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
+  role whose sibling is to-many;
 - the forms not built yet, among them rounding, clamp, text composition, `power` and `percentageOf`, percentages, and
   a version or a defaults group with a bounded validity (the branch binds no evaluation date yet);
 - what the design cannot carry: two computing rules or two initialisations on one target, which the exec-model branch
