@@ -95,12 +95,13 @@ import java.util.function.UnaryOperator;
  * bean pattern, over the reference fields where the read navigates; a derived member is read through its total
  * standing ({@link KenmerkStand}, {@link Stand}), over a path through {@link PadStand}, a positive pattern whatever
  * polarity a check tests; a parameter is bound through a declaration of its own. The case input stays stated on the
- * beans and the branch never writes a bean while it fires; {@link #zetAfgeleideWaarden} writes the derivations onto the
- * beans afterwards.
+ * beans and the branch never writes a bean while it fires, so an initialisation's guard reads the input of its derived
+ * target off the bean as well; {@link #zetAfgeleideWaarden} writes the derivations onto the beans afterwards.
  *
- * <p>What it lowers: a characteristic attribution, and an assignment or a computation of an attribute of the subject
- * that is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8), always valid, with the §6.5
- * deposit of a division by leeg, whose condition is built from characteristic checks
+ * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject that
+ * is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
+ * initialisation, the desugaring domain of ch. 7.7); and an initialisation (ch. 5.4), the only one on its target. Each
+ * always valid, with the §6.5 deposit of a division by leeg, whose condition is built from characteristic checks
  * (own or over a path, negated or not), comparisons, leeg and gevuld tests and {@code Compound}s of those under any
  * quantifier, and whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, or a sum,
  * difference, product or quotient of those, or a date plus or minus a duration. Every other form is in the coverage
@@ -131,6 +132,8 @@ public final class TmsTranspiler {
     private Map<ElementSleutel, Set<String>> schrijvers = Map.of();
     /** Per attribute, the assignments and computations of the document that write it. */
     private final Map<ElementSleutel, List<ResolvedRegel>> rekenregels = new LinkedHashMap<>();
+    /** Per attribute, the initialisations of the document that write it. */
+    private final Map<ElementSleutel, List<ResolvedRegel>> initialisaties = new LinkedHashMap<>();
     /** The members a defaults group writes, on their declaring type. */
     private final Set<ElementSleutel> defaultsdoelen = new LinkedHashSet<>();
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified as the
@@ -246,13 +249,18 @@ public final class TmsTranspiler {
     private Model run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
-        // an initialisation is not counted here: one computing rule and one initialisation on a target is a pair the
-        // branch carries (the initialisation falls through below the rule), two of either kind is not
-        for (ResolvedRegel r : model.resolvedRegels)
-            if ((r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING)
-                    && r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null)
-                rekenregels.computeIfAbsent(ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false),
+        // computing rules and initialisations are counted apart: one of each on a target is a pair the branch carries
+        // (the initialisation falls through below the rule), two of either kind is not
+        for (ResolvedRegel r : model.resolvedRegels) {
+            if (!(r.doel() instanceof Expr.AttribuutRef d) || d.objecttype() == null || d.attribuut() == null) continue;
+            Map<ElementSleutel, List<ResolvedRegel>> per =
+                    r.soort() == ResolvedRegel.Soort.GELIJKSTELLING || r.soort() == ResolvedRegel.Soort.BEREKENING
+                            ? rekenregels
+                            : r.soort() == ResolvedRegel.Soort.INITIALISATIE ? initialisaties : null;
+            if (per != null)
+                per.computeIfAbsent(ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false),
                         k -> new ArrayList<>()).add(r);
+        }
         for (PrioritizedDefaults p : defaults)
             if (p.doel() != null)
                 defaultsdoelen.add(ProducentConsument.elementVan(model.objecttypeOpNaam(p.onderwerp()), p.doel(),
@@ -331,8 +339,7 @@ public final class TmsTranspiler {
         return List.of(switch (r.soort()) {
             case KENMERKTOEKENNING -> kenmerkRegel(r, doel);
             case GELIJKSTELLING, BEREKENING -> rekenRegel(r, doel);
-            case INITIALISATIE -> throw new Weigering("een initialisatie (van '" + doel.attribuut() + "' van "
-                    + doel.objecttype().naam + "): " + NOG_NIET);
+            case INITIALISATIE -> initialisatieRegel(r, doel);
         });
     }
 
@@ -363,12 +370,14 @@ public final class TmsTranspiler {
     /**
      * An assignment or a computation of an attribute of the subject: the left-hand side of a characteristic attribution,
      * and a consequence that computes the value from the values it binds and inserts a {@link Waarde} logically when the
-     * value is gevuld. A computed leeg writes nothing, so the input on the target stands (the standing norm of
-     * RUNTIME-SEMANTICS ch. 7.8: the rule is its target's only writer, which this method demands). A division by a
-     * numeric zero leaves the consequence as the fault it is, a {@code ConsequenceException} that names the rule. A
-     * division of a filled dividend by a leeg divisor inserts the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the
-     * same consequence, for the divisions the exec-model branch gives a companion (both operands a read of an attribute,
-     * of the subject or one role away), under the rule's name: the condition of the rule holds there by construction.
+     * value is gevuld. A computed leeg writes nothing, so the input on the target stands, or the initialisation beside the
+     * rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is its
+     * target's only computing writer, beside at most one unconditional initialisation, which this method demands). A
+     * division by a numeric zero leaves the consequence as the fault it is, a {@code ConsequenceException} that names the
+     * rule. A division of a filled dividend by a leeg divisor inserts the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2
+     * from the same consequence, for the divisions the exec-model branch gives a companion (both operands a read of an
+     * attribute, of the subject or one role away), under the rule's name: the condition of the rule holds there by
+     * construction.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
@@ -382,16 +391,75 @@ public final class TmsTranspiler {
             throw new Weigering("twee of meer rekenende regels op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
                     + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList()) + "): hun"
                     + " v0-betekenis is de volgorde op de agenda (RUNTIME-SEMANTICS ch. 7.7, WF-079)");
-        if (defaultsdoelen.contains(sleutel))
-            throw new Weigering("een doel dat ook een defaultsgroep schrijft ('" + lid.naam() + "' van "
-                    + lid.declarant().naam + "): " + NOG_NIET);
+        if (defaultsdoelen.contains(sleutel)) throw defaultsdoel(lid);
         // the consequence below writes nothing for a computed leeg, which is the semantics on a standing target only;
         // off that domain a computed leeg empties the target, and no fact of this branch says so
         if (!staandeDoelen.staandScalair(r))
             throw new Weigering("een rekenende regel op een doel buiten het staande domein ('" + lid.naam() + "' van "
                     + lid.declarant().naam + "), waar een berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch."
                     + " 7.8): " + NOG_NIET);
-        Lezingen lez = new Lezingen(doel.objecttype());
+        return schrijfregel(r, doel.objecttype(), lid, null);
+    }
+
+    /** A target a defaults group writes, directly or through the fold of RUNTIME-SEMANTICS ch. 7.10: the key is the
+     *  declaring type's, so a group on any type that has the attribute meets a rule on any other, a sibling subtype
+     *  included, where the fold stacks nothing. */
+    private static Weigering defaultsdoel(Lid lid) {
+        return new Weigering("een doel dat ook een defaultsgroep schrijft ('" + lid.naam() + "' van " + lid.declarant().naam
+                + "): " + NOG_NIET);
+    }
+
+    /**
+     * An initialisation (RUNTIME-SEMANTICS ch. 5.4): the left-hand side and the consequence of a computing rule, under a
+     * guard that reads the input and the other writers' values, never its own write. The target must be empty on the
+     * bean, which holds the case input and is not written while the session fires, and no {@link Waarde} of another
+     * writer may stand on it, so a computed value displaces the initialisation whichever fires first, and a
+     * computation that is leeg writes nothing and lets the initialisation fill the target (ch. 7.3). Its own
+     * {@link Waarde} carries its name as the writer and does not match the guard: the value is an equation like any
+     * attribute write, withdrawn and computed again when a value it reads changes. A guard that counted the own write
+     * blocked the initialisation the moment it wrote and truth maintenance withdrew the value: on one object the target
+     * ended leeg without a message (the trial's A5, and the first case of {@code jutterswet-initialisatievolgorde} on
+     * this branch), on several the session reached the fire cap (measured 2026-10-08,
+     * {@code TmsInitialisatieWitnessTest}).
+     *
+     * <p>Two initialisations on one target are ill-formed, conditional or not (IR-SPEC WF-079): where both apply,
+     * nothing ranks them. The backend runs no verifier, so this refuses the pair by name; the key is the declaring
+     * type's, as for two computing rules, so two initialisations on sibling subtypes are refused as well, which
+     * WF-079, read per concrete type, does not pair.
+     */
+    private Rule initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+        Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
+        ElementSleutel sleutel = lid.sleutel();
+        // a target with a defaults group is not WF-079's to speak about: the fold stacks the initialisation below it
+        if (defaultsdoelen.contains(sleutel)) throw defaultsdoel(lid);
+        List<ResolvedRegel> schrijvend = initialisaties.get(sleutel);
+        if (schrijvend.size() > 1)
+            throw new Weigering("twee of meer initialisaties op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
+                    + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList())
+                    + "), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de"
+                    + " waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)");
+        Function<Object, Object> invoer = Accessors.getter(lid.klasse(), lid.naam());
+        String naam = r.naam();
+        return schrijfregel(r, doel.objecttype(), lid, lez -> {
+            lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
+            Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
+            return DSL.not(PatternDSL.pattern(w)
+                    .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
+                    .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o));
+        });
+    }
+
+    /**
+     * The rule of a form that writes an attribute of its subject: the subject pattern with the reads its condition and
+     * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
+     * reads, the {@code blokkade} the form adds (null for none), and a consequence that computes the value from the
+     * values it binds and inserts a {@link Waarde} logically, with the form's name as the writer, when the value is
+     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes.
+     */
+    private Rule schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
+                              Function<Lezingen, RuleItemBuilder<?>> blokkade) {
+        ElementSleutel sleutel = lid.sleutel();
+        Lezingen lez = new Lezingen(subject);
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         lez.stop();
@@ -403,6 +471,7 @@ public final class TmsTranspiler {
         // the write boundary: the value in the target's declared unit (RUNTIME-SEMANTICS ch. 2.4)
         eenheden(eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
         List<RuleItemBuilder<?>> items = lez.linkerkant(toets, gelezen, r.voorwaarde());
+        if (blokkade != null) items.add(blokkade.apply(lez));
         String naam = r.naam();
         int[] posities = posities(gebruik);
         int n = lez.variabelen.size();
@@ -1057,10 +1126,10 @@ public final class TmsTranspiler {
 
     /**
      * The three generic rules that keep one {@link KenmerkStand} per object of the declaring type: waar from the input,
-     * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation, {@code not
-     * HeeftKenmerk}, and reads the input in its left-hand side, so a derivation that appears later retracts the onwaar
-     * standing and every conclusion that read it. When both sources hold, the two waar standings are equal, and truth
-     * maintenance keeps them as one fact with a justification each.
+     * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation over a
+     * characteristic, {@code not HeeftKenmerk}, and reads the input in its left-hand side, so a derivation that appears
+     * later retracts the onwaar standing and every conclusion that read it. When both sources hold, the two waar
+     * standings are equal, and truth maintenance keeps them as one fact with a justification each.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> kenmerkstandregels(Lid lid) {

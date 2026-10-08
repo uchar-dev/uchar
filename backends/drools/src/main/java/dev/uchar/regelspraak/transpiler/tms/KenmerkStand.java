@@ -8,7 +8,7 @@ import java.util.Objects;
  * The standing of one derived characteristic on one object, total: at the fixpoint there is exactly one per (object,
  * characteristic), {@code waar} when the case input sets the characteristic or a {@link HeeftKenmerk} for it exists,
  * {@code onwaar} otherwise. A condition reads a derived characteristic through this fact, as a positive pattern,
- * whichever polarity it tests. The only negation of the branch then sits in the generic rule that derives the
+ * whichever polarity it tests. The only negation over a characteristic then sits in the generic rule that derives the
  * {@code onwaar} standing ({@code not HeeftKenmerk}), and a check in a condition, negated or inside a composite, is a
  * predicate over a bound value. Reading {@code not HeeftKenmerk} in every consumer instead would spread the negation
  * over every rule and leave the input, which a case sets on the bean, as a second source each consumer has to

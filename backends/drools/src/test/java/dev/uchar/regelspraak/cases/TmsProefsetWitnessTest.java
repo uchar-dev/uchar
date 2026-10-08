@@ -25,6 +25,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * &lt;tms-transpiler SKIP: defaults: erkende meldingsdatum — …&gt; but was: &lt;tms-transpiler SKIP: regel:
  * aanmelddatum van een vondst — een attribuutdoel (gelijkstelling van 'aanmelddatum' van Vondst): de
  * truth-maintenance-tak leidt nog alleen kenmerken af&gt;".
+ *
+ * <p><b>Red before the initialisation</b> (measured 2026-10-08 on the branch's second step): the first row failed on
+ * "jutterswet-initialisatievolgorde: Result[status=EXCLUDE, reason=tms-transpiler SKIP: regel: standaardbergloon — een
+ * initialisatie (van 'bergloon' van Vondst): de truth-maintenance-tak draagt deze vorm nog niet, caseFailures=[],
+ * casesPlayed=0] ==&gt; expected: &lt;PLAYED&gt; but was: &lt;EXCLUDE&gt;", the second on
+ * "jutterswet-wrakinitialisatie ==&gt; expected: &lt;tms-transpiler SKIP: regel: standaardbergloon — een doel dat ook
+ * een defaultsgroep schrijft ('bergloon' van Vondst): …&gt; but was: &lt;tms-transpiler SKIP: regel: standaardbergloon
+ * — een initialisatie (van 'bergloon' van Vondst): de truth-maintenance-tak draagt deze vorm nog niet&gt;". With a
+ * guard that counted the initialisation's own write, the first row failed on the golden's cases, "case1-beide-
+ * geschreven.json: attribuut bergloon: verwacht 26.00, werkelijk leeg; attribuut vindloon: verwacht 18.00, werkelijk
+ * leeg, case2-voorwaarde-onwaar.json: attribuut vindloon: verwacht 14.00, werkelijk leeg, case4-per-vondst.json: geen
+ * fixpunt (kringverwijzing?)" ({@link TmsInitialisatieWitnessTest}).
  */
 class TmsProefsetWitnessTest {
 
@@ -33,19 +45,19 @@ class TmsProefsetWitnessTest {
 
     @Test void de_goldens_die_de_tak_draagt_spelen_elke_case() throws Exception {
         speelt("anchor/jutterswet-kustwacht", 2);
+        speelt("jutterswet-initialisatievolgorde", 4);
+        speelt("jutterswet-voorwaardelijke-initialisatie", 4);
     }
 
     /** Each by the first form its manifest refuses. The manifest lists the rules before every other family, so a golden
      *  refused on a later family has every rule lowered. */
     @Test void de_goldens_die_de_tak_nog_niet_draagt_blijven_geweigerd() throws Exception {
-        String initialisatie = "tms-transpiler SKIP: regel: standaardbergloon — een initialisatie (van 'bergloon' van"
-                + " Vondst): " + NOG_NIET;
         Map<String, String> weigering = new LinkedHashMap<>();
         weigering.put("jutterswet-meldingsketen",
                 "tms-transpiler SKIP: defaults: erkende meldingsdatum — een PrioritizedDefaults: " + NOG_NIET);
-        weigering.put("jutterswet-initialisatievolgorde", initialisatie);
-        weigering.put("jutterswet-voorwaardelijke-initialisatie", initialisatie);
-        weigering.put("jutterswet-wrakinitialisatie", initialisatie);
+        // the initialisation on the supertype folds into the subtype's defaults stack (RUNTIME-SEMANTICS ch. 7.10)
+        weigering.put("jutterswet-wrakinitialisatie", "tms-transpiler SKIP: regel: standaardbergloon — een doel dat ook"
+                + " een defaultsgroep schrijft ('bergloon' van Vondst): " + NOG_NIET);
         weigering.put("anchor/jutterswet-nestdiepte",
                 "tms-transpiler SKIP: defaults: heffing van een jutter (nestdiepte) — een PrioritizedDefaults: " + NOG_NIET);
         weigering.put("anchor/jutterswet-nestuitzondering",
