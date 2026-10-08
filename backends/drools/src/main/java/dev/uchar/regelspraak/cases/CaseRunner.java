@@ -81,6 +81,9 @@ public final class CaseRunner {
     /** The exec branch's coverage manifest, every construct lowered (a build refuses any other): what the scenario
      *  report's coverage ranges over ({@link #rapport}). Empty for the DRL-text branch, which reports nothing. */
     private List<Dekking> dekking = List.of();
+    /** The build this runner fires: the truth-maintenance branch puts its derivations on the beans only after a fire
+     *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the transpiler that made them. */
+    private DroolsBackend.Build bouw;
 
     /** The members of the model without a bean field of their own ({@link FactModelGenerator#verdringingen}): a
      *  case that sets or reads one is refused by name, since the replay would reach the field of the declaration
@@ -103,7 +106,7 @@ public final class CaseRunner {
     /** Load {@code irPath}, build the KieBase, and replay each of {@code casePaths}. Any {@link Excluded}
      *  (loader refusal, transpiler marker, contract violation, unsupported form) becomes an EXCLUDE result. */
     public static Result runGolden(Path irPath, List<Path> casePaths) {
-        return replay(irPath, casePaths, false);
+        return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     /** The same replay through the OTHER transpiler branch: {@link DrlTranspiler} emits DRL TEXT, which
@@ -115,7 +118,14 @@ public final class CaseRunner {
      *  Before that card it was the harness/measurement entry only; gate 13 has driven it since
      *  2026-09-04. */
     public static Result viaDrlTekst(Path irPath, List<Path> casePaths) {
-        return replay(irPath, casePaths, true);
+        return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TEXT);
+    }
+
+    /** The same replay through the truth-maintenance branch ({@code TmsTranspiler}), which derives with logical
+     *  inserts and puts its derivations on the beans after the fire. A trial branch: no gate sweeps it, and a document
+     *  whose forms it does not carry is an EXCLUDE naming the first one. */
+    public static Result viaTruthMaintenance(Path irPath, List<Path> casePaths) {
+        return replay(irPath, casePaths, DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 
     /** The exec-model branch under a name the witness tree may spell. Identical to the public gate entry
@@ -127,12 +137,12 @@ public final class CaseRunner {
      *  Package-private, like the other three witness seams below: no production caller, and no second
      *  public way in. */
     static Result viaExecModel(Path irPath, List<Path> casePaths) {
-        return replay(irPath, casePaths, false);
+        return replay(irPath, casePaths, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    private static Result replay(Path irPath, List<Path> casePaths, boolean viaDrl) {
+    private static Result replay(Path irPath, List<Path> casePaths, DroolsBackend.Branch tak) {
         try {
-            CaseRunner runner = build(irPath, viaDrl);
+            CaseRunner runner = build(irPath, tak);
             List<String> failures = new ArrayList<>();
             int played = 0;
             for (Path cp : casePaths) {
@@ -321,26 +331,32 @@ public final class CaseRunner {
      *  disk twice and read two {@link Result}s, which reports a whole golden's status where the row wants a
      *  single cell's verdict. Package-private, no production caller. */
     static String speelCase(Path irPath, JsonNode c, boolean viaDrl) throws java.io.IOException {
-        return build(irPath, viaDrl).runCase("case", c);
+        return build(irPath, viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL).runCase("case", c);
+    }
+
+    /** The same comparator seam through any of the three branches, the truth-maintenance branch among them, which the
+     *  boolean seam above cannot name. Package-private, no production caller. */
+    static String speelCase(Path irPath, JsonNode c, DroolsBackend.Branch tak) throws java.io.IOException {
+        return build(irPath, tak).runCase("case", c);
     }
 
     /** Build {@code irPath} on the exec-model branch. Throws {@link Excluded} / {@link IrLoader.Refusal} for any
      *  form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
-        return build(irPath, false);
+        return build(irPath, DroolsBackend.Branch.EXEC_MODEL);
     }
 
-    /** As above, with {@code viaDrl} choosing WHICH transpiler branch produces the KieBase: the exec-model
-     *  back-end (false) or {@link DrlTranspiler}'s DRL TEXT (true). The whole prelude — load,
+    /** As above, with {@code tak} choosing WHICH transpiler branch produces the KieBase: the exec-model back-end,
+     *  {@link DrlTranspiler}'s DRL TEXT, or the truth-maintenance trial. The whole prelude — load,
      *  refuse, beans, contract, lowering with every side table, coverage check, KieBase — is
      *  {@link DroolsBackend#build(Path, DroolsBackend.Branch)}, the backend's public entry, so the green replay,
      *  the red probe and every witness seam build exactly as a consumer of the backend does. */
-    private static CaseRunner build(Path irPath, boolean viaDrl) throws java.io.IOException {
-        DroolsBackend.Build b = DroolsBackend.build(irPath,
-                viaDrl ? DroolsBackend.Branch.DRL_TEXT : DroolsBackend.Branch.EXEC_MODEL);
+    private static CaseRunner build(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
+        DroolsBackend.Build b = DroolsBackend.build(irPath, tak);
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
-        // the exec branch's coverage manifest feeds the scenario report; the DRL-text branch reports nothing
-        if (!viaDrl) runner.dekking = b.dekking();
+        runner.bouw = b;
+        // the exec branch's coverage manifest feeds the scenario report; the other branches report nothing
+        if (tak == DroolsBackend.Branch.EXEC_MODEL) runner.dekking = b.dekking();
         return runner;
     }
 
@@ -490,8 +506,10 @@ public final class CaseRunner {
      *  (RUNTIME-SEMANTICS ch. 5.7): the sentence names the writers of one attribute that kept overwriting each other
      *  with different values in the last firings ({@link Schrijfconflict}), and where those show none it says only
      *  that the cap was reached. A consequence that throws, and on the exec-model branch a condition, leaves the fire
-     *  as {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on either
-     *  branch. */
+     *  as {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any
+     *  branch. At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them
+     *  ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the other branches); without a fixpoint nothing is written
+     *  back, since the replay reports the cap and reads no bean. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);
@@ -503,7 +521,10 @@ public final class CaseRunner {
         } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
-        if (gevuurd < 100_000) return null;
+        if (gevuurd < 100_000) {
+            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+            return null;
+        }
         String conflict = schrijvers.conflict(this::labelVanBean);
         return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
     }

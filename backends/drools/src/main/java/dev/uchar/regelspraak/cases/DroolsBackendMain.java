@@ -27,16 +27,19 @@ public final class DroolsBackendMain {
         // the exec-model square's own. The two sweeps stay separate — a flagless run still reaches exactly the
         // code it always did, and that run alone is the differential square.
         boolean viaDrl = args.length > 0 && args[0].equals("--drl");
-        if (viaDrl) args = java.util.Arrays.copyOfRange(args, 1, args.length);
+        // --tms replays through the truth-maintenance trial branch (TmsTranspiler); no gate sweeps it
+        boolean viaTms = args.length > 0 && args[0].equals("--tms");
+        if (viaDrl || viaTms) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {
-            System.err.println("usage: DroolsBackendMain [--drl] <ir.json> <case*.json>...");
+            System.err.println("usage: DroolsBackendMain [--drl | --tms] <ir.json> <case*.json>...");
             System.exit(3);
         }
         Path ir = Path.of(args[0]);
         List<Path> cases = new ArrayList<>();
         for (int i = 1; i < args.length; i++) cases.add(Path.of(args[i]));
         try {
-            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases) : CaseRunner.runGolden(ir, cases);
+            CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases)
+                    : viaTms ? CaseRunner.viaTruthMaintenance(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
                 case "PLAYED" -> { System.out.println("PLAYED " + r.casesPlayed()); System.exit(0); }
                 case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.reason()); System.exit(2); }

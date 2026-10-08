@@ -15,12 +15,16 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.Kringen;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import dev.uchar.regelspraak.runtime.Breuk;
 
 import org.drools.modelcompiler.KieBaseBuilder;
 import org.drools.modelcompiler.constraints.ConstraintEvaluationException;
 import org.kie.api.KieBase;
+import org.kie.api.conf.EqualityBehaviorOption;
+import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 import org.kie.internal.utils.KieHelper;
 
@@ -54,7 +58,9 @@ import java.util.function.Predicate;
  * <p>Firing stays with the consumer, as the replay does it: a fresh {@link org.kie.api.runtime.KieSession} per
  * case, the fact beans instantiated from {@link Build#beanLoader()} while that loader is the thread's context
  * class loader, the parameters and the evaluation date as globals, and on the DRL-text branch also
- * {@link Build#dagsoortGlobalen()}; a {@code ConsequenceException} out of the fire is named by {@link #benoem}.
+ * {@link Build#dagsoortGlobalen()}; a {@code ConsequenceException} out of the fire is named by {@link #benoem}, and a
+ * fire that reached its fixpoint is followed by {@link #zetAfgeleideWaarden}, which puts what the truth-maintenance
+ * branch derived on the beans and does nothing on the other two.
  */
 public final class DroolsBackend {
 
@@ -63,20 +69,28 @@ public final class DroolsBackend {
     private DroolsBackend() {}
 
     /** Which transpiler lowers the document. The exec-model branch is the one gate 12's square replays; the
-     *  DRL-text branch is narrower — no ch. 7 defaults lowering, more markers — and the gate counts it apart. */
-    public enum Branch { EXEC_MODEL, DRL_TEXT }
+     *  DRL-text branch is narrower — no ch. 7 defaults lowering, more markers — and the gate counts it apart. The
+     *  truth-maintenance branch is a trial ({@code TmsTranspiler}): it derives with logical inserts instead of writing
+     *  the beans, carries a narrow set of forms, and is in no gate. */
+    public enum Branch { EXEC_MODEL, DRL_TEXT, TRUTH_MAINTENANCE }
 
     /** A built document. Exactly one transpiler is set, the one {@link #branch()} names; {@code dekking} is its
      *  coverage manifest, every entry lowered, because the build refuses a document with any other entry. */
     public record Build(RegelSpraakModel model, ClassLoader beanLoader, ExecModelTranspiler execModelTranspiler,
-                        DrlTranspiler drlTranspiler, List<Dekking> dekking, KieBase kieBase) {
+                        DrlTranspiler drlTranspiler, TmsTranspiler tmsTranspiler, List<Dekking> dekking,
+                        KieBase kieBase) {
         public Build {
-            if ((execModelTranspiler == null) == (drlTranspiler == null))
+            int gezet = (execModelTranspiler == null ? 0 : 1) + (drlTranspiler == null ? 0 : 1)
+                    + (tmsTranspiler == null ? 0 : 1);
+            if (gezet != 1)
                 throw new IllegalArgumentException("a Build carries exactly one transpiler, got "
-                        + (execModelTranspiler == null ? "none" : "both"));
+                        + (gezet == 0 ? "none" : gezet));
         }
 
-        public Branch branch() { return execModelTranspiler != null ? Branch.EXEC_MODEL : Branch.DRL_TEXT; }
+        public Branch branch() {
+            return execModelTranspiler != null ? Branch.EXEC_MODEL
+                    : drlTranspiler != null ? Branch.DRL_TEXT : Branch.TRUTH_MAINTENANCE;
+        }
 
         /** The §9.8 day-kind predicates the DRL text declares as globals (name -> predicate); a session must have
          *  each set before it fires. Empty on the exec-model branch, which wires them into its lambdas. */
@@ -98,8 +112,9 @@ public final class DroolsBackend {
      *  @throws IrLoader.Documentfout a document that is not well-formed {@code uchar-ir-v1}
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
-     *      violation, a construct the branch does not lower, and on the DRL-text branch a prioritized-defaults
-     *      extension or a DRL text the Drools compiler rejects */
+     *      violation, a construct the branch does not lower, on the DRL-text branch a prioritized-defaults
+     *      extension or a DRL text the Drools compiler rejects, and on the truth-maintenance branch a cycle among
+     *      the members the forms read and write */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
@@ -143,6 +158,7 @@ public final class DroolsBackend {
             return switch (branch) {
                 case EXEC_MODEL -> execModelTak(loaded, cl);
                 case DRL_TEXT -> drlTak(loaded, cl);
+                case TRUTH_MAINTENANCE -> tmsTak(loaded, cl);
             };
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);
@@ -196,24 +212,62 @@ public final class DroolsBackend {
         for (Dekking d : et.dekking())
             if (!d.lowered()) throw new Excluded("transpiler " + d.verdict() + ": " + d.sleutel()
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
-        weigerDubbeleRegelnaam(et.model());
+        weigerDubbeleRegelnaam(et.model(), "exec-model");
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(et.model());
-        return new Build(loaded.model(), cl, et, null, List.copyOf(et.dekking()), kieBase);
+        return new Build(loaded.model(), cl, et, null, null, List.copyOf(et.dekking()), kieBase);
     }
 
     /** Two rules of one name in one package: the KieBase keeps one rule per name, so the second would replace the first
      *  and the document would play without it (measured 2026-10-02 on two forms of one name, which WF-020 forbids and a
      *  hand-written document can still carry). The DRL-text branch's compiler refuses the same document with
-     *  "Duplicate rule name"; this branch refuses it in those words before the KieBase is built. A rule without a name
-     *  (a nameless form, WF-107) has no name to share and is not counted: this branch plays two nameless creations
-     *  ({@code TakgelijkheidWitnessTest}). */
-    private static void weigerDubbeleRegelnaam(org.drools.model.Model model) {
+     *  "Duplicate rule name"; the exec-model and the truth-maintenance branch refuse it in those words, after their
+     *  {@code tak}, before the KieBase is built. A rule without a name (a nameless form, WF-107) has no name to share
+     *  and is not counted: the exec-model branch plays two nameless creations ({@code TakgelijkheidWitnessTest}). */
+    private static void weigerDubbeleRegelnaam(org.drools.model.Model model, String tak) {
         java.util.Set<String> namen = new java.util.HashSet<>();
         for (org.drools.model.Rule r : model.getRules())
             if (r.getName() != null && !namen.add(r.getFullName()))
-                throw new Excluded("exec-model: Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
+                throw new Excluded(tak + ": Duplicate rule name: " + r.getName() + " — twee regels van één naam in "
                         + "pakket " + r.getPackage() + "; de KieBase houdt één regel per naam, zodat de tweede de eerste "
                         + "zou vervangen (vormnamen zijn uniek, WF-020)");
+    }
+
+    /** The truth-maintenance branch: {@link TmsTranspiler} lowers the forms it carries to an executable model that
+     *  derives with logical inserts, and the KieBase runs in EQUALITY mode, so that two rules that derive the same fact
+     *  insert one fact with two justifications rather than two facts. A form the transpiler does not lower is refused
+     *  from its manifest, as on the exec-model branch; a cycle among what the forms read and write is refused before
+     *  the KieBase is built, since truth maintenance gives a cycle no single fixpoint ({@code Kringen}). */
+    private static Build tmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
+        TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
+                loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
+        for (Dekking d : t.dekking())
+            if (!d.lowered()) throw new Excluded("tms-transpiler " + d.verdict() + ": " + d.sleutel()
+                    + (d.reden().isEmpty() ? "" : " — " + d.reden()));
+        // past the manifest every form of the document is one this branch lowers, so the graph over all forms is the
+        // graph over the forms it carries
+        String kring = Kringen.weigering(loaded.model(), ProducentConsument.vormen(loaded.model(),
+                loaded.prioritizedDefaults(), ProducentConsument.wireNavigatie(loaded)));
+        if (kring != null) throw new Excluded(kring);
+        weigerDubbeleRegelnaam(t.model(), "tms");
+        KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);
+        return new Build(loaded.model(), cl, null, null, t, List.copyOf(t.dekking()), kieBase);
+    }
+
+    /**
+     * Puts what the truth-maintenance branch derived in {@code sessie} on the fact beans, after a fire that reached its
+     * fixpoint: that branch never writes a bean while it fires, so until this call the beans hold the case input only.
+     * On the exec-model and the DRL-text branch it does nothing, since their rules write the beans as they fire. A
+     * consumer that fires a KieBase itself calls it as {@link CaseRunner} does, after every fire that ends at a
+     * fixpoint and before it reads the beans.
+     *
+     * <p>The write-back tells the engine nothing, so the session must not be fired again afterwards: the beans then hold
+     * values the network never saw arrive, and a rule that reads the bean pattern would be evaluated against a state
+     * that no propagation produced.
+     */
+    public static void zetAfgeleideWaarden(Build build, KieSession sessie) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie);
     }
 
 
@@ -259,7 +313,7 @@ public final class DroolsBackend {
             String m = String.valueOf(e.getMessage()).replace('\n', ' ');
             throw new Excluded("drl compile: " + (m.length() > 400 ? m.substring(0, 400) + "…" : m));
         }
-        return new Build(loaded.model(), cl, null, t, List.copyOf(t.dekking()), kieBase);
+        return new Build(loaded.model(), cl, null, t, null, List.copyOf(t.dekking()), kieBase);
     }
 
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
