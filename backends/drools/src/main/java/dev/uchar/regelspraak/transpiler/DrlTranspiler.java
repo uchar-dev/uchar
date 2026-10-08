@@ -1435,65 +1435,22 @@ public final class DrlTranspiler {
                 .render());
             return;
         }
-        // ch. 5.5's two link roles, resolved exactly as ExecModelTranspiler.objectCreatie resolves them: the
-        // creation's own verbindendeRol binding first (it names the role the CREATED object plays; the subject plays
-        // its sibling), and only without one the by-pair derivation. On a repeated or self-typed pair the by-pair
-        // derivation answers null by construction, so the binding is the only route there is — and without it this
-        // branch used to emit an insert with no link at all, left to the marker scan in meet() to refuse.
-        String backRol, fwdRol;                                  // subject-side (field on $new) / created-side (field on $subject)
-        boolean backVeel, fwdVeel;
-        RegelSpraakModel.RolBindingRef vr = rolBindingen.get(oc);
-        if (vr != null) {
-            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, vr);
-            if (paar == null) {
-                creatieGeweigerd(oc, "de connectingRole-binding '" + vr.feittype() + "." + vr.rol()
-                        + "' wijst geen rolpaar aan");
-                return;
-            }
-            fwdRol = paar[0].naam(); fwdVeel = paar[0].meervoudig();
-            backRol = paar[1].naam(); backVeel = paar[1].meervoudig();
-        } else {
-            backRol = model.verbindendeRol(nieuw, subject);
-            fwdRol = model.verbindendeRol(subject, nieuw);
-            backVeel = backRol != null && model.naarVeelRol(nieuw, subject, backRol);
-            fwdVeel = fwdRol != null && model.naarVeelRol(subject, nieuw, fwdRol);
-        }
-        // Only a to-ONE role has a bean field (FactModelGenerator.leden), and only a TYPED one is writable: a
-        // declared member of the same name displaces the reference. A displaced end is refused by name, as in
-        // the exec branch — writing only the other end would leave ch. 5.5's link silently one-sided.
-        String backRef = backRol != null && !backVeel ? backRol : null;
-        String fwdRef = fwdRol != null && !fwdVeel ? fwdRol : null;
-        if (backRef != null && !FactModelGenerator.heeftReferentieVeld(model, nieuw, backRef, subject)) {
-            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(model, nieuw, backRef, subject));
+        // ch. 5.5's two link roles and the shape of the guard: the one shared derivation
+        // (FactModelGenerator.creatiekoppeling), carried out here as a marker. An ambiguous pair is a fault at fire on
+        // the exec-model branch (ch. 5.5 refuses to guess); this branch has no fault-rule idiom and refuses it by the
+        // same sentence instead.
+        FactModelGenerator.Creatiekoppeling koppeling =
+                FactModelGenerator.creatiekoppeling(model, nieuw, subject, rolBindingen.get(oc), oc.naam());
+        if (koppeling.dubbelzinnig() != null) {
+            creatieGeweigerd(oc, koppeling.dubbelzinnig());
             return;
         }
-        if (fwdRef != null && !FactModelGenerator.heeftReferentieVeld(model, subject, fwdRef, nieuw)) {
-            creatieGeweigerd(oc, FactModelGenerator.geenReferentieveldReden(model, subject, fwdRef, nieuw));
+        if (koppeling.weigering() != null) {
+            creatieGeweigerd(oc, koppeling.weigering());
             return;
         }
-        // No writable end: the mint would be reachable from nothing. The three causes are named apart, in the
-        // exec branch's words. An ambiguous pair is a fault at fire over there (ch. 5.5 refuses to guess); this
-        // branch has no fault-rule idiom and refuses it by the same sentence instead.
-        if (backRef == null && fwdRef == null) {
-            creatieGeweigerd(oc, vr == null && subject != nieuw && verbindendeFeittypen(subject, nieuw) > 1
-                    ? "more than one fact type relates \"" + subject.naam + "\" to \"" + nieuw.naam
-                      + "\"; the created object's back-link is ambiguous (ch. 5.5)"
-                    : (vr == null && subject == nieuw
-                    ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
-                      + " de bean geen referentieveld af en de draad wijst geen rol aan"
-                    : vr == null && (backRol == null || fwdRol == null)
-                    ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
-                    : "beide rollen zijn meervoudig ('" + backRol + "' en '" + fwdRol + "'), dus FactModelGenerator"
-                      + " leidt aan geen van beide zijden een referentieveld af")
-                    + ", dus het gecreëerde object zou onbereikbaar zijn");
-            return;
-        }
-        // §9 guard shape: with a binding the cardinality is the bound role's own, without one the by-pair reading.
-        // Either way a 1:1 arm must HAVE the forward field its guard reads — checked, as in the exec branch.
-        boolean eenOpEen = vr != null ? !fwdVeel : !model.subjectNaarVeelCreatie(subject, nieuw);
-        if (eenOpEen != (fwdRef != null))
-            throw new IllegalStateException("objectcreatie " + oc.naam() + ": subjectNaarVeelCreatie(" + eenOpEen
-                    + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
+        String backRef = koppeling.backRef(), fwdRef = koppeling.fwdRef();
+        boolean eenOpEen = koppeling.eenOpEen();
 
         StringBuilder dan = new StringBuilder();
         dan.append("    ").append(ident(nieuw.naam, true)).append(" $new = new ")
@@ -1562,26 +1519,6 @@ public final class DrlTranspiler {
             .clausule("// onopgelost objectcreatie (" + commentVeilig(reden) + "): " + commentVeilig(oc.naam()))
             .clausule("eval(true)")
             .render());
-    }
-
-    /** How many fact types relate {@code van} and {@code naar} in ch. 5.5's sense — ref's {@code connecting_pair}
-     *  count, the exec branch's {@code verbindendeFeittypen}: a two-role fact type filled by the two types in either
-     *  order, plus a wederkerig one-role fact type when both are the same type. Unlike {@code verbindendeRol}, it
-     *  keeps 0 (a linkless pair) and more than one (ch. 5.5's ambiguity) apart. */
-    private int verbindendeFeittypen(Objecttype van, Objecttype naar) {
-        int n = 0;
-        for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
-            List<RegelSpraakModel.Rol> r = ft.rollen;
-            if (r.size() == 2) {
-                boolean ab = van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(1).objecttypeNaam());
-                boolean ba = van.naam.equalsIgnoreCase(r.get(1).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(0).objecttypeNaam());
-                if (ab || ba) n++;
-            } else if (r.size() == 1 && ft.wederkerig && van == naar
-                    && van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam())) {
-                n++;
-            }
-        }
-        return n;
     }
 
     /** §13.4.7 feitcreatie -> a rule that, for each anker and each doel ALREADY related to it by the

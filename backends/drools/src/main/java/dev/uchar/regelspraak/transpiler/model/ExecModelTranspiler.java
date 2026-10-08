@@ -7144,28 +7144,6 @@ public final class ExecModelTranspiler {
 
     private List<Rule> skipList(String reason) { overgeslagen.add(reason); return List.of(); }
 
-    /** How many fact types RELATE {@code van} and {@code naar} in ch. 5.5's sense — the same count ref's
-     *  {@code connecting_pair} takes: a TWO-role fact type whose two roles are filled by the two types (in either
-     *  order), plus, when both types are the same, a §13.3.9.2 wederkerig ONE-role fact type. 0 is the LINKLESS
-     *  creation shape (ref mints without a link, no fault); 1 is derivable; more than one is ch. 5.5's AMBIGUITY,
-     *  which ref faults on. Deliberately NOT {@code verbindendeRol}, which collapses 0 and >1 into one null. */
-    private int verbindendeFeittypen(Objecttype van, Objecttype naar) {
-        if (van == null || naar == null) return 0;
-        int n = 0;
-        for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
-            List<RegelSpraakModel.Rol> r = ft.rollen;
-            if (r.size() == 2) {
-                boolean ab = van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(1).objecttypeNaam());
-                boolean ba = van.naam.equalsIgnoreCase(r.get(1).objecttypeNaam()) && naar.naam.equalsIgnoreCase(r.get(0).objecttypeNaam());
-                if (ab || ba) n++;
-            } else if (r.size() == 1 && ft.wederkerig && van == naar
-                    && van.naam.equalsIgnoreCase(r.get(0).objecttypeNaam())) {
-                n++;
-            }
-        }
-        return n;
-    }
-
     // ---------------- §13.4.6 objectcreatie / §13.4.7 feitcreatie (Phase G) ----------------
     /** §13.4.6 objectcreatie: the subject creates a NEW object of {@code nieuwType}, sets each toekenning value, links
      *  new object and subject over the back-link relation, and inserts it. Gated by the voorwaarde (incl. a §8.1.7
@@ -7200,93 +7178,18 @@ public final class ExecModelTranspiler {
         if (subject == null || nieuw == null) return skip("objectcreatie (onopgelost type): " + oc.naam());
         Class<?> subjClass = factClass(subject), nieuwClass = factClass(nieuw);
         if (subjClass == null || nieuwClass == null) return skip("objectcreatie (geen fact-class): " + oc.naam());
-        // ch. 5.5's two link roles, resolved by ONE of two routes.
-        //   Route 1 — the creation's own symbolic verbindendeRol binding (IR-SPEC ch. 3.3, riding beside the model
-        //   because the vendored record cannot carry it). It names the role the CREATED object plays; the SIBLING
-        //   role in the same feittype is the one the subject plays. AUTHORITATIVE, exactly as ref reads it
-        //   (eval.ml run_object_creatie: "the explicit back-link binding wins over the type-pair derivation — the
-        //   only route for a self-typed pair"). For a SELF-TYPED pair it is the only route there is: the by-pair
-        //   search counts two same-typed sibling roles and derives null by construction, and
-        //   FactModelGenerator.zelfpaarRollen deliberately leaves that search ambiguous while deriving the FIELDS.
-        //   Route 2 — the by-pair derivation, for a creation whose wire record carries no binding (v0's shape).
-        String backRol, fwdRol;                                  // subject-side (field on $new) / created-side (field on $subject)
-        boolean backVeel, fwdVeel;
-        RegelSpraakModel.RolBindingRef vr = rolBindingen.get(oc);
-        if (vr != null) {
-            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, vr);
-            if (paar == null)
-                return skip("objectcreatie (de connectingRole-binding '" + vr.feittype() + "." + vr.rol()
-                        + "' wijst geen rolpaar aan): " + oc.naam());
-            fwdRol = paar[0].naam(); fwdVeel = paar[0].meervoudig();
-            backRol = paar[1].naam(); backVeel = paar[1].meervoudig();
-        } else {
-            backRol = model.verbindendeRol(nieuw, subject);
-            fwdRol = model.verbindendeRol(subject, nieuw);
-            backVeel = backRol != null && model.naarVeelRol(nieuw, subject, backRol);
-            fwdVeel = fwdRol != null && model.naarVeelRol(subject, nieuw, fwdRol);
-        }
-        // Only a to-ONE role has a bean field at all: FactModelGenerator.leden derives the scalar reference on
-        // the ONE side, so a to-many role is stored solely as the OTHER end's field, and writing it anyway would
-        // reach a setter no bean carries (an unclassified "geen setter voor" ERROR at fire, never a valid
-        // not-carried outcome under the gate-12 regime). BOTH ends get that filter, SYMMETRICALLY: the end whose
-        // role is meervoudig is simply NOT written; the other end still carries ch. 5.5's link, and a creation
-        // with one writable end is played, not refused — a refusal there would withhold a value the backend can
-        // produce (checked: on a verifier-clean model whose SUBJECT-side role is meervoudig, ref plays the
-        // creation and the navigated read from the subject reaches the mint).
-        String backRef = backRol != null && !backVeel ? backRol : null;
-        String fwdRef = fwdRol != null && !fwdVeel ? fwdRol : null;
-        // ...and a to-ONE role is only a WRITABLE end when the bean carries its reference field TYPED. leden()'s
-        // name-dedup (attribuut > kenmerk > referentie) lets a declared member of the same name displace it — a
-        // Wachter whose self-pair role `opvolger` is also a Numeriek attribute keeps the PROPERTY and loses the
-        // REFERENCE — and the writes below would then push a fact into a BigDecimal field: ClassCastException at
-        // fire, an unclassified ERROR where main gave a clean per-form EXCLUDE (lens 2, 2026-08-30). Refused per
-        // creation, with the displacing member named, never guessed and never crashed. NOT nulled-out like a
-        // to-many end either: that end's link is stored elsewhere BY DESIGN, while this one cannot be stored at
-        // all, so writing only the other half would leave ch. 5.5's link silently one-sided.
-        if (backRef != null && !heeftReferentieVeld(nieuw, backRef, subject))
-            return skip("objectcreatie (" + geenReferentieveldReden(nieuw, backRef, subject) + "): " + oc.naam());
-        if (fwdRef != null && !heeftReferentieVeld(subject, fwdRef, nieuw))
-            return skip("objectcreatie (" + geenReferentieveldReden(subject, fwdRef, nieuw) + "): " + oc.naam());
-        // Only when NEITHER end carries a bean field is the mint truly an ORPHAN — inserted but reachable from
-        // nothing, so no navigated read or fold could ever see it. RUNTIME-SEMANTICS ch. 5.5 links both ends; a
-        // link the bean model cannot hold ANYWHERE is NOT-CARRIED, refused loudly, never a silently wrong value.
-        if (backRef == null && fwdRef == null && vr == null && subject != nieuw
-                && verbindendeFeittypen(subject, nieuw) > 1)
-            // ch. 5.5's REFUSAL TO GUESS — and the card's lowering-vs-fire question, answered ONCE for both sides.
-            // The MOMENT already differs across the square (ref raises it during evaluation, the ASP backend at
-            // translation), so it is a phase-structure detail. The CATEGORY is not: an ambiguous back-link is a
-            // property of the PROGRAM, not a gap in this backend — the §13.4.6 form IS carried, every other
-            // creation lowers and fires — so reporting it as "not carried" would file a faulty program under
-            // "unsupported". It therefore lowers to a rule that FAULTS at fire (the shape uniciteit's invalid key
-            // shape already uses), worded as ref words it so the red fence pins ONE fragment across all three
-            // executors. NARROWING, recorded: this rule needs a subject instance to fire, where ref faults even on
-            // an empty world. The neighbouring shapes below stay honest lowering REFUSALS, because those really are
-            // backend gaps — a link no bean field can hold anywhere, which ref does not fault on either (a
-            // self-typed pair without a binding mints unlinked there; a to-many pair links through role lists).
-            return vormFoutRegel(kop(oc.naam()), subjClass, oc.geldigheid(), "more than one fact type relates \""
-                    + subject.naam + "\" to \"" + nieuw.naam + "\"; the created object's back-link is ambiguous (ch. 5.5)");
-        if (backRef == null && fwdRef == null)
-            // The three causes are DIFFERENT and are named apart: an ambiguous pair is ch. 5.5's refusal to guess
-            // (the interpreter faults there), a self-typed pair is a bean-model gap (the reference field is
-            // derivable only from the creation's symbolic role binding, which this bean model does not carry),
-            // and a pair whose BOTH roles are meervoudig resolves fine but derives no field on either side.
-            return skip("objectcreatie (" + (vr == null && subject == nieuw
-                    ? "zelfgetypeerd rollenpaar zonder connectingRole-binding: uit twee gelijkgetypeerde rollen leidt"
-                      + " de bean geen referentieveld af en de draad wijst geen rol aan"
-                    : vr == null && (backRol == null || fwdRol == null)
-                    ? "geen uniek verbindend feittype: de terugkoppeling is niet af te leiden en ch. 5.5 gist niet"
-                    : "beide rollen zijn meervoudig ('" + backRol + "' en '" + fwdRol + "'), dus FactModelGenerator"
-                      + " leidt aan geen van beide zijden een referentieveld af")
-                    + ", dus het gecreëerde object zou onbereikbaar zijn): " + oc.naam());
-        // §9 guard shape (see doc). With a BINDING the cardinality is read off the bound role itself — the same
-        // reading ref applies (`Some (_, new_role, _) when not new_role.rol_meervoudig`); without one, the by-pair
-        // subjectNaarVeelCreatie stands. INVARIANT (either route): !to-many(created-side role) ≡ fwdRef != null, so
-        // the 1:1 arm below always HAS the forward field its guard reads. Checked, not assumed: on the by-pair route
-        // the two derivations sit in different classes and the guard would otherwise read a null field name.
-        boolean eenOpEen = vr != null ? !fwdVeel : !model.subjectNaarVeelCreatie(subject, nieuw);
-        if (eenOpEen != (fwdRef != null))
-            throw new IllegalStateException("objectcreatie " + oc.naam() + ": subjectNaarVeelCreatie(" + eenOpEen
-                    + ") en het voorwaartse veld (" + fwdRef + ") spreken elkaar tegen");
+        // ch. 5.5's two link roles and the shape of the guard: the one shared derivation
+        // (FactModelGenerator.creatiekoppeling), carried out here as a skip, or, for the ambiguous back-link, a rule
+        // that FAULTS at fire. An ambiguous back-link is a property of the PROGRAM, not a gap in this backend, so it is
+        // worded as ref words it and the red fence pins ONE fragment across all three executors. NARROWING, recorded:
+        // that rule needs a subject instance to fire, where ref faults even on an empty world.
+        FactModelGenerator.Creatiekoppeling koppeling =
+                FactModelGenerator.creatiekoppeling(model, nieuw, subject, rolBindingen.get(oc), oc.naam());
+        if (koppeling.dubbelzinnig() != null)
+            return vormFoutRegel(kop(oc.naam()), subjClass, oc.geldigheid(), koppeling.dubbelzinnig());
+        if (koppeling.weigering() != null) return skip("objectcreatie (" + koppeling.weigering() + "): " + oc.naam());
+        String backRef = koppeling.backRef(), fwdRef = koppeling.fwdRef();
+        boolean eenOpEen = koppeling.eenOpEen();
 
         // Lower each toekenning value to a §13.4.6.2 value producer (TkLower), as a rule's value is lowered. The runtime
         // receiver is the anchor $subject (body below applies it to args[0]), so the anchor objecttype rides as the
