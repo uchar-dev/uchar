@@ -126,8 +126,10 @@ import java.util.function.UnaryOperator;
  * the reference interpreter does not see, and a fault thrown there could not be withdrawn when the state passes. The
  * consequence that computes a value inserts the fault instead of the value. A condition is tested in the left-hand
  * side, where Drools cannot take an exception as a fact, so its test answers that it does not hold where it faults,
- * and a rule of the form's own inserts the fault ({@link #voorwaardefoutregel}). Only the faults that stand at the
- * fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back.
+ * and a rule of the form's own inserts the fault ({@link #voorwaardefoutregel}). A fold's filter that faults for a
+ * member inserts no fault but a {@link Filterfout}: the form that reads the fold faults where its own evaluation reaches
+ * the fold, as the reference interpreter evaluates the filter only there ({@link #vouw}). Only the faults that stand at
+ * the fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back.
  */
 public final class TmsTranspiler {
 
@@ -460,7 +462,7 @@ public final class TmsTranspiler {
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen)
             uit.add(voorwaardefoutregel(r.naam(), model.geëmitteerdeRegelNaam(r.naam()),
-                    () -> new Lezingen(doel.objecttype()), r.voorwaarde(), null, Lezingen::vastleggen));
+                    () -> new Lezingen(doel.objecttype()), r.voorwaarde(), null));
         return uit;
     }
 
@@ -626,8 +628,8 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen)
-            uit.add(voorwaardefoutregel(naam, regelnaam, () -> lezingen(subject, geabsorbeerd), r.voorwaarde(), blokkade,
-                    Lezingen::vastleggen));
+            uit.add(voorwaardefoutregel(naam, regelnaam, () -> lezingen(subject, geabsorbeerd), r.voorwaarde(),
+                    blokkade));
         return uit;
     }
 
@@ -649,14 +651,14 @@ public final class TmsTranspiler {
      * therefore tests the condition through {@link #zonderFout}, which does not hold where it faults, and this rule,
      * whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw} sets up the subject
      * pattern and what precedes it), with the same {@code blokkade} after the test and the test that the condition
-     * faults, inserts the named {@link Fout} logically, on the subject of the form: the fold's subject where the
-     * condition is a fold's filter ({@link Lezingen#drager}). It fires exactly where the form's rule tests the condition
-     * and the test faults, and the fault goes when a read it rested on changes. The sentence names the form's rule as
-     * the exec-model branch names a fault in a condition. {@code vastleggen} registers what the rule reads: at once for
-     * a form, with the form for a fold's contribution rule.
+     * faults, inserts the named {@link Fout} logically, on the subject of the form. It fires exactly where the form's
+     * rule tests the condition and the test faults, and the fault goes when a read it rested on changes. The sentence
+     * names the form's rule as the exec-model branch names a fault in a condition. A condition faults also where it
+     * reaches a fold whose filter faulted for a member ({@link #vouw}); the filter itself inserts no fault
+     * ({@link #filterfoutregel}).
      */
     private Rule voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                     Function<Lezingen, RuleItemBuilder<?>> blokkade, Consumer<Lezingen> vastleggen) {
+                                     Function<Lezingen, RuleItemBuilder<?>> blokkade) {
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = voorwaarde(c, lez);
@@ -664,14 +666,14 @@ public final class TmsTranspiler {
         List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, c);
         if (blokkade != null) items.add(blokkade.apply(lez));
         String zinregel = model.geëmitteerdeRegelNaam(vorm);
-        items.add(gevolg(lez, lez.foutonderwerp(), posities(gelezen), (drools, onderwerp, w) -> {
+        items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
             Breuk.DelingDoorNul nul = fout(toets, w);
             if (nul == null)
                 throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
                         + " gevolg, over dezelfde gebonden waarden");
             drools.logicalInsert(new Fout(onderwerp, vorm, nul.inDeRegel(zinregel, nul)));
         }, lez.variabelen.size()));
-        vastleggen.accept(lez);
+        lez.vastleggen();
         return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
     }
 
@@ -736,7 +738,7 @@ public final class TmsTranspiler {
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen)
             uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), () -> new Lezingen(c.subject()),
-                    c.assertie(), null, Lezingen::vastleggen));
+                    c.assertie(), null));
         return uit;
     }
 
@@ -1396,9 +1398,10 @@ public final class TmsTranspiler {
     // ---------------- aggregations ----------------
 
     /** A fold this branch lowers: the key its contributions carry ({@link Bijdrage#vouw}), its contribution rules (one
-     *  per range, beside the fault rule of a filter that can fault), and the reads of those rules, registered when a
-     *  form that reads the fold lowers ({@link Lezingen#vastleggen}). */
-    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen) {}
+     *  per range, beside the filter fault rule of a filter that can fault), the reads of those rules, registered when a
+     *  form that reads the fold lowers ({@link Lezingen#vastleggen}), and whether its filter can fault, in which case
+     *  the rule that reads it binds its {@link Filterfout} facts as well. */
+    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen) {}
 
     /** The kinds of an aggregation, as against the builtins that share the node. */
     private static boolean isVouw(Expr.FunctieKind k) {
@@ -1471,6 +1474,13 @@ public final class TmsTranspiler {
      * (ch. 5.11), a total 0, both counts 0 and an ordering fold leeg; eerste and laatste are the least and the greatest
      * value. A count over an instance-set union counts the members its selections select together ({@link #unievouw}).
      *
+     * <p>A filter that faults for a member is a {@link Filterfout} of the member, no fault: the reference interpreter
+     * evaluates the filter only where it evaluates the fold. This rule binds the least of those facts on its subject,
+     * and the fold's value faults with that division where it is computed, before the fallback, which the reference
+     * interpreter evaluates after the members ({@link #filterfout}). The fault is then this rule's, as a division in its
+     * own value or condition is: inserted by its consequence or by its fault rule ({@link #voorwaardefoutregel}), and
+     * only where its evaluation reaches the fold.
+     *
      * <p>Refused by name: a total without a range, which reads the subject's own timeline, and a fold over a member on
      * a timeline; the timelines are of a later card.
      */
@@ -1478,8 +1488,14 @@ public final class TmsTranspiler {
         Expr.FunctieKind kind = f.kind();
         if (kind == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
                 && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
-            int[] i = lez.vouw(unievouw(f, u, lez.subject), null);
-            return w -> aantal(w[i[0]]);
+            Vouw v = unievouw(f, u, lez.subject);
+            int[] i = lez.vouw(v, null);
+            if (!v.kanFalen()) return w -> aantal(w[i[0]]);
+            lez.markeerFalen();
+            return w -> {
+                filterfout(w[i[2]]);
+                return aantal(w[i[0]]);
+            };
         }
         Objecttype elem = f.elementObjecttype();
         if (elem == null) throw new Weigering("een Aggregation " + kind + " zonder elementtype ('" + snippet(f.bron()) + "')");
@@ -1508,10 +1524,11 @@ public final class TmsTranspiler {
                     + " eist een sourceRole of sourcePath");
         Expr.AttribuutRef lid = arg;
         Vouw v = vouwVoor(f, lez.subject, (sleutel, naam) -> {
+            List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
-            List<Rule> regels = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem),
-                    f.filter(), lid, lezingen);
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen));
+            boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem),
+                    f.filter(), lid, regels, lezingen);
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen);
         });
         if (arg != null && f.leegwaarde() != null)
             eenheden(eff.eenheidVan(f.leegwaarde()), eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
@@ -1522,8 +1539,9 @@ public final class TmsTranspiler {
             default -> null;
         };
         int[] i = lez.vouw(v, functie);
+        if (v.kanFalen()) lez.markeerFalen();
         Waardefunctie terugval = f.leegwaarde() == null ? null : waarde(f.leegwaarde(), lez);
-        return switch (kind) {
+        Waardefunctie uitkomst = switch (kind) {
             case AANTAL, AANTAL_GEVULDE -> w -> aantal(w[i[0]]);
             case SOM -> w -> {
                 Object t = terugval == null ? null : terugval.van(w);
@@ -1532,6 +1550,17 @@ public final class TmsTranspiler {
             case TOTAAL -> w -> leeg(w[i[0]]) ? BigDecimal.ZERO : w[i[1]];
             default -> w -> leeg(w[i[0]]) ? null : w[i[1]];
         };
+        if (!v.kanFalen()) return uitkomst;
+        return w -> {
+            filterfout(w[i[2]]);
+            return uitkomst.van(w);
+        };
+    }
+
+    /** The evaluation of a fold whose filter faulted for a member: {@code eerste} is the least {@link Filterfout} the
+     *  reading rule bound on its subject, or null where none stands. */
+    private static void filterfout(Object eerste) {
+        if (eerste != null) throw ((Filterfout) eerste).fout();
     }
 
     private static BigDecimal aantal(Object telling) {
@@ -1570,15 +1599,16 @@ public final class TmsTranspiler {
         return vouwVoor(f, subject, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
+            boolean kanFalen = false;
             for (int k = 0; k < u.takken().size(); k++) {
                 Expr.InstanceSetUnion.Tak t = u.takken().get(k);
                 if (t.elementType() == null)
                     throw new Weigering("een selectie zonder elementtype in een InstanceSetUnion ('" + snippet(t.bron()) + "')");
-                regels.addAll(bijdrageregels(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
+                kanFalen |= bijdrageregels(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
                         t.elementType(), eenstapsbereik(t.bronRol(), subject, t.elementType(), snippet(t.bron())),
-                        t.filter(), null, lezingen));
+                        t.filter(), null, regels, lezingen);
             }
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen));
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen);
         });
     }
 
@@ -1588,12 +1618,13 @@ public final class TmsTranspiler {
      * filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
      * logically: for a count the member; for a filled count the member where its value is gevuld; for the other folds
      * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2). Beside it, where the filter can
-     * fault, the rule that inserts the fault on the fold's subject, named after the form that reads the fold. The reads
-     * of the rules go into {@code lezingen}, to be registered with the form.
+     * fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}). The rules go into
+     * {@code uit} and their reads into {@code lezingen}, to be registered with the form; returns whether the filter can
+     * fault.
      */
-    private List<Rule> bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
-                                      Objecttype elem, Bereik bereik, Conditie filter, Expr.AttribuutRef arg,
-                                      List<Lezingen> lezingen) {
+    private boolean bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
+                                   Objecttype elem, Bereik bereik, Conditie filter, Expr.AttribuutRef arg,
+                                   List<Rule> uit, List<Lezingen> lezingen) {
         Supplier<Lezingen> nieuw = () -> bijdragelezingen(subject, elem, bereik);
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
@@ -1614,12 +1645,40 @@ public final class TmsTranspiler {
             Object v = w[waarde];
             if (v != null) drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], gevuld ? null : collapse(v)));
         }, lez.variabelen.size()));
-        String regelnaam = model.geëmitteerdeRegelNaam(vorm) + ": bijdrage aan " + naam;
-        List<Rule> uit = new ArrayList<>();
-        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        String vormnaam = model.geëmitteerdeRegelNaam(vorm);
+        uit.add(PatternDSL.rule(PKG, vormnaam + ": bijdrage aan " + naam).build(items.toArray(new RuleItemBuilder[0])));
         lezingen.add(lez);
-        if (kanFalen) uit.add(voorwaardefoutregel(vorm, regelnaam, nieuw, filter, null, lezingen::add));
-        return uit;
+        if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, nieuw, filter, lezingen::add));
+        return kanFalen;
+    }
+
+    /**
+     * The rule beside a contribution rule whose filter can fault: that rule's left-hand side built again over fresh
+     * declarations ({@code nieuw}), the test that the filter faults for the member, and a consequence that inserts the
+     * member's {@link Filterfout} logically, on the fold's subject. No {@link Fout}: whether the division happens
+     * depends on the form that reads the fold, which faults where its evaluation reaches the fold while such a fact
+     * stands ({@link #vouw}). The fact goes when a read it rested on changes, as a contribution does.
+     */
+    private Rule filterfoutregel(String sleutel, String regelnaam, Supplier<Lezingen> nieuw, Conditie filter,
+                                 Consumer<Lezingen> vastleggen) {
+        Lezingen lez = nieuw.get();
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = voorwaarde(filter, lez);
+        lez.stop();
+        Set<Integer> gebruik = lez.volg();
+        int lid = lez.lid();
+        lez.stop();
+        gebruik.addAll(gelezen);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, filter);
+        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
+            Breuk.DelingDoorNul nul = fout(toets, w);
+            if (nul == null)
+                throw new IllegalStateException("het filter van " + sleutel + " faalde in de toets en niet in het gevolg,"
+                        + " over dezelfde gebonden waarden");
+            drools.logicalInsert(new Filterfout(sleutel, onderwerp, w[lid], nul));
+        }, lez.variabelen.size()));
+        vastleggen.accept(lez);
+        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /** The reads of a contribution rule: the member is the subject, the fold's subject is bound before it, and the
@@ -2019,10 +2078,6 @@ public final class TmsTranspiler {
             this.onderwerp = PatternDSL.pattern(s);
         }
 
-        /** The object a fault of this rule's condition stands on: the subject of the form, which in a contribution
-         *  rule is the fold's subject and not the member. */
-        Variable<Object> foutonderwerp() { return drager != null ? drager : s; }
-
         /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
         int lid() {
             int bekend = bestaand("onderwerp zelf");
@@ -2083,29 +2138,45 @@ public final class TmsTranspiler {
         /**
          * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
          * accumulate over them that counts them and, where {@code functie} names an accumulate function, folds their
-         * values with it. Returns the index of the count and that of the folded value (-1 without one). An accumulate
-         * over no contribution still binds a row, through the count, so the rule reads an empty fold as well.
+         * values with it; and where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts
+         * on this subject, which binds the least of them, or null. Returns the index of the count, that of the folded
+         * value and that of the least filter fault, each -1 without one. An accumulate over no fact still binds a row,
+         * through the count, so the rule reads an empty fold, and a fold without a filter fault, as well.
          */
         int[] vouw(Vouw v, Class<?> functie) {
             vouwen.add(v);
             String sleutel = v.sleutel();
             int bekend = bestaand("vouw " + sleutel);
-            if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel)};
+            if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel),
+                    v.kanFalen() ? bestaand("filterfout " + sleutel) : -1};
             Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
             PatternDSL.PatternDef<Bijdrage> p = PatternDSL.pattern(b).expr(id("vouw"), x -> x.vouw().equals(sleutel))
                     .expr(id("vouw-onderwerp"), s, (x, o) -> x.onderwerp() == o);
             Variable<Object> aantal = DSL.declarationOf(Object.class, "$aantal_" + id("vouw"));
+            int[] uit;
             if (functie == null) {
                 standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
                         .as(aantal)));
-                return new int[]{nieuw("vouw " + sleutel, aantal), -1};
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1};
+            } else {
+                Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
+                Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
+                p.bind(bijdragewaarde, Bijdrage::waarde);
+                standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
+                        .as(aantal), DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1};
             }
-            Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
-            Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
-            p.bind(bijdragewaarde, Bijdrage::waarde);
-            standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b).as(aantal),
-                    DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
-            return new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst)};
+            if (!v.kanFalen()) return uit;
+            Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
+            PatternDSL.PatternDef<Filterfout> q = PatternDSL.pattern(f)
+                    .expr(id("filterfout"), x -> x.vouw().equals(sleutel))
+                    .expr(id("filterfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+            Variable<Object> fouten = DSL.declarationOf(Object.class, "$filterfouten_" + id("vouw"));
+            Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_filterfout_" + id("vouw"));
+            standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f).as(fouten),
+                    DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
+            uit[2] = nieuw("filterfout " + sleutel, eerste);
+            return uit;
         }
 
         /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:

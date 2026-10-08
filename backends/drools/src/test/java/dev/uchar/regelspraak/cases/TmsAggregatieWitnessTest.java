@@ -357,7 +357,8 @@ class TmsAggregatieWitnessTest {
                             + " voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"), "null"));
 
     /** J1 reports V1 (gewicht 10, deelnemers 2: 5, counted) and V2 (gewicht 9, deelnemers 0): the filter divides 9 by
-     *  0 for V2, a fault at the fixpoint, on J1 and named after the rule that reads the fold. */
+     *  0 for V2, and the rule, which has no condition, reaches the fold: a fault at the fixpoint, on J1 and named after
+     *  the rule. */
     static JsonNode filterzaak() throws Exception {
         return TmsDocumenten.zaak(List.of(
                 instantieMetRollen("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten", List.of("V1", "V2"))),
@@ -370,9 +371,10 @@ class TmsAggregatieWitnessTest {
         return TmsDocumenten.document(FILTERMODEL, regels);
     }
 
-    /** The fault of a fold's filter is a fact of the fold's contribution rule, reported at the fixpoint with the
-     *  sentence the exec-model branch gives for the same filter, and the fire ends at its fixpoint in every order of the
-     *  generated rules. */
+    /** The fault of a fold's filter is the fault of the rule that reads the fold, which the rule raises where its
+     *  evaluation reaches the fold while the member's {@code Filterfout} stands ({@code TmsFilterfoutWitnessTest}),
+     *  reported at the fixpoint with the sentence the exec-model branch gives for the same filter, and the fire ends at
+     *  its fixpoint in every order of the generated rules. */
     @Test void een_fout_in_het_filter_van_een_vouw_staat_aan_het_fixpunt() throws Exception {
         String zin = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 9 gedeeld door 0 — een numerieke"
                 + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";

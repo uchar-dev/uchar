@@ -165,8 +165,16 @@ are the least and the greatest value. Equal contributions merge into one fact, s
 reaches along two routes, or that two selections of an `InstanceSetUnion` select, contributes once (RUNTIME-SEMANTICS
 ch. 3.4b, 3.4d). When the result of an accumulate changes, the activation that read it fires again and Drools
 withdraws the logical facts its earlier firing inserted and did not insert again: one `Waarde` stays for the target.
-A listed fold ("de eerste van A en B") is computed from its operands' bound values. A fault in a fold's filter is a
-fault fact on the fold's subject, named after the rule that reads the fold. Witness `TmsAggregatieWitnessTest`.
+A listed fold ("de eerste van A en B") is computed from its operands' bound values. Witness
+`TmsAggregatieWitnessTest`.
+
+A filter that divides by a numeric zero for a member inserts a `Filterfout` for that member, and no fault: the
+reference interpreter evaluates a filter only where the evaluation of a form reaches the fold, so not where the form's
+condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10).
+The rule that reads the fold binds the least `Filterfout` on its subject beside the contributions, and where its own
+evaluation reaches the fold while one stands, that evaluation faults as a division in it would; the `Fout` is that
+rule's, inserted by its consequence or by its fault rule, named after it, and withdrawn when the `Filterfout` goes.
+Witness `TmsFilterfoutWitnessTest`.
 
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
