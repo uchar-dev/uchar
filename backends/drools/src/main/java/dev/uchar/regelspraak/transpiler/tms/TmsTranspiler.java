@@ -1819,7 +1819,7 @@ public final class TmsTranspiler {
         if (klok && !(eff.typeVan(datumExpr) instanceof Datatype.DatumTijd))
             throw new Weigering("een klokeenheid bij een datum zonder tijd ('" + snippet(b.bron()) + "')");
         Waardefunctie d = waarde(datumExpr, lez), n = waarde(duurExpr, lez);
-        return w -> RegelSpraakRuntime.rsDatumReken((java.time.temporal.Temporal) d.van(w), (BigDecimal) n.van(w),
+        return w -> RegelSpraakRuntime.rsDatumReken((java.time.temporal.Temporal) d.van(w), n.van(w),
                 eenheid, optellen);
     }
 

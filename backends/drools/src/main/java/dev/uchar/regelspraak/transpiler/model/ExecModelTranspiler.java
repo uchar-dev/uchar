@@ -3082,9 +3082,9 @@ public final class ExecModelTranspiler {
             Set<String> g0 = new LinkedHashSet<>(df0.globals()); g0.addAll(nf0.globals());
             if (datumTijd)
                 return new WaardeFn((s, gm) -> RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
-                        (java.time.LocalDateTime) dfn0.apply(s, gm), (BigDecimal) nfn0.apply(s, gm), pred, optellen), g0);
+                        (java.time.LocalDateTime) dfn0.apply(s, gm), nfn0.apply(s, gm), pred, optellen), g0);
             return new WaardeFn((s, gm) -> RegelSpraakRuntime.rsDatumPlusDagsoort(
-                    (java.time.LocalDate) dfn0.apply(s, gm), (BigDecimal) nfn0.apply(s, gm), pred, optellen), g0);
+                    (java.time.LocalDate) dfn0.apply(s, gm), nfn0.apply(s, gm), pred, optellen), g0);
         }
         String unit = Tijdrekening.chronoUnit(eff.typeVan(durExpr));
         if (unit == null) return null;
@@ -3095,7 +3095,7 @@ public final class ExecModelTranspiler {
         BiFunction<Object, Map<String, BigDecimal>, Object> dfn = df.fn(), nfn = nf.fn();
         Set<String> g = new LinkedHashSet<>(df.globals()); g.addAll(nf.globals());
         return new WaardeFn((s, gm) -> RegelSpraakRuntime.rsDatumReken(
-                (java.time.temporal.Temporal) dfn.apply(s, gm), (BigDecimal) nfn.apply(s, gm), unit, optellen), g);
+                (java.time.temporal.Temporal) dfn.apply(s, gm), nfn.apply(s, gm), unit, optellen), g);
     }
 
     /** A single positive single-period subject kenmerk's TRUE-period reader ({@code s -> the kenmerk's List<Segment>}),

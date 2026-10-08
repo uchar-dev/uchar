@@ -483,11 +483,13 @@ public final class RegelSpraakRuntime {
      *  unit (dag/week/maand/jaar; uur/… only on a datumtijd) -> a new date(time). Leegwaarde per Tabel 15: an empty
      *  DATUM -> empty ("niet te gebruiken"), but an empty DURATION is treated as the number 0 -> the date unchanged
      *  (as is a 0 duration, §6). The aantal is taken as whole units (date arithmetic operates on integer time
-     *  units; a fractional value truncates toward zero). A step whose datum-tijd result leaves the representable
-     *  millisecond range faults ({@link #datumTijdStap}), as does a count outside that range ({@link #duurTelling}); a
-     *  step on a date without a time faults only beyond the years java.time holds. The single implementation; the DRL
-     *  imports it (single-runtime principle). */
-    public static java.time.temporal.Temporal rsDatumReken(java.time.temporal.Temporal datum, BigDecimal aantal, String eenheid, boolean optellen) {
+     *  units; a fractional value truncates toward zero). It is any number the value side computes, so a division that
+     *  does not terminate arrives as a {@link Breuk} and truncates exactly, as the reference interpreter's rational
+     *  does; with a {@code BigDecimal} parameter the branches cast it, and a Breuk failed that cast before the step. A
+     *  step whose datum-tijd result leaves the representable millisecond range faults ({@link #datumTijdStap}), as does
+     *  a count outside that range ({@link #duurTelling}); a step on a date without a time faults only beyond the years
+     *  java.time holds. The single implementation; the DRL imports it (single-runtime principle). */
+    public static java.time.temporal.Temporal rsDatumReken(java.time.temporal.Temporal datum, Object aantal, String eenheid, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg tijdseenheid -> behandeld als 0 -> datum onveranderd (Tabel 15)
         long n = duurTelling(aantal);
@@ -585,10 +587,11 @@ public final class RegelSpraakRuntime {
     /** §6.11 "datum ± N &lt;dagsoort&gt;" ("5 werkdagen"): step one calendar day at a time, counting only days that
      *  ARE the dagsoort ({@code isDagsoort}), until N have passed — the Nth such day is the result. X itself NEVER
      *  counts (step before testing) and the result is always a dagsoort day, EXCEPT a 0 / leeg count returns X
-     *  unchanged (the §6.11 0-case wins over "always a werkdag"); a leeg datum stays leeg. Byte-identical mirror of
+     *  unchanged (the §6.11 0-case wins over "always a werkdag"); a leeg datum stays leeg. The count is whole as at
+     *  {@link #rsDatumReken}, a {@link Breuk} included, and faults outside the same range. Byte-identical mirror of
      *  the single implementation for both back-ends (single-runtime principle) — the dagsoort predicate arrives as a Predicate<LocalDate>
      *  compiled once by kern.Dagsoorten (the DRL passes it as a session global). */
-    public static java.time.LocalDate rsDatumPlusDagsoort(java.time.LocalDate datum, BigDecimal aantal,
+    public static java.time.LocalDate rsDatumPlusDagsoort(java.time.LocalDate datum, Object aantal,
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg eenheid -> behandeld als 0 -> datum onveranderd (§6.11 Tabel 15)
@@ -623,7 +626,7 @@ public final class RegelSpraakRuntime {
      *  operand yields a datum-en-tijd result (the time-of-day is preserved). A dagsoort is day-granular, so step over
      *  the DATE part via {@link #rsDatumPlusDagsoort} and re-attach the original time-of-day. A leeg datum stays leeg.
      *  The single implementation; the DRL imports it (single-runtime principle). */
-    public static java.time.LocalDateTime rsDatumTijdPlusDagsoort(java.time.LocalDateTime datum, BigDecimal aantal,
+    public static java.time.LocalDateTime rsDatumTijdPlusDagsoort(java.time.LocalDateTime datum, Object aantal,
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         java.time.LocalDate d = rsDatumPlusDagsoort(datum.toLocalDate(), aantal, isDagsoort, optellen);
