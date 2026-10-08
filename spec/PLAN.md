@@ -1014,6 +1014,39 @@ maintainer's call; an undeclared dimension still passes the frontend and only th
 refuses it (WF-004); `scripts/admit.sh` and `corpus/README.md` do not know the
 `scenario.rgs` of a golden.
 
+**Truth maintenance replaces the destructive Drools lowering (2026-10-08,
+card `drools-logische-afleiding`):** a trial branch of `backends/drools`
+(`DroolsBackend.Branch.TRUTH_MAINTENANCE`, flag `--tms`) derives with
+`insertLogical` in an EQUALITY KieBase instead of writing on the beans: a
+derived characteristic or attribute is a logical fact justified by its rule,
+every read a derived value depends on is a pattern in the rule's left-hand
+side, prioritized defaults lower to logical control facts, and of the six
+measures the exec-model branch needs against destructive writes only the fire
+cap remains. On its eight-golden trial set it fires 251 times against 218 and
+takes 1.27 times as long, under a millisecond per case; over the corpus it
+plays 66 goldens without a FAIL and refuses the rest per form, aggregations
+first (65). As an independent reading it found two existing faults, now
+cards: `deling-door-leeg-onder-initialisatie` (the exec-model branch and
+clingo deposit a division by empty under an initialisation whose target the
+input fills) and `fout-op-tussenstand` (ref and both Drools branches fault or
+answer depending on the rule order when a fault arises at an intermediate
+state, against the confluence of RUNTIME-SEMANTICS ch. 5.2; a norm question
+first). Maintainer decision the same day: build the branch out as the
+REPLACEMENT of the exec-model branch, not as a third branch, and move the
+DRL-text branch to truth maintenance too, so that the backend ends with two
+branches of one design; gate 12 then compares two renderings of that design,
+and the independent check stays with ref and clingo. The route choice
+recorded in `drl-defaults-lowering` lapses with it. The follow-up cards are
+build cards, not feasibility trials, in this order: aggregations, object and
+fact creation, and faults as logical facts; the expression and condition
+forms with the calculation date; allocation and timelines; the switch-over,
+where the branch becomes gate 12's exec-model leg and the distribution's and
+the destructive lowering leaves (the distribution follows with its own card
+and a pin bump); then the DRL-text branch, with which `Stratificatie` leaves.
+Recorded, not opened: this branch withdraws a deposit made at an intermediate
+state where ref keeps it (RUNTIME-SEMANTICS ch. 6.1, "recorded residuals"),
+the question `fout-op-tussenstand` asks for faults; no golden reaches it.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
