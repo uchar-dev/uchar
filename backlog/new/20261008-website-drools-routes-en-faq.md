@@ -7,15 +7,17 @@ Stand van de website: `a677b24`, `python3 _research/check.py` groen.*
 
 ## Wacht op
 
-Deze kaart begint pas als beide kaarten geland zijn:
+Deze kaart begint pas als `20261008-tms-omschakeling` en
+`20261008-drl-teksttak-op-truth-maintenance` geland zijn (keuze van de
+eigenaar, 2026-10-08). `20261007-drools-logische-afleiding` is geland, en de
+eigenaar besloot daarop de truth-maintenance-tak uit te bouwen tot vervanging
+van de exec-modeltak en de DRL-teksttak ook op truth maintenance te zetten
+(PLAN §9, 2026-10-08); de kaart `20261006-drl-defaults-lowering` ging op in de
+tweede kaart hierboven.
 
-1. `20261007-drools-logische-afleiding`, inclusief de beslissing van de
-   eigenaar op het `Result:` (doorbouwen of stoppen);
-2. `20261006-drl-defaults-lowering`.
-
-De diagrammen en de antwoorden beschrijven de stand ná die twee kaarten: of er
-een derde tak is, hoe de DRL-teksttak `prioritizedDefaults` verlaagt, en of de
-backend truth maintenance gebruikt.
+De diagrammen en de antwoorden beschrijven de stand ná die twee kaarten: twee
+Drools-takken met truth maintenance, een in PatternDSL en een in DRL-tekst,
+zonder derde tak.
 
 Goal: `ontwikkelaar.html` ("Onder de motorkap") krijgt een sectie over de
 routes van regels naar de Drools-engine, met twee diagrammen, en een FAQ. Beide
@@ -84,9 +86,9 @@ Java-lambda's. Feitklassen moeten als Java-klasse bestaan vóór de stap naar
 
 ## Diagram 2: dezelfde lagen met uchar erin
 
-Stand 2026-10-08. Werk het bij naar de stand na beide kaarten: de DRL-teksttak
-met zijn verlaging van `prioritizedDefaults`, en de proeftak als derde tak of in
-plaats van de exec-modeltak, als de eigenaar tot doorbouwen besliste.
+Stand 2026-10-08. Werk het bij naar de stand na de twee kaarten van "Wacht
+op": beide takken met truth maintenance, de defaults in beide met logische
+stuurfeiten, en geen derde tak.
 
 ```
 uchar, boven Drools
@@ -176,17 +178,17 @@ feitenblad.
    al; uchar begon bij dat werkende paar (README van uchar, "Why these
    languages and engines"). Drools is een volwassen productieregel-engine op de
    JVM. `ref` en clingo toetsen dat de IR geen aannames van Drools overneemt.
-6. **Waarom heeft de Drools-backend NO_LOOP, salience en een vuurplafond?**
-   Afhankelijk van de beslissing over de proef: de maatregelen die nodig zijn
-   omdat de exec-modeltak destructief schrijft, of hoe de backend nu met
-   truth maintenance afleidt.
+6. **Waarom heeft de Drools-backend geen NO_LOOP en geen salience, en wel een
+   vuurplafond?** Hoe de backend met truth maintenance afleidt, waarom de
+   maatregelen tegen destructief schrijven daarmee wegvielen, en waarom het
+   vuurplafond blijft.
 7. **Hoe weet je dat een tak die je niet kunt lezen, klopt?** `ref`, clingo en
    beide Drools-takken worden tegen dezelfde vastgelegde uitkomsten afgespeeld,
    en die uitkomsten zijn vastgezet op handgerekende ankers, zodat een fout die
    in meer backends zit niet verdwijnt doordat ze het met elkaar eens zijn.
-8. **Gebruikt de backend truth maintenance?** Het antwoord komt uit het
-   `Result:` van `20261007-drools-logische-afleiding` en de beslissing van de
-   eigenaar.
+8. **Gebruikt de backend truth maintenance?** Ja, in beide takken (PLAN §9,
+   2026-10-08), met de metingen uit de `Result:`-notities van
+   `20261007-drools-logische-afleiding` en `20261008-tms-omschakeling`.
 9. **Waarom drie backends?** Kort, met een link naar de bestaande tekst op de
    site.
 

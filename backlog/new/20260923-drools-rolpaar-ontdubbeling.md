@@ -25,3 +25,9 @@ het huispatroon is één gedeelde afleiding in `FactModelGenerator`
 
 May touch: `backends/drools/**`, kaartverplaatsing. NB: serieel met
 andere Drools-kaarten; zuivere herstructurering, geen gedragswijziging.
+
+*Raakvlak (2026-10-08): `20261008-tms-aggregaties-creatie-en-fouten` (punt 4)
+zet het beslisblok in `FactModelGenerator`; de kopie in `ExecModelTranspiler`
+verdwijnt met `20261008-tms-omschakeling`, die in `DrlTranspiler` uiterlijk
+met `20261008-drl-teksttak-op-truth-maintenance`. Deze kaart sluit mee met de
+kaart die de laatste kopie weghaalt.*

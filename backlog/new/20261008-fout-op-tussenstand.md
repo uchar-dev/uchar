@@ -108,3 +108,20 @@ voorstel), kaartverplaatsing.
 hetzelfde gebied (wat een initialisatie die niet beslist, mag doen) en kan in
 dezelfde sessie worden gewerkt. De kaart `20261007-drools-logische-afleiding`
 legt deze meting vast in haar `Result:`.
+
+Na het besluit van 2026-10-08 (PLAN §9) gaan beide Drools-takken op truth
+maintenance:
+
+- `20261008-tms-aggregaties-creatie-en-fouten` voert een fout als logisch feit
+  dat pas aan het fixpunt telt, omdat die tak tussenstanden bezoekt die ref niet
+  ziet. Zijn `Result:` geeft wat de tak op de documenten A en B antwoordt, in
+  beide volgordes. Twee weigeringen van die tak hangen van het besluit hier af:
+  een deling in een default, en een deling in een initialisatie naast een
+  andere schrijver.
+- Voor (c) zijn de Drools-takken na `20261008-tms-omschakeling` en
+  `20261008-drl-teksttak-op-truth-maintenance` de takken met truth maintenance.
+  Landt deze kaart eerder, dan geldt (c) voor de takken die er dan zijn.
+- Dezelfde vraag geldt voor een deponering op een tussenstand: de tak met truth
+  maintenance trekt haar in, ref houdt haar. RUNTIME-SEMANTICS ch. 6.1
+  ("Recorded residuals") legt dat laatste al vast als residu dat op het
+  defaultsmodel van ch. 7 wacht. Neem het mee in het besluit.

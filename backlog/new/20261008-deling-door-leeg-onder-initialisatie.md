@@ -95,3 +95,8 @@ haar `Result:`. Haar getuige
 vraagt van de exec-modeltak alleen case 1; landt die kaart vóór deze, dan zet
 deze kaart daar ook case 2 aan. Geen andere kaart raakt
 `delingCompanions` of de deponeerregels van clingo.
+
+Na het besluit van 2026-10-08 (PLAN §9) vervangt `20261008-tms-omschakeling`
+de exec-modeltak door de verlaging met truth maintenance. Deze kaart is klein
+en kan daarvóór landen zoals ze staat. Landt ze erna, dan vervalt (b) voor de
+exec-modeltak, want de nieuwe verlaging geeft hier al het goede antwoord.

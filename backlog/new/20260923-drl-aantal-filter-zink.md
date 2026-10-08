@@ -33,3 +33,8 @@ zonder bruikbare reden.
 May touch: `backends/drools/**`, `corpus/**`, `scripts/check-drools.sh`
 (**voorstel**, pins/kanaallijsten), kaartverplaatsing. NB: serieel met
 andere Drools-kaarten.
+
+*Raakvlak (2026-10-08): `20261008-drl-teksttak-op-truth-maintenance` vervangt
+de destructieve verlaging van de DRL-teksttak en neemt deze vorm op als
+getuige; deze kaart gaat met die landing naar `done/`. Werk haar alleen los als
+dat eerder nodig is.*
