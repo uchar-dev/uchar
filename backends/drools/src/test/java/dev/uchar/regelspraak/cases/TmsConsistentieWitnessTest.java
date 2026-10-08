@@ -320,11 +320,11 @@ class TmsConsistentieWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
         assertEquals("tms: kring in de afhankelijkheden over de knopen Vondst.verdacht en het kanaal van \"controle"
-                + " verdenking\" via de regel \"verdenking\" en de consistentieregel \"controle verdenking\" — elke kring"
-                + " is onwelgevormd (WF-045; met een ontkenning erop ook WF-046), en truth maintenance geeft er geen"
-                + " eenduidig fixpunt voor: een positieve kring houdt zichzelf in stand nadat haar ingang vervalt, een even"
-                + " ontkenningskring beslist op de volgorde van de regels in het model, en een oneven ontkenningskring"
-                + " wisselt tot het vuurplafond", e.getMessage());
+                + " verdenking\" via de regel \"verdenking\" en de consistentieregel \"controle verdenking\" — een kring"
+                + " die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd (WF-045), en truth"
+                + " maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt zichzelf in stand nadat haar"
+                + " ingang vervalt, een even ontkenningskring beslist op de volgorde van de regels in het model, en een"
+                + " oneven ontkenningskring wisselt tot het vuurplafond", e.getMessage());
     }
 
     @Test void is_gevuurd_en_een_kanaal_zonder_gedragen_producent_worden_geweigerd() throws Exception {

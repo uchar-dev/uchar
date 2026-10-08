@@ -238,9 +238,9 @@ public final class DroolsBackend {
      *  inserted as stated takes over an equal logical fact, where IDENTITY mode keeps the two as two facts on one key
      *  and ignores a delete of the stated one in some states. Equal logical facts merge into one fact with a
      *  justification per rule in either mode; that merge rests on the equals and hashCode of the branch's fact classes.
-     *  A form the transpiler does not lower is refused from its manifest, as on the exec-model branch; a cycle among what
-     *  the forms read and write is refused before the KieBase is built, since truth maintenance gives a cycle no single
-     *  fixpoint ({@code Kringen}). */
+     *  A form the transpiler does not lower is refused from its manifest, as on the exec-model branch; a cycle of the
+     *  dependency graph that WF-045 or WF-046 forbids is refused before the KieBase is built, since truth maintenance
+     *  gives such a cycle no single fixpoint ({@code Kringen}). */
     private static Build tmsTak(IrLoader.Loaded loaded, ClassLoader cl) {
         TmsTranspiler t = TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(), loaded.rolBindingen(),
                 loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
@@ -249,8 +249,7 @@ public final class DroolsBackend {
                     + (d.reden().isEmpty() ? "" : " — " + d.reden()));
         // past the manifest every form of the document is one this branch lowers, so the graph over all forms is the
         // graph over the forms it carries
-        String kring = Kringen.weigering(loaded.model(), ProducentConsument.vormen(loaded.model(),
-                loaded.prioritizedDefaults(), ProducentConsument.wireNavigatie(loaded)));
+        String kring = Kringen.weigering(loaded);
         if (kring != null) throw new Excluded(kring);
         weigerDubbeleRegelnaam(t.model(), "tms");
         KieBase kieBase = KieBaseBuilder.createKieBaseFromModel(t.model(), EqualityBehaviorOption.EQUALITY);

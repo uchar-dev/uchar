@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.cases;
 
-import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 
@@ -45,10 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class TmsKringWitnessTest {
 
-    private static final String REDEN = " — elke kring is onwelgevormd (WF-045; met een ontkenning erop ook WF-046), en"
-            + " truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt zichzelf in stand nadat"
-            + " haar ingang vervalt, een even ontkenningskring beslist op de volgorde van de regels in het model, en een"
-            + " oneven ontkenningskring wisselt tot het vuurplafond";
+    private static final String REDEN = " — een kring die niet door een creatielid van een recursieve regelgroep loopt,"
+            + " is onwelgevormd (WF-045), en truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring"
+            + " houdt zichzelf in stand nadat haar ingang vervalt, een even ontkenningskring beslist op de volgorde van de"
+            + " regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond";
 
     private static final List<String> KENMERKEN = List.of("wachtdoend", "vrijgesteld", "dwarsligger", "afgelost", "paraat");
 
@@ -136,9 +135,7 @@ class TmsKringWitnessTest {
                 + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
                 + "\"dayKinds\":[]}";
         Path ir = TmsDocumenten.document(model, regels);
-        IrLoader.Loaded l = IrLoader.loadAll(TmsDocumenten.JSON.readTree(Files.readString(ir)));
-        return Kringen.weigering(l.model(), ProducentConsument.vormen(l.model(), l.prioritizedDefaults(),
-                ProducentConsument.wireNavigatie(l)));
+        return Kringen.weigering(IrLoader.loadAll(TmsDocumenten.JSON.readTree(Files.readString(ir))));
     }
 
     private static final String TWEE = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
