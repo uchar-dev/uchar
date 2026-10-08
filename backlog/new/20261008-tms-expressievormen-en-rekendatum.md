@@ -79,6 +79,15 @@ weigeren op een vorm van `20261008-tms-verdeling-en-tijdlijnen`.
    bewaar bij elke gecompileerde `Toets` en `Waardefunctie` de IR-knoop, zodat
    `20261008-drl-teksttak-op-truth-maintenance` voorwaarden uit de IR kan
    weergeven. Doet de bouwer het niet, dan zegt het `Result:` waarom.
+6. **De fouten van de datumrekening als logisch feit** (bijvangst van
+   `20261009-drools-datumstap-buiten-bereik`). Sinds die kaart geeft de runtime
+   een fout voor een datumstap buiten het bereik en voor een aantal buiten het
+   bereik; in deze tak verlaten die fouten de fire als exception, terwijl alleen
+   een deling door nul een `Fout`-feit is dat pas aan het fixpunt telt. Een
+   aantal dat alleen op een tussenstand buiten het bereik ligt, kan hier dus een
+   fout geven waar ref een waarde geeft (niet gemeten). Het commentaar bij
+   `TmsTranspiler.fout` ("division by zero is the only evaluation fault") klopt
+   dan niet meer.
 
 ## Acceptatie
 

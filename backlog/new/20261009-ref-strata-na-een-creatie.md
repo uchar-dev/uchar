@@ -57,6 +57,22 @@ de restpost "conditions on attribute-writing forms read positively" van ch.
 6.1: daar staan lezer en schrijver in één stratum, hier ordent de stratificatie
 ze al, en ref houdt zich er niet aan.
 
+## Ook een consistentie mist het nieuwe object (2026-10-09)
+
+De gerichte lens op de fixronde van `20261009-creatie-initialisatie-leest-groeiende-waarde`
+vond een naburige vorm, door de hoofdsessie nagemeten (document gemaakt door
+`/tmp/lens-bugs/w1/consistentie/maak.py`): Haven met `y` en de kenmerken
+`gesloten` en `open`, Post met `a`; "y = 1", "a = 5", "een Haven is gesloten
+indien zijn y groter is dan 1", "een Haven is open indien hij niet gesloten is",
+de creatie "post voor een open haven", en de consistentie "controle post": de a
+van een Post is kleiner dan 5. Verwacht: H1 open, één Post met a = 5, en dus
+inconsistent onder "controle post". Ref (main én de branch van W1) geeft in beide
+volgordes `MISMATCH: expected inconsistent …, but the channel carries: (empty)`:
+de consistentie staat in een lager stratum dan de creatie, vuurt aan het fixpunt
+van dat stratum, als de Post nog niet bestaat, en daarna niet meer. Clingo,
+de exec-modeltak en de DRL-teksttak geven inconsistent; de tak met truth
+maintenance weigert de creatie.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Een golden met deze vorm, de lezer eerst, eigen Jutterswet-casus,
@@ -64,8 +80,11 @@ ze al, en ref houdt zich er niet aan.
   Drools-takken die de vorm dragen spelen hem. Voorbeelden in `ref/test/` voor
   beide volgordes.
 - (b) Ref laat na elke ronde van creaties de vormen die niets maken stratum voor
-  stratum tot rust komen (0, 1, …, k), rood eerst. Geen bestaande verwachting
-  in `corpus/golden` of `corpus/rood` verandert.
+  stratum tot rust komen (0, 1, …, k), en laat de consistenties en uniciteiten
+  van elk stratum daarna opnieuw vuren, rood eerst. Geen bestaande verwachting
+  in `corpus/golden` of `corpus/rood` verandert. NB: de fixrondes van
+  `20261009-creatie-initialisatie-leest-groeiende-waarde` repareren de ref-kant
+  (lensvondsten op die kaart); deze kaart houdt dan de goldens.
 - (c) Gates 5, 6, 8 en 12 groen (in `scripts/check-drools.sh` gaan de pins
   `EXPECTED_PLAYED` en `EXPECTED_DRL_PLAYED` elk één omhoog; voorstel); de
   corpusgetuige van de tak met truth maintenance noemt haar weigering; alle gates
