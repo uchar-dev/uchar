@@ -143,8 +143,10 @@ built, never as a silent fall:
 - what the design cannot carry: two computing rules or two initialisations on one target, which the exec-model branch
   settles by agenda order (WF-079); a rule beside a defaults group of its type on its target (WF-050); a computing
   rule on a target outside the standing domain, where a computed leeg would have to empty the target (ch. 7.8); and a
-  division in a default, since the branch computes every default whose reads stand, also one a higher default
-  displaces, and a division by zero there would fail where the reference never evaluates it (ch. 7.1);
+  division in a default, or in the condition or the value of an initialisation whose target has another writer, which
+  ch. 7.7 reads as the lowest default beside it, since the branch computes every default whose reads stand, also one
+  another default displaces, and a division by zero there would fail where the reference never evaluates it
+  (ch. 5.4, 7.1, 7.7);
 - every cycle among what the forms read and write, negated or not, refused by `Kringen` with a `tms:` sentence
   (WF-045): under truth maintenance a positive cycle sustains itself, an even negative cycle settles by model order,
   and an odd one changes until the fire cap.

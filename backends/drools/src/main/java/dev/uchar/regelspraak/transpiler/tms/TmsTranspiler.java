@@ -476,6 +476,12 @@ public final class TmsTranspiler {
      * nothing ranks them. The backend runs no verifier, so this refuses the pair by name; the key is the declaring
      * type's, as for two computing rules, so two initialisations on sibling subtypes are refused as well, which
      * WF-079, read per concrete type, does not pair.
+     *
+     * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default
+     * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
+     * writer displaces it later, so a division in its condition or its value is refused there, with the predicate of a
+     * division in a default: a division by zero would fail where the reference interpreter never evaluates it
+     * ({@code TmsInitialisatieWitnessTest}). Without another writer nothing displaces it and the division stays carried.
      */
     private Rule initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
@@ -487,6 +493,17 @@ public final class TmsTranspiler {
                     + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList())
                     + "), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de"
                     + " waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)");
+        Set<String> anderen = new LinkedHashSet<>(schrijvers.getOrDefault(sleutel, Set.of()));
+        anderen.remove(ProducentConsument.basisNaam(r.naam()));
+        String deling = deling(r.voorwaarde(), r.waarde());
+        if (deling != null && !anderen.isEmpty())
+            throw new Weigering("een deling in een initialisatie waarvan het doel nog een schrijver heeft ('" + deling
+                    + "'; '" + lid.naam() + "' van " + lid.declarant().naam + " wordt ook geschreven door "
+                    + String.join(", ", anderen.stream().map(x -> "\"" + x + "\"").toList()) + "): naast een andere"
+                    + " schrijver is een initialisatie de laagste default (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak"
+                    + " rekent haar uit zodra wat zij leest staat, ook waar de andere schrijver haar later verdringt; een"
+                    + " deling door nul geeft daar een fout waar de referentie, die alleen de beslissende default"
+                    + " uitrekent, geen geeft (speculatieve evaluatie, ch. 7.1)");
         Function<Object, Object> invoer = Accessors.getter(lid.klasse(), lid.naam());
         String naam = r.naam();
         return schrijfregel(r, doel.objecttype(), lid, lez -> {
@@ -704,7 +721,7 @@ public final class TmsTranspiler {
      * <p>Refused as the exec-model branch refuses them: a characteristic target that shares its name with an attribute,
      * a group with a dated validity, an initialisation default on a characteristic, a deciding default without a
      * justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a division
-     * anywhere in a default ({@link #delingInDefault}).
+     * anywhere in a default ({@link #deling(Conditie, Expr)}).
      */
     private List<Rule> stapelregels(Stapels.Stapel st) {
         PrioritizedDefaults l0 = st.leden().get(0);
@@ -788,7 +805,7 @@ public final class TmsTranspiler {
         if (!d.initialisatie() && d.voorwaarde() == null && d.heeftEigenInhoud())
             throw new Weigering("een beslissende default zonder rechtvaardiging ('" + (d.bron() != null ? d.bron()
                     : "zonder bron") + "', doel '" + b.lid.naam() + "')");
-        String deling = delingInDefault(d);
+        String deling = deling(d.voorwaarde(), d.consequentie());
         if (deling != null)
             throw new Weigering("een deling in een default ('" + deling + "'): deze tak rekent een default uit zodra wat"
                     + " hij leest staat, ook een die een hogere default verdringt, en een deling door nul geeft daar een"
@@ -796,12 +813,14 @@ public final class TmsTranspiler {
                     + " ch. 7.1, speculatieve evaluatie)");
     }
 
-    /** The snippet of the first division in the justification or the consequence of {@code d}, or null. The exec-model
-     *  branch refuses a division below the top of a consequence, whose deposit would persist; here the evaluation
-     *  itself is speculative, as a default is evaluated whenever its reads stand, so every division is refused. */
-    private static String delingInDefault(Default d) {
-        String c = d.voorwaarde() == null ? null : deling(d.voorwaarde());
-        return c != null ? c : deling(d.consequentie());
+    /** The snippet of the first division in {@code voorwaarde} or {@code waarde}, or null: in the justification or the
+     *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
+     *  ch. 7.7 reads as the lowest default ({@link #initialisatieRegel}). The exec-model branch refuses a division below
+     *  the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a default is
+     *  evaluated whenever its reads stand, so every division is refused. */
+    private static String deling(Conditie voorwaarde, Expr waarde) {
+        String c = voorwaarde == null ? null : deling(voorwaarde);
+        return c != null ? c : deling(waarde);
     }
 
     private static String deling(Conditie c) {

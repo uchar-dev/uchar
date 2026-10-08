@@ -326,6 +326,64 @@ class TmsInitialisatieWitnessTest {
                 e.getMessage());
     }
 
+    // ---------------- a division in an initialisation beside another writer ----------------
+
+    private static final String DELING_MODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
+            List.of(attribuut("taxatie", GEHEEL), attribuut("bergloon", GEHEEL), attribuut("opbrengst", GEHEEL),
+                    attribuut("deelnemers", GEHEEL)),
+            List.of("gemeld", "erkend"))), List.of());
+
+    private static final List<String> DELING = List.of(
+            kenmerkregel("erkenning", "Vondst", "erkend", check("gemeld", false)),
+            rekenregel("bergloon", "GELIJKSTELLING", "Vondst", "bergloon", lezing("taxatie", "Vondst"),
+                    check("erkend", false)),
+            rekenregel("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon",
+                    binair("dividedBy", lezing("opbrengst", "Vondst"), lezing("deelnemers", "Vondst")), "null"));
+
+    private static final String DELING_WEIGERING = "tms-transpiler SKIP: regel: standaardbergloon — een deling in een"
+            + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'bergloon' van Vondst wordt ook"
+            + " geschreven door \"bergloon\"): naast een andere schrijver is een initialisatie de laagste default"
+            + " (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak rekent haar uit zodra wat zij leest staat, ook waar de"
+            + " andere schrijver haar later verdringt; een deling door nul geeft daar een fout waar de referentie, die"
+            + " alleen de beslissende default uitrekent, geen geeft (speculatieve evaluatie, ch. 7.1)";
+
+    /**
+     * "Een Vondst is erkend indien hij gemeld is", "Het bergloon van een Vondst moet gesteld worden op zijn taxatie,
+     * indien hij erkend is" and "Het bergloon van een Vondst moet geïnitialiseerd worden op zijn opbrengst gedeeld door
+     * zijn deelnemers". Beside the computation the initialisation is the lowest default (RUNTIME-SEMANTICS ch. 7.7), and
+     * only the deciding default is evaluated (ch. 7.1 and 7.5): V1 (gemeld, taxatie 30, opbrengst 100, deelnemers 0) ends
+     * at 30, consistent, and the division by zero is never reached. This branch evaluates the initialisation as soon as
+     * what it reads stands, before the computation's condition holds through the derived {@code erkend}, so it refuses
+     * the division there, in every order of the document. An initialisation with a division and no other writer is not
+     * speculative and stays carried ({@link #een_deling_door_leeg_deponeert_alleen_waar_de_initialisatie_geldt}).
+     *
+     * <p><b>Red before the refusal</b> (measured 2026-10-08, the division carried): every order of the document played
+     * into the fault, the first "[erkenning, bergloon, standaardbergloon] DelingDoorNul: deling door nul in de regel
+     * "standaardbergloon": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS
+     * ch. 1.4, punt 4)", and the other five the same.
+     */
+    @Test void een_deling_in_een_initialisatie_naast_een_andere_schrijver_wordt_geweigerd() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(
+                List.of(instantie("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "100", "deelnemers", "0"),
+                        List.of("gemeld"), Map.of())),
+                List.of(waarde("V1", "bergloon", "30"), consistent()));
+        List<String> verwacht = new ArrayList<>(), uitkomsten = new ArrayList<>();
+        for (List<String> volgorde : TmsDocumenten.permutaties(DELING)) {
+            List<String> namen = TmsDocumenten.regelnamen(volgorde);
+            String uitkomst;
+            try {
+                uitkomst = "gespeeld: " + CaseRunner.speelCase(TmsDocumenten.document(DELING_MODEL, volgorde), zaak,
+                        DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            } catch (RuntimeException e) {
+                uitkomst = e.getClass().getSimpleName() + ": " + e.getMessage();
+            }
+            verwacht.add(namen + " Excluded: " + DELING_WEIGERING);
+            uitkomsten.add(namen + " " + uitkomst);
+        }
+        assertEquals(6, uitkomsten.size());
+        assertEquals(verwacht, uitkomsten);
+    }
+
     // ---------------- helpers ----------------
 
     /** Attribute {@code attribuut} of the bean ends at the number {@code lexeem}, or leeg where it is null. */
