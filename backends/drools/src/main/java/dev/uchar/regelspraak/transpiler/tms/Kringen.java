@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,14 +54,16 @@ import java.util.TreeSet;
  * subtype chain as ch. 5.1 decides per writer: a form that iterates a type writes the member on every type comparable
  * with it that carries the member, an object creation writes its members and its population on the created type and
  * its ancestors only. Keyed on the declaring type instead, a creation of a supertype was the producer of a read on a
- * subtype it never mints, and the three wrakboeking goldens showed a cycle the verifier does not know. The edge kinds
- * of ch. 5.2 enter only as negative or not, since only WF-046 asks.
+ * subtype it never mints, and the three wrakboeking goldens showed a cycle the verifier does not know. Of the edge
+ * kinds of ch. 5.2, WF-046 asks which edges are negative, and the evaluation strata ({@link #strata}), by which the
+ * driver orders the creations, ask which are strict or negative.
  *
  * <p>One edge is drawn beyond the verifier: a rule writes the §9.5 channel of its own name. A rule whose value
  * deposits a §6.5 inconsistency fills that channel (RUNTIME-SEMANTICS ch. 5.6), and this branch carries a test of it,
  * where ch. 5.1 keys the channel of a consistency or a uniqueness only. The edge reaches a reader only where such a
  * test passes the lowering, and makes this check stricter than the verifier, never laxer: a test of a rule's channel
- * that closes a cycle is refused here and alternates until the fire cap without the edge.
+ * that closes a cycle is refused here and alternates until the fire cap without the edge. The strata leave the edge
+ * out, so that they are the reference interpreter's.
  */
 public final class Kringen {
     private Kringen() {}
@@ -68,13 +71,17 @@ public final class Kringen {
     /** A read: the node, and whether the edge it draws is negative (ch. 5.2). */
     private record Lezing(String knoop, boolean negatief) {}
 
-    /** One form of the graph: its kind and name as the refusal names it, whether it is a creation member of a
-     *  recursive rule group, and the nodes it writes and reads. */
-    private record Vorm(ProducentConsument.Vormsoort soort, String naam, boolean recursieveCreatie, Set<String> schrijft,
-                        List<Lezing> leest) {}
+    /** One form of the graph: its kind and name as the refusal names it, the IR node it is built from, whether it is a
+     *  creation member of a recursive rule group, whether its writes are irrevocable, and the nodes it writes and
+     *  reads. A form with irrevocable writes, a characteristic attribution, a consistency, a uniqueness or a creation,
+     *  reads every value that is not a characteristic strictly (the verifier's {@code strict_unless_char},
+     *  RUNTIME-SEMANTICS ch. 6.1): a transient it acted on would persist. */
+    private record Vorm(ProducentConsument.Vormsoort soort, String naam, Object bron, boolean recursieveCreatie,
+                        boolean onherroepelijk, Set<String> schrijft, List<Lezing> leest) {}
 
-    /** An edge from the form that writes {@code knoop} to the form that reads it. */
-    private record Rand(int producent, int consument, String knoop, boolean negatief) {}
+    /** An edge from the form that writes {@code knoop} to the form that reads it; {@code strikt} where ch. 5.2 makes
+     *  the edge strict or negative, so that off a cycle the reader's stratum lies above the writer's. */
+    private record Rand(int producent, int consument, String knoop, boolean negatief, boolean strikt) {}
 
     private static final Comparator<Vorm> VORMVOLGORDE =
             Comparator.comparing((Vorm v) -> v.soort().ordinal()).thenComparing(Vorm::naam);
@@ -83,7 +90,8 @@ public final class Kringen {
      *  A cycle names its nodes and the forms whose reads and writes close it, both sorted, so every order of the same
      *  forms gives the same sentence. */
     public static String weigering(IrLoader.Loaded geladen) {
-        Graaf g = new Graaf(geladen);
+        Graaf g = new Graaf(geladen.model(), geladen.prioritizedDefaults(), geladen.navigatieBindingen(),
+                geladen.rolBindingen(), geladen.bronPaden());
         List<Vorm> vormen = g.vormen();
         List<Rand> randen = randen(vormen);
         List<String> kringen = kringen45(g, vormen, randen);
@@ -102,15 +110,67 @@ public final class Kringen {
                 + " regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult";
     }
 
+    /**
+     * The evaluation stratum of every form of the document, by its IR node, as the reference interpreter computes it
+     * over the verifier's graph ({@code ref/lib/eval.ml}, RUNTIME-SEMANTICS ch. 6.3): the smallest stratum at or above
+     * the writers of what the form reads positively and above the writers of what it reads strictly or negatively,
+     * except along a cycle, where every edge counts as positive (a cycle WF-045 admits passes through a recursive
+     * creation, and its generations settle it). The edge this branch draws beyond the verifier, a rule that writes the
+     * channel of its own name, is left out, so the strata are the reference interpreter's and no higher. A document
+     * with a forbidden cycle gets strata as well; {@link #weigering} refuses it.
+     */
+    static Map<Object, Integer> strata(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                       Map<Object, List<RolBindingRef>> navigatie, Map<Object, RolBindingRef> rolBindingen,
+                                       Map<Object, List<RolBindingRef>> bronPaden) {
+        List<Vorm> vormen = new Graaf(model, defaults, navigatie, rolBindingen, bronPaden).vormen();
+        int n = vormen.size();
+        List<Rand> randen = new ArrayList<>();
+        for (Rand r : randen(vormen))
+            if (!(vormen.get(r.producent()).soort() == ProducentConsument.Vormsoort.REGEL && r.knoop().startsWith("chan:")))
+                randen.add(r);
+        List<List<Integer>> volgend = new ArrayList<>();
+        for (int i = 0; i < n; i++) volgend.add(new ArrayList<>());
+        for (Rand r : randen) volgend.get(r.producent()).add(r.consument());
+        boolean[] stijgt = new boolean[randen.size()];
+        for (int i = 0; i < randen.size(); i++) {
+            Rand r = randen.get(i);
+            stijgt[i] = r.strikt() && !bereikbaar(volgend, r.consument(), r.producent());
+        }
+        int[] stratum = new int[n];
+        boolean veranderd = true;
+        for (int ronde = 1; veranderd; ronde++) {
+            // only an edge between two strongly connected components climbs, so the strata settle within n rounds;
+            // the reference interpreter faults past n + 2, and so does this
+            if (ronde > n + 2) throw new IllegalStateException("tms: geen evaluatiestrata na " + (n + 2) + " rondes");
+            veranderd = false;
+            for (int i = 0; i < randen.size(); i++) {
+                Rand r = randen.get(i);
+                int nodig = stratum[r.producent()] + (stijgt[i] ? 1 : 0);
+                if (stratum[r.consument()] < nodig) {
+                    stratum[r.consument()] = nodig;
+                    veranderd = true;
+                }
+            }
+        }
+        Map<Object, Integer> uit = new IdentityHashMap<>();
+        for (int i = 0; i < n; i++) uit.put(vormen.get(i).bron(), stratum[i]);
+        return uit;
+    }
+
     /** Every edge of the graph: one for every node a form reads and another form, or the same, writes. */
     private static List<Rand> randen(List<Vorm> vormen) {
         Map<String, List<Integer>> schrijvers = new HashMap<>();
         for (int i = 0; i < vormen.size(); i++)
             for (String k : vormen.get(i).schrijft()) schrijvers.computeIfAbsent(k, x -> new ArrayList<>()).add(i);
         List<Rand> uit = new ArrayList<>();
-        for (int c = 0; c < vormen.size(); c++)
-            for (Lezing l : vormen.get(c).leest())
-                for (int p : schrijvers.getOrDefault(l.knoop(), List.of())) uit.add(new Rand(p, c, l.knoop(), l.negatief()));
+        for (int c = 0; c < vormen.size(); c++) {
+            Vorm lezer = vormen.get(c);
+            for (Lezing l : lezer.leest()) {
+                boolean strikt = l.negatief() || lezer.onherroepelijk() && !l.knoop().startsWith("char:");
+                for (int p : schrijvers.getOrDefault(l.knoop(), List.of()))
+                    uit.add(new Rand(p, c, l.knoop(), l.negatief(), strikt));
+            }
+        }
         return uit;
     }
 
@@ -254,12 +314,13 @@ public final class Kringen {
         /** The order nodes are listed in: the members first, by type and name, then the other nodes. */
         private final Map<String, String> volgorde = new HashMap<>();
 
-        Graaf(IrLoader.Loaded geladen) {
-            this.model = geladen.model();
-            this.defaults = geladen.prioritizedDefaults();
-            this.navigatie = geladen.navigatieBindingen();
-            this.rolBindingen = geladen.rolBindingen();
-            this.bronPaden = geladen.bronPaden();
+        Graaf(RegelSpraakModel model, List<PrioritizedDefaults> defaults, Map<Object, List<RolBindingRef>> navigatie,
+              Map<Object, RolBindingRef> rolBindingen, Map<Object, List<RolBindingRef>> bronPaden) {
+            this.model = model;
+            this.defaults = defaults;
+            this.navigatie = navigatie;
+            this.rolBindingen = rolBindingen;
+            this.bronPaden = bronPaden;
             this.stapels = new Stapels(model, defaults);
         }
 
@@ -353,8 +414,8 @@ public final class Kringen {
                 conditie(r.voorwaarde(), d.objecttype(), false, leest);
                 expr(r.waarde(), d.objecttype(), leest);
                 if (!kenmerk && !stapels.geabsorbeerdOp(d.objecttype(), d.attribuut()).isEmpty()) leest = negatief(leest);
-                uit.add(new Vorm(ProducentConsument.Vormsoort.REGEL, ProducentConsument.basisNaam(r.naam()), false,
-                        schrijft, leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.REGEL, ProducentConsument.basisNaam(r.naam()), r, false,
+                        kenmerk, schrijft, leest));
             }
             for (ResolvedVerdeling v : model.verdelingen) {
                 Set<String> schrijft = new LinkedHashSet<>();
@@ -372,14 +433,14 @@ public final class Kringen {
                     for (String a : new String[] {v.ratoAttribuut(), v.maximumAttribuut(), v.groepeerAttribuut()})
                         if (a != null) leest.add(new Lezing(lid(v.doelType(), a, false), false));
                 conditie(v.voorwaarde(), v.bronType(), false, leest);
-                uit.add(new Vorm(ProducentConsument.Vormsoort.VERDELING, ProducentConsument.basisNaam(v.naam()), false,
-                        schrijft, leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.VERDELING, ProducentConsument.basisNaam(v.naam()), v, false,
+                        false, schrijft, leest));
             }
             for (ResolvedConsistentie c : model.consistenties) {
                 List<Lezing> leest = new ArrayList<>();
                 conditie(c.assertie(), c.subject(), false, leest);
-                uit.add(new Vorm(ProducentConsument.Vormsoort.CONSISTENTIE, ProducentConsument.basisNaam(c.naam()), false,
-                        c.naam() == null ? Set.of() : Set.of(kanaal(c.naam())), leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.CONSISTENTIE, ProducentConsument.basisNaam(c.naam()), c,
+                        false, true, c.naam() == null ? Set.of() : Set.of(kanaal(c.naam())), leest));
             }
             for (ResolvedUniciteit u : model.uniciteiten) {
                 List<Lezing> leest = new ArrayList<>();
@@ -387,16 +448,16 @@ public final class Kringen {
                     leest.add(new Lezing(relatie(u.scopeRol().feittype()), false));
                 if (u.subject() != null)
                     for (String k : u.sleutels()) if (k != null) leest.add(new Lezing(lid(u.subject(), k, false), false));
-                uit.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), false,
-                        u.naam() == null ? Set.of() : Set.of(kanaal(u.naam())), leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), u,
+                        false, true, u.naam() == null ? Set.of() : Set.of(kanaal(u.naam())), leest));
             }
             for (ResolvedUniciteitUnie u : model.uniciteitUnies) {
                 List<Lezing> leest = new ArrayList<>();
                 for (ResolvedUniciteitUnie.Bron b : u.bronnen())
                     if (b.type() != null)
                         for (String k : b.sleutels()) if (k != null) leest.add(new Lezing(lid(b.type(), k, false), false));
-                uit.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), false,
-                        u.naam() == null ? Set.of() : Set.of(kanaal(u.naam())), leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.UNICITEIT, ProducentConsument.basisNaam(u.naam()), u,
+                        false, true, u.naam() == null ? Set.of() : Set.of(kanaal(u.naam())), leest));
             }
             for (ResolvedObjectCreatie o : model.objectCreaties) {
                 Set<String> schrijft = new LinkedHashSet<>();
@@ -414,8 +475,8 @@ public final class Kringen {
                 conditie(o.voorwaarde(), o.subject(), false, leest);
                 for (ResolvedObjectCreatie.Toekenning t : o.toekenningen()) expr(t.waarde(), o.subject(), leest);
                 String naam = o.naam() == null ? "" : o.naam();
-                uit.add(new Vorm(ProducentConsument.Vormsoort.OBJECTCREATIE, ProducentConsument.basisNaam(o.naam()),
-                        recursief.contains(Namen.norm(zonderVersie(naam))), schrijft, leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.OBJECTCREATIE, ProducentConsument.basisNaam(o.naam()), o,
+                        recursief.contains(Namen.norm(zonderVersie(naam))), true, schrijft, leest));
             }
             for (ResolvedFeitCreatie f : model.feitCreaties) {
                 Set<String> schrijft = new LinkedHashSet<>();
@@ -428,8 +489,8 @@ public final class Kringen {
                     leest.add(new Lezing(relatie(f.joinRol().feittype()), false));
                 conditie(f.voorwaarde(), f.anker(), false, leest);
                 String naam = f.naam() == null ? "" : f.naam();
-                uit.add(new Vorm(ProducentConsument.Vormsoort.FEITCREATIE, ProducentConsument.basisNaam(f.naam()),
-                        recursief.contains(Namen.norm(zonderVersie(naam))), schrijft, leest));
+                uit.add(new Vorm(ProducentConsument.Vormsoort.FEITCREATIE, ProducentConsument.basisNaam(f.naam()), f,
+                        recursief.contains(Namen.norm(zonderVersie(naam))), true, schrijft, leest));
             }
             for (int i = 0; i < defaults.size(); i++) {
                 PrioritizedDefaults p = defaults.get(i);
@@ -440,8 +501,8 @@ public final class Kringen {
                 List<Lezing> leest = new ArrayList<>();
                 for (Default d : p.defaults()) defaultlezingen(d, onderwerp, leest);
                 uit.add(new Vorm(ProducentConsument.Vormsoort.DEFAULTSGROEP,
-                        p.naam() != null ? ProducentConsument.basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i,
-                        false, schrijft, negatief(leest)));
+                        p.naam() != null ? ProducentConsument.basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i, p,
+                        false, false, schrijft, negatief(leest)));
             }
             return uit;
         }

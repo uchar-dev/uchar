@@ -141,7 +141,11 @@ import java.util.function.UnaryOperator;
  * made it had passed, and its initialisations would follow later changes, where ch. 5.5 evaluates them when the object
  * is made. Its rules sit in agenda groups of their own ({@link #FEITCREATIE}, {@link #OBJECTCREATIE}) and the driver
  * fires them in generations ({@code DroolsBackend.vuur}): the rule layer to rest, then the fact creations once, the
- * rule layer to rest, the object creations once, and again, for at most 100 generations. An object creation inserts
+ * rule layer to rest, the object creations once, and again, for at most 100 generations. It does so per evaluation
+ * stratum of the reference interpreter, in ascending order ({@link #creatiestrata}): a creation reads strictly, so it
+ * fires only once the creations whose output it reads have reached their fixpoint, as the reference interpreter
+ * evaluates stratum k to its fixpoint before a form of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an
+ * initialisation evaluated earlier would be fixed on a value that grows. An object creation inserts
  * the new bean, a {@link Gemaakt} mark per creation and subject, the {@link Koppeling} of its connecting relation and
  * its initialisations as {@link Waarde} and {@link HeeftKenmerk}, computed from what its rule binds
  * ({@link #objectCreatie}); a fact creation inserts the {@link Koppeling} it makes ({@link #feitCreatie}). Every relation
@@ -228,6 +232,10 @@ public final class TmsTranspiler {
     /** The names of the lowered creation rules, those of {@link #FEITCREATIE} and of {@link #OBJECTCREATIE}: the driver
      *  counts their firings to tell a generation that created something from one that did not. */
     private final Set<String> creatieregels = new LinkedHashSet<>();
+    /** The evaluation stratum of every form of a document with a creation, by its node ({@link Kringen#strata}). */
+    private Map<Object, Integer> strata = Map.of();
+    /** The strata of the lowered creation rules ({@link #creatiestrata}). */
+    private final Set<Integer> creatiestrata = new TreeSet<>();
     /** Whether a filter fault rule reads a {@link Lijstplaats} ({@link #plaats}). */
     private boolean lijstplaatsen;
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
@@ -276,6 +284,12 @@ public final class TmsTranspiler {
     /** The names of the creation rules of the model, in the agenda groups {@link #FEITCREATIE} and
      *  {@link #OBJECTCREATIE}; empty for a document without a lowered creation, which the driver fires in one go. */
     public Set<String> creatieregels() { return Set.copyOf(creatieregels); }
+
+    /** The evaluation strata of the creation rules of the model, ascending, as the reference interpreter computes them
+     *  over the verifier's dependency graph (RUNTIME-SEMANTICS ch. 6.3): the driver runs the generations of each in
+     *  turn, and a creation rule fires in the phases of its own stratum and of every stratum above it
+     *  ({@link Creatiefase}). Empty where {@link #creatieregels} is. */
+    public List<Integer> creatiestrata() { return List.copyOf(creatiestrata); }
 
     /** Whether a rule of the model reads a {@link Lijstplaats}: a fold whose filter can fault over a range with a
      *  to-many step. Only then does the case input state the places of its to-many lists. */
@@ -382,6 +396,8 @@ public final class TmsTranspiler {
     private Model run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
+        if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
+            strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
         // before any form lowers: a form that reads a created relation must know it while it lowers
         for (ResolvedObjectCreatie o : model.objectCreaties) {
             RolBindingRef vr = rolBindingen.get(o);
@@ -947,7 +963,8 @@ public final class TmsTranspiler {
             inits.add(new Initialisatie(lid, w));
         }
         lez.stop();
-        int fase = lez.creatiefase();
+        int stratum = stratum(oc, naam);
+        int fase = lez.creatiefase(stratum);
         gebruik.add(fase);
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, oc.voorwaarde(),
                 creatiebewaking(naam, lez, fase));
@@ -979,6 +996,7 @@ public final class TmsTranspiler {
         for (Initialisatie i : inits) afgeleid.put(i.lid().sleutel(), i.lid());
         lez.vastleggen();
         creatieregels.add(regelnaam);
+        creatiestrata.add(stratum);
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, OBJECTCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
@@ -1000,6 +1018,16 @@ public final class TmsTranspiler {
                         .expr(id("gemaakt-onderwerp"), lez.s, (g, o) -> g.onderwerp() == o)),
                 DSL.not(PatternDSL.pattern(nieuw).expr(id("nieuw-object"), lez.s, (g, o) -> g.object() == o)
                         .expr(id("nieuw-in-deze-fase"), f, (g, n) -> g.fase() == (Integer) n)));
+    }
+
+    /** The evaluation stratum of the creation {@code vorm}, named {@code naam}: every creation is a form of the
+     *  dependency graph, so a creation without one is a fault of this transpiler. */
+    private int stratum(Object vorm, String naam) {
+        Integer s = strata.get(vorm);
+        if (s == null)
+            throw new IllegalStateException("tms: de creatie \"" + naam + "\" heeft geen stratum in de"
+                    + " afhankelijkheidsgraaf");
+        return s;
     }
 
     /** A new bean of {@code klasse}, with every field unset: what a creation initialises is a fact beside it. */
@@ -1049,7 +1077,8 @@ public final class TmsTranspiler {
         Toets toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
-        int fase = lez.creatiefase();
+        int stratum = stratum(fc, fc.naam());
+        int fase = lez.creatiefase(stratum);
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, ankerguard);
         List<RolBindingRef> stappen = new ArrayList<>();
         for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) stappen.add(t.rolBinding());
@@ -1075,6 +1104,7 @@ public final class TmsTranspiler {
                         : new Koppeling(relatie, d, a, (Integer) n))));
         lez.vastleggen();
         creatieregels.add(regelnaam);
+        creatiestrata.add(stratum);
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, FEITCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
@@ -2675,14 +2705,17 @@ public final class TmsTranspiler {
             return uit;
         }
 
-        /** The number of the {@link Creatiefase} the driver opened, for a creation rule: one fact for the whole session,
-         *  joined to no subject, bound among the parameters. */
-        int creatiefase() {
+        /** The number of the {@link Creatiefase} the driver opened, for a creation rule of stratum {@code stratum}: one
+         *  fact for the whole session, joined to no subject, bound among the parameters, and only a phase of this
+         *  stratum or one above, as a pass of the reference interpreter over stratum k runs every form of stratum k or
+         *  below (RUNTIME-SEMANTICS ch. 6.3). */
+        int creatiefase(int stratum) {
             int bekend = bestaand("creatiefase");
             if (bekend >= 0) return bekend;
             Variable<Creatiefase> f = DSL.declarationOf(Creatiefase.class, "$creatiefase");
             Variable<Object> n = DSL.declarationOf(Object.class, "$fase");
-            parameters.add(PatternDSL.pattern(f).bind(n, Creatiefase::nummer));
+            parameters.add(PatternDSL.pattern(f).expr(id("creatiestratum"), c -> c.stratum() >= stratum)
+                    .bind(n, Creatiefase::nummer));
             return nieuw("creatiefase", n);
         }
 

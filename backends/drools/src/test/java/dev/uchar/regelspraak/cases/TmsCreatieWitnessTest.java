@@ -608,9 +608,12 @@ class TmsCreatieWitnessTest {
     /** A fact creation walks a link only in a later phase than the one that made it, after the rule layer has reached a
      *  fixpoint over it, as an object waits to be a subject. The golden {@code anchor/jutterswet-erflijn} builds the
      *  erflijn over a chain W1 → W2 → W3 → W4 of opvolgers: "erf de directe opvolger" links each Wachter to its
-     *  opvolger, and the recursive "erf de lijn door" walks an erflijn link and then an opvolger. The links of the
-     *  direct opvolgers arise in the phase of the fact creations of generation 1, those two steps away in that of
-     *  generation 2, and W1 → W4 in that of generation 3: phases 1, 3 and 5. */
+     *  opvolger, and the recursive "erf de lijn door" walks an erflijn link and then an opvolger. "erf de lijn door"
+     *  reads the erflijn links "erf de directe opvolger" writes, strictly, so it sits a stratum above it (RUNTIME-SEMANTICS
+     *  ch. 6.1, 6.3). The links of the direct opvolgers arise in the phase of the fact creations of stratum 0's first
+     *  generation, which its second generation, making nothing, closes (phases 3 and 4); those two steps away arise in
+     *  the fact phase of stratum 1's first generation, and W1 → W4 in that of its second: phases 1, 5 and 7. Until the
+     *  creations fired per stratum (2026-10-08) they were phases 1, 3 and 5. */
     @Test void een_link_is_pas_in_de_volgende_generatie_pad() throws Exception {
         Path d = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-erflijn");
         assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(d.resolve("ir.json"), List.of(d.resolve("case.json")))
@@ -630,7 +633,8 @@ class TmsCreatieWitnessTest {
             assertEquals(6, links.size(), () -> "links in volgorde " + namen);
             for (Object[] l : links) {
                 int afstand = w.indexOf(l[1]) - w.indexOf(l[0]);
-                assertEquals(2 * afstand - 1, l[2], () -> "fase van een link over " + afstand + " in volgorde " + namen);
+                assertEquals(afstand == 1 ? 1 : 2 * afstand + 1, l[2],
+                        () -> "fase van een link over " + afstand + " in volgorde " + namen);
             }
             for (int i = 0; i < 4; i++)
                 assertGetal(String.valueOf(3 - i), TmsDocumenten.lees(w.get(i), "erfvolgeraantal"),

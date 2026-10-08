@@ -292,9 +292,10 @@ public final class DroolsBackend {
         if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie);
     }
 
-    /** The generation budget of a run with creations: at most this many generations create something, and the next
-     *  must create nothing. The reference interpreter bounds a recursive chain by 100 passes, one generation each, and
-     *  the ASP backend by an equal {@code oc_budget} (RUNTIME-SEMANTICS ch. 5.5 and 5.7); {@code corpus/rood}
+    /** The generation budget of a run with creations, per evaluation stratum: at most this many generations of one
+     *  stratum create something, and the next must create nothing. The reference interpreter bounds the fixpoint of
+     *  each stratum by 100 passes, a recursive chain advancing one generation per pass, and the ASP backend the depth
+     *  of a chain of mints by an equal {@code oc_budget} (RUNTIME-SEMANTICS ch. 5.5 and 5.7); {@code corpus/rood}
      *  {@code finite-chain-over-budget} and {@code synth2-budgetgrens-onder} pin the two sides of the bound. */
     static final int GENERATIES = 100;
 
@@ -318,11 +319,22 @@ public final class DroolsBackend {
      * new {@code Creatiefase}, gives its group the focus and fires, which fires the creations that hold at that fixpoint
      * and then, once the group is empty, takes the rule layer to rest again in the same fire. What a phase made carries
      * its number, and a creation rule does not take an object or a link of the phase it fires in, so a recursive chain
-     * advances one generation per phase. The run ends at the first generation that creates nothing. A generation past
-     * {@link #GENERATIES} that still creates ends it without a fixpoint.
+     * advances one generation per phase.
+     *
+     * <p>The generations run per evaluation stratum of the reference interpreter, in ascending order
+     * ({@code TmsTranspiler.creatiestrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
+     * of its own stratum or one above. A creation writes irrevocably, so it reads strictly and sits above the producers
+     * of what it reads (RUNTIME-SEMANTICS ch. 6.1); the reference interpreter evaluates stratum k to its fixpoint before
+     * a form of stratum k+1 fires (ch. 6.3). In one phase for all strata, a creation that reads what another creation
+     * of the same generation makes would read the state before it, and its initialisation would stay fixed on that
+     * value. The strata order only the creations, which are stated: the rule layer stays under truth maintenance and
+     * reaches its fixpoint after every phase. A stratum ends at its first generation that creates nothing. A generation
+     * past {@link #GENERATIES} within one stratum that still creates ends the run without a fixpoint: the reference
+     * interpreter bounds the fixpoint of each stratum by its budget of passes.
      */
     static Vuring vuur(Build build, KieSession sessie, int plafond) {
-        Set<String> creaties = build.tmsTranspiler() == null ? Set.of() : build.tmsTranspiler().creatieregels();
+        TmsTranspiler tms = build.tmsTranspiler();
+        Set<String> creaties = tms == null ? Set.of() : tms.creatieregels();
         if (creaties.isEmpty()) return new Vuring(sessie.fireAllRules(plafond), null);
         int[] gemaakt = {0};
         AgendaEventListener teller = new DefaultAgendaEventListener() {
@@ -335,27 +347,29 @@ public final class DroolsBackend {
             int gevuurd = sessie.fireAllRules(plafond);
             FactHandle fase = null;
             int nummer = 0;
-            for (int generatie = 1; gevuurd < plafond; generatie++) {
-                gemaakt[0] = 0;
-                for (String groep : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE)) {
-                    // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which every
-                    // creation rule does; null means the KieBase lacks the creation rules the transpiler reports
-                    org.kie.api.runtime.rule.AgendaGroup g = sessie.getAgenda().getAgendaGroup(groep);
-                    if (g == null)
-                        throw new IllegalStateException("de KieBase kent de agendagroep " + groep + " niet, terwijl het"
-                                + " model creatieregels heeft: " + creaties);
-                    if (fase != null) sessie.delete(fase);
-                    fase = sessie.insert(new Creatiefase(++nummer));
-                    g.setFocus();
-                    gevuurd += sessie.fireAllRules(plafond - gevuurd);
-                    if (gevuurd >= plafond) return new Vuring(gevuurd, null);
+            for (int stratum : tms.creatiestrata())
+                for (int generatie = 1; gevuurd < plafond; generatie++) {
+                    gemaakt[0] = 0;
+                    for (String groep : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE)) {
+                        // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which
+                        // every creation rule does; null means the KieBase lacks the creation rules the transpiler reports
+                        org.kie.api.runtime.rule.AgendaGroup g = sessie.getAgenda().getAgendaGroup(groep);
+                        if (g == null)
+                            throw new IllegalStateException("de KieBase kent de agendagroep " + groep + " niet, terwijl"
+                                    + " het model creatieregels heeft: " + creaties);
+                        if (fase != null) sessie.delete(fase);
+                        fase = sessie.insert(new Creatiefase(++nummer, stratum));
+                        g.setFocus();
+                        gevuurd += sessie.fireAllRules(plafond - gevuurd);
+                        if (gevuurd >= plafond) return new Vuring(gevuurd, null);
+                    }
+                    if (gemaakt[0] == 0) break;
+                    if (generatie > GENERATIES)
+                        return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
+                                + generatie + " maakt nog " + gemaakt[0] + (gemaakt[0] == 1 ? " object of link"
+                                : " objecten of links") + " — een creatie die niet stopt is een fout (RUNTIME-SEMANTICS"
+                                + " ch. 5.5 en 5.7)");
                 }
-                if (gemaakt[0] == 0) return new Vuring(gevuurd, null);
-                if (generatie > GENERATIES)
-                    return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
-                            + generatie + " maakt nog " + gemaakt[0] + (gemaakt[0] == 1 ? " object of link" : " objecten of"
-                            + " links") + " — een creatie die niet stopt is een fout (RUNTIME-SEMANTICS ch. 5.5 en 5.7)");
-            }
             return new Vuring(gevuurd, null);
         } finally {
             sessie.removeEventListener(teller);
