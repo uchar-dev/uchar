@@ -2,11 +2,16 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
+import dev.uchar.regelspraak.transpiler.tms.Stand;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.event.rule.DefaultRuleRuntimeEventListener;
+import org.kie.api.event.rule.MatchCreatedEvent;
+import org.kie.api.event.rule.ObjectDeletedEvent;
 import org.kie.api.event.rule.ObjectInsertedEvent;
 import org.kie.api.runtime.KieSession;
 
@@ -58,7 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       shape the verifier admits where the condition reads its own output, where a logical object kept itself
  *       standing by its own count once the state that made it had passed
  *       ({@link #een_creatie_die_haar_eigen_uitvoer_leest_houdt_zichzelf_niet_in_stand}); and while the rule layer
- *       reacts to an object a creation made ({@link #een_creatie_vuurt_niet_terwijl_de_regellaag_op_een_creatie_reageert}).</li>
+ *       reacts to an object a creation made ({@link #een_creatie_vuurt_niet_terwijl_de_regellaag_op_een_creatie_reageert}),
+ *       where with a condition read positively the creation does not even get a match on that state
+ *       ({@link #een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand}).</li>
  *   <li>A recursive chain that WF-045 admits stops where its condition no longer holds, an initialisation keeps the
  *       value it had when the object was made, and a navigation through the created relation reads the created link
  *       ({@link #een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt}).</li>
@@ -74,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  *
  * <p><b>The other executors</b> (2026-10-08). Every document written here passes the verifier. The reference
- * interpreter and the ASP backend give the expectations of A, A2, B, D1 and G. On D2 both fault: "to-one role "haven"
+ * interpreter and the ASP backend give the expectations of A, A2, B, D1, G and H. On D2 both fault: "to-one role "haven"
  * on "J1" already links H1; a second filler is ill-typed (ch. 5.5)" and "UNSATISFIABLE — a fail-fast guard fired:
  * viol("to-one second filler on role haven","J1")". On F both fault: "no fixpoint within 100 passes — divergence is a
  * fault (ch. 5.7)" and "UNSATISFIABLE — a fail-fast guard fired: no viol/2 witness (the input is not stratified?)". On C
@@ -92,7 +99,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * each caught: without the phase on the mark of a made object (F), without the mark per rule and subject (A), without
  * the agenda group of the object creations (every object creation test), with the creations in the main group beside
  * the rule layer (G, F, C and the budget), with a fact creation that does not test for the link it makes (D1, D2 and
- * the erflijn), and without the phase on a walked link (the erflijn).
+ * the erflijn), and without the phase on a walked link (the erflijn). Measured on {@code 582b200e}: auto-focus on the
+ * object creations (H by its match on the intermediate state, "expected: &lt;[]&gt; but was: &lt;[{aantal=1,
+ * kopie=0}]&gt;"; C, F and the budget by the phase), and an eager object creation without auto-focus, no-loop (H, the
+ * same match).
  */
 class TmsCreatieWitnessTest {
 
@@ -241,6 +251,11 @@ class TmsCreatieWitnessTest {
      *  differ only between those two rules, when the Melding has arrived; "waarschuw" makes a Waarschuwing where they
      *  differ. At every fixpoint of the rule layer they are equal. */
     static Path documentG() throws Exception {
+        return waarschuwdocument(vergelijking("notEqual", lezing("aantal", "Jutter"), lezing("kopie", "Jutter")));
+    }
+
+    /** The model and rules of G, with {@code voorwaarde} as the condition of "waarschuw". */
+    private static Path waarschuwdocument(String voorwaarde) throws Exception {
         String model = TmsDocumenten.model(List.of(
                 TmsDocumenten.objecttype("Jutter", List.of(attribuut("aantal", GEHEEL), attribuut("kopie", GEHEEL),
                         attribuut("waarschuwingaantal", GEHEEL)), List.of()),
@@ -259,9 +274,8 @@ class TmsCreatieWitnessTest {
                         TELLING, "het aantal waarschuwingen van de Jutter"), "null"));
         return document(model, regels, List.of(), List.of(
                 objectcreatie("meld", "Jutter", "Melding", List.of(), "null", "jutmelding", "melding"),
-                objectcreatie("waarschuw", "Jutter", "Waarschuwing", List.of(),
-                        vergelijking("notEqual", lezing("aantal", "Jutter"), lezing("kopie", "Jutter")),
-                        "jutwaarschuwing", "waarschuwing")), List.of(), List.of());
+                objectcreatie("waarschuw", "Jutter", "Waarschuwing", List.of(), voorwaarde, "jutwaarschuwing",
+                        "waarschuwing")), List.of(), List.of());
     }
 
     static JsonNode zaakG() throws Exception {
@@ -294,6 +308,97 @@ class TmsCreatieWitnessTest {
                     < volgordeVanWaarden.indexOf("kopie")) tussenstand++;
         }
         assertTrue(tussenstand > 0, "geen volgorde liet het aantal voor de kopie veranderen");
+    }
+
+    // ---------------- document H: the rule layer after a creation phase, read positively ----------------
+
+    /** G with the condition of "waarschuw" read positively, "het aantal van de Jutter is groter dan de kopie van de
+     *  Jutter": a comparison with a leeg operand does not hold (RUNTIME-SEMANTICS ch. 1.2), so it holds only where the
+     *  aantal has grown past a kopie that is there, and the expected answer rests on no condition that holds on absence
+     *  (ch. 6.1). At every fixpoint of the rule layer the two are equal, and the case expects G's answer. */
+    static Path documentH() throws Exception {
+        return waarschuwdocument(vergelijking("greater", lezing("aantal", "Jutter"), lezing("kopie", "Jutter")));
+    }
+
+    /**
+     * After a creation phase, while its {@code Creatiefase} stands, the rule layer passes a state on which "waarschuw"
+     * holds and which no fixpoint has: "meld" has made the Melding, the aantal standing is 1 and the kopie standing still
+     * 0. Measured per order, over working memory: the standings "waarschuw" reads, and every match Drools creates for
+     * "waarschuw". In every order the state stood with a {@code Creatiefase} in the session, no Waarschuwing is made, and
+     * "waarschuw" does not even get a match: Drools 8.44 evaluates a rule lazily, when the agenda takes it from the group
+     * that has the focus, and the object creations' group has the focus only when the driver gives it, at a fixpoint of
+     * the rule layer ({@code DroolsBackend.vuur}).
+     *
+     * <p>This is the witness for auto-focus on the object creations, which G does not see. Auto-focus makes a rule eager
+     * ({@code RuleImpl.setAutoFocus} sets the eager flag) and gives its group the focus where an evaluation creates a
+     * match ({@code PhreakRuleTerminalNode.doLeftInserts}): "waarschuw" gets a match on the state above, in every order,
+     * and this test fails on it. Measured on this document, the rule layer then fires on, the copy of the aantal included,
+     * while the group has the focus, and the match is cancelled before it fires, so the mutant makes no Waarschuwing.
+     * The answer it does change is the phase: an object creation that holds when a generation opens fires in the phase
+     * of the fact creations, on which {@link #een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt},
+     * {@link #een_object_is_pas_in_de_volgende_generatie_onderwerp} and
+     * {@link #het_generatiebudget_ligt_waar_het_corpus_het_pint} fail.
+     */
+    @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
+        Path ir = documentH();
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertTrue(b.tmsTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
+                + b.tmsTranspiler().creatieregels());
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+            Tussenstand stand = new Tussenstand(j1);
+            List<String> matches = new ArrayList<>();
+            List<Object[]> gemaakt = new ArrayList<>();
+            assertNull(vuur(b, volgorde, List.of(j1), sessie -> {
+                sessie.addEventListener(stand);
+                sessie.addEventListener(new DefaultAgendaEventListener() {
+                    @Override public void matchCreated(MatchCreatedEvent e) {
+                        if (e.getMatch().getRule().getName().equals("waarschuw")) matches.add(stand.standen.toString());
+                    }
+                });
+            }, sessie -> gemaakt.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
+            assertEquals(1, gemaakt.size(), () -> "objecten in volgorde " + namen);
+            assertGetal("0", TmsDocumenten.lees(j1, "waarschuwingaantal"), "waarschuwingaantal in volgorde " + namen);
+            assertGetal("1", TmsDocumenten.lees(j1, "kopie"), "kopie in volgorde " + namen);
+            assertEquals(List.of(), matches, () -> "matches van waarschuw, met de standen, in volgorde " + namen);
+            assertTrue(stand.gezien, () -> "geen aantal boven de kopie terwijl een Creatiefase stond, in volgorde " + namen);
+        }
+    }
+
+    /** Follows the standings of {@code onderwerp} and the {@link Creatiefase} facts through working memory, and records
+     *  whether the aantal standing stood above the kopie standing, both gevuld, while a {@code Creatiefase} did: the
+     *  state on which "waarschuw" of document H holds. */
+    private static final class Tussenstand extends DefaultRuleRuntimeEventListener {
+        private final Object onderwerp;
+        final Map<String, Object> standen = new java.util.TreeMap<>();
+        private int fasen;
+        boolean gezien;
+
+        Tussenstand(Object onderwerp) { this.onderwerp = onderwerp; }
+
+        @Override public void objectInserted(ObjectInsertedEvent e) {
+            if (e.getObject() instanceof Creatiefase) fasen++;
+            else if (e.getObject() instanceof Stand s && s.onderwerp() == onderwerp) standen.put(naam(s), s.waarde());
+            kijk();
+        }
+
+        @Override public void objectDeleted(ObjectDeletedEvent e) {
+            if (e.getOldObject() instanceof Creatiefase) fasen--;
+            else if (e.getOldObject() instanceof Stand s && s.onderwerp() == onderwerp
+                    && java.util.Objects.equals(standen.get(naam(s)), s.waarde())) standen.remove(naam(s));
+            kijk();
+        }
+
+        private void kijk() {
+            if (fasen > 0 && standen.get("aantal") instanceof BigDecimal a && standen.get("kopie") instanceof BigDecimal k
+                    && a.compareTo(k) > 0) gezien = true;
+        }
+
+        private static String naam(Stand s) {
+            return s.attribuut().naam().toLowerCase(java.util.Locale.ROOT);
+        }
     }
 
     // ---------------- document C: a recursive chain that stops ----------------
