@@ -1047,6 +1047,25 @@ Recorded, not opened: this branch withdraws a deposit made at an intermediate
 state where ref keeps it (RUNTIME-SEMANTICS ch. 6.1, "recorded residuals"),
 the question `fout-op-tussenstand` asks for faults; no golden reaches it.
 
+**Creation in the truth-maintenance lowering is stated, not logical
+(2026-10-08, card `tms-aggregaties-creatie-en-fouten`):** the first build
+card carries faults as logical facts that count only at the fixpoint,
+aggregations as an `accumulate` over logical contributions, and object and
+fact creation; the branch plays 120 goldens (from 66) without a FAIL. A
+logically inserted object can keep itself alive through its own output after
+the intermediate state that made it is retracted, and its initialisations
+would follow later changes where ch. 5.5 evaluates them at the mint. Maintainer
+decision during the card: a creation fires only at a fixpoint of the rule
+layer, per stratum and in generations as in the reference interpreter (the
+strata of RUNTIME-SEMANTICS ch. 6.1 and 6.3, the budget of 100 passes per
+stratum), and the created object, its initialisations and its links are stated
+facts keyed per (rule, subject) that do not lapse; the rule layer stays under
+truth maintenance. Second decision: the switch-over card carries a synthetic
+scale test with a floor (growth exponent at most 1.2, and firings under half
+the cap at 10 000 objects; otherwise the joins are indexed first), because the
+standing facts, the unindexed joins and a fixed fire cap of 100 000 meet large
+cases there.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
