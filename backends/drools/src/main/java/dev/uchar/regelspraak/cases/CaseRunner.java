@@ -340,6 +340,47 @@ public final class CaseRunner {
         return build(irPath, tak).runCase("case", c);
     }
 
+    /** One fire of a case measured by {@link #meet}: the firings {@code fireAllRules} reported, the wall time of the
+     *  fire plus the write-back in nanoseconds, and every fact the session held at the end. */
+    record Meting(int vuringen, long nanos, List<Object> feiten) {}
+
+    /** The measuring seam of the truth-maintenance trial (card drools-logische-afleiding, acceptance (e)): a runner of
+     *  {@code irPath} on {@code tak} whose KieBase is built once, so that a harness in the test tree can fire one case
+     *  many times and time the fire alone. The replay entries cannot serve: they build per call and hand back a
+     *  verdict, not the firings or the session. Package-private, no production caller, and no gate runs it. */
+    static CaseRunner voorMeting(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
+        return build(irPath, tak);
+    }
+
+    /** Sets up case {@code c} as {@link #runCase} does and fires it through {@link #vuurTotFixpunt}, the replay's own
+     *  fire and write-back, timing that call and nothing else; the expectations are left to the replay entries. A run
+     *  that hits the cap fails with the replay's sentence, since its numbers would measure the cap. */
+    Meting meet(JsonNode c) {
+        labelNaarBean.clear();
+        labelType.clear();
+        rekendatum = asOfDatum(c);
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(cl);
+        KieSession sessie = kieBase.newKieSession();
+        try {
+            JsonNode instances = c.get("input").get("instances");
+            for (JsonNode i : instances) beanVoor(i);
+            for (JsonNode i : instances) zetAttributenEnKenmerken(i);
+            for (JsonNode i : instances) zetRollen(i);
+            spiegelWederkerigeRollen();
+            zetGlobals(sessie, c);
+            for (Object bean : labelNaarBean.values()) sessie.insert(bean);
+            long begin = System.nanoTime();
+            String geenFixpunt = vuurTotFixpunt(sessie);
+            long nanos = System.nanoTime() - begin;
+            if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
+            return new Meting(vuringen, nanos, new ArrayList<>(sessie.getObjects()));
+        } finally {
+            sessie.dispose();
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
     /** Build {@code irPath} on the exec-model branch. Throws {@link Excluded} / {@link IrLoader.Refusal} for any
      *  form the v0 backend does not carry. */
     private static CaseRunner build(Path irPath) throws java.io.IOException {
@@ -460,6 +501,9 @@ public final class CaseRunner {
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
      *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
     private LocalDate rekendatum;
+    /** What {@code fireAllRules} returned in the last {@link #vuurTotFixpunt}, for the measuring seam ({@link #meet});
+     *  no verdict reads it. */
+    private int vuringen;
 
     private String runCase(String naam, JsonNode c) {
         return runCase(naam, c, null);
@@ -521,6 +565,7 @@ public final class CaseRunner {
         } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
+        vuringen = gevuurd;
         if (gevuurd < 100_000) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
             return null;

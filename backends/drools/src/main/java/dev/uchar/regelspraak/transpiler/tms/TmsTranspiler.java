@@ -203,8 +203,17 @@ public final class TmsTranspiler {
      * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
      * root) or the simple one, the number of Drools rules it consists of, and the kinds of control fact those rules
      * insert ({@link Stuurfeit}). The standing rules of the target are shared with every other reader and not counted.
+     *
+     * <p>{@code eigenaars} gives, in the general form, per member chain the place of the default whose exception group
+     * it is; empty in the simple form, which has none. A member chain settles by its own rules whether that default is
+     * displaced or not, so a measurement needs it to tell the {@link Uitkomst} facts the stack's outcome rests on from
+     * those that stand under a displaced default.
      */
-    public record Defaultsgroep(String naam, boolean algemeen, int regels, List<String> stuurfeiten) {}
+    public record Defaultsgroep(String naam, boolean algemeen, int regels, List<String> stuurfeiten,
+                                Map<Integer, Plaats> eigenaars) {}
+
+    /** The place of a default in the general form: its chain and its position there, as {@link Uitkomst} carries them. */
+    public record Plaats(int keten, int positie) {}
 
     /** One entry per effective stack the branch lowered, in the order of the model. */
     public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
@@ -723,8 +732,22 @@ public final class TmsTranspiler {
         // registered only once every default of the stack lowered, as a single rule registers its reads
         for (Lezingen lez : b.lezingen) lez.vastleggen();
         afgeleid.put(lid.sleutel(), lid);
-        defaultsgroepen.add(new Defaultsgroep(b.naam, algemeen, regels.size(), List.copyOf(b.stuurfeiten)));
+        Map<Integer, Plaats> eigenaars = new LinkedHashMap<>();
+        for (List<Knoop> keten : wortel) eigenaars(keten, eigenaars);
+        defaultsgroepen.add(new Defaultsgroep(b.naam, algemeen, regels.size(), List.copyOf(b.stuurfeiten),
+                Map.copyOf(eigenaars)));
         return regels;
+    }
+
+    /** Per member chain below {@code keten}, at any depth, the default whose exception group it is. */
+    private static void eigenaars(List<Knoop> keten, Map<Integer, Plaats> uit) {
+        for (Knoop k : keten) {
+            if (!k.heeftLeden()) continue;
+            for (int m = 0; m < k.leden().size(); m++) {
+                uit.put(k.eersteLid() + m, new Plaats(k.keten(), k.positie()));
+                eigenaars(k.leden().get(m), uit);
+            }
+        }
     }
 
     /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#niveau}), an
