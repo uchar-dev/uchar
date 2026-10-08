@@ -1732,6 +1732,58 @@ let () =
     [ ("keten", "stand", [ stand; opvolgerbegin ]);
       ("kopie", "standkopie", [ standkopie; stand; opvolgerbegin ]) ]
 
+(* WV-5.5-generaties-feitcreatie (ch. 5.5, since 2026-10-09): a fact
+   creation belongs to the generation like an object creation, and no
+   creation reads what another creation of its own generation links. "maak
+   maten" (in group "estafette" beside "werf de opvolger") links a Wachter as
+   maatgever to its opvolger as maat; "werf de opvolger" gives a Wachter of
+   rang below 4 an opvolger with rang plus 1 and beginstand equal to the
+   number of its maatgevers; "opvolgerbegin" reads the beginstand of the
+   opvolger and "verderbegin" the opvolgerbegin of the opvolger. W1 (rang 1)
+   makes W2 in generation 1. In generation 2 "maak maten" links W1 to W2 and
+   W2 makes W3, both against the world of generation 1, where W2 has no
+   maatgever: W3 starts at beginstand 0, and so does W4 in generation 3. In
+   both orders of the rules: opvolgerbegin(W1) = 0, verderbegin(W1) = 0 and
+   each minted Wachter at beginstand 0. Until that date a pass ran the fact
+   creations before the object creations, so the initialisation counted the
+   link of its own pass: beginstand 1 for W3 and W4, verderbegin(W1) = 1. *)
+let () =
+  let regel naam doel waarde =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "De %s van een Wachter"}}, "value": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "de %s van zijn opvolger"}, "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}]}, "initialisation": false, "presentation": "equation"}]}|}
+        naam doel doel waarde waarde )
+  in
+  let regels =
+    [ regel "opvolgerbegin" "opvolgerbegin" "beginstand"; regel "verderbegin" "verderbegin" "opvolgerbegin" ]
+  in
+  let doc regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "maat", "objectType": "Wachter", "plural": "maten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": {"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}, "right": {"node": "Literal", "value": {"number": "1"}, "type": %s, "source": {"snippet": "1"}}, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "beginstand", "value": {"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "maatgevers", "subjectType": "Wachter", "source": {"snippet": "maatgevers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "maatschap", "role": "maatgever"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal maatgevers van de Wachter"}}, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": {"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}, "right": {"node": "Literal", "value": {"number": "4"}, "type": %s, "source": {"snippet": "4"}}, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "maak maten", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "maat", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger", "maak maten"], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", "
+         (List.map
+            (fun lid -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} lid getal_json)
+            [ "rang"; "beginstand"; "opvolgerbegin"; "verderbegin" ]))
+      (String.concat ", " (List.map snd regels))
+      getal_json getal_json getal_json
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "opvolgerbegin", "value": {"number": "0"}}, {"kind": "attributeValue", "label": "W1", "attribute": "verderbegin", "value": {"number": "0"}}]}|}
+  in
+  List.iter
+    (fun volgorde ->
+      let naam =
+        Printf.sprintf "WV-5.5-generaties-feitcreatie [%s]" (String.concat "; " (List.map fst volgorde))
+      in
+      speelt ~naam ~ir:(doc volgorde) ~zaak (fun final ->
+          List.iter
+            (fun label ->
+              expect_num
+                (Printf.sprintf "%s: beginstand(%s) = 0" naam label)
+                (attr_van final label "beginstand") "0")
+            [ "oc0::W1"; "oc0::oc0::W1"; "oc0::oc0::oc0::W1" ]))
+    (volgordes regels)
+
 (* WV-5.5-budget-grens (ch. 5.5, since 2026-10-09): the generation budget —
    a stratum admits at most 100 generations that mint or link, and the 101st
    that still does is the fault — counts generations, not passes, so the
