@@ -1901,6 +1901,127 @@ let () =
         (fun _ -> ()))
     [ ("van a105 naar a1", List.rev op); ("van a1 naar a105", op) ]
 
+(* WV-6.3-na-een-creatie (ch. 6.3, since 2026-10-09): the forms of stratum
+   <= k reach their fixpoint before any form of stratum k + 1 fires, and that
+   holds again on what a creation makes. "post voor een open haven" gives a
+   Haven that is open a Post; "y van een haven" writes y = 1 and "open haven"
+   marks a Haven whose y is groter dan 0; "a van een post" writes a = 5;
+   "gemarkeerde post" marks a Post whose a is ongelijk aan 5, a read the
+   stratification puts above the writer of a; "bewaakte haven" marks a Haven
+   whose post is gemarkeerd. H1 without input. In both orders of the reader
+   of a and its writer: H1 open, one Post with a = 5 that is not gemarkeerd,
+   and H1 not bewaakt. Until that date the forms of every stratum up to the
+   creation's ran together in one pass in document order, so with the reader
+   first "gemarkeerde post" read a on the new Post before "a van een post"
+   wrote it, took "leeg ongelijk aan 5" for true (ch. 1.2) and marked it for
+   good: H1 bewaakt. *)
+let () =
+  let kenmerkregel naam doel ot voorwaarde =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "%s"}}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": %s, "initialisation": false}]}|}
+        naam doel ot doel voorwaarde )
+  in
+  let waarderegel naam doel ot n =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "%s"}}, "value": {"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}, "initialisation": false, "presentation": "equation"}]}|}
+        naam doel ot doel n getal_json n )
+  in
+  let vergelijking op attr ot n =
+    Printf.sprintf
+      {|{"node": "Comparison", "op": "%s", "left": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "zijn %s"}}, "right": {"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}, "source": {"snippet": "%s %s %d"}}|}
+      op attr ot attr n getal_json n attr op n
+  in
+  let gemarkeerd = kenmerkregel "gemarkeerde post" "gemarkeerd" "Post" (vergelijking "notEqual" "a" "Post" 5)
+  and y = waarderegel "y van een haven" "y" "Haven" 1
+  and open_ = kenmerkregel "open haven" "open" "Haven" (vergelijking "greater" "y" "Haven" 0)
+  and a = waarderegel "a van een post" "a" "Post" 5
+  and bewaakt =
+    kenmerkregel "bewaakte haven" "bewaakt" "Haven"
+      {|{"node": "CharacteristicCheck", "characteristic": "gemarkeerd", "negated": false, "source": {"snippet": "zijn post gemarkeerd is"}, "navigation": {"node": "RoleBinding", "factType": "havenpost", "role": "post"}}|}
+  in
+  let doc regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [{"node": "Attribute", "name": "y", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "open", "kind": "adjectival"}, {"node": "Characteristic", "name": "bewaakt", "kind": "adjectival"}]}, {"node": "ObjectType", "name": "Post", "animate": false, "plural": "Posten", "attributes": [{"node": "Attribute", "name": "a", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "gemarkeerd", "kind": "adjectival"}]}], "factTypes": [{"node": "FactType", "name": "havenpost", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "many": false}, {"node": "Role", "name": "post", "objectType": "Post", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "post voor een open haven", "versions": [{"createdType": "Post", "subject": "Haven", "initialisations": [], "condition": {"node": "CharacteristicCheck", "characteristic": "open", "negated": false, "source": {"snippet": "de Haven is open"}}, "validity": {"node": "Validity"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": []}, "diagnostics": []}|}
+      getal_json getal_json
+      (String.concat ", " (List.map snd regels))
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "H1", "objectType": "Haven", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "characteristicPresent", "label": "H1", "characteristic": "open"}, {"kind": "characteristicAbsent", "label": "H1", "characteristic": "bewaakt"}]}|}
+  in
+  List.iter
+    (fun (volgorde, regels) ->
+      let naam = Printf.sprintf "WV-6.3-na-een-creatie [%s]" volgorde in
+      speelt ~naam ~ir:(doc regels) ~zaak (fun final ->
+          let posten =
+            World.SMap.fold
+              (fun _ (i : World.instance) acc -> if i.otype = "Post" then i :: acc else acc)
+              final.instances []
+          in
+          check (naam ^ ": one Post") (List.length posten = 1);
+          expect_num (naam ^ ": a of the Post = 5") (attr_van final "oc0::H1" "a") "5";
+          check (naam ^ ": the Post is not gemarkeerd")
+            (List.for_all (fun i -> not (World.has_char i "gemarkeerd")) posten)))
+    [ ("gemarkeerde post eerst", [ gemarkeerd; y; open_; a; bewaakt ]);
+      ("a van een post eerst", [ a; y; open_; gemarkeerd; bewaakt ]) ]
+
+(* WV-5.7-twee-schrijvers-twee-strata (since 2026-10-09): the forms that make
+   nothing come to rest stratum by stratum, and each stratum's fixpoint runs
+   the forms of every lower stratum again, so two writers of one target in
+   different strata still overwrite each other there and fault (ch. 5.7). "a
+   een" writes a = 1 when x is groter dan 0 (stratum 0); "m" marks a Ding whose
+   x is groter dan 9 (stratum 0); "a twee" writes a = 2 when the Ding is not m,
+   a negated read that puts it in stratum 1. D with x = 5: both conditions
+   hold, no fixpoint, in both orders. A fixpoint of stratum 1 that ran only
+   the forms of stratum 1 would leave a = 2 without a word. *)
+let () =
+  let regel naam doel waarde voorwaarde presentatie =
+    Printf.sprintf
+      {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Ding", "source": {"snippet": "%s"}}, "value": %s, "condition": %s, "initialisation": false%s}]}|}
+      naam doel doel waarde voorwaarde presentatie
+  in
+  let groter_dan n =
+    Printf.sprintf
+      {|{"node": "Comparison", "op": "greater", "left": {"node": "AttributeReference", "attribute": "x", "subjectType": "Ding", "source": {"snippet": "zijn x"}}, "right": {"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}, "source": {"snippet": "x > %d"}}|}
+      n getal_json n n
+  in
+  let getal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal_json n
+  in
+  let een = regel "a een" "a" (getal 1) (groter_dan 0) {|, "presentation": "equation"|}
+  and m =
+    regel "m" "m" {|{"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}|}
+      (groter_dan 9) ""
+  and twee =
+    regel "a twee" "a" (getal 2)
+      {|{"node": "CharacteristicCheck", "characteristic": "m", "negated": true, "source": {"snippet": "niet m"}}|}
+      {|, "presentation": "equation"|}
+  in
+  let doc regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Ding", "animate": false, "plural": "Dingen", "attributes": [{"node": "Attribute", "name": "x", "datatype": %s}, {"node": "Attribute", "name": "a", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "m", "kind": "adjectival"}]}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": []}, "diagnostics": []}|}
+      getal_json getal_json (String.concat ", " regels)
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "D", "objectType": "Ding", "attributes": {"x": {"number": "5"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+  in
+  List.iter
+    (fun (volgorde, regels, zin) ->
+      let naam = Printf.sprintf "WV-5.7-twee-schrijvers-twee-strata [%s]" volgorde in
+      met_bestanden ~ir:(doc regels) ~zaak (fun bevindingen _ evalueer ->
+          check (naam ^ ": verifier-clean") (bevindingen = []);
+          expect_fault_msg naam evalueer zin))
+    [ ( "a een eerst",
+        [ een; m; twee ],
+        {|two writers of one target disagree: rule "a een" writes 1 and rule "a twee" writes 2 to the attribute a of D, a Ding|}
+      );
+      ( "a twee eerst",
+        [ twee; m; een ],
+        {|two writers of one target disagree: rule "a twee" writes 2 and rule "a een" writes 1 to the attribute a of D, a Ding|}
+      ) ]
+
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
    attribute defaults). Only y applicable and x justified must yield y, never a

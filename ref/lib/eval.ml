@@ -4042,27 +4042,54 @@ let evaluate env world =
      and "kopie2 = kopie" in one stratum, the reader of kopie written first
      faulted and written last played. *)
   let generation_budget = 100 in
+  (* The forms that make nothing come to rest stratum by stratum: for j = 0,
+     1, …, k those of stratum <= j reach their fixpoint before a form of
+     stratum j + 1 runs (ch. 6.3). A creation of stratum k makes instances on
+     which the forms of every lower stratum still have to compute, and a form
+     of a higher stratum may read what they write there only once it is at
+     rest. Until 2026-10-09 the forms of every stratum up to k ran together
+     in one pass in document order after a creation: on a Post a creation
+     had made, "gemarkeerde post" (stratum 1, a Post is gemarkeerd when its a
+     is ongelijk aan 5) written before "a van een post" (stratum 0, a = 5)
+     read a as leeg, took that for unequal to 5 and marked the Post for good;
+     written after it, the Post stayed unmarked. A lower form runs again in
+     every higher stratum's fixpoint, so two writers of one target in
+     different strata still overwrite each other there and are named
+     (ch. 5.7).
+
+     The forms that make nothing carry no budget of their own: without
+     creations their graph is acyclic (WF-045), and the forms of the lower
+     strata are at rest when stratum j's fixpoint starts and read nothing
+     stratum j writes, so unless two writers of one target keep overwriting
+     each other that fixpoint is reached within as many passes as stratum j
+     has forms that make nothing. The bound, the larger of 100 and that
+     number plus one, only turns those two writers into the fault that
+     names them. *)
+  let settling_upto = Array.init (kmax + 1) (fun j -> settling ~k:j) in
+  let settle ~k world =
+    let rec upto j world =
+      if j > k then world
+      else
+        let steps = settling_upto.(j) in
+        let own = List.length steps - if j = 0 then 0 else List.length settling_upto.(j - 1) in
+        upto (j + 1)
+          (fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) world)
+    in
+    upto 0 world
+  in
   (* for k = 0, 1, …: the forms of stratum <= k evaluate to their fixpoint
      before any form of stratum k+1 fires (ch. 6.3), in generations
      (ch. 5.5). Generation 0 is the fixpoint of the forms that make nothing;
      generation G+1 is every creation against generation G's settled world,
-     after which the forms that make nothing settle again; the stratum is
-     done when a generation makes and links nothing. The forms that make
-     nothing carry no budget of their own: without creations their graph is
-     acyclic (WF-045), so unless two writers of one target keep overwriting
-     each other they settle within as many passes as there are of them. The
-     bound below, the larger of 100 and that number plus one, only turns
-     those two writers (ch. 5.7) into the fault that names them. The
-     consistency and uniqueness forms of stratum k fire once at the
-     stratum's fixpoint — their channel facts are idempotent (ch. 5.6) *)
+     after which the forms that make nothing settle again, stratum by
+     stratum ([settle]); the stratum is done when a generation makes and
+     links nothing. The consistency and uniqueness forms of stratum k fire
+     once at the stratum's fixpoint — their channel facts are idempotent
+     (ch. 5.6) *)
   let world = ref world in
   for k = 0 to kmax do
-    let settling = settling ~k and creations = creations ~k in
-    let settle =
-      fixpoint
-        ~budget:(max 100 (List.length settling + 1))
-        ~cause:(disagreement settling) (pass settling)
-    in
+    let creations = creations ~k in
+    let settle = settle ~k in
     (* [settled] is generation [g]'s settled world *)
     let rec next g settled =
       match generation creations settled with
