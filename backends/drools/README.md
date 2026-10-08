@@ -106,7 +106,8 @@ branch writes no bean and calls no `update`. Every read a derived value depends 
 left-hand side, and a consequence computes only from bound variables, so truth maintenance withdraws whatever rested
 on a read that changed. A read of a derived member goes through a total standing fact, exactly one per object and
 member (`KenmerkStand`, `Stand`, and `PadStand` for a read one role away), which carries the derivation or else the
-input; a read of an input member or of a role binds the bean, and a parameter is read through its `ParameterStand`. A
+input; a read of an input member or of a role binds the bean, except a relation a form creates (below), and a
+parameter is read through its `ParameterStand`. A
 condition is a predicate over bound values; the negations sit in the generic standing rules, in the guard of an
 initialisation and in the control facts of a defaults group. The KieBase runs in `EqualityBehaviorOption.EQUALITY`,
 where a stated fact takes over an equal logical one; equal logical facts merge into one fact with a justification per
@@ -176,13 +177,51 @@ evaluation reaches the fold while one stands, that evaluation faults as a divisi
 rule's, inserted by its consequence or by its fault rule, named after it, and withdrawn when the `Filterfout` goes.
 Witness `TmsFilterfoutWitnessTest`.
 
+**Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
+fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
+interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
+its own output once the state that made it had passed, and its initialisations would follow later changes, where
+ch. 5.5 evaluates them when the object is made. So the creation rules sit in two agenda groups of their own,
+`TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.vuur` fires the session
+in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then per generation
+a phase of fact creations and a phase of object creations, in the order of a pass of the reference interpreter. Each
+phase inserts a new `Creatiefase` with its number, gives its group the focus and fires; that fires the creations that
+hold at the fixpoint and then, once the group is empty, takes the rule layer to rest again in the same fire. The run
+ends at the first generation that creates nothing; a generation past the hundredth that still creates ends it without
+a fixpoint ("geen fixpunt binnen 100 generaties"), the bound the reference interpreter and the ASP backend share
+(`corpus/rood` `finite-chain-over-budget`, `corpus/golden/synth2-budgetgrens-onder`). An agenda filter cannot keep the
+creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for good.
+
+An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `Creatiefase`,
+the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a
+`Gemaakt` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
+which is the input world, since the branch writes no bean. Its consequence makes a new bean of the created type and
+inserts, stated, the bean, its `Gemaakt` with the phase, the `Koppeling` of the connecting relation and the
+initialisations as `Waarde` and `HeeftKenmerk`, computed from the values the rule binds. A fact creation's rule walks
+its path, over the reference fields of an input relation and over the `Koppeling` facts of a created one, none of the
+current phase, and inserts the `Koppeling` it makes, stated, where no link between anchor and target exists yet: the
+creation is idempotent per link. What a phase made carries its number, and a creation rule takes no object or link of
+the phase it fires in, so a recursive chain advances one generation per phase, after the rule layer has reached a
+fixpoint over what the previous phase made. Every relation a form creates is read through `Koppeling` facts, the
+links of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation
+through a `PadStand` over a chain of patterns, the range of a fold through an `exists` over the link. A second
+distinct filler of a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vulling is een fout, geen
+overschrijving", ch. 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without
+the mark and without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The
+replay fires through `DroolsBackend.vuur`, which is not public; a consumer call is for the card `tms-omschakeling`, and
+`zetAfgeleideWaarden` refuses a session of a build with a creation that was fired without a `Creatiefase`. Witness
+`TmsCreatieWitnessTest`.
+
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
 - the forms outside the trial, among them built-in calls and quantifier folds, role membership, `Let` and
-  `IfThenElse`, object and fact creation, allocation, uniqueness, day kinds, timelines (a total over the subject's own
-  timeline or over a time-dependent member among them), time windows and dimensions (a fold over a dimension selection
-  among them);
+  `IfThenElse`, allocation, uniqueness, day kinds, timelines (a total over the subject's own timeline or over a
+  time-dependent member among them), time windows and dimensions (a fold over a dimension selection among them);
+- the creations it does not build yet: an object creation without a `connectingRole`, whose relation would follow from
+  the pair of types, or with a back-link that is ambiguous (the exec-model branch faults there at fire), a created
+  relation that is not one of two roles, a division in a member initialisation, whose §6.5 deposit the branch does
+  not make, and a fold whose range of more than one step goes over a created relation;
 - the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many;
@@ -197,9 +236,11 @@ built, never as a silent fall:
   the default is displaced; whether such a fault counts waits on a decision of the norm (ch. 5.2, 5.4, 7.1, 7.7; card
   `fout-op-tussenstand`, where the reference interpreter gives the fault or the value of an initialisation beside
   another writer depending on the order of the rules);
-- every cycle among what the forms read and write, negated or not, refused by `Kringen` with a `tms:` sentence
-  (WF-045): under truth maintenance a positive cycle sustains itself, an even negative cycle settles by model order,
-  and an odd one changes until the fire cap.
+- every cycle of the dependency graph that the verifier refuses, refused by `Kringen` with a `tms:` sentence over the
+  verifier's own graph (`checks.ml`): a cycle that does not pass through a creation member of a recursive rule group
+  (WF-045), and a negative edge on any cycle (WF-046), plus one edge the verifier does not draw, a rule that writes
+  the channel of its own name. Under truth maintenance a positive cycle sustains itself, an even negative cycle settles
+  by model order, and an odd one changes until the fire cap.
 
 The loader and the bean model refuse on this branch as on the other two.
 

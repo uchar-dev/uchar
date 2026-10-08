@@ -15,6 +15,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
@@ -24,8 +25,12 @@ import org.drools.modelcompiler.KieBaseBuilder;
 import org.drools.modelcompiler.constraints.ConstraintEvaluationException;
 import org.kie.api.KieBase;
 import org.kie.api.conf.EqualityBehaviorOption;
+import org.kie.api.event.rule.AfterMatchFiredEvent;
+import org.kie.api.event.rule.AgendaEventListener;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
+import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.utils.KieHelper;
 
 import java.io.IOException;
@@ -35,6 +40,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -62,6 +68,12 @@ import java.util.function.Predicate;
  * fire that reached its fixpoint is followed by {@link #zetAfgeleideWaarden}, which on the truth-maintenance branch
  * throws the evaluation faults that stand at the fixpoint and otherwise puts what that branch derived on the beans, and
  * does nothing on the other two.
+ *
+ * <p>A truth-maintenance build with a creation fires in generations, which a plain {@code fireAllRules} does not do:
+ * its creation rules sit in agenda groups of their own and would never fire. The replay fires through {@link #vuur},
+ * which is not public: how a consumer calls it is for the card that switches the toolchain over
+ * ({@code tms-omschakeling}). Until then {@link #zetAfgeleideWaarden} refuses a session of such a build that was fired
+ * without it, rather than hand out an answer without the creations.
  */
 public final class DroolsBackend {
 
@@ -114,8 +126,8 @@ public final class DroolsBackend {
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the branch does not lower, on the DRL-text branch a prioritized-defaults
-     *      extension or a DRL text the Drools compiler rejects, and on the truth-maintenance branch a cycle among
-     *      the members the forms read and write */
+     *      extension or a DRL text the Drools compiler rejects, and on the truth-maintenance branch a cycle of the
+     *      dependency graph that WF-045 or WF-046 forbids */
     public static Build build(JsonNode document, Branch branch) {
         Objects.requireNonNull(branch, "branch");
         IrLoader.Loaded loaded = IrLoader.loadAll(document);   // the model plus the ch. 7 prioritized-defaults extension beside it
@@ -278,6 +290,76 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie);
+    }
+
+    /** The generation budget of a run with creations: at most this many generations create something, and the next
+     *  must create nothing. The reference interpreter bounds a recursive chain by 100 passes, one generation each, and
+     *  the ASP backend by an equal {@code oc_budget} (RUNTIME-SEMANTICS ch. 5.5 and 5.7); {@code corpus/rood}
+     *  {@code finite-chain-over-budget} and {@code synth2-budgetgrens-onder} pin the two sides of the bound. */
+    static final int GENERATIES = 100;
+
+    /** What {@link #vuur} did: the firings of all its fires together, and the sentence of a run that ends without a
+     *  fixpoint at the generation budget, null otherwise. A run that reaches the fire cap has no fixpoint either; the
+     *  caller reads that off {@code vuringen}. */
+    record Vuring(int vuringen, String geenFixpunt) {}
+
+    /**
+     * Fires {@code sessie} of {@code build} to its fixpoint, at most {@code plafond} firings in all. On the exec-model
+     * and the DRL-text branch, and on the truth-maintenance branch without a lowered creation, that is one fire.
+     *
+     * <p>On the truth-maintenance branch with a creation a creation fires only at a fixpoint of the rule layer, and
+     * what it makes is stated and never lapses, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5): a logical
+     * object could keep itself standing through its own output after the state that made it passed, and its
+     * initialisations would follow later changes, where ch. 5.5 evaluates them when the object is made. So this fires
+     * in generations, here and not in the rules, so that a second rendering of the branch can share it. The creation
+     * rules sit in agenda groups of their own ({@code TmsTranspiler.FEITCREATIE}, {@code TmsTranspiler.OBJECTCREATIE}),
+     * so a fire without their focus takes the rule layer to rest and leaves them pending. Then per generation a phase of
+     * fact creations and a phase of object creations, in the order of a pass of the reference interpreter: each opens a
+     * new {@code Creatiefase}, gives its group the focus and fires, which fires the creations that hold at that fixpoint
+     * and then, once the group is empty, takes the rule layer to rest again in the same fire. What a phase made carries
+     * its number, and a creation rule does not take an object or a link of the phase it fires in, so a recursive chain
+     * advances one generation per phase. The run ends at the first generation that creates nothing. A generation past
+     * {@link #GENERATIES} that still creates ends it without a fixpoint.
+     */
+    static Vuring vuur(Build build, KieSession sessie, int plafond) {
+        Set<String> creaties = build.tmsTranspiler() == null ? Set.of() : build.tmsTranspiler().creatieregels();
+        if (creaties.isEmpty()) return new Vuring(sessie.fireAllRules(plafond), null);
+        int[] gemaakt = {0};
+        AgendaEventListener teller = new DefaultAgendaEventListener() {
+            @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                if (creaties.contains(e.getMatch().getRule().getName())) gemaakt[0]++;
+            }
+        };
+        sessie.addEventListener(teller);
+        try {
+            int gevuurd = sessie.fireAllRules(plafond);
+            FactHandle fase = null;
+            int nummer = 0;
+            for (int generatie = 1; gevuurd < plafond; generatie++) {
+                gemaakt[0] = 0;
+                for (String groep : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE)) {
+                    // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which every
+                    // creation rule does; null means the KieBase lacks the creation rules the transpiler reports
+                    org.kie.api.runtime.rule.AgendaGroup g = sessie.getAgenda().getAgendaGroup(groep);
+                    if (g == null)
+                        throw new IllegalStateException("de KieBase kent de agendagroep " + groep + " niet, terwijl het"
+                                + " model creatieregels heeft: " + creaties);
+                    if (fase != null) sessie.delete(fase);
+                    fase = sessie.insert(new Creatiefase(++nummer));
+                    g.setFocus();
+                    gevuurd += sessie.fireAllRules(plafond - gevuurd);
+                    if (gevuurd >= plafond) return new Vuring(gevuurd, null);
+                }
+                if (gemaakt[0] == 0) return new Vuring(gevuurd, null);
+                if (generatie > GENERATIES)
+                    return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
+                            + generatie + " maakt nog " + gemaakt[0] + (gemaakt[0] == 1 ? " object of link" : " objecten of"
+                            + " links") + " — een creatie die niet stopt is een fout (RUNTIME-SEMANTICS ch. 5.5 en 5.7)");
+            }
+            return new Vuring(gevuurd, null);
+        } finally {
+            sessie.removeEventListener(teller);
+        }
     }
 
 

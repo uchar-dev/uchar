@@ -42,8 +42,9 @@ import java.util.TreeSet;
  * cycle derived from an input kept both its characteristics after the input was taken off the bean in a running
  * session, since each was the other's justification; an even cycle of negations played, and the rule first in the
  * model decided which characteristic held; an odd one, of length one and of length two, alternated until the fire
- * cap. A cycle through a recursive creation is admitted: it advances one generation per instance, and the fire cap
- * bounds a creation that does not stop (RUNTIME-SEMANTICS ch. 5.5).
+ * cap. A cycle through a recursive creation is admitted: a creation fires only at a fixpoint of the rule layer and
+ * what it makes is stated, so the chain advances one generation at a time, and the driver's budget of 100 generations
+ * bounds a creation that does not stop (RUNTIME-SEMANTICS ch. 5.5, {@code DroolsBackend.vuur}).
  *
  * <p>The graph is the verifier's ({@code spec/verifier/lib/checks.ml}, {@code dep_forms}, {@code wf045_046}), node for
  * node and edge for edge, and not {@link ProducentConsument}'s, whose member keys are the declaring type and which

@@ -553,19 +553,23 @@ public final class CaseRunner {
      *  as {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any
      *  branch. At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them,
      *  or the evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
-     *  other branches); without a fixpoint nothing is written back, since the replay reports the cap and reads no bean. */
+     *  other branches); without a fixpoint nothing is written back, since the replay reports the cap and reads no bean.
+     *  The fire is {@link DroolsBackend#vuur}, which fires a truth-maintenance model with a creation in generations; a
+     *  creation that does not stop within its generation budget has no fixpoint either, and returns that sentence. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);
-        int gevuurd;
+        DroolsBackend.Vuring vuring;
         try {
-            gevuurd = sessie.fireAllRules(100_000);
+            vuring = DroolsBackend.vuur(bouw, sessie, 100_000);
         } catch (ConsequenceException e) {
             throw DroolsBackend.benoem(e);
         } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
+        int gevuurd = vuring.vuringen();
         vuringen = gevuurd;
+        if (vuring.geenFixpunt() != null) return vuring.geenFixpunt();
         if (gevuurd < 100_000) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
             return null;
