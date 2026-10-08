@@ -211,6 +211,15 @@ vastgesteld; die vorm krijgt daarom een eigen getuige (acceptatie b).
   regel 57) en vuurt en leest zelf (`service/.../Uitvoerder.java` regel 69,
   `CaseSessie`). Deze kaart verandert daar niets.
 
+## Volgorde
+
+Afgesproken met de eigenaar op 2026-10-08. Deze kaart gaat vóór
+`20261006-drl-defaults-lowering`. De route die die kaart kiest, hangt af van
+de beslisvraag van (f): bij doorbouwen route B2 in de DRL-teksttak, bij stoppen
+route A, zodat gate 12 in beide gevallen twee verschillende lowerings van
+`prioritizedDefaults` houdt. Begin daar pas aan na de beslissing van de
+eigenaar. Na beide kaarten volgt `20261008-website-drools-routes-en-faq`.
+
 ## Omvang
 
 Middelgroot. De lowering beslaat de vormen van de proefset en de getuigen;

@@ -134,6 +134,26 @@ varianten:
   defaults-golden in deze tak staat in het `Result:`.
 - (d) Sweep van de exec-modeltak byte-gelijk; alle zestien gates groen.
 
+## Volgorde (2026-10-08)
+
+Deze kaart wacht op `20261007-drools-logische-afleiding` en de beslissing van
+de eigenaar op het `Result:` daarvan. Gate 12 heeft alleen een tweede,
+onafhankelijke lowering als de twee Drools-takken `prioritizedDefaults`
+verschillend verlagen:
+
+- Gaat de proeftak door naar een volledige tak, dan verlaagt de productietak
+  met stuurfeiten. Kies hier dan route B2.
+- Stopt de proef, dan houdt de exec-modeltak zijn reduceerregel. Kies hier dan
+  route A, en neem de metingen van de proef over logisch ingevoegde stuurfeiten
+  mee (één regel en één `Beslist(d)` per default met een lagere eronder).
+
+De proef meet afleiding die volledig logisch is. De DRL-teksttak schrijft voor
+zijn andere regels destructief op de bonen, en de beslissende default schrijft
+daar ook. De uitkomst van de proef geldt dus voor de stuurfeiten, niet voor die
+schrijfopdracht: een waarde die een lagere default al schreef, blijft staan als
+daarna geen default meer beslist. Dat toetst deze kaart zelf. Na deze kaart
+volgt `20261008-website-drools-routes-en-faq`.
+
 ## Omvang
 
 Groot. De lowering in de exec-modeltak is ongeveer 1650 regels en groeide over
