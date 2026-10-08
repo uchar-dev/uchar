@@ -39,8 +39,8 @@ compiles them in-tree from `frontends/regelspraak/src/main/java` (the ANTLR-coup
 `cases/DroolsBackend.java` is the backend's public entry, and the one a consumer builds with — the toolchain
 distribution (CLI, decision service, scenario runner) that builds this repository as a git submodule.
 `DroolsBackend.build(document, branch)` takes a loaded `uchar-ir-v1` document (a `JsonNode`, or a path) and
-returns a `Build` record: the model, the bean class loader, the transpiler of the chosen branch (`EXEC_MODEL` or
-`DRL_TEXT`), its coverage manifest and the `KieBase`. It is the whole prelude of the case runner, which builds
+returns a `Build` record: the model, the bean class loader, the transpiler of the chosen branch (`EXEC_MODEL`,
+`DRL_TEXT`, or the trial `TRUTH_MAINTENANCE` below), its coverage manifest and the `KieBase`. It is the whole prelude of the case runner, which builds
 every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the replay's
 sentences (`IrLoader.Refusal`, `IrLoader.Documentfout`, `CaseRunner.Excluded`). Each transpiler has one build,
 and it takes every side table the loader returns beside the model: a build that left one out still produced a
@@ -86,6 +86,70 @@ loader+transpiler carry **must** match the pinned expectations gates 5 (ref) and
 per-form auto-refusals print their reason, and a reason-carrying value-divergence list
 in the script (the check-noop survivor pattern) names each golden whose fired outcome
 differs from ref/clingo and fails when stale.
+
+## The truth-maintenance trial branch
+
+A third branch, `DroolsBackend.Branch.TRUTH_MAINTENANCE`, lowered by `transpiler/tms/TmsTranspiler` and chosen with
+`--tms` on the CLI (`CaseRunner.viaTruthMaintenance` in the replay). It is the trial of the card
+`drools-logische-afleiding`: can Drools' truth maintenance replace the measures the exec-model branch takes against
+the engine's own reactivity — `NO_LOOP` on a rule that writes its own subject, salience from the stratification,
+opaque class reactivity, `update` only on a changed value, the `initEigen` guard of an initialisation — and what does
+that cost in rules, firings and control facts. It is no gate path: gate 12 plays the exec-model and the DRL-text
+branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its witnesses (`Tms*WitnessTest`), among them
+`TmsCorpusWitnessTest`, which demands that every golden with cases either plays or is refused, and that none plays a
+wrong value. The measurements, and the owner's decision whether to build the branch out, are in the card's result;
+`TmsMeting` in the test tree produces them, and its javadoc says how to run it.
+
+**Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
+with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
+branch writes no bean and calls no `update`. Every read a derived value depends on is a bound pattern in the
+left-hand side, and a consequence computes only from bound variables, so truth maintenance withdraws whatever rested
+on a read that changed. A read of a derived member goes through a total standing fact, exactly one per object and
+member (`KenmerkStand`, `Stand`, and `PadStand` for a read one role away), which carries the derivation or else the
+input; a read of an input member or of a role binds the bean, and a parameter is read through its `ParameterStand`. A
+condition is a predicate over bound values; the negations sit in the generic standing rules, in the guard of an
+initialisation and in the control facts of a defaults group. The KieBase runs in `EqualityBehaviorOption.EQUALITY`,
+where a stated fact takes over an equal logical one; equal logical facts merge into one fact with a justification per
+rule, which rests on the `equals` and `hashCode` of the fact classes, the subject compared by identity.
+
+**Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
+bean and no other writer holds a `Waarde` on it; its guard excludes its own write, since a guard that counted its own
+`Waarde` would undo the write it justified. A consistency inserts a logical `Inconsistentie`, and "regelversie X is
+inconsistent" reads the total standing fact `KanaalStand`. A defaults group decides with control facts (`Stuurfeit`).
+In the simple form, one chain without exception groups, a deciding default inserts `Beslist` where a lower default
+has a rule, and every lower default carries `not Beslist` over the ones above it. In the general form, with
+exception groups or more than one group at the root of the effective stack (RUNTIME-SEMANTICS ch. 7.10), every
+default settles into an `Uitkomst`, and the member chains are reconciled by the rules of ch. 7.2 and 7.9. A higher
+decision displaces a lower one through truth maintenance alone and gives it back when it goes. The member chains of a
+displaced default still settle their own `Uitkomst`, and those facts stay in the session; the measurement counts them
+apart.
+
+**The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
+the derivations on the beans: `setX(true)` per `HeeftKenmerk`, the attribute's setter per `Waarde`. Input on a
+characteristic stands, since nothing writes false; a derived value replaces input on an attribute, and a computed
+leeg writes nothing, so the input stands (ch. 7.1, 7.8). Two different values on one attribute of one object have no
+common fixpoint and fail with a sentence that names both writers (ch. 5.7); the write-back never chooses. On the other
+branches the call does nothing, so a consumer that fires a KieBase itself can call it after every fire. The session
+must not fire again afterwards: the beans then hold values the network never saw arrive.
+
+**What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
+built, never as a silent fall:
+
+- the forms outside the trial, among them aggregations, built-in calls and quantifier folds, role membership, `Let`
+  and `IfThenElse`, object and fact creation, allocation, uniqueness, day kinds, timelines, time windows and
+  dimensions;
+- the forms not built yet, among them rounding, clamp, text composition, `power` and `percentageOf`, percentages, and
+  a version or a defaults group with a bounded validity (the branch binds no evaluation date yet);
+- what the design cannot carry: two computing rules or two initialisations on one target, which the exec-model branch
+  settles by agenda order (WF-079); a rule beside a defaults group of its type on its target (WF-050); a computing
+  rule on a target outside the standing domain, where a computed leeg would have to empty the target (ch. 7.8); and a
+  division in a default, since the branch computes every default whose reads stand, also one a higher default
+  displaces, and a division by zero there would fail where the reference never evaluates it (ch. 7.1);
+- every cycle among what the forms read and write, negated or not, refused by `Kringen` with a `tms:` sentence
+  (WF-045): under truth maintenance a positive cycle sustains itself, an even negative cycle settles by model order,
+  and an odd one changes until the fire cap.
+
+The loader and the bean model refuse on this branch as on the other two.
 
 ## The rule graph and gate 15
 
