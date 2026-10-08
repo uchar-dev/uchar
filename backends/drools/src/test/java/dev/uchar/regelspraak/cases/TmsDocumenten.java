@@ -86,9 +86,17 @@ final class TmsDocumenten {
     }
 
     static JsonNode zaak(List<String> instanties, List<String> verwachtingen) throws Exception {
+        return zaak(instanties, Map.of(), verwachtingen);
+    }
+
+    /** A case with whole-number {@code parameters} by name. */
+    static JsonNode zaak(List<String> instanties, Map<String, String> parameters, List<String> verwachtingen)
+            throws Exception {
+        List<String> p = new ArrayList<>();
+        parameters.forEach((naam, lexeem) -> p.add("\"" + naam + "\":{\"number\":\"" + lexeem + "\"}"));
         return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":null,\"input\":{\"instances\":["
-                + String.join(",", instanties) + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwachtingen)
-                + "]}");
+                + String.join(",", instanties) + "],\"parameters\":{" + String.join(",", p) + "}},\"expected\":["
+                + String.join(",", verwachtingen) + "]}");
     }
 
     /** A Jutter bean of {@code beanLoader} with the characteristics of {@code kenmerken} set, as the case input sets
@@ -146,8 +154,23 @@ final class TmsDocumenten {
     }
 
     static String model(List<String> objecttypen, List<String> feittypen) {
+        return model(objecttypen, feittypen, List.of());
+    }
+
+    /** A model with {@code parameters}, each a whole-number Parameter named by its entry. */
+    static String model(List<String> objecttypen, List<String> feittypen, List<String> parameters) {
+        List<String> p = new ArrayList<>();
+        for (String naam : parameters)
+            p.add("{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + GEHEEL + "}");
         return "{\"objectTypes\":[" + String.join(",", objecttypen) + "],\"factTypes\":[" + String.join(",", feittypen)
-                + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
+                + "],\"parameters\":[" + String.join(",", p) + "],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
+                + "\"timelines\":[],\"dayKinds\":[]}";
+    }
+
+    /** "het {@code parameter}": a read of a parameter. */
+    static String parameterlezing(String parameter) {
+        return "{\"node\":\"ParameterReference\",\"parameter\":\"" + parameter + "\",\"source\":{\"snippet\":\"het "
+                + parameter + "\"}}";
     }
 
     /** "zijn {@code attribuut}": a read of the subject's own attribute. */

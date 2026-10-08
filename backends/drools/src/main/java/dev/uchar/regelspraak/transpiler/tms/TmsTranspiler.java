@@ -45,7 +45,6 @@ import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
 import org.drools.model.functions.Block2;
 import org.drools.model.functions.Block3;
-import org.drools.model.functions.Function2;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.functions.Predicate10;
 import org.drools.model.functions.Predicate11;
@@ -71,7 +70,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
@@ -94,8 +92,8 @@ import java.util.function.UnaryOperator;
  * computes only with bound variables. A member no form writes is input, stable during a session, and is bound off the
  * bean pattern, over the reference fields where the read navigates; a derived member is read through its total
  * standing ({@link KenmerkStand}, {@link Stand}), over a path through {@link PadStand}, a positive pattern whatever
- * polarity a check tests; the §9.5 channel of a form through {@link KanaalStand}; a parameter is bound through a
- * declaration of its own. The case input stays stated on the beans and the branch never writes a bean while it fires,
+ * polarity a check tests; the §9.5 channel of a form through {@link KanaalStand}; a parameter through its
+ * {@link ParameterStand}. The case input stays stated on the beans and the branch never writes a bean while it fires,
  * so an initialisation's guard reads the input of its derived target off the bean as well; {@link #zetAfgeleideWaarden}
  * writes the derivations onto the beans afterwards.
  *
@@ -298,6 +296,7 @@ public final class TmsTranspiler {
         for (Padlezing p : padlezingen.values()) standen.addAll(padstandregels(p));
         for (Lid lid : gelezen.values()) standen.addAll(lid.kenmerk() ? kenmerkstandregels(lid) : attribuutstandregels(lid));
         for (String producent : kanalen) standen.addAll(kanaalstandregels(producent));
+        for (Map.Entry<String, Global<?>> g : globals.entrySet()) standen.add(parameterstandregel(g.getKey(), g.getValue()));
         ModelImpl m = new ModelImpl(PKG);
         globals.values().forEach(m::addGlobal);
         regels.forEach(m::addRule);
@@ -1120,22 +1119,32 @@ public final class TmsTranspiler {
             return nieuw(sleutel, w);
         }
 
-        /** A parameter, bound through a declaration of its own from the subject and the global: two globals in one
-         *  constraint of the executable model read as the last one, so no test or consequence names a global itself.
-         *  The global's value rides in an {@link Optional}, so a parameter the case leaves unset still yields one row
-         *  and reads leeg. */
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        /** A parameter, bound off its {@link ParameterStand}: no test or consequence names a global itself, since two
+         *  globals in one constraint of the executable model read as the last one, and a source over a global was not
+         *  kept apart from another parameter's in another rule ({@link ParameterStand}). A parameter the case leaves
+         *  unset has a standing with a null value and reads leeg. */
         int parameter(Parameter p) {
             String naam = Namen.ident(p.naam(), false);
             String sleutel = "parameter " + naam;
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Global g = global(p);
-            Variable<Optional> v = DSL.declarationOf(Optional.class, "$parameter_" + variabelen.size(),
-                    DSL.from((Variable) s, g, (Function2) (x, gv) -> Optional.ofNullable(gv)));
-            parameters.add(PatternDSL.pattern(v));
-            return nieuw(sleutel, v);
+            global(p);
+            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            Variable<ParameterStand> st = DSL.declarationOf(ParameterStand.class, "$parameter_" + variabelen.size());
+            parameters.add(PatternDSL.pattern(st).expr(id("parameter"), x -> x.parameter().equals(naam))
+                    .bind(w, ParameterStand::waarde));
+            return nieuw(sleutel, w);
         }
+    }
+
+    /** The rule that puts the {@link ParameterStand} of one parameter in working memory: it matches no fact, so it fires
+     *  once per session, and it binds the global in its consequence, where the case runner set it before the session
+     *  fired. The global does not change while the session fires, so the standing never needs to be withdrawn. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Rule parameterstandregel(String naam, Global<?> g) {
+        return PatternDSL.rule(PKG, "parameterstand " + naam).build(
+                DSL.on((Global) g).execute((Block2<org.drools.model.Drools, Object>) (drools, v) ->
+                        drools.logicalInsert(new ParameterStand(naam, v))));
     }
 
     /** The global of parameter {@code p}, of the Java type the exec-model branch declares it with, so that the case
@@ -1162,11 +1171,6 @@ public final class TmsTranspiler {
         return gebruik.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    /** {@code w[i]} with a parameter's {@link Optional} taken off; every other bound value is itself. */
-    private static Object uitgepakt(Object v) {
-        return v instanceof Optional<?> o ? o.orElse(null) : v;
-    }
-
     /** The test over the values a condition reads, as a standalone test after the patterns that bind them. A condition
      *  that reads nothing is a constant. */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1177,7 +1181,7 @@ public final class TmsTranspiler {
         int n = lez.variabelen.size();
         Toets t = args -> {
             Object[] w = new Object[n];
-            for (int j = 0; j < pos.length; j++) w[pos[j]] = uitgepakt(args[j]);
+            for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j];
             return toets.test(w);
         };
         String id = id("voorwaarde");
@@ -1230,7 +1234,7 @@ public final class TmsTranspiler {
         for (int j = 0; j < pos.length; j++) v[j + 1] = lez.variabelen.get(pos[j]);
         return new Gevolg(v, (drools, args) -> {
             Object[] w = new Object[n];
-            for (int j = 0; j < pos.length; j++) w[pos[j]] = uitgepakt(args[j + 1]);
+            for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j + 1];
             f.voer(drools, args[0], w);
         });
     }
