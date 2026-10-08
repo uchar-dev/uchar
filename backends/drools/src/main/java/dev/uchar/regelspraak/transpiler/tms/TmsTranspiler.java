@@ -94,17 +94,20 @@ import java.util.function.UnaryOperator;
  * computes only with bound variables. A member no form writes is input, stable during a session, and is bound off the
  * bean pattern, over the reference fields where the read navigates; a derived member is read through its total
  * standing ({@link KenmerkStand}, {@link Stand}), over a path through {@link PadStand}, a positive pattern whatever
- * polarity a check tests; a parameter is bound through a declaration of its own. The case input stays stated on the
- * beans and the branch never writes a bean while it fires, so an initialisation's guard reads the input of its derived
- * target off the bean as well; {@link #zetAfgeleideWaarden} writes the derivations onto the beans afterwards.
+ * polarity a check tests; the §9.5 channel of a form through {@link KanaalStand}; a parameter is bound through a
+ * declaration of its own. The case input stays stated on the beans and the branch never writes a bean while it fires,
+ * so an initialisation's guard reads the input of its derived target off the bean as well; {@link #zetAfgeleideWaarden}
+ * writes the derivations onto the beans afterwards.
  *
  * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject that
  * is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
- * initialisation, the desugaring domain of ch. 7.7); and an initialisation (ch. 5.4), the only one on its target. Each
- * always valid, with the §6.5 deposit of a division by leeg, whose condition is built from characteristic checks
- * (own or over a path, negated or not), comparisons, leeg and gevuld tests and {@code Compound}s of those under any
- * quantifier, and whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, or a sum,
- * difference, product or quotient of those, or a date plus or minus a duration. Every other form is in the coverage
+ * initialisation, the desugaring domain of ch. 7.7); an initialisation (ch. 5.4), the only one on its target; and a
+ * consistency, whose violation is a logical §9.5 inconsistency. Each always valid, with the §6.5 deposit of a division
+ * by leeg, whose condition or assertion is built from characteristic checks (own or over a path, negated or not),
+ * comparisons, leeg and gevuld tests, tests of the channel of a consistency or of a rule that deposits, and
+ * {@code Compound}s of those under any quantifier, and whose value is a literal, a read of an attribute (own or over a
+ * path of roles), a parameter, or a sum, difference, product or quotient of those, or a date plus or minus a
+ * duration. Every other form is in the coverage
  * manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the first
  * such entry.
  */
@@ -147,6 +150,9 @@ public final class TmsTranspiler {
     private final Map<ElementSleutel, Lid> gelezen = new LinkedHashMap<>();
     /** The reads of a derived member over a path: each gets its two path-standing rules. */
     private final Map<String, Padlezing> padlezingen = new LinkedHashMap<>();
+    /** The producers whose §9.5 channel a lowered condition reads, by the name the channel test spells: each gets the
+     *  two rules of its {@link KanaalStand}. */
+    private final Set<String> kanalen = new LinkedHashSet<>();
     /** The parameters a lowered rule reads, as the globals the case runner sets by name. */
     private final Map<String, Global<?>> globals = new LinkedHashMap<>();
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
@@ -268,7 +274,7 @@ public final class TmsTranspiler {
         List<Rule> regels = new ArrayList<>();
         for (ResolvedRegel r : model.resolvedRegels) regels.addAll(meet("regel", naamOf(r.naam()), () -> regel(r)));
         for (ResolvedConsistentie c : model.consistenties)
-            weiger("consistentie", naamOf(c.naam()), "een Consistency: " + NOG_NIET);
+            regels.addAll(meet("consistentie", naamOf(c.naam()), () -> List.of(consistentieRegel(c))));
         for (ResolvedUniciteit u : model.uniciteiten)
             weiger("uniciteit", naamOf(u.naam()), "een Uniqueness: " + BUITEN);
         for (ResolvedVerdeling v : model.verdelingen)
@@ -291,6 +297,7 @@ public final class TmsTranspiler {
         List<Rule> standen = new ArrayList<>();
         for (Padlezing p : padlezingen.values()) standen.addAll(padstandregels(p));
         for (Lid lid : gelezen.values()) standen.addAll(lid.kenmerk() ? kenmerkstandregels(lid) : attribuutstandregels(lid));
+        for (String producent : kanalen) standen.addAll(kanaalstandregels(producent));
         ModelImpl m = new ModelImpl(PKG);
         globals.values().forEach(m::addGlobal);
         regels.forEach(m::addRule);
@@ -487,6 +494,108 @@ public final class TmsTranspiler {
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
         return PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    // ---------------- a consistency and the §9.5 channel ----------------
+
+    /**
+     * A consistency (IR-SPEC ch. 3.5): the subject pattern with the reads of its assertion bound as a rule's are, one
+     * test that holds where the assertion does not, and a consequence that inserts the subject's §9.5 inconsistency
+     * logically, under the form's name. The violation is the negation of the assertion read with the empty operand of
+     * RUNTIME-SEMANTICS ch. 1.2: the reference interpreter deposits where the assertion does not evaluate to true, and
+     * the exec-model branch writes the same tables out per shape (an equality of numbers violated where exactly one is
+     * leeg, an ordering violated where an operand is leeg), which the condition lowering of this branch carries. Every
+     * read is bound to a total standing, so a subject has one activation and the channel one error fact per form and
+     * subject, without the guard the exec-model branch needs. A violation found against a transient value goes when
+     * that value changes, where the exec-model branch orders the consistency after the writers of what it reads and
+     * never withdraws one; the fixpoint is the same.
+     */
+    private Rule consistentieRegel(ResolvedConsistentie c) {
+        // the rule is named by the form, and the channel test reads the error facts by that name
+        if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
+        if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
+        if (c.geldigheid() != null && !c.geldigheid().altijd())
+            throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
+        Lezingen lez = new Lezingen(c.subject());
+        Set<Integer> gelezen = lez.volg();
+        Toets houdt = voorwaarde(c.assertie(), lez);
+        lez.stop();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> !houdt.test(w), gelezen, c.assertie());
+        String naam = c.naam();
+        items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
+                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, o))));
+        lez.vastleggen();
+        return PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /**
+     * A test of the §9.5 channel, "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6): an existential over the
+     * error facts of the form X, with no subject of its own, read through X's {@link KanaalStand}. The producers this
+     * branch carries are a consistency and a computing rule or initialisation whose value deposits a §6.5
+     * inconsistency ({@link #schrijfregel}); any other name is refused, as the exec-model branch refuses a name that
+     * produces nothing it lowers, since a test of a channel nothing fills would never hold and say nothing. "is
+     * gevuurd" reads no channel and is refused as well.
+     */
+    private Toets kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
+        if (!rv.inconsistent()) throw nietGelezen("Regelversie 'is gevuurd'", rv, BUITEN);
+        String producent = rv.regel();
+        if (!kanaalproducent(producent))
+            throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
+                    + snippet(rv) + "'): de truth-maintenance-tak draagt als producent van het §9.5-kanaal alleen een"
+                    + " Consistency en een rekenende regel of initialisatie met een deling tussen twee gelezen attributen"
+                    + " (§6.5)");
+        int i = lez.kanaal(producent);
+        return w -> Boolean.TRUE.equals(w[i]);
+    }
+
+    /** Whether the form named {@code naam}, spelled as the error facts carry it, fills a channel this branch lowers. */
+    private boolean kanaalproducent(String naam) {
+        if (naam == null) return false;
+        for (ResolvedConsistentie c : model.consistenties) if (naam.equals(c.naam())) return true;
+        for (ResolvedRegel r : model.resolvedRegels)
+            if (naam.equals(r.naam()) && r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deponeert(r.waarde()))
+                return true;
+        return false;
+    }
+
+    /** Whether a value holds a division the §6.5 deposit of {@link #schrijfregel} covers, as {@link #delingen} finds
+     *  them. */
+    private boolean deponeert(Expr e) {
+        if (!(e instanceof Expr.Binair b)) return false;
+        if ((b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) && telt(b.links())
+                && telt(b.rechts()))
+            return true;
+        return deponeert(b.links()) || deponeert(b.rechts());
+    }
+
+    /**
+     * The two generic rules that keep one {@link KanaalStand} for the channel of the form named {@code producent}:
+     * inconsistent while an error fact of that form stands, on any subject, and consistent while none does. The second
+     * carries the negation over the channel, so a condition that reads it, in either polarity, binds the standing as a
+     * positive pattern.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<Rule> kanaalstandregels(String producent) {
+        Class<?> klasse;
+        try {
+            klasse = Class.forName(INCONSISTENTIE, true, beanLoader);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("geen bonenklasse " + INCONSISTENTIE + " voor het kanaal van " + producent, e);
+        }
+        String naam = "kanaalstand " + producent + ": ";
+        Variable i1 = DSL.declarationOf(klasse, "$inconsistentie");
+        Rule inconsistent = PatternDSL.rule(PKG, naam + "inconsistent").build(
+                DSL.exists(PatternDSL.pattern(i1).expr(id("kanaal"),
+                        (Predicate1) i -> producent.equals(RegelSpraakRuntime.get(i, "regel")))),
+                DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
+                        drools.logicalInsert(new KanaalStand(producent, true))));
+        Variable i2 = DSL.declarationOf(klasse, "$inconsistentie");
+        Rule consistent = PatternDSL.rule(PKG, naam + "consistent").build(
+                DSL.not(PatternDSL.pattern(i2).expr(id("kanaal"),
+                        (Predicate1) i -> producent.equals(RegelSpraakRuntime.get(i, "regel")))),
+                DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
+                        drools.logicalInsert(new KanaalStand(producent, false))));
+        return List.of(inconsistent, consistent);
     }
 
     /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here, as at
@@ -692,7 +801,7 @@ public final class TmsTranspiler {
             case Conditie.Kwantorvouw q -> throw nietGelezen("QuantifierFold", c, BUITEN);
             case Conditie.Rollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
             case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
-            case Conditie.Regelversie rv -> throw nietGelezen("Regelversie", c, BUITEN);
+            case Conditie.Regelversie rv -> kanaallezing(rv, lez);
             case Conditie.Onopgelost o -> throw nietGelezen("Unresolved", c, BUITEN);
         };
     }
@@ -884,6 +993,7 @@ public final class TmsTranspiler {
         private final Map<String, Integer> index = new LinkedHashMap<>();
         private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
         private final Map<String, Padlezing> paden = new LinkedHashMap<>();
+        private final Set<String> kanaalnamen = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> gebruik;
 
@@ -913,13 +1023,30 @@ public final class TmsTranspiler {
 
         void stop() { gebruik = null; }
 
-        /** Registers what the lowered rule reads with the transpiler: the standings and path standings it needs. */
+        /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
+         *  standings it needs. */
         void vastleggen() {
             gelezen.putAll(afgeleid);
             for (Padlezing p : paden.values()) {
                 padlezingen.putIfAbsent(p.sleutel(), p);
                 gelezen.putIfAbsent(p.lid().sleutel(), p.lid());
             }
+            kanalen.addAll(kanaalnamen);
+        }
+
+        /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:
+         *  one fact for the whole session, joined to no subject, since the channel test has none of its own. */
+        @SuppressWarnings("unchecked")
+        int kanaal(String producent) {
+            String sleutel = "kanaal " + producent;
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            Variable<KanaalStand> st = DSL.declarationOf(KanaalStand.class, "$kanaal_" + variabelen.size());
+            standen.add(PatternDSL.pattern(st).expr(id("kanaal"), k -> k.regel().equals(producent))
+                    .bind(w, KanaalStand::inconsistent));
+            kanaalnamen.add(producent);
+            return nieuw(sleutel, w);
         }
 
         private int bestaand(String sleutel) {

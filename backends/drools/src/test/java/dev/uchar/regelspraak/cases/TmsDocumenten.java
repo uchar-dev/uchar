@@ -56,8 +56,14 @@ final class TmsDocumenten {
 
     /** The document of {@code model} with {@code regels}, in that order, written to a temporary file. */
     static Path document(String model, List<String> regels) throws Exception {
+        return document(model, regels, List.of());
+    }
+
+    /** The document of {@code model} with {@code regels} and {@code consistenties}, each in its order. */
+    static Path document(String model, List<String> regels, List<String> consistenties) throws Exception {
         String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + model + ",\"rules\":{\"rules\":[" + String.join(",", regels)
-                + "],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],"
+                + "],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":["
+                + String.join(",", consistenties) + "],"
                 + "\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[],"
                 + "\"prioritizedDefaults\":[]},\"diagnostics\":[]}";
         Path tmp = Files.createTempFile("tms-getuige", ".json");
@@ -217,6 +223,19 @@ final class TmsDocumenten {
                 ? "{\"kind\":\"attributeEmpty\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\"}"
                 : "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\",\"value\":"
                   + "{\"number\":\"" + lexeem + "\"}}";
+    }
+
+    /** A Consistency of one always-valid version: {@code assertie} must hold for every {@code subject}. */
+    static String consistentie(String naam, String subject, String assertie) {
+        return "{\"node\":\"Consistency\",\"name\":\"" + naam + "\",\"versions\":[{\"subject\":\"" + subject
+                + "\",\"assertion\":" + assertie + ",\"validity\":{\"node\":\"Validity\"},\"source\":{\"snippet\":\""
+                + naam + "\"}}]}";
+    }
+
+    /** "regelversie {@code regel} is inconsistent": a test of the §9.5 channel of the named form. */
+    static String kanaaltoets(String regel) {
+        return "{\"node\":\"Regelversie\",\"regel\":\"" + regel + "\",\"inconsistent\":true,\"source\":{\"snippet\":"
+                + "\"regelversie " + regel + " is inconsistent\"}}";
     }
 
     /** The expectation that the session holds no §9.5 Inconsistentie at all. */

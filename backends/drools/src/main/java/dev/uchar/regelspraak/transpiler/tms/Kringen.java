@@ -2,8 +2,13 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.graaf.ProducentConsument.Vormsoort;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.ResolvedConsistentie;
+import dev.uchar.regelspraak.ir.ResolvedRegel;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -34,6 +39,14 @@ import java.util.TreeSet;
  * is needed when every cycle is refused. Keying on the declaring type merges a member that two sibling subtypes
  * inherit into one node, which IR-SPEC ch. 5.1 keeps apart; that can refuse a document without a cycle, never pass
  * one with a cycle.
+ *
+ * <p>The §9.5 channel of a form is a node as well (IR-SPEC ch. 5.1; RUNTIME-SEMANTICS ch. 5.6: reading the channel
+ * makes it part of the dependency graph). {@code ProducentConsument} does not key channels, so the edges are added
+ * here: a form that can fill a channel writes the one of its own name, and a rule or consistency whose condition tests
+ * "regelversie X is inconsistent" reads X's. A rule writes its channel only where its value deposits; the lowering
+ * refuses a test of any other rule before this check runs, so an edge from a rule that cannot deposit reaches no
+ * reader. Measured with these edges left out (2026-10-08): a consistency asserting a characteristic that a rule derives
+ * from the consistency's own channel passed this check and alternated until the fire cap.
  */
 public final class Kringen {
     private Kringen() {}
@@ -50,7 +63,7 @@ public final class Kringen {
      *  of the same forms gives the same sentence. */
     public static String weigering(RegelSpraakModel model, List<ProducentConsument.Vorm> vormen) {
         Map<ElementSleutel, Map<ElementSleutel, Set<ProducentConsument.Vorm>>> randen = new TreeMap<>(VOLGORDE);
-        for (ProducentConsument.Vorm v : vormen)
+        for (ProducentConsument.Vorm v : metKanalen(model, vormen))
             for (ElementSleutel lees : v.leest())
                 for (ElementSleutel schrijf : v.schrijft()) {
                     randen.computeIfAbsent(lees, k -> new TreeMap<>(VOLGORDE))
@@ -70,8 +83,9 @@ public final class Kringen {
             for (ElementSleutel lid : component) leden.add(lid(model, lid));
             List<String> door = new ArrayList<>();
             for (ProducentConsument.Vorm v : sluitend) door.add(vorm(v));
-            kringen.add("over " + (leden.size() == 1 ? "het lid " : "de leden ") + opsomming(leden) + " via "
-                    + opsomming(door));
+            boolean kanaal = component.stream().anyMatch(k -> KANAAL.equals(k.objecttype()));
+            String soort = leden.size() == 1 ? (kanaal ? "" : "het lid ") : (kanaal ? "de knopen " : "de leden ");
+            kringen.add("over " + soort + opsomming(leden) + " via " + opsomming(door));
         }
         if (kringen.isEmpty()) return null;
         return "tms: " + (kringen.size() == 1 ? "kring in de afhankelijkheden " + kringen.get(0)
@@ -126,8 +140,54 @@ public final class Kringen {
         }
     }
 
-    /** A member as the document declares it, "Type.naam"; the key holds the normalised spelling only. */
+    /** The objecttype of a channel's node: a member of no declared type. */
+    private static final String KANAAL = "§9.5-kanaal";
+
+    private static ElementSleutel kanaal(String naam) {
+        return new ElementSleutel(KANAAL, Namen.norm(ProducentConsument.basisNaam(naam)), false);
+    }
+
+    /** {@code vormen} with the channel edges of the class comment. Only rules and consistencies are read for channel
+     *  tests: every other form that carries a condition is refused by the manifest before this check runs. */
+    private static List<ProducentConsument.Vorm> metKanalen(RegelSpraakModel model, List<ProducentConsument.Vorm> vormen) {
+        Map<String, Set<ElementSleutel>> toetsen = new HashMap<>();
+        for (ResolvedRegel r : model.resolvedRegels)
+            kanaaltoetsen(r.voorwaarde(), toetsen.computeIfAbsent(vormsleutel(Vormsoort.REGEL, r.naam()),
+                    k -> new LinkedHashSet<>()));
+        for (ResolvedConsistentie c : model.consistenties)
+            kanaaltoetsen(c.assertie(), toetsen.computeIfAbsent(vormsleutel(Vormsoort.CONSISTENTIE, c.naam()),
+                    k -> new LinkedHashSet<>()));
+        List<ProducentConsument.Vorm> uit = new ArrayList<>();
+        for (ProducentConsument.Vorm v : vormen) {
+            Set<ElementSleutel> schrijft = new LinkedHashSet<>(v.schrijft());
+            if (v.soort() == Vormsoort.REGEL || v.soort() == Vormsoort.CONSISTENTIE || v.soort() == Vormsoort.UNICITEIT
+                    || v.soort() == Vormsoort.VERDELING)
+                schrijft.add(kanaal(v.naam()));
+            Set<ElementSleutel> leest = new LinkedHashSet<>(v.leest());
+            leest.addAll(toetsen.getOrDefault(vormsleutel(v.soort(), v.naam()), Set.of()));
+            uit.add(new ProducentConsument.Vorm(v.soort(), v.naam(), schrijft, leest));
+        }
+        return uit;
+    }
+
+    private static String vormsleutel(Vormsoort soort, String naam) {
+        return soort + " " + Namen.norm(ProducentConsument.basisNaam(naam));
+    }
+
+    /** The channels a condition tests, through composites and quantifier folds. */
+    private static void kanaaltoetsen(Conditie c, Set<ElementSleutel> uit) {
+        if (c instanceof Conditie.Regelversie rv && rv.inconsistent() && rv.regel() != null) uit.add(kanaal(rv.regel()));
+        if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) kanaaltoetsen(d, uit);
+        if (c instanceof Conditie.Kwantorvouw k) {
+            kanaaltoetsen(k.filter(), uit);
+            kanaaltoetsen(k.toets(), uit);
+        }
+    }
+
+    /** A member as the document declares it, "Type.naam", or a channel as "het kanaal van" its form; the key holds the
+     *  normalised spelling only. */
     private static String lid(RegelSpraakModel model, ElementSleutel e) {
+        if (KANAAL.equals(e.objecttype())) return "het kanaal van \"" + e.naam() + "\"";
         Objecttype ot = model.objecttypeOpNaam(e.objecttype());
         if (ot == null) return e.objecttype() + "." + e.naam();
         String naam = e.kenmerk() ? ot.kenmerkNaam(e.naam()) : ot.attribuutNaam(e.naam());

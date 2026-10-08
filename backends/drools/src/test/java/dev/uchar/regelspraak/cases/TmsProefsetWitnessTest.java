@@ -37,6 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * geschreven.json: attribuut bergloon: verwacht 26.00, werkelijk leeg; attribuut vindloon: verwacht 18.00, werkelijk
  * leeg, case2-voorwaarde-onwaar.json: attribuut vindloon: verwacht 14.00, werkelijk leeg, case4-per-vondst.json: geen
  * fixpunt (kringverwijzing?)" ({@link TmsInitialisatieWitnessTest}).
+ *
+ * <p><b>Red before the consistency</b> (measured 2026-10-08 on the branch's third step): the second row failed on
+ * "jutterswet-opgave-boven-berekening ==&gt; expected: &lt;tms-transpiler SKIP: defaults: opgave boven berekening
+ * waarde — een PrioritizedDefaults: …&gt; but was: &lt;tms-transpiler SKIP: consistentie: controle opgave waarde — een
+ * Consistency: de truth-maintenance-tak draagt deze vorm nog niet&gt;".
  */
 class TmsProefsetWitnessTest {
 
@@ -63,7 +68,7 @@ class TmsProefsetWitnessTest {
         weigering.put("anchor/jutterswet-nestuitzondering",
                 "tms-transpiler SKIP: defaults: heffing van een jutter — een PrioritizedDefaults: " + NOG_NIET);
         weigering.put("jutterswet-opgave-boven-berekening",
-                "tms-transpiler SKIP: consistentie: controle opgave waarde — een Consistency: " + NOG_NIET);
+                "tms-transpiler SKIP: defaults: opgave boven berekening waarde — een PrioritizedDefaults: " + NOG_NIET);
         for (Map.Entry<String, String> e : weigering.entrySet()) {
             String g = e.getKey();
             CaseRunner.Result r = CaseRunner.viaTruthMaintenance(GOLDEN.resolve(g).resolve("ir.json"), zaken(g));
