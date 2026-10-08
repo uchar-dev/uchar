@@ -31,3 +31,13 @@ zet het beslisblok in `FactModelGenerator`; de kopie in `ExecModelTranspiler`
 verdwijnt met `20261008-tms-omschakeling`, die in `DrlTranspiler` uiterlijk
 met `20261008-drl-teksttak-op-truth-maintenance`. Deze kaart sluit mee met de
 kaart die de laatste kopie weghaalt.*
+
+## Result (2026-10-08)
+
+Gedaan door `20261008-tms-aggregaties-creatie-en-fouten` (punt 4), commit `21bc5085`: het beslisblok van de
+objectcreatie staat één keer, in `FactModelGenerator.creatiekoppeling` en `verbindendeFeittypen`, en de exec-modeltak
+en de DRL-teksttak roepen het aan; de privékopieën zijn weg. (a) gehaald. (b) De bestaande getuigen blijven groen
+zonder wijziging, en een mutant in de gedeelde functie maakt getuigen van beide takken rood. (c) De statusregels van
+beide takken over alle 292 goldens zijn byte-gelijk vóór en na (jar van `42859692` tegen `21bc5085`: 0 verschillen per
+tak, gemeten door de hoofdsessie); de pins bewogen niet; alle 16 gates groen op de eindcommit van die kaart. De
+Raakvlak-regel hierboven ging ervan uit dat de kopieën pas met latere kaarten zouden verdwijnen; dat is achterhaald.
