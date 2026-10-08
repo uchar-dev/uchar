@@ -1250,7 +1250,18 @@ EXPECTED_CHANNEL=(
 # the document under WF-045 before, through the fact creation's population proxy (RUNTIME-SEMANTICS ch. 6.1); this
 # backend played it all along. No source file of this backend changed: the exec branch plays the case, PLAYED 1, with
 # ref's and clingo's values. The DRL-text branch plays it too, PLAYED 1, so EXPECTED_DRL_PLAYED moves by one as well.
-EXPECTED_PLAYED=240
+# 240 -> 241 (2026-10-09, a fold whose subselection divides, under a condition that does not hold):
+# jutterswet-filterwacht, new, from bron.rgs and scenario.rgs and hand-computed: "het aantal vondsten van de Jutter die
+# aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2" as the value of a
+# computation under "indien hij actief is" and as the second member of a composite after "hij is actief", over a Jutter
+# that is not actief with a vondst whose deelnemers is 0, and over two actieve Jutters whose vondsten divide cleanly.
+# The exec branch tested the subselection on the element's pattern, for every element of the type, and faulted where
+# ref never evaluates the fold ("DelingDoorNul: deling door nul in de regel "zware vondsten": 9 gedeeld door 0 …"); a
+# subselection that divides now goes on the element bound again in the source of the accumulate, and the exec branch
+# plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
+# branches: no report line moves but this golden's. The DRL-text branch plays it too, PLAYED 2, so EXPECTED_DRL_PLAYED
+# moves by one as well.
+EXPECTED_PLAYED=241
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1687,7 +1698,12 @@ DRL_CHANNEL=(
 # cases with no change of its own, PLAYED 4. Reason block at EXPECTED_PLAYED above.
 # 193 -> 194 (2026-10-06, a fact creation writes no population): jutterswet-premiepot, new. This branch plays its
 # case with no change of its own, PLAYED 1. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=194
+# 194 -> 195 (2026-10-09, a fold whose subselection divides, under a condition that does not hold):
+# jutterswet-filterwacht, new. This branch tested the subselection on the element's pattern too and faulted where the
+# fold is not reached ("ConstraintEvaluationException: Error evaluating constraint '(rsAggVergelijk(rsGedeeld(gewicht,
+# deelnemers), …"); it now tests a subselection that divides on the element bound again in the source of the
+# accumulate and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=195
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
