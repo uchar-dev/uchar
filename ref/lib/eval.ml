@@ -1,7 +1,10 @@
 (* The evaluation session of RUNTIME-SEMANTICS ch. 5: forward chaining to
    the least fixpoint, with freshness realised as naive re-evaluation
-   passes and idempotence at the write boundary (World.write_attr). A
-   bounded pass budget turns divergence into a fault.
+   passes and idempotence at the write boundary (World.write_attr), and
+   creation in generations (ch. 5.5). A bounded generation budget turns a
+   chain of creations without end into a fault, and a bound on the passes
+   between two generations does the same for two writers that keep
+   overwriting each other.
 
    Negation and channel reads are staged as v0's single boundary
    (ch. 5.3): the positive part quiesces first, then negation consumers
@@ -2502,8 +2505,12 @@ let rule_name (r : resolved_regel) = Option.value r.rr_naam ~default:"<naamloos>
 
 (* run one form over its subjects; [body] gets the fresh instance and an
    error collector, returns (world, changed); collected §9.5 reasons land
-   as channel facts for (rule × subject) *)
-let over_subjects ?(exact = false) ?(behalve = []) env world ~otype ~rule body =
+   as channel facts for (rule × subject). Given [read], the subjects and
+   the instance [body] gets come from that world while the writes and the
+   channel facts land on [world]: a creation reads the settled world of
+   the generation before its own, not what its own generation makes or
+   links (ch. 5.5) *)
+let over_subjects ?(exact = false) ?(behalve = []) ?read env world ~otype ~rule body =
   let isa a b =
     (if exact then norm a = norm b else isa env a b)
     (* the ch. 7.10 absorption: on these concrete types the rule IS a
@@ -2513,7 +2520,7 @@ let over_subjects ?(exact = false) ?(behalve = []) env world ~otype ~rule body =
   in
   List.fold_left
     (fun (w, changed) (snapshot : World.instance) ->
-      let self = World.get w snapshot.label in
+      let self = match read with Some _ -> snapshot | None -> World.get w snapshot.label in
       let pending = ref [] in
       let err reason = pending := reason :: !pending in
       let w, ch = body w self err in
@@ -2523,7 +2530,7 @@ let over_subjects ?(exact = false) ?(behalve = []) env world ~otype ~rule body =
           w !pending
       in
       (w, changed || ch))
-    (world, false) (World.of_type ~isa world otype)
+    (world, false) (World.of_type ~isa (Option.value read ~default:world) otype)
 
 (* ch. 3.7: the pro-rata target — the one implemented temporal write.
    The value MUST be tijdsevenredig-deel over an own temporal attribute
@@ -2948,8 +2955,10 @@ let run_verdeling env world (v : resolved_verdeling) =
    sees the link. Naturally idempotent: an already-present link is a
    no-op write, so a target reached along two paths links once. The
    symbolic form (IR-SPEC ch. 3.4, WF-028) is the whole of the relational
-   content; the wire requires it (B7). *)
-let run_feit_creatie env world (fc : resolved_feit_creatie) =
+   content; the wire requires it (B7). The anchors, the guard and the
+   chain are read on [read], the settled world of the generation before;
+   the links land on [world] (ch. 5.5, generations). *)
+let run_feit_creatie env ~read world (fc : resolved_feit_creatie) =
   if not (applies env fc.fc_geldigheid) then (world, false)
   else begin
     let name = Option.value fc.fc_naam ~default:"<feitcreatie>" in
@@ -2966,15 +2975,15 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
        anker, which short-circuits the chain exactly as before. *)
     let doel_guard = if guard_on_doel env.doc fc then fc.fc_voorwaarde else None in
     let anker_guard = if doel_guard = None then fc.fc_voorwaarde else None in
-    over_subjects env world ~otype:(req "FactCreationVersion.anchor" fc.anker) ~rule:name
+    over_subjects ~read env world ~otype:(req "FactCreationVersion.anchor" fc.anker) ~rule:name
       (fun w self err ->
         let fire =
-          match anker_guard with Some c -> eval_cond env w self ~err c | None -> true
+          match anker_guard with Some c -> eval_cond env read self ~err c | None -> true
         in
         if not fire then (w, false)
         else
           let hop insts rb =
-            List.concat_map (fun i -> role_links w i (bound_role env rb)) insts
+            List.concat_map (fun i -> role_links read i (bound_role env rb)) insts
           in
           let mids =
             List.fold_left
@@ -2985,7 +2994,7 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
           let targets =
             match doel_guard with
             | None -> targets
-            | Some c -> List.filter (fun t -> eval_cond env w t ~err c) targets
+            | Some c -> List.filter (fun t -> eval_cond env read t ~err c) targets
           in
           List.fold_left
             (fun (w, ch) (t : World.instance) ->
@@ -3012,8 +3021,19 @@ let run_feit_creatie env world (fc : resolved_feit_creatie) =
    blocks the creation (the snapshot narrowing is a recorded delta:
    v0's guard is a live fact-base negation) — while the to-many and
    linkless shapes guard per (rule × subject) through the
-   deterministic label. *)
-let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
+   deterministic label.
+
+   The subjects, the condition and the member initialisations are read on
+   [read], the settled world of the generation before (ch. 5.5,
+   generations): the value at the moment of making, which neither the
+   other creations of the same generation nor the minted instance itself
+   can move. Until 2026-10-09 they were read on the running world of a
+   pass, so the moment of making was a position in the pass: measured on
+   a recursive creation whose initialisation reads a copy of a count the
+   rules derive from its own links, the copy rule written before the
+   count left the initialisation leeg and written after it gave 0. The
+   instance, its initialisations and the back-link land on [world]. *)
+let run_object_creatie env ~world0 ~idx ~read world (oc : resolved_object_creatie) =
   if not (applies env oc.oc_geldigheid) then (world, false)
   else begin
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
@@ -3031,9 +3051,9 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
           | Error e -> Value.fault "%s" e)
       | None -> connecting_pair env ~from_type:subject ~to_type:nieuw
     in
-    over_subjects env world ~otype:subject ~rule:name (fun w self err ->
+    over_subjects ~read env world ~otype:subject ~rule:name (fun w self err ->
         let fire =
-          match oc.oc_voorwaarde with Some c -> eval_cond env w self ~err c | None -> true
+          match oc.oc_voorwaarde with Some c -> eval_cond env read self ~err c | None -> true
         in
         if not fire then (w, false)
         else begin
@@ -3081,7 +3101,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                            an absent atom is both. The boolean constant above
                            stays the v0 form; a truly non-boolean value (a
                            number, a text) still faults fast. *)
-                        match eval_expr env w self ~err e with
+                        match eval_expr env read self ~err e with
                         | Value.Bool true -> fst (World.set_char w ~label ~char:m)
                         | Value.Bool false | Value.Empty -> w
                         | v ->
@@ -3092,7 +3112,7 @@ let run_object_creatie env ~world0 ~idx world (oc : resolved_object_creatie) =
                         Value.fault
                           "characteristic initialisation of %S without a value" m)
                   else
-                    let v = eval_expr env w self ~err (req "MemberInit.value" t.toe_waarde) in
+                    let v = eval_expr env read self ~err (req "MemberInit.value" t.toe_waarde) in
                     fst
                       (World.write_attr w ~label ~attr:m
                          ~decl:(attr_decl env ~otype:nieuw ~attr:m)
@@ -3606,7 +3626,9 @@ let parameterset_check env =
                   p d))
     (vintage_read_params env.doc)
 
-(* [cause] names the divergence where it can, from the state the budget left *)
+(* the fixpoint of the forms that make nothing: [step] is one pass, and a
+   pass [budget] + 1 that still changes something is the fault. [cause]
+   names the divergence where it can, from the state the bound left *)
 let fixpoint ~budget ~cause step world =
   let rec go n world =
     if n > budget then
@@ -3723,7 +3745,7 @@ let evaluate env world =
      answered in pass order. On the R3 shape (a recursive creation under
      "het merk is niet gevuld", a rule writing merk = 1 when the
      successor's rang is not gevuld) this interpreter answered
-     merk(W1) = 1, because [pass] runs rules before creations; the
+     merk(W1) = 1, because its pass ran rules before creations; the
      opposite order mints W2 and leaves merk(W1) leeg, and the ASP reading
      has five stable models. On the R1 shape it minted a chain whose every
      creation is justified by a leeg merk that the final world fills.
@@ -3875,11 +3897,13 @@ let evaluate env world =
         (stratum, owner, members))
       (effective_defaults env)
   in
-  (* the forms of stratum <= k in the order a pass runs them — rules,
-     allocations, defaults groups, fact creations, object creations, each in
-     document order — with the name the divergence diagnosis gives a writer *)
+  (* the forms of stratum <= k that make nothing — rules, allocations,
+     defaults groups, each in document order — with the name the divergence
+     diagnosis gives a writer. The forms of a lower stratum run again here:
+     they write on the instances this stratum's creations mint, and no
+     population read orders them after those creations *)
   let named kind name = Printf.sprintf "%s \"%s\"" kind (Option.value name ~default:"<naamloos>") in
-  let steps ~k =
+  let settling ~k =
     List.filter_map
       (fun r ->
         if rule_stratum r > k then None
@@ -3898,43 +3922,63 @@ let evaluate env world =
               ( named "defaults group" (fst (List.hd members)).pd_naam,
                 fun w -> run_defaults_group env w ~world0 ~owner members ))
         defaults_groups
-    @ List.filter_map
-        (fun (fc : resolved_feit_creatie) ->
-          if fc_stratum fc > k then None
-          else Some (named "fact creation" fc.fc_naam, fun w -> run_feit_creatie env w fc))
-        env.doc.feit_creaties
+  in
+  (* the creations of stratum <= k — fact creations, then object creations,
+     each in document order. A step reads the world it gets first and
+     writes on the second *)
+  let creations ~k =
+    List.filter_map
+      (fun (fc : resolved_feit_creatie) ->
+        if fc_stratum fc > k then None
+        else Some (named "fact creation" fc.fc_naam, fun read w -> run_feit_creatie env ~read w fc))
+      env.doc.feit_creaties
     @ List.filter_map
         (fun (i, (oc : resolved_object_creatie)) ->
           if oc_stratum oc > k then None
           else
-            Some (named "object creation" oc.oc_naam, fun w -> run_object_creatie env ~world0 ~idx:i w oc))
+            Some
+              ( named "object creation" oc.oc_naam,
+                fun read w -> run_object_creatie env ~world0 ~idx:i ~read w oc ))
         (indexed env.doc.object_creaties)
   in
-  let pass ~k world =
+  (* one pass: every form that makes nothing once, each on the world the
+     one before it left *)
+  let pass steps world =
     List.fold_left
       (fun (w, ch) (_, step) ->
         let w, c = step w in
         (w, ch || c))
-      (world, false) (steps ~k)
+      (world, false) steps
   in
-  (* The cause of a divergence, where the state the budget left shows one
-     (ch. 5.7). Two writers of one target whose equations demand different
-     values have no fixpoint (ch. 5.1): each pass, each overwrites the other.
-     WF-079 refuses two unconditional writers; two conditional writers whose
-     conditions both hold on one instance reach this point. Two more passes
-     are replayed form by form, and an attribute of one instance that two or
-     more writers change to different values in both passes is named with
-     its writers and their values, in the order the pass runs them. The writes
-     are read off the world (World.changed_attrs), so the replay is the pass
-     itself. A runaway creation grows the world instead, shows no such
-     attribute, and keeps the budget's sentence. *)
-  let disagreement ~k world =
+  (* one generation (ch. 5.5): every creation against the same settled
+     world [read], so none reads what another creation of the generation
+     makes or links, whatever their order in the document. Returns the
+     world with what the generation made, and the creations that minted or
+     linked something *)
+  let generation steps read =
+    List.fold_left
+      (fun (w, makers) (who, step) ->
+        let w, made = step read w in
+        (w, if made then makers @ [ who ] else makers))
+      (read, []) steps
+  in
+  (* The cause of a divergence of the forms that make nothing, where the
+     state the bound left shows one (ch. 5.7). Two writers of one target
+     whose equations demand different values have no fixpoint (ch. 5.1):
+     each pass, each overwrites the other. WF-079 refuses two unconditional
+     writers; two conditional writers whose conditions both hold on one
+     instance reach this point. Two more passes are replayed form by form,
+     and an attribute of one instance that two or more writers change to
+     different values in both passes is named with its writers and their
+     values, in the order the pass runs them. The writes are read off the
+     world (World.changed_attrs), so the replay is the pass itself. *)
+  let disagreement steps world =
     let writes w =
       List.fold_left
         (fun (w, log) (who, step) ->
           let w', _ = step w in
           (w', log @ List.map (fun (l, a, v) -> (who, l, a, v)) (World.changed_attrs ~before:w ~after:w')))
-        (w, []) (steps ~k)
+        (w, []) steps
     in
     let conflicts log =
       let targets =
@@ -3986,22 +4030,51 @@ let evaluate env world =
           (Printf.sprintf "%s writers of one target disagree: %s to the attribute %s of %s, a %s" count
              listed declared label otype)
   in
-  (* the ch. 5.5/5.7 bounded budget: a recursive chain advances one
-     generation per pass, so this also caps runaway recursion — an
-     order of magnitude above any legitimate corpus fixpoint (~7
-     passes), and deliberately EQUAL to the ASP backend's oc_budget so
-     both executors fault a runaway chain at the same generation
-     (clingo's nested creation terms cap the reachable depth anyway:
-     its term handling aborts near depth ~200 — recorded in the
-     backend README) *)
-  let budget = 100 in
-  (* for k = 0, 1, …: the forms of stratum <= k evaluate to their
-     fixpoint before any form of stratum k+1 fires (ch. 6.3); the
-     consistency and uniqueness forms of stratum k fire once at that
-     fixpoint — their channel facts are idempotent (ch. 5.6) *)
+  (* The ch. 5.5 generation budget: a stratum admits at most 100
+     generations that mint an object or lay a link, and a 101st that still
+     does is the fault, never a silent truncation. It counts generations,
+     not passes, so where a chain stops does not depend on how many passes
+     the forms that make nothing need between two generations, nor on the
+     order in which the document writes them. The same number as the ASP
+     backend's oc_budget. Until 2026-10-09 the budget was 100 passes of
+     every form of the stratum together, and a pass that only computed
+     counted as well: measured on a chain of 99 mints with "kopie = nummer"
+     and "kopie2 = kopie" in one stratum, the reader of kopie written first
+     faulted and written last played. *)
+  let generation_budget = 100 in
+  (* for k = 0, 1, …: the forms of stratum <= k evaluate to their fixpoint
+     before any form of stratum k+1 fires (ch. 6.3), in generations
+     (ch. 5.5). Generation 0 is the fixpoint of the forms that make nothing;
+     generation G+1 is every creation against generation G's settled world,
+     after which the forms that make nothing settle again; the stratum is
+     done when a generation makes and links nothing. The forms that make
+     nothing carry no budget of their own: without creations their graph is
+     acyclic (WF-045), so unless two writers of one target keep overwriting
+     each other they settle within as many passes as there are of them. The
+     bound below, the larger of 100 and that number plus one, only turns
+     those two writers (ch. 5.7) into the fault that names them. The
+     consistency and uniqueness forms of stratum k fire once at the
+     stratum's fixpoint — their channel facts are idempotent (ch. 5.6) *)
   let world = ref world in
   for k = 0 to kmax do
-    world := fixpoint ~budget ~cause:(disagreement ~k) (pass ~k) !world;
+    let settling = settling ~k and creations = creations ~k in
+    let settle =
+      fixpoint
+        ~budget:(max 100 (List.length settling + 1))
+        ~cause:(disagreement settling) (pass settling)
+    in
+    (* [settled] is generation [g]'s settled world *)
+    let rec next g settled =
+      match generation creations settled with
+      | w, [] -> w
+      | _, makers when g >= generation_budget ->
+          Value.fault
+            "no fixpoint within %d generations — generation %d still mints or links (%s), and \
+             divergence is a fault (ch. 5.5, 5.7)"
+            generation_budget (g + 1) (String.concat ", " makers)
+      | w, _ -> next (g + 1) (settle w)
+    in
+    world := next 0 (settle !world);
     world :=
       List.fold_left
         (fun w c -> if cons_stratum c = k then run_consistentie env w c else w)

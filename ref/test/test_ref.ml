@@ -1602,6 +1602,253 @@ let () =
       in
       check "WV-6.4-h-rolcheck-na-de-feitcreatie" (Case.check c final = []))
 
+(* --- ch. 5.5: generations and the generation budget ---------------------- *)
+
+(* The document and the case as files, loaded the way the runner loads them.
+   [f] gets the verifier's findings, the case and the evaluation, deferred so
+   that a fault can be caught where it is pinned. *)
+let met_bestanden ~ir ~zaak f =
+  let schrijf suffix tekst =
+    let bestand = Filename.temp_file "ref-wv55" suffix in
+    let oc = open_out bestand in
+    output_string oc tekst;
+    close_out oc;
+    bestand
+  in
+  let irf = schrijf ".ir.json" ir and casef = schrijf ".case.json" zaak in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let bevindingen = Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf) in
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      f bevindingen c (fun () ->
+          Eval.evaluate
+            { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+              locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
+            c.world))
+
+(* verifier-clean, evaluated without a fault, every expectation of the case
+   met, then [verder] on the end state. A fault or a mismatch is carried in
+   the example's name, so a red run says what came out. *)
+let speelt ~naam ~ir ~zaak verder =
+  met_bestanden ~ir ~zaak (fun bevindingen c evalueer ->
+      check (naam ^ ": verifier-clean") (bevindingen = []);
+      match evalueer () with
+      | exception Value.Fault m -> check (naam ^ " (fault: " ^ m ^ ")") false
+      | final ->
+          let fouten = Case.check c final in
+          check
+            (naam ^ match fouten with [] -> "" | f -> " (" ^ String.concat "; " f ^ ")")
+            (fouten = []);
+          verder final)
+
+(* every order of a list of named rules *)
+let rec volgordes = function
+  | [] -> [ [] ]
+  | regels ->
+      List.concat_map
+        (fun (naam, regel) ->
+          List.map
+            (fun rest -> (naam, regel) :: rest)
+            (volgordes (List.filter (fun (n, _) -> n <> naam) regels)))
+        regels
+
+let attr_van (final : World.t) label attr =
+  match World.SMap.find_opt label final.instances with
+  | Some i -> World.attr i attr
+  | None -> Value.Text ("<no instance " ^ label ^ ">")
+
+let getal_json = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|}
+
+(* WV-5.5-generaties (ch. 5.5, since 2026-10-09): a creation reads the
+   settled world of the generation before its own, so the value its
+   initialisation takes at the moment of making does not depend on where the
+   document writes the rules. "werf de opvolger" (recursive group
+   "estafette") gives a Wachter of rang below 4 an opvolger with rang plus 1
+   and beginstand equal to its stand; "stand van een wachter" counts its
+   opvolgers; "opvolgerbegin" reads the beginstand of its opvolger. The copy
+   variant adds "De standkopie van een Wachter moet gesteld worden op zijn
+   stand" and initialises the beginstand from the standkopie instead. W1
+   (rang 1) makes W2, W2 makes W3, W3 makes W4. When W1 makes its opvolger it
+   has none, so its stand is 0; afterwards it is 1. In every order of the
+   rules: stand(W1) = 1, opvolgerbegin(W1) = 0, each minted Wachter starts at
+   beginstand 0, and the chain has four Wachters. Until that date a creation
+   read the running world of a pass, so the moment of making was a position
+   in the pass: with the copy rule written before the count, the
+   initialisation read a copy the pass had not yet computed and
+   opvolgerbegin(W1) was leeg. *)
+let () =
+  let eigen naam =
+    Printf.sprintf
+      {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "zijn %s"}}|}
+      naam naam
+  in
+  let regel naam doel presentatie waarde =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "De %s van een Wachter"}}, "value": %s, "initialisation": false, "presentation": "%s"}]}|}
+        naam doel doel waarde presentatie )
+  in
+  let stand =
+    regel "stand van een wachter" "stand" "calculation"
+      {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "opvolgers", "subjectType": "Wachter", "source": {"snippet": "opvolgers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal opvolgers van de Wachter"}}|}
+  in
+  let opvolgerbegin =
+    regel "opvolgerbegin" "opvolgerbegin" "equation"
+      {|{"node": "AttributeReference", "attribute": "beginstand", "subjectType": "Wachter", "source": {"snippet": "de beginstand van zijn opvolger"}, "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}]}|}
+  in
+  let standkopie = regel "standkopie van een wachter" "standkopie" "equation" (eigen "stand") in
+  let doc ~gelezen regels =
+    let leden = [ "rang"; "stand"; "beginstand"; "opvolgerbegin" ] @ if gelezen = "stand" then [] else [ gelezen ] in
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": {"node": "Literal", "value": {"number": "1"}, "type": %s, "source": {"snippet": "1"}}, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "beginstand", "value": %s, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": {"node": "Literal", "value": {"number": "4"}, "type": %s, "source": {"snippet": "4"}}, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger"], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", "
+         (List.map
+            (fun lid -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} lid getal_json)
+            leden))
+      (String.concat ", " (List.map snd regels))
+      (eigen "rang") getal_json getal_json (eigen gelezen) (eigen "rang") getal_json
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "stand", "value": {"number": "1"}}, {"kind": "attributeValue", "label": "W1", "attribute": "opvolgerbegin", "value": {"number": "0"}}]}|}
+  in
+  List.iter
+    (fun (variant, gelezen, regels) ->
+      List.iter
+        (fun volgorde ->
+          let naam =
+            Printf.sprintf "WV-5.5-generaties-%s [%s]" variant (String.concat "; " (List.map fst volgorde))
+          in
+          speelt ~naam ~ir:(doc ~gelezen volgorde) ~zaak (fun final ->
+              check (naam ^ ": four Wachters") (World.SMap.cardinal final.instances = 4);
+              List.iter
+                (fun label ->
+                  expect_num
+                    (Printf.sprintf "%s: beginstand(%s) = 0" naam label)
+                    (attr_van final label "beginstand") "0")
+                [ "oc0::W1"; "oc0::oc0::W1"; "oc0::oc0::oc0::W1" ]))
+        (volgordes regels))
+    [ ("keten", "stand", [ stand; opvolgerbegin ]);
+      ("kopie", "standkopie", [ standkopie; stand; opvolgerbegin ]) ]
+
+(* WV-5.5-budget-grens (ch. 5.5, since 2026-10-09): the generation budget —
+   a stratum admits at most 100 generations that mint or link, and the 101st
+   that still does is the fault — counts generations, not passes, so the
+   boundary does not depend on the order of the rules that make nothing.
+   "werf de opvolger" (group "estafette") gives Wachters of rang below 52 an
+   opvolger with rang plus 1; "leg de volgende boei" (group "boeienlijn")
+   gives a Boei whose nummer is below the bound a volgende boei with nummer
+   plus 1 and a wachterrang read from the rang of its wachter, which puts that
+   chain a stratum higher. "kopie van een boei" copies the nummer, "kopie2 van
+   een boei" the kopie. W1 (rang 1) guards B1 (nummer 1). Bound 100: 99
+   generations of Boeien; bound 101: 100, the last the budget admits; bound
+   102: 101, the fault. In both orders of the two copy rules: 100 and 101
+   Boeien, kopie2 of the last Boei equal to its nummer, and the fault "no
+   fixpoint within 100 generations". Until that date the budget was 100
+   passes of the whole stratum, and the copy rules settle in one pass more
+   when the reader of kopie is written first: with that order bound 100
+   faulted (no fixpoint within 100 passes) and the other order played. *)
+let () =
+  let boei naam =
+    Printf.sprintf
+      {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Boei", "source": {"snippet": "zijn %s"}}|}
+      naam naam
+  in
+  let kopie_regel naam doel bron =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Boei", "source": {"snippet": "De %s van een Boei"}}, "value": %s, "initialisation": false, "presentation": "equation"}]}|}
+        naam doel doel (boei bron) )
+  in
+  let kopie = kopie_regel "kopie van een boei" "kopie" "nummer"
+  and kopie2 = kopie_regel "kopie2 van een boei" "kopie2" "kopie" in
+  let literal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal_json n
+  in
+  let lid naam = Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} naam getal_json in
+  let wachter_rang =
+    {|{"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}|}
+  in
+  let doc ~grens regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}, {"node": "ObjectType", "name": "Boei", "animate": true, "plural": "Boeis", "attributes": [%s], "characteristics": [{"node": "Characteristic", "name": "genummerd", "kind": "adjectival"}]}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "many": false}]}, {"node": "FactType", "name": "boeiketen", "reciprocal": false, "roles": [{"node": "Role", "name": "vorige boei", "objectType": "Boei", "many": false}, {"node": "Role", "name": "volgende boei", "objectType": "Boei", "many": false}]}, {"node": "FactType", "name": "bewaking", "reciprocal": false, "roles": [{"node": "Role", "name": "wachter", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "boei", "objectType": "Boei", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}, {"node": "ObjectCreation", "name": "leg de volgende boei", "versions": [{"createdType": "Boei", "subject": "Boei", "initialisations": [{"node": "MemberInit", "member": "nummer", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "wachterrang", "value": {"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "de rang van zijn wachter"}, "path": [{"node": "RoleBinding", "factType": "bewaking", "role": "wachter"}]}, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "boeiketen", "role": "volgende boei"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger"], "source": {"snippet": "estafette"}}, {"node": "RuleGroup", "name": "boeienlijn", "recursive": true, "members": ["leg de volgende boei"], "source": {"snippet": "boeienlijn"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (lid "rang")
+      (String.concat ", " (List.map lid [ "nummer"; "wachterrang"; "kopie"; "kopie2" ]))
+      (String.concat ", " (List.map snd regels))
+      wachter_rang (literal 1) getal_json wachter_rang (literal 52)
+      (boei "nummer") (literal 1) getal_json (boei "nummer") (literal grens)
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {"boei": ["B1"]}, "characteristics": []}, {"label": "B1", "objectType": "Boei", "attributes": {"nummer": {"number": "1"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "rang", "value": {"number": "1"}}, {"kind": "attributeValue", "label": "B1", "attribute": "kopie", "value": {"number": "1"}}, {"kind": "attributeValue", "label": "B1", "attribute": "kopie2", "value": {"number": "1"}}]}|}
+  in
+  List.iter
+    (fun grens ->
+      List.iter
+        (fun volgorde ->
+          let naam =
+            Printf.sprintf "WV-5.5-budget-grens-%d-generaties [%s]" (grens - 1)
+              (String.concat "; " (List.map fst volgorde))
+          in
+          let ir = doc ~grens volgorde in
+          if grens - 1 <= 100 then
+            speelt ~naam ~ir ~zaak (fun final ->
+                let boeien =
+                  World.SMap.fold
+                    (fun _ (i : World.instance) n -> if i.otype = "Boei" then n + 1 else n)
+                    final.instances 0
+                in
+                check (Printf.sprintf "%s: %d Boeien (got %d)" naam grens boeien) (boeien = grens);
+                let laatste = String.concat "" (List.init (grens - 1) (fun _ -> "oc1::")) ^ "B1" in
+                expect_num (naam ^ ": kopie2 of the last Boei") (attr_van final laatste "kopie2")
+                  (string_of_int grens))
+          else
+            met_bestanden ~ir ~zaak (fun bevindingen _ evalueer ->
+                check (naam ^ ": verifier-clean") (bevindingen = []);
+                expect_fault_msg naam evalueer
+                  "no fixpoint within 100 generations — generation 101 still mints or links (object \
+                   creation \"leg de volgende boei\")"))
+        (volgordes [ kopie2; kopie ]))
+    [ 100; 101; 102 ]
+
+(* WV-5.5-budget-regelketen (since 2026-10-09): the forms that make nothing
+   carry no budget of their own. Without creations their graph is acyclic, so
+   unless two writers of one target keep overwriting each other they settle
+   within as many passes as there are of them, and ref bounds their loop at the
+   larger of 100 and that number plus one, which only turns those two writers
+   (ch. 5.7) into a fault. A Ding with an input a0 = 0 and 105 rules "a<i> van
+   een ding": a<i> = a<i-1> + 1. Written from a105 down to a1, each pass
+   settles one more link of the chain, and the 105th pass the last; written
+   from a1 up, one pass settles all. a105 = 105 in both orders. Until that
+   date the bound was the budget of 100 passes, and the first order faulted
+   (no fixpoint within 100 passes). *)
+let () =
+  let n = 105 in
+  let lid i = Printf.sprintf {|{"node": "Attribute", "name": "a%d", "datatype": %s}|} i getal_json in
+  let regel i =
+    Printf.sprintf
+      {|{"node": "Rule", "name": "a%d van een ding", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "a%d", "subjectType": "Ding", "source": {"snippet": "De a%d van een Ding"}}, "value": {"node": "Binary", "op": "plus", "left": {"node": "AttributeReference", "attribute": "a%d", "subjectType": "Ding", "source": {"snippet": "zijn a%d"}}, "right": {"node": "Literal", "value": {"number": "1"}, "type": %s, "source": {"snippet": "1"}}, "type": %s, "source": {"snippet": "plus"}}, "initialisation": false, "presentation": "calculation"}]}|}
+      i i i (i - 1) (i - 1) getal_json getal_json
+  in
+  let doc volgorde =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Ding", "animate": false, "plural": "Dingen", "attributes": [%s], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", " (List.init (n + 1) lid))
+      (String.concat ", " (List.map regel volgorde))
+  in
+  let zaak =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "D", "objectType": "Ding", "attributes": {"a0": {"number": "0"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "D", "attribute": "a%d", "value": {"number": "%d"}}]}|}
+      n n
+  in
+  let op = List.init n (fun i -> i + 1) in
+  List.iter
+    (fun (richting, volgorde) ->
+      speelt ~naam:(Printf.sprintf "WV-5.5-budget-regelketen-%d [%s]" n richting) ~ir:(doc volgorde) ~zaak
+        (fun _ -> ()))
+    [ ("van a105 naar a1", List.rev op); ("van a1 naar a105", op) ]
+
 (* WV-7.9: nested exception groups (ch. 7.9) — the PHASE4-DEFAULTS §7
    spurious-conflict test at the unit level (b <- x, x <- {y, z}, hand-built
    attribute defaults). Only y applicable and x justified must yield y, never a
