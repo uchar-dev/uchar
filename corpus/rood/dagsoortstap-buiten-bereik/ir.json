@@ -1,0 +1,312 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dag",
+                "canonical": "dag",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachttermijn",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "springtijdagen",
+                "canonical": "springtijdagen",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verre tijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluittijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "springtijdag",
+        "plural": "springtijdagen"
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "verre tijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verre tijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het verre tijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtdagen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtdagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip plus zijn wachtdagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "sluittijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluittijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het sluittijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "verre tijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn verre tijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachttermijn",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachttermijn"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn verre tijdstip plus zijn wachttermijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "springtijdag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "atLeast",
+          "threshold": 1,
+          "parts": [
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "dayOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 1"
+              }
+            },
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "dayOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "15"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "15"
+                }
+              },
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 15"
+              }
+            }
+          ],
+          "source": {
+            "snippet": "er aan ten minste 1 van de volgende voorwaarden wordt voldaan: - de dag uit de dag gelijk is aan 1 - de dag uit de dag gelijk is aan 15."
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

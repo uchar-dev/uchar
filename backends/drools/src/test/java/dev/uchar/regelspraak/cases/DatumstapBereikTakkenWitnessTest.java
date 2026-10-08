@@ -30,6 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * "Expected java.lang.RuntimeException to be thrown, but nothing was thrown" in each of the twelve rows. The ch. 3.8
  * examples had answered +228160941-04-01T08:00, -228156894-10-02T16:00 and +164276444-06-02T00:00, and the count of
  * 2^64 + 1 days one day, 2024-01-02T00:00.
+ *
+ * <p>The red case {@code corpus/rood/dagsoortstap-buiten-bereik} goes through the same replay: a step to the last day
+ * of the range in one rule, and one day of a kind further in the next. The day kind's step is its own runtime function
+ * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by the exec-model and the DRL-text branch; the
+ * truth-maintenance branch refuses day kinds by name, and the row pins that refusal. RED FIRST, measured on this
+ * branch at 16905a6d: both branches answered +146140482-05-01T00:00 without a fault.
  */
 class DatumstapBereikTakkenWitnessTest {
 
@@ -47,19 +53,38 @@ class DatumstapBereikTakkenWitnessTest {
         assertEquals(4, gevallen.size(), "the red case's four case files: " + gevallen);
         for (Path geval : gevallen) {
             JsonNode c = JSON.readTree(Files.readString(geval));
-            String zin = c.get("expectedFault").get("drools").asText();
-            ObjectNode zonderFout = ((ObjectNode) c).deepCopy();
-            zonderFout.remove("expectedFault");
-            zonderFout.set("expected", JSON.createArrayNode());
-            for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
-                String rij = geval.getFileName() + " on " + tak;
-                RuntimeException e = assertThrows(RuntimeException.class,
-                        () -> CaseRunner.speelCase(ir, zonderFout, tak), rij);
-                assertFalse(e instanceof CaseRunner.Excluded, rij + " faults at fire, it does not refuse the form: "
-                        + e.getMessage());
-                assertTrue(keten(e).contains(zin), rij + " names '" + zin + "': " + keten(e));
-            }
+            for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) faalt(ir, geval, c, tak);
         }
+    }
+
+    @Test void de_samengestelde_dagsoortstap_faalt_in_de_takken_die_dagsoorten_dragen() throws Exception {
+        Path map = ROOD.resolveSibling("dagsoortstap-buiten-bereik");
+        Path ir = map.resolve("ir.json"), geval = map.resolve("case1.json");
+        JsonNode c = JSON.readTree(Files.readString(geval));
+        faalt(ir, geval, c, DroolsBackend.Branch.EXEC_MODEL);
+        faalt(ir, geval, c, DroolsBackend.Branch.DRL_TEXT);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, zonderFout(c), DroolsBackend.Branch.TRUTH_MAINTENANCE), "truth maintenance");
+        assertTrue(e.getMessage().contains("dagsoorten zijn buiten de proef"), e.getMessage());
+    }
+
+    /** {@code c} replayed on {@code tak} faults at fire, with the fragment it pins for the backend in the cause chain. */
+    private static void faalt(Path ir, Path geval, JsonNode c, DroolsBackend.Branch tak) {
+        String zin = c.get("expectedFault").get("drools").asText();
+        String rij = geval.getFileName() + " on " + tak;
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> CaseRunner.speelCase(ir, zonderFout(c), tak), rij);
+        assertFalse(e instanceof CaseRunner.Excluded, rij + " faults at fire, it does not refuse the form: "
+                + e.getMessage());
+        assertTrue(keten(e).contains(zin), rij + " names '" + zin + "': " + keten(e));
+    }
+
+    /** The case as written, with its {@code expectedFault} swapped for an empty {@code expected}. */
+    private static ObjectNode zonderFout(JsonNode c) {
+        ObjectNode z = ((ObjectNode) c).deepCopy();
+        z.remove("expectedFault");
+        z.set("expected", JSON.createArrayNode());
+        return z;
     }
 
     private static String keten(Throwable t) {

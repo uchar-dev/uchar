@@ -202,4 +202,47 @@ class DatumstapBereikWitnessTest {
                 fout("kwartaal plus 3 074 457 345 618 258 603: ref geeft 2024-02-01", D0, "3074457345618258603",
                         "KWARTAAL", true, JAREN)));
     }
+
+    /**
+     * The day kind's step on a datum-tijd ({@code rsDatumTijdPlusDagsoort}) walks the civil days and puts the time of
+     * day back, and the day it lands on must lie in the range as at every other calendar step: the reference
+     * interpreter makes the same test after its walk. One walk is a few days, but its start can already lie at the
+     * edge, computed by another rule. The rows are a composed step, measured 2026-10-09 in {@code ref} on "Het verre
+     * tijdstip … als zijn meldtijdstip plus zijn wachtdagen" and "Het sluittijdstip … als zijn verre tijdstip plus zijn
+     * wachttermijn" (springtijdagen, the 1st and the 15th, as in {@code jutterswet-getijklok}), and its mirror with
+     * {@code min}: 2024-01-01T00:00:00 plus 53 375 975 860 days is the last day of the range, and one springtijdag
+     * further, 146140482-05-01, faults. A count of 0 keeps the test, as in {@code ref}; a leeg count returns the
+     * datum-tijd untested, as there.
+     *
+     * <p>One row expects a fault where {@code ref} gives a value: one springtijdag back from -146136543-09-09T00:00,
+     * the first day of the range, answered {@code @4611686017705975808ms}, an instant near the top. Its operand lies
+     * within a day of -2^62, where {@code ref}'s floor division of the millisecond count overflows (it adds a day's
+     * length less one to the negated count, and the sum passes 2^62 - 1), so it walked from the top day of the range
+     * instead; the step the row describes leaves the range and faults.
+     *
+     * <p>RED FIRST, measured on this branch at 16905a6d: the step answered +146140482-05-01T00:00 and
+     * -146136543-09-01T00:00 where these rows expect a fault; the rows that expect a value passed.
+     */
+    @Test void de_dagsoortstap_op_een_datum_tijd_toetst_de_dag_waarop_hij_landt() {
+        Predicate<LocalDate> springtij = d -> d.getDayOfMonth() == 1 || d.getDayOfMonth() == 15;
+        LocalDateTime laatsteDag = (LocalDateTime) stap(T0, "53375975860", "DAYS", true);
+        assertEquals(ms(4611686018371200000L), laatsteDag, "2024-01-01T00:00:00 plus 53 375 975 860 dagen");
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime
+                .rsDatumTijdPlusDagsoort(laatsteDag, BigDecimal.ONE, springtij, true), "dan plus 1 springtijdag");
+        assertTrue(e.getMessage().contains(BEREIK), e.getMessage());
+        assertEquals(laatsteDag, RegelSpraakRuntime.rsDatumTijdPlusDagsoort(laatsteDag, BigDecimal.ZERO, springtij, true),
+                "plus 0 springtijdagen: de dag zelf ligt in het bereik");
+        assertEquals(laatsteDag, RegelSpraakRuntime.rsDatumTijdPlusDagsoort(laatsteDag, null, springtij, true),
+                "plus een leeg aantal");
+        assertEquals(ms(4611686017593600000L), RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
+                LocalDateTime.of(146140482, 4, 1, 0, 0), BigDecimal.ONE, springtij, true),
+                "vanaf 146140482-04-01 plus 1 springtijdag: de 15e ligt er nog in");
+        assertEquals(ms(-4611686017852800000L), RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
+                LocalDateTime.of(-146136543, 9, 20, 0, 0), BigDecimal.ONE, springtij, false),
+                "vanaf -146136543-09-20 min 1 springtijdag: de 15e ligt er nog in");
+        e = assertThrows(IllegalStateException.class, () -> RegelSpraakRuntime.rsDatumTijdPlusDagsoort(
+                LocalDateTime.of(-146136543, 9, 9, 0, 0), BigDecimal.ONE, springtij, false),
+                "vanaf de eerste dag van het bereik min 1 springtijdag: ref slaat hier om");
+        assertTrue(e.getMessage().contains(BEREIK), e.getMessage());
+    }
 }

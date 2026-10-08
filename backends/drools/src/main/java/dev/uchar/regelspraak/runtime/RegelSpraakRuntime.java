@@ -537,10 +537,18 @@ public final class RegelSpraakRuntime {
             return t.plus(n, ChronoUnit.valueOf(eenheid));
         }
         LocalDate doel = kalenderdoel(t.toLocalDate(), n, eenheid);
-        long msod = t.toLocalTime().toNanoOfDay() / 1_000_000L;
-        if (doel == null || doel.toEpochDay() > (MS_MAX - msod) / MS_PER_DAG || doel.toEpochDay() < MS_MIN / MS_PER_DAG)
-            throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        if (doel == null) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        toetsLandingsdag(doel, t.toLocalTime());
         return doel.atTime(t.toLocalTime());
+    }
+
+    /** The test on the civil day a datum-tijd step in a calendar unit or a day kind lands on, the time of day riding
+     *  through unchanged, as the reference interpreter makes it after the step: the instant must stay below the top of
+     *  the range and the day's own midnight above the bottom. */
+    private static void toetsLandingsdag(LocalDate dag, java.time.LocalTime tijd) {
+        long msod = tijd.toNanoOfDay() / 1_000_000L;
+        if (dag.toEpochDay() > (MS_MAX - msod) / MS_PER_DAG || dag.toEpochDay() < MS_MIN / MS_PER_DAG)
+            throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
     }
 
     /** The millisecond count of {@code t} since 1970-01-01T00:00:00. A datum-tijd outside the range is none that a
@@ -624,13 +632,18 @@ public final class RegelSpraakRuntime {
 
     /** §6.11 "datum-en-tijd ± N &lt;dagsoort&gt;": §4.1/§4.2 Tabel 2/5 rule 2 — adding a time value to a datum-EN-tijd
      *  operand yields a datum-en-tijd result (the time-of-day is preserved). A dagsoort is day-granular, so step over
-     *  the DATE part via {@link #rsDatumPlusDagsoort} and re-attach the original time-of-day. A leeg datum stays leeg.
-     *  The single implementation; the DRL imports it (single-runtime principle). */
+     *  the DATE part via {@link #rsDatumPlusDagsoort} and re-attach the original time-of-day. A leeg datum stays leeg,
+     *  and a leeg count returns the datum-tijd unchanged and untested. The day the walk lands on is tested against the
+     *  representable millisecond range as every other datum-tijd step's is ({@link #toetsLandingsdag}), a count of 0
+     *  included: one walk is a few days, but its start may already lie at the edge of the range, computed by another
+     *  rule. The single implementation; the DRL imports it (single-runtime principle). */
     public static java.time.LocalDateTime rsDatumTijdPlusDagsoort(java.time.LocalDateTime datum, Object aantal,
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
+        if (aantal == null) return datum;      // leeg aantal -> onveranderd en ongetoetst, als in de referentie-interpreter
         java.time.LocalDate d = rsDatumPlusDagsoort(datum.toLocalDate(), aantal, isDagsoort, optellen);
-        return d == null ? null : d.atTime(datum.toLocalTime());   // re-attach the time-of-day (§4 rule 2)
+        toetsLandingsdag(d, datum.toLocalTime());
+        return d.atTime(datum.toLocalTime());   // re-attach the time-of-day (§4 rule 2)
     }
 
     /** §6.10 "de (absolute) tijdsduur van A tot B in &lt;dagsoort&gt;": COUNT the dagsoort days in the half-open
