@@ -241,10 +241,10 @@ Out of scope: de exec-modeltak en de DRL-teksttak, `scripts/` (de proeftak
 komt niet in een gate), `corpus/`, `spec/`, de toolchain, en de vormen onder
 "Niet in de proef".
 
-## Result (2026-10-08, ter beoordeling; niet gemerged)
+## Result (2026-10-08)
 
-*De kaart blijft in `doing/` tot de eigenaar akkoord geeft. Ze staat op de branch `card/drools-logische-afleiding`,
-gerebased op main `87ca3f9a`. De commits:*
+*Branch `card/drools-logische-afleiding`, gerebased op main `87ca3f9a` en na het akkoord van de eigenaar fast-forward
+gemerged. De commits:*
 
 | Commit | Inhoud |
 |---|---|
@@ -519,6 +519,16 @@ Bij stoppen zou gelden:
 - route A voor `20261006-drl-defaults-lowering`;
 - de vloer van de corpusgetuige vervangen door alleen "nooit FAIL", of alleen dit Result landen en de branch als
   archief bewaren.
+
+### Besluit van de eigenaar (2026-10-08)
+
+- **(f):** doorbouwen, als vervanging van de huidige exec-modeltak. Het eindbeeld is twee Drools-takken.
+- **DRL-teksttak:** die gaat ook op truth maintenance. Daarmee vervalt de afspraak in
+  `20261006-drl-defaults-lowering` dat die kaart bij doorbouwen route B2 kiest. Gate 12 vergelijkt dan twee
+  verlagingen met hetzelfde ontwerp; de onafhankelijke toets komt van ref en clingo. De hoofdsessie werkt die kaart bij
+  wanneer ze de vervolgkaarten schrijft.
+- **Vervolgkaarten:** bouwkaarten, geen haalbaarheidsproeven, met reviews zoals in deze kaart.
+- **Landing:** fast-forward vanuit de hoofdcheckout; niet gepusht.
 
 ### Waarnemingen
 
