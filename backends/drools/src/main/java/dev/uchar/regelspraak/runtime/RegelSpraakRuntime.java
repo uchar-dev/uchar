@@ -454,19 +454,124 @@ public final class RegelSpraakRuntime {
                 toBd(uur).intValue(), toBd(minuut).intValue(), toBd(seconde).intValue(), toBd(milli).intValue() * 1_000_000);
     }
 
+    /** The representable millisecond range of a datum-tijd value, [-2^62, 2^62 - 1] ms around 1970-01-01T00:00:00,
+     *  some 146 million years either way. uchar RUNTIME-SEMANTICS ch. 3.8 makes a step that leaves it a fault, "never a
+     *  silent wrap-around", and names no number: this is the reference interpreter's machine integer, in which it holds
+     *  a datum-tijd, and the backend takes it over so that the same steps fault in both. A duration's whole count is
+     *  bounded by the same interval there, and here. java.time reaches some 999 999 999 years, so without this bound
+     *  the step answered dates the reference interpreter refuses. */
+    private static final long MS_MIN = -(1L << 62);
+    private static final long MS_MAX = (1L << 62) - 1;
+    private static final long MS_PER_DAG = 86_400_000L;
+
+    /** The fault of a datum-tijd step that leaves {@link #MS_MIN}..{@link #MS_MAX}, in the reference interpreter's
+     *  words. */
+    public static final String DATUMTIJD_BUITEN_BEREIK = "datum-tijd arithmetic leaves the representable millisecond range";
+
+    /** The fault of a step on a date without a time that leaves the years a {@link LocalDate} holds. ch. 3.8 bounds no
+     *  such step, and the reference interpreter answers a date there; this backend has none to give and says so in its
+     *  own sentence, not in java.time's. */
+    public static final String DATUM_BUITEN_JAREN =
+            "date arithmetic leaves the years -999999999 to 999999999 that this backend's dates hold";
+
+    /** A calendar step of more units than this lands beyond the years a {@link LocalDate} holds, whatever the unit
+     *  (10^12 days are some 2.7 billion years), so {@link #kalenderdoel} rejects it before its arithmetic could leave a
+     *  long. */
+    private static final long KALENDERSTAP_MAX = 1_000_000_000_000L;
+
     /** §6/§13.4.16 date arithmetic (§6 spec / Tabel 15): a datum/datumtijd plus or minus a whole number of a time
      *  unit (dag/week/maand/jaar; uur/… only on a datumtijd) -> a new date(time). Leegwaarde per Tabel 15: an empty
      *  DATUM -> empty ("niet te gebruiken"), but an empty DURATION is treated as the number 0 -> the date unchanged
      *  (as is a 0 duration, §6). The aantal is taken as whole units (date arithmetic operates on integer time
-     *  units; a fractional value truncates toward zero). The single implementation; the DRL imports it (single-runtime principle). */
+     *  units; a fractional value truncates toward zero). A step whose datum-tijd result leaves the representable
+     *  millisecond range faults ({@link #datumTijdStap}), as does a count outside that range ({@link #duurTelling}); a
+     *  step on a date without a time faults only beyond the years java.time holds. The single implementation; the DRL
+     *  imports it (single-runtime principle). */
     public static java.time.temporal.Temporal rsDatumReken(java.time.temporal.Temporal datum, BigDecimal aantal, String eenheid, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg tijdseenheid -> behandeld als 0 -> datum onveranderd (Tabel 15)
-        long n = aantal.longValue();
-        boolean kwartaal = "KWARTAAL".equals(eenheid);   // §3.7 kwartaal = 3 maanden (geen ChronoUnit.QUARTERS)
-        java.time.temporal.ChronoUnit u = kwartaal ? java.time.temporal.ChronoUnit.MONTHS : java.time.temporal.ChronoUnit.valueOf(eenheid);
-        if (kwartaal) n = n * 3;
-        return optellen ? datum.plus(n, u) : datum.minus(n, u);
+        long n = duurTelling(aantal);
+        if (!optellen) n = -n;                 // |n| <= 2^62, so the negation cannot overflow
+        if (datum instanceof java.time.LocalDateTime t) return datumTijdStap(t, n, eenheid);
+        if (datum instanceof LocalDate d) {
+            LocalDate doel = kalenderdoel(d, n, eenheid);
+            if (doel == null) throw new IllegalStateException(DATUM_BUITEN_JAREN);
+            return doel;
+        }
+        throw new IllegalArgumentException("rsDatumReken: geen datum maar " + datum.getClass().getName());
+    }
+
+    /** The whole count of a duration (ch. 3.8): a fractional count truncates toward zero, exactly. A count outside
+     *  {@link #MS_MIN}..{@link #MS_MAX} faults in the reference interpreter's sentence, with the count written as it
+     *  writes a rational. {@code BigDecimal.longValue} kept the low 64 bits of a larger count, so 2^64 + 1 days stepped
+     *  one day. */
+    private static long duurTelling(Object aantal) {
+        Breuk q = Breuk.van(aantal);
+        BigInteger n = q.teller().divide(q.noemer());   // BigInteger#divide truncates toward zero
+        if (n.compareTo(BigInteger.valueOf(MS_MIN)) < 0 || n.compareTo(BigInteger.valueOf(MS_MAX)) > 0)
+            throw new IllegalStateException("duration count "
+                    + (q.noemer().equals(BigInteger.ONE) ? q.teller().toString() : q.toString()) + " is out of range");
+        return n.longValue();
+    }
+
+    /** A datum-tijd step of {@code n} {@code eenheid}, checked before it is taken as the reference interpreter checks
+     *  it. In a clock unit the step itself, n times the unit in milliseconds, and the instant it reaches must both lie
+     *  in the range: from 2024 a step back of 1 281 023 894 008 hours faults although the instant it names lies inside.
+     *  In a calendar unit the time of day rides through unchanged, and the day the step lands on must keep the instant
+     *  below the top of the range and its own midnight above the bottom: the bottom is a whole day, so a step that lands
+     *  on the last partial day faults even where its time of day would stay inside. */
+    private static java.time.LocalDateTime datumTijdStap(java.time.LocalDateTime t, long n, String eenheid) {
+        long eenheidMs = switch (eenheid) {
+            case "HOURS" -> 3_600_000L;
+            case "MINUTES" -> 60_000L;
+            case "SECONDS" -> 1_000L;
+            case "MILLIS" -> 1L;
+            default -> 0L;                     // a calendar unit
+        };
+        if (eenheidMs > 0) {
+            if (n > MS_MAX / eenheidMs || n < MS_MIN / eenheidMs) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+            long s = milliseconden(t) + n * eenheidMs;    // both terms lie in the range, so the sum fits a long
+            if (s < MS_MIN || s > MS_MAX) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+            return t.plus(n, ChronoUnit.valueOf(eenheid));
+        }
+        LocalDate doel = kalenderdoel(t.toLocalDate(), n, eenheid);
+        long msod = t.toLocalTime().toNanoOfDay() / 1_000_000L;
+        if (doel == null || doel.toEpochDay() > (MS_MAX - msod) / MS_PER_DAG || doel.toEpochDay() < MS_MIN / MS_PER_DAG)
+            throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        return doel.atTime(t.toLocalTime());
+    }
+
+    /** The millisecond count of {@code t} since 1970-01-01T00:00:00. A datum-tijd outside the range is none that a
+     *  checked step yields, but the datumtijd-met constructor can make one, and a step from it faults too, before the
+     *  count could leave a long. */
+    private static long milliseconden(java.time.LocalDateTime t) {
+        long dag = t.toLocalDate().toEpochDay();
+        if (dag < MS_MIN / MS_PER_DAG - 1 || dag > MS_MAX / MS_PER_DAG) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        long ms = dag * MS_PER_DAG + t.toLocalTime().toNanoOfDay() / 1_000_000L;
+        if (ms < MS_MIN || ms > MS_MAX) throw new IllegalStateException(DATUMTIJD_BUITEN_BEREIK);
+        return ms;
+    }
+
+    /** The civil day a calendar step of {@code n} {@code eenheid} from {@code d} lands on (ch. 3.8): days and weeks
+     *  are linear, months, quarters and years advance the proleptic month and clamp the day to the end of the target
+     *  month, as java.time does. Null when that day lies beyond the years a {@link LocalDate} holds: this is computed
+     *  before java.time is asked, so that java.time's exception never stands in for the fault. §3.7: a kwartaal is 3
+     *  maanden (java.time has no QUARTERS). */
+    private static LocalDate kalenderdoel(LocalDate d, long n, String eenheid) {
+        if (n > KALENDERSTAP_MAX || n < -KALENDERSTAP_MAX) return null;
+        switch (eenheid) {
+            case "DAYS", "WEEKS" -> {
+                long dag = d.toEpochDay() + ("WEEKS".equals(eenheid) ? 7 * n : n);
+                return dag < LocalDate.MIN.toEpochDay() || dag > LocalDate.MAX.toEpochDay() ? null : LocalDate.ofEpochDay(dag);
+            }
+            case "MONTHS", "KWARTAAL", "YEARS" -> {
+                long maanden = n * ("YEARS".equals(eenheid) ? 12 : "KWARTAAL".equals(eenheid) ? 3 : 1);
+                long jaar = Math.floorDiv(d.getYear() * 12L + d.getMonthValue() - 1 + maanden, 12);
+                return jaar < java.time.Year.MIN_VALUE || jaar > java.time.Year.MAX_VALUE ? null : d.plusMonths(maanden);
+            }
+            default -> throw new IllegalArgumentException("rsDatumReken: de tijdseenheid " + eenheid
+                    + " is geen kalendereenheid en vraagt een datum met tijd");
+        }
     }
 
     /** The normative REACH of the day-kind walk (uchar RUNTIME-SEMANTICS ch. 3.8): a step that passes this many
@@ -487,7 +592,7 @@ public final class RegelSpraakRuntime {
             java.util.function.Predicate<java.time.LocalDate> isDagsoort, boolean optellen) {
         if (datum == null) return null;        // leeg datum -> leeg
         if (aantal == null) return datum;      // leeg eenheid -> behandeld als 0 -> datum onveranderd (§6.11 Tabel 15)
-        long n = aantal.longValue();
+        long n = duurTelling(aantal);          // |n| <= 2^62, so the negation below cannot overflow
         boolean op = optellen;
         if (n < 0) { op = !op; n = -n; }
         if (n == 0) return datum;              // §6.11: 0 -> X onveranderd (zelfs als X geen dagsoort-dag is)

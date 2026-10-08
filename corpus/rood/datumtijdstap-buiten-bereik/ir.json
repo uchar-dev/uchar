@@ -1,0 +1,269 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Getijpost",
+        "animate": true,
+        "plural": "Getijposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldtijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "uur",
+                "canonical": "uur",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorlooptijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "uur",
+                "canonical": "uur",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "dag",
+                "canonical": "dag",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluittijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanlooptijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verre tijdstip",
+            "datatype": {
+              "node": "Date",
+              "precision": "millisecond"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "sluittijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluittijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het sluittijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachttijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachttijd"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip plus zijn wachttijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanlooptijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanlooptijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het aanlooptijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "voorlooptijd",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn voorlooptijd"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip min zijn voorlooptijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verre tijdstip van een getijpost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verre tijdstip",
+              "subjectType": "Getijpost",
+              "source": {
+                "snippet": "Het verre tijdstip van een Getijpost"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "meldtijdstip",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn meldtijdstip"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "wachtdagen",
+                "subjectType": "Getijpost",
+                "source": {
+                  "snippet": "zijn wachtdagen"
+                }
+              },
+              "type": {
+                "node": "Date",
+                "precision": "millisecond"
+              },
+              "source": {
+                "snippet": "zijn meldtijdstip plus zijn wachtdagen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

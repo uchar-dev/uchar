@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Getijpost",
+        "attributes": {
+          "meldtijdstip": {
+            "dateTime": "2024-01-01T00:00:00"
+          },
+          "wachtdagen": {
+            "number": "60000000000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "ref": "datum-tijd arithmetic leaves the representable millisecond range",
+    "clingo": "value 60000000000 at 0 decimals exceeds clingo's integer range",
+    "drools": "datum-tijd arithmetic leaves the representable millisecond range"
+  }
+}
