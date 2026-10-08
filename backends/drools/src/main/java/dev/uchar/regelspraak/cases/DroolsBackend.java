@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.graaf.ProducentConsument;
+import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.ResolvedStartpunt;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
@@ -16,8 +17,11 @@ import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
+import dev.uchar.regelspraak.transpiler.tms.HeeftKenmerk;
+import dev.uchar.regelspraak.transpiler.tms.Koppeling;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import dev.uchar.regelspraak.runtime.Breuk;
 
@@ -28,15 +32,23 @@ import org.kie.api.conf.EqualityBehaviorOption;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
+import org.kie.api.event.rule.DefaultRuleRuntimeEventListener;
+import org.kie.api.event.rule.ObjectInsertedEvent;
+import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.utils.KieHelper;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -293,9 +305,10 @@ public final class DroolsBackend {
     }
 
     /** The generation budget of a run with creations, per evaluation stratum: at most this many generations of one
-     *  stratum create something, and the next must create nothing. The reference interpreter bounds the fixpoint of
-     *  each stratum by 100 passes, a recursive chain advancing one generation per pass, and the ASP backend the depth
-     *  of a chain of mints by an equal {@code oc_budget} (RUNTIME-SEMANTICS ch. 5.5 and 5.7); {@code corpus/rood}
+     *  stratum change something, and the next must change nothing, a generation being a pass of the reference
+     *  interpreter ({@link #vuur}). The reference interpreter bounds the fixpoint of each stratum by 100 passes that
+     *  change something, a recursive chain advancing one generation per pass, and the ASP backend the depth of a chain
+     *  of mints by an equal {@code oc_budget} (RUNTIME-SEMANTICS ch. 5.5 and 5.7); {@code corpus/rood}
      *  {@code finite-chain-over-budget} and {@code synth2-budgetgrens-onder} pin the two sides of the bound. */
     static final int GENERATIES = 100;
 
@@ -328,9 +341,26 @@ public final class DroolsBackend {
      * a form of stratum k+1 fires (ch. 6.3). In one phase for all strata, a creation that reads what another creation
      * of the same generation makes would read the state before it, and its initialisation would stay fixed on that
      * value. The strata order only the creations, which are stated: the rule layer stays under truth maintenance and
-     * reaches its fixpoint after every phase. A stratum ends at its first generation that creates nothing. A generation
-     * past {@link #GENERATIES} within one stratum that still creates ends the run without a fixpoint: the reference
-     * interpreter bounds the fixpoint of each stratum by its budget of passes.
+     * reaches its fixpoint after every phase.
+     *
+     * <p>The budget counts as the reference interpreter counts its passes, per stratum: every pass that changes
+     * something, until the first that changes nothing. A generation is such a pass: the change of the rule layer after
+     * the creations of the generation before, which the reference interpreter's next pass makes before its creations,
+     * and the creations of this generation. A change of the rule layer is net, a value, a characteristic or a link that
+     * stands differently after the generation than before it, the facts the creations state left out, as they are the
+     * creations' own change; a standing or a contribution is no change, as an object without a written value is none
+     * for the reference interpreter. It counts in this stratum only where a form of this stratum or below writes the
+     * member ({@code TmsTranspiler.lidstratum}): the reference interpreter evaluates a form of a higher stratum only
+     * after this stratum's fixpoint. So a stratum whose last creation still makes the rule layer change has one pass
+     * more than generations that create. A stratum ends at its first generation that changes nothing; a generation past
+     * {@link #GENERATIES} that still changes something ends the run without a fixpoint.
+     *
+     * <p>The reference interpreter also counts a first pass of a stratum in which only rules change: the rules of that
+     * stratum, which no earlier stratum evaluated. Here the rule layer made those changes while an earlier stratum's
+     * phases fired, and the first generation counts by its creations alone. That cannot change the outcome: in a pass
+     * of the reference interpreter the rules run before the creations, so its first pass of a stratum makes the
+     * creations of the first generation, and a first pass in which only rules change is followed by one that changes
+     * nothing.
      */
     static Vuring vuur(Build build, KieSession sessie, int plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
@@ -342,12 +372,23 @@ public final class DroolsBackend {
                 if (creaties.contains(e.getMatch().getRule().getName())) gemaakt[0]++;
             }
         };
+        // what a creation inserts is stated and is the creation's own change, never one of the rule layer
+        Set<Object> gesteld = Collections.newSetFromMap(new IdentityHashMap<>());
+        RuleRuntimeEventListener stellingen = new DefaultRuleRuntimeEventListener() {
+            @Override public void objectInserted(ObjectInsertedEvent e) {
+                if (e.getRule() != null && creaties.contains(e.getRule().getName())) gesteld.add(e.getObject());
+            }
+        };
         sessie.addEventListener(teller);
+        sessie.addEventListener(stellingen);
         try {
             int gevuurd = sessie.fireAllRules(plafond);
             FactHandle fase = null;
             int nummer = 0;
-            for (int stratum : tms.creatiestrata())
+            for (int stratum : tms.creatiestrata()) {
+                // the net change of the rule layer after the creations of the previous generation, of this stratum
+                int reactie = 0;
+                Map<Plaats, Set<Object>> stand = stand(sessie, gesteld);
                 for (int generatie = 1; gevuurd < plafond; generatie++) {
                     gemaakt[0] = 0;
                     for (String groep : List.of(TmsTranspiler.FEITCREATIE, TmsTranspiler.OBJECTCREATIE)) {
@@ -363,17 +404,69 @@ public final class DroolsBackend {
                         gevuurd += sessie.fireAllRules(plafond - gevuurd);
                         if (gevuurd >= plafond) return new Vuring(gevuurd, null);
                     }
-                    if (gemaakt[0] == 0) break;
-                    if (generatie > GENERATIES)
+                    if (generatie > GENERATIES && gemaakt[0] > 0)
                         return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
                                 + generatie + " maakt nog " + gemaakt[0] + (gemaakt[0] == 1 ? " object of link"
                                 : " objecten of links") + " — een creatie die niet stopt is een fout (RUNTIME-SEMANTICS"
                                 + " ch. 5.5 en 5.7)");
+                    if (generatie > GENERATIES && reactie > 0)
+                        return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
+                                + generatie + " maakt niets meer, maar de regellaag verandert nog " + reactie
+                                + (reactie == 1 ? " waarde, kenmerk of link" : " waarden, kenmerken of links")
+                                + " na wat generatie " + (generatie - 1) + " maakte — ook die pas telt, zoals in de"
+                                + " referentie-interpreter (RUNTIME-SEMANTICS ch. 5.5 en 5.7)");
+                    if (gemaakt[0] == 0) break;
+                    Map<Plaats, Set<Object>> na = stand(sessie, gesteld);
+                    reactie = reactie(stand, na, tms, stratum);
+                    stand = na;
                 }
+            }
             return new Vuring(gevuurd, null);
         } finally {
             sessie.removeEventListener(teller);
+            sessie.removeEventListener(stellingen);
         }
+    }
+
+    /** One place of the state a pass of the reference interpreter changes: an attribute ({@code 'w'}) or a
+     *  characteristic ({@code 'k'}) of an object, or a link of a relation ({@code 'l'}), the objects by identity. */
+    private record Plaats(char soort, Id onderwerp, Object lid, Id tweede) {}
+
+    /** An object compared by identity, as the branch's facts compare their subject. */
+    private record Id(Object o) {
+        @Override public boolean equals(Object x) { return x instanceof Id i && i.o == o; }
+        @Override public int hashCode() { return System.identityHashCode(o); }
+    }
+
+    /** What stands in {@code sessie} per place: the values of an attribute, a characteristic, a link; without the facts
+     *  a creation stated ({@code gesteld}). A number counts by its value, so 5.0 and 5.00 are one value. */
+    private static Map<Plaats, Set<Object>> stand(KieSession sessie, Set<Object> gesteld) {
+        Map<Plaats, Set<Object>> uit = new HashMap<>();
+        for (Object f : sessie.getObjects(o -> o instanceof Waarde || o instanceof HeeftKenmerk || o instanceof Koppeling)) {
+            if (gesteld.contains(f)) continue;
+            if (f instanceof Waarde w)
+                uit.computeIfAbsent(new Plaats('w', new Id(w.onderwerp()), w.attribuut(), null), p -> new HashSet<>())
+                        .add(w.waarde() instanceof BigDecimal b ? b.stripTrailingZeros() : w.waarde());
+            else if (f instanceof HeeftKenmerk h)
+                uit.put(new Plaats('k', new Id(h.onderwerp()), h.kenmerk(), null), Set.of(Boolean.TRUE));
+            else if (f instanceof Koppeling k)
+                uit.put(new Plaats('l', new Id(k.eerste()), k.relatie(), new Id(k.tweede())), Set.of(Boolean.TRUE));
+        }
+        return uit;
+    }
+
+    /** The places that stand differently in {@code na} than in {@code voor} and that a form of {@code stratum} or below
+     *  writes ({@link TmsTranspiler#lidstratum}). A link counts in every stratum, though the rule layer makes none: a
+     *  creation states the links it makes, and the links of the input do not change while the session fires. */
+    private static int reactie(Map<Plaats, Set<Object>> voor, Map<Plaats, Set<Object>> na, TmsTranspiler tms,
+                               int stratum) {
+        Set<Plaats> plaatsen = new HashSet<>(voor.keySet());
+        plaatsen.addAll(na.keySet());
+        int n = 0;
+        for (Plaats p : plaatsen)
+            if (!Objects.equals(voor.get(p), na.get(p)) && (p.soort() == 'l'
+                    || tms.lidstratum(p.onderwerp().o(), (ElementSleutel) p.lid()) <= stratum)) n++;
+        return n;
     }
 
 

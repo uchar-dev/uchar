@@ -234,6 +234,8 @@ public final class TmsTranspiler {
     private final Set<String> creatieregels = new LinkedHashSet<>();
     /** The evaluation stratum of every form of a document with a creation, by its node ({@link Kringen#strata}). */
     private Map<Object, Integer> strata = Map.of();
+    /** The least stratum of a writer of every member node of a document with a creation ({@link #lidstratum}). */
+    private Map<String, Integer> lidstrata = Map.of();
     /** The strata of the lowered creation rules ({@link #creatiestrata}). */
     private final Set<Integer> creatiestrata = new TreeSet<>();
     /** Whether a filter fault rule reads a {@link Lijstplaats} ({@link #plaats}). */
@@ -290,6 +292,28 @@ public final class TmsTranspiler {
      *  turn, and a creation rule fires in the phases of its own stratum and of every stratum above it
      *  ({@link Creatiefase}). Empty where {@link #creatieregels} is. */
     public List<Integer> creatiestrata() { return List.copyOf(creatiestrata); }
+
+    /**
+     * The least evaluation stratum of a form that writes member {@code lid} on the type of {@code onderwerp}, a bean of
+     * this model, in a document with a creation. The rule layer has no strata on this branch, but it changes that member
+     * of that object only through such a form, and the reference interpreter evaluates a form only in the passes of its
+     * own stratum and above, so it makes that change in a pass of this stratum or a later one. The driver counts a
+     * change of the rule layer among the passes of a stratum by it ({@code DroolsBackend.vuur}). A member that no form
+     * writes is input, which the rule layer does not change: asked for one, this fails.
+     */
+    public int lidstratum(Object onderwerp, ElementSleutel lid) {
+        String klasse = onderwerp.getClass().getName();
+        Objecttype type = null;
+        for (Objecttype t : model.objecttypen.values())
+            if ((FactModelGenerator.PAKKET + "." + Namen.ident(t.naam, true)).equals(klasse)) type = t;
+        if (type == null) throw new IllegalStateException("tms: " + klasse + " is geen boon van dit model");
+        String knoop = (lid.kenmerk() ? "char:" : "attr:") + Namen.norm(type.naam) + ":" + lid.naam();
+        Integer s = lidstrata.get(knoop);
+        if (s == null)
+            throw new IllegalStateException("tms: geen vorm van dit model schrijft " + Feitnamen.lid(lid) + " op een "
+                    + type.naam);
+        return s;
+    }
 
     /** Whether a rule of the model reads a {@link Lijstplaats}: a fold whose filter can fault over a range with a
      *  to-many step. Only then does the case input state the places of its to-many lists. */
@@ -396,8 +420,11 @@ public final class TmsTranspiler {
     private Model run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
-        if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
-            strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
+        if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty()) {
+            Kringen.Strata s = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
+            strata = s.vormen();
+            lidstrata = s.leden();
+        }
         // before any form lowers: a form that reads a created relation must know it while it lowers
         for (ResolvedObjectCreatie o : model.objectCreaties) {
             RolBindingRef vr = rolBindingen.get(o);
