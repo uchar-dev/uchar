@@ -90,15 +90,18 @@ differs from ref/clingo and fails when stale.
 ## The truth-maintenance trial branch
 
 A third branch, `DroolsBackend.Branch.TRUTH_MAINTENANCE`, lowered by `transpiler/tms/TmsTranspiler` and chosen with
-`--tms` on the CLI (`CaseRunner.viaTruthMaintenance` in the replay). It is the trial of the card
+`--tms` on the CLI (`CaseRunner.viaTruthMaintenance` in the replay). It began as the trial of the card
 `drools-logische-afleiding`: can Drools' truth maintenance replace the measures the exec-model branch takes against
 the engine's own reactivity — `NO_LOOP` on a rule that writes its own subject, salience from the stratification,
 opaque class reactivity, `update` only on a changed value, the `initEigen` guard of an initialisation — and what does
-that cost in rules, firings and control facts. It is no gate path: gate 12 plays the exec-model and the DRL-text
-branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its witnesses (`Tms*WitnessTest`), among them
-`TmsCorpusWitnessTest`, which demands that every golden with cases either plays or is refused, and that none plays a
-wrong value. The measurements, and the owner's decision whether to build the branch out, are in the card's result;
-`TmsMeting` in the test tree produces them, and its javadoc says how to run it.
+that cost in rules, firings and control facts. The measurements are in that card's result; `TmsMeting` in the test
+tree produces them, and its javadoc says how to run it. On them the owner decided to build the branch out into the
+replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The first,
+`tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
+facts; its `Result:` gives the measurements and the count of the corpus per family. It is no gate path yet: gate 12
+plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
+witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
+plays or is refused, that none plays a wrong value, and that at least 120 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -171,11 +174,20 @@ A listed fold ("de eerste van A en B") is computed from its operands' bound valu
 
 A filter that divides by a numeric zero for a member inserts a `Filterfout` for that member, and no fault: the
 reference interpreter evaluates a filter only where the evaluation of a form reaches the fold, so not where the form's
-condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10).
-The rule that reads the fold binds the least `Filterfout` on its subject beside the contributions, and where its own
-evaluation reaches the fold while one stands, that evaluation faults as a division in it would; the `Fout` is that
-rule's, inserted by its consequence or by its fault rule, named after it, and withdrawn when the `Filterfout` goes.
-Witness `TmsFilterfoutWitnessTest`.
+condition does not hold, nor in a member of a composite that its verdict no longer reads (RUNTIME-SEMANTICS ch. 5.10),
+and there per member in fold order, stopping at the first fault (ch. 5.11). The bean model keeps a to-many role as a
+reference field on each member and no order, so for a model that reads it (`TmsTranspiler.leestLijstplaatsen`) the
+case runner states the place of every member of a to-many list as a `Lijstplaats`, in the list the reference
+interpreter holds: the members the case writes under the holder, in the order it writes them, then the members the
+loader mirrors from their own link, in ascending label order (ch. 5.7a). The rule that inserts a `Filterfout` joins the
+member per route, with the intermediates of a path bound rather than in an `exists`, binds the place at every to-many
+step, and gives the fact its place in the fold order, the number of the selection of a union and then those places.
+Two routes to one member stay two facts, so the least is the member's first reach, as the dedup of the reference
+interpreter keeps it (ch. 3.4b). The rule that reads the fold binds the least `Filterfout` on its subject beside the
+contributions, the first in fold order, and where its own evaluation reaches the fold while one stands, that
+evaluation faults as a division in it would; the `Fout` is that rule's, inserted by its consequence or by its fault
+rule, named after it, and withdrawn when the `Filterfout` goes. A member whose place the input did not state makes the
+rule fail loudly. Witness `TmsFilterfoutWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
@@ -190,25 +202,30 @@ hold at the fixpoint and then, once the group is empty, takes the rule layer to 
 ends at the first generation that creates nothing; a generation past the hundredth that still creates ends it without
 a fixpoint ("geen fixpunt binnen 100 generaties"), the bound the reference interpreter and the ASP backend share
 (`corpus/rood` `finite-chain-over-budget`, `corpus/golden/synth2-budgetgrens-onder`). An agenda filter cannot keep the
-creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for good.
+creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for good. The
+groups do: Drools evaluates a rule lazily, when the agenda takes it from the group that has the focus, so a creation
+rule gets no match on an intermediate state of the rule layer. Auto-focus on a creation rule would make it eager and
+give it a match there, and put its group in front when a generation opens.
 
 An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `Creatiefase`,
 the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a
 `Gemaakt` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
-which is the input world, since the branch writes no bean. Its consequence makes a new bean of the created type and
-inserts, stated, the bean, its `Gemaakt` with the phase, the `Koppeling` of the connecting relation and the
-initialisations as `Waarde` and `HeeftKenmerk`, computed from the values the rule binds. A fact creation's rule walks
-its path, over the reference fields of an input relation and over the `Koppeling` facts of a created one, none of the
-current phase, and inserts the `Koppeling` it makes, stated, where no link between anchor and target exists yet: the
+which is the input world, since the branch writes no bean. Which roles link the subject and the new object, with the
+guards on the reference fields and the refusal sentences, is one decision shared with the exec-model and the DRL-text
+branch (`FactModelGenerator.creatiekoppeling`, with `verbindendeFeittypen`). Its consequence makes a new bean of the
+created type and inserts, stated, the bean, its `Gemaakt` with the phase, the `Koppeling` of the connecting relation and
+the initialisations as `Waarde` and `HeeftKenmerk`, computed from the values the rule binds. A fact creation's rule
+walks its path, over the reference fields of an input relation and over the `Koppeling` facts of a created one, none of
+the current phase, and inserts the `Koppeling` it makes, stated, where no link between anchor and target exists yet: the
 creation is idempotent per link. What a phase made carries its number, and a creation rule takes no object or link of
 the phase it fires in, so a recursive chain advances one generation per phase, after the rule layer has reached a
-fixpoint over what the previous phase made. Every relation a form creates is read through `Koppeling` facts, the
-links of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation
-through a `PadStand` over a chain of patterns, the range of a fold through an `exists` over the link. A second
-distinct filler of a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vulling is een fout, geen
-overschrijving", ch. 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without
-the mark and without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The
-replay fires through `DroolsBackend.vuur`, which is not public; a consumer call is for the card `tms-omschakeling`, and
+fixpoint over what the previous phase made. Every relation a form creates is read through `Koppeling` facts, the links
+of the case input included, which a rule per to-one end inserts logically from the bean fields: a navigation through a
+`PadStand` over a chain of patterns, the range of a fold through an `exists` over the link. A second distinct filler of
+a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vulling is een fout, geen overschrijving", ch.
+5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
+without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay fires
+through `DroolsBackend.vuur`, which is not public; a consumer call is for the card `tms-omschakeling`, and
 `zetAfgeleideWaarden` refuses a session of a build with a creation that was fired without a `Creatiefase`. Witness
 `TmsCreatieWitnessTest`.
 
@@ -221,7 +238,8 @@ built, never as a silent fall:
 - the creations it does not build yet: an object creation without a `connectingRole`, whose relation would follow from
   the pair of types, or with a back-link that is ambiguous (the exec-model branch faults there at fire), a created
   relation that is not one of two roles, a division in a member initialisation, whose §6.5 deposit the branch does
-  not make, and a fold whose range of more than one step goes over a created relation;
+  not make, a fold whose range of more than one step goes over a created relation, and a fold whose filter can fault
+  over a created relation, whose made links have no place in the fold order;
 - the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many;
@@ -237,10 +255,13 @@ built, never as a silent fall:
   `fout-op-tussenstand`, where the reference interpreter gives the fault or the value of an initialisation beside
   another writer depending on the order of the rules);
 - every cycle of the dependency graph that the verifier refuses, refused by `Kringen` with a `tms:` sentence over the
-  verifier's own graph (`checks.ml`): a cycle that does not pass through a creation member of a recursive rule group
-  (WF-045), and a negative edge on any cycle (WF-046), plus one edge the verifier does not draw, a rule that writes
-  the channel of its own name. Under truth maintenance a positive cycle sustains itself, an even negative cycle settles
-  by model order, and an odd one changes until the fire cap.
+  verifier's own graph (`checks.ml`, the nodes of IR-SPEC ch. 5.1: attribute, characteristic, channel, population,
+  relation): a cycle that does not pass through a creation member of a recursive rule group (WF-045), and a negative
+  edge on any cycle (WF-046). Under truth maintenance a positive cycle sustains itself, an even negative cycle settles
+  by model order, and an odd one changes until the fire cap. One edge more than the verifier draws, a rule that writes
+  the channel of its own name, makes a known over-refusal: where a rule reads the channel of a computing rule that
+  reads the reader's target, the verifier sees no cycle and the reference interpreter computes the document, while
+  this branch refuses it. It refuses none of the goldens the loader loads (`TmsKringVerifierWitnessTest`).
 
 The loader and the bean model refuse on this branch as on the other two.
 
