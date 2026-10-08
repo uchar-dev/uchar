@@ -31,18 +31,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the midnight of the day it lands on leaves the range, even where the instant does not: "min 53 376 015 307 dagen"
  * from 09:00. Both are corners some 146 million years out; they are here so that a change on either side shows.
  *
- * <p>Three rows expect a fault where {@code ref} gives a value, because its 63-bit arithmetic wraps there: "plus
- * 3 074 457 345 618 258 603 kwartalen" from 2024-01-01T00:00:00 answered 2024-02-01T00:00:00 (three times the count
- * is 2^63 + 1, and the multiplication kept the 1); "min -4 611 686 018 427 387 904 milliseconden" answered an instant
- * 2^62 ms before the start (the negation of the smallest count is that count again); and on a date without a time
- * "plus 700 000 000 000 000 000 weken" answered -11836990593520844-11-04. ch. 3.8 calls that a fault, and a fault is
- * what this function gives.
+ * <p>Four rows expect a fault where {@code ref} gives a value, because its 63-bit arithmetic wraps there: "plus
+ * 3 074 457 345 618 258 603 kwartalen" from 2024-01-01T00:00:00 answered 2024-02-01T00:00:00, and from the date
+ * 2024-01-01 2024-02-01 (three times the count is 2^63 + 1, and the multiplication kept the 1); "min
+ * -4 611 686 018 427 387 904 milliseconden" answered an instant 2^62 ms before the start (the negation of the smallest
+ * count is that count again); and on a date without a time "plus 700 000 000 000 000 000 weken" answered
+ * -11836990593520844-11-04. ch. 3.8 calls a wrap-around a fault, and a fault is what this function gives.
  *
  * <p>A date without a time has no millisecond range in ch. 3.8 and none in {@code ref}: there the step gives a date up
  * to where its arithmetic wraps. This function gives {@code ref}'s date as far as a java.time date reaches, years
  * -999 999 999 to 999 999 999, and faults with its own sentence beyond, where {@code ref} still answers
- * (1000000000-01-01) and the ASP backend refuses the count. That split is recorded, not closed: closing it is a
- * number for ch. 3.8 to name.
+ * (1000000000-01-01) and the ASP backend faults too: it refuses a count of days beyond its 32-bit integers at
+ * translation, and a step of 999 997 976 years trips its guard on the year. That split is recorded, not closed:
+ * closing it is a number for ch. 3.8 to name.
  *
  * <p>RED FIRST, measured on the claim's base (main 9b9a42ad), row by row: every row that expects a fault failed.
  * The count of 2^64 + 1 days answered 2024-01-02, because {@code BigDecimal.longValue} keeps the low 64 bits; the day
