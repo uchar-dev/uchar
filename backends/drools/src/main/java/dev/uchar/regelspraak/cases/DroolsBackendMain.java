@@ -1,5 +1,8 @@
 package dev.uchar.regelspraak.cases;
 
+import dev.uchar.regelspraak.transpiler.tms.Evaluatiefouten;
+
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +24,12 @@ public final class DroolsBackendMain {
     private DroolsBackendMain() {}
 
     public static void main(String[] args) {
+        System.exit(voer(args, System.out));
+    }
+
+    /** The CLI without its exit: prints the status line on {@code uit} and returns the exit code. A witness runs the
+     *  CLI through here inside the test JVM, which {@code System.exit} would end. */
+    static int voer(String[] args, PrintStream uit) {
         // --drl replays through the OTHER transpiler branch (DrlTranspiler's DRL text, compiled here) instead of
         // the exec-model back-end. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12
         // path: the gate sweeps every golden through it and pins the played count (EXPECTED_DRL_PLAYED) beside
@@ -32,7 +41,7 @@ public final class DroolsBackendMain {
         if (viaDrl || viaTms) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         if (args.length < 2) {
             System.err.println("usage: DroolsBackendMain [--drl | --tms] <ir.json> <case*.json>...");
-            System.exit(3);
+            return 3;
         }
         Path ir = Path.of(args[0]);
         List<Path> cases = new ArrayList<>();
@@ -41,18 +50,32 @@ public final class DroolsBackendMain {
             CaseRunner.Result r = viaDrl ? CaseRunner.viaDrlTekst(ir, cases)
                     : viaTms ? CaseRunner.viaTruthMaintenance(ir, cases) : CaseRunner.runGolden(ir, cases);
             switch (r.status()) {
-                case "PLAYED" -> { System.out.println("PLAYED " + r.casesPlayed()); System.exit(0); }
-                case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.reason()); System.exit(2); }
-                default -> { System.out.println("FAIL " + String.join(" | ", r.caseFailures())); System.exit(1); }
+                case "PLAYED" -> { uit.println("PLAYED " + r.casesPlayed()); return 0; }
+                case "EXCLUDE" -> { uit.println("EXCLUDE " + r.reason()); return 2; }
+                default -> { uit.println("FAIL " + String.join(" | ", r.caseFailures())); return 1; }
             }
         } catch (RuntimeException e) {
-            // Flattened as the DRL compile path does it (DroolsBackend.drlTak), and bounded at 200: every caller
-            // reads the LAST line of this output as the status line, so a multi-line exception message would
-            // push the ERROR head off it and hand the harness a fragment of a stack trace to diagnose with.
-            String m = String.valueOf(e.getMessage()).replace('\n', ' ');
-            System.out.println("ERROR " + e.getClass().getSimpleName() + ": "
-                    + (m.length() > 200 ? m.substring(0, 200) + "…" : m));
-            System.exit(3);
+            uit.println("ERROR " + e.getClass().getSimpleName() + ": " + melding(e));
+            return 3;
         }
+    }
+
+    /** The message of {@code e} for the ERROR line. Flattened as the DRL compile path does it (DroolsBackend.drlTak),
+     *  and bounded at 200: every caller reads the LAST line of this output as the status line, so a multi-line
+     *  exception message would push the ERROR head off it and hand the harness a fragment of a stack trace to diagnose
+     *  with. The faults that stand at the fixpoint of the truth-maintenance branch keep the head that names the rule of
+     *  each whole, and the bound applies to their sentences only: a bound across the whole message would drop from the
+     *  line every rule whose fault comes past it. */
+    private static String melding(RuntimeException e) {
+        if (e instanceof Evaluatiefouten f) return plat(f.kop()) + ": " + begrensd(plat(f.zinnen()));
+        return begrensd(plat(String.valueOf(e.getMessage())));
+    }
+
+    private static String plat(String s) {
+        return s.replace('\n', ' ');
+    }
+
+    private static String begrensd(String s) {
+        return s.length() > 200 ? s.substring(0, 200) + "…" : s;
     }
 }

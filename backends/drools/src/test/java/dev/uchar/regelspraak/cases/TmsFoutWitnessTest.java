@@ -16,7 +16,11 @@ import org.kie.api.event.rule.ObjectUpdatedEvent;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.runtime.KieSession;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,6 +92,22 @@ import static org.junit.jupiter.api.Assertions.fail;
  * evaluatiefouten: deling door nul in de regel "verhouding": 30 gedeeld door 0 — …; deling door nul in de regel
  * "aandeel": 100 gedeeld door 0 — …&gt;" in the order [aandeel, verhouding, kenmerkstand Vondst.erkend: waar uit een
  * afleiding, erkenning, …].
+ *
+ * <p><b>The CLI's ERROR line.</b> The CLI bounded its ERROR line at 200 characters across the whole message, so on the
+ * document with two faults the line broke off in the second sentence, before the rule "verhouding", while the rows above
+ * compared the exception and not that line. The message now opens with a head that names the rule of every fault, and
+ * the CLI bounds only the sentences after it. <b>Red before the change</b> (measured 2026-10-08 through
+ * {@code DroolsBackendMain.voer}, the CLI without its exit, with the line formed as before; the jar of the branch printed
+ * the same line): in each of the six orders "[noemt "verhouding" niet, opent niet met exit 3 en de kop]: 3 ERROR
+ * Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten: deling door nul in de regel "aandeel": 100 gedeeld door 0 —
+ * een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4); deling door…", and on the
+ * document of long rule names "[noemt "de verhouding … van de gemeente" niet, noemt "het aandeel … van de gemeente"
+ * niet, opent niet met exit 3 en de kop]: 3 ERROR Evaluatiefouten: aan het fixpunt staan 4 evaluatiefouten: deling door
+ * nul in de regel "de verhouding van een vondst … op het strand van de g…". <b>Red by mutation</b> (not committed): with
+ * the head in the message and the bound across the whole line again, the document of long rule names lost its second
+ * rule in each order, "[noemt "het aandeel … van de gemeente" niet, opent niet met exit 3 en de kop]: 3 ERROR
+ * Evaluatiefouten: aan het fixpunt staan 4 evaluatiefouten, in de regels "de verhouding … van de gemeente" (2×), …",
+ * while the document with two faults stayed green, its head being shorter than the bound.
  */
 class TmsFoutWitnessTest {
 
@@ -240,10 +260,14 @@ class TmsFoutWitnessTest {
         return TmsDocumenten.document(MODEL, regels);
     }
 
-    private static final String TWEE_FOUTEN = "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten: deling door nul"
-            + " in de regel \"aandeel\": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg"
-            + " (RUNTIME-SEMANTICS ch. 1.4, punt 4); deling door nul in de regel \"verhouding\": 30 gedeeld door 0 — een"
-            + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+    /** The head of the two faults: their number and the rule of each, in the order of the report. */
+    private static final String TWEE_KOP = "aan het fixpunt staan 2 evaluatiefouten, in de regels \"aandeel\","
+            + " \"verhouding\"";
+
+    private static final String TWEE_FOUTEN = "Evaluatiefouten: " + TWEE_KOP + ": deling door nul in de regel"
+            + " \"aandeel\": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS"
+            + " ch. 1.4, punt 4); deling door nul in de regel \"verhouding\": 30 gedeeld door 0 — een numerieke nul als"
+            + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void twee_blijvende_fouten_staan_in_elke_volgorde_in_dezelfde_vaste_volgorde() throws Exception {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
@@ -295,6 +319,99 @@ class TmsFoutWitnessTest {
         assertInstanceOf(Breuk.DelingDoorNul.class, twee.getSuppressed()[0]);
         assertTrue(twee.getSuppressed()[0].getMessage().startsWith("deling door nul in de regel \"verhouding\": 30"),
                 () -> "onderdrukt: " + twee.getSuppressed()[0]);
+    }
+
+    // ---------------- the CLI's status line ----------------
+
+    /** The CLI's ERROR line on the document with two faults, in each of its six orders: exit code 3, and a line that
+     *  opens with the head naming both rules and ends where the bound shortened the sentences. The line is the
+     *  exception's message with its sentences bounded, and that message is pinned over the 720 orders of the generated
+     *  rules by {@link #twee_blijvende_fouten_in_elke_volgorde_van_de_gegenereerde_regels}. */
+    @Test void de_errorregel_van_de_cli_noemt_beide_staande_fouten_in_elke_volgorde() throws Exception {
+        Path zaak = zaakbestand(tweeZaak());
+        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> volgorde : TmsDocumenten.permutaties(TWEE)) {
+            List<String> namen = TmsDocumenten.regelnamen(volgorde);
+            String regel = cli("--tms", twee(volgorde).toString(), zaak.toString());
+            List<String> mis = gebreken(regel, TWEE_KOP, List.of("aandeel", "verhouding"));
+            uitkomsten.add(namen + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
+            verwacht.add(namen + " in orde");
+        }
+        assertEquals(verwacht, uitkomsten);
+        assertEquals(6, uitkomsten.size());
+    }
+
+    static final String LANG_AANDEEL = "het aandeel van een vondst in de opbrengst van de veiling over het aantal"
+            + " deelnemers aan de berging op het strand van de gemeente";
+    static final String LANG_VERHOUDING = "de verhouding van een vondst tussen de taxatie door de strandvonder en het"
+            + " aantal deelnemers aan de berging op het strand van de gemeente";
+
+    /** The document with two faults under rule names of over a hundred characters each. */
+    static final List<String> LANG = List.of(
+            rekenregel(LANG_AANDEEL, "BEREKENING", "Vondst", "aandeel",
+                    binair("dividedBy", lezing("opbrengst", "Vondst"), lezing("deelnemers", "Vondst")), "null"),
+            rekenregel(LANG_VERHOUDING, "BEREKENING", "Vondst", "verhouding",
+                    binair("dividedBy", lezing("taxatie", "Vondst"), lezing("deelnemers", "Vondst")),
+                    check("erkend", false)),
+            ERKENNING);
+
+    /** V1 and V2, each with a numeric zero for deelnemers: each rule faults on both, four faults in all. */
+    static JsonNode tweeVondstenZaak() throws Exception {
+        return TmsDocumenten.zaak(List.of(
+                instantie("V1", "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
+                        List.of("gemeld"), Map.of()),
+                instantie("V2", "Vondst", Map.of("opbrengst", "50", "taxatie", "20", "deelnemers", "0"),
+                        List.of("gemeld"), Map.of())),
+                List.of(consistent()));
+    }
+
+    /** The bound drops no fault where the head alone is longer than the bound: two rules of long names, each faulting
+     *  on two objects, in each of the six orders of the document. The head names each rule once with the number of its
+     *  faults, in the fixed order (by name: "de verhouding …" before "het aandeel …"). */
+    @Test void de_grens_van_de_errorregel_laat_geen_staande_fout_weg() throws Exception {
+        Path zaak = zaakbestand(tweeVondstenZaak());
+        String kop = "aan het fixpunt staan 4 evaluatiefouten, in de regels \"" + LANG_VERHOUDING + "\" (2×), \""
+                + LANG_AANDEEL + "\" (2×)";
+        assertTrue(kop.length() > 200, () -> "de kop past binnen de grens: " + kop.length() + " tekens");
+        Map<String, String> kort = Map.of(LANG_AANDEEL, "aandeel …", LANG_VERHOUDING, "verhouding …");
+        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> volgorde : TmsDocumenten.permutaties(LANG)) {
+            List<String> namen = TmsDocumenten.regelnamen(volgorde).stream().map(n -> kort.getOrDefault(n, n)).toList();
+            String regel = cli("--tms", TmsDocumenten.document(MODEL, volgorde).toString(), zaak.toString());
+            List<String> mis = gebreken(regel, kop, List.of(LANG_VERHOUDING, LANG_AANDEEL));
+            uitkomsten.add(namen + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
+            verwacht.add(namen + " in orde");
+        }
+        assertEquals(verwacht, uitkomsten);
+        assertEquals(6, uitkomsten.size());
+    }
+
+    /** What is wrong with the CLI's {@code regel} (exit code, a space, the last line it printed) on a document whose
+     *  faults stand under {@code kop}: empty where the exit code is 3, the line opens with the ERROR head and
+     *  {@code kop}, names every rule of {@code regels}, and the bound shortened the sentences after the head. */
+    private static List<String> gebreken(String regel, String kop, List<String> regels) {
+        List<String> mis = new ArrayList<>();
+        for (String naam : regels)
+            if (!regel.contains("\"" + naam + "\"")) mis.add("noemt \"" + naam + "\" niet");
+        if (!regel.startsWith("3 ERROR Evaluatiefouten: " + kop + ": ")) mis.add("opent niet met exit 3 en de kop");
+        if (!regel.endsWith("…")) mis.add("de grens kortte de zinnen niet in");
+        return mis;
+    }
+
+    /** The exit code of {@code DroolsBackendMain} on {@code args}, a space, and the last line it printed: the status
+     *  line gate 12 and the corpus sweep read ({@code java -jar … | tail -1}), from the CLI's own code in this JVM. */
+    private static String cli(String... args) {
+        ByteArrayOutputStream uit = new ByteArrayOutputStream();
+        int code = DroolsBackendMain.voer(args, new PrintStream(uit, true, StandardCharsets.UTF_8));
+        List<String> regels = uit.toString(StandardCharsets.UTF_8).lines().toList();
+        return code + " " + (regels.isEmpty() ? "(geen uitvoer)" : regels.get(regels.size() - 1));
+    }
+
+    /** {@code zaak} in a temporary file, for the CLI. */
+    private static Path zaakbestand(JsonNode zaak) throws Exception {
+        Path tmp = Files.createTempFile("tms-getuige-zaak", ".json");
+        tmp.toFile().deleteOnExit();
+        return Files.writeString(tmp, zaak.toString());
     }
 
     // ---------------- helpers ----------------

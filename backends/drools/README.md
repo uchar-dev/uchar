@@ -143,10 +143,12 @@ form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and th
 inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one as the
 `DelingDoorNul` the exec-model branch's fire gives through `DroolsBackend.benoem`, with the same sentence ("deling door
 nul in de regel "aandeel": 100 gedeeld door 0 — …"), two or more as `Evaluatiefouten`, ordered by the name of the form
-and then by the sentence, so the report does not depend on the order of the rules. A consumer that fires a KieBase of
-this branch itself meets the fault at `zetAfgeleideWaarden`, not out of `fireAllRules`. Witnesses `TmsFoutWitnessTest`
-and `TmsVoorwaardefoutWitnessTest`. Other exceptions are no evaluation fault and still leave the fire: a broken
-contract, a bug, and also a date step past the range of `java.time`, which the shared runtime throws as a
+and then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that
+names the rule of every fault ("aan het fixpunt staan 2 evaluatiefouten, in de regels "aandeel", "verhouding""), and
+the CLI's ERROR line bounds only the sentences after it, so no fault drops off the line. A consumer that fires a
+KieBase of this branch itself meets the fault at `zetAfgeleideWaarden`, not out of `fireAllRules`. Witnesses
+`TmsFoutWitnessTest` and `TmsVoorwaardefoutWitnessTest`. Other exceptions are no evaluation fault and still leave the
+fire: a broken contract, a bug, and also a date step past the range of `java.time`, which the shared runtime throws as a
 `DateTimeException`; that range is not the one RUNTIME-SEMANTICS ch. 3.8 names, so the branch does not take it for the
 fault of that chapter.
 

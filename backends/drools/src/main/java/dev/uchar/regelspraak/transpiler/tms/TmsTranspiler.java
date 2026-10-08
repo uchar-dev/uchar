@@ -273,7 +273,7 @@ public final class TmsTranspiler {
         if (!fouten.isEmpty()) {
             fouten.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
             if (fouten.size() == 1) throw fouten.get(0).fout();
-            throw new Evaluatiefouten(fouten.stream().map(Fout::fout).toList());
+            throw new Evaluatiefouten(fouten);
         }
         for (Object f : sessie.getObjects(o -> o instanceof HeeftKenmerk)) {
             HeeftKenmerk h = (HeeftKenmerk) f;
