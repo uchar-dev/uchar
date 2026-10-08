@@ -68,6 +68,51 @@ default. Geen golden heeft een van beide vormen, dus de gates zien het niet.
 De proeftak weigert vorm A sinds de fixronde van zijn eindlens; vorm B geeft
 hij dezelfde volgordeafhankelijkheid als ref.
 
+## Aanvulling (2026-10-09): document C en de tak met truth maintenance
+
+Gemeten op 2026-10-08 tijdens `20261008-tms-aggregaties-creatie-en-fouten`
+(waarneming 4 van haar `Result:`), op haar branch `361ca2ec`, met ref en clingo
+uit `_build` van de worktree en de shaded jar van die commit.
+
+Document C: objecttype Vondst met `opbrengst`, `deelnemers` en `toeslag`
+(gehele getallen) en de kenmerken `gemeld` en `erkend`.
+
+    Regel erkenning: Een Vondst is erkend indien hij gemeld is.
+    Regel standaardtoeslag: De toeslag van een Vondst moet geïnitialiseerd
+        worden op 5 indien zijn opbrengst gedeeld door zijn deelnemers groter
+        is dan 10.
+
+Case: V2 gemeld, opbrengst 100, deelnemers 0, en toeslag 7 in de invoer. De
+initialisatie schrijft niet, want haar doel is in de invoer gevuld (ch. 5.4);
+onder het voorgestelde antwoord hieronder is de verwachting toeslag 7,
+consistent.
+
+| Uitvoerder | C |
+|---|---|
+| ref | `EVALUATION FAULT: division by numeric zero` |
+| clingo | `UNSATISFIABLE — a fail-fast guard fired: viol("division by numeric zero","V2")` |
+| Drools, exec-modeltak | `ERROR DelingDoorNul: deling door nul in de regel "standaardtoeslag": 100 gedeeld door 0 …` |
+| Drools, DRL-teksttak | `PLAYED 1` |
+| Drools, truth-maintenance-tak (vóór en na de kaart) | `PLAYED 1` |
+
+Ref rekent de voorwaarde van een initialisatie uit vóór de blokkade op het doel
+(`ref/lib/eval.ml`, de tak van de initialisatie na `eval_cond`); de tak met
+truth maintenance toetst eerst op het onderwerppatroon dat het doel in de invoer
+leeg is en rekent de voorwaarde daar niet uit. C verschilt van A: bij A rekent
+een initialisatie haar waarde naast een rekenende regel die beslist, bij C haar
+voorwaarde terwijl de invoer haar blokkeert. De vraag is dezelfde: mag een
+initialisatie die niet beslist een fout geven? `20261008-deling-door-leeg-onder-initialisatie`
+stelt die vraag voor een deponering (deling door leeg), waar de spec al nee
+zegt (ch. 7.1); C is haar tegenhanger voor een fout. Neem C mee in het besluit, in de
+goldens van (b) en in (c).
+
+Wat de tak met truth maintenance sinds die kaart op A en B antwoordt, staat in
+haar `Result:` onder "Meting voor `20261008-fout-op-tussenstand`": A weigert hij
+in beide volgordes (een deling in een initialisatie naast een andere schrijver;
+met die weigering uitgezet speelt hij bergloon 30), B speelt hij in beide
+volgordes met aandeel 3. Met fouten als feit van het fixpunt geeft de tak dus al
+wat het voorgestelde antwoord vraagt.
+
 ## Vraag aan de eigenaar (spec)
 
 Telt een fout op een tussenstand? Voorgesteld antwoord: nee. Een fout is, net

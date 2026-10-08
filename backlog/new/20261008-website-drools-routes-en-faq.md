@@ -181,14 +181,23 @@ feitenblad.
 6. **Waarom heeft de Drools-backend geen NO_LOOP en geen salience, en wel een
    vuurplafond?** Hoe de backend met truth maintenance afleidt, waarom de
    maatregelen tegen destructief schrijven daarmee wegvielen, en waarom het
-   vuurplafond blijft.
+   vuurplafond blijft. Ook (aanvulling 2026-10-09, na
+   `20261008-tms-aggregaties-creatie-en-fouten`): creaties vuren in fasen per
+   stratum, via eigen agendagroepen die de driver van de backend één voor één
+   de focus geeft, met een budget per stratum zoals de referentie-interpreter;
+   en het plafond groeit met de invoer mee, als `20261008-tms-omschakeling`
+   dat zo oplevert (haar punt 10).
 7. **Hoe weet je dat een tak die je niet kunt lezen, klopt?** `ref`, clingo en
    beide Drools-takken worden tegen dezelfde vastgelegde uitkomsten afgespeeld,
    en die uitkomsten zijn vastgezet op handgerekende ankers, zodat een fout die
    in meer backends zit niet verdwijnt doordat ze het met elkaar eens zijn.
 8. **Gebruikt de backend truth maintenance?** Ja, in beide takken (PLAN §9,
    2026-10-08), met de metingen uit de `Result:`-notities van
-   `20261007-drools-logische-afleiding` en `20261008-tms-omschakeling`.
+   `20261007-drools-logische-afleiding` en `20261008-tms-omschakeling`. Met
+   één uitzondering die het antwoord moet noemen (aanvulling 2026-10-09):
+   een creatie is een gesteld feit, geen logisch feit; ze vuurt alleen aan een
+   fixpunt van de regellaag en blijft staan (besluit van de eigenaar
+   2026-10-08, PLAN §9; RUNTIME-SEMANTICS ch. 5.5).
 9. **Waarom drie backends?** Kort, met een link naar de bestaande tekst op de
    site.
 

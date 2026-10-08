@@ -75,6 +75,56 @@ volgt met een eigen kaart.
    `fireAllRules` het terugzetten aanroepen in `Uitvoerder` en `CaseSessie`. Die
    kaart landt daar, na deze.
 
+## Aanvulling na `20261008-tms-aggregaties-creatie-en-fouten` (2026-10-09)
+
+Uit het `Result:` van die kaart (waarneming 11, het advies, de open punten) en
+het besluit van de eigenaar van 2026-10-08 (PLAN §9):
+
+9. **Schaalproef met vloer** (besluit van de eigenaar). Eén Kustwacht, N
+   Wachters met elk 10 Vondsten; (a) een regel per Vondst uit invoer maal een
+   parameter; (b) een defaults-groep op de Vondst met een onvoorwaardelijke
+   lagere default en een hogere die (a) leest; (c) een som en (d) een maximum per
+   Wachter over (b); (e) een som over alle Wachters op de Kustwacht; (f) een
+   consistentie per Wachter; (g) een recursieve creatieketen van diepte 3 per
+   Wachter. Voor N ∈ {100, 1 000, 10 000}: vuringen tegen het plafond, tijd van
+   vuren en terugzetten, piekaantal feiten en heap, bouwtijd, de verhouding met
+   de exec-modeltak van vóór de omschakeling, en de helling in log-log; plus een
+   tweede fire na één invoerwijziging tegen een verse sessie. **Vloer:** helling
+   ten hoogste 1,2 en vuringen onder de helft van het plafond bij N = 10 000.
+   Haalt de verlaging dat niet, dan eerst de joins indexeren (`alphaIndexedBy` op
+   de lidsleutel, `betaIndexedBy` op het onderwerp, gelijke ids voor gelijke
+   constraints, zodat Drools knopen deelt), en dan opnieuw meten. Gelezen door de
+   adviseur op `42859692`: elke join is een ongeïndexeerde lambda, elke
+   constraint heeft een eigen id (`id()` in `TmsTranspiler`), `min` en `max`
+   rekenen bij een intrekking alles opnieuw (`supportsReverse()` is daar false in
+   Drools 8.44), en het plafond van 100 000 vuringen
+   (`CaseRunner.java` regel 576) is met ongeveer 5 000 objecten × 20 leden al
+   bereikt.
+10. **Een vuurplafond dat met de invoer meegroeit**, in plaats van de vaste
+    100 000 (de driver `DroolsBackend.vuur` krijgt het plafond als argument).
+11. **Herhaald vuren na het terugzetten.** Na `zetAfgeleideWaarden` staan de
+    afgeleide waarden op de bonen, en de patronen op de bonen lezen ze bij een
+    volgende fire als invoer: een initialisatie wordt dan geblokkeerd door een
+    waarde "uit de invoer" die zij zelf schreef. Punt 4 lost dat op (niet
+    terugzetten tussen twee fires, of de bonen alleen invoer laten dragen), en
+    de getuige van punt 4 draait ook een initialisatie.
+12. **Het contract voor afnemers**, in de README (punt 6) en in de kaarttekst
+    voor de toolchain (punt 8): een model met creaties vuurt via de driver
+    `DroolsBackend.vuur` (strata, generaties, de agendagroepen
+    `TmsTranspiler.FEITCREATIE` en `OBJECTCREATIE`), die nog niet publiek is;
+    deze kaart beslist hoe een afnemer hem aanroept (de javadoc van
+    `DroolsBackend` verwijst al hierheen). Tot dan weigert
+    `zetAfgeleideWaarden` een sessie van zo'n model die zonder de driver vuurde.
+    Bij het vullen van een sessie komen de
+    `Lijstplaats`-feiten mee als `TmsTranspiler.leestLijstplaatsen()` dat vraagt;
+    `zetAfgeleideWaarden` gooit `DelingDoorNul` bij één fout en
+    `Evaluatiefouten` bij twee of meer; en gecreëerde links staan nog niet op de
+    referentievelden van de bonen (alleen als `Koppeling`-feit), wat de afnemer
+    moet weten of wat deze kaart oplost. Nieuw publiek in het pakket van de tak
+    sinds die kaart: `Evaluatiefouten`, `Lijstplaats`, `Creatiefase`, en in
+    `TmsTranspiler` `FEITCREATIE`, `OBJECTCREATIE`, `creatieregels()`,
+    `creatiestrata()`, `lidstratum(…)` en `leestLijstplaatsen()`.
+
 ## Acceptatie
 
 - (a) De doorloop van punt 1, als tabel in het `Result:`.
@@ -84,6 +134,9 @@ volgt met een eigen kaart.
 - (d) Gate 12 groen met `EXPECTED_PLAYED` ten minste 240 en dezelfde namen;
   `EXPECTED_DRL_PLAYED` gelijk; alle gates van `CLAUDE.md` groen.
 - (e) De meting van punt 7 en de kaarttekst van punt 8 in het `Result:`.
+- (f) De schaalproef van punt 9 als tabel in het `Result:`, met de vloer
+  gehaald; punt 10 en 11 met een getuige, rood eerst; het contract van punt 12
+  in de README en in de kaarttekst van punt 8.
 
 ## Raakvlakken
 

@@ -65,6 +65,21 @@ weigeren op een vorm van `20261008-tms-verdeling-en-tijdlijnen`.
    geldigheid, defaults-groepen met een gedateerde geldigheid, `TimeWindow` en
    `ContextValue`.
 
+5. **De leeslaag** (aanbeveling van het advies in het `Result:` van
+   `20261008-tms-aggregaties-creatie-en-fouten`, vraag 2; de bouwer beslist).
+   `TmsTranspiler` mengt analyse en PatternDSL, en de methoden die deze kaart
+   raakt, raken dat ook. Het advies: (1) splits `Lezingen` in een leestabel die
+   niet aan een weergave vastzit (soort, sleutel, index, plaats in de LHS, en de
+   ontdubbeling per sleutel) en de PatternDSL-uitwerking ervan; (2) vervang de
+   losse structurele lambda's door een kleine gesloten woordenschat (alfa op een
+   lidsleutel, join op het onderwerp, join op een bereik, de vensters van de
+   stuurfeiten, de nultoets op invoer, de klassetoets) met één mapper naar
+   PatternDSL, zodat gelijke constraints een gelijk id krijgen en Drools knopen
+   kan delen (dat raakt de schaalproef van `20261008-tms-omschakeling`); (3)
+   bewaar bij elke gecompileerde `Toets` en `Waardefunctie` de IR-knoop, zodat
+   `20261008-drl-teksttak-op-truth-maintenance` voorwaarden uit de IR kan
+   weergeven. Doet de bouwer het niet, dan zegt het `Result:` waarom.
+
 ## Acceptatie
 
 - (a) Rood-eerst getuigen, elk in elke volgorde van de betrokken regels in het
