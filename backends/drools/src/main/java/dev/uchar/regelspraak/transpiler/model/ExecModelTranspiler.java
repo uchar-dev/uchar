@@ -1457,20 +1457,24 @@ public final class ExecModelTranspiler {
         return new Agg(DSL.accumulate(accBron(src2, ver, extra), DSL.accFunction(accClass, amtVar).as(resultVar)), resultVar, null, null, false);
     }
 
-    /** The accumulate SOURCE: the element pattern alone, or that pattern followed by the far side of its tests
-     *  ({@code ver}, {@link #elementtoets}) and — for a WF-102 path whose walk alternates — an {@code exists} over the
-     *  intermediates. The {@code exists} is what makes the flat-union reading true in this branch: joined into the
-     *  source instead, two intermediates reaching one element would produce two tuples and the element would
-     *  contribute twice. The far side joins one object per element and test, so it adds no tuple. */
+    /** The accumulate SOURCE: the element pattern alone, or that pattern followed by — for a WF-102 path whose walk
+     *  alternates — an {@code exists} over the intermediates, and then the far side of its tests ({@code ver},
+     *  {@link #elementtoets}). The {@code exists} is what makes the flat-union reading true in this branch: joined into
+     *  the source instead, two intermediates reaching one element would produce two tuples and the element would
+     *  contribute twice. The far side joins one object per element and test, so it adds no tuple. It comes after the
+     *  {@code exists} because the element pattern of such a path carries no join to the subject: a test placed before
+     *  it would run for every element of the type, and a filter that divides by a numeric zero would fault for an
+     *  element outside the range, which the reference interpreter never reaches. */
     private org.drools.model.view.ViewItem<?> accBron(PatternDSL.PatternDef src, List<org.drools.model.view.ViewItem<?>> ver,
                                                      List<PatternDSL.PatternDef> extra) {
         if (ver.isEmpty() && extra.isEmpty()) return src;
-        List<org.drools.model.view.ViewItemBuilder<?>> delen = new ArrayList<>(ver);
+        List<org.drools.model.view.ViewItemBuilder<?>> delen = new ArrayList<>();
         if (!extra.isEmpty()) {
             org.drools.model.view.ViewItemBuilder<?>[] rest =
                     extra.subList(1, extra.size()).toArray(new org.drools.model.view.ViewItemBuilder<?>[0]);
             delen.add(DSL.exists(extra.get(0), rest));
         }
+        delen.addAll(ver);
         return DSL.and(src, delen.toArray(new org.drools.model.view.ViewItemBuilder<?>[0]));
     }
 
@@ -1486,9 +1490,24 @@ public final class ExecModelTranspiler {
      *  changes, an update of a reached object included, and the accumulate revises the element's membership. The
      *  matrix needs no pattern of its own: a changed tuple in the source makes the accumulate pass its result on
      *  again. While the subselection lowers, its navigated reads are the {@link #gejoindeLezingen}, so a chain lowers
-     *  there as it does in a condition. A test that reads through no role stays on the element pattern, unchanged.
-     *  null where the subselection does not lower, or a hop has no bean field ({@link #navReden}). */
+     *  there as it does in a condition. A test that reads through no role stays on the element pattern, unchanged —
+     *  unless the subselection divides ({@link #deelt}). Drools runs a test on the element's pattern for every element
+     *  of the type as it is inserted, whether or not a form reaches the fold, while the reference interpreter evaluates
+     *  the subselection only where the evaluation of a form reaches the fold: where its condition holds, and within a
+     *  composite only up to the member after which the verdict stands (RUNTIME-SEMANTICS ch. 5.10), and then only for
+     *  the members of that subject's range. A division by a numeric zero there is a fault (ch. 1.4, point 4), so on the
+     *  element's pattern it faulted where the reference interpreter answers. Such a subselection goes on the element
+     *  bound again, as above: in the source of the accumulate that pattern is evaluated per tuple that reaches the
+     *  accumulate, and only for the elements joined to that tuple's subject. null where the subselection does not
+     *  lower, or a hop has no bean field ({@link #navReden}). */
     private record Elementtoets(PatternDSL.PatternDef src, List<org.drools.model.view.ViewItem<?>> ver) {}
+
+    /** Whether {@code filter} divides: a quotient is the one operation of a subselection that faults on this branch,
+     *  where its divisor is a numeric zero ({@code Breuk.delen}). */
+    private static boolean deelt(Conditie filter) {
+        return Conditie.bevatOperand(filter, e -> e instanceof Expr.Binair b
+                && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS));
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Elementtoets elementtoets(PatternDSL.PatternDef src, Variable elemVar, Objecttype elem, Conditie filter,
@@ -1499,7 +1518,7 @@ public final class ExecModelTranspiler {
         navRefs(matrix, elem, refs, hops);
         List<PatternDSL.PatternDef> joins = refs.isEmpty() && hops.isEmpty() ? List.of() : verreJoins(refs, hops, elem, elemVar);
         if (joins == null) return null;
-        if (joins.isEmpty()) {
+        if (joins.isEmpty() && !deelt(filter)) {
             if (filter == null) return new Elementtoets(src, List.of());
             PatternDSL.PatternDef gefilterd = filterSource(src, filter, elem);
             return gefilterd == null ? null : new Elementtoets(gefilterd, List.of());

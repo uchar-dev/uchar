@@ -387,7 +387,8 @@ A division by a numeric zero there is named by the predicate itself, after its r
 `DelingDoorNul` on: the replay, the red path and the scenario report read "deling door nul in de regel "zwaar": 60
 gedeeld door 0 — …", and a consumer that fires a KieBase itself gets Drools' exception with the named division in its
 cause chain. The DRL-text branch throws Drools' MVEL exception, which names the rule and the condition in DRL, as
-before. Witness `NuldelerVoorwaardeWitnessTest`.
+before; for a subselection that divides it names no rule (the section on a subselection that divides). Witness
+`NuldelerVoorwaardeWitnessTest`.
 
 The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this
@@ -674,3 +675,34 @@ that updates the element after the writer (a characteristic on the element, an o
 object to it) played before as well. The DRL-text branch writes such a test into the element pattern of its accumulate
 or quantifier and answered with the members it had at insertion (`verwacht 2, werkelijk 0`); it refuses the form by name
 (`een subselectie of matrix die via een rol van het element leest`), also where the answer happened to hold.
+
+## Recorded: a subselection that divides
+
+The subselection of a fold ("die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is
+groter dan 2") is evaluated by `ref` only where the evaluation of a form reaches the fold: where the form's condition
+holds, within a composite up to the member after which its verdict stands (RUNTIME-SEMANTICS ch. 5.10), and per member
+of that subject's range (ch. 3.4a). A division by a numeric zero there is a fault (ch. 1.4, point 4), and nowhere else
+does it happen. Both branches tested the subselection on the element's pattern, which Drools tests for every element
+of the type as it is inserted, whether or not a form reaches the fold: measured 2026-10-09, each faulted where a rule's
+condition did not hold, where a composite had settled before the fold, in the condition and in the initialisation of
+an object creation, in the filter of a quantifier fold, and for an element in no fold's range, one step or a path away,
+where `ref` answers. A subselection that divides now goes on the element bound again in the source of the accumulate
+(`ExecModelTranspiler.elementtoets`, the shape a subselection that reads through a role already had;
+`DrlTranspiler.accumulate` and `kwantorvouw`, `Elem( … ) from $e`), after the join to the subject and after the walk of
+a path whose intermediates are an `exists` (`accBron` puts the element's tests after it): it is tested per tuple that
+reaches the accumulate, for the elements joined to that tuple's subject. A subselection that does not divide stays on
+the element's pattern. Where the fold is reached the division still faults: on the exec-model branch named after the
+rule, on the DRL-text branch as Drools' exception for the constraint, which there names no rule (on the element's
+pattern it named every rule whose accumulate shared the constraint). Golden `jutterswet-filterwacht`, red case
+`vouwfilter-deelt-door-nul`, witness `FilterfoutWitnessTest`.
+
+Limits that remain, measured 2026-10-09 with `ref` as the arbiter. A member of an `all` composite that follows a member
+with a fold is tested on the subject's pattern, before the fold's accumulate, on both branches: a fault in that member
+happens where the fold has already settled the composite ("indien hij aan alle volgende voorwaarden voldoet: het aantal
+… is groter dan 0; zijn saldo gedeeld door zijn noemer is groter dan 1": `ref` answers, both branches fault), and since
+this change a fold whose subselection divides is not evaluated where such a later member does not hold ("… het aantal
+… is groter dan 0; hij is actief" on a Jutter that is not actief: `ref` faults, both branches answer; before, they
+faulted for every element). The accumulate of a fold in a default's justification is evaluated for every subject of the
+group's rule, while the justification is read by priority with the short circuit of ch. 5.10, so on the exec-model
+branch a lower default whose fold divides by a numeric zero faults where a higher default decides (the DRL-text branch
+refuses defaults).

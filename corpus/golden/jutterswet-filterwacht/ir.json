@@ -1,0 +1,448 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstental",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zware vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "actief",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "druk",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deelnemers",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmelder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vondstental",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstental",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vondstental van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zware vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zware vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De zware vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "deelnemers",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn deelnemers"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn gewicht gedeeld door zijn deelnemers"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "2"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "actief",
+              "negated": false,
+              "source": {
+                "snippet": "hij actief is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "drukte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "druk",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is druk"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "actief",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is actief"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "count",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "vondsten",
+                        "subjectType": "Jutter",
+                        "source": {
+                          "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "filter": {
+                      "node": "Compound",
+                      "quantifier": "the",
+                      "threshold": 0,
+                      "parts": [
+                        {
+                          "node": "Comparison",
+                          "op": "greater",
+                          "left": {
+                            "node": "Binary",
+                            "op": "dividedBy",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "gewicht",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "zijn gewicht"
+                              }
+                            },
+                            "right": {
+                              "node": "AttributeReference",
+                              "attribute": "deelnemers",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "zijn deelnemers"
+                              }
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": false,
+                              "decimals": 0,
+                              "sign": "unspecified"
+                            },
+                            "source": {
+                              "snippet": "zijn gewicht gedeeld door zijn deelnemers"
+                            }
+                          },
+                          "right": {
+                            "node": "Literal",
+                            "value": {
+                              "number": "2"
+                            },
+                            "type": {
+                              "node": "Number",
+                              "whole": true,
+                              "decimals": 0,
+                              "sign": "unspecified"
+                            },
+                            "source": {
+                              "snippet": "2"
+                            }
+                          },
+                          "source": {
+                            "snippet": "zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                      }
+                    },
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "aanmelding",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "0"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "0"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0."
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -2547,6 +2547,13 @@ public final class DrlTranspiler {
         };
     }
 
+    /** Whether {@code c}, the subselection of a fold, divides: a quotient is the one operation of a subselection that
+     *  faults on this branch, where its divisor is a numeric zero ({@code Breuk.delen}). */
+    private static boolean deelt(Conditie c) {
+        return Conditie.bevatOperand(c, x -> x instanceof Expr.Binair b
+                && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS));
+    }
+
     /** A read whose bindings walk more than one hop: the §13.4.1 chain. */
     private boolean keten(Expr.AttribuutRef a) {
         return navigatieBindingen.containsKey(a) && navigatieBindingen.get(a).size() > 1;
@@ -4149,11 +4156,13 @@ public final class DrlTranspiler {
         // instance (a silent miscompile).
         java.util.List<String> bereik = new ArrayList<>();
         if (plan == null) bereik.add(scope.text());
+        String delendFilter = null;
         if (f.filter() != null) {
             if (leestViaElementrol(f.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, f.filter(), elem);  // Kenmerk -> bare element property; Onopgelost -> marker
             if (fc.marker()) return null;
-            bereik.add(fc.text());
+            if (deelt(f.filter())) delendFilter = fc.text();
+            else bereik.add(fc.text());
         }
         int n = ++acc.n;
         String ev = "$e" + n, var = "$acc" + n;
@@ -4165,6 +4174,16 @@ public final class DrlTranspiler {
             if (!pc.constraint().isEmpty()) bereik.add(0, pc.constraint());
             naPatroon = pc.naPatroon();
         }
+        // A subselection that divides is not a constraint on the element pattern: Drools tests that pattern for every
+        // element of the type as it is inserted, whether or not a rule reaches the fold, and the reference interpreter
+        // evaluates the subselection only where the evaluation of a form reaches the fold, for the members of that
+        // subject's range (RUNTIME-SEMANTICS ch. 5.10, ch. 3.4a); a division by a numeric zero there is a fault
+        // (ch. 1.4, point 4). On the element bound again FROM its declaration, after the range is decided, it is
+        // tested per tuple that reaches the accumulate and only for the elements joined to that tuple's subject. Drools'
+        // exception for a fault there names the constraint and no rule, where on the element pattern it named every rule
+        // whose accumulate shared that constraint.
+        if (delendFilter != null)
+            naPatroon += " and " + ident(elem.naam, true) + "( " + delendFilter + " ) from " + ev;
         String filterScope = samen(bereik);
         Expr arg = f.argumenten().isEmpty() ? null : f.argumenten().get(0);
         // §7.1 a per-element timeline fold: a temporal-attribute element value is summed over time (rsTijdTotaal at the
@@ -5034,17 +5053,26 @@ public final class DrlTranspiler {
             return kvMarker(kv, "de bereik-join heeft geen beanveld — " + navReden);
         if (leestViaElementrol(kv.filter()) || leestViaElementrol(kv.toets())) return kvMarker(kv, ELEMENTROL_REDEN);
         final int mark = acc.clausules.size();
-        StringJoiner delen = new StringJoiner(", ");
-        delen.add(ident(rol, false) + " == " + SUBJECT);
+        String join = ident(rol, false) + " == " + SUBJECT;
+        StringJoiner toetsen = new StringJoiner(", ");
         if (kv.filter() != null) {
             Frag ff = conditieInline(acc, kv.filter(), elem, false);
             if (ff.marker() || acc.clausules.size() != mark)
                 return kvTerug(acc, mark, kv, "een die/dat-subselectie die deze tak niet IN het elementpatroon"
                         + " kan schrijven (" + kv.filter().getClass().getSimpleName() + ")");
-            delen.add(ff.text());
+            toetsen.add(ff.text());
         }
         Conditie.GeheelPeriode gp = geheelPeriodeVan(kv.toets());
-        if (gp != null) return heelperiodeVouw(acc, kv, gp, elem, subject, delen, mark);
+        // A subselection or a matrix that divides is tested on the element bound again after the join, as on the source
+        // of an aggregation (accumulate): on the element pattern Drools tests it for every element of the type, whether
+        // or not the rule reaches the fold. A whole-period matrix is not on the element pattern at all: its eval follows
+        // the accumulate.
+        boolean herbind = deelt(kv.filter()) || (gp == null && deelt(kv.toets()));
+        java.util.function.Function<String, String> bron = ev -> herbind
+                ? ev + " : " + ident(elem.naam, true) + "( " + join + " ) and " + ident(elem.naam, true) + "( " + toetsen
+                        + " ) from " + ev
+                : ev + " : " + ident(elem.naam, true) + "( " + join + (toetsen.length() == 0 ? "" : ", " + toetsen) + " )";
+        if (gp != null) return heelperiodeVouw(acc, kv, gp, elem, subject, bron, mark);
         Frag mf = conditieInline(acc, kv.toets(), elem, true);
         if (mf.marker() || acc.clausules.size() != mark)
             return kvTerug(acc, mark, kv, "een matrixvorm die deze tak niet IN het elementpatroon kan schrijven ("
@@ -5056,14 +5084,15 @@ public final class DrlTranspiler {
             default          -> null;   // ALLE / GEEN: the witness route below
         };
         if (vergelijking != null) {
-            delen.add(mf.text());
+            toetsen.add(mf.text());
             String ev = "$kv" + (++acc.n);   // the Acc's own element counter, shared with the aggregations
-            acc.clausules.add("Number( intValue " + vergelijking + " ) from accumulate( " + ev + " : "
-                    + ident(elem.naam, true) + "( " + delen + " ), count(" + ev + ") )");
+            acc.clausules.add("Number( intValue " + vergelijking + " ) from accumulate( " + bron.apply(ev) + ", count("
+                    + ev + ") )");
             return new LoweredConditie("", java.util.List.of(), false);
         }
-        delen.add(kv.kwantor() == Conditie.Kwantor.ALLE ? "!( " + mf.text() + " )" : mf.text());
-        acc.clausules.add("not " + ident(elem.naam, true) + "( " + delen + " )");
+        toetsen.add(kv.kwantor() == Conditie.Kwantor.ALLE ? "!( " + mf.text() + " )" : mf.text());
+        if (herbind) acc.clausules.add("not ( " + bron.apply("$kv" + (++acc.n)) + " )");
+        else acc.clausules.add("not " + ident(elem.naam, true) + "( " + join + ", " + toetsen + " )");
         return new LoweredConditie("", java.util.List.of(), false);
     }
 
@@ -5109,7 +5138,7 @@ public final class DrlTranspiler {
      * Every other decline below names the axis it was declined on and rolls back through {@link #kvTerug}.
      */
     private LoweredConditie heelperiodeVouw(Acc acc, Conditie.Kwantorvouw kv, Conditie.GeheelPeriode gp,
-            Objecttype elem, Objecttype subject, StringJoiner delen, int mark) {
+            Objecttype elem, Objecttype subject, java.util.function.Function<String, String> bron, int mark) {
         String gran = gp.jaar() ? "JAAR" : "MAAND";
         String tlVeld; int toetsCode; String grens = "null";
         if (kv.toets() instanceof Conditie.Vergelijking v) {
@@ -5157,7 +5186,7 @@ public final class DrlTranspiler {
 
         int n = ++acc.n;                       // the Acc's own element counter, shared with the aggregations
         String ev = "$kv" + n, lijst = "$kvtl" + n;
-        acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + delen + " ) ; "
+        acc.clausules.add("accumulate( " + bron.apply(ev) + " ; "
                 + lijst + " : collectList( " + ev + "." + getter(tlVeld) + "() ) )");
         String staart = ", \"" + gran + "\", " + toetsCode + ", " + grens + ")";
         boolean telt = kv.kwantor() == Conditie.Kwantor.TEN_MINSTE

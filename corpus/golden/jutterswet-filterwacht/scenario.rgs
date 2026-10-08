@@ -1,0 +1,41 @@
+Scenario een jutter die niet actief is
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn V1 en V2
+een Vondst V1
+- het gewicht is 10
+- de deelnemers is 2
+een Vondst V2
+- het gewicht is 9
+- de deelnemers is 0
+Met als verwacht resultaat:
+- het vondstental van J1 is 2
+- de zware vondsten van J1 is leeg
+- J1 is niet druk
+- de gegevens zijn consistent
+
+Scenario actieve jutters zonder nuldeler
+Gegeven is de volgende situatie:
+een Jutter J2
+- is actief
+- de vondsten zijn V3 en V4
+een Jutter J3
+- is actief
+- de vondsten zijn V5
+een Vondst V3
+- het gewicht is 10
+- de deelnemers is 2
+een Vondst V4
+- het gewicht is 3
+- de deelnemers is 3
+een Vondst V5
+- het gewicht is 4
+- de deelnemers is 4
+Met als verwacht resultaat:
+- het vondstental van J2 is 2
+- de zware vondsten van J2 is 1
+- J2 is druk
+- het vondstental van J3 is 1
+- de zware vondsten van J3 is 0
+- J3 is niet druk
+- de gegevens zijn consistent

@@ -1,0 +1,30 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstental Numeriek (niet-negatief geheel getal);
+    de zware vondsten Numeriek (geheel getal);
+    is actief kenmerk (bijvoeglijk);
+    is druk kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de deelnemers Numeriek (geheel getal);
+
+Feittype aanmelding
+    de aanmelder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmelder heeft meerdere vondsten
+
+Regel vondstental
+    geldig altijd
+        Het vondstental van een Jutter moet berekend worden als het aantal vondsten van de Jutter.
+
+Regel zware vondsten
+    geldig altijd
+        De zware vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
+        indien hij actief is.
+
+Regel drukte
+    geldig altijd
+        Een Jutter is druk
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is actief
+        - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0.
