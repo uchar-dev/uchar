@@ -60,24 +60,49 @@ faults with file/position context — never a silent fallback.
   and the verifier cannot drift); negated characteristic reads and
   channel reads sit strictly above their producers. A dependency cycle
   reaching ref/ is a fault, never divergence.
-- **Divergence is a fault, named where the state shows its cause**
-  (ch. 5.7). The pass budget is 100. When it runs out, two more passes
-  are replayed form by form and the writes are read off the world
+- **Creation runs in generations** (ch. 5.5). Within stratum k,
+  generation 0 is the fixpoint of the forms that make nothing (rules,
+  allocations, defaults groups); generation G+1 is every object and
+  fact creation of the stratum against generation G's settled world,
+  so no creation reads what another creation of its own generation
+  makes or links, and a member initialisation takes the value at the
+  moment of making whatever the document order. After each generation
+  the forms that make nothing settle again, stratum by stratum: for
+  j = 0, 1, …, k the forms of stratum ≤ j reach their fixpoint before
+  a form of stratum j + 1 runs, so on a new instance a form of a
+  higher stratum reads only what the lower strata have finished
+  writing there. The stratum is done when a generation makes and
+  links nothing; its consistency and uniqueness forms then fire once.
+- **The generation budget** (ch. 5.5): a stratum admits 100
+  generations that mint an object or lay a link, and a 101st that
+  still does is the fault, never a truncation: "no fixpoint within
+  100 generations — generation 101 still mints or links (object
+  creation "werf eeuwig"), and divergence is a fault (ch. 5.5, 5.7)"
+  (`corpus/rood/runaway-recursion`,
+  `corpus/rood/finite-chain-over-budget`). The passes the forms that
+  make nothing need between two generations do not count.
+- **Divergence of the forms that make nothing is a fault, named where
+  the state shows its cause** (ch. 5.7). These forms carry no budget
+  of their own: without creations their graph is acyclic (WF-045), so
+  stratum j's fixpoint is reached within as many passes as the stratum
+  has such forms. The bound per stratum is the larger of 100 and that
+  number plus one. When it runs out, two more passes are replayed form
+  by form and the writes are read off the world
   (`World.changed_attrs`); an attribute of one instance that two or
   more writers change to different values in both passes is named
   with the writers, their values and the instance: "no fixpoint within
   100 passes — divergence is a fault (ch. 5.7): two writers of one
   target disagree: rule "melding op vinddag" writes 2026-03-04 and
   rule "melding op aanspoeldag" writes 2026-03-01 to the attribute
-  meldingsdatum of V, a Vondst". Two conditional writers whose
-  conditions both hold on one instance reach this (WF-079 refuses two
-  unconditional ones), and so do a computing rule that evaluates leeg
-  and the conditional initialisation beside it (ch. 5.4). Two writers
-  that write the same value hold both their equations and play, and a
-  standing writer (ch. 7.8) that evaluates leeg writes nothing. A run
-  that grows instead, a recursive creation without end, keeps the
-  budget's sentence alone (`corpus/rood/jutterswet-dubbele-melding`,
-  `corpus/rood/runaway-recursion`).
+  meldingsdatum of V, a Vondst" (`corpus/rood/jutterswet-dubbele-melding`).
+  Two conditional writers whose conditions both hold on one instance
+  reach this (WF-079 refuses two unconditional ones), also when they
+  sit in different strata, because the fixpoint of each stratum runs
+  the forms of the lower strata again; so do a computing rule that
+  evaluates leeg and the conditional initialisation beside it
+  (ch. 5.4). Two writers that write the same value hold both their
+  equations and play, and a standing writer (ch. 7.8) that evaluates
+  leeg writes nothing.
 - **Timelines** (ch. 3): `lib/timeline.ml` carries the algebra — read,
   calendar and anchored buckets with the month-end clamp, the grid a
   member reads (the calendar's, or the one a fixed start point lays —
