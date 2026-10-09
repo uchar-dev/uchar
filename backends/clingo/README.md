@@ -219,29 +219,47 @@ spec bug.
   generation before, and a later generation may change the value read
   without the initialised member following it. This encoding has no
   moment of making; the initialisation's head reads the stable model,
-  which holds the end value. So a creation on a dependency cycle (WF-045
-  admits it through a recursive group) whose initialisation reads a node
-  that a form on that cycle writes is refused by name (IR-SPEC ch. 5.5):
-  a value a rule, an allocation or a defaults group on the cycle
-  computes, also where a creation writes the same member, or a
-  population or relation a creation on the cycle grows (the creation's
-  own back-link included). An attribute or characteristic that only
-  creations write is set once per object, at its making, so a read of it
-  stays carried: the anchor `jutterswet-wachtersketen` reads its rang so.
+  which holds the end value. The two differ where a later generation of
+  the creation's own stratum changes the value read, and there only a
+  creation on a dependency cycle (WF-045 admits one through a recursive
+  group) can change it. So an initialisation is refused by name
+  (IR-SPEC ch. 5.5) when a writer of a node it reads lies on a
+  dependency cycle through its creation, or is reached in the
+  dependency graph from a creation on a dependency cycle in its
+  creation's own stratum: a value a rule, an allocation or a defaults
+  group computes there, also where a creation writes the same member, or
+  a population or relation a creation on the cycle grows (the creation's
+  own back-link included). A creation off the cycle can share the
+  cycle's stratum, since a positive characteristic read is not
+  stratum-strict: with the recursive fact creation "geef door", which
+  makes an ervaren Wachter the maatgever of its opvolger, and a rule
+  that marks a Wachter with a maatgever ervaren, a creation that gives a
+  Haven a Rapport with the number of its ervaren wachters makes the
+  Rapport in generation 1. Over W1 → W2 → W3, all wachters of the Haven
+  and W1 ervaren in the input, ref answers 1, and this backend answered
+  3, without a refusal until 2026-10-09. A creation in a higher stratum
+  than the cycle reads the end value, as ref does, and stays carried. An
+  attribute or characteristic that only creations write is set once per
+  object, at its making, so a read of it stays carried: the anchor
+  `jutterswet-wachtersketen` reads its rang so.
   A member that a creation and a rule on the cycle both write is
   refused: with rang plus 1 and beginstand = zijn rang initialised, and a
   rule that sets the rang of a Wachter with an opvolger to 2, ref starts
   W1's opvolger at beginstand 1 while W1 ends at rang 2. The test reads
   the static dependency graph of `Ir_v0.Checks` (the graph ref
-  stratifies), not the values: a rule on the cycle whose value on an
-  object is fixed at the object's making is refused as well, and so is a
-  writer on the cycle whose validity the case's date excludes. Only a
-  creation version the date excludes is not asked, because it is not
-  translated. On the worked example of ch. 5.5 (beginstand = zijn stand,
-  the stand counting the opvolgers) ref answers opvolgerbegin(W1) = 0,
-  and this backend answered 1 before the refusal; the suite's `ch5.5
-  generations` frames pin the refusals, each beside ref's absolute
-  answer, and the carried forms.
+  stratifies) and ref's strata over it, not the values: a rule on the
+  cycle whose value on an object is fixed at the object's making is
+  refused as well, and so is a writer on the cycle whose validity the
+  case's date excludes. Only a creation version the date excludes is not
+  asked, because it is not translated. On the worked example of ch. 5.5
+  (beginstand = zijn stand, the stand counting the opvolgers) ref
+  answers opvolgerbegin(W1) = 0, and this backend answered 1 before the
+  refusal; the suite's `ch5.5 generations` frames pin the refusals, each
+  beside ref's absolute answer, and the carried forms, and the `ch5.5
+  generations off the cycle` frames do the same for a creation off the
+  cycle: refused in the cycle's stratum, carried a stratum higher, beside
+  the cycle out of its reach, and where it reads only what a creation
+  writes.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —

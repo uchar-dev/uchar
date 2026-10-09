@@ -11327,6 +11327,66 @@ let writer_conflicts ctx =
       writers
   end
 
+(* The evaluation strata of RUNTIME-SEMANTICS ch. 6.3 for every form of
+   [forms], the verifier's [Ir_v0.Checks.dep_forms] of the document as
+   loaded, computed as ref/ computes them in [Eval.evaluate] over the same
+   graph: every form gets the least stratum at or above its positive
+   producers and strictly above its other producers, except along a
+   dependency cycle, which WF-045 admits through a recursive group and on
+   which every edge counts positive. *)
+let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
+  let n = Array.length forms in
+  let writers node =
+    List.filter (fun i -> List.mem node forms.(i).Ir_v0.Checks.df_writes) (List.init n Fun.id)
+  in
+  let succ = Array.make n [] in
+  Array.iteri
+    (fun ci (f : Ir_v0.Checks.dep_form) ->
+      List.iter
+        (fun (node, _) ->
+          List.iter (fun pi -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi)) (writers node))
+        f.df_reads)
+    forms;
+  (* [reachable.(src).(i)]: form i is reached from src over one edge or more;
+     an edge p -> c lies on a cycle exactly when c reaches p *)
+  let reachable = Array.init n (fun _ -> Array.make n false) in
+  Array.iteri
+    (fun src _ ->
+      let rec go i =
+        if not reachable.(src).(i) then begin
+          reachable.(src).(i) <- true;
+          List.iter go succ.(i)
+        end
+      in
+      List.iter go succ.(src))
+    forms;
+  let strata = Array.make n 0 in
+  let changed = ref true and rounds = ref 0 in
+  while !changed do
+    incr rounds;
+    if !rounds > n + 2 then
+      fault "no evaluation strata exist — a dependency cycle that WF-045 or WF-046 forbids reached this backend";
+    changed := false;
+    Array.iteri
+      (fun ci (f : Ir_v0.Checks.dep_form) ->
+        List.iter
+          (fun (node, kind) ->
+            List.iter
+              (fun pi ->
+                let need =
+                  strata.(pi)
+                  + match kind with Ir_v0.Checks.Dep_pos -> 0 | _ -> if reachable.(ci).(pi) then 0 else 1
+                in
+                if strata.(ci) < need then begin
+                  strata.(ci) <- need;
+                  changed := true
+                end)
+              (writers node))
+          f.df_reads)
+      forms
+  done;
+  strata
+
 (* RUNTIME-SEMANTICS ch. 5.5, Generations (card
    creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
    initialisation of an object creation takes the value at the moment of
@@ -11335,25 +11395,52 @@ let writer_conflicts ctx =
    read; the initialised member does not follow it. This encoding has no
    moment of making. An initialisation is a val/heeft head on the minted
    term ([translate_object_creatie]), so it reads the stable model, which
-   holds the end value. The two differ where the value read can still
-   change after the making. On a verifier-clean document that happens only
-   where a form on a dependency cycle through the creation writes the node
-   the initialisation reads; WF-045 admits such a cycle because it passes
-   through a member of a recursive group. A rule, an allocation or a
-   defaults group on the cycle recomputes its target while the chain grows,
-   and a creation on the cycle grows a population (the objects it makes) or
-   a relation (its back-link, or the links of a fact creation). A
-   creation's own write of an attribute or characteristic is no such
-   change: it sets the member once per object, when the object is made. So
-   a member that only creations write keeps the value of its making, and
-   the anchor jutterswet-wachtersketen reads its rang that way and stays
-   carried. A member that a creation writes and a rule on the cycle writes
-   as well is refused, because the rule can change it after the making:
-   with rang plus 1 and beginstand = zijn rang initialised, and a rule that
-   sets the rang of a Wachter with an opvolger to 2, the opvolger W1 makes
-   starts at beginstand 1 while W1 ends at rang 2. A writer off the cycle
-   reads nothing the cycle produces, and its value is complete before the
-   creation reads it (ch. 6.3).
+   holds the end value. The two differ where a later generation of the
+   creation's own stratum changes the value read. A later stratum does not:
+   every writer of what the creation reads sits in its stratum or a lower
+   one, and a lower stratum is complete before it starts (ch. 6.3).
+
+   Within the stratum a creation brings the change: it grows a population
+   (the objects it makes) or a relation (its back-link, or the links of a
+   fact creation), and a rule, an allocation or a defaults group recomputes
+   what reads them. A creation's own write of an attribute or
+   characteristic is no such change: it sets the member once per object,
+   when the object is made. So a member that only creations write keeps the
+   value of its making, and the anchor jutterswet-wachtersketen reads its
+   rang that way and stays carried. A member that a creation writes and a
+   rule on the cycle writes as well is refused, because the rule can change
+   it after the making: with rang plus 1 and beginstand = zijn rang
+   initialised, and a rule that sets the rang of a Wachter with an opvolger
+   to 2, the opvolger W1 makes starts at beginstand 1 while W1 ends at rang
+   2.
+
+   The test is static over the verifier's graph. Every other writer of a
+   node the initialisation reads is an offence when a creation that lies
+   on a dependency cycle in the creation's own stratum reaches it over one
+   edge or more; WF-045 admits such a cycle only through a member of a
+   recursive group. The creation itself is one of them where it lies on
+   such a cycle, and then the writer lies on a cycle through it. Nothing
+   else can change the value after the making. Off a cycle an edge between
+   two forms of one stratum is a positive read: a creation reads positively
+   only a characteristic, and a characteristic is written by a rule that
+   reads positively only characteristics, by a defaults group, whose reads
+   are all negative, or by a creation's initialisation on the object it
+   makes. A creation on no cycle therefore reaches another creation of its
+   stratum only through characteristics of the objects it makes, and the
+   other creation meets those objects only through a population or a
+   relation that it reads strictly, from a higher stratum; a chain that
+   passes a cycle is reached from the creation on that cycle as well. A
+   cycle lifts that strictness (ch. 6.1), and a creation off the cycle can
+   share its stratum through a positive read of a characteristic the cycle
+   makes grow: with the recursive fact creation "geef door", which makes an
+   ervaren Wachter the maatgever of its opvolger, and a rule that marks a
+   Wachter with a maatgever ervaren, a creation that gives a Haven a
+   Rapport with the number of its ervaren wachters makes the Rapport in
+   generation 1, when one of the three wachters is ervaren; ref answers 1,
+   and this backend answered 3 until 2026-10-09, when the test asked only
+   for a writer on a cycle through the creation. A writer that no such
+   creation reaches keeps its value from generation 0 on, and a creation
+   of a higher stratum than the cycle reads the end value, as ref does.
 
    Measured 2026-10-09 on the card's document (beginstand = zijn stand, the
    stand counting the opvolgers): ref answers opvolgerbegin(W1) = 0 and this
@@ -11366,13 +11453,14 @@ let writer_conflicts ctx =
    the values. It also refuses a rule on the cycle whose value on an object
    is fixed at the object's making (basis = zijn rang plus 10), where the
    end value would be right, and a writer on the cycle whose validity the
-   case's date excludes, which writes nothing in that case; a filter on the
-   writer alone would still read the cycle off the static graph, as ref's
-   strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]), built
-   over the document as loaded, which is the graph ref stratifies. A
-   creation version that the case's date excludes makes nothing and is not
-   translated ([translate_object_creatie] skips it), so it is not
-   refused. *)
+   case's date excludes, which writes nothing in that case, and it counts
+   a creation on a cycle whose validity the case's date excludes; a filter
+   on the writer alone would still read the cycle off the static graph, as
+   ref's strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]),
+   built over the document as loaded, which is the graph ref stratifies,
+   and the strata are ref's ([form_strata]). A creation version that the
+   case's date excludes makes nothing and is not translated
+   ([translate_object_creatie] skips it), so it is not refused. *)
 let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
   let cctx = { Ir_v0.Checks.doc } in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
@@ -11441,110 +11529,97 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
       let prefix p = String.length node >= String.length p && String.sub node 0 (String.length p) = p in
       prefix "pop:" || prefix "rel:"
     in
+    let describe p =
+      let kind, _ = kind_of p in
+      Printf.sprintf "%s \"%s\"" kind (name_of p)
+    in
+    (* the creations that lie on a dependency cycle, each with the forms it
+       reaches; the strata only for a read that leaves the creation's own
+       cycle *)
+    let cycle_creations =
+      List.filter_map
+        (fun i ->
+          if snd (kind_of i) then
+            let r = reached i in
+            if r.(i) then Some (i, r) else None
+          else None)
+        (List.init n Fun.id)
+    in
+    let strata = lazy (form_strata forms) in
     List.iter
       (fun (o : resolved_object_creatie) ->
         let c = index_of o.oc_pointer in
         let on_cycle = reached c in
-        let offence (t : toekenning) =
+        (* the nodes an initialisation reads, each with every writer that can
+           change it after the making *)
+        let writers (t : toekenning) =
           let nodes =
             List.fold_left
               (fun acc (node, _) -> if List.mem node acc then acc else acc @ [ node ])
               []
               (Ir_v0.Checks.dep_opt cctx ~subject:o.oc_subject [] t.toe_waarde)
           in
-          List.find_map
+          List.concat_map
             (fun node ->
-              List.find_map
+              List.filter_map
                 (fun p ->
-                  if on_cycle.(p) && List.mem node forms.(p).Ir_v0.Checks.df_writes then
-                    let kind, creation = kind_of p in
-                    if creation && not (grows node) then None
-                    else
-                      Some
-                        ( req "MemberInit.member" t.toe_attribuut,
-                          node,
-                          if p = c then "the creation itself"
-                          else Printf.sprintf "%s \"%s\"" kind (name_of p) )
+                  if List.mem node forms.(p).Ir_v0.Checks.df_writes && not (snd (kind_of p) && not (grows node))
+                  then Some (node, p)
                   else None)
                 (List.init n Fun.id))
             nodes
         in
-        match List.find_map offence o.toekenningen with
-        | Some (member, node, writer) when Eval.window_admits ~as_of o.oc_geldigheid ->
-            fault
-              "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
-               dependency cycle through the creation (admitted by WF-045 through a recursive group) \
-               — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
-               ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
-               later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
-              (name_of c) member node writer
-        | _ -> ())
+        let on_the_cycle (t : toekenning) =
+          List.find_map (fun (node, p) -> if on_cycle.(p) then Some (t, node, p) else None) (writers t)
+        in
+        let in_the_stratum (t : toekenning) =
+          List.find_map
+            (fun (node, p) ->
+              List.find_map
+                (fun (d, r) ->
+                  if d <> c && r.(p) && (Lazy.force strata).(d) = (Lazy.force strata).(c) then Some (t, node, p, d)
+                  else None)
+                cycle_creations)
+            (writers t)
+        in
+        let member (t : toekenning) = req "MemberInit.member" t.toe_attribuut in
+        if Eval.window_admits ~as_of o.oc_geldigheid then
+          match List.find_map on_the_cycle o.toekenningen with
+          | Some (t, node, p) ->
+              fault
+                "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
+                 dependency cycle through the creation (admitted by WF-045 through a recursive group) \
+                 — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
+                 ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
+                 later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
+                (name_of c) (member t) node
+                (if p = c then "the creation itself" else describe p)
+          | None -> (
+              match List.find_map in_the_stratum o.toekenningen with
+              | Some (t, node, p, d) ->
+                  fault
+                    "object creation \"%s\": the initialisation of %s reads %s, which %s writes, and %s, \
+                     on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
+                     recursive group), reaches that writer in the dependency graph, so a later \
+                     generation of the stratum can still change the value read — an initialisation \
+                     takes the value at the moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), \
+                     and this backend reads the value of the stable model, so it refuses the creation \
+                     (IR-SPEC ch. 5.5)"
+                    (name_of c) (member t) node (describe p) (describe d)
+              | None -> ()))
       doc.object_creaties
   end
 
-(* The evaluation strata of RUNTIME-SEMANTICS ch. 6.3, computed as ref/
-   computes them in [Eval.evaluate], over the same graph
-   ([Ir_v0.Checks.dep_forms] of the document as loaded): every form gets the
-   least stratum at or above its positive producers and strictly above its
-   other producers, except along a dependency cycle, which WF-045 admits
-   through a recursive group and on which every edge counts positive. The
-   creation budget of ch. 5.5 counts the depth per stratum, so the depth
-   this backend keeps for it ([translate_object_creatie]) has to start
-   again exactly where ref's does; a stratification of its own could split
-   a chain ref counts as one, or join two that ref counts apart. Returns
-   the stratum of every object creation, by its wire pointer. *)
+(* The stratum of every object creation, by its wire pointer, as ref/
+   computes it ([form_strata]). The creation budget of ch. 5.5 counts the
+   depth per stratum, so the depth this backend keeps for it
+   ([translate_object_creatie]) has to start again exactly where ref's
+   does; a stratification of its own could split a chain ref counts as
+   one, or join two that ref counts apart. *)
 let object_creation_strata (doc : document) : (string * int) list =
   let forms = Array.of_list (Ir_v0.Checks.dep_forms { Ir_v0.Checks.doc }) in
   let n = Array.length forms in
-  let writers node =
-    List.filter (fun i -> List.mem node forms.(i).Ir_v0.Checks.df_writes) (List.init n Fun.id)
-  in
-  let succ = Array.make n [] in
-  Array.iteri
-    (fun ci (f : Ir_v0.Checks.dep_form) ->
-      List.iter
-        (fun (node, _) ->
-          List.iter (fun pi -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi)) (writers node))
-        f.df_reads)
-    forms;
-  (* [reachable.(src).(i)]: form i is reached from src over one edge or more;
-     an edge p -> c lies on a cycle exactly when c reaches p *)
-  let reachable = Array.init n (fun _ -> Array.make n false) in
-  Array.iteri
-    (fun src _ ->
-      let rec go i =
-        if not reachable.(src).(i) then begin
-          reachable.(src).(i) <- true;
-          List.iter go succ.(i)
-        end
-      in
-      List.iter go succ.(src))
-    forms;
-  let strata = Array.make n 0 in
-  let changed = ref true and rounds = ref 0 in
-  while !changed do
-    incr rounds;
-    if !rounds > n + 2 then
-      fault "no evaluation strata exist — a dependency cycle that WF-045 or WF-046 forbids reached this backend";
-    changed := false;
-    Array.iteri
-      (fun ci (f : Ir_v0.Checks.dep_form) ->
-        List.iter
-          (fun (node, kind) ->
-            List.iter
-              (fun pi ->
-                let need =
-                  strata.(pi)
-                  + match kind with Ir_v0.Checks.Dep_pos -> 0 | _ -> if reachable.(ci).(pi) then 0 else 1
-                in
-                if strata.(ci) < need then begin
-                  strata.(ci) <- need;
-                  changed := true
-                end)
-              (writers node))
-          f.df_reads)
-      forms
-  done;
+  let strata = form_strata forms in
   List.map
     (fun (o : resolved_object_creatie) ->
       let rec find i =
