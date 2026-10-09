@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * that a rule derives later, a recipient a creation adds, and a condition, and a degradation counts on the §9.5 channel
  * at the fixpoint only.
  *
- * <p>The model: a Berging (opbrengst, onverdeelde rest, rangrest, vrijgavescore) shares its opbrengst among its Bergers
+ * <p>The model: a Berging (opbrengst, onverdeelde rest, rangrest, vrijgavescore, bruto) shares its opbrengst among its Bergers
  * (bergingsdeelname: berging, one Berging; berger, many Bergers). A Berger has the input basisgewicht, extra, jaar,
  * basismaximum and peiljaar (a number with one decimal), the derived toeslag, gewicht, rang, maximum and toezicht, and
  * the shares bergingsaandeel and rangaandeel. Every expectation below is computed by hand from ch. 4.2 to 4.4.
@@ -79,15 +79,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li><b>F, a recipient a creation adds.</b> "Een Berging heeft een berger" makes a third Berger in the bergingsdeelname,
  *       a relation the branch then reads through its links; 900 in gelijke delen: J1 300, J2 300, rest 0, the made Berger
  *       counted.</li>
+ *   <li><b>G, a pot derived later.</b> "De opbrengst van een berging is zijn bruto"; 90 in gelijke delen over J1, J2
+ *       and J3: 30 each, rest 0. Before the opbrengst is derived the pot is leeg, the fault of an empty pot of the
+ *       equal-shares method, which must be gone at the fixpoint like every fault (PLAN §9, 2026-10-09).</li>
  * </ul>
  *
  * <p>Every part runs in every order of its rules and its allocations in the document, and in a seeded sample of orders
- * of the generated rules: A and C with a listener that requires at least one order to pass the intermediate state
- * (an inserted share of 225 for J1 and of 900 for J2, a deposit on J3), B with its channel, D, E and F through a replay
- * of their cases in each order.
+ * of the generated rules: A, C and G with a listener that requires at least one order to pass the intermediate state
+ * (an inserted share of 225 for J1 and of 900 for J2, a deposit on J3, the fault of the empty pot), B with its channel,
+ * D, E and F through a replay of their cases in each order.
  *
  * <p><b>Measured in the other executors</b> (2026-10-09, the documents {@link #main} writes, every one verifier-clean).
- * The reference interpreter's runner and the ASP runner pass A (15 expectations), B (10), C (8), F (4) and of D the
+ * The reference interpreter's runner and the ASP runner pass A (15 expectations), B (10), C (8), F (4), G (6) and of D the
  * eligible weights that sum to 0 (5), the empty pot of the ordered method (4, no deposit beside the empty weight), the
  * all-empty tie group (6) and the keys in two scales (5). On an empty pot of the equal-shares and the proportional
  * method the reference interpreter faults with this branch's sentence ("EVALUATION FAULT: empty source amount in
@@ -100,16 +103,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * validity-bounded form needs an evaluation date; this session is time-free"; the ASP runner does not translate the
  * validity window of an allocation ("allocation validity windows are not translated (no corpus case)").
  *
- * <p>The exec-model branch plays A, B, C, F and of D the zero weights and the ordered empty pot; on D it splits the
+ * <p>The exec-model branch plays A, B, C, F and of D the zero weights and the ordered empty pot; on G it leaves the rest
+ * leeg ("onverdeelde rest: verwacht 0, werkelijk leeg"), its rule for the rest not woken by a pot derived later; on D it
+ * splits the
  * all-empty tie group equally ("rangaandeel: verwacht 0, werkelijk 50; … verwacht 100, werkelijk 0") and the keys in
  * two scales apart ("verwacht 50, werkelijk 0; … verwacht 50, werkelijk 100"), takes the v0 hole on the negative
  * weight, throws a NullPointerException on the empty pots of the other two methods, and refuses E, whose two versions
  * it reads as two allocations on one target. The DRL-text branch does the same on D, fails A ("rangaandeel: verwacht
  * 900, werkelijk 450; … verwacht 0, werkelijk 450"), throws on B ("ConsequenceException … cannot invoke method:
  * setBergingsaandeel", the fault of {@code 20260923-drl-verdeling-dubbelbezet}), deposits on J1 and J2 in E's 2026 and
- * does not fault E's time-free session.
+ * does not fault E's time-free session; it plays G.
  *
- * <p><b>Red before the change</b> (2026-10-09, this class on the branch at the card's claim): all ten tests, each on
+ * <p><b>Red before the change</b> (2026-10-09, this class on the branch at the card's claim): all twelve tests, each on
  * "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een Allocation: buiten de proef van de
  * truth-maintenance-tak" or the same refusal of the allocation of its part. <b>Red by mutation</b> (the same day, not
  * committed): the {@link dev.uchar.regelspraak.transpiler.tms.Ontvanger} stated instead of logical fails A's and C's
@@ -119,7 +124,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * unnormalised fails D ("rangaandeel: verwacht 50, werkelijk 0; … verwacht 50, werkelijk 100"); an empty tie-break
  * weight handed on as leeg fails D ("verwacht 0, werkelijk 50; … verwacht 100, werkelijk 0"); a negative proportional
  * weight left unclamped fails D ("verwacht 100, werkelijk 150; … verwacht 0, werkelijk -50"); and the validity gate left
- * out fails E.
+ * out fails E. The fault of an empty pot stated instead of logical fails G's sample, "Rekenfout fout in de regel
+ * "verdeel de opbrengst gelijk": empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", a fault of
+ * an intermediate state that stayed.
  */
 class TmsVerdelingWitnessTest {
 
@@ -127,7 +134,7 @@ class TmsVerdelingWitnessTest {
 
     static final String MODEL = TmsDocumenten.model(List.of(
             TmsDocumenten.objecttype("Berging", List.of(attribuut("opbrengst", GEHEEL), attribuut("onverdeelde rest", GEHEEL),
-                    attribuut("rangrest", GEHEEL), attribuut("vrijgavescore", GEHEEL)), List.of()),
+                    attribuut("rangrest", GEHEEL), attribuut("vrijgavescore", GEHEEL), attribuut("bruto", GEHEEL)), List.of()),
             TmsDocumenten.objecttype("Berger", List.of(attribuut("basisgewicht", GEHEEL), attribuut("extra", GEHEEL),
                     attribuut("toeslag", GEHEEL), attribuut("gewicht", GEHEEL), attribuut("jaar", GEHEEL),
                     attribuut("rang", GEHEEL), attribuut("basismaximum", GEHEEL), attribuut("maximum", GEHEEL),
@@ -571,6 +578,59 @@ class TmsVerdelingWitnessTest {
         assertEquals("gespeeld", speel(document(List.of(), List.of(F_GELIJK), List.of(HULPBERGER)), fZaak()));
     }
 
+    // ---------------- G: a pot derived later ----------------
+
+    static final String POT = rekenregel("opbrengst van een berging", "BEREKENING", "Berging", "opbrengst",
+            lezing("bruto", "Berging"), "null");
+
+    static JsonNode gZaak() throws Exception {
+        return TmsDocumenten.zaak(List.of(
+                instantie("B1", "Berging", Map.of("bruto", "90"), List.of("J1", "J2", "J3")),
+                instantie("J1", "Berger", Map.of(), List.of()), instantie("J2", "Berger", Map.of(), List.of()),
+                instantie("J3", "Berger", Map.of(), List.of())),
+                List.of(waarde("B1", "opbrengst", "90"), waarde("J1", "bergingsaandeel", "30"),
+                        waarde("J2", "bergingsaandeel", "30"), waarde("J3", "bergingsaandeel", "30"),
+                        waarde("B1", "onverdeelde rest", "0"), consistent()));
+    }
+
+    @Test void g_een_pot_die_later_afgeleid_wordt() throws Exception {
+        assertEquals("gespeeld", speel(document(List.of(POT), List.of(F_GELIJK), List.of()), gZaak()));
+    }
+
+    /** A seeded sample of orders of the generated rules: the write-back finds no fault at the fixpoint and writes 30
+     *  three times, and in at least one order the allocation inserted the fault of the empty pot on the way, before the
+     *  opbrengst was derived, and that fault went again. */
+    @Test void g_de_fout_van_een_lege_pot_op_een_tussenstand_vervalt() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(document(List.of(POT), List.of(F_GELIJK), List.of()),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        int onderweg = 0;
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+            Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
+            List<Object> bergers = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                Object j = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of(), List.of());
+                koppel(j, b1);
+                bergers.add(j);
+            }
+            List<Object> bonen = new ArrayList<>(List.of(b1));
+            bonen.addAll(bergers);
+            int[] fouten = new int[1];
+            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(
+                    new DefaultRuleRuntimeEventListener() {
+                        @Override public void objectInserted(ObjectInsertedEvent e) {
+                            if (e.getObject() instanceof dev.uchar.regelspraak.transpiler.tms.Fout) fouten[0]++;
+                        }
+                    }), sessie -> { });
+            Map<String, Object> eind = new LinkedHashMap<>();
+            for (int i = 0; i < 3; i++) eind.put("J" + (i + 1), TmsDocumenten.lees(bergers.get(i), "bergingsaandeel"));
+            eind.put("B1", TmsDocumenten.lees(b1, "onverdeelde rest"));
+            assertEquals("{J1=30, J2=30, J3=30, B1=0}", getallen(eind), () -> "volgorde " + namen);
+            if (fouten[0] > 0) onderweg++;
+        }
+        assertTrue(onderweg > 0, "geen volgorde liet de verdeling op de lege pot vallen voordat de opbrengst afgeleid was");
+    }
+
     // ---------------- D, E and F in orders of the generated rules ----------------
 
     /** Parts D, E and F hold one allocation each, so the order of the document varies nothing; here every case of them
@@ -709,6 +769,7 @@ class TmsVerdelingWitnessTest {
                     Map.of(r.getKey(), (JsonNode) r.getValue()[1]));
         schrijf(uit.resolve("e-geldigheid"), ir(List.of(), List.of(E_VERDELING), List.of()), eZaken());
         schrijf(uit.resolve("f-creatie"), ir(List.of(), List.of(F_GELIJK), List.of(HULPBERGER)), Map.of("f", fZaak()));
+        schrijf(uit.resolve("g-pot-later"), ir(List.of(POT), List.of(F_GELIJK), List.of()), Map.of("g", gZaak()));
     }
 
     private static void schrijf(Path map, String ir, Map<String, JsonNode> zaken) throws Exception {
