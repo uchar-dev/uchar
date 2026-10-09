@@ -15108,6 +15108,255 @@ let () =
     ~beginwaarde:(eigen "basis") [ basis_vast; stand; opvolgerbegin ]
     [ ("stand", "1"); ("opvolgerbegin", "7") ]
 
+(* RUNTIME-SEMANTICS ch. 5.5, the generation budget (card
+   creatiebudget-ref-en-clingo, 2026-10-09): a stratum admits at most 100
+   generations that make an object or lay a link, and a 101st is a fault,
+   in ref ("no fixpoint within 100 generations") and here ("generation
+   budget exhausted", UNSAT). The depth this backend keeps for it starts
+   again in every evaluation stratum. Every frame pins ref beside this
+   backend.
+
+   The chain of corpus/rood/finite-chain-over-budget without its
+   consistency: "werf de lange keten" while the rang is below N, from W1 of
+   rang 1, N - 1 generations. 99 and 100 generations play and 101 fault;
+   until 2026-10-09 this backend was UNSAT at 100 already, where ref plays
+   (the card's documents q2-grens-100/101/102). With the rank detector "de
+   rang van een Wachter is kleiner dan N" beside the chain, the frame also
+   pins that the last Wachter, of rang N, is made.
+
+   The chain over three strata, 50 + 1 + 50: Wachters to rang 51 (stratum
+   0), one Boei for the Wachter of rang 51 ("leg een boei", stratum 1),
+   Boeien to nummer 51 (stratum 2); two rank detectors pin W51 and B51.
+   Until 2026-10-09 the depth ran on over the strata and this backend was
+   UNSAT at B50. One document order: the strata do not depend on it, and
+   the frame is the slowest of the suite (its grounding lets every Wachter
+   the chain could make seed a chain of Boeien, README).
+
+   Document L of the truth-maintenance witness (TmsCreatiestratumWitnessTest):
+   Wachters to rang 52 (stratum 0) and, from B1 of the input, Boeien to
+   nummer N (stratum 1, the wachterrang reads the rang of the Boei's
+   wachter), beside "kopie van een boei" (kopie = nummer, the chain's
+   stratum), the characteristic "genummerd" (a stratum higher) or nothing,
+   each in both orders of the two creations. To B101 (100 generations) and,
+   with the kopie, to B100; until 2026-10-09 every frame to B101 was UNSAT
+   here. *)
+let () =
+  let getal = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let literal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal n
+  in
+  let lees ty attr =
+    Printf.sprintf
+      {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "zijn %s"}}|}
+      attr ty attr
+  in
+  let plus_een ty attr =
+    Printf.sprintf {|{"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}|}
+      (lees ty attr) (literal 1) getal
+  in
+  let vergelijking op links rechts =
+    Printf.sprintf {|{"node": "Comparison", "op": "%s", "left": %s, "right": %s, "source": {"snippet": "%s"}}|} op links
+      rechts op
+  in
+  let init lid waarde =
+    Printf.sprintf {|{"node": "MemberInit", "member": "%s", "value": %s, "characteristic": false}|} lid waarde
+  in
+  let creatie naam ~subject ~nieuw ~inits ~voorwaarde ~feittype ~rol =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "%s", "versions": [{"createdType": "%s", "subject": "%s", "initialisations": [%s], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}}]}|}
+      naam nieuw subject (String.concat ", " inits) voorwaarde feittype rol
+  in
+  let groep naam lid =
+    Printf.sprintf {|{"node": "RuleGroup", "name": "%s", "recursive": true, "members": ["%s"], "source": {"snippet": "%s"}}|}
+      naam lid naam
+  in
+  (* "de <attr> van een <ty> is kleiner dan <grens>": inconsistent exactly
+     where an instance reaches the grens *)
+  let detector naam ty attr grens =
+    Printf.sprintf
+      {|{"node": "Consistency", "name": "%s", "versions": [{"subject": "%s", "assertion": %s, "validity": {"node": "Validity"}, "source": {"snippet": "%s"}}]}|}
+      naam ty
+      (vergelijking "less" (lees ty attr) (literal grens))
+      naam
+  in
+  let attribuut naam = Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} naam getal in
+  let wachter =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}|}
+      (attribuut "rang")
+  in
+  let boei ~l =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "Boei", "animate": true, "plural": "Boeis", "attributes": [%s], "characteristics": [%s]}|}
+      (String.concat ", " (List.map attribuut ([ "nummer"; "wachterrang" ] @ if l then [ "kopie" ] else [])))
+      (if l then {|{"node": "Characteristic", "name": "genummerd", "kind": "adjectival"}|} else "")
+  in
+  let feittype naam (r1, t1) (r2, t2) =
+    Printf.sprintf
+      {|{"node": "FactType", "name": "%s", "reciprocal": false, "roles": [{"node": "Role", "name": "%s", "objectType": "%s", "many": false}, {"node": "Role", "name": "%s", "objectType": "%s", "many": false}]}|}
+      naam r1 t1 r2 t2
+  in
+  let opvolging = feittype "opvolging" ("voorganger", "Wachter") ("opvolger", "Wachter")
+  and boeiketen = feittype "boeiketen" ("vorige boei", "Boei") ("volgende boei", "Boei")
+  and bewaking = feittype "bewaking" ("wachter", "Wachter") ("boei", "Boei") in
+  let doc ~types ~feittypen ?(regels = []) ~creaties ?(consistenties = []) ~groepen () =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [%s], "allocations": [], "consistencies": [%s], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [%s], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", " types) (String.concat ", " feittypen) (String.concat ", " regels)
+      (String.concat ", " creaties) (String.concat ", " consistenties) (String.concat ", " groepen)
+  in
+  let zaak ?(bewaakt = false) verwacht =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {%s}, "characteristics": []}%s], "parameters": {}}, "expected": [%s]}|}
+      (if bewaakt then {|"boei": ["B1"]|} else "")
+      (if bewaakt then
+         {|, {"label": "B1", "objectType": "Boei", "attributes": {"nummer": {"number": "1"}}, "roles": {}, "characteristics": []}|}
+       else "")
+      (String.concat ", " verwacht)
+  in
+  let waarde label attr w =
+    Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "%s", "value": {"number": "%s"}}|} label
+      attr w
+  and inconsistent regel = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s"}|} regel in
+  let speelt ~name ~ir ~case_text =
+    verifier_clean ~name ~ir;
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  (* both executors fault on the budget, each in its own words *)
+  let budget_op ~name ~ir ~case_text =
+    verifier_clean ~name ~ir;
+    let doc, case = load_pair ~ir ~case_text in
+    (match ref_report doc case with
+    | _ -> check (name ^ ": ref faults on the budget (it evaluated)") false
+    | exception Uchar_ref.Value.Fault m ->
+        check (name ^ ": ref faults on the budget (" ^ m ^ ")")
+          (Uchar_ref.Case.contains ~needle:"no fixpoint within 100 generations" m));
+    let label = name ^ ": clingo is UNSAT on the budget" in
+    match translate doc case with
+    | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+    | program -> (
+        match Solve.run_clingo program with
+        | _, Unix.WEXITED 20 ->
+            let ws = Solve.diagnose program in
+            check
+              (label ^ " (" ^ String.concat "; " ws ^ ")")
+              (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"generation budget exhausted" w) ws)
+        | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
+        | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
+        | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+        | _, _ -> check (label ^ " (clingo killed)") false)
+  in
+  (* the chain of finite-chain-over-budget while the rang is below [grens],
+     optionally beside its rank detector *)
+  let lange_keten ?(met_detector = false) grens =
+    doc ~types:[ wachter ] ~feittypen:[ opvolging ]
+      ~creaties:
+        [ creatie "werf de lange keten" ~subject:"Wachter" ~nieuw:"Wachter"
+            ~inits:[ init "rang" (plus_een "Wachter" "rang") ]
+            ~voorwaarde:(vergelijking "less" (lees "Wachter" "rang") (literal grens))
+            ~feittype:"opvolging" ~rol:"opvolger" ]
+      ~consistenties:(if met_detector then [ detector "rangdetector" "Wachter" "rang" grens ] else [])
+      ~groepen:[ groep "lange estafette" "werf de lange keten" ] ()
+  in
+  List.iter
+    (fun (grens, generaties) ->
+      let name = Printf.sprintf "ch5.5 generation budget, a chain of %d generations" generaties in
+      if generaties <= 100 then begin
+        speelt ~name ~ir:(lange_keten grens) ~case_text:(zaak [ waarde "W1" "rang" "1" ]);
+        speelt ~name:(name ^ " with its rank detector") ~ir:(lange_keten ~met_detector:true grens)
+          ~case_text:(zaak [ waarde "W1" "rang" "1"; inconsistent "rangdetector" ])
+      end
+      else budget_op ~name ~ir:(lange_keten grens) ~case_text:(zaak [ waarde "W1" "rang" "1" ]))
+    [ (100, 99); (101, 100); (102, 101) ];
+  (* 50 + 1 + 50 over three strata *)
+  let werf grens =
+    creatie "werf de opvolger" ~subject:"Wachter" ~nieuw:"Wachter"
+      ~inits:[ init "rang" (plus_een "Wachter" "rang") ]
+      ~voorwaarde:(vergelijking "less" (lees "Wachter" "rang") (literal grens))
+      ~feittype:"opvolging" ~rol:"opvolger"
+  in
+  let leg ~wachterrang grens =
+    creatie "leg de volgende boei" ~subject:"Boei" ~nieuw:"Boei"
+      ~inits:
+        (init "nummer" (plus_een "Boei" "nummer")
+        ::
+        (if wachterrang then
+           [ init "wachterrang"
+               {|{"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "de rang van zijn wachter"}, "path": [{"node": "RoleBinding", "factType": "bewaking", "role": "wachter"}]}|}
+           ]
+         else []))
+      ~voorwaarde:(vergelijking "less" (lees "Boei" "nummer") (literal grens))
+      ~feittype:"boeiketen" ~rol:"volgende boei"
+  in
+  let groepen = [ groep "estafette" "werf de opvolger"; groep "boeienlijn" "leg de volgende boei" ] in
+  let drie_strata =
+    doc ~types:[ wachter; boei ~l:false ] ~feittypen:[ opvolging; boeiketen; bewaking ]
+      ~creaties:
+        [ werf 51;
+          creatie "leg een boei" ~subject:"Wachter" ~nieuw:"Boei" ~inits:[ init "nummer" (literal 1) ]
+            ~voorwaarde:(vergelijking "equal" (lees "Wachter" "rang") (literal 51))
+            ~feittype:"bewaking" ~rol:"boei";
+          leg ~wachterrang:false 51 ]
+      ~consistenties:[ detector "wachterdetector" "Wachter" "rang" 51; detector "boeidetector" "Boei" "nummer" 51 ]
+      ~groepen ()
+  and drie_strata_zaak =
+    zaak [ waarde "W1" "rang" "1"; inconsistent "wachterdetector"; inconsistent "boeidetector" ]
+  in
+  speelt ~name:"ch5.5 generation budget, a chain over three strata (50 + 1 + 50)" ~ir:drie_strata
+    ~case_text:drie_strata_zaak;
+  (* The nesting bound: the same document with oc_nest lowered to 60 in the
+     program text, so the frame grounds small. B1 nests 51 levels deep, so
+     B10 reaches the bound; this backend refuses by name, where ref, which
+     keeps no such bound, plays. *)
+  (let name = "ch5.5 generation budget, the nesting bound (oc_nest lowered to 60) on 50 + 1 + 50" in
+   ref_matches ~name ~ir:drie_strata ~case_text:drie_strata_zaak;
+   let doc, case = load_pair ~ir:drie_strata ~case_text:drie_strata_zaak in
+   let label = name ^ ": clingo refuses by name where ref plays" in
+   match
+     replace_first
+       ~needle:(Printf.sprintf "#const oc_nest = %d." Translate.oc_nest)
+       ~by:"#const oc_nest = 60." (translate doc case)
+   with
+   | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+   | exception Failure m -> check (label ^ " (" ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnose program in
+           check
+             (label ^ " (" ^ String.concat "; " ws ^ ")")
+             (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"term nesting bound reached" w) ws)
+       | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
+       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+       | _, _ -> check (label ^ " (clingo killed)") false));
+  (* document L, in both orders of its creations *)
+  let kopie =
+    {|{"node": "Rule", "name": "kopie van een boei", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "kopie", "subjectType": "Boei", "source": {"snippet": "De kopie van een Boei"}}, "value": {"node": "AttributeReference", "attribute": "nummer", "subjectType": "Boei", "source": {"snippet": "zijn nummer"}}, "initialisation": false, "presentation": "equation"}]}|}
+  and genummerd =
+    Printf.sprintf
+      {|{"node": "Rule", "name": "genummerd", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "genummerd", "subjectType": "Boei", "source": {"snippet": "Een Boei is genummerd"}}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": %s, "initialisation": false}]}|}
+      (vergelijking "greater" (lees "Boei" "nummer") (literal 0))
+  in
+  List.iter
+    (fun (variant, grens, regels, verwacht) ->
+      List.iter
+        (fun (volgorde, creaties) ->
+          speelt
+            ~name:(Printf.sprintf "ch5.5 generation budget, document L to B%d %s [%s]" grens variant volgorde)
+            ~ir:
+              (doc ~types:[ wachter; boei ~l:true ] ~feittypen:[ opvolging; boeiketen; bewaking ] ~regels ~creaties
+                 ~groepen ())
+            ~case_text:(zaak ~bewaakt:true (waarde "W1" "rang" "1" :: verwacht)))
+        [ ("werf de opvolger; leg de volgende boei", [ werf 52; leg ~wachterrang:true grens ]);
+          ("leg de volgende boei; werf de opvolger", [ leg ~wachterrang:true grens; werf 52 ]) ])
+    [ ("with the kopie", 100, [ kopie ], [ waarde "B1" "kopie" "1" ]);
+      ("with the kopie", 101, [ kopie ], [ waarde "B1" "kopie" "1" ]);
+      ("with genummerd", 101, [ genummerd ],
+        [ {|{"kind": "characteristicPresent", "label": "B1", "characteristic": "genummerd"}|} ]);
+      ("without a rule", 101, [], []) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

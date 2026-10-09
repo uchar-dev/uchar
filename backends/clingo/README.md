@@ -166,18 +166,46 @@ spec bug.
   1:1 linked-instance guard is `not inputrol/3` over the case links
   only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
   relation faults the translation, as in `ref/`.
-- A creation that is a member of a **recursive rule group**
-  (IR-SPEC ch. 3.9) grounds along a generation depth: every input
-  instance is `depth(_, 0)`, the creation's body carries
-  `depth(S,D), D < oc_budget`, and the mint derives `depth(ocN(S),
-  D+1)` — so gringo grounds the chain exactly as far as its condition
-  carries it (the nested terms ARE the generations), and a chain that
-  reaches `oc_budget` (`#const`, 100 — the same bound as the reference
-  interpreter's pass budget; ref counts passes, this side generations
-  per chain, and one chain advances one generation per pass) derives
-  the named witness `viol("generation budget exhausted", _)` → UNSAT
-  where the reference interpreter's pass budget faults. Ch. 5.5's
-  bounded budget, never a silent truncation.
+- In a document with a creation in a **recursive rule group**
+  (IR-SPEC ch. 3.9) every object creation grounds along a generation
+  depth per evaluation stratum, ch. 5.5's generation budget: a stratum
+  admits at most 100 generations that make an object or lay a link, and
+  the reference interpreter faults on a 101st with "no fixpoint within
+  100 generations". `depth(X,K,D)` says that X is D generations deep in
+  stratum K. The strata are the reference interpreter's, computed the
+  same way over the verifier's dependency graph of the document as
+  loaded. An input instance is depth 0 in every stratum of an object
+  creation, and so is an instance a lower stratum made
+  (`depth(X,K,0) :- depth(X,K0,D), D > 0, ocstratum(K), K > K0.`),
+  since ch. 6.3 completes a lower stratum before a higher one starts.
+  A creation of stratum k carries `depth(S,k,D), D <= oc_budget` and
+  derives `depth(ocN(S),k,D+1)`: the depth goes on only from a subject
+  stratum k made, which on a verifier-clean document is one on the
+  creation's own WF-045 cycle, because a creation reads its subject's
+  population and every other maker of its subjects sits in a lower
+  stratum. The 100th generation is made, and a 101st derives the named
+  witness `viol("generation budget exhausted", _)` → UNSAT. Ch. 5.5's
+  bounded budget, never a silent truncation. Until 2026-10-09 the depth
+  ran on over the strata and the witness fell at the 100th generation:
+  a chain of 100 generations, and chains of 50 + 1 + 50 in three
+  strata, were UNSAT here where the reference interpreter plays them.
+  The suite's `ch5.5 generation budget` frames pin both sides, each
+  beside the reference interpreter. The depth follows the chain of
+  mints, and the reference interpreter counts generations: where a
+  subject mints only some generations after it was made, because its
+  condition waits for a link a fact creation lays or for a value a
+  later generation makes true, those generations count there and not
+  here, so near the bound the reference interpreter can fault where
+  this backend plays. For a relation creation alone that is the
+  recorded boundary of IR-SPEC ch. 3.9 (WF-033's note); no corpus
+  document comes near it.
+- The guards bound the grounding as well, and that is where its cost
+  lies: gringo does not settle a chain's condition while it grounds, so
+  a chain grounds as deep as its guard admits. A chain of a higher
+  stratum grounds from every instance the lower chain could make: the
+  50 + 1 + 50 frame grounds about 1.7 GB of rules and takes about 23 s
+  (measured 2026-10-09; about 7 s while the depth ran on over the
+  strata), where a single chain of 100 takes well under a second.
 - A member initialisation takes the value at the moment of making
   (ch. 5.5, Generations): ref reads it on the settled world of the
   generation before, and a later generation may change the value read
@@ -329,12 +357,22 @@ shared-derivation bug from ever passing silently.
 
 Recorded limitations:
 
-- Clingo's term handling aborts (SIGABRT, observed in clingo 5.8.2)
-  once function terms nest beyond roughly 200 levels — the recursive
-  creation's generations ARE nested terms, so chains beyond that depth
-  cannot exist on this backend regardless of budget; `oc_budget` (100)
-  sits deliberately below the abort so budget exhaustion is always the
-  named `viol/2` witness, never a crash.
+- Clingo aborts (SIGABRT) while it writes a model as JSON (`--outf=2`,
+  the form the runner reads) once a shown atom carries a term nested
+  deeper than about 200 levels: measured on clingo 5.8.2 (2026-10-09),
+  `heeft(X,"k")` aborts with X nested 201 levels and `val(X,"a",V)` with
+  X nested 202, and both print at 200. A minted instance is a term that
+  nests one level per creation, over all strata. Until 2026-10-09 the
+  generation depth ran on over the strata and kept every term under 101
+  levels; per stratum it no longer does (a chain of 100 + 1 + 100 nests
+  201 levels). So every creation also carries `nest(S,Nest), Nest <
+  oc_nest` and derives `nest(ocN(S),Nest+1)`, with `oc_nest` = 190, and
+  an instance at that depth derives the named witness `viol("term
+  nesting bound reached …", _)` → UNSAT: a chain of 190 nested creations
+  over all strata is refused by name here, where the reference
+  interpreter, which keeps no such bound, plays it. The suite pins the
+  refusal on the 50 + 1 + 50 frame with the bound lowered to 60 in the
+  program text.
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails

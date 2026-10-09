@@ -434,6 +434,10 @@ type ctx = {
      helpers it has emitted *)
   mutable signs : (string * sign_src) list;
   mutable sign_helpers : string list;
+  (* the evaluation stratum of every object creation, by its wire pointer
+     ([object_creation_strata]); empty in a document without a recursive
+     creation, where no generation depth is kept *)
+  oc_strata : (string * int) list;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -846,8 +850,19 @@ let case_supplies ctx ~otype ~attr =
          || Uchar_ref.World.timeline i attr <> None))
     ctx.case.world.instances
 
+(* the distinct evaluation strata of the object creations, ascending: the
+   strata in which a generation depth is kept *)
+let oc_strata_of ctx = List.sort_uniq compare (List.map snd ctx.oc_strata)
+
+(* the deepest a minted term may nest, over all strata. Measured on clingo
+   5.8.2 (2026-10-09): its JSON output aborts (SIGABRT) on heeft(X,"k") once
+   X nests 201 levels and on val(X,"a",V) at 202, and prints both at 200; the
+   bound keeps a margin below that *)
+let oc_nest = 190
+
 (* does any recursive rule group carry an object-creation member? —
-   gates the generation-depth machinery (depth/2, oc_budget) *)
+   gates the generation-depth machinery (depth/3, nest/2, oc_budget,
+   oc_nest) *)
 let has_recursive_creation (doc : document) =
   List.exists
     (fun (g : resolved_regel_groep) ->
@@ -9855,15 +9870,35 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    connectingRole binding, else the uniquely-derivable pair) lands both
    rol/3 ends. The 1:1 shape's linked-instance guard reads the INPUT
    links only (inputrol/3, the case facts) — the same input-snapshot
-   narrowing ref/ records for its guard. A creation that is a member of
-   a RECURSIVE rule group grounds along a generation depth (depth/2,
-   bounded by oc_budget = 100, the same bound as ref/'s pass budget —
-   ref counts passes, this side generations per chain; one chain
-   advances one generation per pass, so the two accounts align):
-   exhausting the budget derives a viol/2 witness — UNSAT where ref/'s
-   pass budget faults (ch. 5.5's bounded budget, never a silent
-   truncation; the bound also stays under clingo's own term-depth
-   abort, recorded in the README). *)
+   narrowing ref/ records for its guard.
+
+   In a document with a recursive creation every creation grounds along a
+   generation depth per evaluation stratum, ch. 5.5's generation budget
+   (card creatiebudget-ref-en-clingo, 2026-10-09). depth(X,K,D) says that
+   X is D generations deep in stratum K: an input instance, and an
+   instance a lower stratum made, is 0 there, since ch. 6.3 completes a
+   lower stratum before a higher one starts. A creation of stratum k
+   gives its mint D+1 from its subject's depth in k, so the depth goes on
+   only from a subject that stratum k itself made, which on a
+   verifier-clean document is a subject on the creation's own WF-045
+   cycle: a creation reads its subject's population, so every other maker
+   of its subjects sits in a lower stratum. The guard admits a subject up
+   to depth oc_budget (100), so the 100th generation is made, and a 101st
+   derives the viol/2 witness — UNSAT where ref/ faults with "no fixpoint
+   within 100 generations", never a silent truncation. Until 2026-10-09
+   the depth ran on over the strata and the witness fell at the 100th
+   generation: a chain of 100 generations, and chains of 50 + 1 + 50 over
+   three strata, were UNSAT here, where ref plays them.
+
+   The depth no longer bounds the nesting of the terms, which grows by one
+   per creation over all strata, and clingo aborts while it prints an
+   atom whose term nests past 200 levels (README, Recorded limitations).
+   nest/2 counts that nesting, and a creation admits a subject below
+   oc_nest; an instance at oc_nest derives a viol/2 witness of its own, a
+   loud refusal of a chain this backend cannot carry where ref plays it.
+   A depth or nesting guard is part of every creation's body, so the
+   grounding, which does not settle the conditions of the chain, stops
+   there too. *)
 let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   (* the ch. 8.2 validity gate: an excluded creation does not apply —
      nothing is minted, no back-link lands, no guard fires (ref skips the
@@ -9897,31 +9932,33 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
         [ Printf.sprintf "not inputrol(%s,%s,_)" subject (str (role_canonical new_role)) ]
     | _ -> []
   in
-  let recursive =
-    let name = norm (Ir_v0.Checks.strip_version (Option.value oc.oc_naam ~default:"")) in
-    List.exists
-      (fun (g : resolved_regel_groep) ->
-        g.recursief
-        && List.exists
-             (function
-               | Some l -> norm (Ir_v0.Checks.strip_version l) = name
-               | None -> false)
-             g.leden)
-      ctx.doc.regel_groepen
+  let stratum =
+    if has_recursive_creation ctx.doc then
+      match List.assoc_opt oc.oc_pointer ctx.oc_strata with
+      | Some k -> Some k
+      | None ->
+          failwith
+            (Printf.sprintf
+               "backends/clingo/lib/translate.ml, translate_object_creatie: the object creation at \
+                %S has no evaluation stratum"
+               oc.oc_pointer)
+    else None
   in
   let depth_guard =
-    if recursive then [ Printf.sprintf "depth(%s,D)" subject; "D < oc_budget" ] else []
+    match stratum with
+    | Some k ->
+        [ Printf.sprintf "depth(%s,%d,D)" subject k; "D <= oc_budget"; Printf.sprintf "nest(%s,Nest)" subject;
+          "Nest < oc_nest" ]
+    | None -> []
   in
   let body =
     (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: cond) @ guard @ depth_guard
   in
-  (if recursive then head_body ctx (Printf.sprintf "depth(%s,D+1)" term) body
-   else if has_recursive_creation ctx.doc then
-     (* a non-recursive mint still carries a depth in a document with
-        recursive chains, so a chain seeded from it stays bounded *)
-     head_body ctx
-       (Printf.sprintf "depth(%s,D+1)" term)
-       (body @ [ Printf.sprintf "depth(%s,D)" subject ]));
+  (match stratum with
+  | Some k ->
+      head_body ctx (Printf.sprintf "depth(%s,%d,D+1)" term k) body;
+      head_body ctx (Printf.sprintf "nest(%s,Nest+1)" term) body
+  | None -> ());
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str nieuw)) body;
   List.iter
     (fun (t : toekenning) ->
@@ -11059,9 +11096,12 @@ let translate_case ctx (case : Case.t) =
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
-      (* generation depth 0 for every input instance — the recursive
-         creations' grounding bound counts from here *)
-      if has_recursive_creation doc then emit ctx "depth(%s,0)." (str_raw label);
+      (* an input instance is generation depth 0 in every stratum of an
+         object creation, and nests no term *)
+      if has_recursive_creation doc then begin
+        List.iter (fun k -> emit ctx "depth(%s,%d,0)." (str_raw label) k) (oc_strata_of ctx);
+        emit ctx "nest(%s,0)." (str_raw label)
+      end;
       Eval.SMap.iter
         (fun aname v ->
           if v <> Value.Empty && init_target i.otype aname then
@@ -11415,6 +11455,84 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
       doc.object_creaties
   end
 
+(* The evaluation strata of RUNTIME-SEMANTICS ch. 6.3, computed as ref/
+   computes them in [Eval.evaluate], over the same graph
+   ([Ir_v0.Checks.dep_forms] of the document as loaded): every form gets the
+   least stratum at or above its positive producers and strictly above its
+   other producers, except along a dependency cycle, which WF-045 admits
+   through a recursive group and on which every edge counts positive. The
+   generation budget of ch. 5.5 counts per stratum, so the depth this
+   backend keeps for it ([translate_object_creatie]) has to start again
+   exactly where ref's count does; a stratification of its own could split
+   a chain ref counts as one, or join two that ref counts apart. Returns
+   the stratum of every object creation, by its wire pointer. *)
+let object_creation_strata (doc : document) : (string * int) list =
+  let forms = Array.of_list (Ir_v0.Checks.dep_forms { Ir_v0.Checks.doc }) in
+  let n = Array.length forms in
+  let writers node =
+    List.filter (fun i -> List.mem node forms.(i).Ir_v0.Checks.df_writes) (List.init n Fun.id)
+  in
+  let succ = Array.make n [] in
+  Array.iteri
+    (fun ci (f : Ir_v0.Checks.dep_form) ->
+      List.iter
+        (fun (node, _) ->
+          List.iter (fun pi -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi)) (writers node))
+        f.df_reads)
+    forms;
+  (* [reachable.(src).(i)]: form i is reached from src over one edge or more;
+     an edge p -> c lies on a cycle exactly when c reaches p *)
+  let reachable = Array.init n (fun _ -> Array.make n false) in
+  Array.iteri
+    (fun src _ ->
+      let rec go i =
+        if not reachable.(src).(i) then begin
+          reachable.(src).(i) <- true;
+          List.iter go succ.(i)
+        end
+      in
+      List.iter go succ.(src))
+    forms;
+  let strata = Array.make n 0 in
+  let changed = ref true and rounds = ref 0 in
+  while !changed do
+    incr rounds;
+    if !rounds > n + 2 then
+      fault "no evaluation strata exist — a dependency cycle that WF-045 or WF-046 forbids reached this backend";
+    changed := false;
+    Array.iteri
+      (fun ci (f : Ir_v0.Checks.dep_form) ->
+        List.iter
+          (fun (node, kind) ->
+            List.iter
+              (fun pi ->
+                let need =
+                  strata.(pi)
+                  + match kind with Ir_v0.Checks.Dep_pos -> 0 | _ -> if reachable.(ci).(pi) then 0 else 1
+                in
+                if strata.(ci) < need then begin
+                  strata.(ci) <- need;
+                  changed := true
+                end)
+              (writers node))
+          f.df_reads)
+      forms
+  done;
+  List.map
+    (fun (o : resolved_object_creatie) ->
+      let rec find i =
+        if i >= n then
+          failwith
+            (Printf.sprintf
+               "backends/clingo/lib/translate.ml, object_creation_strata: the object creation at %S is \
+                not in the verifier's dep_forms"
+               o.oc_pointer)
+        else if forms.(i).Ir_v0.Checks.df_at = o.oc_pointer then (o.oc_pointer, strata.(i))
+        else find (i + 1)
+      in
+      find 0)
+    doc.object_creaties
+
 let translate (doc : document) (case : Case.t) : string =
   (* WF-007: a presentation tag inside a type annotation, listed by the
      loader, is refused in the verifier's sentence — the same refusal ref
@@ -11443,6 +11561,10 @@ let translate (doc : document) (case : Case.t) : string =
      (multiply-only, integer-encodable) so the factor≠1 unit fences below
      translate. Run before the desugaring — the two are orthogonal
      (units/literals vs prioritized-defaults structure). *)
+  (* the strata over the document as loaded, which is what ref/ stratifies:
+     the desugaring below turns rules into defaults groups, whose reads are
+     negative edges, and would move strata *)
+  let oc_strata = if has_recursive_creation doc then object_creation_strata doc else [] in
   let doc = Normalise.document doc in
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
@@ -11450,7 +11572,7 @@ let translate (doc : document) (case : Case.t) : string =
       write_unbounded = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); let_needs = []; value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
-      pre_asks = []; signs = []; sign_helpers = [] }
+      pre_asks = []; signs = []; sign_helpers = []; oc_strata }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a
@@ -11489,12 +11611,21 @@ let translate (doc : document) (case : Case.t) : string =
   if List.exists (fun (_, (ot : objecttype)) -> ot.ot_supertype <> None) doc.objecttypen then
     emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";
   if has_recursive_creation doc then begin
-    (* the generation-depth bound (ch. 5.5's fire budget, grounded): a
-       recursive chain grounds only as deep as its condition carries
-       it, and a chain that reaches the budget derives a viol/2
-       witness — UNSAT exactly where ref/'s pass budget faults *)
-    emit ctx "#const oc_budget = 100. #defined depth/2.";
-    emit ctx "viol(\"generation budget exhausted\",X) :- depth(X,oc_budget)."
+    (* ch. 5.5's generation budget, grounded per stratum
+       ([translate_object_creatie]): a 101st generation in one stratum
+       derives the viol/2 witness — UNSAT where ref/ faults. An instance a
+       lower stratum made is depth 0 in every higher stratum of a
+       creation. The nesting bound keeps every term under clingo's abort
+       (README, Recorded limitations). *)
+    emit ctx "#const oc_budget = 100. #const oc_nest = %d. #defined depth/3. #defined nest/2." oc_nest;
+    emit ctx "viol(\"generation budget exhausted\",X) :- depth(X,_,D), D > oc_budget.";
+    emit ctx
+      "viol(\"term nesting bound reached: a chain of %d nested creations over all strata is \
+       deeper than this backend carries (README, Recorded limitations)\",X) :- nest(X,Nest), \
+       Nest >= oc_nest."
+      oc_nest;
+    List.iter (fun k -> emit ctx "ocstratum(%d)." k) (oc_strata_of ctx);
+    emit ctx "depth(X,K,0) :- depth(X,K0,D), D > 0, ocstratum(K), K > K0."
   end;
   (* the fail-fast guards derive viol/2 witnesses; this single global
      integrity constraint turns any witness into UNSAT — the runner's
