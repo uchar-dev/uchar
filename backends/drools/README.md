@@ -320,21 +320,41 @@ record `Tijdvak` is one segment `[van, tot)` with its value. Its equality is the
 the reference interpreter compares two timelines (`write_timeline`): 7 and 7.00 are one value, the same values on
 another cut are another; its `hashCode` agrees with it, since the KieBase in EQUALITY merges equal logical facts. The
 generated bean `Segment` has no value equality and is mutable, so the branch converts at two boundaries only: where it
-binds a timeline off a bean, an input member or the true periods of a characteristic, and where `zetAfgeleideWaarden`
-puts a derived timeline on the bean as its `Segment`s. `Tijdvak` has the getters and the constructor the runtime's
-helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`, `rsTijdKnip`,
-`rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side like any
-read, a derived one through its standing, and read whole: by the temporal total of the subject's own timeline, with
-the clip of ch. 3.6 by a characteristic, negated or not, by an `alle` of characteristics or by an ordering of an own
-timeline against a value; by a sum or a total per member of a set (ch. 3.6, the per-element fold), where each
-member's timeline collapses over time in its contribution rule and a member without one contributes nothing; and as
-a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline ever carries. It is written
-whole, only by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or from a fixed start point
-(ch. 3.2). On a standing temporal target (ch. 7.8) an empty result writes nothing and leaves the input whole;
-elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty list, while a
-target never written stays null. A characteristic on a timeline is input only, read as its true periods. Witnesses
+binds a timeline off a bean, the input of an attribute or the true periods of a characteristic, and where
+`zetAfgeleideWaarden` puts a derived timeline on the bean as its `Segment`s. `Tijdvak` has the getters and the
+constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`,
+`rsTijdKnip`, `rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
+like any read, an attribute through its standing, derived or input, and read whole: by the temporal total of the
+subject's own timeline, with the clip of ch. 3.6 by a characteristic, negated or not, by an `alle` of characteristics
+or by an ordering of an own timeline against a value; by a sum or a total per member of a set (ch. 3.6, the
+per-element fold), where each member's timeline collapses over time in its contribution rule and a member without one
+contributes nothing; and as a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline
+ever carries. It is written whole, only by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or
+from a fixed start point (ch. 3.2). On a standing temporal target (ch. 7.8) an empty result writes nothing and leaves
+the input whole; elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty
+list, while a target never written stays null. A characteristic on a timeline is input only, read as its true
+periods; the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
 `TijdvakTest`, `TmsTijdlijnWitnessTest`, `TmsTijdlijnVouwWitnessTest`, `TmsOoitUniciteitWitnessTest`, and for the
 refusals below `TmsTijdlijnWeigeringWitnessTest`.
+
+**The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or
+as the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date, and
+RUNTIME-SEMANTICS ch. 8.4 keeps the two apart: the bucket scalar serves the subject's own total without a clip, the
+full timeline every other read, and "an executor that needs the one and finds the other faults — never guesses". The
+bean shows a bucket scalar as the one segment of its period, which a full timeline of one segment would be as well, so
+on this branch the case runner states an `Emmerinvoer(bean, attribute)` beside the beans for each bucket scalar, the
+attribute keyed by its declaring type as `ProducentConsument.elementVan` gives it. Two input rules of the attribute's
+standing join that fact, under `exists` and under `not`, and the input stands as an `Emmerscalair` or as a
+`List<Tijdvak>`; a timeline a form derives replaces it, as any input. A form that finds the other convention faults
+where the evaluation reaches it, an `Invoervormfout` inserted logically as a `Fout`, in the reference interpreter's
+words and naming the object, by its case label where the write-back has one: the own total without a clip over a full
+timeline; and over a bucket scalar the clip of a total, the timeline a comparison clip compares, the base of a
+pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `Lidfout`), and
+an ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
+it. A consumer that fills a session itself states the same facts; without them the branch reads every input timeline
+as a full timeline. The reference interpreter and the ASP backend read a pro-rata base and a compared timeline given as
+a bucket scalar as no timeline today; this branch follows ch. 8.4 there, and they follow with a card. Witness
+`TmsInvoervormWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
@@ -439,7 +459,10 @@ built, never as a silent fall:
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part or a day count,
   among them a sum of timelines over a set (ch. 3.5); the comparisons "gelijk aan" and "ongelijk aan" in a clip, where
   `rsTijdConditie` reads an empty side as no period and ch. 3.6 applies the comparison of ch. 1.2 per period; a rate
-  whose denominator is not the unit of the grid, which `rsTijdTotaal` would weigh unit-blind; the total without a clip
+  over a grid whose unit the document does not declare, or declares in two different canonical chains, which the
+  reference interpreter refuses to integrate, in its words; a rate whose denominator is not the unit of the grid, which
+  `rsTijdTotaal` would weigh unit-blind; a sum or a total per member over a timeline in a fold over a created relation,
+  whose made links have no place in the fold order that names the member given as a bucket scalar; the total without a clip
   over a timeline a form writes, which the reference interpreter refuses as well; a timeline on a variable start point
   and its `StartPointDetermination`; a time-dependent parameter, which the goldens with cases read in a `TemporalRead`
   that the loader refuses for every branch; and what the reference interpreter refuses as well: a member on a grid of
