@@ -483,7 +483,10 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them a dimensioned attribute over a path or one a form writes;
+- of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
+  dimension selection, and in those two an attribute that lies on a timeline, is read over a path or is written by a
+  form. Witness `TmsTijdlijnWeigeringWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its
+  total;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10), as the other two branches refuse it (golden `jutterswet-pachtvenster`); a

@@ -217,7 +217,6 @@ public final class TmsTranspiler {
     static final int MAX_LEZINGEN = 13;
 
     private static final String NOG_NIET = "de truth-maintenance-tak draagt deze vorm nog niet";
-    private static final String BUITEN = "buiten de proef van de truth-maintenance-tak";
     private static final String INCONSISTENTIE = FactModelGenerator.PAKKET + ".Inconsistentie";
 
     private final RegelSpraakModel model;
@@ -6139,8 +6138,12 @@ public final class TmsTranspiler {
                 for (Map.Entry<String, Datatype> e : t.attributen.entrySet())
                     if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
                         String a = e.getKey();
+                        // every position that asks this method reads or writes the member whole, as one value or as a
+                        // timeline; a dimensioned one is read only per cell, through gedimensioneerdLid
                         if (t.attribuutDimensies.containsKey(a))
-                            throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + ": " + BUITEN);
+                            throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + ", gelezen"
+                                    + " of geschreven buiten een DimensionCellRead of een vouw over een"
+                                    + " dimensieselectie: " + NOG_NIET + "; geen golden met cases heeft het");
                         return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
                                 bonenklasse(t), t.attribuutGranulariteit.get(a));
                     }
@@ -6162,8 +6165,8 @@ public final class TmsTranspiler {
                         throw new Weigering("een dimensielezing van het attribuut '" + a + "' van " + t.naam + ", dat niet"
                                 + " gedimensioneerd is");
                     if (t.attribuutGranulariteit.containsKey(a))
-                        throw new Weigering("het tijdsafhankelijke attribuut '" + a + "' van " + t.naam + ": tijdlijnen"
-                                + " zijn " + BUITEN);
+                        throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + " op een"
+                                + " tijdlijn: " + NOG_NIET + "; geen golden met cases heeft er een");
                     return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
                             bonenklasse(t), null);
                 }
