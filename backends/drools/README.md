@@ -169,8 +169,12 @@ evaluated at the first read and kept for every further one, a read of a leeg val
 and a binder the body does not read evaluates nothing, so it faults and deposits nothing. An `IfThenElse` evaluates
 the branch its condition chooses and nothing of the other (ch. 10.2). Both bind every read of both branches and of a
 binder's value in the left-hand side all the same, so truth maintenance follows each value the evaluation may need.
-Which §6.5 or §6.6 place deposits therefore depends on the evaluation itself: the consequence of a computing rule
-puts a probe (`Sonde`) in its value array, and every place that qualifies reports to it where it runs. Rounding,
+Which §6.5 or §6.6 place deposits therefore depends on the evaluation itself: every division of a filled dividend by
+a leeg divisor and every square root of a negative number that the evaluation reaches deposits, as in the reference
+interpreter (ch. 1.2, 5.6). The consequence of a computing rule puts a probe (`Sonde`) in its value array, and every
+such place reports to it where it runs; a condition deposits through a rule of the form's own, `<rule>: deponering in
+de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
+longer reads deposits nothing (ch. 5.10). Witness `TmsDeponeringWitnessTest`. Rounding,
 clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
 whole exponent, the restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
 exact-digit tests compute through the runtime's helpers, as the exec-model branch computes them, from bound values;
@@ -216,6 +220,14 @@ contributions, the first in fold order, and where its own evaluation reaches the
 evaluation faults as a division in it would; the `Fout` is that rule's, inserted by its consequence or by its fault
 rule, named after it, and withdrawn when the `Filterfout` goes. A member whose place the input did not state makes the
 rule fail loudly. Witness `TmsFilterfoutWitnessTest`.
+
+A filter that deposits for a member (a division by leeg, a negative root) inserts a `Filterdeponering` for that member
+in the same way, through a rule beside the contribution rule with a probe in its test, and no inconsistency: the
+reference interpreter evaluates the filter with the collector of the form that reads the fold, so the deposit is that
+form's, on its subject, and only where its evaluation reaches the fold (RUNTIME-SEMANTICS ch. 5.11, "keyed by (rule ×
+subject)"). The rule that reads the fold counts these facts on its subject beside the contributions and reports to its
+own probe where its evaluation reaches the fold while one stands; the filter of each selection of an
+`InstanceSetUnion` does the same. Witness `TmsFilterdeponeringWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
