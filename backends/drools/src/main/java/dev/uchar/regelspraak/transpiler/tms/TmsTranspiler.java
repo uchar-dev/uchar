@@ -31,6 +31,7 @@ import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.kern.Bronpad;
+import dev.uchar.regelspraak.transpiler.kern.Dagsoorten;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.EffectieveEenheid;
 import dev.uchar.regelspraak.transpiler.kern.Eenheidsconflict;
@@ -298,6 +299,10 @@ public final class TmsTranspiler {
      *  two different tests under one id would collapse into the first. */
     private int idSeq;
     private Model model0;
+    /** The day-kind definitions of the document, each compiled to its predicate over a calendar day where a form first
+     *  steps or counts in its day kind ({@link #dagsoortpredikaat}). A definition reads nothing of working memory
+     *  (WF-031), so its predicate is a constant of the document and no rule binds anything for it. */
+    private final Dagsoorten dagsoorten;
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
                           Map<Object, List<RolBindingRef>> navigatieBindingen, Map<Object, RolBindingRef> rolBindingen,
@@ -309,6 +314,7 @@ public final class TmsTranspiler {
         this.rolBindingen = rolBindingen;
         this.bronPaden = bronPaden;
         this.eff = eff;
+        this.dagsoorten = new Dagsoorten(model);
     }
 
     /** Build the model and its coverage manifest from the loaded model and every side table the loader returns. Each
@@ -552,8 +558,8 @@ public final class TmsTranspiler {
             weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: een variabel startpunt draagt de"
                     + " truth-maintenance-tak nog niet; geen golden met cases heeft er een, en de caselezer legt geen"
                     + " tijdlijn op zo'n raster");
-        for (ResolvedDagsoort d : model.resolvedDagsoorten)
-            weiger("dagsoortdefinitie", d.naam(), "een DayKindDefinition: dagsoorten zijn " + BUITEN);
+        // a day-kind definition is no form that fires: the forms that step or count in its day kind compile it where
+        // they lower (dagsoortpredikaat), so a definition no form uses is never compiled and refuses nothing
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
         for (List<Rule> rs : bijdrageregels.values()) regels.addAll(rs);
         for (String relatie : gecreeerdeRelaties) regels.addAll(koppelingregels(relatie));
@@ -2866,7 +2872,7 @@ public final class TmsTranspiler {
 
     /** A date plus or minus a duration with a calendar or clock unit, as the exec-model branch computes it
      *  ({@code datumRekenWaarde}): no date minus date, no duration minus a date, a clock unit only on a date-time. A
-     *  duration counted in a day kind is refused: day kinds are outside the proef. A step or a count outside the range of
+     *  duration counted in a day kind walks the calendar ({@link #dagsoortstap}). A step or a count outside the range of
      *  RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault ({@link #datumfout}); the date is evaluated before the duration
      *  (ch. 5.11). */
     private Waardefunctie datumrekening(Expr.Binair b, Lezingen lez) {
@@ -2880,8 +2886,9 @@ public final class TmsTranspiler {
         boolean optellen = op == Expr.BinOp.PLUS;
         if (eff.typeVan(duurExpr).isDatum() || (!optellen && !datumLinks))
             throw new Weigering("een rekensom van twee datums of een duur min een datum ('" + snippet(b.bron()) + "')");
-        if (Tijdrekening.dagsoortVoorEenheid(model, eff.typeVan(duurExpr).eenheidOf()) != null)
-            throw new Weigering("een duur in dagsoorten ('" + snippet(b.bron()) + "'): dagsoorten zijn " + BUITEN);
+        // ch. 3.8 puts the calendar table first, as Tijdrekening.dagsoortVoorEenheid looks a spelling up for every branch
+        String dagsoort = Tijdrekening.dagsoortVoorEenheid(model, eff.typeVan(duurExpr).eenheidOf());
+        if (dagsoort != null) return dagsoortstap(b, datumExpr, duurExpr, optellen, dagsoort, lez);
         String eenheid = Tijdrekening.chronoUnit(eff.typeVan(duurExpr));
         if (eenheid == null) throw new Weigering("een duur zonder tijdseenheid ('" + snippet(b.bron()) + "')");
         boolean klok = switch (eenheid) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
@@ -2900,17 +2907,110 @@ public final class TmsTranspiler {
         };
     }
 
+    /**
+     * A date or a date-time plus or minus a count of days of the day kind {@code dagsoort} (RUNTIME-SEMANTICS ch. 3.8,
+     * §6.11), as the runtime walks it for the other branches: from the date, which never counts, one calendar day at a
+     * time to the Nth day the definition admits ({@code rsDatumPlusDagsoort}); on a date-time over its date part, the
+     * clock time riding through ({@code rsDatumTijdPlusDagsoort}). A count of 0 or leeg gives the date unchanged, a leeg
+     * date leeg. The definition reads nothing of working memory (WF-031), so its predicate is a constant of the document
+     * ({@link #dagsoortpredikaat}), and the reads the step depends on are the date and the count, bound as any value of
+     * the rule. A walk that passes the reach of ch. 3.8 without a day of the kind is an evaluation fault in the sentence
+     * of the reference interpreter ({@link #datumfout}), a {@link Fout} that counts only where it stands at the
+     * fixpoint. The date is evaluated before the count (ch. 5.11).
+     */
+    private Waardefunctie dagsoortstap(Expr.Binair b, Expr datumExpr, Expr duurExpr, boolean optellen, String dagsoort,
+                                       Lezingen lez) {
+        java.util.function.Predicate<LocalDate> predikaat =
+                dagsoortpredikaat(dagsoort, "een duur in dagsoorten ('" + snippet(b.bron()) + "')");
+        boolean datumTijd = eff.typeVan(datumExpr) instanceof Datatype.DatumTijd;
+        lez.markeerFalen();
+        Waardefunctie d = waarde(datumExpr, lez), n = waarde(duurExpr, lez);
+        return w -> {
+            Object datum = d.van(w), aantal = n.van(w);
+            try {
+                return datumTijd
+                        ? RegelSpraakRuntime.rsDatumTijdPlusDagsoort((LocalDateTime) datum, aantal, predikaat, optellen)
+                        : RegelSpraakRuntime.rsDatumPlusDagsoort((LocalDate) datum, aantal, predikaat, optellen);
+            } catch (IllegalStateException e) {
+                throw datumfout(e);
+            }
+        };
+    }
+
+    /**
+     * The predicate of the day kind {@code naam} over a calendar day, from its definition (IR-SPEC ch. 3.7), compiled by
+     * the backend's day-kind compiler ({@code kern.Dagsoorten}) the first time a form needs it and the same object for
+     * every form after: the bound day, its date parts, the first Easter day, literals and other day kinds on the bound
+     * day. The form {@code wat} that steps or counts in the day kind is refused by name where the definition does not
+     * compile ({@link #dagsoortweigering}); a definition that no form uses is never compiled, so it refuses nothing.
+     */
+    private java.util.function.Predicate<LocalDate> dagsoortpredikaat(String naam, String wat) {
+        java.util.function.Predicate<LocalDate> p = dagsoorten.predikaat(naam);
+        if (p == null) throw new Weigering(wat + ": " + dagsoortweigering(naam, new LinkedHashSet<>()));
+        return p;
+    }
+
+    /**
+     * Why the day kind {@code naam} has no predicate here, found in its definition and in the definitions it refers to
+     * ({@code bezocht} holds those already looked at, the reference graph being acyclic by WF-085): no definition; a
+     * parameter, which WF-031 admits and the reference interpreter reads, and which this branch does not read, since
+     * the day-kind compiler binds nothing; a day-kind test on another day than the bound day, which no executor carries
+     * (RUNTIME-SEMANTICS ch. 3.8, red case {@code dagsoortverwijzing-andere-dag}); and else a shape of its condition
+     * outside what the compiler carries.
+     */
+    private String dagsoortweigering(String naam, Set<String> bezocht) {
+        ResolvedDagsoort def = null;
+        for (ResolvedDagsoort d : model.resolvedDagsoorten)
+            if (d.naam() != null && d.naam().equalsIgnoreCase(naam)) def = d;
+        if (def == null) return "de dagsoort '" + naam + "' heeft geen definitie (WF-031)";
+        if (!bezocht.add(naam.toLowerCase())) return null;
+        String[] parameter = {null};
+        Conditie.bevatOperand(def.voorwaarde(), e -> e instanceof Expr.ParameterRef pr
+                && (parameter[0] = pr.parameter() == null ? "(onopgelost)" : pr.parameter().naam()) != null);
+        if (parameter[0] != null)
+            return "de definitie van de dagsoort '" + naam + "' leest de parameter '" + parameter[0] + "', die de"
+                    + " truth-maintenance-tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)";
+        List<Conditie.Predicaat> toetsen = new ArrayList<>();
+        dagsoorttoetsen(def.voorwaarde(), toetsen);
+        for (Conditie.Predicaat t : toetsen) {
+            if (!(t.operand() == null || t.operand() instanceof Expr.Constante c && "de dag".equalsIgnoreCase(c.naam())))
+                return "de definitie van de dagsoort '" + naam + "' toetst de dagsoort '" + t.dagsoort() + "' op een andere"
+                        + " dag dan de gebonden dag ('" + snippet(t) + "'), een vorm die geen executor uitvoert"
+                        + " (RUNTIME-SEMANTICS ch. 3.8)";
+            if (t.dagsoort() != null && dagsoorten.predikaat(t.dagsoort()) == null) {
+                String genest = dagsoortweigering(t.dagsoort(), bezocht);
+                if (genest != null) return genest;
+            }
+        }
+        return "de definitie van de dagsoort '" + naam + "' heeft een voorwaarde ('" + snippet(def.voorwaarde()) + "')"
+                + " buiten wat de dagsoortcompiler van de backend draagt: vergelijkingen van de gebonden dag, zijn"
+                + " datumdelen, de eerste paasdag en literalen, en andere dagsoorten op de gebonden dag";
+    }
+
+    /** The day-kind tests in {@code c}, in wire order, through its composites. */
+    private static void dagsoorttoetsen(Conditie c, List<Conditie.Predicaat> uit) {
+        if (c instanceof Conditie.Predicaat p && p.soort() == Conditie.Predicaatsoort.DAGSOORT) uit.add(p);
+        else if (c instanceof Conditie.Samengesteld s) for (Conditie d : s.onderdelen()) dagsoorttoetsen(d, uit);
+    }
+
     /** The fault of a date step the runtime raised as {@code e}, as an evaluation fault in its own sentence, which is
      *  the reference interpreter's: a step that leaves the representable range of a datum-tijd, a duration count outside
-     *  that range (RUNTIME-SEMANTICS ch. 3.8), and a step on a date beyond the years the runtime's dates hold. Any other
-     *  {@code IllegalStateException} out of the date step is no evaluation fault and is thrown as it is. */
+     *  that range (RUNTIME-SEMANTICS ch. 3.8), a step on a date beyond the years the runtime's dates hold, and a walk over
+     *  the days of a day kind that passes the reach of ch. 3.8 without one. Any other {@code IllegalStateException} out
+     *  of the date step is no evaluation fault and is thrown as it is. */
     private static RuntimeException datumfout(IllegalStateException e) {
         String zin = String.valueOf(e.getMessage());
         boolean bereik = zin.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
                 || zin.equals(RegelSpraakRuntime.DATUM_BUITEN_JAREN)
-                || (zin.startsWith("duration count ") && zin.endsWith(" is out of range"));
+                || (zin.startsWith("duration count ") && zin.endsWith(" is out of range"))
+                || zin.startsWith(DAGSOORTWANDELING);
         return bereik ? new Rekenfout(zin, e) : e;
     }
+
+    /** The opening of the runtime's fault of a day-kind walk past its reach ({@code rsDatumPlusDagsoort}), which is the
+     *  reference interpreter's sentence word for word, the reach and the date after it. */
+    private static final String DAGSOORTWANDELING = "day-kind walk: no day of the kind within "
+            + RegelSpraakRuntime.DAGSOORT_REIKWIJDTE + " calendar days of ";
 
     /** {@code f} restated from unit {@code van} into unit {@code naar} (RUNTIME-SEMANTICS ch. 2.6): times the exact
      *  canonical factors {@code num ÷ den} as rationals where both are known, so a restatement that does not terminate
@@ -3402,7 +3502,8 @@ public final class TmsTranspiler {
     }
 
     /** The duration and the absolute duration from argument 0 to argument 1 in whole units of the node's own unit
-     *  (RUNTIME-SEMANTICS ch. 3.8, WF-038), the "van" evaluated before the "tot" (ch. 5.11); a leeg operand leeg. */
+     *  (RUNTIME-SEMANTICS ch. 3.8, WF-038), the "van" evaluated before the "tot" (ch. 5.11); a leeg operand leeg. A unit
+     *  that is a day kind counts the days of the kind ({@link #dagsoortduur}). */
     private Waardefunctie tijdsduur(Expr.Functie f, Lezingen lez, String spelling) {
         List<Expr> a = f.argumenten();
         if (a.size() != 2)
@@ -3413,8 +3514,9 @@ public final class TmsTranspiler {
             throw new Weigering("een " + spelling + " die niet twee datums van één precisie meet ('" + snippet(f.bron())
                     + "', WF-038)");
         Datatype type = eff.typeVan(f);
-        if (Tijdrekening.dagsoortVoorEenheid(model, type.eenheidOf()) != null)
-            throw new Weigering("een " + spelling + " in dagsoorten ('" + snippet(f.bron()) + "'): dagsoorten zijn " + BUITEN);
+        // ch. 3.8 puts the calendar table first, as Tijdrekening.dagsoortVoorEenheid looks a spelling up for every branch
+        String dagsoort = Tijdrekening.dagsoortVoorEenheid(model, type.eenheidOf());
+        if (dagsoort != null) return dagsoortduur(f, lez, spelling, dagsoort, van instanceof Datatype.DatumTijd);
         String eenheid = Tijdrekening.chronoUnit(type);
         if (eenheid == null)
             throw new Weigering("een " + spelling + " zonder tijdseenheid ('" + snippet(f.bron()) + "', WF-038)");
@@ -3428,6 +3530,30 @@ public final class TmsTranspiler {
             Object v = vanaf.van(w), t = totaan.van(w);
             return RegelSpraakRuntime.rsTijdsduur((java.time.temporal.Temporal) v, (java.time.temporal.Temporal) t,
                     eenheid, absoluut);
+        };
+    }
+
+    /**
+     * The duration from argument 0 to argument 1 in whole days of the day kind {@code dagsoort} (RUNTIME-SEMANTICS
+     * ch. 3.8, §6.10), as the runtime counts it for the other branches ({@code rsTijdsduurDagsoort}): the days of the
+     * kind after the start up to and including the end, signed by the order of the two, the absolute duration without
+     * the sign, a leeg operand leeg. The interval bounds the count, so it has no reach and no fault. The predicate is a
+     * constant of the document ({@link #dagsoortpredikaat}). Over two date-times the form is refused by name, as the
+     * reference interpreter and the ASP backend refuse it: counting whole days of a kind between two instants needs a
+     * rule for the part-day at each end, which ch. 3.8 does not fix, and the refusal does not wait for a filled operand.
+     */
+    private Waardefunctie dagsoortduur(Expr.Functie f, Lezingen lez, String spelling, String dagsoort, boolean datumTijd) {
+        String wat = "een " + spelling + " in dagsoorten ('" + snippet(f.bron()) + "')";
+        if (datumTijd)
+            throw new Weigering(wat + " tussen twee datum-tijden: de referentie-interpreter en de ASP-backend weigeren haar"
+                    + " met naam, omdat het tellen van hele dagen van een soort tussen twee tijdstippen een regel voor de"
+                    + " deeldag aan elk eind vraagt, die RUNTIME-SEMANTICS ch. 3.8 niet vastlegt (ch. 3.12)");
+        java.util.function.Predicate<LocalDate> predikaat = dagsoortpredikaat(dagsoort, wat);
+        Waardefunctie vanaf = waarde(f.argumenten().get(0), lez), totaan = waarde(f.argumenten().get(1), lez);
+        boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
+        return w -> {
+            Object v = vanaf.van(w), t = totaan.van(w);
+            return RegelSpraakRuntime.rsTijdsduurDagsoort((LocalDate) v, (LocalDate) t, predikaat, absoluut);
         };
     }
 
@@ -5027,7 +5153,11 @@ public final class TmsTranspiler {
             case ELFPROEF, NUMERIEK_MET_EXACT -> {
                 return cijferproef(p, lez);
             }
-            case DAGSOORT -> throw new Weigering("een Predicate dayKind ('" + snippet(p) + "'): dagsoorten zijn " + BUITEN);
+            // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
+            // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
+            case DAGSOORT -> throw new Weigering("een Predicate dayKind als voorwaarde ('" + snippet(p) + "'): de"
+                    + " referentie-interpreter en de ASP-backend weigeren haar met naam buiten een dagsoortdefinitie"
+                    + " (RUNTIME-SEMANTICS ch. 3.12, 5.4)");
             default -> throw new IllegalStateException("predicaatsoort " + p.soort());
         }
     }

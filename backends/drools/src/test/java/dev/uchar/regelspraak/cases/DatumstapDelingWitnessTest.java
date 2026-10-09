@@ -10,8 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A date step whose count is a division that does not terminate: "zijn meldtijdstip plus zijn wachttijd gedeeld door
@@ -25,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * backend refuses the documents at translation ("a unit-carrying multiplicative operand is not translated").
  *
  * <p>The exact quotient is a {@code Breuk}, and the step's count has to accept one. On the truth-maintenance branch the
- * day-kind rows stay refused: day kinds are outside that branch's trial, and the rows pin the refusal, so a branch that
- * starts carrying them fails here until the rows expect its values.
+ * day-kind rows pinned the refusal of day kinds until the card tms-verdeling-en-tijdlijnen (2026-10-09), which carries
+ * them; since then they expect that branch's values, the same as the other two branches'.
  *
  * <p>RED FIRST, measured on this branch's first commit (cf54b8b9), where the runtime took the count as a
  * {@code BigDecimal}: the exec-model and truth-maintenance branches cast the quotient to one and threw
@@ -63,16 +61,9 @@ class DatumstapDelingWitnessTest {
         Path tijdstip = gedeeld(CORPUS.resolve("golden/jutterswet-getijklok/ir.json"), "sluittijdstip van een getijpost");
         JsonNode getij = zaak("Getijpost", "G1", "{\"meldtijdstip\":{\"dateTime\":\"2026-03-10T09:15:30\"},"
                 + "\"wachttermijn\":{\"number\":\"10\"}}", "sluittijdstip", "{\"dateTime\":\"2026-04-15T09:15:30\"}");
-        for (DroolsBackend.Branch tak : new DroolsBackend.Branch[] {
-                DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT }) {
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) {
             assertNull(CaseRunner.speelCase(datum, berging, tak), tak + ": 10 springtijdagen gedeeld door 3 op een datum");
             assertNull(CaseRunner.speelCase(tijdstip, getij, tak), tak + ": hetzelfde op een datum-tijd");
-        }
-        for (Path ir : new Path[] { datum, tijdstip }) {
-            JsonNode c = ir == datum ? berging : getij;
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE), "truth maintenance");
-            assertTrue(e.getMessage().contains("dagsoorten zijn buiten de proef"), e.getMessage());
         }
     }
 

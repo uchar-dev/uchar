@@ -33,9 +33,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The red case {@code corpus/rood/dagsoortstap-buiten-bereik} goes through the same replay: a step to the last day
  * of the range in one rule, and one day of a kind further in the next. The day kind's step is its own runtime function
- * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by the exec-model and the DRL-text branch; the
- * truth-maintenance branch refuses day kinds by name, and the row pins that refusal. RED FIRST, measured on this
- * branch at 16905a6d: both branches answered +146140482-05-01T00:00 without a fault.
+ * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by all three branches. RED FIRST, measured on this
+ * branch at 16905a6d: the exec-model and the DRL-text branch answered +146140482-05-01T00:00 without a fault. The
+ * truth-maintenance branch refused day kinds by name, and the row pinned that refusal, until the card
+ * tms-verdeling-en-tijdlijnen (2026-10-09), which carries them: since then its row faults as the other two do.
  */
 class DatumstapBereikTakkenWitnessTest {
 
@@ -61,11 +62,7 @@ class DatumstapBereikTakkenWitnessTest {
         Path map = ROOD.resolveSibling("dagsoortstap-buiten-bereik");
         Path ir = map.resolve("ir.json"), geval = map.resolve("case1.json");
         JsonNode c = JSON.readTree(Files.readString(geval));
-        faalt(ir, geval, c, DroolsBackend.Branch.EXEC_MODEL);
-        faalt(ir, geval, c, DroolsBackend.Branch.DRL_TEXT);
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, zonderFout(c), DroolsBackend.Branch.TRUTH_MAINTENANCE), "truth maintenance");
-        assertTrue(e.getMessage().contains("dagsoorten zijn buiten de proef"), e.getMessage());
+        for (DroolsBackend.Branch tak : DroolsBackend.Branch.values()) faalt(ir, geval, c, tak);
     }
 
     /** {@code c} replayed on {@code tak} faults at fire, with the fragment it pins for the backend in the cause chain. */
