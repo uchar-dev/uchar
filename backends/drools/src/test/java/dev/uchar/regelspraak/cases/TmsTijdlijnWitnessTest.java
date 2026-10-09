@@ -68,8 +68,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * maanddeel whole (ch. 7.8), wachtsom 9, topsom 0. J3 (as J1 without bedrag, maanddeel 9 in June 2024 as input): the
  * computed maanddeel replaces the input whole, wachtsom 3178, and topsom 0, the clip over an absent timeline (ch. 3.6).
  * Every order of the five rules in the document; beside it the generated rules in a hundred sampled orders, where at
- * the fixpoint every object holds one {@link Stand} per derived timeline it reads and at most one {@link Waarde} per
- * target, and in some order the wachtsom of J1 was 0 on the way.
+ * the fixpoint every object holds one {@link Stand} per timeline it reads, derived or input, and at most one
+ * {@link Waarde} per target, and in some order the wachtsom of J1 was 0 on the way.
  *
  * <p><b>B, a flank on an intermediate state.</b> "Een Jutter is vrijgesteld indien zijn score kleiner is dan 5" and the
  * jaardeel "indien hij niet vrijgesteld is": a negated read of what a rule derives later. J1 (score 3, jaardeel 4 in
@@ -207,8 +207,11 @@ class TmsTijdlijnWitnessTest {
                     waarden.merge(labels.get(((Waarde) f).onderwerp()) + "." + ((Waarde) f).attribuut().naam(), 1,
                             Integer::sum);
             });
-            assertEquals(Map.of("J1.jaardeel", 1, "J1.maanddeel", 1, "J2.jaardeel", 1, "J2.maanddeel", 1), standen,
-                    () -> "standen in volgorde " + namen);
+            // the jaartarief and the bedrag no form writes stand as well, the bedrag of J2 as leeg: every attribute on a
+            // timeline a rule reads has a standing, which carries its input in the convention the case gives it
+            // (RUNTIME-SEMANTICS ch. 8.4)
+            assertEquals(Map.of("J1.bedrag", 1, "J1.jaardeel", 1, "J1.jaartarief", 1, "J1.maanddeel", 1, "J2.bedrag", 1,
+                    "J2.jaardeel", 1, "J2.jaartarief", 1, "J2.maanddeel", 1), standen, () -> "standen in volgorde " + namen);
             assertEquals(Map.of("J1.jaardeel", 1, "J1.maanddeel", 1, "J1.topsom", 1, "J1.wachtsom", 1, "J2.topsom", 1,
                     "J2.wachtsom", 1), waarden, () -> "waarden in volgorde " + namen);
             assertEquals(List.of("[2024-01-01, 2025-01-01)=306", "[2025-01-01, 2026-01-01)=59"),

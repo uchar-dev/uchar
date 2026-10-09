@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
 import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
 
 import org.kie.api.KieBase;
@@ -365,6 +366,7 @@ public final class CaseRunner {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
+        emmerinvoer.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -466,6 +468,7 @@ public final class CaseRunner {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
+        emmerinvoer.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -509,6 +512,10 @@ public final class CaseRunner {
     /** The to-many lists of the case input per holder bean and per reference field of their members, as
      *  {@link #zetRollen} writes them: what {@link #voegInvoerIn} states as {@link Lijstplaats} facts. */
     private final Map<Object, Map<String, Lijst>> lijsten = new IdentityHashMap<>();
+    /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
+     *  {@link #temporeleInvoer} lays on the bean as one segment: what {@link #voegInvoerIn} states as
+     *  {@link Emmerinvoer} facts on the truth-maintenance branch. */
+    private final List<Emmerinvoer> emmerinvoer = new ArrayList<>();
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
      *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
     private LocalDate rekendatum;
@@ -526,6 +533,7 @@ public final class CaseRunner {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
+        emmerinvoer.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -639,6 +647,8 @@ public final class CaseRunner {
                 roep(bean, Namen.setter(Namen.gedeclareerdeNaam(ot.granulariteitLeden().keySet(), e.getKey())), List.class,
                         temporeleInvoer(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
                                 rooster(ot, e.getKey())));
+                if (!e.getValue().isNull() && !e.getValue().has("timeline"))
+                    emmerinvoer.add(new Emmerinvoer(bean, ProducentConsument.elementVan(ot, e.getKey(), false)));
                 continue;
             }
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
@@ -785,16 +795,22 @@ public final class CaseRunner {
     }
 
     /**
-     * Inserts the case input into {@code sessie}: the beans, and where the model reads it, the place of every member
-     * of a to-many list ({@link Lijstplaats}). The bean model keeps a to-many role as a reference field on each member
-     * and no order, while the truth-maintenance branch names the first member in fold order whose filter faults
-     * (RUNTIME-SEMANTICS ch. 5.11). The places are those of the list the reference interpreter folds over: the written
+     * Inserts the case input into {@code sessie}: the beans, and on the truth-maintenance branch an {@link Emmerinvoer}
+     * per scalar input on a temporal attribute, and where the model reads it, the place of every member of a to-many
+     * list ({@link Lijstplaats}). The bean shows such a scalar as the one segment of its bucket, which a full timeline
+     * of one segment would be as well, while that branch reads the two conventions of RUNTIME-SEMANTICS ch. 8.4 apart:
+     * the bucket scalar serves the subject's own total, the full timeline every other read, and a form that needs the
+     * one and finds the other faults. The other two branches read the bean alone. The bean model keeps a to-many role
+     * as a reference field on each member and no order, while the truth-maintenance branch names the first member in
+     * fold order whose filter faults (RUNTIME-SEMANTICS ch. 5.11). The places are those of the list the reference interpreter folds over: the written
      * members first, in the order the case wrote them, then the members whose own link the loader mirrors into the
      * list, in ascending label order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was written.
      */
     private void voegInvoerIn(KieSession sessie) {
         for (Object bean : labelNaarBean.values()) sessie.insert(bean);
-        if (bouw.tmsTranspiler() == null || !bouw.tmsTranspiler().leestLijstplaatsen()) return;
+        if (bouw.tmsTranspiler() == null) return;
+        for (Emmerinvoer e : emmerinvoer) sessie.insert(e);
+        if (!bouw.tmsTranspiler().leestLijstplaatsen()) return;
         for (Map<String, Lijst> perVeld : lijsten.values())
             for (Map.Entry<String, Lijst> e : perVeld.entrySet()) {
                 List<Object> leden = new ArrayList<>(e.getValue().geschreven);
@@ -980,7 +996,10 @@ public final class CaseRunner {
      *  timeline ("the asOfDate-bucket convention carries the total", eval.ml). The divergence surface is thus
      *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
      *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
-     *  looks, by construction. */
+     *  looks, by construction. That holds for the exec-model and the DRL-text branch, which read the bean alone;
+     *  for the truth-maintenance branch the caller records each scalar as an {@link Emmerinvoer}, which
+     *  {@link #voegInvoerIn} states beside the beans, and that branch reads the two conventions apart and faults
+     *  where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
     private List<Object> temporeleInvoer(JsonNode w, String attr, String plek, Rooster gran) {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)
         if (w.has("timeline")) return tijdreeks(w.get("timeline"), attr, plek, gran, false);

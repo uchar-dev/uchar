@@ -265,7 +265,8 @@ public final class TmsTranspiler {
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
-    /** The derived members a lowered rule reads, on its subject or at the end of a path: each gets its standing rules. */
+    /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
+     *  ones, and every attribute on a timeline ({@link Lezingen#tijdlijn}). Each gets its standing rules. */
     private final Map<ElementSleutel, Lid> gelezen = new LinkedHashMap<>();
     /** The reads of a derived member over a path: each gets its two path-standing rules. */
     private final Map<String, Padlezing> padlezingen = new LinkedHashMap<>();
@@ -399,7 +400,8 @@ public final class TmsTranspiler {
     /**
      * As {@link #zetAfgeleideWaarden(KieSession)}, with {@code label} naming the objects of the case: a
      * {@link Schrijversconflict} then names its object by the case label it gives, and as made by a creation where it
-     * gives null, as the reference interpreter names the instance. Null names an object by type and identity.
+     * gives null, as the reference interpreter names the instance, and an {@link Invoervormfout} names its object by
+     * that label. Null names an object by type and identity.
      */
     public void zetAfgeleideWaarden(KieSession sessie, Function<Object, String> label) {
         if (!creatieregels.isEmpty() && sessie.getObjects(o -> o instanceof Creatiefase).isEmpty())
@@ -409,7 +411,9 @@ public final class TmsTranspiler {
         for (Object f : sessie.getObjects(o -> o instanceof Fout)) {
             Fout fout = (Fout) f;
             fouten.add(label != null && fout.fout() instanceof Schrijversconflict c
-                    ? new Fout(fout.onderwerp(), fout.regel(), c.benoemd(label)) : fout);
+                    ? new Fout(fout.onderwerp(), fout.regel(), c.benoemd(label))
+                    : label != null && fout.fout() instanceof Invoervormfout i
+                    ? new Fout(fout.onderwerp(), fout.regel(), i.benoemd(label)) : fout);
         }
         if (!fouten.isEmpty()) {
             fouten.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
@@ -788,7 +792,10 @@ public final class TmsTranspiler {
      * {@link Tijdvak} as their segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
      * value at the bucket's start times the share of true days, a base that is leeg there or absent giving no segment,
      * and {@code rsAantalDagenIn} the true days per touched bucket, on the calendar or from the anchor of the target's
-     * fixed start point ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7).
+     * fixed start point ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). The
+     * pro-rata part reads its base whole, bucket by bucket, so a base the case gives as the asOfDate-bucket scalar
+     * faults ({@link Invoervormfout}, ch. 8.4), wherever the rule's evaluation reaches the value; the reference
+     * interpreter and the ASP backend read such a base as no timeline today and write nothing.
      *
      * <p>Refused by name, as the reference interpreter refuses them: a stated bucket other than the target's
      * granularity (WF-056, WF-058); a clause that is not a check of an own characteristic on a timeline, or is negated
@@ -839,8 +846,13 @@ public final class TmsTranspiler {
         String vast = Tijdlijnen.proRataVastRaster(subject, doel.naam(), f);
         if (vast != null) throw new Weigering(wat + ": " + vast);
         int basiswaarde = lez.tijdlijn(basis);
-        return w -> Tijdvak.lijst(RegelSpraakRuntime.rsTijdsevenredig((List<?>) w[conditie], (List<?>) w[basiswaarde],
-                gran, Tijdvak.class));
+        int onderwerp = lez.lid();
+        lez.markeerFalen();
+        String basisnaam = basis.naam();
+        return w -> Tijdvak.lijst(RegelSpraakRuntime.rsTijdsevenredig((List<?>) w[conditie], volledig(w[basiswaarde],
+                () -> new Invoervormfout("the pro-rata base \"" + basisnaam + "\" needs the full timeline; ",
+                        w[onderwerp], " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)")), gran,
+                Tijdvak.class));
     }
 
     /**
@@ -1311,7 +1323,8 @@ public final class TmsTranspiler {
      * duplicate that arises on an intermediate state goes when the keys move on, and the channel holds what stands at
      * the fixpoint, where the reference interpreter evaluates the form (ch. 5.9). A key on a timeline reads
      * ever-uniqueness: one key per value its timeline ever carries ({@link #sleutelregel}), so two instances collide
-     * where they ever carried one value. A scope over a relation a form creates is refused.
+     * where they ever carried one value, and an instance whose key the case gives as the asOfDate-bucket scalar faults
+     * ({@link #sleutelvormregel}, ch. 8.4). A scope over a relation a form creates is refused.
      */
     private List<Rule> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen, RolBindingRef scopeRol,
                                         Geldigheid geldigheid) {
@@ -1319,8 +1332,11 @@ public final class TmsTranspiler {
         if (naam == null) throw new Weigering("een Uniqueness zonder naam (WF-107)");
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
         List<Rule> uit = new ArrayList<>();
-        for (int b = 0; b < bronnen.size(); b++) uit.add(sleutelregel(naam, regelnaam, b, bronnen.get(b), scopeRol,
-                geldigheid));
+        for (int b = 0; b < bronnen.size(); b++) {
+            uit.add(sleutelregel(naam, regelnaam, b, bronnen.get(b), scopeRol, geldigheid));
+            Rule vorm = sleutelvormregel(naam, regelnaam, b, bronnen.get(b), geldigheid);
+            if (vorm != null) uit.add(vorm);
+        }
         Variable<Uniciteitssleutel> k = DSL.declarationOf(Uniciteitssleutel.class, "$sleutel");
         Variable<Object> element = DSL.declarationOf(Object.class, "$element");
         Variable<Uniciteitssleutel> ander = DSL.declarationOf(Uniciteitssleutel.class, "$ander");
@@ -1391,6 +1407,8 @@ public final class TmsTranspiler {
         int tijdlijn = ooit;
         Toets doetMee = w -> {
             for (int i = 0; i < sleutels.size(); i++) if (i != tijdlijn && w[sleutels.get(i)] == null) return false;
+            // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
+            if (tijdlijn >= 0 && w[sleutels.get(tijdlijn)] instanceof Emmerscalair) return false;
             return scope < 0 || w[scope] != null;
         };
         List<RuleItemBuilder<?>> items = lez.linkerkant(doetMee, gelezen, null);
@@ -1413,6 +1431,47 @@ public final class TmsTranspiler {
         }, lez.variabelen.size()));
         lez.vastleggen();
         return PatternDSL.rule(PKG, regelnaam + ": sleutel van " + type.naam + " " + (b + 1))
+                .build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /**
+     * The rule beside the key rule of source {@code b} of the uniqueness {@code naam} where its key has a component on a
+     * timeline: over the instances of the source's type, gated by the form's validity, the components up to that one
+     * bound as the key rule binds them, the test that every component before it is gevuld and that the case gives the
+     * timeline as the asOfDate-bucket scalar ({@link Emmerscalair}), and a consequence that inserts the fault of
+     * RUNTIME-SEMANTICS ch. 5.9 logically as a {@link Fout} of the instance ({@link Invoervormfout}), in the reference
+     * interpreter's words: ever-uniqueness reads every value the timeline ever carries, and a scalar would miss values.
+     * The key's form is checked on every instance of the type, before the scope narrows the rows ("this form error
+     * precedes the scope narrowing"), so the parent and the components after the timeline do not enter; the reference
+     * interpreter builds a row's tuples component by component and stops at an empty one, so an empty component before
+     * the timeline leaves the timeline unread. Null for a key without a component on a timeline.
+     */
+    private Rule sleutelvormregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron,
+                                  Geldigheid geldigheid) {
+        Objecttype type = bron.type();
+        int positie = -1;
+        for (int i = 0; i < bron.sleutels().size() && positie < 0; i++)
+            if (gedeclareerd(type, bron.sleutels().get(i), false).tijd() != null) positie = i;
+        if (positie < 0) return null;
+        Lezingen lez = new Lezingen(type).geldig(geldigheid);
+        Set<Integer> gelezen = lez.volg();
+        List<Integer> ervoor = new ArrayList<>();
+        for (int i = 0; i < positie; i++) ervoor.add(lez.eigen(lid(type, bron.sleutels().get(i), false)));
+        Lid tijdlid = tijdlid(type, bron.sleutels().get(positie), false, "een uniciteitssleutel '"
+                + bron.sleutels().get(positie) + "' van " + type.naam + " op een tijdlijn");
+        int tijdlijn = lez.tijdlijn(tijdlid);
+        lez.stop();
+        Toets emmer = w -> {
+            for (int i : ervoor) if (w[i] == null) return false;
+            return w[tijdlijn] instanceof Emmerscalair;
+        };
+        List<RuleItemBuilder<?>> items = lez.linkerkant(emmer, gelezen, null);
+        String sleutelnaam = tijdlid.naam();
+        items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> drools.logicalInsert(new Fout(o, naam,
+                new Invoervormfout("the ever-unique key \"" + sleutelnaam + "\" needs the full timeline; ", o,
+                        " supplies only a scalar (ch. 5.9)").inDeRegel(regelnaam))), lez.variabelen.size()));
+        lez.vastleggen();
+        return PatternDSL.rule(PKG, regelnaam + ": sleutelvorm van " + type.naam + " " + (b + 1))
                 .build(items.toArray(new RuleItemBuilder[0]));
     }
 
@@ -3206,12 +3265,20 @@ public final class TmsTranspiler {
      *  ({@link Lezingen#vastleggen}), whether its filter can fault, in which case the rule that reads it binds its
      *  {@link Filterfout} facts as well, and whether its filter can deposit, in which case that rule counts its
      *  {@link Filterdeponering} facts; for a quantifier fold, whether its matrix can fault and whether it can deposit,
-     *  in which case its contributions carry a {@link Lidtoets} ({@link #kwantorvouw}). */
+     *  in which case its contributions carry a {@link Lidtoets} ({@link #kwantorvouw}); and for a per-element fold over
+     *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
+     *  {@link Lidfout} facts as well ({@link #lidfoutregel}). */
     private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
-                        boolean lidKanFalen, boolean lidDeponeert) {
+                        boolean lidKanFalen, boolean lidDeponeert, boolean waardeKanFalen) {
         /** A fold over a set source or a union: no matrix per member. */
         Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {
-            this(sleutel, regels, lezingen, kanFalen, deponeert, false, false);
+            this(sleutel, regels, lezingen, kanFalen, deponeert, false, false, false);
+        }
+
+        /** A quantifier fold: a matrix per member, and no value per member. */
+        Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
+             boolean lidKanFalen, boolean lidDeponeert) {
+            this(sleutel, regels, lezingen, kanFalen, deponeert, lidKanFalen, lidDeponeert, false);
         }
 
         /** Whether the rule that reads the fold replays its contributors in order: a quantifier fold whose matrix can
@@ -3536,12 +3603,24 @@ public final class TmsTranspiler {
             throw new Weigering("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
                     + " eist een sourceRole of sourcePath");
         Expr.AttribuutRef lid = arg;
+        // a member on a timeline the case gives as the asOfDate-bucket scalar faults, naming the first such member in
+        // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
+        boolean tijdlijnlid = lid != null && gedeclareerd(elem, lid.attribuut(), false).tijd() != null;
+        RolBindingRef bron = rolBindingen.get(f);
+        if (tijdlijnlid && bron != null && bron.feittype() != null
+                && gecreeerdeRelaties.contains(Namen.norm(bron.feittype())))
+            throw new Weigering("een " + kind + " per lid over het tijdsafhankelijke attribuut '" + lid.attribuut()
+                    + "' in een vouw over de gecreëerde relatie '" + bron.feittype() + "' ('" + snippet(f.bron()) + "'): een"
+                    + " gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welk lid met een emmerscalair als"
+                    + " invoer de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11, 8.4); " + NOG_NIET + ", en geen golden met"
+                    + " cases heeft het");
         Vouw v = vouwVoor(f, lez, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem), 0,
                     f.filter(), lid, regels, lezingen);
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert(f.filter()));
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert(f.filter()), false,
+                    false, tijdlijnlid);
         });
         Class<?> functie = switch (kind) {
             case SOM, TOTAAL -> accumulatiefunctie("BigDecimalSumAccumulateFunction");
@@ -3567,20 +3646,23 @@ public final class TmsTranspiler {
 
     /**
      * The temporal total of the subject's own timeline (RUNTIME-SEMANTICS ch. 3.6): "het totaal van zijn X", optionally
-     * "gedurende" a clause, as a function of the values this rule binds: the timeline of X ({@link Lezingen#tijdlijn}),
-     * derived through its standing or input off the bean, and every timeline and value the clause reads. Without a
-     * clause it is {@code rsTijdTotaal} of the timeline, each segment's value times the whole units of X's grid it spans,
-     * leeg where X has no timeline; the case's scalar input on X is the timeline of the one period of X's grid that
-     * holds the evaluation date, which the case runner lays on the bean. With a clause the timeline is clipped to the
-     * clause's true periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0
-     * (ch. 3.6: the clip's presence turns absence into 0). The runtime's helpers compute this as the exec-model branch
-     * computes it, with {@link Tijdvak} as their segment class.
+     * "gedurende" a clause, as a function of the values this rule binds: the timeline of X, through its standing
+     * ({@link Lezingen#tijdlijn}), and every timeline and value the clause reads. The two routes of the total take the two
+     * conventions of the case input, and a form that needs the one and finds the other faults ({@link Invoervormfout},
+     * ch. 8.4). Without a clause the total takes the asOfDate-bucket scalar, the session's date being the horizon: it is
+     * {@code rsTijdTotaal} of the one period of X's grid that holds the evaluation date ({@link Emmerscalair}), the
+     * segment's value times the whole units it spans, and leeg where X has no input; a full timeline faults, in the
+     * reference interpreter's words. With a clause the total reads the full timeline: it is clipped to the clause's true
+     * periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
+     * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
+     * reference interpreter. The runtime's helpers compute this as the exec-model branch computes it, with
+     * {@link Tijdvak} as their segment class.
      *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
-     * (WF-091), a rate whose denominator is not the unit of X's grid ({@link #integreerbaar}), and the total without a
-     * clause over a timeline a form writes: the reference interpreter takes that total only of the case's scalar on the
-     * period of the evaluation date and faults on a full timeline (ch. 3.6), so no executor confirms it, and no golden
-     * has it.
+     * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator is not that
+     * unit ({@link #integreerbaar}), and the total without a clause over a timeline a form writes: the reference
+     * interpreter takes that total only of the case's scalar on the period of the evaluation date and faults on a full
+     * timeline (ch. 3.6), so no executor confirms it, and no golden has it.
      */
     private Waardefunctie eigenTotaal(Expr.Functie f, Lezingen lez) {
         String wat = "een totaal over de eigen tijdlijn ('" + snippet(f.bron()) + "')";
@@ -3595,10 +3677,31 @@ public final class TmsTranspiler {
                     + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); " + NOG_NIET
                     + ", en geen golden met cases heeft het");
         int tijdlijn = lez.tijdlijn(lid);
+        int onderwerp = lez.lid();
+        lez.markeerFalen();
         String gran = lid.tijd().name();
-        if (f.filter() == null) return w -> RegelSpraakRuntime.rsTijdTotaal((List<?>) w[tijdlijn], gran);
-        Knip knip = knip(f.filter(), lez, wat);
-        return w -> RegelSpraakRuntime.rsTijdTotaal(knip.van(w, (List<?>) w[tijdlijn]), gran);
+        String naam = lid.naam();
+        if (f.filter() == null) return w -> {
+            Object invoer = w[tijdlijn];
+            if (invoer instanceof Emmerscalair e) return RegelSpraakRuntime.rsTijdTotaal(e.tijdlijn(), gran);
+            // a timeline a form writes is refused above, so a full timeline here is the case's
+            if (invoer != null)
+                throw new Invoervormfout("the temporal total of \"" + naam + "\" over a case-supplied full timeline is"
+                        + " not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
+                        w[onderwerp], " supplies a full timeline");
+            return RegelSpraakRuntime.rsTijdTotaal(null, gran);
+        };
+        Knip knip = knip(f.filter(), lez, wat, naam);
+        return w -> RegelSpraakRuntime.rsTijdTotaal(knip.van(w, volledig(w[tijdlijn], () -> new Invoervormfout(
+                "the gedurende clip of \"" + naam + "\" needs the full timeline; ", w[onderwerp],
+                " supplies only the asOfDate-bucket scalar"))), gran);
+    }
+
+    /** {@code waarde}, the timeline of an attribute a form reads whole, or the fault {@code fout} gives where the case
+     *  gives that input as the asOfDate-bucket scalar ({@link Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4). */
+    private static List<?> volledig(Object waarde, Supplier<Invoervormfout> fout) {
+        if (waarde instanceof Emmerscalair) throw fout.get();
+        return (List<?>) waarde;
     }
 
     /** A clip of a timeline to the true periods of a clause, as a function of the values the rule binds. */
@@ -3617,7 +3720,8 @@ public final class TmsTranspiler {
      * segments of that timeline whose value satisfies it ({@code rsTijdConditie}), where a leeg segment and a leeg bound
      * satisfy no ordering. The fragments are kept apart, never coalesced, so a clip that splits one
      * whole unit loses it. Every characteristic's true periods are bound off the bean ({@link Lezingen#tijdlijn}), the
-     * compared timeline through its standing where a form writes it, and the bound like any value of the rule.
+     * compared timeline through its standing, read whole ({@link #vergelijkingsknip}), and the bound like any value of
+     * the rule. {@code geknipt} names the attribute whose timeline is clipped.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
@@ -3627,7 +3731,7 @@ public final class TmsTranspiler {
      * sides are equal and exactly one leeg side is unequal (ch. 3.6, the worked example of 500,00); no golden has
      * either.
      */
-    private Knip knip(Conditie c, Lezingen lez, String wat) {
+    private Knip knip(Conditie c, Lezingen lez, String wat, String geknipt) {
         if (c instanceof Conditie.Kenmerk k) {
             if (k.eigenaar() != null || k.periode() != null)
                 throw new Weigering(wat + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
@@ -3647,7 +3751,7 @@ public final class TmsTranspiler {
                     throw new Weigering(wat + " met een lid van de samengestelde knip dat geen kenmerk is ('"
                             + snippet(deel) + "'): " + NOG_NIET + "; de referentie-interpreter neemt alleen kenmerken"
                             + " (RUNTIME-SEMANTICS ch. 3.6)");
-                delen.add(knip(deel, lez, wat));
+                delen.add(knip(deel, lez, wat, geknipt));
             }
             return (w, tl) -> {
                 List<?> uit = tl;
@@ -3655,14 +3759,16 @@ public final class TmsTranspiler {
                 return uit;
             };
         }
-        if (c instanceof Conditie.Vergelijking v) return vergelijkingsknip(v, lez, wat);
+        if (c instanceof Conditie.Vergelijking v) return vergelijkingsknip(v, lez, wat, geknipt);
         throw new Weigering(wat + " met de knip '" + snippet(c) + "': " + NOG_NIET + "; de referentie-interpreter"
                 + " neemt een eigen tijdsafhankelijk kenmerk, een vergelijking van een eigen tijdsafhankelijk attribuut"
                 + " en een 'alle' daarvan (RUNTIME-SEMANTICS ch. 3.6)");
     }
 
-    /** The comparison clip of {@link #knip}: the left side an own attribute on a timeline, the right side a value. */
-    private Knip vergelijkingsknip(Conditie.Vergelijking v, Lezingen lez, String wat) {
+    /** The comparison clip of {@link #knip} of the timeline of {@code geknipt}: the left side an own attribute on a
+     *  timeline, which the clip reads whole, segment by segment, so that the asOfDate-bucket scalar faults there
+     *  ({@link Invoervormfout}, RUNTIME-SEMANTICS ch. 8.4) before the bound is evaluated; the right side a value. */
+    private Knip vergelijkingsknip(Conditie.Vergelijking v, Lezingen lez, String wat, String geknipt) {
         if (v.periode() != null)
             throw new Weigering(wat + " met een geheleperiodetoets in de knip ('" + snippet(v) + "', WF-097)");
         Integer toets = Tijdrekening.toets(v.op());
@@ -3688,11 +3794,17 @@ public final class TmsTranspiler {
             throw new Weigering(wat + " met een vergelijking in de knip over twee eenheden ('" + snippet(v) + "'): "
                     + NOG_NIET);
         int tijdlijn = lez.tijdlijn(getoetst);
+        int onderwerp = lez.lid();
+        lez.markeerFalen();
         Waardefunctie grens = waarde(v.rechts(), lez);
         int t = toets;
+        String vergeleken = getoetst.naam();
         return (w, tl) -> {
+            List<?> getoetsteTijdlijn = volledig(w[tijdlijn], () -> new Invoervormfout("the gedurende clip of \""
+                    + geknipt + "\" compares \"" + vergeleken + "\" per segment and needs its full timeline; ",
+                    w[onderwerp], " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)"));
             Object g = collapse(grens.van(w));
-            List<?> perioden = RegelSpraakRuntime.rsTijdConditie((List<?>) w[tijdlijn], t, (BigDecimal) g, Tijdvak.class);
+            List<?> perioden = RegelSpraakRuntime.rsTijdConditie(getoetsteTijdlijn, t, (BigDecimal) g, Tijdvak.class);
             return RegelSpraakRuntime.rsTijdKnip(tl, perioden, Tijdvak.class);
         };
     }
@@ -3770,17 +3882,21 @@ public final class TmsTranspiler {
      * its filter deposited for a member, the deposit is heard by this rule's probe ({@link Sonde}), since the reference
      * interpreter evaluates the filter with the reading form's collector, only where that form's evaluation reaches the
      * fold (RUNTIME-SEMANTICS ch. 5.10, 5.11); then, where its filter faulted for a member, the fault of the first in
-     * fold order ({@link #filterfout}); then {@code uitkomst}, the fold's value, whose fallback the reference interpreter
-     * evaluates after the members. A deposit for a member after the one that faults, which the reference interpreter
-     * does not reach, is heard as well: the session faults at the fixpoint, so it changes no outcome.
+     * fold order ({@link #filterfout}); then, where the case gives a member's timeline as the asOfDate-bucket scalar, the
+     * fault that names the first such member in fold order ({@link Lidfout}, ch. 3.6, 8.4); then {@code uitkomst}, the
+     * fold's value, whose fallback the reference interpreter evaluates after the members. A deposit for a member after
+     * the one that faults, which the reference interpreter does not reach, is heard as well: the session faults at the
+     * fixpoint, so it changes no outcome.
      */
     private static Waardefunctie gelezenVouw(Vouw v, int[] i, Lezingen lez, Waardefunctie uitkomst) {
-        if (v.kanFalen()) lez.markeerFalen();
+        if (v.kanFalen() || v.waardeKanFalen()) lez.markeerFalen();
         int sonde = v.deponeert() ? lez.sonde() : -1;
-        if (!v.kanFalen() && sonde < 0) return uitkomst;
+        if (!v.kanFalen() && !v.waardeKanFalen() && sonde < 0) return uitkomst;
         return w -> {
             if (sonde >= 0 && ((Number) w[i[3]]).longValue() > 0) Sonde.meld(w, sonde);
             if (v.kanFalen()) filterfout(w[i[2]]);
+            // the reference interpreter reads the members' values once every member's filter is evaluated
+            if (v.waardeKanFalen() && w[i[4]] != null) throw ((Lidfout) w[i[4]]).fout();
             return uitkomst.van(w);
         };
     }
@@ -3886,6 +4002,8 @@ public final class TmsTranspiler {
                 drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], null));
                 return;
             }
+            // a member the case gives as the asOfDate-bucket scalar contributes nothing: its Lidfout stands instead
+            if (totaal != null && w[waarde] instanceof Emmerscalair) return;
             Object v = totaal == null ? w[waarde] : RegelSpraakRuntime.rsTijdTotaal((List<?>) w[waarde], totaal);
             if (v != null) drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], gevuld ? null : collapse(v)));
         }, lez.variabelen.size()));
@@ -3894,6 +4012,8 @@ public final class TmsTranspiler {
         lezingen.add(lez);
         if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem, bereik,
                 selectie, filter, lezingen::add));
+        if (totaal != null) uit.add(lidfoutregel(sleutel, vormnaam + ": lidfout in " + naam, subject, elem, bereik,
+                selectie, filter, lidwaarde, lezingen::add));
         if (deponeert(filter)) uit.add(filterdeponeerregel(sleutel, vormnaam + ": filterdeponering in " + naam, subject,
                 elem, bereik, filter, lezingen::add));
         return kanFalen;
@@ -3980,6 +4100,58 @@ public final class TmsTranspiler {
                 plaats.add(((Number) w[p.plaats()]).intValue());
             }
             drools.logicalInsert(new Filterfout(sleutel, onderwerp, w[lid], fout, plaats));
+        }, lez.variabelen.size()));
+        vastleggen.accept(lez);
+        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /**
+     * The rule beside a contribution rule of a per-element fold over an attribute on a timeline (RUNTIME-SEMANTICS
+     * ch. 3.6, §7.1): that rule's left-hand side built again over fresh declarations, joined per route from the fold's
+     * subject with the member's place bound at every to-many step of the route ({@link Bereik#perRoute}), the test that
+     * the member's filter holds and that the case gives the member's timeline as the asOfDate-bucket scalar
+     * ({@link Emmerscalair}), and a consequence that inserts the member's {@link Lidfout} logically, on the fold's
+     * subject, with its place in the fold order: the {@code selectie}, then those places. Such a member contributes
+     * nothing, since a set fold needs each member's own timeline and the scalar states none (ch. 8.4); the form that
+     * reads the fold faults where its evaluation reaches the fold while such a fact stands ({@link #gelezenVouw}), in the
+     * reference interpreter's words. A member whose filter faults has its {@link Filterfout} instead, which the reading
+     * form meets first. A member whose place the input did not state has no place in the fold order: the consequence
+     * throws, naming the field, as the filter fault rule does.
+     */
+    private Rule lidfoutregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem, Bereik bereik,
+                              int selectie, Conditie filter, Lid lidwaarde, Consumer<Lezingen> vastleggen) {
+        List<Plaatslezing> plaatsen = new ArrayList<>();
+        Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
+        Set<Integer> gelezen = lez.volg();
+        Toets filtertoets = filter == null ? null : voorwaarde(filter, lez);
+        Toets houdt = filtertoets == null ? w -> true : lez.kanFalen() ? zonderFout(filtertoets) : filtertoets;
+        int waarde = lez.tijdlijn(lidwaarde);
+        lez.stop();
+        Set<Integer> gebruik = lez.volg();
+        int lid = lez.lid();
+        lez.stop();
+        for (Plaatslezing p : plaatsen) {
+            gebruik.add(p.aantal());
+            gebruik.add(p.plaats());
+        }
+        String naam = lidwaarde.naam();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> houdt.test(w) && w[waarde] instanceof Emmerscalair,
+                gelezen, filter);
+        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
+            List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
+            plaats.add(selectie);
+            for (Plaatslezing p : plaatsen) {
+                if (((Number) w[p.aantal()]).longValue() == 0)
+                    throw new IllegalStateException("de vouw " + sleutel + " leest de tijdlijn van " + Feitnamen.object(w[lid])
+                            + ", die de case als emmerscalair geeft, maar een lid van zijn route heeft geen Lijstplaats"
+                            + " onder het veld '" + p.veld() + "': de invoer stelt de volgorde van die lijst niet, en zonder"
+                            + " haar is niet te bepalen welk lid de vouw noemt (RUNTIME-SEMANTICS ch. 3.6, 5.11)");
+                plaats.add(((Number) w[p.plaats()]).intValue());
+            }
+            drools.logicalInsert(new Lidfout(sleutel, onderwerp, w[lid], new Invoervormfout("the per-element temporal"
+                    + " total of \"" + naam + "\" over ", w[lid], ": the case supplies an asOfDate-bucket scalar, which"
+                    + " carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1,"
+                    + " ch. 8.4)"), plaats));
         }, lez.variabelen.size()));
         vastleggen.accept(lez);
         return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
@@ -4835,11 +5007,13 @@ public final class TmsTranspiler {
          * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
          * accumulate over them that counts them and, where {@code functie} names an accumulate function, folds their
          * values with it; where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts
-         * on this subject, which binds the least of them, the first in fold order, or null; and where the filter can
-         * deposit, an accumulate that counts its {@link Filterdeponering} facts on this subject. Returns the index of
-         * the count, that of the folded value, that of the least filter fault and that of the count of filter deposits,
-         * each -1 without one. An accumulate over no fact still binds a row, through the count, so the rule reads an
-         * empty fold, and a fold without a filter fault or a filter deposit, as well.
+         * on this subject, which binds the least of them, the first in fold order, or null; where the filter can
+         * deposit, an accumulate that counts its {@link Filterdeponering} facts on this subject; and where a member's
+         * value can fault, an accumulate over its {@link Lidfout} facts on this subject, which binds the least of them in
+         * the same way. Returns the index of the count, that of the folded value, that of the least filter fault, that of
+         * the count of filter deposits and that of the least member fault, each -1 without one. An accumulate over no
+         * fact still binds a row, through the count, so the rule reads an empty fold, and a fold without a filter fault,
+         * a filter deposit or a member fault, as well.
          */
         int[] vouw(Vouw v, Class<?> functie) {
             vouwen.add(v);
@@ -4847,7 +5021,8 @@ public final class TmsTranspiler {
             int bekend = bestaand("vouw " + sleutel);
             if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel),
                     v.kanFalen() ? bestaand("filterfout " + sleutel) : -1,
-                    v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1};
+                    v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1,
+                    v.waardeKanFalen() ? bestaand("lidfout " + sleutel) : -1};
             Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
             PatternDSL.PatternDef<Bijdrage> p = PatternDSL.pattern(b).expr(id("vouw"), x -> x.vouw().equals(sleutel))
                     .expr(id("vouw-onderwerp"), s, (x, o) -> x.onderwerp() == o);
@@ -4856,14 +5031,14 @@ public final class TmsTranspiler {
             if (functie == null) {
                 standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
                         .as(aantal)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1, -1};
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1, -1, -1};
             } else {
                 Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
                 Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
                 p.bind(bijdragewaarde, Bijdrage::waarde);
                 standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
                         .as(aantal), DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1, -1};
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1, -1, -1};
             }
             if (v.kanFalen()) {
                 Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
@@ -4885,6 +5060,17 @@ public final class TmsTranspiler {
                 standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), d)
                         .as(deponeringen)));
                 uit[3] = nieuw("filterdeponering " + sleutel, deponeringen);
+            }
+            if (v.waardeKanFalen()) {
+                Variable<Lidfout> f = DSL.declarationOf(Lidfout.class, "$lidfout_" + id("vouw"));
+                PatternDSL.PatternDef<Lidfout> q = PatternDSL.pattern(f)
+                        .expr(id("lidfout"), x -> x.vouw().equals(sleutel))
+                        .expr(id("lidfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                Variable<Object> fouten = DSL.declarationOf(Object.class, "$lidfouten_" + id("vouw"));
+                Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_lidfout_" + id("vouw"));
+                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
+                        .as(fouten), DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
+                uit[4] = nieuw("lidfout " + sleutel, eerste);
             }
             return uit;
         }
@@ -5114,13 +5300,16 @@ public final class TmsTranspiler {
         }
 
         /**
-         * The timeline of a member on a timeline of this rule's subject ({@link Lid#tijd}), bound as an immutable
-         * {@code List<Tijdvak>}, or null where the member holds none (an absent timeline, RUNTIME-SEMANTICS ch. 3.1):
-         * a member a form writes off its {@link Stand}, which carries the derived timeline or else the input's, and an
-         * input member off the subject's bean, whose {@code List<Segment>} it turns into that form there
-         * ({@link Tijdvak#lijst}); the bean does not change while the session fires, so the binding is stable. A
-         * characteristic on a timeline is input: no executor writes one (ch. 3.11), so its true periods are bound off
-         * the bean and never through {@link #kenmerkstandregels}, whose test of {@code true} is false on a list.
+         * The timeline of a member on a timeline of this rule's subject ({@link Lid#tijd}), or null where the member
+         * holds none (an absent timeline, RUNTIME-SEMANTICS ch. 3.1). An attribute is bound off its {@link Stand},
+         * whether a form writes it or not: the standing carries the timeline a form derived, and otherwise the input,
+         * as an immutable {@code List<Tijdvak>}, or as an {@link Emmerscalair} where the case gives the input in the
+         * asOfDate-bucket convention ({@link Emmerinvoer}). The bean does not show that convention, and every reader of
+         * the full timeline must tell it apart (ch. 8.4), so the input is read where the standing rules join that fact
+         * ({@link #attribuutstandregels}). A characteristic on a timeline is input: no executor writes one (ch. 3.11),
+         * and a case delivers it only as its true periods, so they are bound off the bean, turned into that form there
+         * ({@link Tijdvak#lijst}), and never through {@link #kenmerkstandregels}, whose test of {@code true} is false on
+         * a list; the bean does not change while the session fires, so the binding is stable.
          */
         int tijdlijn(Lid lid) {
             String sleutel = "tijdlijn " + lid.sleutel();
@@ -5128,18 +5317,18 @@ public final class TmsTranspiler {
             if (bekend >= 0) return bekend;
             Variable<Object> w = DSL.declarationOf(Object.class, "$tijdlijn_" + variabelen.size());
             ElementSleutel lk = lid.sleutel();
-            if (schrijvers.containsKey(lk)) {
-                if (lid.kenmerk())
+            if (lid.kenmerk()) {
+                if (schrijvers.containsKey(lk))
                     throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
                             + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
+                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
+                onderwerp.bind(w, o -> Tijdvak.lijst((List<?>) getter.apply(o)));
+            } else {
                 Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
                 standen.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
                         .expr(id("stand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
                         .bind(w, Stand::waarde));
                 afgeleid.put(lk, lid);
-            } else {
-                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-                onderwerp.bind(w, o -> Tijdvak.lijst((List<?>) getter.apply(o)));
             }
             return nieuw(sleutel, w);
         }
@@ -5356,40 +5545,76 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The two generic rules that keep one {@link Stand} per object of the declaring type: the derived value where a
-     * {@link Waarde} exists, else the input on the bean, read in the left-hand side, leeg included. The input rule
+     * The generic rules that keep one {@link Stand} per object of the declaring type: the derived value where a
+     * {@link Waarde} exists, else the input on the bean, read in the left-hand side, leeg included. An input rule
      * carries {@code not Waarde}, so a derivation that appears later retracts the input standing and every value that
-     * read it. The input timeline of a member on a timeline stands in the form a {@link Waarde} carries one,
-     * {@code List<Tijdvak>} ({@link Tijdvak#lijst}), so every standing of the member holds one representation.
+     * read it. A member no form writes has no derivation, and only an attribute on a timeline is read through its
+     * standing then ({@link Lezingen#tijdlijn}).
+     *
+     * <p>The input timeline of a member on a timeline stands in the form a {@link Waarde} carries one,
+     * {@code List<Tijdvak>} ({@link Tijdvak#lijst}), so every standing of the member holds one representation, except
+     * where the case gives the input as the asOfDate-bucket scalar: then the input stands as an {@link Emmerscalair}
+     * (RUNTIME-SEMANTICS ch. 8.4). The bean holds that scalar as the one segment of its period, which a full timeline of
+     * one segment would be as well, so two input rules join the {@link Emmerinvoer} the case input states beside the
+     * beans, the one under {@code exists} and the other under {@code not}; the fact is stated and never changes while
+     * the session fires, so exactly one of them holds for each object.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> attribuutstandregels(Lid lid) {
         Function<Object, Object> bean = Accessors.getter(lid.klasse(), lid.naam());
-        Function<Object, Object> getter = lid.tijd() == null ? bean : o -> Tijdvak.lijst((List<?>) bean.apply(o));
         ElementSleutel sleutel = lid.sleutel();
         String naam = "stand " + lid.declarant().naam + "." + lid.naam() + ": ";
+        List<Rule> uit = new ArrayList<>();
 
-        Variable<Object> s1 = (Variable<Object>) DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Variable<Waarde> w1 = DSL.declarationOf(Waarde.class, "$waarde");
-        Variable<Object> v1 = DSL.declarationOf(Object.class, "$v");
-        Rule afleiding = PatternDSL.rule(PKG, naam + "uit een afleiding").build(
-                PatternDSL.pattern(s1),
-                PatternDSL.pattern(w1).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
-                        .expr(id("waarde-onderwerp"), s1, (x, o) -> x.onderwerp() == o)
-                        .bind(v1, Waarde::waarde),
-                DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
-                        drools.logicalInsert(new Stand(o, sleutel, v))));
+        if (schrijvers.containsKey(sleutel)) {
+            Variable<Object> s1 = (Variable<Object>) DSL.declarationOf(lid.klasse(), "$onderwerp");
+            Variable<Waarde> w1 = DSL.declarationOf(Waarde.class, "$waarde");
+            Variable<Object> v1 = DSL.declarationOf(Object.class, "$v");
+            uit.add(PatternDSL.rule(PKG, naam + "uit een afleiding").build(
+                    PatternDSL.pattern(s1),
+                    PatternDSL.pattern(w1).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
+                            .expr(id("waarde-onderwerp"), s1, (x, o) -> x.onderwerp() == o)
+                            .bind(v1, Waarde::waarde),
+                    DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
+                            drools.logicalInsert(new Stand(o, sleutel, v)))));
+        }
 
-        Variable s2 = DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Variable<Object> v2 = DSL.declarationOf(Object.class, "$invoer");
-        Variable<Waarde> w2 = DSL.declarationOf(Waarde.class, "$waarde");
-        Rule invoer = PatternDSL.rule(PKG, naam + "uit de invoer").build(
-                ((PatternDSL.PatternDef) PatternDSL.pattern(s2)).bind(v2, o -> getter.apply(o)),
-                DSL.not(PatternDSL.pattern(w2).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
-                        .expr(id("waarde-onderwerp"), s2, (x, o) -> x.onderwerp() == o)),
-                DSL.on(s2, v2).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
-                        drools.logicalInsert(new Stand(o, sleutel, v))));
-        return List.of(afleiding, invoer);
+        if (lid.tijd() == null) {
+            uit.add(invoerstandregel(lid, naam + "uit de invoer", bean, null));
+            return uit;
+        }
+        Function<Object, Object> tijdlijn = o -> Tijdvak.lijst((List<?>) bean.apply(o));
+        uit.add(invoerstandregel(lid, naam + "uit de invoer", tijdlijn, false));
+        uit.add(invoerstandregel(lid, naam + "uit de invoer, een emmerscalair", tijdlijn, true));
+        return uit;
+    }
+
+    /** The input rule {@code naam} of {@link #attribuutstandregels}: where no {@link Waarde} stands on the object, the
+     *  {@link Stand} of the input that {@code invoer} reads off the bean; with {@code emmer} null for a member that
+     *  holds one value, and for a member on a timeline only where an {@link Emmerinvoer} of the member on the object
+     *  exists ({@code true}), the input then standing as its {@link Emmerscalair}, or does not ({@code false}). The
+     *  bucket is taken in the consequence, from the bound timeline: a binding is computed for every object the subject
+     *  pattern matches, also one whose input is a full timeline. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Rule invoerstandregel(Lid lid, String naam, Function<Object, Object> invoer, Boolean emmer) {
+        ElementSleutel sleutel = lid.sleutel();
+        Variable s = DSL.declarationOf(lid.klasse(), "$onderwerp");
+        Variable<Object> v = DSL.declarationOf(Object.class, "$invoer");
+        Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$waarde");
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        items.add(((PatternDSL.PatternDef) PatternDSL.pattern(s)).bind(v, o -> invoer.apply(o)));
+        if (emmer != null) {
+            Variable<Emmerinvoer> e = DSL.declarationOf(Emmerinvoer.class, "$emmerinvoer");
+            PatternDSL.PatternDef<Emmerinvoer> p = PatternDSL.pattern(e).expr(id("emmerinvoer"),
+                    x -> x.attribuut().equals(sleutel)).expr(id("emmerinvoer-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+            items.add(emmer ? DSL.exists(p) : DSL.not(p));
+        }
+        items.add(DSL.not(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
+                .expr(id("waarde-onderwerp"), s, (x, o) -> x.onderwerp() == o)));
+        boolean alsEmmer = Boolean.TRUE.equals(emmer);
+        items.add(DSL.on(s, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, x) ->
+                drools.logicalInsert(new Stand(o, sleutel, alsEmmer ? Emmerscalair.van((List<?>) x) : x))));
+        return PatternDSL.rule(PKG, naam).build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /**

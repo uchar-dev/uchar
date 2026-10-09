@@ -180,7 +180,10 @@ class TmsTijdlijnVouwWitnessTest {
             assertEquals(Map.of("J1.last", 1, "J1.som", 1, "J2.last", 1, "V1.tarief", 1), waarden,
                     () -> "waarden in volgorde " + namen);
             standen.sort(null);
-            assertEquals(List.of("V1.tarief", "V2.tarief", "V3.tarief"), standen, () -> "standen in volgorde " + namen);
+            // the jaartarief no form writes stands as well: every attribute on a timeline a rule reads has a standing,
+            // which carries its input in the convention the case gives it (RUNTIME-SEMANTICS ch. 8.4)
+            assertEquals(List.of("V1.jaartarief", "V1.tarief", "V2.jaartarief", "V2.tarief", "V3.jaartarief",
+                    "V3.tarief"), standen, () -> "standen in volgorde " + namen);
             assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocumenten.lees(j1, "last")),
                     () -> "last van J1 in volgorde " + namen);
             assertEquals(0, new BigDecimal("46").compareTo((BigDecimal) TmsDocumenten.lees(j1, "som")),

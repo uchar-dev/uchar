@@ -12,6 +12,10 @@ import java.util.Objects;
  * give the defaults reading of the case input without a rule of their own: a writer that decides replaces the input,
  * and one that computes leeg writes nothing and leaves the input standing (RUNTIME-SEMANTICS ch. 7.8).
  *
+ * <p>An attribute on a timeline has a standing wherever a rule reads it, also where no form writes it, so that its input
+ * stands in the convention the case gives it: a {@code List<Tijdvak>} for a full timeline, an {@link Emmerscalair} for
+ * the asOfDate-bucket scalar (ch. 8.4).
+ *
  * <p>Keyed and compared as {@link HeeftKenmerk} is; the value may be null, and then it is leeg.
  */
 public record Stand(Object onderwerp, ElementSleutel attribuut, Object waarde) {
