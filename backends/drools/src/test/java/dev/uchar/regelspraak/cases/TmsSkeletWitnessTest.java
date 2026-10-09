@@ -76,11 +76,13 @@ class TmsSkeletWitnessTest {
     }
 
     /** "Het lampental van een Vuurtoren moet berekend worden als het aantal dagen in het jaar dat hij helder is": a
-     *  BuiltinCall that buckets a timeline, which the branch refuses until the card of allocation and timelines. Until
-     *  the aggregations were carried (card tms-aggregaties-creatie-en-fouten, 2026-10-08) this row pinned the refusal
-     *  of "het aantal lampen van de Vuurtoren", an Aggregation, and until the value forms were carried (card
-     *  tms-expressievormen-en-rekendatum, 2026-10-09) that of "de absolute waarde van -3", which the branch now
-     *  computes. */
+     *  BuiltinCall that buckets a timeline, written to a target that holds one value. Since the card
+     *  tms-verdeling-en-tijdlijnen (2026-10-09) the branch writes such a builtin as the timeline of a temporal target,
+     *  and refuses it anywhere else in a sentence of its own; until then it refused every timeline as outside the
+     *  trial ("… tijdlijnen zijn buiten de proef van de truth-maintenance-tak"). Until the aggregations were carried
+     *  (card tms-aggregaties-creatie-en-fouten, 2026-10-08) this row pinned the refusal of "het aantal lampen van de
+     *  Vuurtoren", an Aggregation, and until the value forms were carried (card tms-expressievormen-en-rekendatum,
+     *  2026-10-09) that of "de absolute waarde van -3", which the branch now computes. */
     @Test void een_waarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
         String dagen = "{\"node\":\"BuiltinCall\",\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":"
                 + "\"CharacteristicCheck\",\"characteristic\":\"helder\",\"negated\":false,\"source\":{\"snippet\":"
@@ -93,8 +95,9 @@ class TmsSkeletWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
         assertEquals("tms-transpiler SKIP: regel: lampental — een BuiltinCall dayCount in een waarde ('het aantal dagen in"
-                + " het jaar dat hij helder is'): tijdlijnen zijn buiten de proef van de truth-maintenance-tak",
-                e.getMessage());
+                + " het jaar dat hij helder is'): de truth-maintenance-tak rekent een tijdsevenredig deel en een"
+                + " dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS ch. 3.7, 3.8,"
+                + " 3.11)", e.getMessage());
     }
 
     /** "Een Vuurtoren is helder indien regelversie verlichting is gevuurd": a Regelversie 'is gevuurd', which the branch

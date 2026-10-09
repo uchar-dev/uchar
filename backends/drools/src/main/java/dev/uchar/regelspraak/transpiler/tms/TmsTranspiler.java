@@ -38,6 +38,7 @@ import dev.uchar.regelspraak.transpiler.kern.Gastheer;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.kern.Operatoren;
 import dev.uchar.regelspraak.transpiler.kern.StaandeDoelen;
+import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 
 import org.drools.model.DSL;
@@ -435,8 +436,21 @@ public final class TmsTranspiler {
                         throw label == null ? c : c.benoemd(label);
                     }
                 Lid lid = lidVan(eerste, eerste.attribuut());
-                Accessors.setter(lid.klasse(), lid.naam()).accept(eerste.onderwerp(), eerste.waarde());
+                // a timeline goes onto the bean as the bean model's segments, which carry no value equality
+                @SuppressWarnings("unchecked")
+                Object v = lid.tijd() == null ? eerste.waarde()
+                        : Tijdvak.bonen((List<Tijdvak>) eerste.waarde(), segmentklasse());
+                Accessors.setter(lid.klasse(), lid.naam()).accept(eerste.onderwerp(), v);
             }
+    }
+
+    /** The bean model's {@code Segment}, the class of a timeline's segments on a bean. */
+    private Class<?> segmentklasse() {
+        try {
+            return Class.forName(FactModelGenerator.PAKKET + ".Segment", true, beanLoader);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("geen bonenklasse Segment voor een tijdlijn", e);
+        }
     }
 
     private Lid lidVan(Object feit, ElementSleutel sleutel) {
@@ -531,7 +545,9 @@ public final class TmsTranspiler {
         for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
         regels.addAll(verschilregels());
         for (ResolvedStartpunt sp : model.resolvedStartpunten)
-            weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: tijdlijnen zijn " + BUITEN);
+            weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: een variabel startpunt draagt de"
+                    + " truth-maintenance-tak nog niet; geen golden met cases heeft er een, en de caselezer legt geen"
+                    + " tijdlijn op zo'n raster");
         for (ResolvedDagsoort d : model.resolvedDagsoorten)
             weiger("dagsoortdefinitie", d.naam(), "een DayKindDefinition: dagsoorten zijn " + BUITEN);
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here
@@ -659,6 +675,10 @@ public final class TmsTranspiler {
         // the loader refuses any other value (WF-022); asked again because this rule writes true whatever it says
         if (!(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde()) && l.type() instanceof Datatype.Booleaan))
             throw new Weigering("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
+        Lid tijd = gedeclareerd(doel.objecttype(), doel.attribuut(), true);
+        if (tijd.tijd() != null)
+            throw new Weigering("het tijdsafhankelijke kenmerk '" + tijd.naam() + "' van " + tijd.declarant().naam
+                    + " als doel: " + NOG_NIET + "; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)");
         Lid lid = lid(doel.objecttype(), doel.attribuut(), true);
         Lezingen lez = new Lezingen(doel.objecttype()).geldig(r.geldigheid());
         Set<Integer> gelezen = lez.volg();
@@ -711,10 +731,138 @@ public final class TmsTranspiler {
      * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
      */
     private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+        if (gedeclareerd(doel.objecttype(), doel.attribuut(), false).tijd() != null) return tijdlijnregel(r, doel);
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
         boolean schrijftLeeg = !staandeDoelen.staandScalair(r);
         return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd, schrijftLeeg);
+    }
+
+    /**
+     * A computation of an attribute on a timeline of the subject (RUNTIME-SEMANTICS ch. 3.11): the rule writes a whole
+     * timeline at once, which a pro-rata part (ch. 3.7) or a day count (ch. 3.8) over the subject's own characteristic
+     * produces ({@link #tijdlijnwaarde}), and inserts it as the {@link Waarde} of the target, an immutable
+     * {@code List<Tijdvak>}. On a standing temporal target ({@link StaandeDoelen#staandTemporeel}: the target's one
+     * version-free writer, ch. 7.8) an empty result is the temporal leeg and writes nothing, so the input timeline of the
+     * target stands whole, and a result with a segment replaces it whole; elsewhere the rule writes the empty timeline
+     * as well (ch. 1.2g). The versions of one rule are one writer; a version that applies writes as such a rule does,
+     * and two that stand with different timelines are the fault of ch. 5.7 ({@link #verschilregel}).
+     *
+     * <p>Refused by name, each with no golden that has cases: any other writer of the target, a rule, an
+     * initialisation, a defaults group or an allocation, since ch. 7.8 keeps a target with more writers fenced and
+     * the reference interpreter answers it in pass order; and any other value, among them a sum of timelines over a
+     * set (ch. 3.5) and the arithmetic of two timelines (ch. 3.4), which no golden of this branch's gap asks. Refused
+     * by name as well: a time window in the condition, which on a temporal target clips the timeline instead of
+     * gating the rule on the evaluation date (ch. 3.10), as the other two branches refuse it; golden
+     * {@code jutterswet-pachtvenster} has it.
+     */
+    private List<Rule> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
+        Lid lid = tijdlid(doel.objecttype(), doel.attribuut(), false, "een tijdsafhankelijk doel");
+        List<String> anderen = andereSchrijvers(r, doel.objecttype(), lid.sleutel());
+        if (!anderen.isEmpty())
+            throw new Weigering("een tijdsafhankelijk doel met een tweede schrijver ('" + lid.naam() + "' van "
+                    + lid.declarant().naam + " wordt ook geschreven door "
+                    + String.join(", ", anderen.stream().map(x -> "\"" + x + "\"").toList()) + "): " + NOG_NIET
+                    + "; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met"
+                    + " cases heeft er een");
+        if (Conditie.bevatPeriode(r.voorwaarde()))
+            throw new Weigering("een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
+                    + lid.naam() + "' van " + lid.declarant().naam + ": daar knipt het venster de tijdlijn"
+                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET + ", zoals de andere twee takken van de"
+                    + " Drools-backend haar niet dragen");
+        if (!(r.waarde() instanceof Expr.Functie f && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL
+                || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN)))
+            throw new Weigering("een waarde van het tijdsafhankelijke doel '" + lid.naam() + "' van "
+                    + lid.declarant().naam + " die geen tijdsevenredig deel en geen dagentelling is ('"
+                    + (r.waarde() == null ? "zonder waarde" : snippet(r.waarde().bron())) + "'): " + NOG_NIET
+                    + " (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een");
+        return schrijfregel(r, doel.objecttype(), lid, null, Set.of(), !staandeDoelen.staandTemporeel(doel));
+    }
+
+    /**
+     * The timeline that the pro-rata part or the day count {@code f} produces for the target {@code doel} of
+     * {@code subject} (RUNTIME-SEMANTICS ch. 3.7, 3.8), as a function of the values the rule binds: the true periods of
+     * the subject's own characteristic in its gedurende clause and, for the pro-rata part, the timeline of the base, an
+     * own attribute, each bound in the left-hand side ({@link Lezingen#tijdlijn}), so a base that a rule derives later
+     * takes the result along. The runtime's helpers compute them, as the exec-model branch computes them, with
+     * {@link Tijdvak} as their segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
+     * value at the bucket's start times the share of true days, a base that is leeg there or absent giving no segment,
+     * and {@code rsAantalDagenIn} the true days per touched bucket, on the calendar or from the anchor of the target's
+     * fixed start point ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7).
+     *
+     * <p>Refused by name, as the reference interpreter refuses them: a stated bucket other than the target's
+     * granularity (WF-056, WF-058); a clause that is not a check of an own characteristic on a timeline, or is negated
+     * or navigated; a base that is not an own attribute on a timeline, is finer than the bucket or carries a unit, whose
+     * rate the reference interpreter does not restate (ch. 3.7, fenced); and a pro-rata part onto or from a fixed start
+     * point ({@link Tijdlijnen#proRataVastRaster}).
+     */
+    private Waardefunctie tijdlijnwaarde(Expr.Functie f, Lid doel, Objecttype subject, Lezingen lez) {
+        boolean deel = f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL;
+        String wat = (deel ? "een tijdsevenredig deel" : "een dagentelling") + " ('" + snippet(f.bron()) + "')";
+        if (f.granulariteit() != doel.tijd())
+            throw new Weigering(wat + " per " + f.granulariteit() + " naar het doel '" + doel.naam() + "' met de"
+                    + " granulariteit " + doel.tijd() + ": de emmer is die van het doel (" + (deel ? "WF-056" : "WF-058")
+                    + ")");
+        if (doel.tijd() != RegelSpraakModel.Granulariteit.MAAND && doel.tijd() != RegelSpraakModel.Granulariteit.JAAR)
+            throw new Weigering(wat + " per " + doel.tijd() + ": alleen een maand en een jaar zijn emmers"
+                    + " (RUNTIME-SEMANTICS ch. 3.2)");
+        if (f.leegwaarde() != null || f.dimensieSelectie() != null)
+            throw new Weigering(wat + " met een terugvalwaarde of een dimensieselectie: " + NOG_NIET);
+        int conditie = kniptijdlijn(f.filter(), subject, lez, wat);
+        String gran = doel.tijd().name();
+        if (!deel) {
+            if (!f.argumenten().isEmpty())
+                throw new Weigering(wat + " met " + f.argumenten().size() + " argumenten: een dagentelling neemt er"
+                        + " geen (WF-058)");
+            // RUNTIME-SEMANTICS ch. 3.2: a target on a fixed start point buckets from the constant anchor its walls are
+            // computed from
+            LocalDate anker = model.vastStartpuntAnker(doel.declarant(), doel.naam());
+            return w -> Tijdvak.lijst(anker == null
+                    ? RegelSpraakRuntime.rsAantalDagenIn((List<?>) w[conditie], gran, Tijdvak.class)
+                    : RegelSpraakRuntime.rsAantalDagenInVanaf((List<?>) w[conditie], gran, anker, Tijdvak.class));
+        }
+        if (f.argumenten().size() != 1 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef b)
+                || b.attribuut() == null || b.objecttype() != subject || navigatieBindingen.containsKey(b))
+            throw new Weigering(wat + " over een basis die geen eigen tijdsafhankelijk attribuut is: " + NOG_NIET
+                    + "; de referentie-interpreter neemt alleen een eigen attribuut als basis (RUNTIME-SEMANTICS ch. 3.7)");
+        Lid basis = tijdlid(subject, b.attribuut(), false, wat);
+        if (!basis.datatype().isNumeriek())
+            throw new Weigering(wat + " over de basis '" + basis.naam() + "', die geen getal is (WF-091)");
+        if (basis.datatype().eenheidOf() != null)
+            throw new Weigering(wat + " over de basis '" + basis.naam() + "' met de eenheid "
+                    + basis.datatype().eenheidOf().weergave() + ": de herrekening van een tarief is omheind in de"
+                    + " referentie-interpreter en deze tak (RUNTIME-SEMANTICS ch. 3.7); geen golden");
+        if (basis.tijd().ordinal() < doel.tijd().ordinal())
+            throw new Weigering(wat + " over de basis '" + basis.naam() + "' met de granulariteit " + basis.tijd()
+                    + ", fijner dan de emmer " + doel.tijd() + ": de basis staat niet vast over een emmer (RUNTIME-SEMANTICS"
+                    + " ch. 3.7)");
+        String vast = Tijdlijnen.proRataVastRaster(subject, doel.naam(), f);
+        if (vast != null) throw new Weigering(wat + ": " + vast);
+        int basiswaarde = lez.tijdlijn(basis);
+        return w -> Tijdvak.lijst(RegelSpraakRuntime.rsTijdsevenredig((List<?>) w[conditie], (List<?>) w[basiswaarde],
+                gran, Tijdvak.class));
+    }
+
+    /**
+     * The true periods of the gedurende clause {@code c} of a pro-rata part or a day count on {@code subject}, bound as a
+     * timeline ({@link Lezingen#tijdlijn}): a check of the subject's own characteristic on a timeline, as the reference
+     * interpreter reads that clause (RUNTIME-SEMANTICS ch. 3.7, 3.8). Refused by name: no clause, another condition, a
+     * negated or navigated check, and an owner or a whole-period qualifier on the check (WF-097).
+     */
+    private int kniptijdlijn(Conditie c, Objecttype subject, Lezingen lez, String wat) {
+        if (!(c instanceof Conditie.Kenmerk k))
+            throw new Weigering(wat + " met een voorwaarde die geen kenmerk van het onderwerp is"
+                    + (c == null ? " (geen voorwaarde)" : " ('" + snippet(c) + "')") + ": " + NOG_NIET
+                    + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk (RUNTIME-SEMANTICS"
+                    + " ch. 3.7, 3.8)");
+        if (k.eigenaar() != null || k.periode() != null)
+            throw new Weigering(wat + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
+                    + snippet(k) + "', WF-097)");
+        if (k.negatie() || k.navigatie() != null || navigatieBindingen.containsKey(k))
+            throw new Weigering(wat + " met een ontkend of genavigeerd kenmerk ('" + snippet(k) + "'): " + NOG_NIET
+                    + "; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk, niet ontkend"
+                    + " (RUNTIME-SEMANTICS ch. 3.7, 3.8)");
+        return lez.tijdlijn(tijdlid(subject, k.kenmerk(), true, wat));
     }
 
     /**
@@ -805,6 +953,10 @@ public final class TmsTranspiler {
      * ({@code TmsInitialisatieWitnessTest}). Without another writer nothing displaces it and the division stays carried.
      */
     private List<Rule> initialisatieRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
+        Lid tijd = gedeclareerd(doel.objecttype(), doel.attribuut(), false);
+        if (tijd.tijd() != null)
+            throw new Weigering("een initialisatie van het tijdsafhankelijke attribuut '" + tijd.naam() + "' van "
+                    + tijd.declarant().naam + ": " + NOG_NIET + "; geen golden met cases heeft er een");
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         ElementSleutel sleutel = lid.sleutel();
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
@@ -879,9 +1031,11 @@ public final class TmsTranspiler {
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
-        // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6)
-        Waardefunctie waarde = herschaald(waarde(r.waarde(), lez), eff.eenheidVan(r.waarde()),
-                lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
+        // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6); a
+        // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
+        Waardefunctie waarde = lid.tijd() != null ? tijdlijnwaarde((Expr.Functie) r.waarde(), lid, subject, lez)
+                : herschaald(waarde(r.waarde(), lez), eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(),
+                        "een §4 schrijfgrens naar het doel");
         lez.stop();
         int sonde = lez.sondeplaats();
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
@@ -904,7 +1058,7 @@ public final class TmsTranspiler {
             }
             if (s != null && s.gemeld())
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, onderwerp));
-            if (v != null || schrijftLeeg) drools.logicalInsert(new Waarde(onderwerp, sleutel, v, naam));
+            if (!isLeeg(v) || schrijftLeeg) drools.logicalInsert(new Waarde(onderwerp, sleutel, v, naam));
         }, n));
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
@@ -1155,8 +1309,9 @@ public final class TmsTranspiler {
      * inconsistency, one per instance, also where two sources of a union reach it. A key belongs to its source, so an
      * instance that two sources reach with an equal key duplicates against itself (rule 1). Every fact is logical, so a
      * duplicate that arises on an intermediate state goes when the keys move on, and the channel holds what stands at
-     * the fixpoint, where the reference interpreter evaluates the form (ch. 5.9). A key on a timeline, which reads
-     * ever-uniqueness, is refused with the member ({@link #lid}), and so is a scope over a relation a form creates.
+     * the fixpoint, where the reference interpreter evaluates the form (ch. 5.9). A key on a timeline reads
+     * ever-uniqueness: one key per value its timeline ever carries ({@link #sleutelregel}), so two instances collide
+     * where they ever carried one value. A scope over a relation a form creates is refused.
      */
     private List<Rule> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen, RolBindingRef scopeRol,
                                         Geldigheid geldigheid) {
@@ -1194,7 +1349,16 @@ public final class TmsTranspiler {
     /** The key rule of source {@code b} of the uniqueness {@code naam}: over the instances of the source's type, gated
      *  on the evaluation date by the form's validity, the key components and the parent bound, and the instance's
      *  {@link Uniciteitssleutel} inserted logically where it takes part ({@link #uniciteitsregels}). An enumeration
-     *  component is compared as the declared name it is, up to normalisation (ch. 5.6). */
+     *  component is compared as the declared name it is, up to normalisation (ch. 5.6).
+     *
+     *  <p>A component on a timeline reads ever-uniqueness (RUNTIME-SEMANTICS ch. 5.9, decided 2026-08-20): it claims
+     *  every value its timeline ever carries, so the rule inserts one key per such value, beside the other components,
+     *  and none where the timeline is absent or carries no value. The timeline is bound like any read
+     *  ({@link Lezingen#tijdlijn}), so a key a rule derives later takes its keys along. The values are taken as the
+     *  exec-model branch takes them ({@code rsOoitWaarden}): without trailing zeros and once each, so an instance whose
+     *  timeline carries one value in two segments claims it once and does not duplicate against itself. A key has at
+     *  most one component on a timeline, as the reference interpreter refuses more: the same-moment join of two has no
+     *  corpus case. */
     private Rule sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron, RolBindingRef scopeRol,
                               Geldigheid geldigheid) {
         Objecttype type = bron.type();
@@ -1202,15 +1366,31 @@ public final class TmsTranspiler {
         Set<Integer> gelezen = lez.volg();
         List<Integer> sleutels = new ArrayList<>();
         List<Boolean> enumeratie = new ArrayList<>();
+        int ooit = -1;
         for (String sleutel : bron.sleutels()) {
+            if (gedeclareerd(type, sleutel, false).tijd() != null) {
+                String wat = "een uniciteitssleutel '" + sleutel + "' van " + type.naam + " op een tijdlijn";
+                if (ooit >= 0)
+                    throw new Weigering(wat + " naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel,"
+                            + " de gelijktijdige koppeling van twee heeft geen corpuscase (RUNTIME-SEMANTICS ch. 5.9); "
+                            + NOG_NIET);
+                Lid lid = tijdlid(type, sleutel, false, wat);
+                if (!lid.datatype().isNumeriek())
+                    throw new Weigering(wat + " die geen getal is: " + NOG_NIET);
+                ooit = sleutels.size();
+                sleutels.add(lez.tijdlijn(lid));
+                enumeratie.add(false);
+                continue;
+            }
             Lid lid = lid(type, sleutel, false);
             sleutels.add(lez.eigen(lid));
             enumeratie.add(lid.datatype() instanceof Datatype.Enumeratie);
         }
         int scope = scopeRol == null ? -1 : lez.scopelezing(scopeRol);
         lez.stop();
+        int tijdlijn = ooit;
         Toets doetMee = w -> {
-            for (int i : sleutels) if (w[i] == null) return false;
+            for (int i = 0; i < sleutels.size(); i++) if (i != tijdlijn && w[sleutels.get(i)] == null) return false;
             return scope < 0 || w[scope] != null;
         };
         List<RuleItemBuilder<?>> items = lez.linkerkant(doetMee, gelezen, null);
@@ -1220,7 +1400,16 @@ public final class TmsTranspiler {
                 Object v = w[sleutels.get(i)];
                 waarden.add(enumeratie.get(i) ? RegelSpraakRuntime.rsEnumNaam(v) : v);
             }
-            drools.logicalInsert(new Uniciteitssleutel(naam, b, o, scope < 0 ? null : w[scope], waarden));
+            Object ouder = scope < 0 ? null : w[scope];
+            if (tijdlijn < 0) {
+                drools.logicalInsert(new Uniciteitssleutel(naam, b, o, ouder, waarden));
+                return;
+            }
+            for (BigDecimal waarde : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(tijdlijn)))) {
+                List<Object> sleutel = new ArrayList<>(waarden);
+                sleutel.set(tijdlijn, waarde);
+                drools.logicalInsert(new Uniciteitssleutel(naam, b, o, ouder, sleutel));
+            }
         }, lez.variabelen.size()));
         lez.vastleggen();
         return PatternDSL.rule(PKG, regelnaam + ": sleutel van " + type.naam + " " + (b + 1))
@@ -2456,6 +2645,12 @@ public final class TmsTranspiler {
         return v instanceof Breuk b ? b.naarDecimal() : v;
     }
 
+    /** Whether a computed value is leeg: null, or a timeline without a segment, which is the temporal leeg
+     *  (RUNTIME-SEMANTICS ch. 3.1, 7.8: an empty timeline is one never written). */
+    private static boolean isLeeg(Object v) {
+        return v == null || v instanceof List<?> l && l.isEmpty();
+    }
+
     // ---------------- values ----------------
 
     /** A value as a function of the values the rule binds, indexed as {@link Lezingen} numbers them. */
@@ -3057,14 +3252,17 @@ public final class TmsTranspiler {
      * ch. 3.8); the year, month and day of a date and the hour, minute, second and millisecond of a date-time
      * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #paasdag}); a date and a date-time made of their parts
      * ({@link #datumconstructie}). A square root is computed as the base of its mandatory rounding ({@link #afronding}),
-     * and without one exactly ({@link #exacteWortel}). A bucketing builtin over a timeline and a duration in day kinds
-     * belong to the card of timelines and day kinds, and are refused by name.
+     * and without one exactly ({@link #exacteWortel}). A bucketing builtin over a timeline is the value of a temporal
+     * target and nothing else ({@link #tijdlijnwaarde}), so here it is refused by name, and a duration in day kinds
+     * belongs to the card of day kinds and is refused by name.
      */
     private Waardefunctie builtin(Expr.Functie f, Lezingen lez) {
         Expr.FunctieKind kind = f.kind();
         String spelling = Spelling.BUILTIN_KIND.spelling(kind);
         if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN)
-            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "tijdlijnen zijn " + BUITEN);
+            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "de truth-maintenance-tak rekent een tijdsevenredig"
+                    + " deel en een dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS"
+                    + " ch. 3.7, 3.8, 3.11)");
         if (f.filter() != null)
             throw new Weigering("een BuiltinCall " + spelling + " met een filter ('" + snippet(f.bron()) + "'): alleen een"
                     + " bucketing over een tijdlijn draagt er een");
@@ -3296,8 +3494,12 @@ public final class TmsTranspiler {
      * the member in the same way: the reference interpreter evaluates the filter with this rule's collector, so the
      * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #gelezenVouw}).
      *
-     * <p>Refused by name: a total without a range, which reads the subject's own timeline, and a fold over a member on
-     * a timeline; the timelines are of a later card.
+     * <p>A total without a range reads the subject's own timeline ({@link #eigenTotaal}). A sum or a total over a member
+     * on a timeline folds twice (RUNTIME-SEMANTICS ch. 3.6, the per-element fold): each member's timeline collapses over
+     * time first, at its own granularity, in the contribution rule, which contributes that scalar, and a member without
+     * a timeline contributes nothing; the fold over the set is the ordinary one. Every other fold over a member on a
+     * timeline is refused by name, as the reference interpreter refuses it: it has no moment at which to rank, count or
+     * test the timeline.
      */
     private Waardefunctie vouw(Expr.Functie f, Lezingen lez) {
         Expr.FunctieKind kind = f.kind();
@@ -3324,11 +3526,12 @@ public final class TmsTranspiler {
             arg = a;
         }
         boolean metBereik = bronPaden.containsKey(f) || rolBindingen.containsKey(f);
-        if (kind == Expr.FunctieKind.TOTAAL && !metBereik)
-            throw nietBerekend("Aggregation total over de eigen tijdlijn", f.bron(), "tijdlijnen zijn " + BUITEN);
-        if (arg != null && Namen.bevatNaam(elem.granulariteitLeden(), arg.attribuut()))
+        if (kind == Expr.FunctieKind.TOTAAL && !metBereik) return eigenTotaal(f, lez);
+        if (arg != null && Namen.bevatNaam(elem.granulariteitLeden(), arg.attribuut())
+                && kind != Expr.FunctieKind.SOM && kind != Expr.FunctieKind.TOTAAL)
             throw nietBerekend("Aggregation " + kind + " over het tijdsafhankelijke attribuut '" + arg.attribuut() + "'",
-                    f.bron(), "tijdlijnen zijn " + BUITEN);
+                    f.bron(), "zij heeft geen moment waarop zij een tijdlijn rangschikt, telt of toetst; alleen een som en"
+                    + " een totaal vouwen de tijdlijn van elk lid eerst over de tijd (RUNTIME-SEMANTICS ch. 3.4c, 3.6)");
         if (!metBereik)
             throw new Weigering("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
                     + " eist een sourceRole of sourcePath");
@@ -3360,6 +3563,162 @@ public final class TmsTranspiler {
             default -> w -> leeg(w[i[0]]) ? null : w[i[1]];
         };
         return gelezenVouw(v, i, lez, uitkomst);
+    }
+
+    /**
+     * The temporal total of the subject's own timeline (RUNTIME-SEMANTICS ch. 3.6): "het totaal van zijn X", optionally
+     * "gedurende" a clause, as a function of the values this rule binds: the timeline of X ({@link Lezingen#tijdlijn}),
+     * derived through its standing or input off the bean, and every timeline and value the clause reads. Without a
+     * clause it is {@code rsTijdTotaal} of the timeline, each segment's value times the whole units of X's grid it spans,
+     * leeg where X has no timeline; the case's scalar input on X is the timeline of the one period of X's grid that
+     * holds the evaluation date, which the case runner lays on the bean. With a clause the timeline is clipped to the
+     * clause's true periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0
+     * (ch. 3.6: the clip's presence turns absence into 0). The runtime's helpers compute this as the exec-model branch
+     * computes it, with {@link Tijdvak} as their segment class.
+     *
+     * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
+     * (WF-091), a rate whose denominator is not the unit of X's grid ({@link #integreerbaar}), and the total without a
+     * clause over a timeline a form writes: the reference interpreter takes that total only of the case's scalar on the
+     * period of the evaluation date and faults on a full timeline (ch. 3.6), so no executor confirms it, and no golden
+     * has it.
+     */
+    private Waardefunctie eigenTotaal(Expr.Functie f, Lezingen lez) {
+        String wat = "een totaal over de eigen tijdlijn ('" + snippet(f.bron()) + "')";
+        Expr.AttribuutRef a = (Expr.AttribuutRef) f.argumenten().get(0);
+        if (a.objecttype() != lez.subject || navigatieBindingen.containsKey(a))
+            throw new Weigering(wat + " over een attribuut van een ander object dan het onderwerp: zonder bereik leest"
+                    + " het totaal de tijdlijn van het onderwerp zelf (WF-083 (c)); " + NOG_NIET + " over een pad");
+        Lid lid = integreerbaar(tijdlid(lez.subject, a.attribuut(), false, wat), wat);
+        if (f.filter() == null && schrijvers.containsKey(lid.sleutel()))
+            throw new Weigering(wat + " zonder knip over de tijdlijn van '" + lid.naam() + "', die een vorm schrijft:"
+                    + " de referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
+                    + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); " + NOG_NIET
+                    + ", en geen golden met cases heeft het");
+        int tijdlijn = lez.tijdlijn(lid);
+        String gran = lid.tijd().name();
+        if (f.filter() == null) return w -> RegelSpraakRuntime.rsTijdTotaal((List<?>) w[tijdlijn], gran);
+        Knip knip = knip(f.filter(), lez, wat);
+        return w -> RegelSpraakRuntime.rsTijdTotaal(knip.van(w, (List<?>) w[tijdlijn]), gran);
+    }
+
+    /** A clip of a timeline to the true periods of a clause, as a function of the values the rule binds. */
+    @FunctionalInterface
+    private interface Knip {
+        List<?> van(Object[] w, List<?> tijdlijn);
+    }
+
+    /**
+     * The gedurende clause {@code c} of a temporal total as a clip of the subject's timeline (RUNTIME-SEMANTICS
+     * ch. 3.6), in the three shapes the reference interpreter carries, each through the runtime's helpers as the
+     * exec-model branch clips: a check of an own characteristic on a timeline, which keeps the fragments of each segment
+     * within its true periods ({@code rsTijdKnip}), or, negated, outside them within the segment
+     * ({@code rsTijdKnipNiet}); a flat {@code all} of such checks, which clips by each in turn, the intersection of
+     * their true periods; and a comparison of an own attribute on a timeline with a value, whose true periods are the
+     * segments of that timeline whose value satisfies it ({@code rsTijdConditie}), where a leeg segment and a leeg bound
+     * satisfy no ordering and no equality. The fragments are kept apart, never coalesced, so a clip that splits one
+     * whole unit loses it. Every characteristic's true periods are bound off the bean ({@link Lezingen#tijdlijn}), the
+     * compared timeline through its standing where a form writes it, and the bound like any value of the rule.
+     *
+     * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
+     * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
+     * ordering, units that differ between the two sides, and the comparison "ongelijk aan": the runtime's
+     * {@code rsTijdConditie} reads a gap in the compared timeline as no period, where ch. 3.6 and the reference
+     * interpreter read it as leeg, which satisfies "ongelijk aan" against a filled bound (ch. 3.6, the worked example
+     * of 500,00); no golden has it.
+     */
+    private Knip knip(Conditie c, Lezingen lez, String wat) {
+        if (c instanceof Conditie.Kenmerk k) {
+            if (k.eigenaar() != null || k.periode() != null)
+                throw new Weigering(wat + " met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('"
+                        + snippet(k) + "', WF-097)");
+            if (k.navigatie() != null || navigatieBindingen.containsKey(k))
+                throw new Weigering(wat + " met een genavigeerd kenmerk in de knip ('" + snippet(k) + "'): " + NOG_NIET
+                        + "; geen golden met cases heeft het");
+            int perioden = lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat));
+            if (k.negatie())
+                return (w, tl) -> RegelSpraakRuntime.rsTijdKnipNiet(tl, (List<?>) w[perioden], Tijdvak.class);
+            return (w, tl) -> RegelSpraakRuntime.rsTijdKnip(tl, (List<?>) w[perioden], Tijdvak.class);
+        }
+        if (c instanceof Conditie.Samengesteld s && s.kwantor() == Conditie.Kwantor.ALLE && !s.onderdelen().isEmpty()) {
+            List<Knip> delen = new ArrayList<>();
+            for (Conditie deel : s.onderdelen()) {
+                if (!(deel instanceof Conditie.Kenmerk))
+                    throw new Weigering(wat + " met een lid van de samengestelde knip dat geen kenmerk is ('"
+                            + snippet(deel) + "'): " + NOG_NIET + "; de referentie-interpreter neemt alleen kenmerken"
+                            + " (RUNTIME-SEMANTICS ch. 3.6)");
+                delen.add(knip(deel, lez, wat));
+            }
+            return (w, tl) -> {
+                List<?> uit = tl;
+                for (Knip d : delen) uit = d.van(w, uit);
+                return uit;
+            };
+        }
+        if (c instanceof Conditie.Vergelijking v) return vergelijkingsknip(v, lez, wat);
+        throw new Weigering(wat + " met de knip '" + snippet(c) + "': " + NOG_NIET + "; de referentie-interpreter"
+                + " neemt een eigen tijdsafhankelijk kenmerk, een vergelijking van een eigen tijdsafhankelijk attribuut"
+                + " en een 'alle' daarvan (RUNTIME-SEMANTICS ch. 3.6)");
+    }
+
+    /** The comparison clip of {@link #knip}: the left side an own attribute on a timeline, the right side a value. */
+    private Knip vergelijkingsknip(Conditie.Vergelijking v, Lezingen lez, String wat) {
+        if (v.periode() != null)
+            throw new Weigering(wat + " met een geheleperiodetoets in de knip ('" + snippet(v) + "', WF-097)");
+        Integer toets = Tijdrekening.toets(v.op());
+        if (toets == null)
+            throw new Weigering(wat + " met een datumvergelijking in de knip ('" + snippet(v) + "'): " + NOG_NIET);
+        if (v.op() == Conditie.Operator.ONGELIJK)
+            throw new Weigering(wat + " met 'ongelijk aan' in de knip ('" + snippet(v) + "'): " + NOG_NIET + "; de"
+                    + " rekenhulp rsTijdConditie leest een gat in de vergeleken tijdlijn als geen periode, waar"
+                    + " RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter het als leeg lezen, dat 'ongelijk aan' een"
+                    + " gevulde grens vervult; geen golden met cases heeft het");
+        if (!(v.links() instanceof Expr.AttribuutRef a) || a.attribuut() == null || a.objecttype() != lez.subject
+                || navigatieBindingen.containsKey(a))
+            throw new Weigering(wat + " met een vergelijking in de knip waarvan de linkerkant geen eigen"
+                    + " tijdsafhankelijk attribuut is ('" + snippet(v) + "'): " + NOG_NIET);
+        Lid getoetst = tijdlid(lez.subject, a.attribuut(), false, wat);
+        if (!getoetst.datatype().isNumeriek() || !eff.typeVan(v.rechts()).isNumeriek())
+            throw new Weigering(wat + " met een vergelijking in de knip die geen getallen vergelijkt ('" + snippet(v)
+                    + "'): " + NOG_NIET);
+        if (!Objects.equals(eff.eenheidVan(v.links()), eff.eenheidVan(v.rechts())))
+            throw new Weigering(wat + " met een vergelijking in de knip over twee eenheden ('" + snippet(v) + "'): "
+                    + NOG_NIET);
+        int tijdlijn = lez.tijdlijn(getoetst);
+        Waardefunctie grens = waarde(v.rechts(), lez);
+        int t = toets;
+        return (w, tl) -> {
+            Object g = collapse(grens.van(w));
+            List<?> perioden = RegelSpraakRuntime.rsTijdConditie((List<?>) w[tijdlijn], t, (BigDecimal) g, Tijdvak.class);
+            return RegelSpraakRuntime.rsTijdKnip(tl, perioden, Tijdvak.class);
+        };
+    }
+
+    /**
+     * {@code lid}, a member on a timeline whose total over time is taken, where that total is the bare value times the
+     * count of whole units of the member's grid, as the runtime's {@code rsTijdTotaal} computes it: a number without a
+     * unit, with a unit without a denominator, or a rate whose denominator is the time unit of the grid itself
+     * ({@code EUR/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6 cancels it one for one.
+     * Refused by name: a value that is no number (WF-091), and a rate whose denominator is another unit, which the
+     * reference interpreter integrates through the declared factors and {@code rsTijdTotaal} would weigh unit-blind
+     * (the executor note of ch. 3.6); no golden has it.
+     */
+    private Lid integreerbaar(Lid lid, String wat) {
+        if (!lid.datatype().isNumeriek())
+            throw new Weigering(wat + " over '" + lid.naam() + "', dat geen getal is (WF-091)");
+        Eenheid e = lid.datatype().eenheidOf();
+        if (e == null || e.noemer() == null) return lid;
+        String raster = switch (lid.tijd()) {
+            case DAG -> "DAYS";
+            case WEEK -> "WEEKS";
+            case MAAND -> "MONTHS";
+            case KWARTAAL -> "KWARTAAL";
+            case JAAR -> "YEARS";
+        };
+        if (!raster.equals(Tijdrekening.chronoUnit(e.noemer())))
+            throw new Weigering(wat + " over '" + lid.naam() + "' met het tarief " + e.weergave() + " op een raster van "
+                    + lid.tijd() + ": de noemer is niet de eenheid van het raster, en de tak herrekent hem niet"
+                    + " (RUNTIME-SEMANTICS ch. 3.6); geen golden met cases heeft het");
+        return lid;
     }
 
     /**
@@ -3468,7 +3827,13 @@ public final class TmsTranspiler {
         lez.stop();
         Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
-        int waarde = arg == null ? -1 : lez.eigen(lid(elem, arg.attribuut(), false));
+        // a member on a timeline contributes its own total over time (RUNTIME-SEMANTICS ch. 3.6, the per-element fold);
+        // vouw admits only a sum and a total over one
+        Lid lidwaarde = arg == null ? null : gedeclareerd(elem, arg.attribuut(), false).tijd() == null
+                ? lid(elem, arg.attribuut(), false) : integreerbaar(tijdlid(elem, arg.attribuut(), false,
+                        "een totaal per lid ('" + snippet(arg.bron()) + "')"), "een totaal per lid");
+        int waarde = lidwaarde == null ? -1 : lidwaarde.tijd() == null ? lez.eigen(lidwaarde) : lez.tijdlijn(lidwaarde);
+        String totaal = lidwaarde == null || lidwaarde.tijd() == null ? null : lidwaarde.tijd().name();
         lez.stop();
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, filter);
         boolean telling = kind == Expr.FunctieKind.AANTAL, gevuld = kind == Expr.FunctieKind.AANTAL_GEVULDE;
@@ -3477,7 +3842,7 @@ public final class TmsTranspiler {
                 drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], null));
                 return;
             }
-            Object v = w[waarde];
+            Object v = totaal == null ? w[waarde] : RegelSpraakRuntime.rsTijdTotaal((List<?>) w[waarde], totaal);
             if (v != null) drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid], gevuld ? null : collapse(v)));
         }, lez.variabelen.size()));
         String vormnaam = model.geëmitteerdeRegelNaam(vorm);
@@ -4704,6 +5069,37 @@ public final class TmsTranspiler {
             return nieuw(sleutel, w);
         }
 
+        /**
+         * The timeline of a member on a timeline of this rule's subject ({@link Lid#tijd}), bound as an immutable
+         * {@code List<Tijdvak>}, or null where the member holds none (an absent timeline, RUNTIME-SEMANTICS ch. 3.1):
+         * a member a form writes off its {@link Stand}, which carries the derived timeline or else the input's, and an
+         * input member off the subject's bean, whose {@code List<Segment>} it turns into that form there
+         * ({@link Tijdvak#lijst}); the bean does not change while the session fires, so the binding is stable. A
+         * characteristic on a timeline is input: no executor writes one (ch. 3.11), so its true periods are bound off
+         * the bean and never through {@link #kenmerkstandregels}, whose test of {@code true} is false on a list.
+         */
+        int tijdlijn(Lid lid) {
+            String sleutel = "tijdlijn " + lid.sleutel();
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Object> w = DSL.declarationOf(Object.class, "$tijdlijn_" + variabelen.size());
+            ElementSleutel lk = lid.sleutel();
+            if (schrijvers.containsKey(lk)) {
+                if (lid.kenmerk())
+                    throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
+                            + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
+                Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
+                standen.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
+                        .expr(id("stand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
+                        .bind(w, Stand::waarde));
+                afgeleid.put(lk, lid);
+            } else {
+                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
+                onderwerp.bind(w, o -> Tijdvak.lijst((List<?>) getter.apply(o)));
+            }
+            return nieuw(sleutel, w);
+        }
+
         @SuppressWarnings({"unchecked", "rawtypes"})
         int genavigeerd(Pad pad, Lid lid) {
             String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
@@ -4769,7 +5165,8 @@ public final class TmsTranspiler {
         Global<?> g = globals.get(naam);
         if (g != null) return g;
         if (p.granulariteit() != null)
-            throw new Weigering("de tijdsafhankelijke parameter '" + p.naam() + "': tijdlijnen zijn " + BUITEN);
+            throw new Weigering("de tijdsafhankelijke parameter '" + p.naam() + "': " + NOG_NIET + "; de goldens met"
+                    + " cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert");
         Datatype t = p.datatype();
         Class<?> klasse = t.isNumeriek() || t.isPercentage() ? BigDecimal.class
                 : t instanceof Datatype.DatumInDagen ? java.time.LocalDate.class
@@ -4918,11 +5315,13 @@ public final class TmsTranspiler {
      * The two generic rules that keep one {@link Stand} per object of the declaring type: the derived value where a
      * {@link Waarde} exists, else the input on the bean, read in the left-hand side, leeg included. The input rule
      * carries {@code not Waarde}, so a derivation that appears later retracts the input standing and every value that
-     * read it.
+     * read it. The input timeline of a member on a timeline stands in the form a {@link Waarde} carries one,
+     * {@code List<Tijdvak>} ({@link Tijdvak#lijst}), so every standing of the member holds one representation.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> attribuutstandregels(Lid lid) {
-        Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
+        Function<Object, Object> bean = Accessors.getter(lid.klasse(), lid.naam());
+        Function<Object, Object> getter = lid.tijd() == null ? bean : o -> Tijdvak.lijst((List<?>) bean.apply(o));
         ElementSleutel sleutel = lid.sleutel();
         String naam = "stand " + lid.declarant().naam + "." + lid.naam() + ": ";
 
@@ -5092,34 +5491,69 @@ public final class TmsTranspiler {
     // ---------------- members, paths and beans ----------------
 
     /** A member as this branch keys and reaches it: the key on its declaring type, that type, the declared spelling (the
-     *  bean property), whether it is a characteristic, its declared datatype (null for a characteristic), and the bean
-     *  class of the declaring type, whose subtypes' beans extend it. */
+     *  bean property), whether it is a characteristic, its declared datatype (null for a characteristic), the bean
+     *  class of the declaring type, whose subtypes' beans extend it, and, for a member on a timeline, the granularity of
+     *  its grid (null for a member that holds one value). A member on a timeline is read and written as a
+     *  {@code List<Tijdvak>} ({@link Tijdvak}). */
     private record Lid(ElementSleutel sleutel, Objecttype declarant, String naam, boolean kenmerk, Datatype datatype,
-                       Class<?> klasse) {}
+                       Class<?> klasse, RegelSpraakModel.Granulariteit tijd) {}
 
-    /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names. A member on a
-     *  timeline or with dimensions is refused. */
+    /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names, holding one
+     *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #tijdlid}. A
+     *  member with dimensions is refused. */
     private Lid lid(Objecttype houder, String naam, boolean kenmerk) {
+        Lid lid = gedeclareerd(houder, naam, kenmerk);
+        if (lid.tijd() != null)
+            throw new Weigering("het tijdsafhankelijke " + (kenmerk ? "kenmerk" : "attribuut") + " '" + lid.naam()
+                    + "' van " + lid.declarant().naam + " op een plek die één waarde leest of schrijft: de"
+                    + " truth-maintenance-tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig"
+                    + " deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig"
+                    + " deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)");
+        return lid;
+    }
+
+    /**
+     * Member {@code naam} as declared on {@code houder}'s chain, on a timeline: {@code wat} reads or writes its timeline
+     * (RUNTIME-SEMANTICS ch. 3). Refused by name: a member that holds one value there, one on a grid of more than one
+     * unit, which carries no operation (ch. 3.2, OPEN in ch. 3.12), and one on a timeline with a variable start point,
+     * whose grid is laid per object from an anchor a {@code StartPointDetermination} derives: no golden with cases
+     * reads or writes one, and the case input lays no timeline on such a grid, so no case can confirm this branch's
+     * reading of it against the reference interpreter.
+     */
+    private Lid tijdlid(Objecttype houder, String naam, boolean kenmerk, String wat) {
+        Lid lid = gedeclareerd(houder, naam, kenmerk);
+        String soort = kenmerk ? "kenmerk" : "attribuut";
+        if (lid.tijd() == null)
+            throw new Weigering(wat + " over het " + soort + " '" + lid.naam() + "' van " + lid.declarant().naam
+                    + ", dat niet tijdsafhankelijk is");
+        if (Tijdlijnen.meerPeriodiek(kenmerk ? lid.declarant().kenmerkTijdlijnAantalLeden()
+                : lid.declarant().tijdlijnAantalLeden(), lid.naam()))
+            throw new Weigering(wat + " over het " + soort + " '" + lid.naam() + "' van " + lid.declarant().naam
+                    + " op een raster van meer perioden, dat geen bewerking draagt (RUNTIME-SEMANTICS ch. 3.2, 3.12)");
+        if (!kenmerk && model.heeftVariabelStartpunt(lid.declarant(), lid.naam()))
+            throw new Weigering(wat + " over het attribuut '" + lid.naam() + "' van " + lid.declarant().naam + " op een"
+                    + " tijdlijn met een variabel startpunt: " + NOG_NIET + "; geen golden met cases leest of schrijft er"
+                    + " een, en de caselezer legt geen tijdlijn op zo'n raster");
+        return lid;
+    }
+
+    /** Member {@code naam} as declared on {@code houder}'s chain, its granularity set where it lies on a timeline. A
+     *  member with dimensions is refused. */
+    private Lid gedeclareerd(Objecttype houder, String naam, boolean kenmerk) {
         for (Objecttype t : houder.keten()) {
             if (kenmerk) {
                 for (String k : t.kenmerken)
-                    if (Namen.norm(k).equals(Namen.norm(naam))) {
-                        if (t.kenmerkGranulariteit.containsKey(k))
-                            throw new Weigering("het tijdsafhankelijke kenmerk '" + k + "' van " + t.naam + ": tijdlijnen"
-                                    + " zijn " + BUITEN);
-                        return new Lid(ProducentConsument.elementVan(houder, naam, true), t, k, true, null, bonenklasse(t));
-                    }
+                    if (Namen.norm(k).equals(Namen.norm(naam)))
+                        return new Lid(ProducentConsument.elementVan(houder, naam, true), t, k, true, null, bonenklasse(t),
+                                t.kenmerkGranulariteit.get(k));
             } else {
                 for (Map.Entry<String, Datatype> e : t.attributen.entrySet())
                     if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
                         String a = e.getKey();
-                        if (t.attribuutGranulariteit.containsKey(a))
-                            throw new Weigering("het tijdsafhankelijke attribuut '" + a + "' van " + t.naam + ": tijdlijnen"
-                                    + " zijn " + BUITEN);
                         if (t.attribuutDimensies.containsKey(a))
                             throw new Weigering("het gedimensioneerde attribuut '" + a + "' van " + t.naam + ": " + BUITEN);
                         return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
-                                bonenklasse(t));
+                                bonenklasse(t), t.attribuutGranulariteit.get(a));
                     }
             }
         }
@@ -5142,7 +5576,7 @@ public final class TmsTranspiler {
                         throw new Weigering("het tijdsafhankelijke attribuut '" + a + "' van " + t.naam + ": tijdlijnen"
                                 + " zijn " + BUITEN);
                     return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
-                            bonenklasse(t));
+                            bonenklasse(t), null);
                 }
         throw new Weigering("het attribuut '" + naam + "' is niet gedeclareerd op " + houder.naam + " of een supertype");
     }
