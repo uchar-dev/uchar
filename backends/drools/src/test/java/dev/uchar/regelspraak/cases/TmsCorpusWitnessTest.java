@@ -53,8 +53,13 @@ class TmsCorpusWitnessTest {
      *
      *  <p>Raised from 171 to 190 on purpose (card tms-expressievormen-en-rekendatum, step 2, acceptance (b)), measured
      *  2026-10-09 over the corpus with the jar of this step after the branch took on the quantifier fold, the role check
-     *  and uniqueness: 190 of the 294 goldens with cases play, none FAILs. */
-    private static final int EXPECTED_MIN_PLAYED = 190;
+     *  and uniqueness: 190 of the 294 goldens with cases play, none FAILs.
+     *
+     *  <p>Raised from 190 to 201 on purpose (card tms-expressievormen-en-rekendatum, step 3, acceptance (b)), measured
+     *  2026-10-09 over the corpus with the jar of this step after the branch took on two or more writers of one target,
+     *  a computed leeg outside the standing domain and writers keyed per concrete type: 201 of the 294 goldens with
+     *  cases play, none FAILs. */
+    private static final int EXPECTED_MIN_PLAYED = 201;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;

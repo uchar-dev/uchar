@@ -109,9 +109,11 @@ import java.util.function.UnaryOperator;
  * so an initialisation's guard reads the input of its derived target off the bean as well; {@link #zetAfgeleideWaarden}
  * writes the derivations onto the beans afterwards.
  *
- * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject that
- * is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
- * initialisation, the desugaring domain of ch. 7.7); an initialisation (ch. 5.4), the only one on its target; a
+ * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject, which
+ * writes nothing for a computed leeg on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
+ * initialisation, the desugaring domain of ch. 7.7) and writes the leeg elsewhere (ch. 1.2g), any number of them on one
+ * target, two that stand on one object with different values being the fault of ch. 5.7 ({@link #verschilregel}); an
+ * initialisation (ch. 5.4), the only one on its target per concrete type; a
  * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
  * duplicates are as well ({@link #uniciteitsregels}); a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
@@ -700,10 +702,10 @@ public final class TmsTranspiler {
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
      * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
      *
-     * <p>A rule outside the standing domain on a member that an object creation sets when it makes the object is
-     * refused by name: the branch keeps that member value as the creation's stated {@link Waarde}, which the rule's
-     * value would meet as a second writer, where the reference interpreter overwrites the value the creation wrote at
-     * the making (ch. 5.5, 1.2g).
+     * <p>A rule outside the standing domain on a member that an object creation sets when it makes an object the rule
+     * applies to (the rule is on the created type or on an ancestor of it) is refused by name: the branch keeps that
+     * member value as the creation's stated {@link Waarde}, which the rule's value would meet as a second writer, where
+     * the reference interpreter overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
      */
     private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
@@ -711,7 +713,7 @@ public final class TmsTranspiler {
         boolean schrijftLeeg = !staandeDoelen.staandScalair(r);
         if (schrijftLeeg)
             for (ResolvedObjectCreatie oc : model.objectCreaties)
-                if (oc.nieuwType() != null && verwant(oc.nieuwType(), doel.objecttype()))
+                if (oc.nieuwType() != null && oc.nieuwType().keten().contains(doel.objecttype()))
                     for (var t : oc.toekenningen())
                         if (!t.kenmerk() && ProducentConsument.elementVan(oc.nieuwType(), t.attribuut(), false)
                                 .equals(lid.sleutel()))

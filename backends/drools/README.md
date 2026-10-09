@@ -100,10 +100,10 @@ replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The 
 `tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
 `tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date, the faults of date arithmetic as
-facts and the condition forms (below); the writers of that card follow. It is no gate path yet: gate 12
+facts, the condition forms and the writers of one target (below). It is no gate path yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 190 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 201 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -119,8 +119,9 @@ where a stated fact takes over an equal logical one; equal logical facts merge i
 rule, which rests on the `equals` and `hashCode` of the fact classes, the subject compared by identity.
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
-bean and no other writer holds a `Waarde` on it; its guard excludes its own write, since a guard that counted its own
-`Waarde` would undo the write it justified. A consistency inserts a logical `Inconsistentie`, and "regelversie X is
+bean and no other writer holds a `Waarde` on it (beside a writer outside the standing domain, a written leeg leaves
+the target empty: below); its guard excludes its own write, since a guard that counted its own `Waarde` would undo the
+write it justified. A consistency inserts a logical `Inconsistentie`, and "regelversie X is
 inconsistent" reads the total standing fact `KanaalStand`. A defaults group decides with control facts (`Stuurfeit`).
 In the simple form, one chain without exception groups, a deciding default inserts `Beslist` where a lower default
 has a rule, and every lower default carries `not Beslist` over the ones above it. In the general form, with
@@ -132,11 +133,14 @@ apart.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
 the derivations on the beans: `setX(true)` per `HeeftKenmerk`, the attribute's setter per `Waarde`. Input on a
-characteristic stands, since nothing writes false; a derived value replaces input on an attribute, and a computed
-leeg writes nothing, so the input stands (ch. 7.1, 7.8). Two different values on one attribute of one object have no
-common fixpoint and fail with a sentence that names both writers (ch. 5.7); the write-back never chooses. On the other
-branches the call does nothing, so a consumer that fires a KieBase itself can call it after every fire. The session
-must not fire again afterwards: the beans then hold values the network never saw arrive.
+characteristic stands, since nothing writes false; a derived value replaces input on an attribute, a computed leeg
+of a standing writer writes nothing, so the input stands (ch. 7.1, 7.8), and a computed leeg of a writer outside the
+standing domain empties the attribute (ch. 1.2g). Two different values on one attribute of one object have no common
+fixpoint: they stand as a fault (below), and the write-back never chooses. The replay passes the case labels to
+`zetAfgeleideWaarden`, so that the fault names its object as the reference interpreter does; a consumer without labels
+gets the type and the identity. On the other branches the call does nothing, so a consumer that fires a KieBase
+itself can call it after every fire. The session must not fire again afterwards: the beans then hold values the
+network never saw arrive.
 
 **Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
 and so is every fault of `Rekenfout`: a date step or a duration count outside the range of ch. 3.8, a context value
@@ -255,6 +259,27 @@ logical, so a duplicate that arises on an intermediate state is gone at the fixp
 evaluates the form. Witnesses `TmsKwantorvouwWitnessTest`, `TmsRolcontroleWitnessTest` and
 `TmsUniciteitWitnessTest`.
 
+**Writers of one target.** A computing rule is an equation (RUNTIME-SEMANTICS ch. 5.1), and a target may have any
+number of them, the versions of one form among them. On a standing target (ch. 7.8, and the desugaring domain of ch.
+7.7, as `transpiler/kern/StaandeDoelen` classifies it for all three branches) a computed leeg inserts nothing; outside
+it the rule inserts a `Waarde` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
+another writer can disagree with. Where two writers stand on one object with different values, a rule per attribute
+on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
+accumulate over the attribute's `Waarde` facts on the object) inserts a logical
+`Fout` with a `Schrijversconflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
+"melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in het attribuut
+meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the order of the
+document and the object by its case label, as the reference interpreter names them, so the Drools pin of
+`corpus/rood/jutterswet-dubbele-melding` matches it. Like every fault it counts at the fixpoint, so a difference on an
+intermediate state only is no fault. With three writers the sentence names every writer that stands, where the
+reference interpreter names the two its last passes saw change the attribute. The writers are keyed per object, so per
+concrete type (WF-079, ch. 7.10): rules on sister subtypes never meet, and a rule on a supertype meets one on a subtype
+on the subtype's instances. An initialisation's guard reads the target as the other writers leave it, as the
+reference interpreter's guard reads the running fact base: a value another writer places switches it off, and a leeg
+that a writer outside the standing domain writes leaves the target empty, input or not, so the initialisation fills it
+and the two writers disagree, where the reference interpreter faults on the pass budget with the same two writers.
+Witness `TmsSchrijversWitnessTest`.
+
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
@@ -368,10 +393,12 @@ built, never as a silent fall:
   the sentence of the other two branches;
 - a parameter whose Java name is `rekendatum` beside a form that reads the evaluation date, since the case runner sets
   the date under that name;
-- what the design cannot carry: two computing rules or two initialisations on one target, which the exec-model branch
-  settles by agenda order (WF-079); a rule beside a defaults group of its type on its target (WF-050); a computing
-  rule on a target outside the standing domain, where a computed leeg would have to empty the target (ch. 7.8); and a
-  division in a default, or in the condition or the value of an initialisation whose target has another writer, which
+- what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a
+  type and its ancestor, which nothing ranks (ch. 5.4, WF-079); a rule beside a defaults group of its type on its
+  target (WF-050); a computing rule outside the standing domain on a member an object creation sets on objects the
+  rule applies to, since the branch keeps that member as the creation's `Waarde`, which the rule's value would meet as
+  a second writer, where the reference interpreter overwrites the value of the making (ch. 5.5, 1.2g); and a division
+  in a default, or in the condition or the value of an initialisation whose target has another writer, which
   ch. 7.7 reads as the lowest default beside it: the branch computes every default whose reads stand, also one another
   default displaces, so a division by zero there is a fault on an intermediate state, which the branch withdraws once
   the default is displaced; whether such a fault counts waits on a decision of the norm (ch. 5.2, 5.4, 7.1, 7.7; card
