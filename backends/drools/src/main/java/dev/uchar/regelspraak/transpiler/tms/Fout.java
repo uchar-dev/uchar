@@ -5,8 +5,9 @@ import java.util.Objects;
 /**
  * An evaluation fault a rule of the truth-maintenance branch raised on one object, inserted logically by the activation
  * that raised it: a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4), in a rule's value or in a
- * condition. The branch has no strata and passes intermediate states the reference interpreter does not see, and a
- * fault thrown out of the fire cannot be withdrawn; as a logical fact the fault stands while every read it rested on
+ * condition, a {@link Rekenfout}, or two writers of one attribute that disagree ({@link Schrijversconflict}, ch. 5.7).
+ * The branch has no strata and passes intermediate states the reference interpreter does not see, and a fault thrown
+ * out of the fire cannot be withdrawn; as a logical fact the fault stands while every read it rested on
  * stands, and goes when one of them changes. No rule reads it. The session reports the faults that stand at its
  * fixpoint ({@code DroolsBackend.zetAfgeleideWaarden}), so a fault, like a value, is a property of the fixpoint
  * (ch. 5.2).

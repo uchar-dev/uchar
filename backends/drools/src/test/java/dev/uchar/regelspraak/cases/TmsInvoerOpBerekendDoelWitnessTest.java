@@ -11,7 +11,6 @@ import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.rekenregel;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.waarde;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * computed from the input, truth maintenance retracts the input standing and the uitkering computed from it. Both
  * orders of the two rules in the document, the exec-model branch on the same document, and a seeded sample of orders of
  * the generated rules, at least one of which must compute V1's uitkering from the input first. Off the standing domain
- * the branch refuses the rule, since it writes nothing for a computed leeg.
+ * the rule writes a computed leeg (ch. 1.2g), which empties the target, input included.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step): both rows on this branch were
  * refused, "tms-transpiler SKIP: regel: bergloon — een attribuutdoel (gelijkstelling van 'bergloon' van Vondst): de
@@ -84,17 +82,28 @@ class TmsInvoerOpBerekendDoelWitnessTest {
 
     /** "Het bergloon van een Vondst moet geïnitialiseerd worden op 0, indien zijn taxatie gevuld is" beside the bergloon
      *  rule: a conditional initialisation is neither the plain one of RUNTIME-SEMANTICS ch. 7.7 nor absent, so the
-     *  target is off the standing domain, where a computed leeg empties the target instead of leaving the input. The
-     *  branch writes nothing for a computed leeg and therefore refuses the rule. */
-    @Test void buiten_het_staande_domein_weigert_de_tak_de_rekenende_regel() throws Exception {
+     *  target is off the standing domain, where a computed leeg empties the target instead of leaving the input (ch.
+     *  1.2g). Until step 3 of card tms-expressievormen-en-rekendatum the branch refused the rule there, since it wrote
+     *  nothing for a computed leeg; it now writes the leeg ({@code TmsSchrijversWitnessTest}). V1 (taxatie 30, bergloon
+     *  7 as input): 30, uitkering 35. V2 (bergloon 7 as input): the rule writes leeg over the input and the
+     *  initialisation's condition does not hold, so bergloon leeg and uitkering 5. Every order of the three rules. The
+     *  reference interpreter answers the same on this document (measured 2026-10-09, in the report of that step). */
+    @Test void buiten_het_staande_domein_schrijft_de_rekenende_regel_leeg() throws Exception {
         String initialisatie = rekenregel("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", getal("0"),
                 predicaat("filled", lezing("taxatie", "Vondst")));
-        Path ir = TmsDocumenten.document(MODEL, List.of(REGELS.get(0), initialisatie));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: bergloon — een rekenende regel op een doel buiten het staande domein"
-                + " ('bergloon' van Vondst), waar een berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch. 7.8): de"
-                + " truth-maintenance-tak draagt deze vorm nog niet", e.getMessage());
+        JsonNode zaak = TmsDocumenten.zaak(
+                List.of(instantie("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
+                        instantie("V2", "Vondst", Map.of("bergloon", "7"), List.of(), Map.of())),
+                List.of(waarde("V1", "bergloon", "30"), waarde("V1", "uitkering", "35"), waarde("V2", "bergloon", null),
+                        waarde("V2", "uitkering", "5")));
+        int volgordes = 0;
+        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(REGELS.get(0), REGELS.get(1), initialisatie))) {
+            List<String> namen = namen(volgorde);
+            assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak,
+                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+            volgordes++;
+        }
+        assertEquals(6, volgordes);
     }
 
     /** Two rules and the two standing rules of bergloon; taxatie is input and read off the bean. */

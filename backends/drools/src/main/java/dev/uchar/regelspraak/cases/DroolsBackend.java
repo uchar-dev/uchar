@@ -293,6 +293,17 @@ public final class DroolsBackend {
         if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie);
     }
 
+    /** As {@link #zetAfgeleideWaarden(Build, KieSession)}, with {@code label} giving the case label of an input bean
+     *  and null for an object a creation made: the replay's write-back, so that the fault of two writers that disagree
+     *  on the truth-maintenance branch names its object as the reference interpreter names it, "V, een Vondst"
+     *  (RUNTIME-SEMANTICS ch. 5.7), where a consumer without labels gets the type and the identity. */
+    static void zetAfgeleideWaarden(Build build, KieSession sessie, java.util.function.Function<Object, String> label) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        Objects.requireNonNull(label, "label");
+        if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie, label);
+    }
+
     /** What {@link #vuur} did: the firings of all its fires together, and the sentence of a run that ends without a
      *  fixpoint at the creation budget ({@link Creatiebudget}), null otherwise. A run that reaches the fire cap has no
      *  fixpoint either; the caller reads that off {@code vuringen}. A run that ends at the budget counts the firings of

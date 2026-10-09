@@ -247,6 +247,12 @@ public final class TmsTranspiler {
     /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified as the
      *  other two branches classify them. */
     private StaandeDoelen staandeDoelen;
+    /** The place of each rule of the document in its list, by name: the sentence of two writers that disagree names
+     *  them in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7). */
+    private final Map<String, Integer> documentplaats = new HashMap<>();
+    /** The object type of each bean class, by the class's simple name (the one {@link #bonenklasse} loads): a sentence
+     *  names an object by its own type. Keyed by name, so that building it loads no class. */
+    private final Map<String, String> typeNamen = new HashMap<>();
     private final List<Dekking> dekking = new ArrayList<>();
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
@@ -369,8 +375,10 @@ public final class TmsTranspiler {
      * exec-model branch names it out of its fire, two or more as {@link Evaluatiefouten}, ordered by the name of the
      * form and then by the sentence, so that the report does not depend on the order of the rules or of the firings.
      *
-     * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7), and
-     * this does not choose between them: it fails, naming both writers and both values. Equal values are no conflict.
+     * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7). The
+     * rule of {@link #verschilregel} makes that a {@link Fout} of the fixpoint where two writers can disagree; this
+     * does not choose between two values either where no such rule stood, as in a session filled by hand: it fails with
+     * the same {@link Schrijversconflict}. Equal values are no conflict.
      *
      * <p>A model with a creation is fired in generations ({@code DroolsBackend.vuur}), which leaves a
      * {@link Creatiefase} in the session. Without one the creation rules never had the focus and the session holds no
@@ -378,11 +386,24 @@ public final class TmsTranspiler {
      * creations.
      */
     public void zetAfgeleideWaarden(KieSession sessie) {
+        zetAfgeleideWaarden(sessie, null);
+    }
+
+    /**
+     * As {@link #zetAfgeleideWaarden(KieSession)}, with {@code label} naming the objects of the case: a
+     * {@link Schrijversconflict} then names its object by the case label it gives, and as made by a creation where it
+     * gives null, as the reference interpreter names the instance. Null names an object by type and identity.
+     */
+    public void zetAfgeleideWaarden(KieSession sessie, Function<Object, String> label) {
         if (!creatieregels.isEmpty() && sessie.getObjects(o -> o instanceof Creatiefase).isEmpty())
             throw new IllegalStateException("dit model heeft creatieregels en vuurt in generaties (DroolsBackend.vuur);"
                     + " de sessie is zonder creatiefase gevuurd, dus zonder de creaties");
         List<Fout> fouten = new ArrayList<>();
-        for (Object f : sessie.getObjects(o -> o instanceof Fout)) fouten.add((Fout) f);
+        for (Object f : sessie.getObjects(o -> o instanceof Fout)) {
+            Fout fout = (Fout) f;
+            fouten.add(label != null && fout.fout() instanceof Schrijversconflict c
+                    ? new Fout(fout.onderwerp(), fout.regel(), c.benoemd(label)) : fout);
+        }
         if (!fouten.isEmpty()) {
             fouten.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
             if (fouten.size() == 1) throw fouten.get(0).fout();
@@ -401,10 +422,12 @@ public final class TmsTranspiler {
         }
         for (Map<ElementSleutel, List<Waarde>> perLid : perDoel.values())
             for (List<Waarde> waarden : perLid.values()) {
-                waarden.sort(Comparator.comparing(Waarde::schrijver));
                 Waarde eerste = waarden.get(0);
                 for (Waarde w : waarden)
-                    if (!gelijkeWaarde(eerste.waarde(), w.waarde())) throw new IllegalStateException(divergentie(eerste, w));
+                    if (!gelijkeWaarde(eerste.waarde(), w.waarde())) {
+                        Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), waarden);
+                        throw label == null ? c : c.benoemd(label);
+                    }
                 Lid lid = lidVan(eerste, eerste.attribuut());
                 Accessors.setter(lid.klasse(), lid.naam()).accept(eerste.onderwerp(), eerste.waarde());
             }
@@ -418,16 +441,25 @@ public final class TmsTranspiler {
         return lid;
     }
 
-    /** The sentence of RUNTIME-SEMANTICS ch. 5.7 for two writers of one attribute of one object. */
-    private String divergentie(Waarde a, Waarde b) {
-        Lid lid = afgeleid.get(a.attribuut());
-        return "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"" + a.schrijver()
-                + "\" schrijft " + a.waarde() + " en de regel \"" + b.schrijver() + "\" schrijft " + b.waarde()
-                + " in het attribuut " + lid.naam() + " van een " + lid.declarant().naam + " ("
-                + Feitnamen.object(a.onderwerp()) + "); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
+    /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code sleutel} of
+     *  {@code onderwerp}: the writers in the order of the document ({@link #documentplaats}; a writer the document has
+     *  no rule of, such as a defaults group, after them by name), the attribute as declared, and the object's own
+     *  type. */
+    private Schrijversconflict conflict(Object onderwerp, ElementSleutel sleutel, List<Waarde> waarden) {
+        List<Waarde> geordend = new ArrayList<>(waarden);
+        geordend.sort(Comparator.comparing((Waarde w) -> documentplaats.getOrDefault(w.schrijver(), Integer.MAX_VALUE))
+                .thenComparing(Waarde::schrijver));
+        List<Schrijversconflict.Schrijfdaad> daden = new ArrayList<>();
+        for (Waarde w : geordend) daden.add(new Schrijversconflict.Schrijfdaad(w.schrijver(), w.waarde()));
+        return new Schrijversconflict(onderwerp, lidVan(onderwerp, sleutel).naam(), typeNaam(onderwerp), daden);
     }
 
-    /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value. */
+    /** The name of the object type whose bean {@code o} is, its own type and not the one that declares a member. */
+    private String typeNaam(Object o) {
+        return typeNamen.getOrDefault(o.getClass().getSimpleName(), o.getClass().getSimpleName());
+    }
+
+    /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
     private static boolean gelijkeWaarde(Object a, Object b) {
         if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
         return Objects.equals(a, b);
@@ -438,6 +470,8 @@ public final class TmsTranspiler {
     private Model run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
+        for (int i = 0; i < model.resolvedRegels.size(); i++) documentplaats.putIfAbsent(model.resolvedRegels.get(i).naam(), i);
+        for (Objecttype t : model.objecttypen.values()) typeNamen.put(Namen.ident(t.naam, true), t.naam);
         if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
             strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
         // before any form lowers: a form that reads a created relation must know it while it lowers
@@ -489,6 +523,7 @@ public final class TmsTranspiler {
             regels.addAll(meet("uniciteit-unie", naamOf(u.naam()), () -> uniciteitUnieRegels(u)));
         if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
         for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
+        regels.addAll(verschilregels());
         for (ResolvedStartpunt sp : model.resolvedStartpunten)
             weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: tijdlijnen zijn " + BUITEN);
         for (ResolvedDagsoort d : model.resolvedDagsoorten)
@@ -643,39 +678,55 @@ public final class TmsTranspiler {
 
     /**
      * An assignment or a computation of an attribute of the subject: the left-hand side of a characteristic attribution,
-     * and a consequence that computes the value from the values it binds and inserts a {@link Waarde} logically when the
-     * value is gevuld. A computed leeg writes nothing, so the input on the target stands, or the initialisation beside the
-     * rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is its
-     * target's only computing writer, beside at most one unconditional initialisation, which this method demands). An
-     * evaluation fault, a division by a numeric zero or a {@link Rekenfout}, is inserted logically by the consequence as
-     * a {@link Fout} in place of the value, named after the rule. A division of a filled dividend by a leeg divisor, and
-     * a square root of a negative number, insert the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the same
-     * consequence, under the rule's name, where the evaluation reaches them: the probe the consequence puts in its value
-     * array hears exactly the places that run ({@link Sonde}), so a place in a branch of an {@code IfThenElse} that is
-     * not taken, or in the value of a {@code Let} binder no read forces, deposits nothing (ch. 10.2, 10.6). Every
-     * division and every root is such a place, as in the reference interpreter. The condition of the rule holds there by
-     * construction; a deposit in the condition itself is the {@link #deponeerregel}'s.
+     * and a consequence that computes the value from the values it binds and inserts a {@link Waarde} logically. A
+     * computed leeg writes nothing on a standing target, so the input on the target stands, or the initialisation beside
+     * the rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is
+     * its target's only computing writer, beside at most one unconditional initialisation). Outside that domain a
+     * computed leeg is a write (ch. 1.2g): the {@link Waarde} carries leeg, which takes the target's input standing away
+     * and is a value another writer can disagree with. A target may have more computing rules: each is an equation, and
+     * where two of them stand at the fixpoint on one object with different values the rule of {@link #verschilregel}
+     * makes that the fault of ch. 5.7; where at most one condition holds, or they write the same value, the document
+     * plays. They are keyed per object, so writers on sister subtypes never meet (WF-079 and ch. 7.10 read per concrete
+     * type). An evaluation fault, a division by a numeric zero or a {@link Rekenfout}, is inserted logically by the
+     * consequence as a {@link Fout} in place of the value, named after the rule. A division of a filled dividend by a
+     * leeg divisor, and a square root of a negative number, insert the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2
+     * from the same consequence, under the rule's name, where the evaluation reaches them: the probe the consequence puts
+     * in its value array hears exactly the places that run ({@link Sonde}), so a place in a branch of an
+     * {@code IfThenElse} that is not taken, or in the value of a {@code Let} binder no read forces, deposits nothing
+     * (ch. 10.2, 10.6). Every division and every root is such a place, as in the reference interpreter. The condition of
+     * the rule holds there by construction; a deposit in the condition itself is the {@link #deponeerregel}'s.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
      * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
+     *
+     * <p>A rule outside the standing domain on a member that an object creation sets when it makes the object is
+     * refused by name: the branch keeps that member value as the creation's stated {@link Waarde}, which the rule's
+     * value would meet as a second writer, where the reference interpreter overwrites the value the creation wrote at
+     * the making (ch. 5.5, 1.2g).
      */
     private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
-        ElementSleutel sleutel = lid.sleutel();
-        List<ResolvedRegel> schrijvend = rekenregels.get(sleutel);
-        if (schrijvend != null && schrijvend.size() > 1)
-            throw new Weigering("twee of meer rekenende regels op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
-                    + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList()) + "): hun"
-                    + " v0-betekenis is de volgorde op de agenda (RUNTIME-SEMANTICS ch. 7.7, WF-079)");
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
-        // the consequence below writes nothing for a computed leeg, which is the semantics on a standing target only;
-        // off that domain a computed leeg empties the target, and no fact of this branch says so
-        if (!staandeDoelen.staandScalair(r))
-            throw new Weigering("een rekenende regel op een doel buiten het staande domein ('" + lid.naam() + "' van "
-                    + lid.declarant().naam + "), waar een berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch."
-                    + " 7.8): " + NOG_NIET);
-        return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd);
+        boolean schrijftLeeg = !staandeDoelen.staandScalair(r);
+        if (schrijftLeeg)
+            for (ResolvedObjectCreatie oc : model.objectCreaties)
+                if (oc.nieuwType() != null && verwant(oc.nieuwType(), doel.objecttype()))
+                    for (var t : oc.toekenningen())
+                        if (!t.kenmerk() && ProducentConsument.elementVan(oc.nieuwType(), t.attribuut(), false)
+                                .equals(lid.sleutel()))
+                            throw new Weigering("een rekenende regel buiten het staande domein op een lid dat een"
+                                    + " objectcreatie bij het maken zet ('" + lid.naam() + "' van " + lid.declarant().naam
+                                    + ", gezet door \"" + oc.naam() + "\"): deze tak houdt die waarde als een Waarde van de"
+                                    + " creatie, die de waarde van de regel als tweede schrijver zou ontmoeten, waar de"
+                                    + " referentie de waarde van het maken overschrijft (RUNTIME-SEMANTICS ch. 5.5, 1.2g)");
+        return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd, schrijftLeeg);
+    }
+
+    /** Whether one of the two types is the other or an ancestor of it: a form on the one then writes instances of the
+     *  other, where two forms on sister types never meet on one instance (IR-SPEC ch. 2.2, WF-079). */
+    private static boolean verwant(Objecttype a, Objecttype b) {
+        return a.keten().contains(b) || b.keten().contains(a);
     }
 
     /**
@@ -708,10 +759,16 @@ public final class TmsTranspiler {
      * this branch), on several the session reached the fire cap (measured 2026-10-08,
      * {@code TmsInitialisatieWitnessTest}).
      *
+     * <p>A computing rule beside it that is outside the standing domain writes a computed leeg (ch. 1.2g). The guard
+     * then reads the target as the other writers leave it, as the reference interpreter's guard reads the running fact
+     * base: a value another writer places switches it off, and a leeg another writer writes leaves the target empty,
+     * input or not, so the initialisation fills it and the two writers demand different values, the fault of ch. 5.7
+     * ({@link #verschilregel}).
+     *
      * <p>Two initialisations on one target are ill-formed, conditional or not (IR-SPEC WF-079): where both apply,
-     * nothing ranks them. The backend runs no verifier, so this refuses the pair by name; the key is the declaring
-     * type's, as for two computing rules, so two initialisations on sibling subtypes are refused as well, which
-     * WF-079, read per concrete type, does not pair.
+     * nothing ranks them. The backend runs no verifier, so this refuses the pair by name, read per concrete type as
+     * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
+     * sister subtypes never do (ch. 7.10).
      *
      * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default
      * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
@@ -726,12 +783,16 @@ public final class TmsTranspiler {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         ElementSleutel sleutel = lid.sleutel();
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
-        List<ResolvedRegel> schrijvend = initialisaties.get(sleutel);
+        List<ResolvedRegel> schrijvend = initialisaties.get(sleutel).stream()
+                .filter(x -> verwant(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype())).toList();
         if (schrijvend.size() > 1)
             throw new Weigering("twee of meer initialisaties op één doel ('" + lid.naam() + "' van " + lid.declarant().naam
                     + ": " + String.join(", ", schrijvend.stream().map(x -> "\"" + x.naam() + "\"").toList())
                     + "), voorwaardelijk of niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de"
                     + " waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)");
+        // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
+        boolean leegNaast = rekenregels.getOrDefault(sleutel, List.of()).stream().anyMatch(x ->
+                !staandeDoelen.staandScalair(x) && verwant(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype()));
         Set<String> anderen = new LinkedHashSet<>(schrijvers.getOrDefault(sleutel, Set.of()));
         anderen.remove(ProducentConsument.basisNaam(r.naam()));
         String deling = deling(r.voorwaarde(), r.waarde());
@@ -746,13 +807,30 @@ public final class TmsTranspiler {
                     + " waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)");
         Function<Object, Object> invoer = Accessors.getter(lid.klasse(), lid.naam());
         String naam = r.naam();
+        if (!leegNaast)
+            return schrijfregel(r, doel.objecttype(), lid, lez -> {
+                lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
+                Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
+                return List.of(DSL.not(PatternDSL.pattern(w)
+                        .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
+                        .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
+            }, geabsorbeerd, false);
         return schrijfregel(r, doel.objecttype(), lid, lez -> {
-            lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
             Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
-            return List.of(DSL.not(PatternDSL.pattern(w)
-                    .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
-                    .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
-        }, geabsorbeerd);
+            Variable<Waarde> l = DSL.declarationOf(Waarde.class, "$lege_schrijver");
+            Variable<Object> legen = DSL.declarationOf(Object.class, "$lege_schrijvers");
+            return List.of(
+                    DSL.not(PatternDSL.pattern(w)
+                            .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam)
+                                    && x.waarde() != null)
+                            .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)),
+                    DSL.accumulate(PatternDSL.pattern(l)
+                                    .expr(id("lege-schrijver"), x -> x.attribuut().equals(sleutel)
+                                            && !x.schrijver().equals(naam) && x.waarde() == null)
+                                    .expr(id("lege-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o),
+                            DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), l).as(legen)),
+                    DSL.expr(id("doel-leeg"), legen, lez.s, (n, o) -> !leeg(n) || invoer.apply(o) == null));
+        }, geabsorbeerd, false);
     }
 
     /**
@@ -760,13 +838,15 @@ public final class TmsTranspiler {
      * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
      * reads, the {@code blokkade} the form adds (null for none), and a consequence that computes the value from the
      * values it binds and inserts a {@link Waarde} logically, with the form's name as the writer, when the value is
-     * gevuld, beside the §6.5 deposit {@link #rekenRegel} describes. Where the value faults, the consequence inserts the
+     * gevuld, or also when it is leeg where {@code schrijftLeeg} (a computing rule outside the standing domain, ch.
+     * 1.2g), beside the §6.5 deposit {@link #rekenRegel} describes. Where the value faults, the consequence inserts the
      * {@link Fout} instead, and neither the value nor a deposit. Objects of a class in {@code geabsorbeerd} do not
      * match: an effective stack writes the target there ({@link #geabsorbeerd}). Beside it, where the condition can
      * fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
     private List<Rule> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                                    Function<Lezingen, List<RuleItemBuilder<?>>> blokkade, Set<Class<?>> geabsorbeerd) {
+                                    Function<Lezingen, List<RuleItemBuilder<?>>> blokkade, Set<Class<?>> geabsorbeerd,
+                                    boolean schrijftLeeg) {
         ElementSleutel sleutel = lid.sleutel();
         Supplier<Lezingen> nieuw = () -> lezingen(subject, geabsorbeerd).geldig(r.geldigheid());
         Lezingen lez = nieuw.get();
@@ -800,7 +880,7 @@ public final class TmsTranspiler {
             }
             if (s != null && s.gemeld())
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, onderwerp));
-            if (v != null) drools.logicalInsert(new Waarde(onderwerp, sleutel, v, naam));
+            if (v != null || schrijftLeeg) drools.logicalInsert(new Waarde(onderwerp, sleutel, v, naam));
         }, n));
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
@@ -819,6 +899,62 @@ public final class TmsTranspiler {
         if (!geabsorbeerd.isEmpty())
             lez.onderwerp.expr(id("niet-in-een-stapel"), o -> !geabsorbeerd.contains(o.getClass()));
         return lez;
+    }
+
+    // ---------------- two writers of one target ----------------
+
+    /**
+     * The rules of {@link #verschilregel}, one per attribute on which two writers can stand at the fixpoint on one
+     * object: two or more computing rules, or a computing rule outside the standing domain beside an initialisation,
+     * whose guard a written leeg leaves open (ch. 5.4). An initialisation beside a standing rule needs none: its guard
+     * keeps it from standing beside the rule's value, and the rule writes nothing for a computed leeg.
+     */
+    private List<Rule> verschilregels() {
+        List<Rule> uit = new ArrayList<>();
+        for (Map.Entry<ElementSleutel, List<ResolvedRegel>> e : rekenregels.entrySet()) {
+            Lid lid = afgeleid.get(e.getKey());
+            // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
+            if (lid == null) continue;
+            boolean leegNaastInitialisatie = e.getValue().stream().anyMatch(r -> !staandeDoelen.staandScalair(r))
+                    && !initialisaties.getOrDefault(e.getKey(), List.of()).isEmpty();
+            if (e.getValue().size() > 1 || leegNaastInitialisatie) uit.add(verschilregel(lid));
+        }
+        return uit;
+    }
+
+    /**
+     * The fault of RUNTIME-SEMANTICS ch. 5.7 as a logical fact: per object of the declaring type of {@code lid}, an
+     * accumulate over the {@link Waarde} facts on that object's attribute, and where they hold different values a
+     * {@link Fout} with the {@link Schrijversconflict} that names the writers in the order of the document, under the
+     * first of them. The fault rests on the values that stand, so a difference that exists on an intermediate state only
+     * goes again when a writer's condition or value changes, and the session reports the differences that stand at its
+     * fixpoint, as it reports every evaluation fault ({@link #zetAfgeleideWaarden}).
+     */
+    @SuppressWarnings("unchecked")
+    private Rule verschilregel(Lid lid) {
+        ElementSleutel sleutel = lid.sleutel();
+        Variable<Object> s = (Variable<Object>) DSL.declarationOf(lid.klasse(), "$onderwerp");
+        Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$waarde");
+        Variable<Object> lijst = DSL.declarationOf(Object.class, "$waarden");
+        return PatternDSL.rule(PKG, "schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil").build(
+                PatternDSL.pattern(s),
+                DSL.accumulate(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
+                                .expr(id("waarde-onderwerp"), s, (x, o) -> x.onderwerp() == o),
+                        DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), w).as(lijst)),
+                DSL.expr(id("verschil"), lijst, l -> verschillen((List<?>) l)),
+                DSL.on(s, lijst).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, l) -> {
+                    List<Waarde> waarden = new ArrayList<>();
+                    for (Object x : (List<?>) l) waarden.add((Waarde) x);
+                    Schrijversconflict c = conflict(o, sleutel, waarden);
+                    drools.logicalInsert(new Fout(o, c.schrijvers().get(0).schrijver(), c));
+                }));
+    }
+
+    /** Whether the {@link Waarde} facts in {@code waarden} hold two different values, leeg among them. */
+    private static boolean verschillen(List<?> waarden) {
+        for (Object x : waarden)
+            if (!gelijkeWaarde(((Waarde) waarden.get(0)).waarde(), ((Waarde) x).waarde())) return true;
+        return false;
     }
 
     // ---------------- an evaluation fault in a condition ----------------

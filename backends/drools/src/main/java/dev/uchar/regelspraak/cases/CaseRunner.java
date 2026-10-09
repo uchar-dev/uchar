@@ -584,7 +584,7 @@ public final class CaseRunner {
         vuringen = gevuurd;
         if (vuring.geenFixpunt() != null) return vuring.geenFixpunt();
         if (gevuurd < 100_000) {
-            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+            DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
         }
         String conflict = schrijvers.conflict(this::labelVanBean);
