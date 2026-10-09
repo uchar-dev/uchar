@@ -73,18 +73,24 @@ van dat stratum, als de Post nog niet bestaat, en daarna niet meer. Clingo,
 de exec-modeltak en de DRL-teksttak geven inconsistent; de tak met truth
 maintenance weigert de creatie.
 
+## De ref-kant is geland (2026-10-09)
+
+Met `20261009-creatie-initialisatie-leest-groeiende-waarde` (geland op 2026-10-09, samen met
+`20261009-creatiebudget-ref-en-clingo`) komen na elke generatie de vormen die niets maken stratum voor stratum tot
+rust (0, 1, …, k). De consistenties en uniciteiten van een lager stratum vuren na elke generatie opnieuw; die van het
+lopende stratum na zijn laatste generatie. Ref-tests: `WV-6.3-na-een-creatie`, `WV-6.3-consistentie-na-een-creatie`
+en `WV-6.3-uniciteit-na-een-creatie`, elk in twee volgordes. Ref geeft op beide documenten hierboven nu het antwoord
+van clingo. Deze kaart houdt de goldens.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Een golden met deze vorm, de lezer eerst, eigen Jutterswet-casus,
   rechtenvrij, met `bron.rgs`, `ir.json` en de case hierboven; ref, clingo en de
-  Drools-takken die de vorm dragen spelen hem. Voorbeelden in `ref/test/` voor
-  beide volgordes.
-- (b) Ref laat na elke ronde van creaties de vormen die niets maken stratum voor
-  stratum tot rust komen (0, 1, …, k), en laat de consistenties en uniciteiten
-  van elk stratum daarna opnieuw vuren, rood eerst. Geen bestaande verwachting
-  in `corpus/golden` of `corpus/rood` verandert. NB: de fixrondes van
-  `20261009-creatie-initialisatie-leest-groeiende-waarde` repareren de ref-kant
-  (lensvondsten op die kaart); deze kaart houdt dan de goldens.
+  Drools-takken die de vorm dragen spelen hem; een tweede golden voor de vorm
+  met de consistentie. Voorbeelden in `ref/test/` voor beide volgordes.
+- (b) Geland met `20261009-creatie-initialisatie-leest-groeiende-waarde` (zie
+  hierboven); bij het oppakken alleen nameten dat ref beide goldens speelt. Geen
+  bestaande verwachting in `corpus/golden` of `corpus/rood` verandert.
 - (c) Gates 5, 6, 8 en 12 groen (in `scripts/check-drools.sh` gaan de pins
   `EXPECTED_PLAYED` en `EXPECTED_DRL_PLAYED` elk één omhoog; voorstel); de
   corpusgetuige van de tak met truth maintenance noemt haar weigering; alle gates
@@ -92,9 +98,9 @@ maintenance weigert de creatie.
 
 ## Omvang
 
-Klein. Eén plaats in de evaluatielus van ref en één golden.
+Klein: twee goldens; de ref-kant is geland.
 
-May touch: `ref/lib/eval.ml`, `ref/test/`, `corpus/golden/<nieuwe golden>/`,
+May touch: `ref/test/`, `corpus/golden/<nieuwe goldens>/`,
 `scripts/check-drools.sh` (pins; voorstel), kaartverplaatsing. Niet: clingo en
 de Drools-backend (geven al het goede antwoord of weigeren), de spec (ch. 6.3
 zegt het al).
