@@ -46,6 +46,19 @@ plaats van één.
 de fixronde van `20261009-drools-filterfout-buiten-de-lezende-regel` hem
 oplost of luid weigert; wat daar niet lukt, valt onder deze kaart.
 
+**Na de fixronde van die kaart (`4ada319d`) gemeten** (documenten in
+`/tmp/lens-bugs/w2/f1/d/`, uitkomsten in `/tmp/lens-bugs/w2/meting-bijvangst-fix.txt`):
+- `d1-begeleider`: de DRL-teksttak maakt de begeleider van een deling in de waarde
+  (§6.5) zonder de vouw in de voorwaarde, en meldt `inconsistent (zwaarte @ J1)`
+  waar ref en clingo consistent geven; vóór en na de fix.
+- `a8-creatie-onder-vouwvoorwaarde`: clingo geeft geen model maar een fout van
+  gringo, "unsafe variables" in de guard `viol("arithmetic range exceeded …")`
+  van een objectcreatie met een vouw in de initialisatie onder een
+  vouwvoorwaarde (`C3` en `S` onveilig); ref speelt case 1 en 2.
+- Een samenstelling onder "geen" of een tellende kwantor met een datumvouw als
+  lid: de exec-modeltak faalt waar ref na "hij is actief" stopt; de DRL-teksttak
+  weigert de vorm (`a9-*`).
+
 **Gelezen, niet gemeten (lens).** Een negatieve wortel in het filter van een
 vouw die wel bereikt wordt: ref geeft leeg en een §9.5-deponering
 (`ref/lib/arith.ml` rond regel 223–253); `rsWortel` geeft leeg
