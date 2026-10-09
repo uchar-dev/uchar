@@ -212,6 +212,43 @@ class TmsRekenvormWitnessTest {
                 List.of(waarde("S1", "ruimste aanloop", "500"), waarde("S2", "ruimste aanloop", "800"), consistent())));
     }
 
+    /** "De totale lengte van een Sleepbaan moet berekend worden als de som van de lengte van alle baandelen van de
+     *  Sleepbaan, of 1 km als die er niet zijn" (in m), beside "De lengte van een Baandeel moet berekend worden als zijn
+     *  grondlengte": the fallback is restated into the unit of the folded member (ch. 2.6) and then, with the sum, into
+     *  the target's. S1 (G1 300, G2 200 with a lengte 999 in the input): 500; S2 (no baandeel): 1000; S3 (G3 without a
+     *  grondlengte, so its lengte stays leeg and the sum has no filled member): 1000. Measured 2026-10-09: the reference
+     *  interpreter's runner passes the case in both orders; the ASP runner declines it ("sum fallback other than 0 is
+     *  not translated yet"); the exec-model branch and the DRL-text branch write the fallback unrestated, 1 where 1000
+     *  is expected. <b>Red</b> (2026-10-09) at the claim of the card: "een §5.8.2 terugvalwaarde over eenheden die
+     *  herrekend moeten worden (km naar m): de truth-maintenance-tak draagt deze vorm nog niet". */
+    @Test void de_terugvalwaarde_van_een_som_wordt_herrekend_naast_later_afgeleide_lengtes() throws Exception {
+        String model = TmsDocumenten.modelMet(List.of(
+                TmsDocumenten.objecttype("Sleepbaan", List.of(attribuut("totale lengte", M)), List.of()),
+                TmsDocumenten.objecttype("Baandeel", List.of(attribuut("grondlengte", M), attribuut("lengte", M)),
+                        List.of())),
+                List.of(TmsDocumenten.feittypeEenNaarVeel("baanindeling", "baan", "Sleepbaan", "baandeel", "Baandeel",
+                        "baandelen")),
+                List.of(), List.of(eenheidstelsel("Afstand", List.of(METER, KILOMETER))));
+        String lengte = rekenregel("lengte van een baandeel", "BEREKENING", "Baandeel", "lengte",
+                lezing("grondlengte", "Baandeel"), "null");
+        String totaal = rekenregel("totale lengte van een sleepbaan", "BEREKENING", "Sleepbaan", "totale lengte",
+                TmsDocumenten.aggregatie("sum", lezing("lengte", "Baandeel"), "Baandeel",
+                        TmsDocumenten.bronrol("baanindeling", "baandeel"), "null",
+                        literaal("1", getaltype(true, 0, KILOMETER)), M,
+                        "de som van de lengte van alle baandelen van de Sleepbaan of 1 km als die er niet zijn"), "null");
+        assertElkeVolgorde(model, List.of(lengte, totaal), TmsDocumenten.zaakOp(null, List.of(
+                TmsDocumenten.instantieMetRollen("S1", "Sleepbaan", Map.of(), List.of(),
+                        Map.of("baandelen", List.of("G1", "G2"))),
+                TmsDocumenten.instantieMetRollen("S2", "Sleepbaan", Map.of(), List.of(), Map.of()),
+                TmsDocumenten.instantieMetRollen("S3", "Sleepbaan", Map.of(), List.of(), Map.of("baandelen", List.of("G3"))),
+                TmsDocumenten.instantieMetRollen("G1", "Baandeel", Map.of("grondlengte", "300"), List.of(), Map.of()),
+                TmsDocumenten.instantieMetRollen("G2", "Baandeel", Map.of("grondlengte", "200", "lengte", "999"), List.of(),
+                        Map.of()),
+                TmsDocumenten.instantieMetRollen("G3", "Baandeel", Map.of(), List.of(), Map.of())),
+                List.of(waarde("S1", "totale lengte", "500"), waarde("S2", "totale lengte", "1000"),
+                        waarde("S3", "totale lengte", "1000"), consistent())));
+    }
+
     // ---------------- helpers ----------------
 
     /** Every order of {@code regels} in the document of {@code model} plays {@code zaak}. */
