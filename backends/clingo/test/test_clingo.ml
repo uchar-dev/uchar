@@ -15108,21 +15108,24 @@ let () =
     ~beginwaarde:(eigen "basis") [ basis_vast; stand; opvolgerbegin ]
     [ ("stand", "1"); ("opvolgerbegin", "7") ]
 
-(* RUNTIME-SEMANTICS ch. 5.5, the generation budget (card
-   creatiebudget-ref-en-clingo, 2026-10-09): a stratum admits at most 100
-   generations that make an object or lay a link, and a 101st is a fault,
-   in ref ("no fixpoint within 100 generations") and here ("generation
-   budget exhausted", UNSAT). The depth this backend keeps for it starts
-   again in every evaluation stratum. Every frame pins ref beside this
-   backend.
+(* RUNTIME-SEMANTICS ch. 5.5, the creation budget (card
+   creatiebudget-ref-en-clingo, 2026-10-09): every minted instance has a
+   creation depth in the stratum of the creation that minted it, and a mint
+   at depth 101 is a fault, in ref and here, each with "creation budget
+   exhausted" (here a viol/2 witness, UNSAT). The depth starts again in
+   every evaluation stratum. Every frame pins ref beside this backend. The
+   frames were written for a budget of 100 generations per stratum that
+   mint or link, the decision this card held first; on a chain whose every
+   generation mints one instance on the last, depth and generation are one
+   number, so those frames hold under both.
 
    The chain of corpus/rood/finite-chain-over-budget without its
    consistency: "werf de lange keten" while the rang is below N, from W1 of
-   rang 1, N - 1 generations. 99 and 100 generations play and 101 fault;
-   until 2026-10-09 this backend was UNSAT at 100 already, where ref plays
-   (the card's documents q2-grens-100/101/102). With the rank detector "de
-   rang van een Wachter is kleiner dan N" beside the chain, the frame also
-   pins that the last Wachter, of rang N, is made.
+   rang 1, N - 1 mints. 99 and 100 play and 101 faults; until 2026-10-09
+   this backend was UNSAT at 100 already, where ref plays (the card's
+   documents q2-grens-100/101/102). With the rank detector "de rang van een
+   Wachter is kleiner dan N" beside the chain, the frame also pins that the
+   last Wachter, of rang N, is made.
 
    The chain over three strata, 50 + 1 + 50: Wachters to rang 51 (stratum
    0), one Boei for the Wachter of rang 51 ("leg een boei", stratum 1),
@@ -15137,9 +15140,29 @@ let () =
    nummer N (stratum 1, the wachterrang reads the rang of the Boei's
    wachter), beside "kopie van een boei" (kopie = nummer, the chain's
    stratum), the characteristic "genummerd" (a stratum higher) or nothing,
-   each in both orders of the two creations. To B101 (100 generations) and,
-   with the kopie, to B100; until 2026-10-09 every frame to B101 was UNSAT
-   here. *)
+   each in both orders of the two creations. To B101 (depth 100) and, with
+   the kopie, to B100; until 2026-10-09 every frame to B101 was UNSAT here.
+
+   The two forms on which a count of generations and the depth part (the
+   lens on the card's first step, the second advice): a recursive fact
+   creation that lays a closure of 102 hops over 103 Wachters of the input,
+   whose last link comes in the 101st generation of its stratum, plays in
+   both, since a fact creation mints nothing and carries no budget; and a
+   chain whose every mint waits a generation for the link a fact creation
+   of its group lays ("werf de opvolger" while the rang is below N and the
+   Wachter has a maatgever, "maak maten"): to N = 101 it mints W101 at depth
+   100 in generation 199 and plays, to N = 102 the mint at depth 101 is the
+   fault in both. This backend played the first and the second to N = 101
+   before the change as well; ref faulted on all three, at its 101st
+   generation.
+
+   The clamp beside the depth guard: a creation of stratum k whose subject
+   has no depth in k would not fire, silently. On a verifier-clean document
+   that cannot occur, since a creation reads its subject's population
+   strictly and every maker of its subjects sits at or below its stratum;
+   the frame forges such a subject in the program text (an instance with a
+   depth in stratum 1 only, met by a creation of stratum 0) and pins the
+   named witness. *)
 let () =
   let getal = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let literal n =
@@ -15232,7 +15255,7 @@ let () =
     | _ -> check (name ^ ": ref faults on the budget (it evaluated)") false
     | exception Uchar_ref.Value.Fault m ->
         check (name ^ ": ref faults on the budget (" ^ m ^ ")")
-          (Uchar_ref.Case.contains ~needle:"no fixpoint within 100 generations" m));
+          (Uchar_ref.Case.contains ~needle:"creation budget exhausted" m));
     let label = name ^ ": clingo is UNSAT on the budget" in
     match translate doc case with
     | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
@@ -15242,7 +15265,7 @@ let () =
             let ws = Solve.diagnose program in
             check
               (label ^ " (" ^ String.concat "; " ws ^ ")")
-              (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"generation budget exhausted" w) ws)
+              (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"creation budget exhausted" w) ws)
         | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
         | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
         | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
@@ -15262,7 +15285,7 @@ let () =
   in
   List.iter
     (fun (grens, generaties) ->
-      let name = Printf.sprintf "ch5.5 generation budget, a chain of %d generations" generaties in
+      let name = Printf.sprintf "ch5.5 creation budget, a chain of %d mints" generaties in
       if generaties <= 100 then begin
         speelt ~name ~ir:(lange_keten grens) ~case_text:(zaak [ waarde "W1" "rang" "1" ]);
         speelt ~name:(name ^ " with its rank detector") ~ir:(lange_keten ~met_detector:true grens)
@@ -15304,13 +15327,13 @@ let () =
   and drie_strata_zaak =
     zaak [ waarde "W1" "rang" "1"; inconsistent "wachterdetector"; inconsistent "boeidetector" ]
   in
-  speelt ~name:"ch5.5 generation budget, a chain over three strata (50 + 1 + 50)" ~ir:drie_strata
+  speelt ~name:"ch5.5 creation budget, a chain over three strata (50 + 1 + 50)" ~ir:drie_strata
     ~case_text:drie_strata_zaak;
   (* The nesting bound: the same document with oc_nest lowered to 60 in the
      program text, so the frame grounds small. B1 nests 51 levels deep, so
      B10 reaches the bound; this backend refuses by name, where ref, which
      keeps no such bound, plays. *)
-  (let name = "ch5.5 generation budget, the nesting bound (oc_nest lowered to 60) on 50 + 1 + 50" in
+  (let name = "ch5.5 creation budget, the nesting bound (oc_nest lowered to 60) on 50 + 1 + 50" in
    ref_matches ~name ~ir:drie_strata ~case_text:drie_strata_zaak;
    let doc, case = load_pair ~ir:drie_strata ~case_text:drie_strata_zaak in
    let label = name ^ ": clingo refuses by name where ref plays" in
@@ -15344,7 +15367,7 @@ let () =
       List.iter
         (fun (volgorde, creaties) ->
           speelt
-            ~name:(Printf.sprintf "ch5.5 generation budget, document L to B%d %s [%s]" grens variant volgorde)
+            ~name:(Printf.sprintf "ch5.5 creation budget, document L to B%d %s [%s]" grens variant volgorde)
             ~ir:
               (doc ~types:[ wachter; boei ~l:true ] ~feittypen:[ opvolging; boeiketen; bewaking ] ~regels ~creaties
                  ~groepen ())
@@ -15355,7 +15378,67 @@ let () =
       ("with the kopie", 101, [ kopie ], [ waarde "B1" "kopie" "1" ]);
       ("with genummerd", 101, [ genummerd ],
         [ {|{"kind": "characteristicPresent", "label": "B1", "characteristic": "genummerd"}|} ]);
-      ("without a rule", 101, [], []) ]
+      ("without a rule", 101, [], []) ];
+  (* a closure of 102 hops, laid by a recursive fact creation *)
+  let erflijn =
+    {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [{"node": "Attribute", "name": "erfvolgeraantal", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "erflijn", "reciprocal": false, "roles": [{"node": "Role", "name": "erflater", "objectType": "Wachter", "plural": "erflaters", "many": true}, {"node": "Role", "name": "erfvolger", "objectType": "Wachter", "plural": "erfvolgers", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "erfvolgeraantal van een wachter", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "erfvolgeraantal", "subjectType": "Wachter", "source": {"snippet": "Het erfvolgeraantal van een Wachter"}}, "value": {"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "erfvolgers", "subjectType": "Wachter", "source": {"snippet": "alle erfvolgers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "erflijn", "role": "erfvolger"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "het aantal erfvolgers van de Wachter"}}, "initialisation": false, "presentation": "equation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "erf de directe opvolger", "versions": [{"factType": "erflijn", "anchorRole": "erflater", "targetRole": "erfvolger", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}, {"node": "FactCreation", "name": "erf de lijn door", "versions": [{"factType": "erflijn", "anchorRole": "erflater", "targetRole": "erfvolger", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "erflijn", "role": "erfvolger"}, {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "erfestafette", "recursive": true, "members": ["erf de lijn door"]}]}, "diagnostics": []}|}
+  and erflijn_zaak =
+    let wachter i =
+      Printf.sprintf
+        {|{"label": "W%d", "objectType": "Wachter", "attributes": {}, "roles": {%s}, "characteristics": []}|} i
+        (if i < 103 then Printf.sprintf {|"opvolger": ["W%d"]|} (i + 1) else "")
+    in
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [%s, {"kind": "consistent"}]}|}
+      (String.concat ", " (List.init 103 (fun i -> wachter (i + 1))))
+      (waarde "W1" "erfvolgeraantal" "102")
+  in
+  speelt ~name:"ch5.5 creation budget, a closure of 102 hops by a recursive fact creation" ~ir:erflijn
+    ~case_text:erflijn_zaak;
+  (* a chain whose every mint waits a generation for a link *)
+  let wacht_op_link grens =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [%s], "factTypes": [%s, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "maat", "objectType": "Wachter", "plural": "maten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [%s], "allocations": [], "consistencies": [%s], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "maak maten", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "maat", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger", "maak maten"], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      wachter opvolging
+      (creatie "werf de opvolger" ~subject:"Wachter" ~nieuw:"Wachter"
+         ~inits:[ init "rang" (plus_een "Wachter" "rang") ]
+         ~voorwaarde:
+           (Printf.sprintf
+              {|{"node": "Compound", "quantifier": "all", "threshold": 0, "parts": [%s, %s], "source": {"snippet": "aan alle volgende voorwaarden"}}|}
+              (vergelijking "less" (lees "Wachter" "rang") (literal grens))
+              (vergelijking "greater"
+                 {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "maatgevers", "subjectType": "Wachter", "source": {"snippet": "maatgevers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "maatschap", "role": "maatgever"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal maatgevers van de Wachter"}}|}
+                 (literal 0)))
+         ~feittype:"opvolging" ~rol:"opvolger")
+      (detector "rangdetector" "Wachter" "rang" grens)
+  and wacht_zaak =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W0", "objectType": "Wachter", "attributes": {"rang": {"number": "0"}}, "roles": {}, "characteristics": []}, {"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {"maatgever": ["W0"]}, "characteristics": []}], "parameters": {}}, "expected": [%s, %s]}|}
+      (waarde "W1" "rang" "1") (inconsistent "rangdetector")
+  in
+  speelt ~name:"ch5.5 creation budget, a chain that waits for links, W101 at depth 100" ~ir:(wacht_op_link 101)
+    ~case_text:wacht_zaak;
+  budget_op ~name:"ch5.5 creation budget, a chain that waits for links, W102 at depth 101"
+    ~ir:(wacht_op_link 102) ~case_text:wacht_zaak;
+  (* the clamp: a forged instance with a depth in stratum 1 only, an instance
+     of the subject type of "werf de lange keten", of stratum 0 *)
+  let name = "ch5.5 creation budget, the clamp on a subject without a depth in the creation's stratum" in
+  let doc, case = load_pair ~ir:(lange_keten 5) ~case_text:(zaak [ waarde "W1" "rang" "1" ]) in
+  let label = name ^ ": clingo refuses by name" in
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
+  | program -> (
+      match
+        Solve.run_clingo (program ^ "\nis_a(oc9(\"W1\"),\"wachter\"). depth(oc9(\"W1\"),1,1). nest(oc9(\"W1\"),1).\n")
+      with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnose (program ^ "\nis_a(oc9(\"W1\"),\"wachter\"). depth(oc9(\"W1\"),1,1). nest(oc9(\"W1\"),1).\n") in
+          check
+            (label ^ " (" ^ String.concat "; " ws ^ ")")
+            (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"has no creation depth" w) ws)
+      | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
+      | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
+      | _, _ -> check (label ^ " (clingo killed)") false)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

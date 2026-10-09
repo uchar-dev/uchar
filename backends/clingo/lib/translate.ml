@@ -436,7 +436,7 @@ type ctx = {
   mutable sign_helpers : string list;
   (* the evaluation stratum of every object creation, by its wire pointer
      ([object_creation_strata]); empty in a document without a recursive
-     creation, where no generation depth is kept *)
+     creation, where no creation depth is kept *)
   oc_strata : (string * int) list;
 }
 
@@ -851,7 +851,7 @@ let case_supplies ctx ~otype ~attr =
     ctx.case.world.instances
 
 (* the distinct evaluation strata of the object creations, ascending: the
-   strata in which a generation depth is kept *)
+   strata in which a creation depth is kept *)
 let oc_strata_of ctx = List.sort_uniq compare (List.map snd ctx.oc_strata)
 
 (* the deepest a minted term may nest, over all strata. Measured on clingo
@@ -861,8 +861,12 @@ let oc_strata_of ctx = List.sort_uniq compare (List.map snd ctx.oc_strata)
 let oc_nest = 190
 
 (* does any recursive rule group carry an object-creation member? —
-   gates the generation-depth machinery (depth/3, nest/2, oc_budget,
-   oc_nest) *)
+   gates the creation-depth machinery (depth/3, nest/2, oc_budget,
+   oc_nest). Without one no creation mints twice in one chain of mints: a
+   creation reads its subject's population, so a chain that met one
+   creation twice would close a dependency cycle through object creations
+   of no recursive group, which WF-045 refuses. A chain is then no deeper
+   than the document has object creations *)
 let has_recursive_creation (doc : document) =
   List.exists
     (fun (g : resolved_regel_groep) ->
@@ -9873,22 +9877,32 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    narrowing ref/ records for its guard.
 
    In a document with a recursive creation every creation grounds along a
-   generation depth per evaluation stratum, ch. 5.5's generation budget
-   (card creatiebudget-ref-en-clingo, 2026-10-09). depth(X,K,D) says that
-   X is D generations deep in stratum K: an input instance, and an
-   instance a lower stratum made, is 0 there, since ch. 6.3 completes a
-   lower stratum before a higher one starts. A creation of stratum k
-   gives its mint D+1 from its subject's depth in k, so the depth goes on
-   only from a subject that stratum k itself made, which on a
-   verifier-clean document is a subject on the creation's own WF-045
-   cycle: a creation reads its subject's population, so every other maker
-   of its subjects sits in a lower stratum. The guard admits a subject up
-   to depth oc_budget (100), so the 100th generation is made, and a 101st
-   derives the viol/2 witness — UNSAT where ref/ faults with "no fixpoint
-   within 100 generations", never a silent truncation. Until 2026-10-09
-   the depth ran on over the strata and the witness fell at the 100th
-   generation: a chain of 100 generations, and chains of 50 + 1 + 50 over
-   three strata, were UNSAT here, where ref plays them.
+   creation depth per evaluation stratum, ch. 5.5's creation budget (card
+   creatiebudget-ref-en-clingo, 2026-10-09). depth(X,K,D) says that X is a
+   mint at depth D in stratum K: an input instance, and an instance a
+   lower stratum made, is 0 there, since ch. 6.3 completes a lower stratum
+   before a higher one starts. A creation of stratum k gives its mint D+1
+   from its subject's depth in k, so the depth goes on only from a subject
+   that stratum k itself made, which on a verifier-clean document is a
+   subject on the creation's own WF-045 cycle: a creation reads its
+   subject's population, so every other maker of its subjects sits in a
+   lower stratum. The guard admits a subject up to depth oc_budget (100),
+   so the mint at depth 100 is made, and one at 101 derives the viol/2
+   witness "creation budget exhausted" — UNSAT where ref/ faults in the
+   same words, never a silent truncation. The depth is the norm, not a
+   count of generations: a mint that waits for a link or a value keeps
+   its subject's depth, as in ref/. Until 2026-10-09 the depth ran on over
+   the strata and the witness fell at the 100th mint: a chain of 100
+   mints, and chains of 50 + 1 + 50 over three strata, were UNSAT here,
+   where ref plays them.
+
+   The depth guard would leave a creation silent on a subject without a
+   depth in its stratum, and only a mint of a higher stratum lacks one: an
+   input instance is 0 in every stratum of a creation, and a mint carries
+   its own stratum's depth and 0 above it. That cannot occur on a
+   verifier-clean document, by the population read above, so every
+   creation carries a clamp that derives a named viol/2 witness on such a
+   subject instead of firing silently on none.
 
    The depth no longer bounds the nesting of the terms, which grows by one
    per creation over all strata, and clingo aborts while it prints an
@@ -9957,7 +9971,15 @@ let translate_object_creatie ctx i (oc : resolved_object_creatie) =
   (match stratum with
   | Some k ->
       head_body ctx (Printf.sprintf "depth(%s,%d,D+1)" term k) body;
-      head_body ctx (Printf.sprintf "nest(%s,Nest+1)" term) body
+      head_body ctx (Printf.sprintf "nest(%s,Nest+1)" term) body;
+      emit ctx "viol(%s,%s) :- isa(%s,%s), not hasdepth(%s,%d)."
+        (quote
+           (Printf.sprintf
+              "the subject of object creation \"%s\" (stratum %d) has no creation depth in that \
+               stratum: only a mint of a higher stratum lacks one, and a creation reads its \
+               subject's population strictly, so the strata of this backend do not hold (ch. 6.3)"
+              ctx.rule_name k))
+        subject subject (str subject_ot) subject k
   | None -> ());
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str nieuw)) body;
   List.iter
@@ -11096,7 +11118,7 @@ let translate_case ctx (case : Case.t) =
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
-      (* an input instance is generation depth 0 in every stratum of an
+      (* an input instance is creation depth 0 in every stratum of an
          object creation, and nests no term *)
       if has_recursive_creation doc then begin
         List.iter (fun k -> emit ctx "depth(%s,%d,0)." (str_raw label) k) (oc_strata_of ctx);
@@ -11461,9 +11483,9 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
    least stratum at or above its positive producers and strictly above its
    other producers, except along a dependency cycle, which WF-045 admits
    through a recursive group and on which every edge counts positive. The
-   generation budget of ch. 5.5 counts per stratum, so the depth this
-   backend keeps for it ([translate_object_creatie]) has to start again
-   exactly where ref's count does; a stratification of its own could split
+   creation budget of ch. 5.5 counts the depth per stratum, so the depth
+   this backend keeps for it ([translate_object_creatie]) has to start
+   again exactly where ref's does; a stratification of its own could split
    a chain ref counts as one, or join two that ref counts apart. Returns
    the stratum of every object creation, by its wire pointer. *)
 let object_creation_strata (doc : document) : (string * int) list =
@@ -11611,14 +11633,16 @@ let translate (doc : document) (case : Case.t) : string =
   if List.exists (fun (_, (ot : objecttype)) -> ot.ot_supertype <> None) doc.objecttypen then
     emit ctx "isa(X,S) :- isa(X,S0), isa_sub(S0,S).";
   if has_recursive_creation doc then begin
-    (* ch. 5.5's generation budget, grounded per stratum
-       ([translate_object_creatie]): a 101st generation in one stratum
-       derives the viol/2 witness — UNSAT where ref/ faults. An instance a
-       lower stratum made is depth 0 in every higher stratum of a
-       creation. The nesting bound keeps every term under clingo's abort
+    (* ch. 5.5's creation budget, grounded per stratum
+       ([translate_object_creatie]): a mint at depth 101 in its stratum
+       derives the viol/2 witness — UNSAT where ref/ faults, with the same
+       words. An instance a lower stratum made is depth 0 in every higher
+       stratum of a creation. hasdepth/2 serves the clamp each creation
+       carries. The nesting bound keeps every term under clingo's abort
        (README, Recorded limitations). *)
     emit ctx "#const oc_budget = 100. #const oc_nest = %d. #defined depth/3. #defined nest/2." oc_nest;
-    emit ctx "viol(\"generation budget exhausted\",X) :- depth(X,_,D), D > oc_budget.";
+    emit ctx "viol(\"creation budget exhausted\",X) :- depth(X,_,D), D > oc_budget.";
+    emit ctx "hasdepth(X,K) :- depth(X,K,_).";
     emit ctx
       "viol(\"term nesting bound reached: a chain of %d nested creations over all strata is \
        deeper than this backend carries (README, Recorded limitations)\",X) :- nest(X,Nest), \

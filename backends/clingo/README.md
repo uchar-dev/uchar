@@ -166,39 +166,47 @@ spec bug.
   1:1 linked-instance guard is `not inputrol/3` over the case links
   only (ch. 5.5's input-snapshot narrowing). An ambiguous connecting
   relation faults the translation, as in `ref/`.
-- In a document with a creation in a **recursive rule group**
-  (IR-SPEC ch. 3.9) every object creation grounds along a generation
-  depth per evaluation stratum, ch. 5.5's generation budget: a stratum
-  admits at most 100 generations that make an object or lay a link, and
-  the reference interpreter faults on a 101st with "no fixpoint within
-  100 generations". `depth(X,K,D)` says that X is D generations deep in
-  stratum K. The strata are the reference interpreter's, computed the
-  same way over the verifier's dependency graph of the document as
-  loaded. An input instance is depth 0 in every stratum of an object
-  creation, and so is an instance a lower stratum made
-  (`depth(X,K,0) :- depth(X,K0,D), D > 0, ocstratum(K), K > K0.`),
+- In a document with an object creation in a **recursive rule group**
+  (IR-SPEC ch. 3.9) every object creation grounds along a creation depth
+  per evaluation stratum, ch. 5.5's creation budget: every minted
+  instance has a depth in the stratum of the creation that minted it,
+  and a mint at depth 101 is a fault, in the reference interpreter and
+  here, each with "creation budget exhausted". `depth(X,K,D)` says that
+  X is a mint at depth D in stratum K. The strata are the reference
+  interpreter's, computed the same way over the verifier's dependency
+  graph of the document as loaded. An input instance is depth 0 in every
+  stratum of an object creation, and so is an instance a lower stratum
+  made (`depth(X,K,0) :- depth(X,K0,D), D > 0, ocstratum(K), K > K0.`),
   since ch. 6.3 completes a lower stratum before a higher one starts.
   A creation of stratum k carries `depth(S,k,D), D <= oc_budget` and
   derives `depth(ocN(S),k,D+1)`: the depth goes on only from a subject
   stratum k made, which on a verifier-clean document is one on the
   creation's own WF-045 cycle, because a creation reads its subject's
   population and every other maker of its subjects sits in a lower
-  stratum. The 100th generation is made, and a 101st derives the named
-  witness `viol("generation budget exhausted", _)` → UNSAT. Ch. 5.5's
-  bounded budget, never a silent truncation. Until 2026-10-09 the depth
-  ran on over the strata and the witness fell at the 100th generation:
-  a chain of 100 generations, and chains of 50 + 1 + 50 in three
-  strata, were UNSAT here where the reference interpreter plays them.
-  The suite's `ch5.5 generation budget` frames pin both sides, each
-  beside the reference interpreter. The depth follows the chain of
-  mints, and the reference interpreter counts generations: where a
-  subject mints only some generations after it was made, because its
-  condition waits for a link a fact creation lays or for a value a
-  later generation makes true, those generations count there and not
-  here, so near the bound the reference interpreter can fault where
-  this backend plays. For a relation creation alone that is the
-  recorded boundary of IR-SPEC ch. 3.9 (WF-033's note); no corpus
-  document comes near it.
+  stratum. The mint at depth 100 is made, and one at 101 derives the
+  named witness `viol("creation budget exhausted", _)` → UNSAT. Ch.
+  5.5's bounded budget, never a silent truncation. A mint whose
+  condition waits for a link a fact creation lays, or for a value a
+  later generation makes true, keeps its subject's depth, here and in
+  the reference interpreter, and a fact creation mints nothing and
+  carries no budget. Until 2026-10-09 the depth ran on over the strata
+  and the witness fell at the 100th mint: a chain of 100 mints, and
+  chains of 50 + 1 + 50 in three strata, were UNSAT here where the
+  reference interpreter plays them. The suite's `ch5.5 creation budget`
+  frames pin both sides, each beside the reference interpreter, among
+  them the two forms on which a count of generations and the depth part:
+  a closure of 102 hops that a recursive fact creation lays, and a chain
+  whose every mint waits a generation for a link.
+- Every creation of such a document also carries a clamp,
+  `viol(…, S) :- isa(S, T), not hasdepth(S, k).`: a subject without a
+  depth in the creation's stratum k would leave the creation silent
+  under its depth guard. Only a mint of a higher stratum lacks that
+  depth, and a verifier-clean document never gives a creation such a
+  subject, by the population read above; the suite forges one in the
+  program text and pins the witness. Without an object creation in a
+  recursive group no depth is kept: no creation then mints twice in one
+  chain of mints (it would close a dependency cycle WF-045 refuses), so
+  a chain is no deeper than the document has object creations.
 - The guards bound the grounding as well, and that is where its cost
   lies: gringo does not settle a chain's condition while it grounds, so
   a chain grounds as deep as its guard admits. A chain of a higher
@@ -363,7 +371,7 @@ Recorded limitations:
   `heeft(X,"k")` aborts with X nested 201 levels and `val(X,"a",V)` with
   X nested 202, and both print at 200. A minted instance is a term that
   nests one level per creation, over all strata. Until 2026-10-09 the
-  generation depth ran on over the strata and kept every term under 101
+  creation depth ran on over the strata and kept every term under 101
   levels; per stratum it no longer does (a chain of 100 + 1 + 100 nests
   201 levels). So every creation also carries `nest(S,Nest), Nest <
   oc_nest` and derives `nest(ocN(S),Nest+1)`, with `oc_nest` = 190, and
