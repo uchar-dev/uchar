@@ -114,6 +114,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * caught by its row: the companion fed the moved condition's inline ({@code inconsistent (zwaarte @ J5)}), the element
  * pattern without its always-true call in a fold and in a quantifier fold, and the value's clauses before the
  * condition's in a rule and in an object creation.
+ *
+ * <p>The second fix round gave member F of the composite a divisor of its own, the ploeg, where K divides by the
+ * deelnemers. With one filter for both, J1 faulted in F and in K with the same division, so a branch that evaluated the
+ * two folds in the other order gave the same answer in all 144 cells. Now J1 faults in F, D and K each in a division of
+ * its own, and a fourth case, J4, makes F fault where K does not hold, so the order of the two folds decides whether
+ * the composite faults there (192 cells). The round also added the row of a composite under another quantifier than
+ * alle whose fold can fault, which the exec-model branch now refuses by name. <b>Red before the round</b> (measured
+ * 2026-10-09, this class through Maven): with the transpilers of {@code 4ada319d} that row failed in all five of its
+ * forms with the exec-model branch's {@code DelingDoorNul: deling door nul in de regel "drukte": 9 gedeeld door 0 …},
+ * where the reference interpreter answers; its control and the DRL-text branch's refusals passed. A mutant that swaps
+ * the first two folds of an alle composite before it lowers the members, in either branch, passed the composite row
+ * of the first fix round, and fails the new one in 36 of that branch's 96 cells: every J4 cell, and every J1 cell whose
+ * order starts with F or K, among them {@code [F, A, D, K] J1 EXEC_MODEL: verwacht … 10 gedeeld door 0 …, kreeg … 9
+ * gedeeld door 0 …} and {@code [A, D, K, F] J4 DRL_TEXT: verwacht gespeeld, kreeg deling rsGedeeld(gewicht, ploeg)}.
  */
 class FilterfoutWitnessTest {
 
@@ -240,9 +254,14 @@ class FilterfoutWitnessTest {
 
     /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: {@link #FILTER}". */
     static String vouw() {
+        return vouw(FILTER);
+    }
+
+    /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: {@code filter}". */
+    static String vouw(String filter) {
         return aggregatie("count", "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
                 + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", bronrol("aanmelding", "vondst"),
-                FILTER, "null", TELLING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
+                filter, "null", TELLING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
     }
 
     /** "Een Jutter heeft een melding met telling gelijk aan {@code telling}, indien {@code voorwaarde}". */
@@ -371,14 +390,23 @@ class FilterfoutWitnessTest {
 
     // ---------------- the order of an "alle" composite around a fold ----------------
 
+    /** "zijn gewicht gedeeld door zijn ploeg is groter dan 2": the subselection of member F, which divides by another
+     *  attribute than {@link #FILTER} does, so that a case can make one of the two folds fault and not the other, and
+     *  each names a division of its own. */
+    static final String PLOEGFILTER = vergelijking("greater", "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":"
+            + lezing("gewicht", "Vondst") + ",\"right\":" + lezing("ploeg", "Vondst") + ",\"type\":{\"node\":"
+            + "\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":"
+            + "\"zijn gewicht gedeeld door zijn ploeg\"}}", getal("2"));
+
     /** The members of "Een Jutter is druk indien hij aan alle volgende voorwaarden voldoet", by letter: A "hij is
-     *  actief"; F "{@link #vouw()} is groter dan 0", a fold whose subselection divides; D "zijn saldo gedeeld door zijn
-     *  noemer is groter dan 1"; K "het gewicht van ten minste één van de vondsten van de Jutter die {@link #FILTER} is
-     *  groter dan 5", a quantifier fold whose subselection divides. */
+     *  actief"; F "{@link #vouw(String)} over {@link #PLOEGFILTER} is groter dan 0", a fold whose subselection divides
+     *  by the ploeg; D "zijn saldo gedeeld door zijn noemer is groter dan 1"; K "het gewicht van ten minste één van de
+     *  vondsten van de Jutter die {@link #FILTER} is groter dan 5", a quantifier fold whose subselection divides by the
+     *  deelnemers. */
     static String lid(char letter) {
         return switch (letter) {
             case 'A' -> check("actief", false);
-            case 'F' -> vergelijking("greater", vouw(), getal("0"));
+            case 'F' -> vergelijking("greater", vouw(PLOEGFILTER), getal("0"));
             case 'D' -> vergelijking("greater", TmsFilterfoutWitnessTest.quotient(lezing("saldo", "Jutter"),
                     lezing("noemer", "Jutter")), getal("1"));
             case 'K' -> kwantorvouw("atLeast", FILTER, vergelijking("greater", lezing("gewicht", "Vondst"), getal("5")));
@@ -395,23 +423,36 @@ class FilterfoutWitnessTest {
                 actief ? List.of("actief") : List.of(), Map.of("vondsten", vondsten));
     }
 
-    /** J1 is not actief, its V2 divides 9 by 0 and its noemer is 0. J2 is actief and every member holds: V3 (10 by 2 is
-     *  5, gewicht 10 above 5) contributes, and 6 by 2 is 3. J3 is actief, its one vondst V5 (2 by 2 is 1) is no
-     *  contributor, so F and K do not hold, and its noemer is 0. */
-    static final List<Geval> GEVALLEN = List.of(
-            new Geval("J1", List.of(jutter("J1", false, "5", "0", List.of("V1", "V2")), vondst("V1", "10", "2"),
-                    vondst("V2", "9", "0")), Map.of('A', "O", 'F', "9", 'D', "5", 'K', "9")),
-            new Geval("J2", List.of(jutter("J2", true, "6", "2", List.of("V3", "V4")), vondst("V3", "10", "2"),
-                    vondst("V4", "3", "3")), Map.of('A', "W", 'F', "W", 'D', "W", 'K', "W")),
-            new Geval("J3", List.of(jutter("J3", true, "5", "0", List.of("V5")), vondst("V5", "2", "2")),
-                    Map.of('A', "W", 'F', "O", 'D', "5", 'K', "O")));
+    private static String vondst(String label, String gewicht, String deelnemers, String ploeg) {
+        return instantieMetRollen(label, "Vondst", Map.of("gewicht", gewicht, "deelnemers", deelnemers, "ploeg", ploeg),
+                List.of(), Map.of());
+    }
 
-    /** The composite's verdict on {@code g} by RUNTIME-SEMANTICS ch. 5.10: the members are read in {@code volgorde}, and
-     *  the first that does not hold or faults decides; "W" where every member holds. */
+    /** J1 is not actief, and every other member faults in a division of its own: F at V1, 10 by its ploeg 0; D, 5 by
+     *  the noemer 0; K at V2, 9 by its deelnemers 0 (the subselection is settled for every vondst before the matrix,
+     *  ch. 3.9a, so V1, which holds the matrix, does not stop it). J2 is actief and every member holds: V3, 10 by 2 in
+     *  both quotients and gewicht 10 above 5, counts for F and for K, and 6 by 2 is 3. J3 is actief, its one vondst V5,
+     *  2 by 2 in both quotients, counts for neither, so F and K do not hold, and its noemer is 0. J4 is actief and D
+     *  holds; its one vondst V7 makes F fault, 10 by its ploeg 0, and does not count for K, 10 by its deelnemers 5
+     *  being 2: whether the composite faults or answers there follows the order of F and K alone. */
+    static final List<Geval> GEVALLEN = List.of(
+            new Geval("J1", List.of(jutter("J1", false, "5", "0", List.of("V1", "V2")), vondst("V1", "10", "2", "0"),
+                    vondst("V2", "9", "0", "3")), Map.of('A', "O", 'F', "10", 'D', "5", 'K', "9")),
+            new Geval("J2", List.of(jutter("J2", true, "6", "2", List.of("V3", "V4")), vondst("V3", "10", "2", "2"),
+                    vondst("V4", "3", "3", "3")), Map.of('A', "W", 'F', "W", 'D', "W", 'K', "W")),
+            new Geval("J3", List.of(jutter("J3", true, "5", "0", List.of("V5")), vondst("V5", "2", "2", "2")),
+                    Map.of('A', "W", 'F', "O", 'D', "5", 'K', "O")),
+            new Geval("J4", List.of(jutter("J4", true, "6", "2", List.of("V7")), vondst("V7", "10", "5", "0")),
+                    Map.of('A', "W", 'F', "10", 'D', "W", 'K', "O")));
+
+    /** The composite's verdict on {@code g} by RUNTIME-SEMANTICS ch. 5.10 and 5.11: the members are read in
+     *  {@code volgorde}, and the first that does not hold or faults decides, a fault ending the evaluation; "W" where
+     *  every member holds, "O" where one does not, and for a fault the member's letter and its dividend ("F 10"). */
     static String verdict(List<Character> volgorde, Geval g) {
         for (char c : volgorde) {
             String o = g.oordeel().get(c);
-            if (!o.equals("W")) return o;
+            if (o.equals("O")) return o;
+            if (!o.equals("W")) return c + " " + o;
         }
         return "W";
     }
@@ -433,17 +474,28 @@ class FilterfoutWitnessTest {
         }
     }
 
-    /** What {@code tak} must give where the verdict on rule {@code regel} is {@code verdict}: the dividend 9 is V2's
-     *  gewicht by deelnemers, 5 the saldo by the noemer. */
+    /** The quotient of each member's division as the DRL-text branch writes it in the constraint it names. */
+    private static final Map<Character, String> QUOTIENT = Map.of('F', "rsGedeeld(gewicht, ploeg)",
+            'D', "rsGedeeld(saldo, noemer)", 'K', "rsGedeeld(gewicht, deelnemers)");
+
+    /** What {@code tak} must give where the verdict on rule {@code regel} is {@code verdict}: for a fault, the
+     *  exec-model branch's division with its dividend, the DRL-text branch's exception with the member's quotient. */
     static String verwachting(String verdict, String regel, DroolsBackend.Branch tak) {
         if (verdict.equals("W") || verdict.equals("O")) return "gespeeld";
-        if (tak == EXEC) return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict + " gedeeld door 0"
-                + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
-        return "deling " + (verdict.equals("9") ? "rsGedeeld(gewicht, deelnemers)" : "rsGedeeld(saldo, noemer)");
+        if (tak == EXEC) return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict.substring(2)
+                + " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
+                + " punt 4)";
+        return "deling " + QUOTIENT.get(verdict.charAt(0));
     }
 
-    /** Every order of the four members, on the three cases, on both branches: a member is evaluated only where every
-     *  member before it holds, so the verdict, and whether and where a division by 0 happens, follows the order. */
+    /** Every order of the four members, on the four cases, on both branches: a member is evaluated only where every
+     *  member before it holds, and a fault ends the evaluation (ch. 5.10, 5.11), so the verdict, and whether and which
+     *  division by 0 happens, follows the order. On J1 each branch names the division of the first member, F's, D's or
+     *  K's, so a branch that evaluated the two folds in the other order names the other fold's division; on J4 it
+     *  faults where the order puts F before K, and answers where it puts K first. The reference interpreter's message
+     *  names no division ("division by numeric zero"); it faults on J4 in each of the twelve orders with F before K and
+     *  answers in each of the other twelve, and agrees with every other cell (measured 2026-10-09 on the RegelSpraak
+     *  frontend's documents of all 24 orders; the ASP runner agrees cell for cell). */
     @Test void de_leden_van_een_alle_samenstelling_in_elke_volgorde() throws Exception {
         List<String> afwijkend = new ArrayList<>();
         for (List<Character> volgorde : TmsDocumenten.permutaties(List.of('A', 'F', 'D', 'K'))) {
@@ -530,6 +582,80 @@ class FilterfoutWitnessTest {
         for (Path ir : List.of(vouwEerst, actiefEerst))
             assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j2,
                     List.of(verwacht("J2", "druk", true), consistent())), EXEC));
+    }
+
+    /** "de eerste van de vinddatum van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen:
+     *  {@code filter} is later dan zijn peildatum". */
+    private static String datumvouw(String filter) {
+        return vergelijking("later", aggregatie("first", lezing("vinddatum", "Vondst"), "Vondst",
+                bronrol("aanmelding", "vondst"), filter, "null", DATUM, "de eerste van de vinddatum van alle vondsten"
+                        + " van de Jutter die aan de volgende voorwaarde voldoen"), lezing("peildatum", "Jutter"));
+    }
+
+    /** {@link #datumvouw} over {@link #FILTER} as the third member after "hij is actief" and "hij is beladen", under
+     *  geen, ten minste 1, ten hoogste 1 and precies 1, and under ten minste 1 after "hij is beladen", nested in an
+     *  alle composite after "hij is actief". J1 is actief and beladen and its V2 divides 9 by 0. Every composite
+     *  settles before the fold (ch. 5.10), so the reference interpreter answers: not druk, druk, not druk, not druk,
+     *  and nested druk (measured 2026-10-09 on the RegelSpraak frontend's documents of these forms; the ASP runner
+     *  agrees). The exec-model branch lowers such a composite as one test after the accumulates of all its folds, and
+     *  Drools folds those for every subject before the test reads the members in their order, so the branch divided 9
+     *  by 0 there. It now refuses the form by name; the DRL-text branch refuses a fold of dates in a condition. The
+     *  control: the same composites over "zijn gewicht is groter dan 5", which cannot fault, play on the exec-model
+     *  branch as the reference interpreter answers, on J1 and on J2, neither actief nor beladen, whose V3 is heavy and
+     *  was found after its peildatum, so that geen, ten minste 1 and precies 1 read the fold: not druk, druk, druk,
+     *  druk. */
+    @Test void een_vouw_die_kan_falen_onder_een_andere_kwantor_dan_alle_wordt_geweigerd() throws Exception {
+        List<String> j1 = List.of(metDatums(instantieMetRollen("J1", "Jutter", Map.of(), List.of("actief", "beladen"),
+                Map.of("vondsten", List.of("V1", "V2"))), Map.of("peildatum", "2020-01-01")),
+                metDatums(vondst("V1", "10", "2"), Map.of("vinddatum", "2026-01-05")),
+                metDatums(vondst("V2", "9", "0"), Map.of("vinddatum", "2026-01-06")));
+        List<String> j2 = List.of(metDatums(instantieMetRollen("J2", "Jutter", Map.of(), List.of(),
+                Map.of("vondsten", List.of("V3", "V4"))), Map.of("peildatum", "2020-01-01")),
+                metDatums(vondst("V3", "10", "2"), Map.of("vinddatum", "2026-01-05")),
+                metDatums(vondst("V4", "3", "0"), Map.of("vinddatum", "2019-01-01")));
+        String zwaar = vergelijking("greater", lezing("gewicht", "Vondst"), getal("5"));
+        // per quantifier: its wire spelling and threshold, its name in the refusal, druk on J1, druk on J2 (control)
+        String[][] kwantoren = {{"none", "0", "GEEN", "false", "false"}, {"atLeast", "1", "TEN_MINSTE", "true", "true"},
+                {"atMost", "1", "TEN_HOOGSTE", "false", "true"}, {"exactly", "1", "PRECIES", "false", "true"}};
+        List<String> afwijkend = new ArrayList<>();
+        for (String[] k : kwantoren) {
+            int drempel = Integer.parseInt(k[1]);
+            Path ir = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld(k[0], drempel,
+                    List.of(check("actief", false), check("beladen", false), datumvouw(FILTER))))), List.of());
+            weigering(ir, TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk", Boolean.parseBoolean(k[3])),
+                    consistent())), k[2], k[0] + " " + drempel, afwijkend);
+            Path controle = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld(k[0], drempel,
+                    List.of(check("actief", false), check("beladen", false), datumvouw(zwaar))))), List.of());
+            for (JsonNode zaak : List.of(TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk",
+                    Boolean.parseBoolean(k[3])), consistent())), TmsDocumenten.zaak(j2, List.of(verwacht("J2", "druk",
+                    Boolean.parseBoolean(k[4])), consistent())))) {
+                String v = TmsFoutWitnessTest.speel(controle, zaak, EXEC);
+                if (!v.equals("gespeeld")) afwijkend.add(k[0] + " controle " + EXEC + ": " + v);
+            }
+        }
+        Path genest = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0, List.of(
+                check("actief", false), samengesteld("atLeast", 1, List.of(check("beladen", false),
+                        datumvouw(FILTER))))))), List.of());
+        weigering(genest, TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk", true), consistent())), "TEN_MINSTE",
+                "atLeast 1", afwijkend);
+        assertEquals(List.of(), afwijkend);
+    }
+
+    /** Adds to {@code afwijkend} where the exec-model branch does not refuse rule "drukte" of {@code ir} for a
+     *  composite under {@code kwantor} (its source text {@code bron}) whose fold divides, or the DRL-text branch does
+     *  not refuse the rule. */
+    private static void weigering(Path ir, JsonNode zaak, String kwantor, String bron, List<String> afwijkend)
+            throws Exception {
+        String exec = TmsFoutWitnessTest.speel(ir, zaak, EXEC);
+        String reden = "Excluded: transpiler SKIP: regel: drukte — regel (een " + kwantor + "-samenstelling met een"
+                + " vouw waarvan de subselectie een fout kan geven, een deling ('zijn gewicht gedeeld door zijn"
+                + " deelnemers'): deze tak vouwt elke vouw van de samenstelling op de linkerkant van haar regel, ook"
+                + " waar de samenstelling stopt voordat zij het lid met die vouw leest (RUNTIME-SEMANTICS ch. 5.10): "
+                + bron + "): drukte";
+        if (!exec.equals(reden)) afwijkend.add(bron + " " + EXEC + ": " + exec);
+        String drl = TmsFoutWitnessTest.speel(ir, zaak, DRL);
+        if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
+            afwijkend.add(bron + " " + DRL + ": " + drl);
     }
 
     /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan 50", a fold

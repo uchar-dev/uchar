@@ -728,21 +728,34 @@ The exec-model branch refuses, by name, a defaults group with a fold over a set 
 golden has one. A group whose folds cannot fault is lowered as before (the DRL-text branch refuses every defaults
 group).
 
+A composite under `geen` or a counting quantifier with a member that folds a date over a set source is lowered on the
+exec-model branch as one test that reads the members in their order and stops where the verdict stands, after the
+accumulates of all its folds (`ExecModelTranspiler.datumvouwVoorwaarde`). Drools folds those accumulates for every
+subject before the test, so the subselection of a fold in a member the composite never reaches was evaluated all the
+same: on "hij aan ten minste 1 van de volgende voorwaarden voldoet: hij is actief; de eerste van de vinddatum van alle
+vondsten … die {een deling} … is later dan zijn peildatum" `ref` stops after "hij is actief" and answers, where the
+branch divided by zero (measured 2026-10-09, under each of the four quantifiers and nested in an `alle` composite).
+The exec-model branch refuses, by name, such a composite when a fold anywhere in it has a subselection that can fault;
+one whose folds cannot fault is lowered as before, and no golden has one whose fold can. The DRL-text branch refuses a
+fold of dates in a condition. The other routes of such a composite evaluate no fold `ref` does not read: both branches
+refuse a fold of numbers in it, unless it is the single member of a composite under `geen` or `ten minste 1`, which
+`ref` reads wherever it reads the composite.
+
 Golden `jutterswet-filterwacht`, red case `vouwfilter-deelt-door-nul`, witness `FilterfoutWitnessTest`: the four members
-"hij is actief", a fold that divides, "zijn saldo gedeeld door zijn noemer is groter dan 1" and a quantifier fold that
-divides in all 24 orders on three cases; a fold beside a fold of dates, beside a member that reads through a role and in
-a fact creation's anchor condition, each in both orders; a fold in a rule's value and in a creation's initialisation
-under a fold in the condition; the companion of a division by leeg under a composite whose member moved; a divisor
-another rule writes on the element, under a fold and under a quantifier fold, in both rule orders; the refused and the
-lowered defaults group; and each other operation of the list in a subselection.
+"hij is actief", a fold that divides by the ploeg, "zijn saldo gedeeld door zijn noemer is groter dan 1" and a
+quantifier fold that divides by the deelnemers in all 24 orders on four cases, so that each order pins which division
+faults first and a branch that evaluates the two folds in the other order fails; a fold beside a fold of dates, beside a
+member that reads through a role and in a fact creation's anchor condition, each in both orders; a fold in a rule's
+value and in a creation's initialisation under a fold in the condition; the companion of a division by leeg under a
+composite whose member moved; a divisor another rule writes on the element, under a fold and under a quantifier fold, in
+both rule orders; the refused and the lowered defaults group; the refused and the lowered composite under each other
+quantifier; and each other operation of the list in a subselection.
 
 Limits that remain, measured 2026-10-09 with `ref` as the arbiter:
 
-- A composite under `geen` or a counting quantifier with a fold of dates as a member ("hij aan ten minste 1 van de
-  volgende voorwaarden voldoet: hij is actief; de eerste van de vinddatum van alle vondsten … die {een deling} … is
-  later dan zijn peildatum"): the exec-model branch folds the member's fold on the rule's left-hand side and faults
-  where `ref` stops after "hij is actief"; the DRL-text branch refuses the form. Such a composite with a fold of numbers
-  as a member is refused by both branches.
+- The refusal of a composite under `geen` or a counting quantifier is broader than the fault: it also refuses a fold
+  that can fault in the composite's first member, which `ref` reads wherever it reads the composite unless the
+  threshold settles it before any member (ch. 5.10), so that there the lowering it refuses gave what `ref` gives.
 - A quantifier fold whose matrix faults on a contributor after an earlier one settled the fold: `ref` stops in the
   contributors' order (ch. 3.9a); both branches evaluate the matrix of every contributor and fault.
 - Where the fold is reached: date arithmetic past the year 999 999 999 and the eerste paasdag of such a year fault in

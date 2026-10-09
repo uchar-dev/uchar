@@ -3873,7 +3873,22 @@ public final class ExecModelTranspiler {
             }
             // a member that folds a date over a set source needs an accumulate, which the fact-only fold below cannot
             // host: the whole composite is one test over the folds' values
-            if (bevatDatumvouwBlad(s)) return datumvouwVoorwaarde(s, pattern, subject, subjectVar);
+            if (bevatDatumvouwBlad(s)) {
+                // RUNTIME-SEMANTICS ch. 5.10: that test reads the members in their order and stops where the verdict
+                // stands, but the accumulates before it fold for every subject, so the subselection of a fold in a
+                // member the composite never reaches is evaluated all the same. One that can fault (kern.Faalbaar)
+                // ended the session where the reference interpreter answers. Folding only where the test reaches the
+                // member has no place in this lowering, so the form is refused.
+                String plek = vouwfoutIn(s);
+                if (plek != null) {
+                    vouwReden = "een " + s.kwantor() + "-samenstelling met een vouw waarvan de subselectie een fout kan"
+                            + " geven, " + plek + ": deze tak vouwt elke vouw van de samenstelling op de linkerkant van"
+                            + " haar regel, ook waar de samenstelling stopt voordat zij het lid met die vouw leest"
+                            + " (RUNTIME-SEMANTICS ch. 5.10): " + snippet(s.bron());
+                    return null;
+                }
+                return datumvouwVoorwaarde(s, pattern, subject, subjectVar);
+            }
             // §13.4.14.4 a SINGLE aggregation bullet under GEEN / "ten minste 1": the quantifier reduces to a plain
             // boolean transform of the one leaf (GEEN = NOT the leaf, ten minste 1 = the leaf). The counting fold below
             // is fact-only (Predicate1) and CANNOT host an aggregation leaf (which needs an accumulate CE), so route it
@@ -8908,6 +8923,14 @@ public final class ExecModelTranspiler {
                 if (p != null) return p;
             }
         return null;
+    }
+
+    /** The first operation that can fault in the subselection of a fold anywhere in {@code c} ({@link #vouwfout}), or
+     *  null. */
+    private String vouwfoutIn(Conditie c) {
+        String[] plek = { null };
+        Conditie.bevatOperand(c, x -> (plek[0] = vouwfout(x)) != null);
+        return plek[0];
     }
 
     /** Whether the one §9.5 site of a defaults consequence is the consequence itself, under at most a rounding: a
