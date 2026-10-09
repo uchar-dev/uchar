@@ -220,7 +220,7 @@ public final class TmsTranspiler {
     private final Map<Object, List<RolBindingRef>> bronPaden;
     /** The folds lowered so far, per node and fold subject: a node read again, by a rule's fault rule or by a default
      *  that two effective stacks share, reads the contributions already made for it. */
-    private final Map<Expr.Functie, Map<Objecttype, Vouw>> vouwen = new IdentityHashMap<>();
+    private final Map<Object, Map<Objecttype, Vouw>> vouwen = new IdentityHashMap<>();
     /** The contribution rules of the folds the lowered forms read, by the fold's key. */
     private final Map<String, List<Rule>> bijdrageregels = new LinkedHashMap<>();
     private int vouwteller;
@@ -1018,6 +1018,7 @@ public final class TmsTranspiler {
             case Conditie.Vergelijking v -> deponeert(v.links()) || deponeert(v.rechts());
             case Conditie.Predicaat p -> deponeert(p.operand());
             case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(this::deponeert);
+            case Conditie.Kwantorvouw kv -> deponeert(kv.filter()) || deponeert(kv.toets());
             default -> false;
         };
     }
@@ -2493,8 +2494,21 @@ public final class TmsTranspiler {
      *  can deposit), the reads of those rules, registered when a form that reads the fold lowers
      *  ({@link Lezingen#vastleggen}), whether its filter can fault, in which case the rule that reads it binds its
      *  {@link Filterfout} facts as well, and whether its filter can deposit, in which case that rule counts its
-     *  {@link Filterdeponering} facts. */
-    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {}
+     *  {@link Filterdeponering} facts; for a quantifier fold, whether its matrix can fault and whether it can deposit,
+     *  in which case its contributions carry a {@link Lidtoets} ({@link #kwantorvouw}). */
+    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert,
+                        boolean lidKanFalen, boolean lidDeponeert) {
+        /** A fold over a set source or a union: no matrix per member. */
+        Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {
+            this(sleutel, regels, lezingen, kanFalen, deponeert, false, false);
+        }
+
+        /** Whether the rule that reads the fold replays its contributors in order: a quantifier fold whose matrix can
+         *  fault or deposit ({@link Lidtoets}). */
+        boolean geordend() {
+            return lidKanFalen || lidDeponeert;
+        }
+    }
 
     /** The kinds of an aggregation, as against the builtins that share the node. */
     private static boolean isVouw(Expr.FunctieKind k) {
@@ -2874,9 +2888,9 @@ public final class TmsTranspiler {
         }
     }
 
-    /** The fold of {@code f} on {@code subject}, built by {@code bouw} from its key and its name the first time it is
-     *  read. */
-    private Vouw vouwVoor(Expr.Functie f, Objecttype subject, BiFunction<String, String, Vouw> bouw) {
+    /** The fold of {@code f}, an aggregation or a quantifier fold, on {@code subject}, built by {@code bouw} from its key
+     *  and its name the first time it is read. */
+    private Vouw vouwVoor(Object f, Objecttype subject, BiFunction<String, String, Vouw> bouw) {
         Map<Objecttype, Vouw> perOnderwerp = vouwen.computeIfAbsent(f, k -> new IdentityHashMap<>());
         Vouw v = perOnderwerp.get(subject);
         if (v == null) {
@@ -3292,7 +3306,7 @@ public final class TmsTranspiler {
             case Conditie.Vergelijking v -> vergelijking(v, lez);
             case Conditie.Predicaat p -> predicaat(p, lez);
             case Conditie.Periode p -> tijdvenster(p, lez);
-            case Conditie.Kwantorvouw q -> throw nietGelezen("QuantifierFold", c, BUITEN);
+            case Conditie.Kwantorvouw q -> kwantorvouw(q, lez);
             case Conditie.Rollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
             case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
             case Conditie.Regelversie rv -> kanaallezing(rv, lez);
@@ -3404,6 +3418,181 @@ public final class TmsTranspiler {
             case TEN_HOOGSTE -> raak > drempel ? Boolean.FALSE : (raak + rest <= drempel ? Boolean.TRUE : null);
             case PRECIES -> (raak > drempel || raak + rest < drempel) ? Boolean.FALSE : null;
         };
+    }
+
+    /**
+     * A quantifier fold (RUNTIME-SEMANTICS ch. 3.9a, IR-SPEC ch. 4.5): its {@code test}, the matrix, asked of every
+     * contributor, a member of the range that passes the {@code filter}, each with the member as the condition's
+     * subject, and counted under the quantifier: {@code all} holds where every contributor holds the matrix, {@code none}
+     * where none does, the three counting quantifiers on the number that do, and over no contributor all and none hold.
+     * The contributors are an aggregation's ({@link #kwantorbijdragen}): a contribution rule per member that passes the
+     * filter, with the member's reads of the filter and the matrix bound in its left-hand side, so a member whose derived
+     * value changes takes its contribution along, and an accumulate over the contributions in the left-hand side of the
+     * rule that reads the fold. Where the matrix can neither fault nor deposit, a contribution carries 1 or 0 for the
+     * matrix's verdict and the accumulate counts the contributors and sums the verdicts: the order of the members is then
+     * invisible. Where it can, the order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the
+     * contributors' order and stops at the first contributor after which the verdict stands, so a contributor it does not
+     * reach raises no fault and deposits nothing. A contribution then carries the matrix's outcome and the member's place
+     * ({@link Lidtoets}), the accumulate collects them, and the evaluation replays that order ({@link #kwantorlezing}).
+     * The filter is settled for every member before the matrix, as for any fold ({@link #gelezenVouw}). The range is one
+     * step, {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a
+     * hand-built model carries one.
+     */
+    private Toets kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
+        // WF-112, in the sentence of the other two branches: a window in the filter or the test under none or a counting
+        // quantifier has no reading
+        String venster = Vensterpositie.weigering(kv);
+        if (venster != null) throw new Weigering(venster + ": " + snippet(kv));
+        Objecttype elem = kv.elementObjecttype();
+        if (elem == null) throw nietGelezen("QuantifierFold", kv, "zonder opgelost elementtype");
+        if (kv.toets() == null)
+            throw nietGelezen("QuantifierFold", kv, "zonder matrix: een kwantor over geen voorwaarde heeft geen oordeel"
+                    + " (WF-108 (d))");
+        if (kv.kwantor() == Conditie.Kwantor.DE)
+            throw nietGelezen("QuantifierFold", kv, "onder de kwantor DE, die één lid noemt en geen verzameling"
+                    + " kwantificeert (WF-108 (a))");
+        if (kv.bronRol() == null || !kv.bronPad().isEmpty())
+            throw nietGelezen("QuantifierFold", kv, "zonder bereik van één stap: de lader weigert een bereik van meer"
+                    + " stappen (WF-108 (c))");
+        Conditie.Kwantor kw = kv.kwantor();
+        int drempel = kv.drempel();
+        Vouw v = vouwVoor(kv, lez.subject, (sleutel, naam) -> kwantorbijdragen(kv, sleutel, naam, lez.subject, elem));
+        if (!v.geordend()) {
+            int[] i = lez.vouw(v, accumulatiefunctie("BigDecimalSumAccumulateFunction"));
+            Waardefunctie oordeel = gelezenVouw(v, i, lez, w -> {
+                long n = ((Number) w[i[0]]).longValue();
+                return eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) w[i[1]]).longValueExact(), n);
+            });
+            return w -> (Boolean) oordeel.van(w);
+        }
+        int[] i = lez.vouw(v, accumulatiefunctie("CollectListAccumulateFunction"));
+        if (v.lidKanFalen()) lez.markeerFalen();
+        int sonde = v.lidDeponeert() ? lez.sonde() : -1;
+        Waardefunctie oordeel = gelezenVouw(v, i, lez, w -> kwantorlezing(kw, drempel,
+                leeg(w[i[0]]) ? List.of() : (List<?>) w[i[1]], w, sonde));
+        return w -> (Boolean) oordeel.van(w);
+    }
+
+    /**
+     * The contribution rules of the quantifier fold {@code kv} on {@code subject}: one over its range, the fold's
+     * subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound, the
+     * filter as the test (through {@link #zonderFout} where it can fault), and a consequence that evaluates the matrix
+     * for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its verdict, or, where the matrix
+     * can fault or deposit, its {@link Lidtoets}, with the member's place bound as the filter fault rule binds it
+     * ({@link Bereik#perRoute}). Beside it the filter fault rule and the filter deposit rule of a filter that can fault
+     * or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order of the members, so a
+     * matrix that can fault or deposit over a relation a form creates is refused.
+     */
+    private Vouw kwantorbijdragen(Conditie.Kwantorvouw kv, String sleutel, String naam, Objecttype subject,
+                                  Objecttype elem) {
+        String wat = snippet(kv);
+        Bereik bereik = eenstapsbereik(kv.bronRol(), subject, elem, wat);
+        // the member's reads first and its join after: whether the matrix can fault or deposit decides whether the join
+        // binds the member's place
+        Lezingen lez = bijdragelezingen(subject, elem, l -> { });
+        Set<Integer> gelezen = lez.volg();
+        Toets filter = kv.filter() == null ? null : voorwaarde(kv.filter(), lez);
+        boolean filterKanFalen = lez.kanFalen();
+        lez.stop();
+        Set<Integer> gebruik = lez.volg();
+        int lid = lez.lid();
+        Toets matrix = voorwaarde(kv.toets(), lez);
+        boolean lidKanFalen = lez.kanFalen();
+        lez.stop();
+        boolean lidDeponeert = deponeert(kv.toets());
+        int sonde = lez.sondeplaats();
+        boolean geordend = lidKanFalen || lidDeponeert;
+        List<Plaatslezing> plaatsen = new ArrayList<>();
+        if (geordend) {
+            if (kv.bronRol().feittype() != null && gecreeerdeRelaties.contains(Namen.norm(kv.bronRol().feittype())))
+                throw new Weigering("een lidvoorwaarde die kan falen of deponeren in een QuantifierFold over de gecreëerde"
+                        + " relatie '" + kv.bronRol().feittype() + "' ('" + wat + "'): een gemaakte link heeft geen plaats"
+                        + " in de volgorde van de leden, die bepaalt welk lid de kortsluiting nog bereikt"
+                        + " (RUNTIME-SEMANTICS ch. 3.9a, 5.10); " + NOG_NIET);
+            plaatsen.addAll(bereik.perRoute().apply(lez));
+            for (Plaatslezing p : plaatsen) {
+                gebruik.add(p.aantal());
+                gebruik.add(p.plaats());
+            }
+        } else bereik.koppel().accept(lez);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(filterKanFalen ? zonderFout(filter) : filter, gelezen,
+                kv.filter());
+        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
+            if (!geordend) {
+                drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid],
+                        matrix.test(w) ? BigDecimal.ONE : BigDecimal.ZERO));
+                return;
+            }
+            List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
+            plaats.add(0);
+            for (Plaatslezing p : plaatsen) {
+                if (((Number) w[p.aantal()]).longValue() == 0)
+                    throw new IllegalStateException("de kwantorvouw " + sleutel + " leest de matrix van "
+                            + Feitnamen.object(w[lid]) + ", maar dat lid heeft geen Lijstplaats onder het veld '"
+                            + p.veld() + "': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te"
+                            + " bepalen welk lid de kortsluiting bereikt (RUNTIME-SEMANTICS ch. 5.10, 5.11)");
+                plaats.add(((Number) w[p.plaats()]).intValue());
+            }
+            Sonde s = sonde < 0 ? null : new Sonde();
+            if (s != null) w[sonde] = s;
+            Boolean waar = null;
+            RuntimeException fout = null;
+            try {
+                waar = matrix.test(w);
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                fout = e;
+            }
+            drools.logicalInsert(new Bijdrage(sleutel, onderwerp, w[lid],
+                    new Lidtoets(plaats, waar, fout, s != null && s.gemeld())));
+        }, lez.variabelen.size()));
+        String vormnaam = model.geëmitteerdeRegelNaam(vorm);
+        List<Rule> regels = new ArrayList<>();
+        List<Lezingen> lezingen = new ArrayList<>();
+        regels.add(PatternDSL.rule(PKG, vormnaam + ": bijdrage aan " + naam).build(items.toArray(new RuleItemBuilder[0])));
+        lezingen.add(lez);
+        if (filterKanFalen) regels.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem,
+                bereik, 0, kv.filter(), lezingen::add));
+        boolean filterDeponeert = deponeert(kv.filter());
+        if (filterDeponeert) regels.add(filterdeponeerregel(sleutel, vormnaam + ": filterdeponering in " + naam,
+                subject, elem, bereik, kv.filter(), lezingen::add));
+        return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), filterKanFalen, filterDeponeert,
+                lidKanFalen, lidDeponeert);
+    }
+
+    /** The verdict of a quantifier over {@code n} members of which {@code raak} hold, every member read (RUNTIME-SEMANTICS
+     *  ch. 5.10): all where all hold, none where none does, the counting quantifiers on the threshold. */
+    private static boolean eindoordeel(Conditie.Kwantor kw, int drempel, long raak, long n) {
+        return switch (kw) {
+            case ALLE, DE -> raak == n;
+            case GEEN -> raak == 0;
+            case TEN_MINSTE -> raak >= drempel;
+            case TEN_HOOGSTE -> raak <= drempel;
+            case PRECIES -> raak == drempel;
+        };
+    }
+
+    /**
+     * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link Lidtoets} of each
+     * contributor (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the contributors' order, with the stop triggers of ch. 5.10
+     * tested before each contributor, the empty prefix included. A contributor that is reached deposits where its
+     * matrix deposited, heard by the probe at {@code sonde}, and faults where its matrix faulted; one that is not reached
+     * does neither.
+     */
+    private static Boolean kwantorlezing(Conditie.Kwantor kw, int drempel, List<?> bijdragen, Object[] w, int sonde) {
+        List<Lidtoets> leden = new ArrayList<>(bijdragen.size());
+        for (Object b : bijdragen) leden.add((Lidtoets) b);
+        leden.sort(null);
+        int n = leden.size(), raak = 0;
+        for (int k = 0; k < n; k++) {
+            Boolean vast = vastgesteld(kw, drempel, raak, k, n - k);
+            if (vast != null) return vast;
+            Lidtoets lid = leden.get(k);
+            if (lid.gedeponeerd()) Sonde.meld(w, sonde);
+            if (lid.fout() != null) throw lid.fout();
+            if (lid.waar()) raak++;
+        }
+        return eindoordeel(kw, drempel, raak, n);
     }
 
     /**

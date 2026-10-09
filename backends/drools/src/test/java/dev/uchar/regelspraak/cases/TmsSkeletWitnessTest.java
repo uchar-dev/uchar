@@ -44,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Two rows of the first step pinned the refusal of an attribute target and of a leeg or gevuld test; the second
  * step lowers both, and their rows now pin a value and a condition outside the trial, a BuiltinCall over a timeline
- * (an Aggregation until the aggregations were carried, the absolute value until the value forms were) and a
- * QuantifierFold. <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
+ * (an Aggregation until the aggregations were carried, the absolute value until the value forms were) and a test of
+ * whether a rule fired (a QuantifierFold until the condition forms were carried). <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
  * "but was: &lt;tms-transpiler SKIP: regel: lampental — een attribuutdoel (berekening van 'lampental' van Vuurtoren): de
  * truth-maintenance-tak leidt nog alleen kenmerken af&gt;" and "but was: &lt;tms-transpiler SKIP: regel: helder — een
  * QuantifierFold in de voorwaarde ('de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5'): de
@@ -97,24 +97,22 @@ class TmsSkeletWitnessTest {
                 e.getMessage());
     }
 
-    /** "Een Vuurtoren is helder indien de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5": a
-     *  QuantifierFold, outside the trial. */
+    /** "Een Vuurtoren is helder indien regelversie verlichting is gevuurd": a Regelversie 'is gevuurd', which the branch
+     *  does not carry. Until the condition forms were carried (card tms-expressievormen-en-rekendatum, 2026-10-09) this
+     *  row pinned the refusal of "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5", a
+     *  QuantifierFold, which the branch now lowers. */
     @Test void een_voorwaarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
-        String snippet = "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5";
-        String vouw = "{\"node\":\"QuantifierFold\",\"quantifier\":\"atLeast\",\"threshold\":2,\"elementType\":\"Lamp\","
-                + "\"test\":{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":{\"node\":\"AttributeReference\",\"attribute\":"
-                + "\"sterkte\",\"subjectType\":\"Lamp\",\"source\":{\"snippet\":\"de sterkte van ten minste 2 van de lampen van"
-                + " de Vuurtoren\"}},\"right\":" + IrPad.literal("5", GEHEEL, "5") + ",\"source\":{\"snippet\":\"" + snippet
-                + "\"}},\"source\":{\"snippet\":\"" + snippet + "\"},\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":"
-                + "\"torenindeling\",\"role\":\"lamp\"}}";
+        String snippet = "regelversie verlichting is gevuurd";
+        String gevuurd = "{\"node\":\"Regelversie\",\"regel\":\"verlichting\",\"inconsistent\":false,\"source\":"
+                + "{\"snippet\":\"" + snippet + "\"}}";
         String helder = IrPad.regel("helder", "KENMERKTOEKENNING", "{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"helder\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Een Vuurtoren is helder\"}}",
-                IrPad.literal("waar", "{\"node\":\"Boolean\"}", "waar"), vouw);
+                IrPad.literal("waar", "{\"node\":\"Boolean\"}", "waar"), gevuurd);
         Path ir = TmsDocumenten.document(VUURTOREN, List.of(helder));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: helder — een QuantifierFold in de voorwaarde ('" + snippet + "'): buiten"
-                + " de proef van de truth-maintenance-tak", e.getMessage());
+        assertEquals("tms-transpiler SKIP: regel: helder — een Regelversie 'is gevuurd' in de voorwaarde ('" + snippet
+                + "'): buiten de proef van de truth-maintenance-tak", e.getMessage());
     }
 
     /** A Vuurtoren with its lampen over a role to many, as the jutterswet-vuurtoren golden declares them. */
