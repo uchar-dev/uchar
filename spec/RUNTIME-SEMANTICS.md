@@ -3521,10 +3521,62 @@ derivation is role-ambiguous there and mirrors v0's null). Termination
 is the author's obligation — every
 **object-creation member** of a recursive group MUST be conditional
 (WF-033; relation creations need no guard, being idempotent) — and the
-runtime's: a bounded fire budget turns a non-terminating set into a
-**fault**, never a silent truncation (the reference interpreter's pass
-budget; the ASP backend's generation-depth bound, whose exhaustion is
-a named `viol/2` witness → UNSAT).
+runtime's: the **creation budget**. Every minted instance has a
+creation depth in the stratum of the creation that minted it: one more
+than its subject's depth in that stratum, where an input instance, and
+an instance a lower stratum minted, has depth 0 (a lower stratum is
+complete before a higher one starts, ch. 6.3; a subject is never a mint
+of a higher stratum, since a creation reads its subject's population
+strictly, ch. 6.1, and an executor may hold that as an invariant and
+fail loudly where it breaks). A mint at depth 101 is a **fault**, never
+a silent truncation: the reference interpreter and the Drools backend's
+truth-maintenance branch fault at the making, and the ASP backend
+derives a named `viol/2` witness → UNSAT, each with the words "creation
+budget exhausted". The depth is a function of the chain of makings, not
+of document order nor of the generation in which a creation fires: a
+creation whose condition waits for a link or a value keeps its
+subject's depth. Fact creations carry no budget — they mint nothing,
+and over the finite universe a stratum's mints leave, the links are
+finite — nor do the forms that make nothing (their fixpoint exists,
+WF-045; an executor may bound their rounds only to name two writers of
+one target that keep overwriting each other, ch. 5.7). The budget
+bounds the height of each stratum's tree of mints; each (creation,
+subject) mints at most once, so every stratum ends after finitely many
+generations. Its breadth stays the author's obligation (WF-033). Until
+2026-10-09 the reference interpreter bounded 100 passes of a stratum
+and the ASP backend the depth of a chain of mints over all strata, and
+the two parted near the bound: on a chain of exactly 100 mints, on a
+chain whose mints wait for links, and on a closure of more than 100
+hops.
+
+Two named limits sit beside the budget. The ASP backend writes a minted
+instance as a term that nests one level per creation over all strata,
+and clingo cannot print a term nested much past 200 levels, so the
+backend refuses by name (`viol("term nesting bound reached …")`, the
+second posture of `IR-SPEC.md` ch. 5.5) a chain of 190 nested creations
+over all strata, which the reference interpreter plays
+(`backends/clingo/README.md`, Recorded limitations). The Drools
+backend's exec-model and DRL-text branches carry no creation budget,
+only a cap of 100 000 firings, and run a finite chain past the budget
+to its end; gate 8, whose red run drives the exec-model branch, lists
+each such case with that reason (`scripts/check-rood.sh`).
+
+Worked example (absolute; `ref/` tests `WV-5.5-budget-wacht-op-link`
+and `WV-5.5-budget-erflijn`): "werf de opvolger" gives a Wachter whose
+rang is below N and who has a maatgever an opvolger with rang plus 1,
+and "maak maten" links every Wachter as maatgever to its opvolger, both
+members of the recursive group "estafette"; W1 (rang 1) has the
+maatgever W0 (rang 0) in the input. W1 mints W2 in generation 1, W2
+gets its maatgever in generation 2 and mints W3 in generation 3, so
+W(k + 1) comes in generation 2k − 1 at depth k. With N = 101 the chain
+plays: **102** Wachters, W101 minted at depth 100 in generation 199
+with rang **101**, and the consistency "rangdetector" (a rang below
+101) deposits **one** fact, on W101. With N = 102 the mint of W102 at
+depth 101 is the fault. Over a chain of 103 input Wachters the anchor
+`jutterswet-erflijn`, whose recursive fact creation walks an erflijn
+link and then an opvolger, lays the 102-hop link W1 → W103 in the 101st
+generation of its stratum and plays: erfvolgeraantal(W1) = **102**, the
+channel empty.
 
 **Generations** (card `creatie-initialisatie-leest-groeiende-waarde`,
 2026-10-09). Within a stratum, evaluation proceeds in generations.
