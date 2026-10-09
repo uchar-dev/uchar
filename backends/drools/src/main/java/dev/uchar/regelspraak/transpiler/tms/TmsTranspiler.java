@@ -2001,13 +2001,14 @@ public final class TmsTranspiler {
      * The general form: an {@link Uitkomst} per default that settles. A default without exception groups settles by
      * its own decision; a default with them reconciles the outcomes of their chains ({@link #verzoening}) and, with
      * content of its own, falls back to its own decision where no member settles. Every rule of a default carries
-     * {@code not Uitkomst} over the positions above it in its chain, so a lower default is displaced with whatever it
-     * would settle, a conflict included (ch. 7.9). At the root the groups of the stack reconcile once more, by the same
-     * rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
+     * {@code not Uitkomst} over the positions above it in its chain and above each default whose exception group its
+     * chain is ({@link #ketenregels}), so a lower default is displaced with whatever it would settle, a conflict
+     * included (ch. 7.9), and its exception groups with it. At the root the groups of the stack reconcile once more, by
+     * the same rules, under the bare key, and that reconciliation writes the target or deposits the conflict.
      */
     private List<Rule> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
         List<Rule> uit = new ArrayList<>();
-        for (List<Knoop> keten : wortel) ketenregels(b, keten, uit);
+        for (List<Knoop> keten : wortel) ketenregels(b, keten, o -> List.of(), uit);
         String naam = b.naam;
         ElementSleutel sleutel = b.lid.sleutel();
         boolean kenmerk = b.kenmerk;
@@ -2021,12 +2022,23 @@ public final class TmsTranspiler {
         return uit;
     }
 
-    private void ketenregels(Stapelbouw b, List<Knoop> keten, List<Rule> uit) {
+    /**
+     * The rules of {@code keten} and, below each of its defaults, of their member chains. Every rule of a default waits
+     * on the positions above it in its own chain and on {@code voorouders}, the positions above each default whose
+     * exception group the chain is, at any depth: the reference interpreter reaches the exception groups of a default
+     * only where no higher default in its chain decides ({@code decide}), so a group below a displaced default is not
+     * evaluated, settles nothing and raises no fault (RUNTIME-SEMANTICS ch. 7.9; PLAN §9, 2026-10-09).
+     */
+    private void ketenregels(Stapelbouw b, List<Knoop> keten,
+                             Function<Variable<Object>, List<RuleItemBuilder<?>>> voorouders, List<Rule> uit) {
         String naam = b.naam;
         for (Knoop k : keten) {
             int id = k.keten(), i = k.positie();
-            Function<Variable<Object>, List<RuleItemBuilder<?>>> nietHoger =
-                    o -> i > 0 ? List.of(geenUitkomst(naam, id, i, o)) : List.of();
+            Function<Variable<Object>, List<RuleItemBuilder<?>>> nietHoger = o -> {
+                List<RuleItemBuilder<?>> wacht = new ArrayList<>(voorouders.apply(o));
+                if (i > 0) wacht.add(geenUitkomst(naam, id, i, o));
+                return wacht;
+            };
             Afloop beslist = (drools, o, v) ->
                     drools.logicalInsert(new Uitkomst(o, naam, id, i, Uitkomst.Soort.BESLIST, v, null));
             if (!k.heeftLeden()) {
@@ -2035,7 +2047,7 @@ public final class TmsTranspiler {
                 uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, beslist));
                 continue;
             }
-            for (List<Knoop> lid : k.leden()) ketenregels(b, lid, uit);
+            for (List<Knoop> lid : k.leden()) ketenregels(b, lid, nietHoger, uit);
             int eerste = k.eersteLid(), tot = eerste + k.leden().size();
             verzoening(b, eerste, k.leden().size(), k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren),
                     k.sleutel(), k.label(), nietHoger,
@@ -2166,8 +2178,9 @@ public final class TmsTranspiler {
      * ({@link Rekenfout}). Such a fault is a {@link Fout} under the stack's name, as in a rule: the consequence inserts
      * it in place of the decision, and where the justification can fault, a fault rule with the rule's own left-hand
      * side, its control-fact patterns included, inserts it ({@link #voorwaardefoutregel}). A default a higher one
-     * displaces loses its match, and the fault it raised goes with it, so a fault counts only where its default is
-     * evaluated at the fixpoint (PLAN §9, 2026-10-09).
+     * displaces loses its match, and so does every default of an exception group below it ({@link #ketenregels}), and
+     * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
+     * 2026-10-09).
      */
     private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
                                   Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {

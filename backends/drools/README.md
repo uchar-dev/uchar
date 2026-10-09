@@ -127,9 +127,11 @@ In the simple form, one chain without exception groups, a deciding default inser
 has a rule, and every lower default carries `not Beslist` over the ones above it. In the general form, with
 exception groups or more than one group at the root of the effective stack (RUNTIME-SEMANTICS ch. 7.10), every
 default settles into an `Uitkomst`, and the member chains are reconciled by the rules of ch. 7.2 and 7.9. A higher
-decision displaces a lower one through truth maintenance alone and gives it back when it goes. The member chains of a
-displaced default still settle their own `Uitkomst`, and those facts stay in the session; the measurement counts them
-apart.
+decision displaces a lower one through truth maintenance alone and gives it back when it goes. The rules of a member
+chain also wait on the positions above each default whose exception group the chain is, at any depth, as the
+reference interpreter reaches the exception groups of a default only where that default is reached (ch. 7.9): an
+exception group below a displaced default settles no `Uitkomst` and raises no fault at the fixpoint. The loose control
+facts the measurement (`TmsMeting`) counts apart are therefore none.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
 the derivations on the beans: `setX(true)` per `HeeftKenmerk`, the attribute's setter per `Waarde`. Input on a

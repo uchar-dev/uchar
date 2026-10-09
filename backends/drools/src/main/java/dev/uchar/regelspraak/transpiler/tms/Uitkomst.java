@@ -11,13 +11,14 @@ import java.util.Objects;
  * <p>A chain is the list of defaults of a root group or of one exception group; the lowering numbers them per stack,
  * the root groups first, and the exception groups of one default consecutively, so that "a member before this one" is
  * a range of numbers. A default settles in one of four ways, each a rule that carries {@code not Uitkomst} over the
- * positions above its own in its chain: its own decision, where it has no exception groups; and, where it has them,
+ * positions above its own in its chain and above each default whose exception group its chain is, at any depth: its
+ * own decision, where it has no exception groups; and, where it has them,
  * the first conflict among its members passed on unchanged, a conflict of its own where two members decide
  * differently, or the decision of the first deciding member where the deciding members agree; a default with content
  * of its own besides falls back to its own decision where no member settles. The outcome of a chain is therefore the
  * one fact of its highest settling default, and the reconciliation of a default reads the outcomes of its member chains
  * as positive and negated patterns on this fact. A lower default with exception groups is displaced with its conflict
- * (ch. 7.9): its rules are under the {@code not} of the higher one.
+ * (ch. 7.9): its rules, and those of its exception groups, are under the {@code not} of the higher one.
  *
  * <p>Compared by value, the subject by identity, and a decided number by {@code compareTo}, so that two members that
  * decide 10.0 and 10.00 merge into one fact, as the reconciliation reads them as one decision; a characteristic's
