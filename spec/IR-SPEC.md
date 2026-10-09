@@ -3026,11 +3026,11 @@ budget turning divergence into a fault in every executor.
   relation-creation member needs no guard: it mints nothing — its writes
   are idempotent links over the fixed universe, so its fixpoint is the
   transitive closure and termination is structural
-  (`RUNTIME-SEMANTICS.md` ch. 5.5). The shared pass budget still bounds
-  the walk: a closure needing more passes than the budget (a chain of
-  ~100+ hops) faults in the reference interpreter where the ASP
-  grounding completes it — the recorded budget boundary of `RUNTIME-SEMANTICS.md` ch. 5.5,
-  same family as the object-creation generation bound. *v0 mirror note:* containment is a
+  (`RUNTIME-SEMANTICS.md` ch. 5.5). The creation budget of
+  `RUNTIME-SEMANTICS.md` ch. 5.5 does not bound it: a closure of any
+  length completes in every executor (since 2026-10-09; until then the
+  reference interpreter's pass budget cut a closure of 100+ hops where
+  the ASP grounding completed it). *v0 mirror note:* containment is a
   v0 error; the unguarded case only warns. **Delta (promotion)** for the
   guard.
 
