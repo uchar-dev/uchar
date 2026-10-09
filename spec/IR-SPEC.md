@@ -8766,9 +8766,10 @@ one form: a member initialisation of an object creation that reads a node
 a later generation of the creation's own stratum can still change, because
 a creation on a dependency cycle that WF-045 admits in that stratum, the
 creation itself included where it lies on one, reaches a writer of the
-node in the dependency graph; the backend has no moment of making and
-refuses such an initialisation by name (`RUNTIME-SEMANTICS.md` ch. 5.5,
-Generations). A backend realising a **coarser**
+node in the dependency graph in a version the case's date admits; the
+backend has no moment of making and refuses such an initialisation by
+name (`RUNTIME-SEMANTICS.md` ch. 5.5, Generations). A backend realising a
+**coarser**
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
 

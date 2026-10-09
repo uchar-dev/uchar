@@ -3716,10 +3716,16 @@ whose value on an object is fixed at the object's making (a basis
 computed as the rang plus 10) is refused as well, although the end
 value would be right, and so is a writer on the cycle whose validity the
 case's date excludes; only a creation version the date excludes is not
-asked, since the backend does not translate it. The backend's suite pins
-the refusals, each beside the reference interpreter's absolute answer,
-and the carried forms (`ch5.5 generations`, `ch5.5 generations off the
-cycle`); no corpus document has a refused form.
+asked, since the backend does not translate it, and such a version does
+not count as a creation that reaches a writer either: it mints and links
+nothing, in any executor, so no later generation brings a change from
+it. With "geef door" valid from 2027-01-01 and a case on 2026-01-01 no
+maatschap is laid, W3 stays without ervaren, and both the reference
+interpreter and the backend answer rapportaantal(H1) = **1**; valid from
+2025-01-01, the backend refuses the document as above. The backend's
+suite pins the refusals, each beside the reference interpreter's
+absolute answer, and the carried forms (`ch5.5 generations`, `ch5.5
+generations off the cycle`); no corpus document has a refused form.
 
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank
