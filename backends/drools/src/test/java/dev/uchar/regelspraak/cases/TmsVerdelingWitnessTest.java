@@ -673,12 +673,18 @@ class TmsVerdelingWitnessTest {
     /**
      * An allocation whose target another form writes is refused by name, never computed beside it: a computing rule and
      * an initialisation on the share target are well-formed, and this branch does not carry them beside an allocation
-     * yet; two allocations on one target are ill-formed (WF-026). Measured 2026-10-09: the verifier passes the first
-     * two documents and refuses the third, "WF-026 FAIL /rules/allocations/0/versions/0: two allocations write target
-     * (Berger, bergingsaandeel)". The reference interpreter computes the initialisation pair (the share replaces the 5)
-     * and faults the rule pair, "two writers of one target disagree: rule "bergingsaandeel van een berger" writes 5 and
-     * allocation "verdeel de opbrengst naar rato" writes 100"; the ASP runner passes all three, whose case asks no more
-     * than a consistent channel. Red before the change: all three on the refusal of the allocation as such.
+     * yet; two allocations on one target are ill-formed (WF-026). The case pins the share the allocation writes, 100
+     * (pot 100, J1 the only recipient, weight 1), beside a consistent channel. Measured 2026-10-09: the verifier passes
+     * the first two documents and refuses the third, "WF-026 FAIL /rules/allocations/0/versions/0: two allocations write
+     * target (Berger, bergingsaandeel)". The reference interpreter passes the initialisation pair (2 expectations), the
+     * share replacing the initialisation's 5, and fails the same case with 5 pinned, "MISMATCH: J1.bergingsaandeel =
+     * 100, expected 5". It faults the rule pair before any expectation, two writers that disagree as ch. 5.7 has them:
+     * "two writers of one target disagree: rule "bergingsaandeel van een berger" writes 5 and allocation "verdeel de
+     * opbrengst naar rato" writes 100 to the attribute bergingsaandeel of J1, a Berger". The ASP runner derives both
+     * values in both pairs, "MISMATCH: J1.bergingsaandeel = [5;100], expected 100" beside the initialisation and
+     * "[100;5]" beside the rule, a fault of that runner recorded with
+     * {@code 20261009-clingo-gemaakt-lid-met-twee-waarden}. Both runners pass the two allocations (2 expectations), whose
+     * values agree. Red before the change: all three on the refusal of the allocation as such.
      */
     static final String H_REGEL = rekenregel("bergingsaandeel van een berger", "BEREKENING", "Berger",
             "bergingsaandeel", getal("5"), "null");
@@ -687,7 +693,8 @@ class TmsVerdelingWitnessTest {
 
     static JsonNode hZaak() throws Exception {
         return TmsDocumenten.zaak(List.of(instantie("B1", "Berging", Map.of("opbrengst", "100"), List.of("J1")),
-                instantie("J1", "Berger", Map.of("gewicht", "1"), List.of())), List.of(consistent()));
+                instantie("J1", "Berger", Map.of("gewicht", "1"), List.of())),
+                List.of(waarde("J1", "bergingsaandeel", "100"), consistent()));
     }
 
     @Test void h_een_tweede_schrijver_van_een_doel_wordt_luid_geweigerd() throws Exception {
