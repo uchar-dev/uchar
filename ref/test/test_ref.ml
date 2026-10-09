@@ -2173,6 +2173,102 @@ let () =
     [ ("y, a, gesloten, open", [ y; a; gesloten; open_ ]);
       ("open, gesloten, a, y", [ open_; gesloten; a; y ]) ]
 
+(* WV-5.5-consistentie-op-een-groeiend-kenmerk (ch. 5.5, since 2026-10-09):
+   the consistency and uniqueness forms of a stratum fire once the
+   generations of that stratum are done. A consistency reads a positive
+   characteristic non-strictly (ch. 6.1), so it can share a stratum with a
+   cycle that still makes that characteristic grow, and a channel fact is
+   never withdrawn (ch. 5.6). "ervaren wachter" marks a Wachter that has a
+   maatgever; "geef door" (recursive group "doorgeven") links an ervaren
+   Wachter as maatgever to its opvolger, the leerling; the consistency "elke
+   wachter ervaren" asserts that a Wachter is ervaren. All three are in
+   stratum 0. W1 → W2 → W3 over opvolging, W1 ervaren in the input: W2 is
+   ervaren after generation 1, W3 after generation 2, and the channel stays
+   empty. Fired on the world of generation 0, where only W1 is ervaren, the
+   consistency would leave a fact on W2 and one on W3.
+
+   WV-5.5-uniciteit-op-een-groeiende-sleutel: a uniqueness reads its keys
+   strictly (ch. 6.1), so it sits a stratum above every writer of a key and
+   never shares a stratum with a cycle that still changes one. The document
+   above without the consistency, with "volgnummer van een wachter" (the
+   number of its maatgevers plus its basis, stratum 0 beside the cycle) and
+   the uniqueness "uniek volgnummer" (stratum 1). W1 and W2 with basis 5, W3
+   with basis 0: on the world of generation 0, W1 and W2 share volgnummer 5;
+   at the end the volgnummers are 5, 6 and 1. In both orders of the two
+   rules the channel stays empty. *)
+let () =
+  let getal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal_json n
+  in
+  let maatgevers =
+    {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "maatgevers", "subjectType": "Wachter", "source": {"snippet": "alle maatgevers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "maatschap", "role": "maatgever"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal maatgevers van de Wachter"}}|}
+  in
+  let ervaren =
+    ( "ervaren wachter",
+      Printf.sprintf
+        {|{"node": "Rule", "name": "ervaren wachter", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "ervaren", "subjectType": "Wachter", "source": {"snippet": "Een Wachter is ervaren"}}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": {"node": "Comparison", "op": "greater", "left": %s, "right": %s, "source": {"snippet": "het aantal maatgevers van de Wachter is groter dan 0"}}, "initialisation": false}]}|}
+        maatgevers (getal 0) )
+  and volgnummer =
+    ( "volgnummer van een wachter",
+      Printf.sprintf
+        {|{"node": "Rule", "name": "volgnummer van een wachter", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "volgnummer", "subjectType": "Wachter", "source": {"snippet": "Het volgnummer van een Wachter"}}, "value": {"node": "Binary", "op": "plus", "left": %s, "right": {"node": "AttributeReference", "attribute": "basis", "subjectType": "Wachter", "source": {"snippet": "zijn basis"}}, "type": %s, "source": {"snippet": "het aantal maatgevers van de Wachter plus zijn basis"}}, "initialisation": false, "presentation": "calculation"}]}|}
+        maatgevers getal_json )
+  in
+  let doc ?(attributen = []) ?(consistenties = "") ?(uniciteiten = "") regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": [{"node": "Characteristic", "name": "ervaren", "kind": "adjectival"}]}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "leerling", "objectType": "Wachter", "plural": "leerlingen", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [%s], "uniquenesses": [%s], "factCreations": [{"node": "FactCreation", "name": "geef door", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "leerling", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "doorgeven", "recursive": true, "members": ["geef door"], "source": {"snippet": "doorgeven"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", "
+         (List.map
+            (fun lid -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} lid getal_json)
+            attributen))
+      (String.concat ", " (List.map snd regels))
+      consistenties uniciteiten
+  in
+  (* W1 → W2 → W3 over opvolging, W1 ervaren; [basis] gives each its basis *)
+  let zaak ?basis verwacht =
+    let wachter label opvolger kenmerk b =
+      Printf.sprintf
+        {|{"label": "%s", "objectType": "Wachter", "attributes": {%s}, "roles": {%s}, "characteristics": [%s]}|}
+        label
+        (match b with Some b -> Printf.sprintf {|"basis": {"number": "%d"}|} b | None -> "")
+        (match opvolger with Some o -> Printf.sprintf {|"opvolger": ["%s"]|} o | None -> "")
+        (if kenmerk then {|"ervaren"|} else "")
+    in
+    let b i = Option.map (fun l -> List.nth l i) basis in
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s, %s, %s], "parameters": {}}, "expected": [%s]}|}
+      (wachter "W1" (Some "W2") true (b 0))
+      (wachter "W2" (Some "W3") false (b 1))
+      (wachter "W3" None false (b 2))
+      verwacht
+  in
+  let elke_wachter_ervaren =
+    {|{"node": "Consistency", "name": "elke wachter ervaren", "versions": [{"subject": "Wachter", "assertion": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": {"node": "Validity"}}]}|}
+  in
+  speelt ~naam:"WV-5.5-consistentie-op-een-groeiend-kenmerk"
+    ~ir:(doc ~consistenties:elke_wachter_ervaren [ ervaren ])
+    ~zaak:
+      (zaak
+         {|{"kind": "characteristicPresent", "label": "W2", "characteristic": "ervaren"}, {"kind": "characteristicPresent", "label": "W3", "characteristic": "ervaren"}, {"kind": "consistent"}|})
+    (fun _ -> ());
+  let uniek_volgnummer =
+    {|{"node": "Uniqueness", "name": "uniek volgnummer", "versions": [{"sources": [{"node": "Source", "objectType": "Wachter", "keys": ["volgnummer"]}], "validity": {"node": "Validity"}}]}|}
+  in
+  List.iter
+    (fun volgorde ->
+      let naam =
+        Printf.sprintf "WV-5.5-uniciteit-op-een-groeiende-sleutel [%s]"
+          (String.concat "; " (List.map fst volgorde))
+      in
+      speelt ~naam
+        ~ir:(doc ~attributen:[ "basis"; "volgnummer" ] ~uniciteiten:uniek_volgnummer volgorde)
+        ~zaak:
+          (zaak ~basis:[ 5; 5; 0 ]
+             {|{"kind": "attributeValue", "label": "W1", "attribute": "volgnummer", "value": {"number": "5"}}, {"kind": "attributeValue", "label": "W2", "attribute": "volgnummer", "value": {"number": "6"}}, {"kind": "attributeValue", "label": "W3", "attribute": "volgnummer", "value": {"number": "1"}}, {"kind": "consistent"}|})
+        (fun _ -> ()))
+    (volgordes [ ervaren; volgnummer ])
+
 (* WV-5.7-twee-schrijvers-twee-strata (since 2026-10-09): the forms that make
    nothing come to rest stratum by stratum, and each stratum's fixpoint runs
    the forms of every lower stratum again, so two writers of one target in

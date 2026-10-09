@@ -4097,16 +4097,28 @@ let evaluate env world =
      number plus one, only turns those two writers into the fault that
      names them.
 
-     After the fixpoint of stratum j the consistency and uniqueness forms
-     of stratum j fire, in generation 0 and after every generation, so they
-     also check what a creation of a higher stratum makes. What they read
-     is at rest by then, their channel facts are idempotent (ch. 5.6), and
-     instances only come, never go, so firing again adds a fact only for a
-     new instance or for a key a new instance duplicates. Until 2026-10-09
-     they fired once, at the fixpoint of their own stratum: a consistency
-     of stratum 1 on Posts ("the a of a Post is kleiner dan 5") never saw
-     the Post a creation of stratum 2 made with a = 5, and the channel
-     stayed empty. *)
+     The consistency and uniqueness forms of stratum j fire once the
+     generations of stratum j are done (below), and in the loop of every
+     higher stratum k again after the fixpoint of stratum j, in generation 0
+     and after every generation, so they also check what a creation of
+     stratum k makes. What they read there is at rest: stratum j or a lower
+     one writes it, whose forms no longer change it on an instance that
+     exists and have computed it on a new instance before the check fires.
+     Their channel facts are idempotent (ch. 5.6) and instances only come,
+     never go, so firing again adds a fact only for a new instance or for a
+     key a new instance duplicates. In the loop of their own stratum they
+     wait for its last generation. A consistency reads a positive
+     characteristic non-strictly (ch. 6.1), so it can share a stratum with a
+     cycle that still makes that characteristic grow, and a fact it
+     deposited on an earlier generation's world would never be withdrawn: on
+     W1 → W2 → W3, where a recursive fact creation makes an ervaren Wachter
+     the maatgever of its opvolger and a Wachter with a maatgever is ervaren,
+     "elke wachter ervaren" fired in generation 0 would leave a fact on W2
+     and one on W3. A uniqueness reads its keys strictly and sits above every
+     writer of a key. Until 2026-10-09 these forms fired once, at the
+     fixpoint of their own stratum: a consistency of stratum 1 on Posts
+     ("the a of a Post is kleiner dan 5") never saw the Post a creation of
+     stratum 2 made with a = 5, and the channel stayed empty. *)
   let settling_upto = Array.init (kmax + 1) (fun j -> settling ~k:j) in
   let checks j world =
     let world =
@@ -4132,7 +4144,7 @@ let evaluate env world =
         let world =
           fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) world
         in
-        upto (j + 1) (checks j world)
+        upto (j + 1) (if j < k then checks j world else world)
     in
     upto 0 world
   in
@@ -4141,11 +4153,12 @@ let evaluate env world =
      (ch. 5.5). Generation 0 is the fixpoint of the forms that make nothing;
      generation G+1 is every creation against generation G's settled world,
      after which the forms that make nothing settle again, stratum by
-     stratum, each stratum's consistency and uniqueness forms firing at its
-     fixpoint ([settle]); the stratum is done when a generation makes and
-     links nothing. Such a generation changes no instance, attribute,
-     characteristic or link, so the last settle has already checked the
-     world the stratum ends with.
+     stratum, the consistency and uniqueness forms of each lower stratum
+     firing at its fixpoint ([settle]); the stratum is done when a
+     generation makes and links nothing, and then its own consistency and
+     uniqueness forms fire. Such a generation changes no instance,
+     attribute, characteristic or link, so they check the world the last
+     settle left.
 
      The number of generations needs no bound of its own. Every generation
      but the last mints an instance or lays a link; a (creation, subject)
@@ -4170,6 +4183,6 @@ let evaluate env world =
       | w, [] -> w
       | w, _ -> next (settle w)
     in
-    world := next (settle !world)
+    world := checks k (next (settle !world))
   done;
   !world

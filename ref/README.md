@@ -70,14 +70,26 @@ faults with file/position context — never a silent fallback.
   after it the forms that make nothing come to rest again. Coming to
   rest goes stratum by stratum, in generation 0 and after every
   generation: for j = 0, 1, …, k the forms of stratum ≤ j reach their
-  fixpoint and then the consistency and uniqueness forms of stratum j
-  fire, before a form of stratum j + 1 runs. So on a new instance a
-  form of a higher stratum reads only what the lower strata have
-  finished writing there, and a consistency or uniqueness of a lower
-  stratum also checks what a later creation makes; its channel facts
-  are idempotent (ch. 5.6), so firing again adds a fact only for a
-  new instance or a key a new instance duplicates. The stratum is
-  done when a generation makes and links nothing.
+  fixpoint before a form of stratum j + 1 runs, and for j < k the
+  consistency and uniqueness forms of stratum j fire there. So on a
+  new instance a form of a higher stratum reads only what the lower
+  strata have finished writing there, and a consistency or uniqueness
+  of a lower stratum also checks what a later creation makes; its
+  channel facts are idempotent (ch. 5.6), so firing again adds a fact
+  only for a new instance or a key a new instance duplicates. The
+  stratum is done when a generation makes and links nothing, and then
+  the consistency and uniqueness forms of stratum k fire. They wait
+  for that: a consistency reads a positive characteristic
+  non-strictly (ch. 6.1), so it can share a stratum with a cycle that
+  still makes the characteristic grow, and a channel fact is never
+  withdrawn. On W1 → W2 → W3, where a recursive fact creation makes an
+  ervaren Wachter the maatgever of its opvolger and a Wachter with a
+  maatgever is ervaren, the consistency "elke wachter ervaren" finds
+  every Wachter ervaren and the channel stays empty
+  (`WV-5.5-consistentie-op-een-groeiend-kenmerk`); fired in generation
+  0 it would leave a fact on W2 and one on W3. A uniqueness reads its
+  keys strictly and sits a stratum above every writer of a key
+  (`WV-5.5-uniciteit-op-een-groeiende-sleutel`).
 - **The creation budget** (ch. 5.5): every minted instance gets, at
   the making, a creation depth in the stratum of the creation that
   minted it (`World.mints`): one more than its subject's depth there,
