@@ -196,56 +196,56 @@ its own output once the state that made it had passed, and its initialisations w
 ch. 5.5 evaluates them when the object is made. So the creation rules sit in two agenda groups of their own,
 `TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.vuur` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
-evaluation stratum in ascending order (below), per generation a phase of fact creations and a phase of object
-creations, in the order of a pass of the reference interpreter. Each phase inserts a new `Creatiefase` with its number
-and its stratum, gives its group the focus and fires; that fires the creations that hold at the fixpoint and then, once
-the group is empty, takes the rule layer to rest again in the same fire. A generation counts as a pass of the
-reference interpreter (below): a stratum ends at its first generation that changes nothing, and a generation past the
-hundredth of one stratum that still changes something ends the run without a fixpoint ("geen fixpunt binnen 100
-generaties"), the bound of the reference interpreter that `corpus/rood` `finite-chain-over-budget` and
-`corpus/golden/synth2-budgetgrens-onder` pin from both sides. An agenda filter cannot keep the
-creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for good. The
-groups do: Drools evaluates a rule lazily, when the agenda takes it from the group that has the focus, so a creation
-rule gets no match on an intermediate state of the rule layer. Auto-focus on a creation rule would make it eager and
-give it a match there, and put its group in front when a generation opens.
+evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `Creatiefase` with its
+number and its stratum, puts both groups on the focus stack, the fact creations on top, and fires; that fires the fact
+creations that hold at the fixpoint, then the object creations, and once both groups are empty takes the rule layer to
+rest again in the same fire. The rule layer does not fire between the two groups, so every creation of a generation
+reads the same settled world, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5, Generations): an object
+creation does not read what a fact creation of its own generation links. Until 2026-10-09 a generation was a phase of
+fact creations and a phase of object creations with the rule layer at rest between them, and an initialisation that
+counts the maatgevers of a Wachter, over a relation a fact creation in the same recursive group lays, gave 1 where the
+reference interpreter gives 0. The budget counts generations (below): a stratum ends at its first generation that makes
+nothing, and a generation past the hundredth of one stratum that still makes something ends the run without a fixpoint
+("geen fixpunt binnen 100 generaties"), the bound of the reference interpreter that `corpus/rood`
+`finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides. An agenda filter cannot
+keep the creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for
+good. The groups do: Drools evaluates a rule lazily, when the agenda takes it from the group that has the focus, so a
+creation rule gets no match on an intermediate state of the rule layer. Auto-focus on a creation rule would make it
+eager and give it a match there.
 
 **Creations fire per stratum.** A creation writes irrevocably, so every value it reads that is not a characteristic is
 a strict read, and the reference interpreter puts the creation in an evaluation stratum above the producers of what it
 reads; it evaluates stratum k to its fixpoint, within its budget, before a form of stratum k+1 fires (RUNTIME-SEMANTICS
-ch. 6.1 and 6.3, `ref/lib/eval.ml`). With all creations in one phase per generation, a creation that reads what
-another creation of the same generation makes read the state before it: "maak een afrekening" with a penningtelling
-counting the penningen of the Jutter fixed the count at 0 beside "geef een penning", where the reference interpreter
-gives 1, and a condition over a sum that the other creation raises held on the lower sum. So every creation rule gets
-the stratum the reference interpreter gives its form: `Kringen.strata` computes it as `eval.ml` does, over the
+ch. 6.1 and 6.3, `ref/lib/eval.ml`). With the creations of every stratum in one phase (until 2026-10-08), a creation
+that reads what another creation of the same generation makes read the state before it: "maak een afrekening" with a
+penningtelling counting the penningen of the Jutter fixed the count at 0 beside "geef een penning", where the reference
+interpreter gives 1, and a condition over a sum that the other creation raises held on the lower sum. So every creation
+rule gets the stratum the reference interpreter gives its form: `Kringen.strata` computes it as `eval.ml` does, over the
 verifier's graph with its positive, strict and negative edges (an edge counts as positive along a cycle, which WF-045
 admits only through a recursive creation), and without the one edge this branch draws beyond the verifier, a rule
 writing the channel of its own name. The rule binds a `Creatiefase` of its own stratum or one above, as a pass of the
 reference interpreter over stratum k runs every form of stratum k and below, and `TmsTranspiler.creatiestrata` gives
 the driver the strata in ascending order. The stratum is a field of the phase and a test in the rule rather than an
 agenda group per stratum: that keeps the two groups and their order within a generation, and stratum k needs no
-focus on the groups of the strata below it. The budget holds per stratum, as the reference interpreter gives every
-stratum's fixpoint its own budget of passes. Only the creations are ordered by stratum, since only their output is
+focus on the groups of the strata below it. The budget holds per stratum, as the reference interpreter counts the
+generations of every stratum apart. Only the creations are ordered by stratum, since only their output is
 stated; the rule layer stays under truth maintenance without strata and reaches its fixpoint after every phase. Over
 the corpus the strata equal those the reference interpreter's algorithm gives on the verifier's `--dependency-edges`
 for every creation of a document the loader loads (83 creations in 68 documents, 7 of them in stratum 1, among them
 `anchor/jutterswet-erflijn`, whose recursive "erf de lijn door" now walks the direct links in a later stratum, and the
 three wrakboekingen). Witness `TmsCreatiestratumWitnessTest`.
 
-**The budget counts passes that change something.** The reference interpreter bounds the fixpoint of a stratum by 100
-passes that change something. A generation of the driver is one such pass: the change the rule layer makes after the
-creations of the generation before, which the reference interpreter's next pass makes before its creations, and the
-creations of this generation. The change of the rule layer is net, a value, a characteristic or a link that stands
-differently after the generation than before it, without the facts the creations state, which are their own change; a
-standing or a contribution is no change, as an object without a written value is none for the reference interpreter.
-It counts only where a form of the stratum or below writes the member (`TmsTranspiler.lidstratum`, from the least
-stratum of a writer per member that `Kringen.strata` gives), since the reference interpreter evaluates a form of a
-higher stratum only after the fixpoint. So a chain of 100 generations whose last object a rule of its stratum still
-gives a value ends without a fixpoint, and the same chain plays one generation shorter, or without that rule. The
-reference interpreter also counts a first pass of a stratum in which only rules change; here the rule layer made those
-changes while an earlier stratum's phases fired, and the first generation counts by its creations, which cannot change
-the outcome, since the rules of a pass run before its creations. The ASP backend bounds the depth of a chain of mints
-instead (`oc_budget`): it faults at the hundredth mint, where the reference interpreter's 101st pass may change
-nothing, and it counts a chain that runs through two strata as one; this branch follows the reference interpreter.
+**The budget counts generations that make something.** A stratum admits at most 100 generations that make an object or
+lay a link, in the reference interpreter and here (RUNTIME-SEMANTICS ch. 5.5): a generation in which a creation rule
+fires counts, and a 101st that still makes something ends the run without a fixpoint. The rule layer has no budget of
+its own; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Until 2026-10-09 a generation
+counted as a pass of the reference interpreter of then, which also counted a pass in which only the rule layer changed
+(`TmsTranspiler.lidstratum`, since removed): a chain of 100 generations whose last object a rule of its stratum still
+gave a value ended without a fixpoint, and it plays now, as in the reference interpreter and the ASP backend. The ASP
+backend counts the depth of a chain of mints per stratum (`oc_budget`); it counts no generation in which a mint waits
+for a link or a value, which the reference interpreter and this branch do count (`backends/clingo/README.md`).
+Witnesses in `TmsCreatiestratumWitnessTest`: one chain at 99, 100 and 101 generations, 50 + 1 + 50 over three strata,
+and document L with the kopie.
 
 An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `Creatiefase`,
 the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a

@@ -65,25 +65,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       ({@link #een_keten_van_objectcreatie_feitcreatie_en_objectcreatie_loopt_in_drie_strata}).</li>
  *   <li>Two creations of one stratum that do not read each other fire in one generation, in one phase, and both read
  *       the Penning of the stratum below ({@link #twee_creaties_van_een_stratum_vuren_in_een_generatie}).</li>
- *   <li>The budget of 100 generations holds per stratum, as the reference interpreter bounds each stratum's fixpoint
- *       by 100 passes: two chains of 51 generations in two strata play
- *       ({@link #het_generatiebudget_geldt_per_stratum}).</li>
- *   <li>The budget counts the passes that change something, as the reference interpreter counts them: a chain of 100
- *       generations whose last object a rule of its stratum still gives a value ends without a fixpoint
- *       ({@link #een_pas_waarin_alleen_de_regellaag_verandert_telt_mee_voor_het_budget}); the same chain one shorter
- *       plays ({@link #een_keten_die_een_pas_korter_is_speelt}), and so does the chain of 100 without the rule
- *       ({@link #dezelfde_keten_zonder_de_berekende_eigenschap_speelt}) or with a rule of a higher stratum that reacts
- *       to the last object ({@link #een_reactie_uit_een_hoger_stratum_telt_niet_mee}).</li>
+ *   <li>Every creation of a generation reads the same settled world: an object creation does not count the link a
+ *       fact creation of its own generation lays ({@link #de_creaties_van_een_generatie_lezen_een_wereld}).</li>
+ *   <li>The budget of 100 generations holds per stratum, as the reference interpreter counts its generations per
+ *       stratum: two chains of 51 generations in two strata play ({@link #het_generatiebudget_geldt_per_stratum}), and
+ *       so does a chain over three strata, 50 + 1 + 50 ({@link #een_keten_over_drie_strata_telt_per_stratum}).</li>
+ *   <li>The budget counts the generations that make an object or lay a link (RUNTIME-SEMANTICS ch. 5.5): one chain
+ *       plays 99 and 100 generations and ends without a fixpoint at a 101st
+ *       ({@link #de_honderdste_generatie_speelt_en_een_101e_is_een_fout}); a chain of 100 generations plays with a rule
+ *       of its stratum that gives the last object a value after the hundredth generation
+ *       ({@link #een_generatie_waarin_alleen_de_regellaag_verandert_telt_niet_mee_voor_het_budget}), and so does the
+ *       chain one shorter ({@link #een_keten_die_een_pas_korter_is_speelt}), the chain without the rule
+ *       ({@link #dezelfde_keten_zonder_de_berekende_eigenschap_speelt}) and the chain with a rule of a higher stratum
+ *       that reacts to the last object ({@link #een_reactie_uit_een_hoger_stratum_telt_niet_mee}).</li>
  * </ul>
  *
- * <p><b>The other executors</b> (2026-10-08). Every document written here passes the verifier, and the reference
- * interpreter and the ASP backend give the expectations of each case in every order of its creations and rules in the
- * document, apart from the chains of 100 generations in document L. On the chain whose last Boei gets its kopie both
- * fault, the reference interpreter with "no fixpoint within 100 passes — divergence is a fault (ch. 5.7)" and the ASP
- * backend with "UNSATISFIABLE — a fail-fast guard fired: viol("generation budget exhausted", …)". Without the kopie,
- * and with "genummerd", the reference interpreter plays and the ASP backend faults the same way: its budget is the
- * depth of a chain of mints, which reaches 100 at the hundredth mint, where the reference interpreter's 101st pass
- * changes nothing. This branch follows the reference interpreter.
+ * <p><b>The other executors</b> (measured 2026-10-09, cards creatie-initialisatie-leest-groeiende-waarde and
+ * creatiebudget-ref-en-clingo). Every document written here passes the verifier, and the reference interpreter and the
+ * ASP backend give the expectations of each case in every order of its creations and rules in the document, apart from
+ * two. On the chain of document G that a 101st generation would extend both fault, the reference interpreter with "no
+ * fixpoint within 100 generations — generation 101 still mints or links (object creation "werf de lange keten") …" and
+ * the ASP backend with "UNSATISFIABLE — a fail-fast guard fired: viol("generation budget exhausted", …)". Document V the
+ * reference interpreter plays and the ASP backend refuses by name: "the initialisation of beginstand reads
+ * rel:maatschap, which fact creation "maak maten" writes on a dependency cycle through the creation …". Until
+ * 2026-10-09 the two counted their budgets apart (measured 2026-10-08): on the chain of document L whose last Boei gets
+ * its kopie both faulted, the reference interpreter with "no fixpoint within 100 passes — divergence is a fault
+ * (ch. 5.7)", and on the chains of L to B101 without the kopie and with "genummerd" the reference interpreter played and
+ * the ASP backend faulted with "generation budget exhausted": its budget was the depth of a chain of mints, which reached
+ * 100 at the hundredth mint.
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on {@code 6b4c966f}, all creations of a generation in one
  * phase): all five failed, in every document order: "case: attribuut penningaantal: verwacht 1, werkelijk 0" on P and
@@ -101,6 +110,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the rule layer counted whatever the stratum of its writer ("een reactie uit een hoger stratum" ends without a
  * fixpoint), and the facts a creation states counted as a change of the rule layer (the chain without the kopie ends
  * without a fixpoint, and the sentence on the chain with it names more than one change).
+ *
+ * <p><b>Red before the generation count</b> (measured 2026-10-09 on {@code e15baf01}, which counted a pass in which only
+ * the rule layer changed and fired a generation in two phases, the rule layer at rest between them): the branch ended
+ * the chain of document L whose last Boei gets its kopie without a fixpoint, "case: geen fixpunt binnen 100 generaties:
+ * generatie 101 maakt niets meer, maar de regellaag verandert nog 1 waarde, kenmerk of link na wat generatie 100
+ * maakte …", in both orders of its creations, and on document V an object creation read the link a fact creation of its
+ * own generation had laid, "case: attribuut verder: verwacht 0, werkelijk 1", in both orders of the rules. Documents G
+ * and D played and ended where they end now; they failed on the phases alone ("expected: &lt;Wachter in fase 1&gt; but
+ * was: &lt;Wachter in fase 2&gt;"), as did every witness above that pins a phase, since a generation is one phase now.
  */
 class TmsCreatiestratumWitnessTest {
 
@@ -162,9 +180,9 @@ class TmsCreatiestratumWitnessTest {
             assertNull(vuur(b, volgorde, List.of(j1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
                     () -> "volgorde " + namen);
             assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + namen);
-            // the Penning in the object phase of stratum 0's first generation; stratum 0 closes with a generation that
-            // makes nothing (phases 3 and 4), and the Afrekening follows in the object phase of stratum 1
-            assertEquals(List.of("Penning in fase 2", "Afrekening in fase 6"), soorten(objecten), () -> "volgorde " + namen);
+            // one phase per generation: the Penning in stratum 0's first generation; stratum 0 closes with a generation
+            // that makes nothing (phase 2), and the Afrekening follows in the first generation of stratum 1
+            assertEquals(List.of("Penning in fase 1", "Afrekening in fase 3"), soorten(objecten), () -> "volgorde " + namen);
         }
     }
 
@@ -222,7 +240,7 @@ class TmsCreatiestratumWitnessTest {
                     () -> "volgorde " + namen);
             assertGetal("0", TmsDocumenten.lees(j1, "afrekeningaantal"), "afrekeningaantal in volgorde " + namen);
             assertGetal("10", TmsDocumenten.lees(j1, "penningsom"), "penningsom in volgorde " + namen);
-            assertEquals(List.of("Penning in fase 2"), soorten(objecten), () -> "volgorde " + namen);
+            assertEquals(List.of("Penning in fase 1"), soorten(objecten), () -> "volgorde " + namen);
         }
     }
 
@@ -266,12 +284,12 @@ class TmsCreatiestratumWitnessTest {
                 links.addAll(koppelingen(sessie, "bewaring"));
             }), () -> "volgorde " + namen);
             assertGetal("1", TmsDocumenten.lees(j1, "penningaantal"), "penningaantal in volgorde " + namen);
-            // stratum 0 makes the Penning (phase 2) and closes in phases 3 and 4; stratum 1 links it in its first fact
-            // phase (5) and closes in phases 7 and 8; stratum 2 makes the Afrekening in its first object phase (10)
-            assertEquals(List.of("Penning in fase 2", "Afrekening in fase 10"), soorten(objecten), () -> "volgorde " + namen);
+            // one phase per generation: stratum 0 makes the Penning (phase 1) and closes in phase 2; stratum 1 links it
+            // in its first generation (3) and closes in 4; stratum 2 makes the Afrekening in its first generation (5)
+            assertEquals(List.of("Penning in fase 1", "Afrekening in fase 5"), soorten(objecten), () -> "volgorde " + namen);
             assertEquals(1, links.size(), () -> "links in volgorde " + namen);
             assertTrue(links.get(0)[0] == j1 && links.get(0)[1] == objecten.get(0)[1], () -> "link in volgorde " + namen);
-            assertEquals(5, links.get(0)[2], () -> "fase van de link in volgorde " + namen);
+            assertEquals(3, links.get(0)[2], () -> "fase van de link in volgorde " + namen);
         }
     }
 
@@ -318,8 +336,8 @@ class TmsCreatiestratumWitnessTest {
             assertGetal("1", TmsDocumenten.lees(j1, "kwitantieaantal"), "kwitantieaantal in volgorde " + namen);
             List<String> soorten = new ArrayList<>(soorten(objecten));
             soorten.sort(null);
-            // both of stratum 1 in its first object phase, one generation
-            assertEquals(List.of("Afrekening in fase 6", "Kwitantie in fase 6", "Penning in fase 2"), soorten,
+            // both of stratum 1 in its first generation, phase 3
+            assertEquals(List.of("Afrekening in fase 3", "Kwitantie in fase 3", "Penning in fase 1"), soorten,
                     () -> "volgorde " + namen);
         }
     }
@@ -363,10 +381,10 @@ class TmsCreatiestratumWitnessTest {
                 List.of(waarde("W1", "rang", "1")));
     }
 
-    /** Two chains of 51 generations each, 102 in all, in two strata. The reference interpreter bounds the fixpoint of
-     *  each stratum by 100 passes and plays the document; a budget over the whole run would end it at generation 101.
+    /** Two chains of 51 generations each, 102 in all, in two strata. The reference interpreter counts at most 100
+     *  generations per stratum and plays the document; a budget over the whole run would end it at generation 101.
      *  The Boeien wait for the Wachters, so the first Boei is made after the 51 generations of stratum 0 and the one
-     *  that closes it: in phase 2 &middot; 52 + 2. */
+     *  that closes it, one phase each: in phase 52 + 1. */
     @Test void het_generatiebudget_geldt_per_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(), (creaties, regels) -> documentB(creaties), zaakB());
         DroolsBackend.Build b = DroolsBackend.build(documentB(List.of(WERF, LEG)), DroolsBackend.Branch.TRUTH_MAINTENANCE);
@@ -381,8 +399,8 @@ class TmsCreatiestratumWitnessTest {
                     () -> "volgorde " + namen);
             assertEquals(102, objecten.size(), () -> "objecten in volgorde " + namen);
             for (int i = 0; i < 51; i++) {
-                assertEquals("Wachter in fase " + 2 * (i + 1), soort(objecten.get(i)), "volgorde " + namen);
-                assertEquals("Boei in fase " + (2 * 52 + 2 * (i + 1)), soort(objecten.get(51 + i)), "volgorde " + namen);
+                assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
+                assertEquals("Boei in fase " + (52 + i + 1), soort(objecten.get(51 + i)), "volgorde " + namen);
             }
             assertGetal("52", TmsDocumenten.lees(objecten.get(50)[1], "rang"), "rang van W52 in volgorde " + namen);
             assertGetal("52", TmsDocumenten.lees(objecten.get(101)[1], "nummer"), "nummer van B52 in volgorde " + namen);
@@ -391,7 +409,7 @@ class TmsCreatiestratumWitnessTest {
         }
     }
 
-    // ---------------- document L: a pass in which only the rule layer changes ----------------
+    // ---------------- document L: a generation after which only the rule layer changes ----------------
 
     private static final String MODEL_L = TmsDocumenten.model(List.of(
             objecttype("Wachter", List.of(attribuut("rang", GEHEEL)), List.of()),
@@ -429,57 +447,212 @@ class TmsCreatiestratumWitnessTest {
                 v);
     }
 
-    private static final String NA_HONDERD = "geen fixpunt binnen 100 generaties: generatie 101 maakt niets meer, maar"
-            + " de regellaag verandert nog 1 waarde, kenmerk of link na wat generatie 100 maakte — ook die pas telt,"
-            + " zoals in de referentie-interpreter (RUNTIME-SEMANTICS ch. 5.5 en 5.7)";
-
     /** The scenario of the lens on the budget: the chain of Boeien runs to B101, 100 generations of stratum 1, and
-     *  "kopie van een boei" first writes the kopie of B101 in the pass after the hundredth, a 101st pass that changes
-     *  something, so the reference interpreter gives "no fixpoint within 100 passes". */
-    @Test void een_pas_waarin_alleen_de_regellaag_verandert_telt_mee_voor_het_budget() throws Exception {
-        Bouw bouw = (creaties, regels) -> documentL(101, creaties, regels);
-        JsonNode zaak = zaakL(List.of(waarde("B1", "kopie", "1")));
-        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
-        for (List<String> c : permutaties(List.of(WERF, LEG))) {
-            uitkomsten.add(regelnamen(c) + " " + TmsFoutWitnessTest.speel(bouw.van(c, List.of(KOPIE)), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
-            verwacht.add(regelnamen(c) + " case: " + NA_HONDERD);
-        }
-        assertEquals(verwacht, uitkomsten);
-        DroolsBackend.Build b = DroolsBackend.build(bouw.van(List.of(WERF, LEG), List.of(KOPIE)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 10)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            List<Object[]> objecten = new ArrayList<>();
-            assertEquals(NA_HONDERD, vuur(b, volgorde, boeienlijn(b), sessie -> { },
-                    sessie -> objecten.addAll(gemaakt(sessie))), () -> "volgorde " + namen);
-            assertEquals(51 + 100, objecten.size(), () -> "objecten in volgorde " + namen);
-        }
+     *  "kopie van een boei" writes the kopie of B101 after the hundredth generation, while the rule layer comes to rest.
+     *  The budget counts generations that make an object or lay a link (RUNTIME-SEMANTICS ch. 5.5), so the document
+     *  plays, as in the reference interpreter and the ASP backend. Until 2026-10-09 the driver counted the passes of
+     *  the reference interpreter of then, among them a pass in which only the rule layer changed, and this document
+     *  ended without a fixpoint: "geen fixpunt binnen 100 generaties: generatie 101 maakt niets meer, maar de regellaag
+     *  verandert nog 1 waarde, kenmerk of link na wat generatie 100 maakte". */
+    @Test void een_generatie_waarin_alleen_de_regellaag_verandert_telt_niet_mee_voor_het_budget() throws Exception {
+        speeltInElkeVolgorde(List.of(WERF, LEG), List.of(KOPIE), (c, r) -> documentL(101, c, r),
+                zaakL(List.of(waarde("B1", "kopie", "1"))));
+        speeltDoorDeDriver(documentL(101, List.of(WERF, LEG), List.of(KOPIE)), 51 + 100);
     }
 
-    /** The same chain one shorter, to B100: the pass that writes the kopie of B100 is the hundredth, and the next
-     *  changes nothing. */
+    /** The same chain one shorter, to B100, 99 generations of stratum 1. */
     @Test void een_keten_die_een_pas_korter_is_speelt() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(KOPIE), (c, r) -> documentL(100, c, r),
                 zaakL(List.of(waarde("B1", "kopie", "1"))));
         speeltDoorDeDriver(documentL(100, List.of(WERF, LEG), List.of(KOPIE)), 51 + 99);
     }
 
-    /** The chain to B101 without "kopie van een boei": the 101st pass changes nothing, since a new object without a
-     *  written value is no change for the reference interpreter; the standings and contributions the rule layer
-     *  inserts for B101 are no change here either. */
+    /** The chain to B101 without "kopie van een boei", 100 generations of stratum 1. Until 2026-10-09 it already
+     *  played: the reference interpreter's 101st pass changed nothing, since a new object without a written value was no
+     *  change for it, and the driver did not count the standings and contributions the rule layer inserts for B101. */
     @Test void dezelfde_keten_zonder_de_berekende_eigenschap_speelt() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(), (c, r) -> documentL(101, c, r), zaakL(List.of()));
         speeltDoorDeDriver(documentL(101, List.of(WERF, LEG), List.of()), 51 + 100);
     }
 
-    /** The chain to B101 with "genummerd", which the rule layer attributes to B101 after the hundredth generation: that
-     *  rule sits a stratum above the chain, so the reference interpreter evaluates it only after the chain's fixpoint,
-     *  and its change is no pass of the chain's stratum. */
+    /** The chain to B101 with "genummerd", which the rule layer attributes to B101 after the hundredth generation, from a
+     *  stratum above the chain. It counts in no stratum, as no change of the rule layer counts. Until 2026-10-09 it
+     *  already played: the driver counted a change of the rule layer only in the stratum of its writer and below, and
+     *  the reference interpreter evaluated the rule only after the chain's fixpoint. */
     @Test void een_reactie_uit_een_hoger_stratum_telt_niet_mee() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(GENUMMERD), (c, r) -> documentL(101, c, r),
                 zaakL(List.of(TmsDocumenten.verwacht("B1", "genummerd", true))));
         speeltDoorDeDriver(documentL(101, List.of(WERF, LEG), List.of(GENUMMERD)), 51 + 100);
+    }
+
+    // ---------------- document G: the budget of one chain, at its bound ----------------
+
+    private static final String MODEL_G = TmsDocumenten.model(List.of(
+            objecttype("Wachter", List.of(attribuut("rang", GEHEEL)), List.of())),
+            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter")));
+
+    /** The chain of {@code corpus/rood} {@code finite-chain-over-budget} without its consistency, while the rang is below
+     *  {@code grens}: from W1 of rang 1, {@code grens - 1} generations in one stratum. */
+    static Path documentG(int grens) throws Exception {
+        return document(MODEL_G, List.of(), List.of(),
+                List.of(objectcreatie("werf de lange keten", "Wachter", "Wachter",
+                        List.of(init("rang", binair("plus", lezing("rang", "Wachter"), getal("1")))),
+                        vergelijking("less", lezing("rang", "Wachter"), getal(String.valueOf(grens))), "opvolging",
+                        "opvolger")),
+                List.of(), List.of(regelgroep("lange estafette", List.of("werf de lange keten"))));
+    }
+
+    private static final String BUDGET = "geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of link —"
+            + " een creatie die niet stopt is een fout (RUNTIME-SEMANTICS ch. 5.5 en 5.7)";
+
+    /** The bound of the generation budget (RUNTIME-SEMANTICS ch. 5.5), where the reference interpreter and the ASP backend
+     *  put it: chains of 99 and 100 generations play, one generation per phase, and a 101st generation that still makes
+     *  an object ends the run without a fixpoint, the 101st object made. */
+    @Test void de_honderdste_generatie_speelt_en_een_101e_is_een_fout() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
+                Map.of())), List.of(waarde("W1", "rang", "1")));
+        for (int grens : List.of(100, 101, 102)) {
+            int generaties = grens - 1;
+            assertEquals(generaties <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFoutWitnessTest.speel(documentG(grens),
+                    zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE), generaties + " generaties");
+            DroolsBackend.Build b = DroolsBackend.build(documentG(grens), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+                List<String> namen = volgorde.stream().map(Rule::getName).toList();
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                List<Object[]> objecten = new ArrayList<>();
+                assertEquals(generaties <= 100 ? null : BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))), () -> generaties + " generaties in volgorde " + namen);
+                assertEquals(Math.min(generaties, 101), objecten.size(),
+                        () -> "objecten na " + generaties + " generaties in volgorde " + namen);
+                for (int i = 0; i < objecten.size(); i++)
+                    assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
+                if (generaties <= 100)
+                    assertGetal(String.valueOf(grens), TmsDocumenten.lees(objecten.get(generaties - 1)[1], "rang"),
+                            "rang van de laatste Wachter na " + generaties + " generaties in volgorde " + namen);
+            }
+        }
+    }
+
+    // ---------------- document D: a chain over three strata ----------------
+
+    /** "Een Wachter heeft een boei met nummer gelijk aan 1 indien zijn rang gelijk is aan 51": it reads the rang that
+     *  "werf de opvolger" writes, strictly, so it sits a stratum above that chain. */
+    static final String BOEI_BIJ_51 = objectcreatie("leg een boei", "Wachter", "Boei", List.of(init("nummer", getal("1"))),
+            vergelijking("equal", lezing("rang", "Wachter"), getal("51")), "bewaking", "boei");
+
+    /** "werf de opvolger" while the rang is below 51, "leg een boei" and the chain of Boeien while the nummer is below 51,
+     *  without a wachterrang: 50 generations in stratum 0, one in stratum 1 and 50 in stratum 2. */
+    static Path documentD(List<String> creaties) throws Exception {
+        List<String> c = new ArrayList<>();
+        for (String creatie : creaties)
+            c.add(creatie.equals(WERF) ? objectcreatie("werf de opvolger", "Wachter", "Wachter",
+                    List.of(init("rang", binair("plus", lezing("rang", "Wachter"), getal("1")))),
+                    vergelijking("less", lezing("rang", "Wachter"), getal("51")), "opvolging", "opvolger")
+                    : creatie.equals(LEG) ? objectcreatie("leg de volgende boei", "Boei", "Boei",
+                    List.of(init("nummer", binair("plus", lezing("nummer", "Boei"), getal("1")))),
+                    vergelijking("less", lezing("nummer", "Boei"), getal("51")), "boeiketen", "volgende boei")
+                    : creatie);
+        return document(MODEL_B, List.of(), List.of(), c, List.of(),
+                List.of(regelgroep("estafette", List.of("werf de opvolger")),
+                        regelgroep("boeienlijn", List.of("leg de volgende boei"))));
+    }
+
+    /** The chain the ASP backend counted over the strata until 2026-10-09 (50 + 1 + 50 mints, UNSAT at the 100th), and
+     *  that the budget per stratum of RUNTIME-SEMANTICS ch. 5.5 admits: it plays in every order of its creations. The
+     *  phases: stratum 0 makes W2 to W51 in phases 1 to 50 and closes in 51, stratum 1 makes B1 in 52 and closes in 53,
+     *  stratum 2 makes B2 to B51 in 54 to 103. */
+    @Test void een_keten_over_drie_strata_telt_per_stratum() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
+                Map.of())), List.of(waarde("W1", "rang", "1")));
+        speeltInElkeVolgorde(List.of(WERF, BOEI_BIJ_51, LEG), List.of(), (creaties, regels) -> documentD(creaties), zaak);
+        DroolsBackend.Build b = DroolsBackend.build(documentD(List.of(WERF, BOEI_BIJ_51, LEG)),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+            List<Object[]> objecten = new ArrayList<>();
+            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
+                    () -> "volgorde " + namen);
+            assertEquals(50 + 1 + 50, objecten.size(), () -> "objecten in volgorde " + namen);
+            for (int i = 0; i < 50; i++) {
+                assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
+                assertEquals("Boei in fase " + (54 + i), soort(objecten.get(51 + i)), "volgorde " + namen);
+            }
+            assertEquals("Boei in fase 52", soort(objecten.get(50)), "volgorde " + namen);
+            assertGetal("51", TmsDocumenten.lees(objecten.get(49)[1], "rang"), "rang van W51 in volgorde " + namen);
+            assertGetal("51", TmsDocumenten.lees(objecten.get(100)[1], "nummer"), "nummer van B51 in volgorde " + namen);
+        }
+    }
+
+    // ---------------- document V: the creations of one generation read one world ----------------
+
+    private static final String MAATGEVERS = "{\"node\":\"AttributeReference\",\"attribute\":\"maatgevers\","
+            + "\"subjectType\":\"Wachter\",\"source\":{\"snippet\":\"maatgevers van de Wachter\"}}";
+
+    /** "Eén voorganger heeft één opvolger" and "Een maatgever heeft meerdere maten, een maat meerdere maatgevers". */
+    private static final String MODEL_V = TmsDocumenten.model(List.of(
+            objecttype("Wachter", List.of(attribuut("rang", GEHEEL), attribuut("beginstand", GEHEEL),
+                    attribuut("opvolgerbegin", GEHEEL), attribuut("verder", GEHEEL)), List.of())),
+            List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+                    "{\"node\":\"FactType\",\"name\":\"maatschap\",\"reciprocal\":false,\"roles\":[{\"node\":\"Role\","
+                            + "\"name\":\"maatgever\",\"objectType\":\"Wachter\",\"plural\":\"maatgevers\",\"many\":true},"
+                            + "{\"node\":\"Role\",\"name\":\"maat\",\"objectType\":\"Wachter\",\"plural\":\"maten\","
+                            + "\"many\":true}]}"));
+
+    static final List<String> REGELS_V = List.of(
+            rekenregel("opvolgerbegin", "GELIJKSTELLING", "Wachter", "opvolgerbegin",
+                    padlezing("beginstand", "Wachter", "opvolging", "opvolger"), "null"),
+            rekenregel("verder", "GELIJKSTELLING", "Wachter", "verder",
+                    padlezing("opvolgerbegin", "Wachter", "opvolging", "opvolger"), "null"));
+
+    /** Vorm V2 of the card creatie-initialisatie-leest-groeiende-waarde, the recursive group "estafette" of two creations
+     *  on one cycle, so in one stratum: "werf de opvolger" gives a Wachter of rang below 4 an opvolger with rang plus 1
+     *  and beginstand the number of its maatgevers, and "maak maten" makes every Wachter a maatgever of its opvolger.
+     *  "opvolgerbegin" reads the beginstand of the opvolger and "verder" the opvolgerbegin of the opvolger. */
+    static Path documentV(List<String> regels) throws Exception {
+        String werf = objectcreatie("werf de opvolger", "Wachter", "Wachter", List.of(
+                init("rang", binair("plus", lezing("rang", "Wachter"), getal("1"))),
+                init("beginstand", aggregatie("count", MAATGEVERS, "Wachter", bronrol("maatschap", "maatgever"), "null",
+                        "null", TELLING, "het aantal maatgevers van de Wachter"))),
+                vergelijking("less", lezing("rang", "Wachter"), getal("4")), "opvolging", "opvolger");
+        String maten = feitcreatie("maak maten", "maatschap", "maatgever", "maat", "Wachter",
+                List.of(rolbinding("opvolging", "opvolger")), "null");
+        return document(MODEL_V, regels, List.of(), List.of(werf), List.of(maten),
+                List.of(regelgroep("estafette", List.of("werf de opvolger", "maak maten"))));
+    }
+
+    /**
+     * Every creation of a generation reads the settled world of the generation before (RUNTIME-SEMANTICS ch. 5.5,
+     * Generations), so an object creation does not count a link a fact creation of its own generation lays. W1 makes W2
+     * in generation 1; in generation 2 "maak maten" makes W1 a maatgever of W2 while W2 makes W3, on the world in which
+     * W2 has no maatgever yet: W3 starts at beginstand 0, and so does W4. The reference interpreter gives
+     * opvolgerbegin(W1) = 0 and verder(W1) = 0 in every order of the rules. One phase per generation: W2, W3 and W4 in
+     * phases 1, 2 and 3, the maatschap links in phases 2, 3 and 4, and phase 5 makes nothing.
+     */
+    @Test void de_creaties_van_een_generatie_lezen_een_wereld() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
+                Map.of())), List.of(waarde("W1", "opvolgerbegin", "0"), waarde("W1", "verder", "0")));
+        speeltInElkeVolgorde(List.of(), REGELS_V, (creaties, regels) -> documentV(regels), zaak);
+        DroolsBackend.Build b = DroolsBackend.build(documentV(REGELS_V), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+            List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
+            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> {
+                objecten.addAll(gemaakt(sessie));
+                links.addAll(koppelingen(sessie, "maatschap"));
+            }), () -> "volgorde " + namen);
+            assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + namen);
+            assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + namen);
+            assertEquals(List.of("Wachter in fase 1", "Wachter in fase 2", "Wachter in fase 3"), soorten(objecten),
+                    () -> "volgorde " + namen);
+            for (Object[] g : objecten)
+                assertGetal("0", TmsDocumenten.lees(g[1], "beginstand"), "beginstand in volgorde " + namen);
+            List<Integer> fasen = new ArrayList<>();
+            for (Object[] l : links) fasen.add((Integer) l[2]);
+            fasen.sort(null);
+            assertEquals(List.of(2, 3, 4), fasen, () -> "fasen van de maatschap in volgorde " + namen);
+        }
     }
 
     /** W1 of rang 1, watching B1 of nummer 1, as beans for the driver. */

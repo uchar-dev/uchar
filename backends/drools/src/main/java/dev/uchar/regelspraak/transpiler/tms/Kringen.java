@@ -118,14 +118,10 @@ public final class Kringen {
      * creation, and its generations settle it). The edge this branch draws beyond the verifier, a rule that writes the
      * channel of its own name, is left out, so the strata are the reference interpreter's and no higher. A document
      * with a forbidden cycle gets strata as well; {@link #weigering} refuses it.
-     *
-     * <p>Beside the stratum of each form, the least stratum of a form that writes each member node ({@code attr:} or
-     * {@code char:}, per type as ch. 5.1 keys it): the reference interpreter evaluates a writer only in the passes of
-     * its own stratum and above, so a change of that member falls in a pass of that stratum or a later one.
      */
-    static Strata strata(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
-                         Map<Object, List<RolBindingRef>> navigatie, Map<Object, RolBindingRef> rolBindingen,
-                         Map<Object, List<RolBindingRef>> bronPaden) {
+    static Map<Object, Integer> strata(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
+                                       Map<Object, List<RolBindingRef>> navigatie, Map<Object, RolBindingRef> rolBindingen,
+                                       Map<Object, List<RolBindingRef>> bronPaden) {
         List<Vorm> vormen = new Graaf(model, defaults, navigatie, rolBindingen, bronPaden).vormen();
         int n = vormen.size();
         List<Rand> randen = new ArrayList<>();
@@ -156,19 +152,10 @@ public final class Kringen {
                 }
             }
         }
-        Map<Object, Integer> perVorm = new IdentityHashMap<>();
-        Map<String, Integer> perLid = new HashMap<>();
-        for (int i = 0; i < n; i++) {
-            Vorm v = vormen.get(i);
-            perVorm.put(v.bron(), stratum[i]);
-            for (String k : v.schrijft())
-                if (k.startsWith("attr:") || k.startsWith("char:")) perLid.merge(k, stratum[i], Math::min);
-        }
-        return new Strata(perVorm, perLid);
+        Map<Object, Integer> uit = new IdentityHashMap<>();
+        for (int i = 0; i < n; i++) uit.put(vormen.get(i).bron(), stratum[i]);
+        return uit;
     }
-
-    /** The strata of a document: per form by its IR node, and per member node the least stratum of its writers. */
-    record Strata(Map<Object, Integer> vormen, Map<String, Integer> leden) {}
 
     /** Every edge of the graph: one for every node a form reads and another form, or the same, writes. */
     private static List<Rand> randen(List<Vorm> vormen) {

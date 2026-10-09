@@ -140,12 +140,13 @@ import java.util.function.UnaryOperator;
  * instance under a fixed label. A logical object could keep itself standing through its own output after the state that
  * made it had passed, and its initialisations would follow later changes, where ch. 5.5 evaluates them when the object
  * is made. Its rules sit in agenda groups of their own ({@link #FEITCREATIE}, {@link #OBJECTCREATIE}) and the driver
- * fires them in generations ({@code DroolsBackend.vuur}): the rule layer to rest, then the fact creations once, the
- * rule layer to rest, the object creations once, and again, for at most 100 generations. It does so per evaluation
- * stratum of the reference interpreter, in ascending order ({@link #creatiestrata}): a creation reads strictly, so it
- * fires only once the creations whose output it reads have reached their fixpoint, as the reference interpreter
- * evaluates stratum k to its fixpoint before a form of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an
- * initialisation evaluated earlier would be fixed on a value that grows. An object creation inserts
+ * fires them in generations ({@code DroolsBackend.vuur}): the rule layer to rest, then the fact creations once and the
+ * object creations once, both on that one fixpoint, then the rule layer to rest again, and so on, at most 100
+ * generations of one stratum that make something. It does so per evaluation stratum of the reference interpreter, in
+ * ascending order ({@link #creatiestrata}): a creation reads strictly, so it fires only once the creations whose output
+ * it reads have reached their fixpoint, as the reference interpreter evaluates stratum k to its fixpoint before a form
+ * of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an initialisation evaluated earlier would be fixed on a value
+ * that grows. An object creation inserts
  * the new bean, a {@link Gemaakt} mark per creation and subject, the {@link Koppeling} of its connecting relation and
  * its initialisations as {@link Waarde} and {@link HeeftKenmerk}, computed from what its rule binds
  * ({@link #objectCreatie}); a fact creation inserts the {@link Koppeling} it makes ({@link #feitCreatie}). Every relation
@@ -167,8 +168,11 @@ public final class TmsTranspiler {
      *  never fire later. */
     public static final String FEITCREATIE = "uchar-feitcreatie";
 
-    /** The agenda group of the object creations, given the focus by the driver after that of the fact creations, as the
-     *  reference interpreter runs a pass: fact creations before object creations ({@link #FEITCREATIE}). */
+    /** The agenda group of the object creations. The driver puts it on the focus stack beneath the group of the fact
+     *  creations ({@link #FEITCREATIE}), so in a generation the fact creations fire first and the object creations right
+     *  after them, before the rule layer fires again: every creation of a generation reads the same settled world, and an
+     *  object creation does not read what a fact creation of its generation links (RUNTIME-SEMANTICS ch. 5.5,
+     *  Generations). */
     public static final String OBJECTCREATIE = "uchar-objectcreatie";
 
     /** The most values one condition of this branch reads at once: the DSL's standalone test takes at most thirteen
@@ -234,8 +238,6 @@ public final class TmsTranspiler {
     private final Set<String> creatieregels = new LinkedHashSet<>();
     /** The evaluation stratum of every form of a document with a creation, by its node ({@link Kringen#strata}). */
     private Map<Object, Integer> strata = Map.of();
-    /** The least stratum of a writer of every member node of a document with a creation ({@link #lidstratum}). */
-    private Map<String, Integer> lidstrata = Map.of();
     /** The strata of the lowered creation rules ({@link #creatiestrata}). */
     private final Set<Integer> creatiestrata = new TreeSet<>();
     /** Whether a filter fault rule reads a {@link Lijstplaats} ({@link #plaats}). */
@@ -292,28 +294,6 @@ public final class TmsTranspiler {
      *  turn, and a creation rule fires in the phases of its own stratum and of every stratum above it
      *  ({@link Creatiefase}). Empty where {@link #creatieregels} is. */
     public List<Integer> creatiestrata() { return List.copyOf(creatiestrata); }
-
-    /**
-     * The least evaluation stratum of a form that writes member {@code lid} on the type of {@code onderwerp}, a bean of
-     * this model, in a document with a creation. The rule layer has no strata on this branch, but it changes that member
-     * of that object only through such a form, and the reference interpreter evaluates a form only in the passes of its
-     * own stratum and above, so it makes that change in a pass of this stratum or a later one. The driver counts a
-     * change of the rule layer among the passes of a stratum by it ({@code DroolsBackend.vuur}). A member that no form
-     * writes is input, which the rule layer does not change: asked for one, this fails.
-     */
-    public int lidstratum(Object onderwerp, ElementSleutel lid) {
-        String klasse = onderwerp.getClass().getName();
-        Objecttype type = null;
-        for (Objecttype t : model.objecttypen.values())
-            if ((FactModelGenerator.PAKKET + "." + Namen.ident(t.naam, true)).equals(klasse)) type = t;
-        if (type == null) throw new IllegalStateException("tms: " + klasse + " is geen boon van dit model");
-        String knoop = (lid.kenmerk() ? "char:" : "attr:") + Namen.norm(type.naam) + ":" + lid.naam();
-        Integer s = lidstrata.get(knoop);
-        if (s == null)
-            throw new IllegalStateException("tms: geen vorm van dit model schrijft " + Feitnamen.lid(lid) + " op een "
-                    + type.naam);
-        return s;
-    }
 
     /** Whether a rule of the model reads a {@link Lijstplaats}: a fold whose filter can fault over a range with a
      *  to-many step. Only then does the case input state the places of its to-many lists. */
@@ -420,11 +400,8 @@ public final class TmsTranspiler {
     private Model run() {
         schrijvers = ProducentConsument.producentIndex(model, defaults);
         staandeDoelen = StaandeDoelen.van(model, defaults);
-        if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty()) {
-            Kringen.Strata s = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
-            strata = s.vormen();
-            lidstrata = s.leden();
-        }
+        if (!model.objectCreaties.isEmpty() || !model.feitCreaties.isEmpty())
+            strata = Kringen.strata(model, defaults, navigatieBindingen, rolBindingen, bronPaden);
         // before any form lowers: a form that reads a created relation must know it while it lowers
         for (ResolvedObjectCreatie o : model.objectCreaties) {
             RolBindingRef vr = rolBindingen.get(o);

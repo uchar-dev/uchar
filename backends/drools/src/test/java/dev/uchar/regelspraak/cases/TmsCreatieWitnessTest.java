@@ -88,7 +88,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the reference interpreter gives the expectations, and the ASP backend answers opvolgerbegin(W1) = 1: its stable model
  * evaluates the initialisation of the beginstand against the final stand of W1, where ch. 5.5 and the reference
  * interpreter evaluate it when the object is made, at stand 0; a split of the class RUNTIME-SEMANTICS ch. 6.1 records as
- * "a value that grows", on which this branch follows the reference interpreter.
+ * "a value that grows", on which this branch follows the reference interpreter. Measured again on 2026-10-09 (cards
+ * creatie-initialisatie-leest-groeiende-waarde and creatiebudget-ref-en-clingo): the reference interpreter counts
+ * generations and says on F "no fixpoint within 100 generations — generation 101 still mints or links (object creation
+ * "werf"), and divergence is a fault (ch. 5.5, 5.7)", the ASP backend as before; on C the ASP backend now refuses by
+ * name ("the initialisation of beginstand reads attr:wachter:stand, which rule "stand van een wachter" writes on a
+ * dependency cycle through the creation …").
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch after its cycle refusal, {@code fdeb6dfb}): all
  * eleven failed at the build, which refused the creation, for instance "expected: &lt;gespeeld&gt; but was:
@@ -338,6 +343,13 @@ class TmsCreatieWitnessTest {
      * of the fact creations, on which {@link #een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt},
      * {@link #een_object_is_pas_in_de_volgende_generatie_onderwerp} and
      * {@link #het_generatiebudget_ligt_waar_het_corpus_het_pint} fail.
+     *
+     * <p>Measured again on 2026-10-09. Since the creations fire per stratum (2026-10-08), "waarschuw" sits a stratum above
+     * "meld" and binds no {@code Creatiefase} of meld's stratum, so it gets no match on the state above under the mutant
+     * either, and this test passes on it; on {@code e15baf01} only the three tests named above failed in this class, on
+     * the phase. Since a generation is one phase (2026-10-09) there is no phase of the fact creations to fire in, and
+     * under the mutant every test of this class and of {@code TmsCreatiestratumWitnessTest} passes: no witness here
+     * catches auto-focus on the object creations any more.
      */
     @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
         Path ir = documentH();
@@ -445,13 +457,13 @@ class TmsCreatieWitnessTest {
                     () -> "volgorde " + namen);
             assertGetal("1", TmsDocumenten.lees(w1, "stand"), "stand van W1 in volgorde " + namen);
             assertGetal("0", TmsDocumenten.lees(w1, "opvolgerbegin"), "opvolgerbegin van W1 in volgorde " + namen);
-            // W1 makes W2 in the object phase of generation 1 (phase 2), W2 makes W3 in phase 4, W3 makes W4 in
-            // phase 6, and W4, of rang 4, makes nothing
+            // one phase per generation: W1 makes W2 in phase 1, W2 makes W3 in phase 2, W3 makes W4 in phase 3, and
+            // W4, of rang 4, makes nothing
             assertEquals(3, gemaakt.size(), () -> "objecten in volgorde " + namen);
             Object onderwerp = w1;
             for (int i = 0; i < 3; i++) {
                 Object[] g = gemaakt.get(i);
-                int fase = 2 * (i + 1);
+                int fase = i + 1;
                 assertTrue(g[0] == onderwerp, () -> "keten in volgorde " + namen);
                 assertEquals(fase, g[2], () -> "fase in volgorde " + namen);
                 assertGetal(String.valueOf(i + 2), TmsDocumenten.lees(g[1], "rang"), "rang in volgorde " + namen);
@@ -523,8 +535,8 @@ class TmsCreatieWitnessTest {
             assertNull(vuur(b, volgorde, List.of(k1, h1, j1, j2), sessie -> { },
                     sessie -> links.addAll(koppelingen(sessie, "havenlid"))), () -> "volgorde " + namen);
             assertGetal("2", TmsDocumenten.lees(h1, "jutteraantal"), "jutteraantal in volgorde " + namen);
-            // the link of the input, and the one link the creation made, in the phase of the fact creations of
-            // generation 1; the creation fired once
+            // the link of the input, and the one link the creation made, in the phase of generation 1; the creation
+            // fired once
             assertEquals(2, links.size(), () -> "links in volgorde " + namen);
             for (Object[] l : links) {
                 assertTrue(l[0] == h1, () -> "haven in volgorde " + namen);
@@ -562,7 +574,9 @@ class TmsCreatieWitnessTest {
 
     /** A chain that does not stop: every Wachter without an opvolger makes one. The condition reads only the count,
      *  which an accumulate over no contribution answers at once, so a new Wachter would match it in the phase that made
-     *  it if the phase did not hold it back. */
+     *  it if the phase did not hold it back. Each generation makes one Wachter, so the 101st generation of the stratum
+     *  still makes one, and there the budget ends the run: a stratum admits at most 100 generations that make an object
+     *  or lay a link (RUNTIME-SEMANTICS ch. 5.5). */
     static Path documentF() throws Exception {
         String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Wachter", List.of(
                 attribuut("opvolgeraantal", GEHEEL)), List.of())),
@@ -592,12 +606,12 @@ class TmsCreatieWitnessTest {
             List<Object[]> gemaakt = new ArrayList<>();
             assertEquals(BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
                     () -> "volgorde " + namen);
-            // one object in each object phase, the subject of each the object of the one before
+            // one object in each phase, the subject of each the object of the one before
             assertEquals(101, gemaakt.size(), () -> "objecten in volgorde " + namen);
             Object onderwerp = w1;
             for (int i = 0; i < gemaakt.size(); i++) {
                 Object[] g = gemaakt.get(i);
-                int fase = 2 * (i + 1);
+                int fase = i + 1;
                 assertTrue(g[0] == onderwerp, () -> "keten in volgorde " + namen);
                 assertEquals(fase, g[2], () -> "fase in volgorde " + namen);
                 onderwerp = g[1];
@@ -610,10 +624,11 @@ class TmsCreatieWitnessTest {
      *  erflijn over a chain W1 → W2 → W3 → W4 of opvolgers: "erf de directe opvolger" links each Wachter to its
      *  opvolger, and the recursive "erf de lijn door" walks an erflijn link and then an opvolger. "erf de lijn door"
      *  reads the erflijn links "erf de directe opvolger" writes, strictly, so it sits a stratum above it (RUNTIME-SEMANTICS
-     *  ch. 6.1, 6.3). The links of the direct opvolgers arise in the phase of the fact creations of stratum 0's first
-     *  generation, which its second generation, making nothing, closes (phases 3 and 4); those two steps away arise in
-     *  the fact phase of stratum 1's first generation, and W1 → W4 in that of its second: phases 1, 5 and 7. Until the
-     *  creations fired per stratum (2026-10-08) they were phases 1, 3 and 5. */
+     *  ch. 6.1, 6.3). One phase per generation: the links of the direct opvolgers arise in stratum 0's first generation
+     *  (phase 1), which its second generation, making nothing, closes (phase 2); those two steps away arise in stratum
+     *  1's first generation and W1 → W4 in its second: phases 1, 3 and 4. Until the creations fired per stratum
+     *  (2026-10-08) they were phases 1, 3 and 5, and until a generation became one phase (2026-10-09) phases 1, 5 and
+     *  7. */
     @Test void een_link_is_pas_in_de_volgende_generatie_pad() throws Exception {
         Path d = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-erflijn");
         assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(d.resolve("ir.json"), List.of(d.resolve("case.json")))
@@ -633,7 +648,7 @@ class TmsCreatieWitnessTest {
             assertEquals(6, links.size(), () -> "links in volgorde " + namen);
             for (Object[] l : links) {
                 int afstand = w.indexOf(l[1]) - w.indexOf(l[0]);
-                assertEquals(afstand == 1 ? 1 : 2 * afstand + 1, l[2],
+                assertEquals(afstand == 1 ? 1 : afstand + 1, l[2],
                         () -> "fase van een link over " + afstand + " in volgorde " + namen);
             }
             for (int i = 0; i < 4; i++)
