@@ -152,3 +152,151 @@ Drools-backend, `corpus/`, `scripts/` (de vloeren groeien vanzelf).
   generaties en bouwt op deze kaart; serieel, daarna.
 - `20261008-fout-op-tussenstand` vraagt of een fout op een tussenstand telt;
   de generatiezin verandert daar niets aan.
+
+## Result (2026-10-09)
+
+*Geschreven door de hoofdsessie. De eigenaar was offline en vroeg bij twijfel een Fable-adviseur te raadplegen; het
+besluit boven is dus VOORLOPIG, en de kaart stopt vóór de merge. Draait de eigenaar het besluit om, dan vervallen
+stap 2 en de spectekst, en blijven van stap 1 de volgorde van de strata en de consistenties na een creatie staan (die
+lossen bestaande bugs op, zie onder).*
+
+| Commit | Wat |
+|---|---|
+| `b662d566` | claim |
+| `dabfb3b5` | ref: creaties in generaties per stratum, budget in generaties (stap 1) |
+| `f0d8c5fe` | ref: voorbeeld voor een feitcreatie in de generatie |
+| `b14b5df0` | ref: na een creatie komen de strata op volgorde tot rust (lensfix) |
+| `215cd772` | ref/README: generaties, het generatiebudget, de strata na een creatie (lensfix) |
+| `a165fda8` | clingo: een initialisatie die op haar creatiekring leest, weigert (stap 2) |
+| `6f711231` | VOORSTEL spec ch. 5.5, 6.1, 6.3: generaties binnen een stratum |
+| `f15b5953` | ref: consistenties en uniciteiten vuren na elk stratum in rust (lensfix) |
+| `aee2bdb4` | clingo: alleen een lid dat uitsluitend creaties schrijven, blijft vrij (lensfix) |
+| `4893545f` | VOORSTEL spec ch. 5.5: uitzondering alleen voor een lid van creaties |
+| `e1254f72` | VOORSTEL spec ch. 5.5: toetsen na elk stratum in rust |
+| `792776e2` | VOORSTEL IR-SPEC ch. 5.5: clingo neemt de tweede houding voor een vorm (eindlens) |
+| `ba3aac2f` | VOORSTEL spec ch. 5.5: absolute uitkomsten van de toetsen na een creatie (eindlens) |
+| `cc9aa3de` | ref: regelgroepen staan niet meer bij wat niet geïmplementeerd is (eindlens; README en één commentaar) |
+
+### Wat er staat
+
+**Ref** (`ref/lib/eval.ml`) evalueert per stratum k in generaties. Generatie 0 is het fixpunt van de vormen die niets
+maken (regels, verdelingen, defaults-groepen van stratum ≤ k). In generatie G + 1 leest elke creatie van stratum ≤ k
+(feitcreaties en objectcreaties) dezelfde uitgerekende wereld van generatie G en schrijft in een aparte wereld; daarna
+komen de vormen die niets maken stratum voor stratum tot rust (0, 1, …, k, elk tot zijn fixpunt, de lagere vormen
+meegerekend zodat een tweeschrijversconflict over strata gemeld blijft), en na elk stratum vuren de consistenties,
+uniciteiten en uniciteitsunies van dat stratum. Een stratum is klaar als een generatie niets maakt of linkt. Omdat de
+lus het budget opnieuw vastlegt, bevat deze kaart ook het ref-deel van het voorlopige besluit van
+`20261009-creatiebudget-ref-en-clingo` (acceptatie (a) daar): ten hoogste 100 generaties per stratum die maken of
+linken (een 101e geeft `no fixpoint within 100 generations — generation 101 still mints or links (…)`), en voor de
+vormen die niets maken per stratum het grootste van 100 en N_j + 1 rondes, met de bestaande zin over twee schrijvers
+die het niet eens zijn.
+
+**Clingo** (`backends/clingo/lib/translate.ml`) kan het moment van maken niet uitdrukken en weigert daarom luid en bij
+naam (de tweede houding van IR-SPEC ch. 5.5) elke initialisatie van een objectcreatie die een knoop leest die een vorm
+op haar door WF-045 toegelaten kring nog kan veranderen: wat een regel, verdeling of defaults-groep op de kring
+schrijft, of een populatie of relatie die een creatie op de kring laat groeien. Een lid dat uitsluitend creaties
+schrijven, blijft gedragen. De toets leest de afhankelijkheidsgraaf van `Ir_v0.Checks`, dezelfde als ref voor de strata;
+hij weigert daardoor ruimer dan nodig (een regel op de kring waarvan de waarde bij het maken al vastligt, wordt ook
+geweigerd). Geen golden heeft een geweigerde vorm.
+
+**Spec** (beschermd pad, VOORSTEL als diff op de branch): een alinea "Generations" in ch. 5.5 met het document van de
+kaart, de kopievariant en de feitcreatie als uitgewerkte voorbeelden en de weigering van clingo; aanvullingen in ch. 6.1
+(stratum-strikt; de restpost "a value that grows"; de rolcheck, die de verifier sinds 2026-10-06 met WF-045 weigert) en
+ch. 6.3. De letterlijke tekst staat in de diff van de specommit(s).
+
+**Drools**: ongewijzigd. De exec-modeltak en de DRL-teksttak geven op het document van de kaart al 0, en vervallen met
+de omschakeling en de DRL-kaart. De tak met truth maintenance geeft 0, maar leest de creaties van één generatie niet
+tegen één wereld: vorm V2 (een initialisatie telt een relatie die een feitcreatie op de kring legt) geeft daar 1, ref nu
+0. Dat neemt `20261009-creatiebudget-ref-en-clingo` mee, die de driver toch raakt.
+
+### Acceptatie
+
+- (a) Ref in generaties: gedaan; voorbeelden in `ref/test/` (rood eerst gemeten):
+  `WV-5.5-generaties-keten` (2 volgordes), `WV-5.5-generaties-kopie` (6), `WV-5.5-generaties-feitcreatie` (2),
+  `WV-5.5-budget-grens-{99,100,101}-generaties` (elk 2), `WV-5.5-budget-regelketen-105` (2),
+  `WV-6.3-na-een-creatie` (2), `WV-5.7-twee-schrijvers-twee-strata` (2, rood op een mutant),
+  `WV-6.3-consistentie-na-een-creatie` (2), `WV-6.3-uniciteit-na-een-creatie` (2). Suite 1154 → 1266.
+- (b) Clingo weigert: gedaan; checks in `backends/clingo/test` (suite 1988 → 2084), rood met de vertaler van
+  vóór de stap; de recursieve goldens (`jutterswet-wachtersketen` als anker en als rgs, `jutterswet-opvolgerquorum`,
+  `jutterswet-opvolgerversies`, `synth2-budgetgrens-onder`, `jutterswet-erflijn`) blijven spelen.
+- (c) Drools ongewijzigd; zie boven voor V2.
+- (d) Spectekst: voorstel op de branch. De restposten van ch. 6.1 opnieuw gemeten in ref: alle 17 rijen gelijk vóór en
+  na.
+- (e) Geen golden, negatief of rood geval erbij. Over 872 cases (801 golden, 42 rood, 29 toka) geven ref en clingo
+  dezelfde uitvoer als vóór de kaart, en ref ook dezelfde volledige eindwereld (instanties, waarden, kenmerken, kanaal
+  in volgorde); alleen de foutzin van `finite-chain-over-budget` en `runaway-recursion` noemt nu de generaties (hun pin
+  "no fixpoint within" klopt).
+
+Budgetgrens in ref (grootste aantal generaties dat speelt, vóór → na): de vorm van `finite-chain-over-budget` 100 →
+100; de vorm van `synth2-budgetgrens-onder` (met regel en rangdetector) 99 → 100; de q2-vormen van het advies 98–100 →
+100; de L-documenten van `TmsCreatiestratumWitnessTest` 99–100 → 100; de keten over drie strata 100 → 100 per keten.
+Overal faalt de 101e generatie, in elke documentvolgorde.
+
+Volledige gateset van de hoofdsessie op `e1254f72` (lokaal): alle 16 groen. Gate 5: `ref suite 1266 worked examples;
+801 cases replayed exactly`; gate 6: `backend suite 2084 checks; 801 cases replay exactly through clingo — ref =
+clingo`; gate 8: `42 red cases …; 84 pinned fragments`; gate 12: `check-drools: PASS`. Daarna veranderden alleen teksten
+(IR-SPEC, RUNTIME-SEMANTICS, de README van ref en één commentaar in `eval.ml`); op `cc9aa3de` draaiden gates 1, 5 en 6
+opnieuw, groen. Beschermde paden: `spec/RUNTIME-SEMANTICS.md` en `spec/IR-SPEC.md`, alleen als VOORSTEL in eigen
+commits (de eigenaar merget); `scripts/` niet geraakt.
+
+### Lensvondsten
+
+Copilot (sol6, effort xhigh), vier runs (lens op stap 1, herkeuring van de fix, lens op stap 2, eindlens), elk één
+premium request. De eindlens met Opus 5.5 is niet gedraaid (eerst
+afstemmen met de eigenaar).
+
+Aanvaard en gefixt:
+- lens op stap 1, BLOKKEREND: ref liet na een creatie alle strata ≤ k samen in één pas in documentvolgorde lopen, zodat
+  een vorm van een hoger stratum op een nieuw object een tussenstand las (bestaande bug, ook in de oude ref; kaart
+  `20261009-ref-strata-na-een-creatie`) → `b14b5df0`;
+- lens op stap 1, ADVIES: de README van ref noemde nog het passenbudget → `215cd772`;
+- herkeuring van die fix, BLOKKEREND: een consistentie van een lager stratum vuurde niet meer op de objecten van een
+  latere creatie (bestaande bug; nagemeten: ref "consistent", clingo en de Drools-takken "inconsistent") → `f15b5953`,
+  met een variant voor uniciteit;
+- lens op stap 2, BLOKKEREND: de spectekst en de README maakten de uitzondering te ruim (een attribuut dat een creatie
+  schrijft); de code was goed → `aee2bdb4`, `4893545f`, met twee getuigen voor een gedeelde schrijver (rang, graad);
+- lens op stap 2, twee ADVIEZEN: de geldigheid van een schrijver op de kring, en de uitkomst van ref in de
+  weigeringsgetuigen → de keuze voor de statische graaf (ook een verlopen schrijver op de kring) vastgelegd in README,
+  commentaar en spectekst, met een getuige; de geweigerde frames voeren nu ook `ref_matches` uit (`aee2bdb4`).
+
+Eindlens (sol6, de hele diff op `e1254f72`):
+- BLOKKEREND, aanvaard, opgelost door de volgende kaart: op deze tip alleen speelt ref een keten van 100 generaties met
+  een berekende eigenschap, waar clingo nog `generation budget exhausted` geeft (vóór de kaart faalden beide; de
+  q2-vorm zonder berekende eigenschap was al gesplitst). Het ref-deel van het budget landde hier omdat de nieuwe lus
+  het budget vastlegt; het clingo-deel is acceptatie (b) van `20261009-creatiebudget-ref-en-clingo`, die bovenop deze
+  branch staat. **Deze kaart landt dus niet zonder die kaart** (open punt 9). De verouderde budgetteksten (ch. 5.5 "the
+  reference interpreter's pass budget", de README van clingo, `translate.ml`) gaan met die kaart mee. Geen golden of
+  rood geval raakt de grens anders dan vóór de kaart (gates groen).
+- BLOKKEREND, aanvaard: IR-SPEC ch. 5.5 deelde clingo in bij de houding die het gestratificeerde resultaat geeft →
+  voorstel `792776e2` (geldt alleen als de eigenaar het voorstel voor RUNTIME-SEMANTICS ch. 5.5 overneemt).
+- ADVIES, aanvaard: de README van ref noemde regelgroepen niet geïmplementeerd, het commentaar boven
+  `run_object_creatie` "non-recursive", en de zin over de toetsen na een creatie gaf geen absolute uitkomsten →
+  `cc9aa3de`, `ba3aac2f`.
+
+Afgewezen: geen.
+
+### Open punten (voor de eigenaar)
+
+1. **Het voorlopige besluit zelf** (de generaties; Fable-advies vraag 1 in `/tmp/lens-bugs/advies-fable.md`), en de
+   normvraag die het open laat: de generatiezin legt ook voor de voorwaarde van een creatie de lezing van ref vast,
+   zodat de restpost "a value that grows" van ch. 6.1 een tekort van clingo wordt in plaats van een normvraag.
+2. **IR-SPEC ch. 5.5** zegt over de tweede houding "Its instance is `backends/drools`". Voorgestelde zin na de
+   Drools-beschrijving: "Since 2026-10-09 the ASP backend takes it for one form: a member initialisation of a creation
+   that reads a node a form on the creation's own WF-045-admitted cycle writes (RUNTIME-SEMANTICS ch. 5.5,
+   Generations)."
+3. **CONSTRUCTS** (voorstel voor een rij): "**Generations (2026-10-09, card
+   `creatie-initialisatie-leest-groeiende-waarde`):** a creation reads the settled world of the generation before its
+   own (RUNTIME-SEMANTICS ch. 5.5); `ref/` evaluates so, the ASP backend refuses by name an initialisation that reads
+   what a form on its creation's cycle writes."
+4. **PLAN §9** (voorstel, bij de landing): "Creation proceeds in generations within a stratum, and a creation reads the
+   settled world of the generation before its own (provisional decision 2026-10-09 on Fable advice, confirmed by the
+   owner on …; card `creatie-initialisatie-leest-groeiende-waarde`); the reference interpreter evaluates so, the ASP
+   backend refuses by name what it cannot carry."
+5. **De weigering van clingo is ruimer dan nodig** (de graaf, niet de waarden); een nauwere toets is niet gebouwd.
+6. **V2 in de tak met truth maintenance** gaat naar `20261009-creatiebudget-ref-en-clingo`.
+7. **`20261009-ref-strata-na-een-creatie`**: deze kaart repareert de ref-kant van beide vormen (lensvondsten); die kaart
+   houdt de goldens. Bij de landing haar tekst bijwerken.
+8. **Bijvangst, niet onderzocht**: in een proefdocument gaf `zijn rang maal 10` met een gehele typering WF-091 ("the
+   times composite is typed whole, but the type derived from its operands is fractional").
+9. **Landing**: de branch staat op main `8beff67a`; main is verder gegaan met alleen kaarten. Vóór de ff-merge
+   `git rebase main` en de gates opnieuw. `20261009-creatiebudget-ref-en-clingo` staat bovenop deze branch.
