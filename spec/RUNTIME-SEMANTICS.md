@@ -3526,6 +3526,76 @@ runtime's: a bounded fire budget turns a non-terminating set into a
 budget; the ASP backend's generation-depth bound, whose exhaustion is
 a named `viol/2` witness → UNSAT).
 
+**Generations** (card `creatie-initialisatie-leest-groeiende-waarde`,
+2026-10-09). Within a stratum, evaluation proceeds in generations.
+Generation 0 is the fixpoint of the stratum's forms that make nothing —
+rules, allocations, defaults groups — over the world the lower strata
+left (for stratum 0, the input). Generation G + 1 is what every creation
+of the stratum, object creation and fact creation alike, derives from
+generation G's settled world: every creation reads that same world, so
+none reads what another creation of its own generation mints or links,
+whatever their order in the document. After it the forms that make
+nothing settle again, stratum by stratum (ch. 6.3), those of the lower
+strata included, since they compute on the minted instances as well.
+The stratum is done when a generation mints and links nothing. A
+creation's condition and member initialisations are evaluated on the
+settled world it reads, which is the moment of making; this is the
+reading of "values evaluated on the subject" above and of "exactly one
+generation per instance" in the paragraph before. A later generation
+may change the value read; the minted instance's initialisations are
+written once and do not follow it.
+
+Worked example (absolute; `ref/` tests `WV-5.5-generaties-keten` and
+`WV-5.5-generaties-kopie`): a Wachter carries the whole-number
+attributes rang, stand, beginstand and opvolgerbegin, and the fact type
+opvolging gives one voorganger one opvolger, both Wachters. "stand van
+een wachter" counts the Wachter's opvolgers; "opvolgerbegin" reads the
+beginstand of its opvolger; the object creation "werf de opvolger", the
+member of the recursive group "estafette", gives a Wachter whose rang is
+below 4 an opvolger over `connectingRole {opvolging, opvolger}`, with
+rang its rang plus 1 and beginstand its stand. W1 with rang 1 mints W2
+in generation 1, W2 mints W3 in generation 2, W3 mints W4 in generation
+3, and W4 (rang 4) mints nothing. W1 mints on generation 0's settled
+world, where it has no opvolger and its stand is 0; afterwards its stand
+is 1. In either document order of the two rules: four Wachters,
+**stand(W1) = 1**, **opvolgerbegin(W1) = 0**, and **beginstand 0** on
+every minted Wachter. The copy variant adds "De standkopie van een
+Wachter moet gesteld worden op zijn stand" and initialises the
+beginstand from the standkopie: the same values in every order of its
+three rules. Until 2026-10-09 the reference interpreter ran the
+creations inside a pass over the running world, so the moment of making
+was a position in the pass; with the copy rule written before the
+count, the initialisation read a copy the pass had not computed yet and
+opvolgerbegin(W1) was **leeg**. A fact creation belongs to the
+generation in the same way (`ref/` test `WV-5.5-generaties-feitcreatie`):
+with "maak maten" in the group, linking a Wachter as maatgever to its
+opvolger, and the beginstand initialised to the number of maatgevers,
+every minted Wachter starts at **beginstand 0** in either rule order,
+where a pass that ran the fact creations before the object creations
+gave 1 from W3 on.
+
+The ASP backend has no moment of making: an initialisation is a head on
+the minted term, read in the stable model, so it reads the end value; on
+the worked example it answered opvolgerbegin(W1) = 1. Carrying the
+generation reading would take a copy of the rule layer per generation,
+so the backend takes the second posture of `IR-SPEC.md` ch. 5.5. It
+refuses by name every member initialisation of a creation on a
+dependency cycle that WF-045 admits, where the initialisation reads a
+node that a form on that cycle can still change after the making: what
+a rule, an allocation or a defaults group on the cycle writes, or a
+population or relation that a creation on the cycle grows (the number
+of the subject's opvolgers over the creation's own back-link, the number
+of its maatgevers over a relation a fact creation of the group lays).
+An attribute or characteristic that a creation writes is set once per
+object, at its making, so its end value is the value at the making, and
+a read of it stays carried: the anchor below reads its rang so. The
+refusal follows the dependency graph and not the values, so a rule on
+the cycle whose value on an object is fixed at the object's making (a
+basis computed as the rang plus 10) is refused as well, although the end
+value would be right. The backend's suite pins the refusals and the
+carried forms (`ch5.5 generations`); no corpus document has a refused
+form.
+
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank
 n + 1, while n < 5", linked over `opvolging` via the explicit
@@ -4670,7 +4740,8 @@ every form that reads it — in three kinds:
   on would persist.
   Within a WF-045-admissible recursive-creation cycle the strictness is
   discharged by the one-generation-per-instance progression (ch. 5.5)
-  rather than a stratum boundary.
+  rather than a stratum boundary: the creation reads the settled world
+  of the previous generation (ch. 5.5, Generations).
 - **negative**: a negated characteristic read, a characteristic read
   under a negation-like quantifier (*geen*, *ten hoogste*, *precies* —
   their truth can be lost by a later monotone write), every read under a
@@ -4809,13 +4880,23 @@ The two-form shape splits silently rather than loudly. With "het merk is
 ongelijk aan 1" in the creation and a rule writing merk = 1 when "de rang
 van de opvolger is ongelijk aan 2", the reference interpreter answers
 merk(W1) = 1, the ASP backend has two stable models, and its runner picks
-one with merk(W1) leeg. A related gap sits in the role-check narrowing
-above, with no recursion needed: a creation of a Post under "hij is geen
-bemanner" reads, as input, the very link it writes. The verifier sees no
-edge, the reference interpreter mints once, and the ASP backend finds no
-stable model. None of these forms occurs in the corpus. Whether each of
+one with merk(W1) leeg. None of these forms occurs in the corpus. The
+Generations paragraph of ch. 5.5 (2026-10-09) fixes the reference
+interpreter's reading of each of them: a creation's condition is read on
+the settled world of the generation before its own. Whether each of
 them becomes a negative edge is a norm question that the leeg/gevuld
 decision leaves open.
+
+A related gap sat in the role-check narrowing above, with no recursion
+needed: a creation of a Post under "hij is geen bemanner" reads the very
+link it writes. Until 2026-10-06 the verifier saw no edge, the reference
+interpreter minted once, and the ASP backend found no stable model.
+Since the role check reads its relation, negatively under the negation
+(that day, card `feitcreatie-zonder-populatie`), the verifier refuses
+the document under WF-045 (a dependency cycle through no recursive
+creation: bemannen -> bemannen) and WF-046 (the negative edge lies on
+that cycle), and the reference interpreter refuses it under WF-045
+(measured 2026-10-09).
 
 ### 6.2 Acyclicity (WF-045)
 
@@ -4850,8 +4931,9 @@ fixpoint unique. The verifier rejects a program where the assignment
 does not exist.
 
 Evaluation by strata generalises ch. 5.3's single boundary: for k = 0,
-1, …, the forms of stratum ≤ k evaluate to their fixpoint before any
-form of stratum k + 1 fires. A negated characteristic, and since
+1, …, the forms of stratum ≤ k evaluate to their fixpoint, by
+generations within a stratum (ch. 5.5), before any form of stratum
+k + 1 fires. A negated characteristic, and since
 2026-09-23 a leeg/gevuld predicate and the negative parts of a quantifier
 fold (its range under every quantifier but *ten minste*, its matrix under
 *geen*, *ten hoogste* and *precies*), is then read only after every
