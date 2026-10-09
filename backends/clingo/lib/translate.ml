@@ -11417,10 +11417,11 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    The test is static over the verifier's graph. Every other writer of a
    node the initialisation reads is an offence when a creation that lies
    on a dependency cycle in the creation's own stratum reaches it over one
-   edge or more; WF-045 admits such a cycle only through a member of a
-   recursive group. The creation itself is one of them where it lies on
-   such a cycle, and then the writer lies on a cycle through it. Nothing
-   else can change the value after the making. Off a cycle an edge between
+   edge or more, in a version the case's date admits (below); WF-045
+   admits such a cycle only through a member of a recursive group. The
+   creation itself is one of them where it lies on such a cycle, and then
+   the writer lies on a cycle through it. Nothing else can change the
+   value after the making. Off a cycle an edge between
    two forms of one stratum is a positive read: a creation reads positively
    only a characteristic, and a characteristic is written by a rule that
    reads positively only characteristics, by a defaults group, whose reads
@@ -11453,14 +11454,26 @@ let form_strata (forms : Ir_v0.Checks.dep_form array) : int array =
    the values. It also refuses a rule on the cycle whose value on an object
    is fixed at the object's making (basis = zijn rang plus 10), where the
    end value would be right, and a writer on the cycle whose validity the
-   case's date excludes, which writes nothing in that case, and it counts
-   a creation on a cycle whose validity the case's date excludes; a filter
-   on the writer alone would still read the cycle off the static graph, as
-   ref's strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]),
-   built over the document as loaded, which is the graph ref stratifies,
-   and the strata are ref's ([form_strata]). A creation version that the
-   case's date excludes makes nothing and is not translated
-   ([translate_object_creatie] skips it), so it is not refused. *)
+   case's date excludes, which writes nothing in that case; a filter on the
+   writer alone would still read the cycle off the static graph, as ref's
+   strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]), built
+   over the document as loaded, which is the graph ref stratifies, and the
+   strata are ref's ([form_strata]). A creation version that the case's
+   date excludes makes nothing and is not translated
+   ([translate_object_creatie] and [translate_feit_creatie] skip it), so
+   it is not refused, and it does not count as a creation that reaches a
+   writer either. The boundary between the two is deliberate: the test
+   asks whether a later generation can change the value read, and the
+   source of such a change is a creation; a version the date excludes
+   mints and links nothing, in this backend and in ref alike, so no
+   generation brings a change from it, and the same gate that leaves it
+   untranslated ([applies], ref's [Eval.window_admits]) decides that here.
+   The writers and the cycles between them stay read off the static graph,
+   as above. Until the second fix round of 2026-10-09 the excluded version
+   counted: with "geef door" valid from 2027-01-01 and a case on
+   2026-01-01 no executor lays a maatschap, only W1 is ervaren and ref
+   answers rapportaantal(H1) = 1, and this backend refused the Rapport
+   where, before the test reached off the cycle, it answered 1 as well. *)
 let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
   let cctx = { Ir_v0.Checks.doc } in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
@@ -11533,6 +11546,26 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
       let kind, _ = kind_of p in
       Printf.sprintf "%s \"%s\"" kind (name_of p)
     in
+    (* whether the backend translates the creation version at form [i] for
+       the case's date: [translate_object_creatie] and
+       [translate_feit_creatie] gate every version on [applies], which is
+       [Eval.window_admits], the predicate below that leaves a creation
+       version the date excludes unasked *)
+    let translated i =
+      let at = at_of i in
+      match List.find_opt (fun (o : resolved_object_creatie) -> o.oc_pointer = at) doc.object_creaties with
+      | Some o -> Eval.window_admits ~as_of o.oc_geldigheid
+      | None -> (
+          match List.find_opt (fun (f : resolved_feit_creatie) -> f.fc_pointer = at) doc.feit_creaties with
+          | Some f -> Eval.window_admits ~as_of f.fc_geldigheid
+          | None ->
+              failwith
+                (Printf.sprintf
+                   "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
+                    creation at %S is in the verifier's dep_forms but not among the document's \
+                    creations"
+                   at))
+    in
     (* the creations that lie on a dependency cycle, each with the forms it
        reaches; the strata only for a read that leaves the creation's own
        cycle *)
@@ -11577,36 +11610,37 @@ let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
             (fun (node, p) ->
               List.find_map
                 (fun (d, r) ->
-                  if d <> c && r.(p) && (Lazy.force strata).(d) = (Lazy.force strata).(c) then Some (t, node, p, d)
+                  if d <> c && r.(p) && (Lazy.force strata).(d) = (Lazy.force strata).(c) && translated d then
+                    Some (t, node, p, d)
                   else None)
                 cycle_creations)
             (writers t)
         in
         let member (t : toekenning) = req "MemberInit.member" t.toe_attribuut in
-        if Eval.window_admits ~as_of o.oc_geldigheid then
-          match List.find_map on_the_cycle o.toekenningen with
-          | Some (t, node, p) ->
-              fault
-                "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
-                 dependency cycle through the creation (admitted by WF-045 through a recursive group) \
-                 — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
-                 ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
-                 later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
-                (name_of c) (member t) node
-                (if p = c then "the creation itself" else describe p)
-          | None -> (
-              match List.find_map in_the_stratum o.toekenningen with
-              | Some (t, node, p, d) ->
-                  fault
-                    "object creation \"%s\": the initialisation of %s reads %s, which %s writes, and %s, \
-                     on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
-                     recursive group), reaches that writer in the dependency graph, so a later \
-                     generation of the stratum can still change the value read — an initialisation \
-                     takes the value at the moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), \
-                     and this backend reads the value of the stable model, so it refuses the creation \
-                     (IR-SPEC ch. 5.5)"
-                    (name_of c) (member t) node (describe p) (describe d)
-              | None -> ()))
+        match List.find_map on_the_cycle o.toekenningen with
+        | Some (t, node, p) when Eval.window_admits ~as_of o.oc_geldigheid ->
+            fault
+              "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
+               dependency cycle through the creation (admitted by WF-045 through a recursive group) \
+               — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
+               ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
+               later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
+              (name_of c) (member t) node
+              (if p = c then "the creation itself" else describe p)
+        | Some _ -> ()
+        | None -> (
+            match List.find_map in_the_stratum o.toekenningen with
+            | Some (t, node, p, d) when Eval.window_admits ~as_of o.oc_geldigheid ->
+                fault
+                  "object creation \"%s\": the initialisation of %s reads %s, which %s writes, and %s, \
+                   on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
+                   recursive group), reaches that writer in the dependency graph, so a later \
+                   generation of the stratum can still change the value read — an initialisation \
+                   takes the value at the moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), \
+                   and this backend reads the value of the stable model, so it refuses the creation \
+                   (IR-SPEC ch. 5.5)"
+                  (name_of c) (member t) node (describe p) (describe d)
+            | _ -> ()))
       doc.object_creaties
   end
 

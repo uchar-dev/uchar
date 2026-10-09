@@ -226,12 +226,13 @@ spec bug.
   (IR-SPEC ch. 5.5) when a writer of a node it reads lies on a
   dependency cycle through its creation, or is reached in the
   dependency graph from a creation on a dependency cycle in its
-  creation's own stratum: a value a rule, an allocation or a defaults
-  group computes there, also where a creation writes the same member, or
-  a population or relation a creation on the cycle grows (the creation's
-  own back-link included). A creation off the cycle can share the
-  cycle's stratum, since a positive characteristic read is not
-  stratum-strict: with the recursive fact creation "geef door", which
+  creation's own stratum, in a version the case's date admits (below):
+  a value a rule, an allocation or a defaults group computes there, also
+  where a creation writes the same member, or a population or relation a
+  creation on the cycle grows (the creation's own back-link included). A
+  creation off the cycle can share the cycle's stratum, since a positive
+  characteristic read is not stratum-strict: with the recursive fact
+  creation "geef door", which
   makes an ervaren Wachter the maatgever of its opvolger, and a rule
   that marks a Wachter with a maatgever ervaren, a creation that gives a
   Haven a Rapport with the number of its ervaren wachters makes the
@@ -251,15 +252,22 @@ spec bug.
   cycle whose value on an object is fixed at the object's making is
   refused as well, and so is a writer on the cycle whose validity the
   case's date excludes. Only a creation version the date excludes is not
-  asked, because it is not translated. On the worked example of ch. 5.5
-  (beginstand = zijn stand, the stand counting the opvolgers) ref
-  answers opvolgerbegin(W1) = 0, and this backend answered 1 before the
+  asked, because it is not translated, and it does not count as a
+  creation that reaches a writer either: it mints and links nothing,
+  here and in ref, so no later generation brings a change from it. With
+  "geef door" valid from 2027-01-01 and a case on 2026-01-01 the Rapport
+  is carried, and ref and this backend both answer rapportaantal(H1) = 1
+  with W3 not ervaren; until the second fix round of 2026-10-09 this
+  backend refused it. On the worked example of ch. 5.5 (beginstand =
+  zijn stand, the stand counting the opvolgers) ref answers
+  opvolgerbegin(W1) = 0, and this backend answered 1 before the
   refusal; the suite's `ch5.5 generations` frames pin the refusals, each
   beside ref's absolute answer, and the carried forms, and the `ch5.5
   generations off the cycle` frames do the same for a creation off the
-  cycle: refused in the cycle's stratum, carried a stratum higher, beside
-  the cycle out of its reach, and where it reads only what a creation
-  writes.
+  cycle: refused in the cycle's stratum, also with "geef door" valid on
+  the case's date, carried a stratum higher, beside the cycle out of its
+  reach, where it reads only what a creation writes, and where the date
+  excludes "geef door".
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —

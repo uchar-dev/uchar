@@ -15136,8 +15136,13 @@ let () =
    the number of wachters that are aangesteld, which only that creation
    writes: the Rapport reads the population that creation grows as well, so
    it sits in stratum 1 beside the cycle of "geef door", which reaches
-   neither (W1 aangesteld in the input: 1). Each in every order of its
-   rules. *)
+   neither (W1 aangesteld in the input: 1). A creation on the cycle counts
+   only for a version the case's date admits (second fix round, 2026-10-09):
+   with "geef door" valid from 2027-01-01 and a case on 2026-01-01 the
+   backend does not translate it and no executor lays a maatschap, so only
+   W1 is ervaren and the document is carried (ref and here: 1, W3 not
+   ervaren; refused until that fix); valid from 2025-01-01 it is refused as
+   before (ref: 1). Each in every order of its rules. *)
 let () =
   let getal = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let literal n =
@@ -15187,10 +15192,12 @@ let () =
   in
   (* [rang] declares the rang of a Wachter, [kenmerken] the characteristics
      beside ervaren, [haven] the attributes of a Haven beside rapportaantal;
-     [werf] adds "werf de opvolger" and its group *)
-  let doc ?(rang = false) ?(kenmerken = []) ?(haven = []) ?(werf = false) ~aantal regels =
+     [werf] adds "werf de opvolger" and its group; [geef_door] is the
+     validity of "geef door" *)
+  let doc ?(rang = false) ?(kenmerken = []) ?(haven = []) ?(werf = false)
+      ?(geef_door = {|{"node": "Validity"}|}) ~aantal regels =
     Printf.sprintf
-      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": [%s]}, {"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [%s], "characteristics": []}, {"node": "ObjectType", "name": "Rapport", "animate": false, "plural": "Rapporten", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "leerling", "objectType": "Wachter", "plural": "leerlingen", "many": true}]}, {"node": "FactType", "name": "bezetting", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "wachter", "objectType": "Wachter", "plural": "wachters", "many": true}]}, {"node": "FactType", "name": "havenrapport", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "rapport", "objectType": "Rapport", "plural": "rapporten", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "rapport van een haven", "versions": [{"createdType": "Rapport", "subject": "Haven", "initialisations": [{"node": "MemberInit", "member": "aantal", "value": %s, "characteristic": false}], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "havenrapport", "role": "rapport"}}]}%s], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "geef door", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "leerling", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "doorgeven", "recursive": true, "members": ["geef door"], "source": {"snippet": "doorgeven"}}%s], "prioritizedDefaults": []}, "diagnostics": []}|}
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": [%s]}, {"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [%s], "characteristics": []}, {"node": "ObjectType", "name": "Rapport", "animate": false, "plural": "Rapporten", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "leerling", "objectType": "Wachter", "plural": "leerlingen", "many": true}]}, {"node": "FactType", "name": "bezetting", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "wachter", "objectType": "Wachter", "plural": "wachters", "many": true}]}, {"node": "FactType", "name": "havenrapport", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "plural": "havens", "many": false}, {"node": "Role", "name": "rapport", "objectType": "Rapport", "plural": "rapporten", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "rapport van een haven", "versions": [{"createdType": "Rapport", "subject": "Haven", "initialisations": [{"node": "MemberInit", "member": "aantal", "value": %s, "characteristic": false}], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "havenrapport", "role": "rapport"}}]}%s], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "geef door", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "leerling", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false, "source": {"snippet": "hij is ervaren"}}, "validity": %s}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "doorgeven", "recursive": true, "members": ["geef door"], "source": {"snippet": "doorgeven"}}%s], "prioritizedDefaults": []}, "diagnostics": []}|}
       (if rang then lid "rang" else "")
       (String.concat ", " (List.map kenmerk ("ervaren" :: kenmerken)))
       (String.concat ", " (List.map lid ("rapportaantal" :: haven)))
@@ -15198,14 +15205,16 @@ let () =
       (String.concat ", " (List.map snd regels))
       aantal
       (if werf then ", " ^ werf_de_opvolger else "")
+      geef_door
       (if werf then
          {|, {"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger"], "source": {"snippet": "estafette"}}|}
        else "")
   in
   (* W1 → W2 → W3 over opvolging, W1 ervaren, all three wachters of H1;
-     [rang] gives Wn rang n, [aangesteld] marks W1 aangesteld; W3 ends
-     ervaren and H1 at the given values *)
-  let zaak ?(rang = false) ?(aangesteld = false) verwacht =
+     [rang] gives Wn rang n, [aangesteld] marks W1 aangesteld, [datum] is
+     the asOfDate; W3 ends ervaren unless [w3] says not, and H1 at the
+     given values *)
+  let zaak ?(rang = false) ?(aangesteld = false) ?(datum = "null") ?(w3 = true) verwacht =
     let wachter n opvolger kenmerken =
       Printf.sprintf
         {|{"label": "W%d", "objectType": "Wachter", "attributes": {%s}, "roles": {%s}, "characteristics": [%s]}|}
@@ -15215,9 +15224,11 @@ let () =
         (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) kenmerken))
     in
     Printf.sprintf
-      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s, %s, %s, {"label": "H1", "objectType": "Haven", "attributes": {}, "roles": {"wachter": ["W1", "W2", "W3"]}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "characteristicPresent", "label": "W3", "characteristic": "ervaren"}, %s]}|}
+      {|{"format": "uchar-case-v0", "asOfDate": %s, "input": {"instances": [%s, %s, %s, {"label": "H1", "objectType": "Haven", "attributes": {}, "roles": {"wachter": ["W1", "W2", "W3"]}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "%s", "label": "W3", "characteristic": "ervaren"}, %s]}|}
+      datum
       (wachter 1 (Some 2) ("ervaren" :: (if aangesteld then [ "aangesteld" ] else [])))
       (wachter 2 (Some 3) []) (wachter 3 None [])
+      (if w3 then "characteristicPresent" else "characteristicAbsent")
       (String.concat ", "
          (List.map
             (fun (attr, w) ->
@@ -15240,24 +15251,30 @@ let () =
           volgorde)
       (volgordes regels)
   in
-  elke_volgorde ~variant:"the aantal counts the ervaren wachters (the final lens's document)"
-    [ ervaren; rapportaantal ] (fun name regels ->
-      let ir = doc ~aantal:(telling "ervaren") regels and case_text = zaak [ ("rapportaantal", 1) ] in
-      verifier_clean ~name ~ir;
-      ref_matches ~name ~ir ~case_text;
-      faults_with ~name ~ir ~case_text
-        ~needle:
-          "object creation \"rapport van een haven\": the initialisation of aantal reads \
-           char:wachter:ervaren, which rule \"ervaren wachter\" writes, and fact creation \"geef \
-           door\", on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
-           recursive group), reaches that writer in the dependency graph, so a later generation of the \
-           stratum can still change the value read — an initialisation takes the value at the moment \
-           of making (RUNTIME-SEMANTICS ch. 5.5, Generations), and this backend reads the value of the \
-           stable model, so it refuses the creation (IR-SPEC ch. 5.5)");
-  let gedragen ~variant ?rang ?kenmerken ?haven ?werf ?aangesteld ~aantal regels verwacht =
+  let geweigerd ~variant ?geef_door ?datum regels =
     elke_volgorde ~variant regels (fun name regels ->
-        let ir = doc ?rang ?kenmerken ?haven ?werf ~aantal regels
-        and case_text = zaak ?rang ?aangesteld verwacht in
+        let ir = doc ?geef_door ~aantal:(telling "ervaren") regels
+        and case_text = zaak ?datum [ ("rapportaantal", 1) ] in
+        verifier_clean ~name ~ir;
+        ref_matches ~name ~ir ~case_text;
+        faults_with ~name ~ir ~case_text
+          ~needle:
+            "object creation \"rapport van een haven\": the initialisation of aantal reads \
+             char:wachter:ervaren, which rule \"ervaren wachter\" writes, and fact creation \"geef \
+             door\", on a dependency cycle in the creation's own stratum (admitted by WF-045 through a \
+             recursive group), reaches that writer in the dependency graph, so a later generation of \
+             the stratum can still change the value read — an initialisation takes the value at the \
+             moment of making (RUNTIME-SEMANTICS ch. 5.5, Generations), and this backend reads the \
+             value of the stable model, so it refuses the creation (IR-SPEC ch. 5.5)")
+  in
+  geweigerd ~variant:"the aantal counts the ervaren wachters (the final lens's document)" [ ervaren; rapportaantal ];
+  geweigerd
+    ~variant:"the aantal counts the ervaren wachters, \"geef door\" valid from 2025-01-01, a case on 2026-01-01"
+    ~geef_door:{|{"node": "Validity", "from": "2025-01-01"}|} ~datum:{|"2026-01-01"|} [ ervaren; rapportaantal ];
+  let gedragen ~variant ?rang ?kenmerken ?haven ?werf ?geef_door ?aangesteld ?datum ?w3 ~aantal regels verwacht =
+    elke_volgorde ~variant regels (fun name regels ->
+        let ir = doc ?rang ?kenmerken ?haven ?werf ?geef_door ~aantal regels
+        and case_text = zaak ?rang ?aangesteld ?datum ?w3 verwacht in
         verifier_clean ~name ~ir;
         ref_matches ~name ~ir ~case_text;
         clingo_matches ~name ~ir ~case_text)
@@ -15272,7 +15289,11 @@ let () =
     [ ("rapportaantal", 3) ];
   gedragen ~variant:"the aantal counts the aangesteld wachters, which only a creation writes" ~rang:true
     ~kenmerken:[ "aangesteld" ] ~werf:true ~aangesteld:true ~aantal:(telling "aangesteld")
-    [ ervaren; rapportaantal ] [ ("rapportaantal", 1) ]
+    [ ervaren; rapportaantal ] [ ("rapportaantal", 1) ];
+  gedragen
+    ~variant:"the aantal counts the ervaren wachters, \"geef door\" valid from 2027-01-01, a case on 2026-01-01"
+    ~geef_door:{|{"node": "Validity", "from": "2027-01-01"}|} ~datum:{|"2026-01-01"|} ~w3:false
+    ~aantal:(telling "ervaren") [ ervaren; rapportaantal ] [ ("rapportaantal", 1) ]
 
 (* RUNTIME-SEMANTICS ch. 5.5, the creation budget (card
    creatiebudget-ref-en-clingo, 2026-10-09): every minted instance has a
