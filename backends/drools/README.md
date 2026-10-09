@@ -734,12 +734,20 @@ accumulates of all its folds (`ExecModelTranspiler.datumvouwVoorwaarde`). Drools
 subject before the test, so the subselection of a fold in a member the composite never reaches was evaluated all the
 same: on "hij aan ten minste 1 van de volgende voorwaarden voldoet: hij is actief; de eerste van de vinddatum van alle
 vondsten … die {een deling} … is later dan zijn peildatum" `ref` stops after "hij is actief" and answers, where the
-branch divided by zero (measured 2026-10-09, under each of the four quantifiers and nested in an `alle` composite).
-The exec-model branch refuses, by name, such a composite when a fold anywhere in it has a subselection that can fault;
-one whose folds cannot fault is lowered as before, and no golden has one whose fold can. The DRL-text branch refuses a
-fold of dates in a condition. The other routes of such a composite evaluate no fold `ref` does not read: both branches
-refuse a fold of numbers in it, unless it is the single member of a composite under `geen` or `ten minste 1`, which
-`ref` reads wherever it reads the composite.
+branch divided by zero (measured 2026-10-09, under each of the four quantifiers and nested in an `alle` composite). The
+exec-model branch refuses, by name, such a composite when a fold whose subselection can fault sits where `ref` can leave
+it unread (`ExecModelTranspiler.overgeslagenVouwfout`): in a member before which a stop trigger can fire, whatever
+number of the members before it hold, or, by the same rule, within a member that is always read and is itself a
+composite. That is every member after the first under `geen`, and under `alle` in a nested composite; the first member
+only where the threshold settles the composite before any member (`ten hoogste` d over at most d members, `ten minste`
+or `precies` d over fewer: shapes WF-041 admits, as it asks d ≥ 1 only). Every other such composite is lowered as before
+the refusal, since `ref` reads each of its folds wherever it reads the composite: a fold as the only member under
+`geen`, a fold before "hij is actief" under `ten minste 1`, and a fold after "hij is actief" under `precies 1` of two
+members, where no trigger can fire before it (measured 2026-10-09: the branch plays these as `ref` answers, and faults
+where `ref` faults). No golden has a fold that can fault in such a composite. The DRL-text branch refuses a fold of
+dates in a condition. The other routes of such a composite evaluate no fold `ref` does not read: both branches refuse a
+fold of numbers in it, unless it is the single member of a composite under `geen` or `ten minste 1`, which `ref` reads
+wherever it reads the composite.
 
 Golden `jutterswet-filterwacht`, red case `vouwfilter-deelt-door-nul`, witness `FilterfoutWitnessTest`: the four members
 "hij is actief", a fold that divides by the ploeg, "zijn saldo gedeeld door zijn noemer is groter dan 1" and a
@@ -749,13 +757,14 @@ member that reads through a role and in a fact creation's anchor condition, each
 value and in a creation's initialisation under a fold in the condition; the companion of a division by leeg under a
 composite whose member moved; a divisor another rule writes on the element, under a fold and under a quantifier fold, in
 both rule orders; the refused and the lowered defaults group; the refused and the lowered composite under each other
-quantifier; and each other operation of the list in a subselection.
+quantifier, the fold in a member that is always read and in one that a trigger can skip; and each other operation of
+the list in a subselection.
 
 Limits that remain, measured 2026-10-09 with `ref` as the arbiter:
 
-- The refusal of a composite under `geen` or a counting quantifier is broader than the fault: it also refuses a fold
-  that can fault in the composite's first member, which `ref` reads wherever it reads the composite unless the
-  threshold settles it before any member (ch. 5.10), so that there the lowering it refuses gave what `ref` gives.
+- The refusal of a composite under `geen` or a counting quantifier reads the form, not the data: it counts every
+  member before a fold as able to hold and not to hold. Where members cannot ("hij is actief" and "hij is niet
+  actief" under `precies 1`, before the fold), it refuses a fold that `ref` reads wherever it reads the composite.
 - A quantifier fold whose matrix faults on a contributor after an earlier one settled the fold: `ref` stops in the
   contributors' order (ch. 3.9a); both branches evaluate the matrix of every contributor and fault.
 - Where the fold is reached: date arithmetic past the year 999 999 999 and the eerste paasdag of such a year fault in

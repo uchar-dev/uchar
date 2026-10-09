@@ -3878,8 +3878,9 @@ public final class ExecModelTranspiler {
                 // stands, but the accumulates before it fold for every subject, so the subselection of a fold in a
                 // member the composite never reaches is evaluated all the same. One that can fault (kern.Faalbaar)
                 // ended the session where the reference interpreter answers. Folding only where the test reaches the
-                // member has no place in this lowering, so the form is refused.
-                String plek = vouwfoutIn(s);
+                // member has no place in this lowering, so the form is refused; a fold the reference interpreter
+                // reads wherever it reads the composite is folded as before (overgeslagenVouwfout).
+                String plek = overgeslagenVouwfout(s);
                 if (plek != null) {
                     vouwReden = "een " + s.kwantor() + "-samenstelling met een vouw waarvan de subselectie een fout kan"
                             + " geven, " + plek + ": deze tak vouwt elke vouw van de samenstelling op de linkerkant van"
@@ -8931,6 +8932,38 @@ public final class ExecModelTranspiler {
         String[] plek = { null };
         Conditie.bevatOperand(c, x -> (plek[0] = vouwfout(x)) != null);
         return plek[0];
+    }
+
+    /** {@link #vouwfoutIn} for the folds of {@code s} that the reference interpreter can leave unread where it reads
+     *  {@code s} (RUNTIME-SEMANTICS ch. 5.10): every fold of a member the short circuit can skip
+     *  ({@link #kanOverslaan}), and of a member it always reads, the folds that member can leave unread itself: none
+     *  for a single condition, whose operands are all read, and by this same rule for a composite. null where every
+     *  fold that can fault is read wherever {@code s} is, so the lowering folds nothing the reference interpreter does
+     *  not. */
+    private String overgeslagenVouwfout(Conditie.Samengesteld s) {
+        List<Conditie> leden = s.onderdelen();
+        for (int i = 0; i < leden.size(); i++) {
+            Conditie lid = leden.get(i);
+            String plek = kanOverslaan(s, i) ? vouwfoutIn(lid)
+                    : lid instanceof Conditie.Samengesteld genest ? overgeslagenVouwfout(genest) : null;
+            if (plek != null) return plek;
+        }
+        return null;
+    }
+
+    /** Whether the short circuit of RUNTIME-SEMANTICS ch. 5.10 can leave member {@code i} of {@code s} unread: whether
+     *  a stop trigger ({@link #vastgesteld}) can fire before a member {@code j <= i}, with any number {@code h} of the
+     *  {@code j} members before it holding, as their verdicts can give. Every member after the first under geen, or
+     *  under alle in a composite, is such a member; the first is one only where the threshold settles the composite
+     *  before any member (ten hoogste d over at most d members, ten minste and precies d over fewer than d: WF-041
+     *  admits these, it asks d &gt;= 1 only); and a later one need not be (precies 1 over two members reads the second
+     *  whatever the first gives). */
+    private static boolean kanOverslaan(Conditie.Samengesteld s, int i) {
+        int n = s.onderdelen().size();
+        for (int j = 0; j <= i; j++)
+            for (int h = 0; h <= j; h++)
+                if (vastgesteld(s.kwantor(), s.drempel(), h, j, n - j) != null) return true;
+        return false;
     }
 
     /** Whether the one §9.5 site of a defaults consequence is the consequence itself, under at most a rounding: a

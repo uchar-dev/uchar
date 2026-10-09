@@ -128,6 +128,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of the first fix round, and fails the new one in 36 of that branch's 96 cells: every J4 cell, and every J1 cell whose
  * order starts with F or K, among them {@code [F, A, D, K] J1 EXEC_MODEL: verwacht … 10 gedeeld door 0 …, kreeg … 9
  * gedeeld door 0 …} and {@code [A, D, K, F] J4 DRL_TEXT: verwacht gespeeld, kreeg deling rsGedeeld(gewicht, ploeg)}.
+ *
+ * <p>The third fix round narrowed that refusal to a fold the reference interpreter can leave unread, and added the row
+ * of a fold in a member that is always read. <b>Red before the round</b> (measured 2026-10-09, this class through
+ * Maven): with the transpilers of {@code 9c6adc07} the row failed in all twelve cells of its six lowered forms with
+ * {@code Excluded: transpiler SKIP: regel: drukte — regel (een GEEN-samenstelling met een vouw …}, where the reference
+ * interpreter answers, or faults as the branch did before the refusal; its three refused forms passed. A refusal of a
+ * fold in a member after the first at the top only, the narrowing first proposed, fails the row both ways: it keeps
+ * refusing the three forms whose later member no trigger can skip, and it lowers the three refused forms, which then
+ * fault where the reference interpreter answers ({@code atMost 1 EXEC_MODEL: DelingDoorNul: … 9 gedeeld door 0 …}).
  */
 class FilterfoutWitnessTest {
 
@@ -656,6 +665,77 @@ class FilterfoutWitnessTest {
         String drl = TmsFoutWitnessTest.speel(ir, zaak, DRL);
         if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
             afwijkend.add(bron + " " + DRL + ": " + drl);
+    }
+
+    /** J1 with the characteristics {@code kenmerken}, the peildatum 2020-01-01 and V1, 10 by 2, found on 2026-01-05,
+     *  and where {@code metV2} also V2, 9 by 0, found on 2026-01-06. */
+    private static List<String> peiljutter(List<String> kenmerken, boolean metV2) {
+        List<String> uit = new ArrayList<>(List.of(metDatums(instantieMetRollen("J1", "Jutter", Map.of(), kenmerken,
+                Map.of("vondsten", metV2 ? List.of("V1", "V2") : List.of("V1"))), Map.of("peildatum", "2020-01-01")),
+                metDatums(vondst("V1", "10", "2"), Map.of("vinddatum", "2026-01-05"))));
+        if (metV2) uit.add(metDatums(vondst("V2", "9", "0"), Map.of("vinddatum", "2026-01-06")));
+        return uit;
+    }
+
+    /** {@link #datumvouw} over {@link #FILTER} in a member the short circuit of ch. 5.10 never skips, so that the
+     *  reference interpreter reads the fold wherever it reads the composite: as the only member under geen; before "hij
+     *  is actief" under ten minste 1; as the first member of an alle composite that is the only member under geen; and
+     *  as the second member after "hij is actief" under precies 1 of two members, and under ten minste 2 and under ten
+     *  hoogste 1 of three, with "hij is beladen" third, where no stop trigger can fire before the fold whatever the
+     *  first member gives. The exec-model branch folds there what the reference interpreter reads, so it lowers these
+     *  forms as before the refusal and plays them as the reference interpreter answers: with V1 alone, 10 by 2 and
+     *  found after the peildatum, not druk, druk, druk, not druk, druk and not druk; with V2 beside it, 9 by 0, a fault
+     *  in each. The guard: where the threshold settles the composite before any member, ten hoogste 1 and ten minste 2
+     *  over the fold alone, and where the fold is the second member of an alle composite that is the only member under
+     *  geen, after "hij is actief" on a J1 that is not actief, the reference interpreter reads no fold and answers
+     *  (druk, not druk, druk), and the branch before the refusal divided 9 by 0: these forms stay refused. Measured
+     *  2026-10-09 on the RegelSpraak frontend's documents of these forms, with the ASP runner and the branch before the
+     *  refusal ({@code 4ada319d}). */
+    @Test void een_vouw_die_kan_falen_in_een_lid_dat_altijd_gelezen_wordt_speelt_zoals_ref() throws Exception {
+        String deling = "DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul"
+                + " als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+        String actief = check("actief", false), beladen = check("beladen", false), vouw = datumvouw(FILTER);
+        List<String> afwijkend = new ArrayList<>();
+        // per form: its composite, J1's characteristics with V1 alone and its druk there, and with V2 beside V1
+        Map<String, Object[]> spelend = new java.util.LinkedHashMap<>();
+        spelend.put("geen, enig lid", new Object[] {samengesteld("none", 0, List.of(vouw)), List.of(), false,
+                List.of()});
+        spelend.put("ten minste 1, eerste lid", new Object[] {samengesteld("atLeast", 1, List.of(vouw, actief)),
+                List.of(), true, List.of("actief")});
+        spelend.put("geen over alle, eerste lid", new Object[] {samengesteld("none", 0, List.of(samengesteld("all", 0,
+                List.of(vouw, actief)))), List.of(), true, List.of()});
+        spelend.put("precies 1, tweede van twee", new Object[] {samengesteld("exactly", 1, List.of(actief, vouw)),
+                List.of("actief"), false, List.of()});
+        spelend.put("ten minste 2, tweede van drie", new Object[] {samengesteld("atLeast", 2, List.of(actief, vouw,
+                beladen)), List.of("beladen"), true, List.of()});
+        spelend.put("ten hoogste 1, tweede van drie", new Object[] {samengesteld("atMost", 1, List.of(actief, vouw,
+                beladen)), List.of("actief"), false, List.of()});
+        for (Map.Entry<String, Object[]> v : spelend.entrySet()) {
+            Object[] w = v.getValue();
+            Path ir = document(List.of(kenmerkregel("drukte", "Jutter", "druk", (String) w[0])), List.of());
+            @SuppressWarnings("unchecked") List<String> kenmerken = (List<String>) w[1], metV2 = (List<String>) w[3];
+            JsonNode antwoord = TmsDocumenten.zaak(peiljutter(kenmerken, false), List.of(verwacht("J1", "druk",
+                    (Boolean) w[2]), consistent()));
+            String exec = TmsFoutWitnessTest.speel(ir, antwoord, EXEC);
+            if (!exec.equals("gespeeld")) afwijkend.add(v.getKey() + " " + EXEC + ": " + exec);
+            JsonNode fout = TmsDocumenten.zaak(peiljutter(metV2, true), List.of(consistent()));
+            exec = TmsFoutWitnessTest.speel(ir, fout, EXEC);
+            if (!exec.equals(deling)) afwijkend.add(v.getKey() + " met V2 " + EXEC + ": " + exec);
+            String drl = TmsFoutWitnessTest.speel(ir, antwoord, DRL);
+            if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
+                afwijkend.add(v.getKey() + " " + DRL + ": " + drl);
+        }
+        weigering(document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("atMost", 1,
+                List.of(vouw)))), List.of()), TmsDocumenten.zaak(peiljutter(List.of(), true),
+                List.of(verwacht("J1", "druk", true), consistent())), "TEN_HOOGSTE", "atMost 1", afwijkend);
+        weigering(document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("atLeast", 2,
+                List.of(vouw)))), List.of()), TmsDocumenten.zaak(peiljutter(List.of(), true),
+                List.of(verwacht("J1", "druk", false), consistent())), "TEN_MINSTE", "atLeast 2", afwijkend);
+        weigering(document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("none", 0, List.of(
+                samengesteld("all", 0, List.of(actief, vouw)))))), List.of()), TmsDocumenten.zaak(
+                peiljutter(List.of(), true), List.of(verwacht("J1", "druk", true), consistent())), "GEEN", "none 0",
+                afwijkend);
+        assertEquals(List.of(), afwijkend);
     }
 
     /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan 50", a fold
