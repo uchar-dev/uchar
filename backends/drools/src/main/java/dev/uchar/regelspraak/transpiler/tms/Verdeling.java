@@ -19,9 +19,13 @@ import java.util.Set;
  * every recipient's weight, ordering key and cap. It computes as the exec-model branch computes, with the runtime's
  * helpers ({@code rsPlafond}, {@code rsAfronding} and, for the ordered method, {@code rsVerdeelOpVolgorde}), so a share
  * is the quotient at 16 significant digits, capped and then floored, the v0 residual ch. 4.2 records beside the exact
- * fractions; the edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}).
+ * fractions; the edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that
+ * ch. 4.4 decides otherwise for v1 (below).
  *
- * <p>Where the spec and that branch differ, the spec decides. A negative weight in the proportional method counts as 0
+ * <p>Where the spec and that branch differ, the spec decides. An empty pot distributes nothing in every method, as
+ * ch. 4.4 decides for v1, so nothing is written and nothing deposited; in the equal-shares and the proportional method
+ * the reference interpreter keeps the v0 hole there and faults, and the exec-model branch throws. A negative weight in
+ * the proportional method counts as 0
  * and surfaces the §9.5 deposit, as ch. 4.4 decides for v1; the exec-model branch and the reference interpreter keep
  * the v0 hole there, an unclamped weight. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and
  * the reference interpreter read it, where {@code rsVerdeelOpVolgorde} splits a group whose weights are all empty in
@@ -34,19 +38,11 @@ import java.util.Set;
 public final class Verdeling {
     private Verdeling() {}
 
-    /** RUNTIME-SEMANTICS ch. 4.4: an empty pot of an equal-shares allocation with recipients, in the reference
-     *  interpreter's words; v0 has no guard there, and the reference interpreter faults. */
-    static final String LEGE_POT_GELIJKE_DELEN =
-            "empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)";
-
-    /** As {@link #LEGE_POT_GELIJKE_DELEN}, for the proportional method. */
-    static final String LEGE_POT_NAAR_RATO = "empty source amount in proportional allocation (v0 mirror hole, ch. 4.4)";
-
     /**
      * What the distribution of one source gives: the share of every recipient that receives one, by identity; the rest,
      * the pot less every share, or null where nothing is distributed and nothing written (ch. 4.4: no recipients, an
-     * empty pot of the ordered method, eligible weights that sum to 0); and the recipients on which a degradation
-     * surfaces the §9.5 deposit of the allocation (ch. 4.3, 4.4), each once.
+     * empty pot, eligible weights that sum to 0); and the recipients on which a degradation surfaces the §9.5 deposit
+     * of the allocation (ch. 4.3, 4.4), each once.
      */
     public record Uitslag(Map<Object, BigDecimal> aandelen, BigDecimal rest, Set<Object> deponeringen) {}
 
@@ -55,8 +51,7 @@ public final class Verdeling {
      * {@code gewogen} where the allocation declares a ratio attribute, {@code gemaximeerd} where it declares a cap,
      * {@code decimalen} the floor's decimals (null for none), {@code afnemend} the ordered method's direction. The
      * order of {@code ontvangers} decides nothing: every share depends only on the values, and a tie group divides the
-     * pot as it stands at the group's entry. Throws the {@link Rekenfout} of an empty pot where the reference
-     * interpreter faults (ch. 4.4).
+     * pot as it stands at the group's entry.
      */
     public static Uitslag bereken(ResolvedVerdeling.Methode methode, Object pot, List<Ontvanger> ontvangers, boolean gewogen,
                            boolean gemaximeerd, Integer decimalen, boolean afnemend) {
@@ -64,6 +59,9 @@ public final class Verdeling {
         Set<Object> deponeringen = Collections.newSetFromMap(new IdentityHashMap<>());
         // ch. 4.4: zero recipients write nothing and raise nothing, whatever the pot
         if (ontvangers.isEmpty()) return new Uitslag(aandelen, null, deponeringen);
+        // ch. 4.4, decided for v1 and uniform across the methods: an empty pot is no distribution, so it writes no
+        // share and no rest and deposits nothing, not even for an empty weight or cap, and it is no fault
+        if (pot == null) return new Uitslag(aandelen, null, deponeringen);
         return switch (methode) {
             case GELIJKE_DELEN -> gelijkeDelen(pot, ontvangers, decimalen, aandelen, deponeringen);
             case NAAR_RATO -> naarRato(pot, ontvangers, gemaximeerd, decimalen, aandelen, deponeringen);
@@ -77,7 +75,6 @@ public final class Verdeling {
     /** One group, every recipient, unweighted (ch. 4.2); a cap is ill-formed here (WF-025) and refused before. */
     private static Uitslag gelijkeDelen(Object pot, List<Ontvanger> ontvangers, Integer decimalen,
                                         Map<Object, BigDecimal> aandelen, Set<Object> deponeringen) {
-        if (pot == null) throw new Rekenfout(LEGE_POT_GELIJKE_DELEN);
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         BigDecimal n = BigDecimal.valueOf(ontvangers.size());
         BigDecimal som = BigDecimal.ZERO;
@@ -98,7 +95,6 @@ public final class Verdeling {
      */
     private static Uitslag naarRato(Object pot, List<Ontvanger> ontvangers, boolean gemaximeerd, Integer decimalen,
                                     Map<Object, BigDecimal> aandelen, Set<Object> deponeringen) {
-        if (pot == null) throw new Rekenfout(LEGE_POT_NAAR_RATO);
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         List<Ontvanger> gerechtigd = new ArrayList<>();
         List<BigDecimal> gewichten = new ArrayList<>();
@@ -136,15 +132,14 @@ public final class Verdeling {
 
     /**
      * The groups of equal ordering keys, an empty key last, ascending or descending (ch. 4.2), through
-     * {@code rsVerdeelOpVolgorde}. An empty pot distributes nothing. An empty tie-break weight counts as 0 and surfaces
-     * the deposit; a negative one counts as 0 without one, as ch. 4.4 and the reference interpreter have it. An empty or
-     * negative cap degrades to uncapped and surfaces the deposit, for every recipient, as the reference interpreter
-     * reads the cap of every member of every group.
+     * {@code rsVerdeelOpVolgorde}. An empty tie-break weight counts as 0 and surfaces the deposit; a negative one
+     * counts as 0 without one, as ch. 4.4 and the reference interpreter have it. An empty or negative cap degrades to
+     * uncapped and surfaces the deposit, for every recipient, as the reference interpreter reads the cap of every
+     * member of every group.
      */
     private static Uitslag opVolgorde(Object pot, List<Ontvanger> ontvangers, boolean gewogen, boolean gemaximeerd,
                                       Integer decimalen, boolean afnemend, Map<Object, BigDecimal> aandelen,
                                       Set<Object> deponeringen) {
-        if (pot == null) return new Uitslag(aandelen, null, deponeringen);
         BigDecimal a = RegelSpraakRuntime.toBd(pot);
         List<Object> feiten = new ArrayList<>(), sleutels = new ArrayList<>();
         List<Object> gewichten = gewogen ? new ArrayList<>() : null, maxima = gemaximeerd ? new ArrayList<>() : null;

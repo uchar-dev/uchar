@@ -298,20 +298,21 @@ recipient that arrives or leaves, a weight, key, cap or pot that a rule derives 
 stops holding take the source's whole distribution along, the rest included (ch. 4.3), and a deposit made on an
 intermediate state goes again. It computes as the exec-model branch does, with `rsPlafond`, `rsAfronding` and
 `rsVerdeelOpVolgorde`: a share is the quotient at 16 significant digits, capped, then floored, the v0 residual ch. 4.2
-records beside the exact fractions. The edge rows of ch. 4.4 are the reference interpreter's: no recipients, an empty
-pot of the ordered method and eligible proportional weights that sum to 0 write nothing, the last still with the
-deposit of an empty weight beside them, and an empty pot of the equal-shares or the proportional method with
-recipients is that executor's fault, a `Fout` on the source ("empty source amount in equal-shares allocation (v0
-mirror hole, ch. 4.4)"), which like every fault counts at the fixpoint only, so a pot derived later leaves none. Three
-readings differ from the exec-model branch, each as the spec has it: a negative weight of the proportional method
-counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter and
-the exec-model branch keep the unclamped v0 hole and the ASP backend faults; an empty tie-break weight counts as 0 also
-where every weight of its group is empty, as the reference interpreter and the ASP backend read it, where
-`rsVerdeelOpVolgorde` splits such a group in equal parts; and two ordering keys of one value in two scales, 2019 and
-2019.0, are one group, as those two executors compare them, where that helper groups by `equals`. A version with a
-bounded validity gates on the evaluation date and faults a session without one; a condition faults and deposits
-through rules of its own, on the source. A share or a rest replaces the input on its target, and a recipient that
-receives nothing keeps its input. Witness `TmsVerdelingWitnessTest`.
+records beside the exact fractions. The edge rows of ch. 4.4 write nothing for no recipients, for an empty pot and for
+eligible proportional weights that sum to 0, the last still with the deposit of an empty weight beside them. An empty
+pot is no distribution in every method, as ch. 4.4 decides for v1: no share, no rest, no deposit, not even for an
+empty weight, and no fault, so an input on a share stays and a pot derived later leaves nothing from its empty state.
+Four readings differ from the exec-model branch, each as the spec has it: that empty pot in the equal-shares and the
+proportional method, where the reference interpreter and the ASP backend keep the v0 hole and fault ("empty source
+amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", `viol("allocation: empty pot")`) and the exec-model
+branch throws a NullPointerException; a negative weight of the proportional method counts as 0 with a deposit (ch. 4.4,
+decided for v1), where the reference interpreter and the exec-model branch keep the unclamped v0 hole and the ASP
+backend faults; an empty tie-break weight counts as 0 also where every weight of its group is empty, as the reference
+interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such a group in equal parts; and two
+ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
+that helper groups by `equals`. A version with a bounded validity gates on the evaluation date and faults a session
+without one; a condition faults and deposits through rules of its own, on the source. A share or a rest replaces the
+input on its target, and a recipient that receives nothing keeps its input. Witness `TmsVerdelingWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference

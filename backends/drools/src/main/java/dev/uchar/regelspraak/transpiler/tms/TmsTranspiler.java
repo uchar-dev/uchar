@@ -1352,9 +1352,10 @@ public final class TmsTranspiler {
      * negative proportional weight, an empty or negative cap) is the allocation's §9.5 deposit on that recipient. All of
      * it is logical, so a recipient that arrives or leaves, a weight, key, cap or pot that changes, and a condition that
      * stops holding take the whole distribution of the source along, the rest included (ch. 4.3), and a deposit made on
-     * an intermediate state goes again: like a fault it counts at the fixpoint (PLAN §9, 2026-10-09). An empty pot of
-     * the equal-shares or the proportional method with recipients is the reference interpreter's fault (ch. 4.4), a
-     * {@link Fout} on the source. A version with a bounded validity gates on the evaluation date and faults a session
+     * an intermediate state goes again: like a fault it counts at the fixpoint (PLAN §9, 2026-10-09). An empty pot is
+     * no distribution in every method, as ch. 4.4 decides for v1: it writes nothing, deposits nothing and is no fault,
+     * where the reference interpreter keeps the v0 hole of the equal-shares and the proportional method and faults
+     * ({@link Verdeling}). A version with a bounded validity gates on the evaluation date and faults a session
      * without one, as a rule's version does; a condition that can fault or deposit has its own fault and deposit rules,
      * on the source, as the reference interpreter evaluates the condition per source before anything else.
      *
@@ -1432,14 +1433,8 @@ public final class TmsTranspiler {
         items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
             List<Ontvanger> ontvangers = new ArrayList<>();
             for (Object o : (List<?>) w[lijst]) ontvangers.add((Ontvanger) o);
-            Verdeling.Uitslag u;
-            try {
-                u = Verdeling.bereken(methode, w[p], ontvangers, gewogen, gemaximeerd, decimalen, afnemend);
-            } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
-                drools.logicalInsert(new Fout(onderwerp, naam, Rekenfout.benoem(e, regelnaam)));
-                return;
-            }
+            Verdeling.Uitslag u = Verdeling.bereken(methode, w[p], ontvangers, gewogen, gemaximeerd, decimalen,
+                    afnemend);
             for (Object r : u.deponeringen())
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, r));
             for (Map.Entry<Object, BigDecimal> e : u.aandelen().entrySet())

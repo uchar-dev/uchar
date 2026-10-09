@@ -3,10 +3,14 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.tms.Stand;
 import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.event.rule.AfterMatchFiredEvent;
+import org.kie.api.event.rule.BeforeMatchFiredEvent;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.event.rule.DefaultRuleRuntimeEventListener;
 import org.kie.api.event.rule.ObjectInsertedEvent;
 
@@ -67,11 +71,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       deposit each, J4 excluded with one; rest 0. Before the maximum of J3 is derived it is leeg, a deposit on J3 that
  *       must be gone at the fixpoint.</li>
  *   <li><b>D, the edge rows of ch. 4.4</b> that no golden holds: eligible weights that sum to 0 distribute nothing and
- *       write no rest, while an empty weight beside them still deposits; an empty pot of the equal-shares and the
- *       proportional method faults; an empty pot of the ordered method distributes nothing and deposits nothing, also
- *       beside an empty tie-break weight; a tie group whose weights are all empty gives every member a real 0 and passes
- *       the pot on; two ordering keys of one value in two scales are one group; and a negative proportional weight
- *       counts as 0 with a deposit, as ch. 4.4 decides for v1.</li>
+ *       write no rest, while an empty weight beside them still deposits; an empty pot distributes nothing in every
+ *       method, as ch. 4.4 decides for v1, so no share and no rest is written, an input share of 7 stays, and there is
+ *       no fault and no deposit, also beside an empty weight of the proportional method and an empty tie-break weight
+ *       of the ordered one; a tie group whose weights are all empty gives every member a real 0 and passes the pot on;
+ *       two ordering keys of one value in two scales are one group; and a negative proportional weight counts as 0
+ *       with a deposit, as ch. 4.4 decides for v1.</li>
  *   <li><b>E, the validity of a version and the condition.</b> Two versions: in gelijke delen until 2025-12-31, naar
  *       rato van het basisgewicht from 2026-01-01 where the vrijgavescore is at least 10. 100 over J1 (1) and J2 (3):
  *       50 and 50 in 2025, 25 and 75 in 2026, nothing where the condition fails (J1's input share 7 stays), and a fault
@@ -80,27 +85,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       a relation the branch then reads through its links; 900 in gelijke delen: J1 300, J2 300, rest 0, the made Berger
  *       counted.</li>
  *   <li><b>G, a pot derived later.</b> "De opbrengst van een berging is zijn bruto"; 90 in gelijke delen over J1, J2
- *       and J3: 30 each, rest 0. Before the opbrengst is derived the pot is leeg, the fault of an empty pot of the
- *       equal-shares method, which must be gone at the fixpoint like every fault (PLAN §9, 2026-10-09).</li>
+ *       and J3: 30 each, rest 0. Before the opbrengst is derived the pot is leeg, which distributes nothing (ch. 4.4,
+ *       decided for v1): a firing of the allocation on that state inserts no share, no rest, no fault and no
+ *       deposit.</li>
  *   <li><b>H, a second writer of a target</b>: a computing rule or an initialisation beside an allocation on its
  *       target, and two allocations on one target, each refused by name.</li>
  * </ul>
  *
  * <p>Every part runs in every order of its rules and its allocations in the document, and in a seeded sample of orders
  * of the generated rules: A, C and G with a listener that requires at least one order to pass the intermediate state
- * (an inserted share of 225 for J1 and of 900 for J2, a deposit on J3, the fault of the empty pot), B with its channel,
- * D, E and F through a replay of their cases in each order.
+ * (an inserted share of 225 for J1 and of 900 for J2, a deposit on J3, a firing of the allocation on the empty pot), B
+ * with its channel, D, E and F through a replay of their cases in each order.
  *
- * <p><b>Measured in the other executors</b> (2026-10-09, the documents {@link #main} writes, every one verifier-clean).
- * The reference interpreter's runner and the ASP runner pass A (15 expectations), B (10), C (8), F (4), G (6) and of D the
- * eligible weights that sum to 0 (5), the empty pot of the ordered method (4, no deposit beside the empty weight), the
- * all-empty tie group (6) and the keys in two scales (5). On an empty pot of the equal-shares and the proportional
- * method the reference interpreter faults with this branch's sentence ("EVALUATION FAULT: empty source amount in
- * equal-shares allocation (v0 mirror hole, ch. 4.4)") and the ASP runner is unsatisfiable on its guard
- * ({@code viol("allocation: empty pot","B1")}). The negative proportional weight is where the spec and the two
- * executors part: ch. 4.4 decides for v1 that it counts as 0 with a deposit, as this branch reads it; the reference
- * interpreter keeps the v0 hole ("J1.bergingsaandeel = 150, expected 100 … J2.bergingsaandeel = -50, expected 0 …
- * the channel carries: (empty)") and the ASP runner faults ({@code viol("allocation: negative weight","J2")}). E: the
+ * <p><b>Measured in the other executors</b> (2026-10-09, the documents {@link #main} writes, every one verifier-clean
+ * but H's two allocations, ill-formed on purpose). The reference interpreter's runner and the ASP runner pass A (15
+ * expectations), B (10), C (8), F (4), G (6) and of D the eligible weights that sum to 0 (5), the empty pot of the
+ * ordered method (4, no deposit beside the empty weight), the all-empty tie group (6) and the keys in two scales (5).
+ * Twice the spec and the two executors part, each time where ch. 4.4 decides for v1 and they keep the v0 hole; both
+ * executors are to follow the two decisions on a new card. An empty pot of the equal-shares and the proportional
+ * method is no distribution, as this branch reads it, where the reference interpreter faults ("EVALUATION FAULT: empty
+ * source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", and "… in proportional allocation …") and the
+ * ASP runner is unsatisfiable on its guard on either ({@code viol("allocation: empty pot","B1")}). A negative
+ * proportional weight counts as 0 with a deposit, as this branch reads it, where the reference interpreter keeps the v0
+ * hole ("J1.bergingsaandeel = 150, expected 100 … J2.bergingsaandeel = -50, expected 0 … the channel carries:
+ * (empty)") and the ASP runner faults ({@code viol("allocation: negative weight","J2")}). E: the
  * reference interpreter passes the three sessions with a date (4 expectations each) and faults the time-free one, "a
  * validity-bounded form needs an evaluation date; this session is time-free"; the ASP runner does not translate the
  * validity window of an allocation ("allocation validity windows are not translated (no corpus case)").
@@ -126,9 +134,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * unnormalised fails D ("rangaandeel: verwacht 50, werkelijk 0; … verwacht 50, werkelijk 100"); an empty tie-break
  * weight handed on as leeg fails D ("verwacht 0, werkelijk 50; … verwacht 100, werkelijk 0"); a negative proportional
  * weight left unclamped fails D ("verwacht 100, werkelijk 150; … verwacht 0, werkelijk -50"); and the validity gate left
- * out fails E. The fault of an empty pot stated instead of logical fails G's sample, "Rekenfout fout in de regel
- * "verdeel de opbrengst gelijk": empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", a fault of
- * an intermediate state that stayed.
+ * out fails E.
+ *
+ * <p><b>Red before an empty pot became no distribution</b> (measured 2026-10-09 on {@code e9182168} with this class,
+ * where an empty pot of the equal-shares and the proportional method was the reference interpreter's fault, a
+ * {@link dev.uchar.regelspraak.transpiler.tms.Fout} on the source): D, "lege-pot-gelijk=Rekenfout: fout in de regel
+ * "verdeel de opbrengst gelijk": empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4),
+ * lege-pot-naar-rato=Rekenfout: fout in de regel "verdeel de opbrengst naar rato": empty source amount in proportional
+ * allocation (v0 mirror hole, ch. 4.4)", and G's sample, "ingevoegd op de lege pot in volgorde […] ==> expected:
+ * &lt;[]&gt; but was: &lt;[Fout(Berging@…, verdeel de opbrengst gelijk, fout in de regel "verdeel de opbrengst gelijk":
+ * empty source amount in equal-shares allocation (v0 mirror hole, ch. 4.4))]&gt;".
  */
 class TmsVerdelingWitnessTest {
 
@@ -462,12 +477,16 @@ class TmsVerdelingWitnessTest {
                         inconsistent("verdeel de opbrengst naar rato", "J3")))});
         uit.put("lege-pot-gelijk", new Object[]{D_GELIJK, TmsDocumenten.zaak(List.of(
                 instantie("B1", "Berging", Map.of(), List.of("J1", "J2")),
-                instantie("J1", "Berger", Map.of(), List.of()), instantie("J2", "Berger", Map.of(), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", null), consistent()))});
+                instantie("J1", "Berger", Map.of("bergingsaandeel", "7"), List.of()),
+                instantie("J2", "Berger", Map.of(), List.of())),
+                List.of(waarde("J1", "bergingsaandeel", "7"), waarde("J2", "bergingsaandeel", null),
+                        waarde("B1", "onverdeelde rest", null), consistent()))});
         uit.put("lege-pot-naar-rato", new Object[]{D_NAAR_RATO, TmsDocumenten.zaak(List.of(
-                instantie("B1", "Berging", Map.of(), List.of("J1")),
-                instantie("J1", "Berger", Map.of("gewicht", "2"), List.of())),
-                List.of(waarde("J1", "bergingsaandeel", null), consistent()))});
+                instantie("B1", "Berging", Map.of(), List.of("J1", "J2")),
+                instantie("J1", "Berger", Map.of("gewicht", "2", "bergingsaandeel", "7"), List.of()),
+                instantie("J2", "Berger", Map.of(), List.of())),
+                List.of(waarde("J1", "bergingsaandeel", "7"), waarde("J2", "bergingsaandeel", null),
+                        waarde("B1", "onverdeelde rest", null), consistent()))});
         uit.put("lege-pot-op-volgorde", new Object[]{D_OP_JAAR, TmsDocumenten.zaak(List.of(
                 instantie("B1", "Berging", Map.of(), List.of("J1", "J2")),
                 instantie("J1", "Berger", Map.of("jaar", "2020"), List.of()),
@@ -506,10 +525,8 @@ class TmsVerdelingWitnessTest {
                     (JsonNode) r.getValue()[1]));
         Map<String, String> verwacht = new LinkedHashMap<>();
         verwacht.put("gewichten-nul", "gespeeld");
-        verwacht.put("lege-pot-gelijk", "Rekenfout: fout in de regel \"verdeel de opbrengst gelijk\": empty source"
-                + " amount in equal-shares allocation (v0 mirror hole, ch. 4.4)");
-        verwacht.put("lege-pot-naar-rato", "Rekenfout: fout in de regel \"verdeel de opbrengst naar rato\": empty source"
-                + " amount in proportional allocation (v0 mirror hole, ch. 4.4)");
+        verwacht.put("lege-pot-gelijk", "gespeeld");
+        verwacht.put("lege-pot-naar-rato", "gespeeld");
         verwacht.put("lege-pot-op-volgorde", "gespeeld");
         verwacht.put("lege-tiegewichten", "gespeeld");
         verwacht.put("sleutel-in-twee-schalen", "gespeeld");
@@ -599,13 +616,14 @@ class TmsVerdelingWitnessTest {
         assertEquals("gespeeld", speel(document(List.of(POT), List.of(F_GELIJK), List.of()), gZaak()));
     }
 
-    /** A seeded sample of orders of the generated rules: the write-back finds no fault at the fixpoint and writes 30
-     *  three times, and in at least one order the allocation inserted the fault of the empty pot on the way, before the
-     *  opbrengst was derived, and that fault went again. */
-    @Test void g_de_fout_van_een_lege_pot_op_een_tussenstand_vervalt() throws Exception {
+    /** A seeded sample of orders of the generated rules: the write-back writes 30 three times and a rest of 0, and
+     *  every firing of the allocation on the empty pot, before the opbrengst is derived, inserts nothing, no share, no
+     *  rest, no fault and no deposit (ch. 4.4: an empty pot is no distribution); in at least one order the allocation
+     *  fires so. */
+    @Test void g_een_lege_pot_op_een_tussenstand_laat_niets_achter() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(List.of(POT), List.of(F_GELIJK), List.of()),
                 DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        int onderweg = 0;
+        int opLegePot = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
@@ -617,20 +635,37 @@ class TmsVerdelingWitnessTest {
             }
             List<Object> bonen = new ArrayList<>(List.of(b1));
             bonen.addAll(bergers);
-            int[] fouten = new int[1];
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(
-                    new DefaultRuleRuntimeEventListener() {
-                        @Override public void objectInserted(ObjectInsertedEvent e) {
-                            if (e.getObject() instanceof dev.uchar.regelspraak.transpiler.tms.Fout) fouten[0]++;
-                        }
-                    }), sessie -> { });
+            boolean[] legePot = new boolean[1];
+            int[] vuringen = new int[1];
+            List<String> ingevoegd = new ArrayList<>();
+            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> {
+                sessie.addEventListener(new DefaultAgendaEventListener() {
+                    @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
+                        legePot[0] = e.getMatch().getRule().getName().equals("verdeel de opbrengst gelijk")
+                                && e.getMatch().getObjects().stream().anyMatch(o -> o instanceof Stand s
+                                        && s.onderwerp() == b1 && s.attribuut().naam().equals("opbrengst")
+                                        && s.waarde() == null);
+                        if (legePot[0]) vuringen[0]++;
+                    }
+                    @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                        legePot[0] = false;
+                    }
+                });
+                sessie.addEventListener(new DefaultRuleRuntimeEventListener() {
+                    @Override public void objectInserted(ObjectInsertedEvent e) {
+                        if (legePot[0]) ingevoegd.add(String.valueOf(e.getObject()));
+                    }
+                });
+            }, sessie -> { });
             Map<String, Object> eind = new LinkedHashMap<>();
             for (int i = 0; i < 3; i++) eind.put("J" + (i + 1), TmsDocumenten.lees(bergers.get(i), "bergingsaandeel"));
             eind.put("B1", TmsDocumenten.lees(b1, "onverdeelde rest"));
             assertEquals("{J1=30, J2=30, J3=30, B1=0}", getallen(eind), () -> "volgorde " + namen);
-            if (fouten[0] > 0) onderweg++;
+            assertEquals(List.of(), ingevoegd, () -> "ingevoegd op de lege pot in volgorde " + namen);
+            if (vuringen[0] > 0) opLegePot++;
         }
-        assertTrue(onderweg > 0, "geen volgorde liet de verdeling op de lege pot vallen voordat de opbrengst afgeleid was");
+        assertTrue(opLegePot > 0,
+                "geen volgorde liet de verdeling op de lege pot vuren voordat de opbrengst afgeleid was");
     }
 
     // ---------------- H: a second writer of a target ----------------
