@@ -181,6 +181,47 @@ class TmsBuiltinWitnessTest {
                 List.of(waarde("V3", "zijde", null), inconsistent("zijde van een vondst", "V3"))));
     }
 
+    /** "De zijde van een Vondst moet berekend worden als de wortel van zijn oppervlak", without a rounding: exact where
+     *  the oppervlak is the square of a rational, as the reference interpreter computes it (RUNTIME-SEMANTICS ch. 2.2),
+     *  and that executor's fault where it is not, since an irrational root exists only under the rounding §13.4.17.13
+     *  mandates. V1 (basis 2, oppervlak 2 in the input, so √2 on the way where the zijde comes first): zijde 2; V2
+     *  (basis 8): 4; V3 (basis 0,08): 0,4. V4 (basis 1): √2 at the fixpoint, the fault. V5 (basis −2): leeg, with the
+     *  §6.6 deposit. Measured 2026-10-09: the reference interpreter's runner gives these outcomes where the oppervlak
+     *  rule comes first, and in the other order faults on V1's transient √2, the fault of an intermediate state that
+     *  the owner's decision of 2026-10-09 (PLAN §9) does not count; the ASP runner declines the root ("squareRoot is
+     *  not translated"); the exec-model branch plays V4 without a fault, from its approximate root, where the reference
+     *  interpreter faults. <b>Red</b> (2026-10-09) at the claim of the card, "een BuiltinCall in een waarde ('de wortel
+     *  van zijn oppervlak'): buiten de proef van de truth-maintenance-tak", and in the first commit of the card, which
+     *  refused it as "een squareRoot die niet de basis van een afronding is". */
+    @Test void een_wortel_zonder_afronding_is_exact_of_een_fout() throws Exception {
+        String zijde = rekenregel("zijde van een vondst", "BEREKENING", "Vondst", "zijde", builtin("squareRoot",
+                List.of(lezing("oppervlak", "Vondst")), TWEE, "de wortel van zijn oppervlak"), "null");
+        JsonNode exact = TmsDocumenten.zaakOp(null, List.of(
+                instantieMet("V1", "Vondst", Map.of("basis", getalwaarde("2.00"), "oppervlak", getalwaarde("2.00")),
+                        List.of()),
+                instantieMet("V2", "Vondst", Map.of("basis", getalwaarde("8.00")), List.of()),
+                instantieMet("V3", "Vondst", Map.of("basis", getalwaarde("0.08")), List.of())),
+                List.of(waarde("V1", "zijde", "2"), waarde("V2", "zijde", "4"), waarde("V3", "zijde", "0.4"),
+                        consistent()));
+        JsonNode irrationaal = TmsDocumenten.zaakOp(null, List.of(
+                instantieMet("V4", "Vondst", Map.of("basis", getalwaarde("1.00")), List.of())), List.of(consistent()));
+        JsonNode negatief = TmsDocumenten.zaakOp(null, List.of(
+                instantieMet("V5", "Vondst", Map.of("basis", getalwaarde("-2.00")), List.of())),
+                List.of(waarde("V5", "zijde", null), inconsistent("zijde van een vondst", "V5")));
+        List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
+        for (List<String> volgorde : TmsDocumenten.permutaties(List.of(OPPERVLAK, zijde))) {
+            List<String> namen = TmsDocumenten.regelnamen(volgorde);
+            java.nio.file.Path ir = TmsDocumenten.document(GETALMODEL, volgorde);
+            for (JsonNode zaak : List.of(exact, irrationaal, negatief))
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            verwacht.add(namen + " gespeeld");
+            verwacht.add(namen + " Rekenfout: fout in de regel \"zijde van een vondst\": irrational square root of 2"
+                    + " reached without an explicit rounding (§13.4.17.13 mandates one)");
+            verwacht.add(namen + " gespeeld");
+        }
+        assertEquals(verwacht, uitkomsten);
+    }
+
     // ---------------- text ----------------
 
     private static final String TEKSTMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(

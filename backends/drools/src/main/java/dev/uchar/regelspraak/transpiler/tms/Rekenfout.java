@@ -6,9 +6,11 @@ import dev.uchar.regelspraak.runtime.Breuk;
  * An evaluation fault of the truth-maintenance branch other than a division by a numeric zero
  * ({@link Breuk.DelingDoorNul}): a date step or a duration count outside the range of RUNTIME-SEMANTICS ch. 3.8, a
  * context value or a validity window that needs the evaluation date in a session that carries none (ch. 8.1, 8.2), the
- * bound day outside a day-kind evaluation (ch. 8.2), an {@code Unresolved} node the evaluation reaches (ch. 5.7), and an
- * easterSunday of a year that is not whole or lies outside the years a date holds (ch. 3.8). Its sentence ({@link #zin})
- * is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches both.
+ * bound day outside a day-kind evaluation (ch. 8.2), an {@code Unresolved} node the evaluation reaches (ch. 5.7), an
+ * easterSunday of a year that is not whole or lies outside the years a date holds (ch. 3.8), a dateWith or a
+ * dateTimeWith over parts that name no moment, and an irrational square root without a rounding (ch. 2.2). Its sentence
+ * ({@link #zin}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
+ * both.
  *
  * <p>Like a division by zero it never leaves the fire: the consequence that computes a value, or the fault rule of a
  * condition, inserts it logically as a {@link Fout}, which counts only where it stands at the fixpoint

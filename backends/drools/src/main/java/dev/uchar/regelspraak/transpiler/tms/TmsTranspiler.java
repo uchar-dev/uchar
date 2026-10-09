@@ -2469,9 +2469,9 @@ public final class TmsTranspiler {
      * texts ({@link #tekstdeel}); the duration and the absolute duration in a calendar unit ({@code rsTijdsduur},
      * ch. 3.8); the year, month and day of a date and the hour, minute, second and millisecond of a date-time
      * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #paasdag}); a date and a date-time made of their parts
-     * ({@link #datumconstructie}). A square root is carried as the base of its mandatory rounding ({@link #afronding}). A
-     * bucketing builtin over a timeline and a duration in day kinds belong to the card of timelines and day kinds, and
-     * are refused by name.
+     * ({@link #datumconstructie}). A square root is computed as the base of its mandatory rounding ({@link #afronding}),
+     * and without one exactly ({@link #exacteWortel}). A bucketing builtin over a timeline and a duration in day kinds
+     * belong to the card of timelines and day kinds, and are refused by name.
      */
     private Waardefunctie builtin(Expr.Functie f, Lezingen lez) {
         Expr.FunctieKind kind = f.kind();
@@ -2483,9 +2483,7 @@ public final class TmsTranspiler {
                     + " bucketing over een tijdlijn draagt er een");
         List<Expr> a = f.argumenten();
         return switch (kind) {
-            case WORTEL -> throw new Weigering("een squareRoot die niet de basis van een afronding is ('"
-                    + snippet(f.bron()) + "'): §13.4.17.13 schrijft de afronding voor, en de referentie-interpreter faalt"
-                    + " op een irrationale wortel zonder");
+            case WORTEL -> exacteWortel(f, lez);
             case ABSOLUTE_WAARDE -> {
                 Waardefunctie x = waarde(eenArgument(f, spelling), lez);
                 yield w -> RegelSpraakRuntime.rsAbs(x.van(w));
@@ -2510,6 +2508,36 @@ public final class TmsTranspiler {
             case MILLISECONDE_UIT -> datumdeel(f, lez, spelling, ChronoField.MILLI_OF_SECOND, true);
             case DATUM_MET, DATUMTIJD_MET -> datumconstructie(f, lez, spelling);
             default -> throw new IllegalStateException("de soort " + kind + " is een vouw, geen builtin");
+        };
+    }
+
+    /** A square root that is not the base of a rounding, exact as the reference interpreter computes it: the root of
+     *  a radicand that is the square of a rational, and otherwise the fault that executor gives, since an irrational
+     *  root exists only under the rounding §13.4.17.13 mandates (RUNTIME-SEMANTICS ch. 2.2). A leeg radicand is leeg,
+     *  a negative one leeg with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (ch. 1.2,
+     *  {@link Sonde}). The exec-model branch computes a binary approximation here instead. */
+    private Waardefunctie exacteWortel(Expr.Functie f, Lezingen lez) {
+        if (f.argumenten().size() != 1)
+            throw new Weigering("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+                    + "'): de wortel heeft er één (WF-037)");
+        lez.markeerFalen();
+        Waardefunctie radicand = waarde(f.argumenten().get(0), lez);
+        int sonde = deponeerplek(f) ? lez.sonde() : -1;
+        return w -> {
+            Breuk q = Breuk.van(radicand.van(w));
+            if (q == null) return null;
+            if (q.signum() < 0) {
+                Sonde.meld(w, sonde);
+                return null;
+            }
+            BigInteger teller = q.teller().sqrt(), noemer = q.noemer().sqrt();
+            if (!teller.multiply(teller).equals(q.teller()) || !noemer.multiply(noemer).equals(q.noemer()))
+                // the reference interpreter writes the radicand as a rational here (Q.to_string), not as a decimal
+                throw new Rekenfout("irrational square root of " + (q.noemer().equals(BigInteger.ONE) ? q.teller()
+                        : q.teller() + "/" + q.noemer()) + " reached without an explicit rounding (§13.4.17.13 mandates"
+                        + " one)");
+            Breuk r = Breuk.van(teller, noemer);
+            return r.isTerminerend() ? r.naarDecimal() : r;
         };
     }
 
