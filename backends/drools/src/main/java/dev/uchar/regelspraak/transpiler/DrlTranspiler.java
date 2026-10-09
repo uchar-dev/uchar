@@ -430,6 +430,34 @@ public final class DrlTranspiler {
          *  cut off is never evaluated (and never faults). Pushed/popped around each {@link Expr.Let} body. */
         final List<String> letBewaking = new ArrayList<>();
         int letN;
+        /** The ALLE / DE composites, by identity, whose members after a separate clause go on the subject bound again:
+         *  those of the condition a rule, an object creation or a fact creation's anchor puts after its subject
+         *  pattern, set by that site ({@link #splitsbareConjuncties}). Empty elsewhere: a composite in a subselection
+         *  or a matrix is on another pattern, where {@code $subject} is not its object. */
+        java.util.Set<Conditie> splitsbaar = java.util.Set.of();
+        /** Set when a member's test or join went among the clauses: the condition's inline and extra no longer hold
+         *  all of it, so a companion that re-reads them takes the condition lowered without the split. */
+        boolean gesplitst;
+    }
+
+    /** The subject pattern's constraint of a rule: the condition's {@code inline} behind the §9.6 {@code leegGuard} of an
+     *  initialisatie, where there is one (null otherwise). */
+    private static String metLeegGuard(String inline, String leegGuard) {
+        if (leegGuard == null) return inline;
+        return inline.isEmpty() ? leegGuard : leegGuard + ", " + inline;
+    }
+
+    /** {@code c} and, down through ALLE / DE composites, every ALLE / DE composite among their members, by identity:
+     *  the composites whose members a site's subject pattern and its clauses carry ({@link Acc#splitsbaar}). */
+    private static java.util.Set<Conditie> splitsbareConjuncties(Conditie c) {
+        java.util.Set<Conditie> uit = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        java.util.ArrayDeque<Conditie> open = new java.util.ArrayDeque<>();
+        if (c != null) open.add(c);
+        while (!open.isEmpty())
+            if (open.pop() instanceof Conditie.Samengesteld s
+                    && (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE) && uit.add(s))
+                open.addAll(s.onderdelen());
+        return uit;
     }
 
     /**
@@ -1490,8 +1518,14 @@ public final class DrlTranspiler {
 
         // Like the feitcreatie anker, a §8.1.7 far-side guard on the objectcreatie subject hosts its exists/not
         // join after the subject pattern; a near guard yields empty extra and keeps the output byte-identical.
+        // The values' clauses are in acc.clausules before the condition's; the rule puts the condition's first, since
+        // the values are evaluated only where the creation's condition holds (RUNTIME-SEMANTICS ch. 5.5, 5.10), as in
+        // regel().
+        final int voorwaardeVanaf = acc.clausules.size();
+        if (oc.voorwaarde() != null) acc.splitsbaar = splitsbareConjuncties(oc.voorwaarde());
         LoweredConditie opVw = oc.voorwaarde() != null
                 ? conditie(acc, oc.voorwaarde(), subject, true) : LoweredConditie.van("");
+        acc.splitsbaar = java.util.Set.of();
         // §9.10 fase-2: a recursief-group objectcreatie drops no-loop so it forward-chains on its own inserts to the
         // fixpoint (the idempotence guard above is the anti-runaway control, not no-loop). Non-recursief: unchanged.
         String subjectConstraints = eenOpEen
@@ -1500,7 +1534,8 @@ public final class DrlTranspiler {
         Regel r = new Regel(oc.naam())
             .clausule(SUBJECT + " : " + ident(subject.naam, true) + "( " + subjectConstraints + " )")
             .clausules(opVw.extra())
-            .clausules(acc.clausules);
+            .clausules(acc.clausules.subList(voorwaardeVanaf, acc.clausules.size()))
+            .clausules(acc.clausules.subList(0, voorwaardeVanaf));
         if (idemGuard != null) r.clausule(idemGuard);
         r.geldigheid(oc.geldigheid())
             .dan(dan.toString());
@@ -1597,6 +1632,7 @@ public final class DrlTranspiler {
             // after the anker pattern. conditieInline would degrade that join to a marker, dropping the rule to
             // an inert eval(false); a near anker guard yields empty extra and stays byte-identical.
             Acc ankerAcc = new Acc();                          // each attempt collects into its OWN context;
+            ankerAcc.splitsbaar = splitsbareConjuncties(fc.voorwaarde());   // its clauses follow the anker pattern
             LoweredConditie opAnker = conditie(ankerAcc, fc.voorwaarde(), anker, true);
             if (!opAnker.marker()) {
                 ankerC = opAnker.inline();
@@ -1751,21 +1787,25 @@ public final class DrlTranspiler {
                 && r.doel() instanceof Expr.AttribuutRef da && da.objecttype() != null
                 && (bevatNaam(da.objecttype().granulariteitLeden(), da.attribuut())
                     || bevatNaam(da.objecttype().kenmerkGranulariteitLeden(), da.attribuut()));
+        // The value's clauses are in acc.clausules before the condition's; the rule puts the condition's first
+        // (below), since the value is evaluated only where the rule fires (RUNTIME-SEMANTICS ch. 5.10, 5.11): a fold in
+        // the value whose subselection faults must not run where a fold in the condition does not hold.
+        final int voorwaardeVanaf = acc.clausules.size();
+        if (subject != null && r.voorwaarde() != null) acc.splitsbaar = splitsbareConjuncties(r.voorwaarde());
         LoweredConditie lc = subject != null && r.voorwaarde() != null && !kenmerkTlGelowerd
                 ? (periodeOpTijdlijnDoel
                     ? LoweredConditie.marker("periodevergelijking op een tijdsafhankelijk doel (§8.4.3)", r.voorwaarde().bron())
                     : conditie(acc, r.voorwaarde(), subject, true))
                 : LoweredConditie.van("");
-        String constraint = lc.inline();
+        acc.splitsbaar = java.util.Set.of();
         // §9.6 initialisatie assigns only when the attribuut holds NO value yet ("controleert of een attribuut
         // een waarde bevat … als dit niet het geval is"): the leeg-guard makes the rule idempotent and removes
         // the agenda-order dependence vs a berekening on the same doel — the berekening (unguarded) wins whenever
         // it applies, the initialisatie fills the rest. Property reactivity then cancels a stale activation.
-        if (r.soort() == ResolvedRegel.Soort.INITIALISATIE && subject != null
-                && r.doel() instanceof Expr.AttribuutRef ia && ongenavigeerd(ia)) {
-            String leegGuard = ident(ia.attribuut(), false) + " == null";
-            constraint = constraint.isEmpty() ? leegGuard : leegGuard + ", " + constraint;
-        }
+        String initGuard = r.soort() == ResolvedRegel.Soort.INITIALISATIE && subject != null
+                && r.doel() instanceof Expr.AttribuutRef ia && ongenavigeerd(ia) ? ident(ia.attribuut(), false) + " == null"
+                : null;
+        String constraint = metLeegGuard(lc.inline(), initGuard);
         if (subject == null) {
             rule.clausule("// onopgelost doel-objecttype: " + commentVeilig(r.doel().bron().snippet())).clausule("eval(true)");
         } else {
@@ -1808,7 +1848,8 @@ public final class DrlTranspiler {
             rule.clausule(SUBJECT + " : " + ident(subject.naam, true) + "( " + constraint + " )"
                     + (watch.isEmpty() ? "" : " @watch( " + String.join(", ", watch) + " )"));
             for (String e : lc.extra()) rule.clausule(e);   // the exists-join(s), after $subject is bound
-            rule.clausules(acc.clausules)
+            rule.clausules(acc.clausules.subList(voorwaardeVanaf, acc.clausules.size()))
+                .clausules(acc.clausules.subList(0, voorwaardeVanaf))
                 .geldigheid(r.geldigheid());   // §4.2: a time-bounded version fires only inside its window
         }
         if (r.doel() instanceof Expr.AttribuutRef a && ongenavigeerd(a) && a.objecttype() != null
@@ -1963,9 +2004,13 @@ public final class DrlTranspiler {
                 out.append("// onopgelost begeleider: ").append(commentVeilig(navReden)).append('\n');
                 return;
             }
-            deelDoorLeegFout(acc, r, subject, constraint, lc.marker(), lc.extra());
-            wortelNegatiefFout(acc, r, subject, constraint, lc.marker(), lc.extra());
-            startpuntLeegFout(acc, r, subject, constraint, lc.marker(), lc.extra());
+            // A companion re-reads the condition's inline constraint and joins; where the condition's members went
+            // among the clauses (gesplitsteConjunctie), it takes the condition lowered without that split.
+            LoweredConditie gelezen = acc.gesplitst ? conditie(new Acc(), r.voorwaarde(), subject, true) : lc;
+            String gelezenConstraint = metLeegGuard(gelezen.inline(), initGuard);
+            deelDoorLeegFout(acc, r, subject, gelezenConstraint, gelezen.marker(), gelezen.extra());
+            wortelNegatiefFout(acc, r, subject, gelezenConstraint, gelezen.marker(), gelezen.extra());
+            startpuntLeegFout(acc, r, subject, gelezenConstraint, gelezen.marker(), gelezen.extra());
         }
     }
 
@@ -2547,12 +2592,24 @@ public final class DrlTranspiler {
         };
     }
 
-    /** Whether {@code c}, the subselection of a fold, divides: a quotient is the one operation of a subselection that
-     *  faults on this branch, where its divisor is a numeric zero ({@code Breuk.delen}). */
-    private static boolean deelt(Conditie c) {
-        return Conditie.bevatOperand(c, x -> x instanceof Expr.Binair b
-                && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS));
+    /** Whether {@code c}, the subselection or the matrix of a fold, holds an operation that can end the evaluation with
+     *  a fault: the closed list of {@link dev.uchar.regelspraak.transpiler.kern.Faalbaar}, a date operand read from the
+     *  declarations (RUNTIME-SEMANTICS ch. 2.10). */
+    private boolean kanFalen(Conditie c) {
+        return dev.uchar.regelspraak.transpiler.kern.Faalbaar.plek(c, x -> {
+            Datatype t = eff.typeVan(x);
+            return t != null && t.isDatum();
+        }) != null;
     }
+
+    /** The constraint an element pattern gets where its test moved to the element bound again FROM it: always true,
+     *  and a method call over the whole object, so the pattern passes every update of its element on, as the moved
+     *  test's own calls did. A pattern passes an update on only where its constraints read what changed, and the test
+     *  bound again runs only when the tuple before it changes: with its join alone the element pattern passed no update
+     *  of a divisor another rule writes on the element, and the fold kept counting with the input value (measured
+     *  2026-10-09, {@code verwacht 2, werkelijk 0}); an {@code @watch( * )} on that pattern, inside the accumulate's
+     *  source, did not change that (measured the same day), this constraint does. */
+    private static final String KLASSEREACTIEF = "java.util.Objects.nonNull(this)";
 
     /** A read whose bindings walk more than one hop: the §13.4.1 chain. */
     private boolean keten(Expr.AttribuutRef a) {
@@ -3730,17 +3787,22 @@ public final class DrlTranspiler {
         int n = ++acc.n;
         String ev = "$e" + n, var = "$tl" + n;
         String filterScope = ident(rol, false) + " == " + SUBJECT;
+        String naPatroon = "";
         if (f.filter() != null) {
             if (leestViaElementrol(f.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, f.filter(), elem);                 // §13.4.2 die/dat subselectie on the element
             if (fc.marker()) return null;                              // unstructured filter -> marker
-            filterScope = filterScope + ", " + fc.text();
+            // a subselection that can fault goes on the element bound again, as in accumulate()
+            if (kanFalen(f.filter())) {
+                filterScope = filterScope + ", " + KLASSEREACTIEF;
+                naPatroon = " and " + ident(elem.naam, true) + "( " + fc.text() + " ) from " + ev;
+            } else filterScope = filterScope + ", " + fc.text();
         }
         // §4.1 restate each element timeline into the doel unit BEFORE folding (the §5.8.2 sum is unit-homogeneous;
         // an equal unit scales by factor 1 -> the getter verbatim). collectList binds the List<List<Segment>>.
         String elemTijdlijn = schaalTijd(ev + "." + getter(a.attribuut()) + "()", effType(a), doelType);
-        acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + filterScope + " ) ; "
-                + var + " : collectList( " + elemTijdlijn + " ) )");
+        acc.clausules.add("accumulate( " + ev + " : " + ident(elem.naam, true) + "( " + filterScope + " )" + naPatroon
+                + " ; " + var + " : collectList( " + elemTijdlijn + " ) )");
         boolean fallbackNul = f.leegwaarde() != null;                  // §5.8.2 "of 0 als die er niet zijn"
         fnImport("rsTijdSomAlle");
         return "rsTijdSomAlle(" + var + ", " + fallbackNul + ", Segment.class)";
@@ -4156,13 +4218,15 @@ public final class DrlTranspiler {
         // instance (a silent miscompile).
         java.util.List<String> bereik = new ArrayList<>();
         if (plan == null) bereik.add(scope.text());
-        String delendFilter = null;
+        String falendFilter = null;
         if (f.filter() != null) {
             if (leestViaElementrol(f.filter())) { navReden = ELEMENTROL_REDEN; return null; }
             Frag fc = conditie(acc, f.filter(), elem);  // Kenmerk -> bare element property; Onopgelost -> marker
             if (fc.marker()) return null;
-            if (deelt(f.filter())) delendFilter = fc.text();
-            else bereik.add(fc.text());
+            if (kanFalen(f.filter())) {
+                falendFilter = fc.text();
+                bereik.add(KLASSEREACTIEF);
+            } else bereik.add(fc.text());
         }
         int n = ++acc.n;
         String ev = "$e" + n, var = "$acc" + n;
@@ -4174,16 +4238,17 @@ public final class DrlTranspiler {
             if (!pc.constraint().isEmpty()) bereik.add(0, pc.constraint());
             naPatroon = pc.naPatroon();
         }
-        // A subselection that divides is not a constraint on the element pattern: Drools tests that pattern for every
-        // element of the type as it is inserted, whether or not a rule reaches the fold, and the reference interpreter
-        // evaluates the subselection only where the evaluation of a form reaches the fold, for the members of that
-        // subject's range (RUNTIME-SEMANTICS ch. 5.10, ch. 3.4a); a division by a numeric zero there is a fault
-        // (ch. 1.4, point 4). On the element bound again FROM its declaration, after the range is decided, it is
-        // tested per tuple that reaches the accumulate and only for the elements joined to that tuple's subject. Drools'
-        // exception for a fault there names the constraint and no rule, where on the element pattern it named every rule
-        // whose accumulate shared that constraint.
-        if (delendFilter != null)
-            naPatroon += " and " + ident(elem.naam, true) + "( " + delendFilter + " ) from " + ev;
+        // A subselection that can fault (kanFalen) is not a constraint on the element pattern: Drools tests that pattern
+        // for every element of the type as it is inserted, whether or not a rule reaches the fold, and the reference
+        // interpreter evaluates the subselection only where the evaluation of a form reaches the fold, for the members of
+        // that subject's range (RUNTIME-SEMANTICS ch. 5.10, ch. 3.4a); a fault there ends the evaluation (a division by
+        // a numeric zero, ch. 1.4, point 4; the day-kind walk past its reach, ch. 3.8). On the element bound again FROM
+        // its declaration, after the range is decided, it is tested per tuple that reaches the accumulate and only for
+        // the elements joined to that tuple's subject, and the element pattern passes every update on (KLASSEREACTIEF).
+        // Drools' exception for a fault there names the constraint and no rule, where on the element pattern it named
+        // every rule whose accumulate shared that constraint.
+        if (falendFilter != null)
+            naPatroon += " and " + ident(elem.naam, true) + "( " + falendFilter + " ) from " + ev;
         String filterScope = samen(bereik);
         Expr arg = f.argumenten().isEmpty() ? null : f.argumenten().get(0);
         // §7.1 a per-element timeline fold: a temporal-attribute element value is summed over time (rsTijdTotaal at the
@@ -4883,9 +4948,13 @@ public final class DrlTranspiler {
             if (!conjunctie) acc.hijsVerbod = true;
             acc.hijsReden = null;
             List<LoweredConditie> kinderen = new ArrayList<>();
+            List<Integer> merken = new ArrayList<>();   // where each child's own clauses begin in acc.clausules
             String hijsReden;
             try {
-                for (Conditie deel : s.onderdelen()) kinderen.add(conditie(acc, deel, subject, alsVoorwaarde));
+                for (Conditie deel : s.onderdelen()) {
+                    merken.add(acc.clausules.size());
+                    kinderen.add(conditie(acc, deel, subject, alsVoorwaarde));
+                }
             } finally {
                 acc.hijsVerbod = vorigVerbod;
                 hijsReden = acc.hijsReden;
@@ -4919,6 +4988,8 @@ public final class DrlTranspiler {
                               + " kwantor: een aparte when-clausule beweert onvoorwaardelijk wat de vouw weegt"
                         : "voorwaarde", s.bron());
             }
+            if (conjunctie && acc.splitsbaar.contains(s))
+                return gesplitsteConjunctie(acc, subject, kinderen, merken, hijsMark);
             if (conjunctie) {
                 // Join ONLY the non-empty inlines (a pure far-side child has an empty inline — dropping it
                 // avoids a dangling "()" / " && "); concat every child's hoisted clauses. When every child is a
@@ -4947,6 +5018,47 @@ public final class DrlTranspiler {
         // lowers the non-temporal matrix and markers every other shape WITH ITS OWN REASON.
         if (c instanceof Conditie.Kwantorvouw kv) return kwantorvouw(acc, kv, subject);
         return LoweredConditie.marker("voorwaarde", c.bron());
+    }
+
+    /** RUNTIME-SEMANTICS ch. 5.10, the ALLE / DE composite of a site's condition ({@link Acc#splitsbaar}), from its
+     *  lowered {@code kinderen}: the members are read in wire order, and a member after one that does not hold is never
+     *  read, so a fault in it does not happen. A member's inline goes on the subject pattern, its exists and not joins
+     *  after that pattern, and the clauses it adds itself (the accumulate of a fold and its eval) after those, in the
+     *  order of {@code acc.clausules}; Drools tests the subject pattern's constraints before any clause. A later member's
+     *  inline therefore ran before the fold of an earlier one: it faulted where the fold had already settled the
+     *  composite, and the fold was not evaluated where that inline did not hold, so a fault in its subselection did not
+     *  happen. So the members up to and including the first one with a clause or a join of its own lower as before,
+     *  and each member after it takes its place among the clauses, in its order: its inline on the subject bound again
+     *  ({@code Type( inline ) from $subject}, which Drools evaluates per tuple that reaches it), then its joins, then
+     *  its own clauses; {@link Acc#gesplitst} tells the site that something moved. An update of the subject reaches a
+     *  member bound again from it (measured 2026-10-09 with the subject pattern carrying another member's test, and with
+     *  none). {@code merken} holds where each child's own clauses begin in {@code acc.clausules}, from {@code mark} on. */
+    private LoweredConditie gesplitsteConjunctie(Acc acc, Objecttype subject, List<LoweredConditie> kinderen,
+                                                 List<Integer> merken, int mark) {
+        List<String> eigen = new ArrayList<>(acc.clausules.subList(mark, acc.clausules.size()));
+        acc.clausules.subList(mark, acc.clausules.size()).clear();
+        List<String> inlineDelen = new ArrayList<>(), extra = new ArrayList<>(), clausules = new ArrayList<>();
+        boolean na = false;   // a member before this one had a clause or a join of its own
+        for (int i = 0; i < kinderen.size(); i++) {
+            LoweredConditie k = kinderen.get(i);
+            int van = merken.get(i) - mark, tot = i + 1 < kinderen.size() ? merken.get(i + 1) - mark : eigen.size();
+            List<String> zijne = eigen.subList(van, tot);
+            if (!na) {
+                if (!k.inline().isEmpty()) inlineDelen.add("(" + k.inline() + ")");
+                extra.addAll(k.extra());
+                na = k.heeftExtra() || !zijne.isEmpty();
+            } else {
+                if (!k.inline().isEmpty()) {
+                    clausules.add(ident(subject.naam, true) + "( " + k.inline() + " ) from " + SUBJECT);
+                    acc.gesplitst = true;
+                }
+                if (k.heeftExtra()) acc.gesplitst = true;
+                clausules.addAll(k.extra());
+            }
+            clausules.addAll(zijne);
+        }
+        acc.clausules.addAll(clausules);
+        return new LoweredConditie(String.join(" && ", inlineDelen), extra, false);
     }
 
     /** The marker this branch leaves for a quantifier fold it does not lower, carrying the QUANTIFIER, the
@@ -5063,14 +5175,14 @@ public final class DrlTranspiler {
             toetsen.add(ff.text());
         }
         Conditie.GeheelPeriode gp = geheelPeriodeVan(kv.toets());
-        // A subselection or a matrix that divides is tested on the element bound again after the join, as on the source
-        // of an aggregation (accumulate): on the element pattern Drools tests it for every element of the type, whether
-        // or not the rule reaches the fold. A whole-period matrix is not on the element pattern at all: its eval follows
-        // the accumulate.
-        boolean herbind = deelt(kv.filter()) || (gp == null && deelt(kv.toets()));
+        // A subselection or a matrix that can fault (kanFalen) is tested on the element bound again after the join, as
+        // on the source of an aggregation (accumulate): on the element pattern Drools tests it for every element of the
+        // type, whether or not the rule reaches the fold. A whole-period matrix is not on the element pattern at all: its
+        // eval follows the accumulate.
+        boolean herbind = kanFalen(kv.filter()) || (gp == null && kanFalen(kv.toets()));
         java.util.function.Function<String, String> bron = ev -> herbind
-                ? ev + " : " + ident(elem.naam, true) + "( " + join + " ) and " + ident(elem.naam, true) + "( " + toetsen
-                        + " ) from " + ev
+                ? ev + " : " + ident(elem.naam, true) + "( " + join + ", " + KLASSEREACTIEF + " ) and "
+                        + ident(elem.naam, true) + "( " + toetsen + " ) from " + ev
                 : ev + " : " + ident(elem.naam, true) + "( " + join + (toetsen.length() == 0 ? "" : ", " + toetsen) + " )";
         if (gp != null) return heelperiodeVouw(acc, kv, gp, elem, subject, bron, mark);
         Frag mf = conditieInline(acc, kv.toets(), elem, true);

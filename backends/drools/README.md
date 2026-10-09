@@ -387,7 +387,7 @@ A division by a numeric zero there is named by the predicate itself, after its r
 `DelingDoorNul` on: the replay, the red path and the scenario report read "deling door nul in de regel "zwaar": 60
 gedeeld door 0 — …", and a consumer that fires a KieBase itself gets Drools' exception with the named division in its
 cause chain. The DRL-text branch throws Drools' MVEL exception, which names the rule and the condition in DRL, as
-before; for a subselection that divides it names no rule (the section on a subselection that divides). Witness
+before; for a subselection that can fault it names no rule (the section on a subselection that can fault). Witness
 `NuldelerVoorwaardeWitnessTest`.
 
 The naming sits after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
@@ -676,33 +676,76 @@ object to it) played before as well. The DRL-text branch writes such a test into
 or quantifier and answered with the members it had at insertion (`verwacht 2, werkelijk 0`); it refuses the form by name
 (`een subselectie of matrix die via een rol van het element leest`), also where the answer happened to hold.
 
-## Recorded: a subselection that divides
+## Recorded: a subselection that can fault
 
 The subselection of a fold ("die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is
 groter dan 2") is evaluated by `ref` only where the evaluation of a form reaches the fold: where the form's condition
 holds, within a composite up to the member after which its verdict stands (RUNTIME-SEMANTICS ch. 5.10), and per member
-of that subject's range (ch. 3.4a). A division by a numeric zero there is a fault (ch. 1.4, point 4), and nowhere else
-does it happen. Both branches tested the subselection on the element's pattern, which Drools tests for every element
-of the type as it is inserted, whether or not a form reaches the fold: measured 2026-10-09, each faulted where a rule's
-condition did not hold, where a composite had settled before the fold, in the condition and in the initialisation of
-an object creation, in the filter of a quantifier fold, and for an element in no fold's range, one step or a path away,
-where `ref` answers. A subselection that divides now goes on the element bound again in the source of the accumulate
-(`ExecModelTranspiler.elementtoets`, the shape a subselection that reads through a role already had;
-`DrlTranspiler.accumulate` and `kwantorvouw`, `Elem( … ) from $e`), after the join to the subject and after the walk of
-a path whose intermediates are an `exists` (`accBron` puts the element's tests after it): it is tested per tuple that
-reaches the accumulate, for the elements joined to that tuple's subject. A subselection that does not divide stays on
-the element's pattern. Where the fold is reached the division still faults: on the exec-model branch named after the
-rule, on the DRL-text branch as Drools' exception for the constraint, which there names no rule (on the element's
-pattern it named every rule whose accumulate shared the constraint). Golden `jutterswet-filterwacht`, red case
-`vouwfilter-deelt-door-nul`, witness `FilterfoutWitnessTest`.
+of that subject's range (ch. 3.4a). A fault there ends the evaluation (a division by a numeric zero, ch. 1.4, point 4;
+the day-kind walk past its reach, ch. 3.8), and nowhere else does it happen. Both branches tested the subselection on
+the element's pattern, which Drools tests for every element of the type as it is inserted, whether or not a form reaches
+the fold: measured 2026-10-09, each faulted where a rule's condition did not hold, where a composite had settled before
+the fold, in the condition and in the initialisation of an object creation, in the filter of a quantifier fold, and for
+an element in no fold's range, one step or a path away, where `ref` answers.
 
-Limits that remain, measured 2026-10-09 with `ref` as the arbiter. A member of an `all` composite that follows a member
-with a fold is tested on the subject's pattern, before the fold's accumulate, on both branches: a fault in that member
-happens where the fold has already settled the composite ("indien hij aan alle volgende voorwaarden voldoet: het aantal
-… is groter dan 0; zijn saldo gedeeld door zijn noemer is groter dan 1": `ref` answers, both branches fault), and since
-this change a fold whose subselection divides is not evaluated where such a later member does not hold ("… het aantal
-… is groter dan 0; hij is actief" on a Jutter that is not actief: `ref` faults, both branches answer; before, they
-faulted for every element). The accumulate of a fold in a default's justification is evaluated for every subject of the
-group's rule, while the justification is read by priority with the short circuit of ch. 5.10, so on the exec-model
-branch a lower default whose fold divides by a numeric zero faults where a higher default decides (the DRL-text branch
-refuses defaults).
+A subselection that holds an operation of the closed list of `kern.Faalbaar` goes on the element bound again in the
+source of the accumulate, after the join to the subject and after the walk of a path whose intermediates are an
+`exists` (`accBron` puts the element's tests after it): it is tested per tuple that reaches the accumulate, for the
+elements joined to that tuple's subject. The list holds every runtime operation a condition lowers to that throws on
+some value of its operands: a division, a power, date arithmetic (a step over a day kind included), a date built from
+parts, and the Rekenjaar. The exec-model branch uses the shape a subselection that reads through a role already had
+(`ExecModelTranspiler.elementtoets`); the DRL-text branch writes `Elem( … ) from $e` in `accumulate`, in `kwantorvouw`
+for the subselection and the matrix, and in `tijdreeksSomAlleSet`. A subselection without such an operation stays on
+the element's pattern, so every golden without one keeps its rules (a sweep over all goldens in both branches,
+2026-10-09: no report line moved). The element pattern keeps reacting to every update of its element: on the
+DRL-text branch it carries `java.util.Objects.nonNull(this)`, since with its join alone it passed on no update of a
+divisor another rule writes on the element and the fold kept the input's value (`verwacht 2, werkelijk 0`, measured on
+the first form of this change, where the test on the element's own pattern had seen the update; an `@watch( * )` on
+that pattern did not change it); on the exec-model branch an element pattern left without a test gets the opaque
+always-true one. Where the fold is reached the fault still happens: on the exec-model branch a division is named after
+the rule, on the DRL-text branch it is Drools' exception for the constraint, which there names no rule (on the element's
+pattern it named every rule whose accumulate shared the constraint).
+
+The members of an `alle` composite are read in their order, and a member after one that does not hold is never read
+(ch. 5.10). Both branches put the tests of every member on the subject's pattern and a member's separate items (the
+accumulate of a fold and its comparison, an exists) after it, so a test of a member after a fold ran before the fold:
+it faulted where the fold had already settled the composite ("het aantal … is groter dan 0; zijn saldo gedeeld door
+zijn noemer is groter dan 1": `ref` answers), and the fold was not evaluated where that test did not hold ("het aantal
+… is groter dan 0; hij is actief" on a Jutter that is not actief: `ref` faults). The members after the first one with
+separate items now go on the subject bound again from its variable, after those items (`ExecModelTranspiler.conjunctie`;
+`DrlTranspiler.gesplitsteConjunctie`, `Type( … ) from $subject`, for the condition of a rule, of an object creation and
+of a fact creation's anchor). The DRL-text branch also put the clauses of a rule's value, and of an object creation's
+initialisations, before those of its condition, so a fold in the value whose subselection faults ran where a fold in
+the condition did not hold; the condition's clauses now come first. Its §6.5/§6.6 companions read the condition's
+inline constraint and joins as before: where members moved, a companion takes the condition lowered without the move.
+
+A defaults group is one rule that folds every fold of the group on its left-hand side, for every subject, before its
+consequence reads the defaults by priority, while `ref` reads a lower default only where no higher one decides (ch. 7.1)
+and a justification only up to the member after which its verdict stands. A lower default whose fold divides by a
+numeric zero therefore faulted where a higher one decides (measured 2026-10-09: `ref` answers 1, the exec-model branch
+`DelingDoorNul: deling door nul in de regel "defaults A:Jutter.zwaarte"`), in a justification and in a consequence.
+The exec-model branch refuses, by name, a defaults group with a fold over a set source whose subselection can fault; no
+golden has one. A group whose folds cannot fault is lowered as before (the DRL-text branch refuses every defaults
+group).
+
+Golden `jutterswet-filterwacht`, red case `vouwfilter-deelt-door-nul`, witness `FilterfoutWitnessTest`: the four members
+"hij is actief", a fold that divides, "zijn saldo gedeeld door zijn noemer is groter dan 1" and a quantifier fold that
+divides in all 24 orders on three cases; a fold beside a fold of dates, beside a member that reads through a role and in
+a fact creation's anchor condition, each in both orders; a fold in a rule's value and in a creation's initialisation
+under a fold in the condition; the companion of a division by leeg under a composite whose member moved; a divisor
+another rule writes on the element, under a fold and under a quantifier fold, in both rule orders; the refused and the
+lowered defaults group; and each other operation of the list in a subselection.
+
+Limits that remain, measured 2026-10-09 with `ref` as the arbiter:
+
+- A composite under `geen` or a counting quantifier with a fold of dates as a member ("hij aan ten minste 1 van de
+  volgende voorwaarden voldoet: hij is actief; de eerste van de vinddatum van alle vondsten … die {een deling} … is
+  later dan zijn peildatum"): the exec-model branch folds the member's fold on the rule's left-hand side and faults
+  where `ref` stops after "hij is actief"; the DRL-text branch refuses the form. Such a composite with a fold of numbers
+  as a member is refused by both branches.
+- A quantifier fold whose matrix faults on a contributor after an earlier one settled the fold: `ref` stops in the
+  contributors' order (ch. 3.9a); both branches evaluate the matrix of every contributor and fault.
+- Where the fold is reached: date arithmetic past the year 999 999 999 and the eerste paasdag of such a year fault in
+  `java.time` where `ref` answers; zero to a negative power stops `ref` with an uncaught OCaml `Division_by_zero`.
+- A negative root in a subselection: `ref` reads leeg and deposits on the §9.5 channel, this backend reads leeg and
+  deposits nothing.

@@ -45,9 +45,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * range (ch. 3.4a); a filter that divides by a numeric zero there faults the evaluation (ch. 1.4, point 4). Both
  * branches tested the filter on the element's pattern, which Drools tests for every element of the type as it is
  * inserted, so they faulted where a rule's condition did not hold, where a composite had settled before the fold, and
- * for an element in no fold's range. A filter that divides now goes on the element bound again in the source of the
- * accumulate, after the join to the subject and the walk of a path, where it is tested per tuple that reaches the
- * accumulate.
+ * for an element in no fold's range. A filter that can fault ({@code kern.Faalbaar}) now goes on the element bound
+ * again in the source of the accumulate, after the join to the subject and the walk of a path, where it is tested per
+ * tuple that reaches the accumulate.
  *
  * <p>The corpus golden {@code jutterswet-filterwacht} carries the two forms of the card, a computation under "indien
  * hij actief is" and a characteristic whose composite tests "hij is actief" before the fold, and gates 5, 6 and 12
@@ -87,6 +87,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * path row or a quantifier row: the element's tests before the path's {@code exists} in the exec-model branch
  * ({@code accBron}) and in the DRL-text branch, and the quantifier fold of the DRL-text branch without the element
  * bound again, for the subselection and for the matrix.
+ *
+ * <p>The rows from "the order of an alle composite" on came with the first fix round: the order of a composite's
+ * members around a fold, also beside a member that reads through a role and in the condition of a fact creation's
+ * anchor; the order of a rule's value and condition on the DRL-text branch; the DRL-text branch's companion under a
+ * composite whose members moved; a divisor another rule writes on the element; a defaults group; and the operations of
+ * {@code kern.Faalbaar} other than the division. Their outcomes are the reference interpreter's on the RegelSpraak
+ * frontend's documents of the same forms (every order of the composite's members and of the rules included; measured
+ * 2026-10-09); the ASP runner agreed except on the lower default (it faults where the higher one decides), on the object
+ * creation (it does not ground that program) and where it does not translate a form. <b>Red before the round</b>
+ * (measured 2026-10-09 with the transpilers of {@code 9482ec1d}, this class through Maven): 8 of its 10 rows failed; the
+ * companion row, a guard of the move that the code before it passed, and the control of the defaults group passed. The
+ * composite: 56 of the 144 cells, among them {@code [A, F, D, K] J3 EXEC_MODEL: verwacht gespeeld, kreeg DelingDoorNul:
+ * … "drukte": 5 gedeeld door 0 …} (the division of a member after the fold that settled the composite) and
+ * {@code [F, A, D, K] J1 DRL_TEXT: verwacht deling rsGedeeld(gewicht, deelnemers), kreeg gespeeld} (the fold not
+ * evaluated after "hij is actief" did not hold). The fold of dates first, the fold before the member that reads through
+ * a role, the fold before "de Haven veilig is": {@code gespeeld} where the division faults. The fold in the value under
+ * a fold in the condition: the DRL-text branch's {@code ConstraintEvaluationException … rsGedeeld(gewicht, deelnemers)
+ * …} on J1. The divisor written on the element: the DRL-text branch's {@code attribuut zwaarte: verwacht 2, werkelijk 0}
+ * and, for the quantifier fold, {@code kenmerk druk: verwacht aanwezig, werkelijk afwezig}, in both orders (the first
+ * form of the change put the subselection on the element bound again from a pattern with its join alone, which passed
+ * no update on; before that change, with the test on the element's pattern, the branch played this). The defaults
+ * group: {@code DelingDoorNul: deling door nul in de regel "defaults A:Jutter.zwaarte": 9 gedeeld door 0 …}. The other
+ * operations: every branch that lowers the form faulted where J1 is not actief, the exec-model branch's
+ * {@code ConstraintEvaluationException: Error evaluating constraint 'later' …} for the day-kind step. Mutants, each
+ * caught by its row: the companion fed the moved condition's inline ({@code inconsistent (zwaarte @ J5)}), the element
+ * pattern without its always-true call in a fold and in a quantifier fold, and the value's clauses before the
+ * condition's in a rule and in an object creation.
  */
 class FilterfoutWitnessTest {
 
@@ -191,11 +218,15 @@ class FilterfoutWitnessTest {
 
     // ---------------- the other places where a fold stands under a condition ----------------
 
+    /** A date of the day precision. */
+    static final String DATUM = "{\"node\":\"Date\",\"precision\":\"day\"}";
+
     static final String MODEL = TmsDocumenten.model(List.of(
-            TmsDocumenten.objecttype("Jutter", List.of(attribuut("zwaarte", GEHEEL), attribuut("meldtelling", GEHEEL)),
+            TmsDocumenten.objecttype("Jutter", List.of(attribuut("zwaarte", GEHEEL), attribuut("meldtelling", GEHEEL),
+                    attribuut("saldo", GEHEEL), attribuut("noemer", GEHEEL), attribuut("peildatum", DATUM)),
                     List.of("actief", "druk", "beladen", "ontlast")),
-            TmsDocumenten.objecttype("Vondst", List.of(attribuut("gewicht", GEHEEL), attribuut("deelnemers", GEHEEL)),
-                    List.of()),
+            TmsDocumenten.objecttype("Vondst", List.of(attribuut("gewicht", GEHEEL), attribuut("deelnemers", GEHEEL),
+                    attribuut("vinddatum", DATUM), attribuut("ploeg", GEHEEL)), List.of()),
             TmsDocumenten.objecttype("Melding", List.of(attribuut("telling", GEHEEL)), List.of())),
             List.of(feittypeEenNaarVeel("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten"),
                     feittype("JutterHeeftMelding", "melder", "Jutter", "melding", "Melding")));
@@ -336,5 +367,469 @@ class FilterfoutWitnessTest {
         faalt(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("H1", "Haven", Map.of(), List.of(),
                 Map.of("jutters", List.of("J1", "J2", "J3"))), j1, j2, j3, b1, b9), List.of(consistent())),
                 "bootlengte", "4");
+    }
+
+    // ---------------- the order of an "alle" composite around a fold ----------------
+
+    /** The members of "Een Jutter is druk indien hij aan alle volgende voorwaarden voldoet", by letter: A "hij is
+     *  actief"; F "{@link #vouw()} is groter dan 0", a fold whose subselection divides; D "zijn saldo gedeeld door zijn
+     *  noemer is groter dan 1"; K "het gewicht van ten minste één van de vondsten van de Jutter die {@link #FILTER} is
+     *  groter dan 5", a quantifier fold whose subselection divides. */
+    static String lid(char letter) {
+        return switch (letter) {
+            case 'A' -> check("actief", false);
+            case 'F' -> vergelijking("greater", vouw(), getal("0"));
+            case 'D' -> vergelijking("greater", TmsFilterfoutWitnessTest.quotient(lezing("saldo", "Jutter"),
+                    lezing("noemer", "Jutter")), getal("1"));
+            case 'K' -> kwantorvouw("atLeast", FILTER, vergelijking("greater", lezing("gewicht", "Vondst"), getal("5")));
+            default -> throw new IllegalArgumentException("geen lid " + letter);
+        };
+    }
+
+    /** One case of the composite: the Jutter it is about, its instances, and per member its verdict there: "W" it
+     *  holds, "O" it does not, or the dividend of the division by 0 it reaches. */
+    private record Geval(String label, List<String> instanties, Map<Character, String> oordeel) {}
+
+    private static String jutter(String label, boolean actief, String saldo, String noemer, List<String> vondsten) {
+        return instantieMetRollen(label, "Jutter", Map.of("saldo", saldo, "noemer", noemer),
+                actief ? List.of("actief") : List.of(), Map.of("vondsten", vondsten));
+    }
+
+    /** J1 is not actief, its V2 divides 9 by 0 and its noemer is 0. J2 is actief and every member holds: V3 (10 by 2 is
+     *  5, gewicht 10 above 5) contributes, and 6 by 2 is 3. J3 is actief, its one vondst V5 (2 by 2 is 1) is no
+     *  contributor, so F and K do not hold, and its noemer is 0. */
+    static final List<Geval> GEVALLEN = List.of(
+            new Geval("J1", List.of(jutter("J1", false, "5", "0", List.of("V1", "V2")), vondst("V1", "10", "2"),
+                    vondst("V2", "9", "0")), Map.of('A', "O", 'F', "9", 'D', "5", 'K', "9")),
+            new Geval("J2", List.of(jutter("J2", true, "6", "2", List.of("V3", "V4")), vondst("V3", "10", "2"),
+                    vondst("V4", "3", "3")), Map.of('A', "W", 'F', "W", 'D', "W", 'K', "W")),
+            new Geval("J3", List.of(jutter("J3", true, "5", "0", List.of("V5")), vondst("V5", "2", "2")),
+                    Map.of('A', "W", 'F', "O", 'D', "5", 'K', "O")));
+
+    /** The composite's verdict on {@code g} by RUNTIME-SEMANTICS ch. 5.10: the members are read in {@code volgorde}, and
+     *  the first that does not hold or faults decides; "W" where every member holds. */
+    static String verdict(List<Character> volgorde, Geval g) {
+        for (char c : volgorde) {
+            String o = g.oordeel().get(c);
+            if (!o.equals("W")) return o;
+        }
+        return "W";
+    }
+
+    /** What {@code tak} gives on {@code zaak}: "gespeeld", the verdict of an expectation that failed, or the fault with
+     *  its class. For the DRL-text branch, whose exception names the constraint, a division by a numeric zero in the
+     *  cause chain is "deling" with the quotient of that constraint. */
+    static String waarneming(Path ir, JsonNode zaak, DroolsBackend.Branch tak) throws Exception {
+        try {
+            String v = CaseRunner.speelCase(ir, zaak, tak);
+            return v == null ? "gespeeld" : v;
+        } catch (RuntimeException e) {
+            if (tak == DRL && deling(e)) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("rsGedeeld\\([^()]*\\)")
+                        .matcher(String.valueOf(e.getMessage()));
+                return "deling " + (m.find() ? m.group() : "zonder quotiënt in '" + e.getMessage() + "'");
+            }
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
+
+    /** What {@code tak} must give where the verdict on rule {@code regel} is {@code verdict}: the dividend 9 is V2's
+     *  gewicht by deelnemers, 5 the saldo by the noemer. */
+    static String verwachting(String verdict, String regel, DroolsBackend.Branch tak) {
+        if (verdict.equals("W") || verdict.equals("O")) return "gespeeld";
+        if (tak == EXEC) return "DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + verdict + " gedeeld door 0"
+                + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+        return "deling " + (verdict.equals("9") ? "rsGedeeld(gewicht, deelnemers)" : "rsGedeeld(saldo, noemer)");
+    }
+
+    /** Every order of the four members, on the three cases, on both branches: a member is evaluated only where every
+     *  member before it holds, so the verdict, and whether and where a division by 0 happens, follows the order. */
+    @Test void de_leden_van_een_alle_samenstelling_in_elke_volgorde() throws Exception {
+        List<String> afwijkend = new ArrayList<>();
+        for (List<Character> volgorde : TmsDocumenten.permutaties(List.of('A', 'F', 'D', 'K'))) {
+            List<String> leden = new ArrayList<>();
+            for (char c : volgorde) leden.add(lid(c));
+            Path ir = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0, leden))), List.of());
+            for (Geval g : GEVALLEN) {
+                String verdict = verdict(volgorde, g);
+                JsonNode zaak = TmsDocumenten.zaak(g.instanties(), verdict.equals("W") || verdict.equals("O")
+                        ? List.of(verwacht(g.label(), "druk", verdict.equals("W")), consistent()) : List.of(consistent()));
+                for (DroolsBackend.Branch tak : List.of(EXEC, DRL)) {
+                    String gekregen = waarneming(ir, zaak, tak), verwacht = verwachting(verdict, "drukte", tak);
+                    if (!gekregen.equals(verwacht))
+                        afwijkend.add(volgorde + " " + g.label() + " " + tak + ": verwacht " + verwacht + ", kreeg " + gekregen);
+                }
+            }
+        }
+        assertEquals(List.of(), afwijkend);
+    }
+
+    /** "de telling van de melding van de Jutter is groter dan 0", a member that reads through a role, beside
+     *  {@link #vouw()} in both orders: on the exec-model branch such a condition goes on the subject bound again after
+     *  the join to the melding, and the members after the fold on the subject bound again from that. J1's V2 divides 9
+     *  by 0 and its melding counts 0: with the fold first the composite faults, after the member it is not read. J2's V3
+     *  (10 by 2) counts and its melding counts 3: druk. J3's V5 (2 by 2) does not count: not druk. */
+    @Test void een_genavigeerd_lid_naast_de_vouw_in_beide_volgordes() throws Exception {
+        String genavigeerd = vergelijking("greater", padlezing("telling", "Melding", "JutterHeeftMelding", "melding"),
+                getal("0"));
+        String vouwlid = vergelijking("greater", vouw(), getal("0"));
+        List<String> j1 = List.of(instantieMetRollen("J1", "Jutter", Map.of(), List.of(), Map.of("vondsten",
+                List.of("V1", "V2"), "melding", List.of("M1"))), vondst("V1", "10", "2"), vondst("V2", "9", "0"),
+                instantieMetRollen("M1", "Melding", Map.of("telling", "0"), List.of(), Map.of()));
+        List<String> j2 = List.of(instantieMetRollen("J2", "Jutter", Map.of(), List.of(), Map.of("vondsten",
+                List.of("V3"), "melding", List.of("M2"))), vondst("V3", "10", "2"),
+                instantieMetRollen("M2", "Melding", Map.of("telling", "3"), List.of(), Map.of()));
+        List<String> j3 = List.of(instantieMetRollen("J3", "Jutter", Map.of(), List.of(), Map.of("vondsten",
+                List.of("V5"), "melding", List.of("M3"))), vondst("V5", "2", "2"),
+                instantieMetRollen("M3", "Melding", Map.of("telling", "3"), List.of(), Map.of()));
+        Path vouwEerst = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0,
+                List.of(vouwlid, genavigeerd)))), List.of());
+        Path lidEerst = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0,
+                List.of(genavigeerd, vouwlid)))), List.of());
+        faalt(vouwEerst, TmsDocumenten.zaak(j1, List.of(consistent())), "drukte", "9");
+        gespeeld(lidEerst, TmsDocumenten.zaak(j1, List.of(verwacht("J1", "druk", false), consistent())));
+        for (Path ir : List.of(vouwEerst, lidEerst)) {
+            gespeeld(ir, TmsDocumenten.zaak(j2, List.of(verwacht("J2", "druk", true), consistent())));
+            gespeeld(ir, TmsDocumenten.zaak(j3, List.of(verwacht("J3", "druk", false), consistent())));
+        }
+    }
+
+    /** An instance as {@link TmsDocumenten#instantieMetRollen} writes it, with the dates of {@code datums} added. */
+    private static String metDatums(String instantie, Map<String, String> datums) {
+        List<String> d = new ArrayList<>();
+        datums.forEach((naam, iso) -> d.add("\"" + naam + "\":{\"date\":\"" + iso + "\"}"));
+        return instantie.contains("\"attributes\":{}")
+                ? instantie.replace("\"attributes\":{}", "\"attributes\":{" + String.join(",", d) + "}")
+                : instantie.replace("\"attributes\":{", "\"attributes\":{" + String.join(",", d) + ",");
+    }
+
+    /** "de eerste van de vinddatum van alle vondsten van de Jutter die {@link #FILTER} is later dan zijn peildatum"
+     *  beside "hij is actief", in both orders, on the exec-model branch; the DRL-text branch refuses a fold of dates in a
+     *  condition by name (measured 2026-10-09). J1 is not actief and its V2 divides 9 by 0: with the fold first the
+     *  composite faults, after "hij is actief" the fold is not read. J2 is actief, and its one contributor V3 was found
+     *  on 2026-01-05, later than its peildatum 2020-01-01. */
+    @Test void een_datumvouw_naast_een_lid_in_beide_volgordes() throws Exception {
+        String datumvouw = vergelijking("later", aggregatie("first", lezing("vinddatum", "Vondst"), "Vondst",
+                bronrol("aanmelding", "vondst"), FILTER, "null", DATUM, "de eerste van de vinddatum van alle vondsten van de"
+                        + " Jutter die aan de volgende voorwaarde voldoen"), lezing("peildatum", "Jutter"));
+        List<String> j1 = List.of(metDatums(jutter("J1", false, "0", "1", List.of("V1", "V2")), Map.of("peildatum",
+                "2020-01-01")), metDatums(vondst("V1", "10", "2"), Map.of("vinddatum", "2026-01-05")),
+                metDatums(vondst("V2", "9", "0"), Map.of("vinddatum", "2026-01-06")));
+        List<String> j2 = List.of(metDatums(jutter("J2", true, "0", "1", List.of("V3", "V4")), Map.of("peildatum",
+                "2020-01-01")), metDatums(vondst("V3", "10", "2"), Map.of("vinddatum", "2026-01-05")),
+                metDatums(vondst("V4", "3", "3"), Map.of("vinddatum", "2019-01-01")));
+        Path vouwEerst = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0,
+                List.of(datumvouw, check("actief", false))))), List.of());
+        Path actiefEerst = document(List.of(kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0,
+                List.of(check("actief", false), datumvouw)))), List.of());
+        assertEquals("DelingDoorNul: deling door nul in de regel \"drukte\": 9 gedeeld door 0 — een numerieke nul als"
+                + " deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
+                TmsFoutWitnessTest.speel(vouwEerst, TmsDocumenten.zaak(j1, List.of(consistent())), EXEC));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(actiefEerst, TmsDocumenten.zaak(j1,
+                List.of(verwacht("J1", "druk", false), consistent())), EXEC));
+        for (Path ir : List.of(vouwEerst, actiefEerst))
+            assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j2,
+                    List.of(verwacht("J2", "druk", true), consistent())), EXEC));
+    }
+
+    /** "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan 50", a fold
+     *  whose subselection cannot fault. */
+    static String zwaarVouw() {
+        return aggregatie("count", "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
+                + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", bronrol("aanmelding", "vondst"),
+                vergelijking("greater", lezing("gewicht", "Vondst"), getal("50")), "null", TELLING,
+                "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
+    }
+
+    /** "De zwaarte van een Jutter moet berekend worden als {@link #vouw()} indien hij aan alle volgende voorwaarden
+     *  voldoet: - {@link #zwaarVouw()} is groter dan 0", and the creation of a melding with that telling under that
+     *  condition: the value is read only where the condition holds, so the fold in the condition comes first. J1 has no
+     *  vondst above 50. J2's V6 (60 by 2) is above 50 and counts, its V4 (3 by 3) does not: 1. J4 has V6 and V2, so the
+     *  condition holds and the value divides 9 by 0. */
+    @Test void een_vouw_in_de_waarde_onder_een_vouw_in_de_voorwaarde() throws Exception {
+        String voorwaarde = samengesteld("all", 0, List.of(vergelijking("greater", zwaarVouw(), getal("0"))));
+        Path regel = document(List.of(rekenregel("zwaarte", "BEREKENING", "Jutter", "zwaarte", vouw(), voorwaarde)),
+                List.of());
+        Path creatie = document(List.of(MELDTELLING), List.of(creatie(vouw(), voorwaarde)));
+        String v6 = vondst("V6", "60", "2");
+        gespeeld(regel, TmsDocumenten.zaak(j1(false), List.of(waarde("J1", "zwaarte", null), consistent())));
+        gespeeld(creatie, TmsDocumenten.zaak(j1(false), List.of(waarde("J1", "meldtelling", null), consistent())));
+        List<String> j2 = List.of(jutter("J2", false, List.of("V6", "V4")), v6, vondst("V4", "3", "3"));
+        gespeeld(regel, TmsDocumenten.zaak(j2, List.of(waarde("J2", "zwaarte", "1"), consistent())));
+        gespeeld(creatie, TmsDocumenten.zaak(j2, List.of(waarde("J2", "meldtelling", "1"), consistent())));
+        List<String> j4 = List.of(jutter("J4", false, List.of("V6", "V2")), v6, vondst("V2", "9", "0"));
+        faalt(regel, TmsDocumenten.zaak(j4, List.of(consistent())), "zwaarte", "9");
+        faalt(creatie, TmsDocumenten.zaak(j4, List.of(consistent())), "meld", "9");
+    }
+
+    /** A subselection that divides by an attribute another rule writes on the element: "De deelnemers van een Vondst
+     *  moet berekend worden als zijn ploeg plus 1" beside "De zwaarte van een Jutter moet berekend worden als
+     *  {@link #vouw()}", and beside "Een Jutter is druk indien hij aan alle volgende voorwaarden voldoet: - het gewicht van
+     *  ten minste één van de vondsten van de Jutter die {@link #FILTER} is groter dan 5", each in both orders. The case
+     *  supplies deelnemers 10 and 3, which the rule overwrites with 2 and 1, so the fold reads 10 by 2 and 3 by 1: it
+     *  counts both, and V1, gewicht 10, holds the quantifier fold; the input values would count none and hold nothing. */
+    @Test void een_delend_filter_over_een_overschreven_deler_in_elke_regelvolgorde() throws Exception {
+        String deelnemers = rekenregel("deelnemers", "BEREKENING", "Vondst", "deelnemers",
+                binair("plus", lezing("ploeg", "Vondst"), getal("1")), "null");
+        List<String> instanties = List.of(jutter("J1", false, List.of("V1", "V2")),
+                instantieMetRollen("V1", "Vondst", Map.of("gewicht", "10", "ploeg", "1", "deelnemers", "10"), List.of(),
+                        Map.of()),
+                instantieMetRollen("V2", "Vondst", Map.of("gewicht", "3", "ploeg", "0", "deelnemers", "3"), List.of(),
+                        Map.of()));
+        String zwaarte = rekenregel("zwaarte", "BEREKENING", "Jutter", "zwaarte", vouw(), "null");
+        for (List<String> regels : TmsDocumenten.permutaties(List.of(deelnemers, zwaarte)))
+            gespeeld(document(regels, List.of()), TmsDocumenten.zaak(instanties,
+                    List.of(waarde("J1", "zwaarte", "2"), consistent())));
+        String drukte = kenmerkregel("drukte", "Jutter", "druk", samengesteld("all", 0, List.of(lid('K'))));
+        for (List<String> regels : TmsDocumenten.permutaties(List.of(deelnemers, drukte)))
+            gespeeld(document(regels, List.of()), TmsDocumenten.zaak(instanties,
+                    List.of(verwacht("J1", "druk", true), consistent())));
+    }
+
+    /** "De zwaarte van een Jutter moet berekend worden als zijn saldo gedeeld door zijn noemer indien hij aan alle
+     *  volgende voorwaarden voldoet: - {@link #zwaarVouw()} is groter dan 0 - hij is actief": "hij is actief" follows the
+     *  fold and goes on the subject bound again. The DRL-text branch's companion for a division by a leeg noemer reads
+     *  the condition's inline constraint and joins, so it takes the condition lowered without that move and still asks
+     *  "hij is actief". J5 is not actief and has no noemer: the rule does not fire and nothing is deposited. J6 is actief,
+     *  6 by 2: 3. J7 is actief and has no noemer: the division by leeg deposits. A guard of the move: on the branch before
+     *  it the companion read "hij is actief" as well; a companion fed the moved condition's inline deposits for J5
+     *  (mutant, measured 2026-10-09). */
+    @Test void een_begeleider_leest_de_voorwaarde_zonder_verplaatsing() throws Exception {
+        String deling = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + lezing("saldo", "Jutter") + ",\"right\":"
+                + lezing("noemer", "Jutter") + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":"
+                + "\"unspecified\"},\"source\":{\"snippet\":\"zijn saldo gedeeld door zijn noemer\"}}";
+        Path ir = document(List.of(rekenregel("zwaarte", "BEREKENING", "Jutter", "zwaarte", deling, samengesteld("all", 0,
+                List.of(vergelijking("greater", zwaarVouw(), getal("0")), check("actief", false))))), List.of());
+        String v6 = vondst("V6", "60", "2");
+        gespeeld(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("J5", "Jutter", Map.of("saldo", "6"), List.of(),
+                Map.of("vondsten", List.of("V6"))), v6), List.of(waarde("J5", "zwaarte", null), consistent())));
+        gespeeld(ir, TmsDocumenten.zaak(List.of(jutter("J6", true, "6", "2", List.of("V6")), v6),
+                List.of(waarde("J6", "zwaarte", "3"), consistent())));
+        gespeeld(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("J7", "Jutter", Map.of("saldo", "6"), List.of("actief"),
+                Map.of("vondsten", List.of("V6"))), v6), List.of(waarde("J7", "zwaarte", null),
+                TmsDocumenten.inconsistent("zwaarte", "J7"))));
+    }
+
+    /** "Een winterschuit van een Haven is een ligger van de Haven indien hij aan alle volgende voorwaarden voldoet:" with
+     *  the members "het aantal liggers van de Haven die aan de volgende voorwaarde voldoen: zijn lengte gedeeld door zijn
+     *  breedte is groter dan 2 is groter dan 0" and "de Haven veilig is", in both orders, read back through "het
+     *  wintertal van een Haven ... het aantal winterschuiten van de Haven": the condition of a fact creation's anchor.
+     *  H1 is not veilig and its S2 divides 9 by 0: with the fold first the composite faults, after "de Haven veilig is"
+     *  the fold is not read and H1 gets no winterschuit. H2 is veilig and its S3 (10 by 2) is its winterschuit. */
+    @Test void een_feitcreatie_leest_de_leden_van_haar_voorwaarde_in_volgorde() throws Exception {
+        String model = TmsDocumenten.model(List.of(
+                TmsDocumenten.objecttype("Haven", List.of(attribuut("wintertal", TELLING)), List.of("veilig")),
+                TmsDocumenten.objecttype("Schuit", List.of(attribuut("lengte", GEHEEL), attribuut("breedte", GEHEEL)),
+                        List.of())),
+                List.of(feittypeEenNaarVeel("thuisligging", "thuishaven", "Haven", "ligger", "Schuit", "liggers"),
+                        feittypeEenNaarVeel("winterberging", "winterhaven", "Haven", "winterschuit", "Schuit",
+                                "winterschuiten")));
+        String wintertal = rekenregel("wintertal", "BEREKENING", "Haven", "wintertal", aggregatie("count",
+                "{\"node\":\"AttributeReference\",\"attribute\":\"winterschuiten\",\"subjectType\":\"Haven\",\"source\":"
+                        + "{\"snippet\":\"winterschuiten van de Haven\"}}", "Schuit", bronrol("winterberging", "winterschuit"),
+                "null", "null", TELLING, "het aantal winterschuiten van de Haven"), "null");
+        String vouw = vergelijking("greater", aggregatie("count", "{\"node\":\"AttributeReference\",\"attribute\":"
+                + "\"liggers\",\"subjectType\":\"Haven\",\"source\":{\"snippet\":\"liggers van de Haven\"}}", "Schuit",
+                bronrol("thuisligging", "ligger"), vergelijking("greater", TmsFilterfoutWitnessTest.quotient(
+                        lezing("lengte", "Schuit"), lezing("breedte", "Schuit")), getal("2")), "null", TELLING,
+                "het aantal liggers van de Haven die aan de volgende voorwaarde voldoen"), getal("0"));
+        String veilig = check("veilig", false);
+        String h1 = instantieMetRollen("H1", "Haven", Map.of(), List.of(), Map.of("liggers", List.of("S1", "S2")));
+        String h2 = instantieMetRollen("H2", "Haven", Map.of(), List.of("veilig"), Map.of("liggers", List.of("S3")));
+        List<String> schuiten1 = List.of(instantieMetRollen("S1", "Schuit", Map.of("lengte", "10", "breedte", "2"),
+                List.of(), Map.of()), instantieMetRollen("S2", "Schuit", Map.of("lengte", "9", "breedte", "0"), List.of(),
+                Map.of()));
+        String s3 = instantieMetRollen("S3", "Schuit", Map.of("lengte", "10", "breedte", "2"), List.of(), Map.of());
+        for (List<String> leden : List.of(List.of(vouw, veilig), List.of(veilig, vouw))) {
+            String feitcreatie = "{\"node\":\"FactCreation\",\"name\":\"winterberging door de haven\",\"versions\":[{"
+                    + "\"factType\":\"winterberging\",\"anchorRole\":\"winterhaven\",\"targetRole\":\"winterschuit\","
+                    + "\"anchor\":\"Haven\",\"path\":[" + rolbinding("thuisligging", "ligger") + "],\"condition\":"
+                    + samengesteld("all", 0, leden) + ",\"validity\":{\"node\":\"Validity\"}}]}";
+            Path ir = Files.writeString(Files.createTempFile("filterfout-getuige", ".json"), "{\"format\":\"uchar-ir-v1\","
+                    + "\"model\":" + model + ",\"rules\":{\"rules\":[" + wintertal + "],\"dayKindDefinitions\":[],"
+                    + "\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":["
+                    + feitcreatie + "],\"startPointDeterminations\":[],\"ruleGroups\":[],\"prioritizedDefaults\":[]},"
+                    + "\"diagnostics\":[]}");
+            ir.toFile().deleteOnExit();
+            List<String> h1Zaak = new ArrayList<>(List.of(h1));
+            h1Zaak.addAll(schuiten1);
+            if (leden.get(0).equals(vouw)) faaltIn(ir, TmsDocumenten.zaak(h1Zaak, List.of(consistent())),
+                    "winterberging door de haven", "9", "rsGedeeld(lengte, breedte)");
+            else gespeeld(ir, TmsDocumenten.zaak(h1Zaak, List.of(waarde("H1", "wintertal", "0"), consistent())));
+            gespeeld(ir, TmsDocumenten.zaak(List.of(h2, s3), List.of(waarde("H2", "wintertal", "1"), consistent())));
+        }
+    }
+
+    /** {@code zaak} faults on both branches in a division by 0 of {@code deeltal} in rule {@code regel}: the exec-model
+     *  branch's named division, the DRL-text branch's exception for the constraint holding {@code quotient}. */
+    private static void faaltIn(Path ir, JsonNode zaak, String regel, String deeltal, String quotient) throws Exception {
+        assertEquals("DelingDoorNul: deling door nul in de regel \"" + regel + "\": " + deeltal + " gedeeld door 0 — een"
+                + " numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)",
+                TmsFoutWitnessTest.speel(ir, zaak, EXEC), "exec-model");
+        assertEquals("deling " + quotient, waarneming(ir, zaak, DRL), "drl-tekst");
+    }
+
+    // ---------------- a defaults group reads its defaults by priority ----------------
+
+    /** A defaults group on the zwaarte, the higher default "1 indien hij actief is" and below it {@code lager}. */
+    static Path defaultsgroep(String lager) throws Exception {
+        return TmsDocumenten.document(MODEL, List.of(), List.of(), List.of(TmsDocumenten.attribuutgroep("zwaarte basis",
+                "Jutter", "zwaarte", List.of(TmsDocumenten.standaard(check("actief", false), getal("1")), lager))));
+    }
+
+    /** The lower default "2 indien hij aan alle volgende voorwaarden voldoet: - {@link #vouw()} is groter dan 0", and
+     *  the lower default "{@link #vouw()} indien hij druk is": the reference interpreter reads a lower default only where
+     *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1), the exec-model branch folds every fold of the group on the
+     *  left-hand side of its rule, for every subject. Where the fold's subselection can fault the branch refuses the group
+     *  by name (the DRL-text branch refuses every defaults group). */
+    @Test void een_defaultsgroep_met_een_vouw_die_kan_falen_wordt_geweigerd() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(j1(true), List.of(waarde("J1", "zwaarte", "1"), consistent()));
+        for (String lager : List.of(
+                TmsDocumenten.standaard(samengesteld("all", 0, List.of(vergelijking("greater", vouw(), getal("0")))),
+                        getal("2")),
+                TmsDocumenten.standaard(check("druk", false), vouw()))) {
+            String exec = TmsFoutWitnessTest.speel(defaultsgroep(lager), zaak, EXEC);
+            assertTrue(exec.startsWith("Excluded: transpiler SKIP: defaults: ") && exec.contains("defaults (Jutter.zwaarte): ")
+                    && exec.contains("een deling ('zijn gewicht gedeeld door zijn deelnemers')"), exec);
+        }
+    }
+
+    /** The control: the lower default "2 indien … het aantal vondsten van de Jutter die aan de volgende voorwaarde
+     *  voldoen: zijn gewicht is groter dan 5 is groter dan 0", whose subselection cannot fault, is lowered as before. J1
+     *  is actief: 1. J2 is not, and its V3 weighs 10: 2. J3 is not, and its V5 weighs 4: the group decides nothing. */
+    @Test void een_defaultsgroep_met_een_vouw_die_niet_kan_falen_speelt() throws Exception {
+        String vijf = aggregatie("count", "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":"
+                + "\"Jutter\",\"source\":{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", bronrol("aanmelding", "vondst"),
+                vergelijking("greater", lezing("gewicht", "Vondst"), getal("5")), "null", TELLING,
+                "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen");
+        Path ir = defaultsgroep(TmsDocumenten.standaard(samengesteld("all", 0, List.of(vergelijking("greater", vijf,
+                getal("0")))), getal("2")));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(true),
+                List.of(waarde("J1", "zwaarte", "1"), consistent())), EXEC));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(List.of(jutter("J2", false,
+                List.of("V3")), vondst("V3", "10", "2")), List.of(waarde("J2", "zwaarte", "2"), consistent())), EXEC));
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(List.of(jutter("J3", false,
+                List.of("V5")), vondst("V5", "4", "4")), List.of(waarde("J3", "zwaarte", null), consistent())), EXEC));
+    }
+
+    // ---------------- a subselection that faults otherwise than by a division ----------------
+
+    /** A whole number in the unit {@code eenheid}. */
+    private static String inEenheid(String eenheid) {
+        return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
+                + "\"abbreviation\":\"" + eenheid + "\",\"canonical\":\"" + eenheid + "\",\"factorToCanonical\":{\"num\":1,"
+                + "\"den\":1}}}";
+    }
+
+    /** A Jutter with a vondsttal; a Vondst with a gewicht, deelnemers, a vinddatum, a wachttijd in nooitdagen, a termijn
+     *  in jaren, a jaar and a maand; and the day kind nooitdag, which no day is of. */
+    static final String MODEL_FAALBAAR = TmsDocumenten.model(List.of(
+            TmsDocumenten.objecttype("Jutter", List.of(attribuut("vondsttal", GEHEEL)), List.of("actief")),
+            TmsDocumenten.objecttype("Vondst", List.of(attribuut("gewicht", GEHEEL), attribuut("deelnemers", GEHEEL),
+                    attribuut("vinddatum", DATUM), attribuut("wachttijd", inEenheid("nooitdagen")),
+                    attribuut("termijn", inEenheid("jr")), attribuut("jaar", GEHEEL), attribuut("maand", GEHEEL)),
+                    List.of())),
+            List.of(feittypeEenNaarVeel("aanmelding", "aanmelder", "Jutter", "vondst", "Vondst", "vondsten")))
+            .replace("\"dayKinds\":[]", "\"dayKinds\":[{\"node\":\"DayKind\",\"name\":\"nooitdag\",\"plural\":"
+                    + "\"nooitdagen\"}]");
+
+    /** "Een dag is een nooitdag indien de dag uit de dag gelijk is aan 32". */
+    static final String NOOITDAG = "{\"node\":\"DayKindDefinition\",\"dayKind\":\"nooitdag\",\"condition\":{\"node\":"
+            + "\"Comparison\",\"op\":\"equal\",\"left\":{\"node\":\"BuiltinCall\",\"kind\":\"dayOf\",\"arguments\":[{\"node\":"
+            + "\"BoundDay\",\"type\":" + DATUM + ",\"source\":{\"snippet\":\"de dag\"}}],\"type\":" + TELLING + ",\"source\":"
+            + "{\"snippet\":\"de dag uit de dag\"}},\"right\":" + getal("32") + ",\"source\":{\"snippet\":\"de dag uit de dag"
+            + " gelijk is aan 32\"}},\"validity\":{\"node\":\"Validity\"}}";
+
+    /** "Het vondsttal van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende
+     *  voorwaarde voldoen: {@code filter}, indien hij actief is", in a document of {@link #MODEL_FAALBAAR}. */
+    static Path vondsttal(String filter) throws Exception {
+        String regel = rekenregel("vondsttal", "BEREKENING", "Jutter", "vondsttal", aggregatie("count",
+                "{\"node\":\"AttributeReference\",\"attribute\":\"vondsten\",\"subjectType\":\"Jutter\",\"source\":"
+                        + "{\"snippet\":\"vondsten van de Jutter\"}}", "Vondst", bronrol("aanmelding", "vondst"), filter,
+                "null", TELLING, "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen"),
+                check("actief", false));
+        String ir = "{\"format\":\"uchar-ir-v1\",\"model\":" + MODEL_FAALBAAR + ",\"rules\":{\"rules\":[" + regel
+                + "],\"dayKindDefinitions\":[" + NOOITDAG + "],\"objectCreations\":[],\"allocations\":[],"
+                + "\"consistencies\":[],\"uniquenesses\":[],\"factCreations\":[],\"startPointDeterminations\":[],"
+                + "\"ruleGroups\":[],\"prioritizedDefaults\":[]},\"diagnostics\":[]}";
+        Path tmp = Files.createTempFile("filterfout-getuige", ".json");
+        tmp.toFile().deleteOnExit();
+        return Files.writeString(tmp, ir);
+    }
+
+    /** A node of the wire with its source text. */
+    private static String knoop(String velden, String bron) {
+        return "{" + velden + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    }
+
+    /** The messages of {@code t} and its causes, joined. */
+    private static String oorzaken(Throwable t) {
+        StringBuilder b = new StringBuilder();
+        for (Throwable o = t; o != null; o = o.getCause() == o ? null : o.getCause()) b.append(o.getMessage()).append(" <- ");
+        return b.toString();
+    }
+
+    /** Each operation on the closed list of {@code kern.Faalbaar} other than the division, in the subselection of a fold
+     *  under "indien hij actief is", on a Jutter that is not actief, whose one vondst makes the operation fault: a step of
+     *  one nooitdag, which no day is of; a step of 2 000 000 000 jaren; zijn gewicht 0 to the power -1; the date of
+     *  maand 13; the Rekenjaar of a case without an evaluation date; the eerste paasdag of the year 2 000 000 000. The
+     *  reference interpreter does not evaluate the fold and answers (measured 2026-10-09); both branches tested the
+     *  subselection on the element's pattern and faulted, the DRL-text branch for all six, the exec-model branch for
+     *  the three it lowers in a subselection (it refuses the date of parts, the Rekenjaar and the paasdag there by name).
+     *  Where J1 is actief, the reference interpreter faults on the day-kind walk and on the Rekenjaar too, and so do
+     *  both branches, with the runtime's sentence in the cause chain; for the other four it answers or crashes where
+     *  this backend faults (reported with the fix round, not pinned here). */
+    @Test void een_filter_dat_anders_dan_door_een_deling_faalt() throws Exception {
+        String vinddatum = lezing("vinddatum", "Vondst");
+        Map<String, String> filters = new java.util.LinkedHashMap<>();
+        filters.put("dagsoortstap", vergelijking("later", knoop("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
+                + ",\"right\":" + lezing("wachttijd", "Vondst") + ",\"type\":" + DATUM, "zijn vinddatum plus zijn wachttijd"),
+                vinddatum));
+        filters.put("datumbereik", vergelijking("later", knoop("\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + vinddatum
+                + ",\"right\":" + lezing("termijn", "Vondst") + ",\"type\":" + DATUM, "zijn vinddatum plus zijn termijn"),
+                vinddatum));
+        filters.put("macht", vergelijking("greater", knoop("\"node\":\"Rounding\",\"base\":" + knoop("\"node\":\"Binary\","
+                + "\"op\":\"power\",\"left\":" + lezing("gewicht", "Vondst") + ",\"right\":" + lezing("deelnemers", "Vondst")
+                + ",\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}",
+                "zijn gewicht tot de macht zijn deelnemers") + ",\"mode\":\"floor\",\"decimals\":0,\"type\":" + GEHEEL,
+                "zijn gewicht tot de macht zijn deelnemers naar beneden afgerond op 0 decimalen"), getal("2")));
+        filters.put("datum met", vergelijking("later", knoop("\"node\":\"BuiltinCall\",\"kind\":\"dateWith\","
+                + "\"arguments\":[" + lezing("jaar", "Vondst") + "," + lezing("maand", "Vondst") + "," + getal("1") + "],"
+                + "\"type\":" + DATUM, "de datum met jaar: zijn jaar, maand: zijn maand en dag: 1"), vinddatum));
+        filters.put("rekenjaar", vergelijking("greater", knoop("\"node\":\"ContextValue\",\"name\":\"evaluationYear\","
+                + "\"type\":" + GEHEEL, "het Rekenjaar"), lezing("gewicht", "Vondst")));
+        filters.put("paasdag", vergelijking("later", knoop("\"node\":\"BuiltinCall\",\"kind\":\"easterSunday\","
+                + "\"arguments\":[" + lezing("jaar", "Vondst") + "],\"type\":" + DATUM, "de eerste paasdag van zijn jaar"),
+                vinddatum));
+        Map<String, Map<String, String>> getallen = Map.of(
+                "dagsoortstap", Map.of("wachttijd", "1"), "datumbereik", Map.of("termijn", "2000000000"),
+                "macht", Map.of("gewicht", "0", "deelnemers", "-1"), "datum met", Map.of("jaar", "2026", "maand", "13"),
+                "rekenjaar", Map.of("gewicht", "10"), "paasdag", Map.of("jaar", "2000000000"));
+        java.util.Set<String> inExec = java.util.Set.of("dagsoortstap", "datumbereik", "macht");
+        Map<String, String> fout = Map.of("dagsoortstap", "day-kind walk: no day of the kind within 40000 calendar days",
+                "rekenjaar", "the evaluationYear context value needs an evaluation date");
+        List<String> afwijkend = new ArrayList<>();
+        for (Map.Entry<String, String> f : filters.entrySet()) {
+            Path ir = vondsttal(f.getValue());
+            String v1 = metDatums(instantieMetRollen("V1", "Vondst", getallen.get(f.getKey()), List.of(), Map.of()),
+                    Map.of("vinddatum", "2026-01-05"));
+            for (DroolsBackend.Branch tak : inExec.contains(f.getKey()) ? List.of(EXEC, DRL) : List.of(DRL)) {
+                String niet = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("J1", "Jutter",
+                        Map.of(), List.of(), Map.of("vondsten", List.of("V1"))), v1),
+                        List.of(waarde("J1", "vondsttal", null), consistent())), tak);
+                if (!niet.equals("gespeeld")) afwijkend.add(f.getKey() + " " + tak + " niet actief: " + niet);
+                if (!fout.containsKey(f.getKey())) continue;
+                JsonNode actief = TmsDocumenten.zaak(List.of(instantieMetRollen("J1", "Jutter", Map.of(),
+                        List.of("actief"), Map.of("vondsten", List.of("V1"))), v1), List.of(consistent()));
+                try {
+                    String v = CaseRunner.speelCase(ir, actief, tak);
+                    afwijkend.add(f.getKey() + " " + tak + " actief: geen fout maar " + (v == null ? "gespeeld" : v));
+                } catch (RuntimeException e) {
+                    if (!oorzaken(e).contains(fout.get(f.getKey())))
+                        afwijkend.add(f.getKey() + " " + tak + " actief: " + oorzaken(e));
+                }
+            }
+        }
+        assertEquals(List.of(), afwijkend);
     }
 }

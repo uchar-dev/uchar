@@ -1491,22 +1491,23 @@ public final class ExecModelTranspiler {
      *  matrix needs no pattern of its own: a changed tuple in the source makes the accumulate pass its result on
      *  again. While the subselection lowers, its navigated reads are the {@link #gejoindeLezingen}, so a chain lowers
      *  there as it does in a condition. A test that reads through no role stays on the element pattern, unchanged —
-     *  unless the subselection divides ({@link #deelt}). Drools runs a test on the element's pattern for every element
-     *  of the type as it is inserted, whether or not a form reaches the fold, while the reference interpreter evaluates
-     *  the subselection only where the evaluation of a form reaches the fold: where its condition holds, and within a
-     *  composite only up to the member after which the verdict stands (RUNTIME-SEMANTICS ch. 5.10), and then only for
-     *  the members of that subject's range. A division by a numeric zero there is a fault (ch. 1.4, point 4), so on the
-     *  element's pattern it faulted where the reference interpreter answers. Such a subselection goes on the element
-     *  bound again, as above: in the source of the accumulate that pattern is evaluated per tuple that reaches the
-     *  accumulate, and only for the elements joined to that tuple's subject. null where the subselection does not
-     *  lower, or a hop has no bean field ({@link #navReden}). */
+     *  unless the subselection can fault ({@link #kanFalen}). Drools runs a test on the element's pattern for every
+     *  element of the type as it is inserted, whether or not a form reaches the fold, while the reference interpreter
+     *  evaluates the subselection only where the evaluation of a form reaches the fold: where its condition holds, and
+     *  within a composite only up to the member after which the verdict stands (RUNTIME-SEMANTICS ch. 5.10), and then
+     *  only for the members of that subject's range. A fault there ends the evaluation (a division by a numeric zero,
+     *  ch. 1.4, point 4; the day-kind walk past its reach, ch. 3.8), so on the element's pattern it faulted where the
+     *  reference interpreter answers. Such a subselection goes on the element bound again, as above: in the source of
+     *  the accumulate that pattern is evaluated per tuple that reaches the accumulate, and only for the elements joined
+     *  to that tuple's subject. An element pattern that keeps no test then gets the opaque always-true one: a pattern
+     *  without a constraint reacts to no update, and an update of the element reaches the moved test only through it.
+     *  null where the subselection does not lower, or a hop has no bean field ({@link #navReden}). */
     private record Elementtoets(PatternDSL.PatternDef src, List<org.drools.model.view.ViewItem<?>> ver) {}
 
-    /** Whether {@code filter} divides: a quotient is the one operation of a subselection that faults on this branch,
-     *  where its divisor is a numeric zero ({@code Breuk.delen}). */
-    private static boolean deelt(Conditie filter) {
-        return Conditie.bevatOperand(filter, e -> e instanceof Expr.Binair b
-                && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS));
+    /** Whether {@code c} holds an operation that can end the evaluation with a fault, the closed list of
+     *  {@link dev.uchar.regelspraak.transpiler.kern.Faalbaar}, a date operand read from the declarations. */
+    private boolean kanFalen(Conditie c) {
+        return dev.uchar.regelspraak.transpiler.kern.Faalbaar.plek(c, this::isDatum) != null;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1518,7 +1519,7 @@ public final class ExecModelTranspiler {
         navRefs(matrix, elem, refs, hops);
         List<PatternDSL.PatternDef> joins = refs.isEmpty() && hops.isEmpty() ? List.of() : verreJoins(refs, hops, elem, elemVar);
         if (joins == null) return null;
-        if (joins.isEmpty() && !deelt(filter)) {
+        if (joins.isEmpty() && !kanFalen(filter)) {
             if (filter == null) return new Elementtoets(src, List.of());
             PatternDSL.PatternDef gefilterd = filterSource(src, filter, elem);
             return gefilterd == null ? null : new Elementtoets(gefilterd, List.of());
@@ -1539,6 +1540,7 @@ public final class ExecModelTranspiler {
             if (toets == null) return null;
             ver.add(toets);
         }
+        if (zonderToets(src)) src = src.expr(nextId("fresh"), (Predicate1) (e -> true));
         return new Elementtoets(src, ver);
     }
 
@@ -3818,19 +3820,48 @@ public final class ExecModelTranspiler {
         return new Gate(pattern.expr(nextId("fresh"), (Predicate1) (s -> true)), extra);
     }
 
+    /** RUNTIME-SEMANTICS ch. 5.10, the ALLE / DE composite: its members are read in wire order, and a member after one
+     *  that does not hold is never read, so a fault in it does not happen. A member's tests go on the pattern it is
+     *  lowered on, its separate items (the accumulate of a fold and its comparison, an exists) follow that pattern in
+     *  the rule, and Drools tests a pattern's constraints before the items after it. On the subject's pattern alone, a
+     *  test of a later member therefore ran before the fold of an earlier one: it faulted where the fold had already
+     *  settled the composite, and the fold was not evaluated where that later test did not hold, so a fault in its
+     *  subselection did not happen. The members after the first one with separate items go on the subject bound again
+     *  from its variable, a new pattern after each such member's items: Drools evaluates such a pattern per tuple that
+     *  reaches it, so the members are tested in their order and only where every member before them holds. The subject
+     *  pattern stays class-reactive where tests left it: a pattern without a constraint reacts to no update, and an
+     *  update of the subject reaches the moved tests only through it. A later member's joins and accumulates still name
+     *  {@code subjectVar}, the same object. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Gate conjunctie(Conditie.Samengesteld s, PatternDSL.PatternDef pattern, Objecttype subject,
+                            Variable subjectVar) {
+        List<RuleItemBuilder<?>> extra = new ArrayList<>();
+        PatternDSL.PatternDef huidig = pattern;     // the pattern the next member's tests go on
+        boolean opnieuw = false;                    // huidig is the subject bound again, not yet among the items
+        boolean verplaatst = false;                 // a test went on such a pattern
+        for (Conditie sub : s.onderdelen()) {
+            Gate g = voorwaarde(sub, huidig, subject, subjectVar);
+            if (g == null) return null;
+            huidig = g.pattern();
+            if (g.extra().isEmpty()) continue;
+            if (!opnieuw) pattern = huidig;
+            else if (!zonderToets(huidig)) { extra.add(huidig); verplaatst = true; }
+            extra.addAll(g.extra());
+            huidig = PatternDSL.pattern(DSL.declarationOf((Class) subjectVar.getType(), "$lid_" + (seq++),
+                    DSL.from(subjectVar)));
+            opnieuw = true;
+        }
+        if (!opnieuw) return new Gate(huidig, extra);
+        if (!zonderToets(huidig)) { extra.add(huidig); verplaatst = true; }
+        if (verplaatst && zonderToets(pattern)) pattern = pattern.expr(nextId("fresh"), (Predicate1) (o -> true));
+        return new Gate(pattern, extra);
+    }
+
     private Gate voorwaarde(Conditie c, PatternDSL.PatternDef pattern, Objecttype subject, Variable subjectVar) {
         if (c instanceof Conditie.Samengesteld s) {
-            // §13.4.14 ALLE / DE: AND its parts as successive in-pattern constraints; carry up far-side joins.
-            if (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE) {
-                List<RuleItemBuilder<?>> extra = new ArrayList<>();
-                for (Conditie sub : s.onderdelen()) {
-                    Gate g = voorwaarde(sub, pattern, subject, subjectVar);
-                    if (g == null) return null;
-                    pattern = g.pattern();
-                    extra.addAll(g.extra());
-                }
-                return new Gate(pattern, extra);
-            }
+            // §13.4.14 ALLE / DE: AND its parts as successive constraints; carry up far-side joins.
+            if (s.kwantor() == Conditie.Kwantor.ALLE || s.kwantor() == Conditie.Kwantor.DE)
+                return conjunctie(s, pattern, subject, subjectVar);
             // WF-112's composite arm: a window under GEEN or a counting quantifier, at any depth. The fact-only
             // fold below cannot bind the rekendatum and would decline anyway, but only by the generic scope note;
             // the position is ill-formed, and says so in the sentence the DRL-text branch gives too.
@@ -8363,6 +8394,19 @@ public final class ExecModelTranspiler {
         for (PrioritizedDefaults l : members)
             if (l.geldigheid() != null && !l.geldigheid().altijd())
                 return skipList("defaults (gedateerde geldigheid op " + targetForm + " — defaults-vensters niet gedragen)");
+        // fence: a fold whose subselection can fault. The reference interpreter reads the defaults by priority and a
+        // justification only up to the member after which its verdict stands, so a lower default's fold is not
+        // evaluated where a higher one decides (RUNTIME-SEMANTICS ch. 7.1, 5.10). This rule folds every fold of the group
+        // on its left-hand side, for every subject, before the consequence reads the defaults: a fault in such a
+        // subselection ended the session where the reference interpreter answers. Evaluating a fold only when the
+        // consequence reaches it has no place in this lowering, so the form is refused.
+        for (PrioritizedDefaults l : members) {
+            String plek = falendeVouw(l.defaults());
+            if (plek != null)
+                return skipList("defaults (" + targetForm + "): een vouw waarvan de subselectie een fout kan geven, "
+                        + plek + ": deze tak vouwt elke vouw van de groep op de linkerkant van haar regel, ook waar een"
+                        + " hogere default beslist (RUNTIME-SEMANTICS ch. 7.1, 5.10)");
+        }
 
         seq = 0;
         Variable sVar = DSL.declarationOf(factClass, "$subject");
@@ -8834,6 +8878,36 @@ public final class ExecModelTranspiler {
             };
         }
         return leafPredicate(c, subject);
+    }
+
+    /** The first operation that can fault ({@link dev.uchar.regelspraak.transpiler.kern.Faalbaar}) in the subselection
+     *  of a fold in {@code defaults} — in their justifications and consequences, their exception groups included — or
+     *  null where there is none. */
+    private String falendeVouw(List<Default> defaults) {
+        for (Default d : defaults) {
+            String[] plek = { null };
+            java.util.function.Predicate<Expr> vouw = x -> (plek[0] = vouwfout(x)) != null;
+            if (Conditie.bevatOperand(d.voorwaarde(), vouw) || Expr.bevat(d.consequentie(), vouw)) return plek[0];
+            if (d.excepties() != null)
+                for (ExceptionGroup g : d.excepties().leden()) {
+                    String p = falendeVouw(g.defaults());
+                    if (p != null) return p;
+                }
+        }
+        return null;
+    }
+
+    /** The first operation that can fault in the subselection of {@code x}, a fold over a set source or an instance-set
+     *  union, or null. */
+    private String vouwfout(Expr x) {
+        if (x instanceof Expr.Functie f && heeftBereik(f) && f.filter() != null)
+            return dev.uchar.regelspraak.transpiler.kern.Faalbaar.plek(f.filter(), this::isDatum);
+        if (x instanceof Expr.InstanceSetUnion u)
+            for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+                String p = dev.uchar.regelspraak.transpiler.kern.Faalbaar.plek(t.filter(), this::isDatum);
+                if (p != null) return p;
+            }
+        return null;
     }
 
     /** Whether the one §9.5 site of a defaults consequence is the consequence itself, under at most a rounding: a

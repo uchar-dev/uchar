@@ -539,8 +539,9 @@ public final class DroolsBackend {
      *  division by a numeric zero in it is in the cause chain already named after the rule, with the operands: that
      *  {@link Breuk.DelingDoorNul} is returned, with the division as {@link Breuk#delen} threw it as its cause. Any
      *  other {@code e} is returned unchanged. The DRL-text branch throws Drools' own MVEL exception, which names the
-     *  condition and the rule, and does not come here; for the subselection of a fold that divides, which that branch
-     *  tests on the element bound again in the source of the accumulate, Drools names no rule. */
+     *  condition and the rule, and does not come here; for the subselection of a fold that can fault
+     *  ({@code kern.Faalbaar}), which that branch tests on the element bound again in the source of the accumulate,
+     *  Drools names no rule. */
     public static RuntimeException benoem(ConstraintEvaluationException e) {
         for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
             if (t instanceof Breuk.DelingDoorNul nul && nul.regel() != null) return nul;
