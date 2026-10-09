@@ -45,8 +45,12 @@ class TmsCorpusWitnessTest {
      *
      *  <p>Raised from 66 to 120 on purpose (card tms-aggregaties-creatie-en-fouten, acceptance (b)), measured
      *  2026-10-08 through this test after the branch took on aggregations, object and fact creation and faults as
-     *  facts: 120 of the 292 goldens with cases play, none FAILs. */
-    private static final int EXPECTED_MIN_PLAYED = 120;
+     *  facts: 120 of the 292 goldens with cases play, none FAILs.
+     *
+     *  <p>Raised from 120 to 171 on purpose (card tms-expressievormen-en-rekendatum, step 1, acceptance (b)), measured
+     *  2026-10-09 through this test after the branch took on the value forms, the evaluation date and the faults of
+     *  date arithmetic as facts: 171 of the 294 goldens with cases play, none FAILs. */
+    private static final int EXPECTED_MIN_PLAYED = 171;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
