@@ -98,10 +98,12 @@ that cost in rules, firings and control facts. The measurements are in that card
 tree produces them, and its javadoc says how to run it. On them the owner decided to build the branch out into the
 replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The first,
 `tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
-facts; its `Result:` gives the measurements and the count of the corpus per family. It is no gate path yet: gate 12
+facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
+`tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date and the faults of date arithmetic as
+facts (below); the condition forms and the writers of that card follow. It is no gate path yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 120 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 171 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -137,24 +139,50 @@ branches the call does nothing, so a consumer that fires a KieBase itself can ca
 must not fire again afterwards: the beans then hold values the network never saw arrive.
 
 **Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
-and a fault, like a value, belongs to the fixpoint (ch. 5.2). This branch has no strata and passes intermediate states
+and so is every fault of `Rekenfout`: a date step or a duration count outside the range of ch. 3.8, a context value
+or a validity window in a session without an evaluation date (ch. 8.1, 8.2), an `Unresolved` node the evaluation
+reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole,
+dateWith over parts that name no day), and an irrational square root without a rounding (ch. 2.2), where the
+reference interpreter computes a rational one exactly. A fault, like a value, belongs to the fixpoint (ch. 5.2; PLAN §9,
+2026-10-09, "Faults and deposits count at the fixpoint"). This branch has no strata and passes intermediate states
 the reference interpreter does not see, such as a divisor a lower default set to 0 before a higher one decides, and a
 fault thrown out of the fire there could not be withdrawn when the state passes. So no consequence throws an
 evaluation fault: the consequence that computes a value inserts the fault logically as a `Fout`, in place of the value,
 and the fault goes when a read it rested on changes. A condition is tested in the left-hand side, where Drools cannot
 take an exception as a fact; there the test answers that the condition does not hold where it faults, and a rule of the
 form's own, `<rule>: fout in de voorwaarde`, with the same left-hand side and the test that the condition faults,
-inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one as the
-`DelingDoorNul` the exec-model branch's fire gives through `DroolsBackend.benoem`, with the same sentence ("deling door
-nul in de regel "aandeel": 100 gedeeld door 0 — …"), two or more as `Evaluatiefouten`, ordered by the name of the form
+inserts the `Fout`. The write-back reports the faults that stand at the fixpoint before it writes anything: one division
+as the `DelingDoorNul` the exec-model branch's fire gives through `DroolsBackend.benoem`, with the same sentence
+("deling door nul in de regel "aandeel": 100 gedeeld door 0 — …"), one other fault as its `Rekenfout`, named after
+the rule and in the reference interpreter's sentence wherever that executor names the fault ("fout in de regel
+"meldtermijn": duration count … is out of range"), two or more as `Evaluatiefouten`, ordered by the name of the form
 and then by the sentence, so the report does not depend on the order of the rules. That message opens with a head that
 names the rule of every fault ("aan het fixpunt staan 2 evaluatiefouten, in de regels "aandeel", "verhouding""), and
 the CLI's ERROR line bounds only the sentences after it, so no fault drops off the line. A consumer that fires a
 KieBase of this branch itself meets the fault at `zetAfgeleideWaarden`, not out of `fireAllRules`. Witnesses
-`TmsFoutWitnessTest` and `TmsVoorwaardefoutWitnessTest`. Other exceptions are no evaluation fault and still leave the
-fire: a broken contract, a bug, and also a date step past the range of `java.time`, which the shared runtime throws as a
-`DateTimeException`; that range is not the one RUNTIME-SEMANTICS ch. 3.8 names, so the branch does not take it for the
-fault of that chapter.
+`TmsFoutWitnessTest`, `TmsVoorwaardefoutWitnessTest` and, for the date faults, `TmsDatumfoutWitnessTest`, among them a
+duration count that lies outside the range only on an intermediate state, where the branch threw out of the fire
+until 2026-10-09. Other exceptions are no evaluation fault and still leave the fire: a broken contract and a bug.
+
+**Value forms and the evaluation date.** A `Let` binds its binder as a need (RUNTIME-SEMANTICS ch. 10.6): the value is
+evaluated at the first read and kept for every further one, a read of a leeg value ends that `Let` alone with leeg,
+and a binder the body does not read evaluates nothing, so it faults and deposits nothing. An `IfThenElse` evaluates
+the branch its condition chooses and nothing of the other (ch. 10.2). Both bind every read of both branches and of a
+binder's value in the left-hand side all the same, so truth maintenance follows each value the evaluation may need.
+Which §6.5 or §6.6 place deposits therefore depends on the evaluation itself: the consequence of a computing rule
+puts a probe (`Sonde`) in its value array, and every place that qualifies reports to it where it runs. Rounding,
+clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
+whole exponent, the restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
+exact-digit tests compute through the runtime's helpers, as the exec-model branch computes them, from bound values;
+for the last three and the sub-day extractors, dateWith and dateTimeWith, which the reference interpreter declines
+(ch. 5.11), the exec-model branch is the only other executor. The evaluation date is the fact `Rekendatum`, put in
+working memory once per session from the global `rekendatum` the case runner sets, with a null date in a time-free
+session. A version with a bounded validity gates on it with a pattern that admits the date (ch. 8.2) and beside it a
+rule inserts the fault where the session carries no date, as the reference interpreter faults when it evaluates the
+form, with or without a subject; a defaults group with a dated validity gates its own chain the same way and faults
+per object of the stack's type, where the reference interpreter asks the group's window. A `TimeWindow` on a scalar
+target and the context values `evaluationDate` and `evaluationYear` read the date as a bound value. Witnesses
+`TmsLetWitnessTest`, `TmsRekenvormWitnessTest`, `TmsBuiltinWitnessTest` and `TmsRekendatumWitnessTest`.
 
 **Aggregations.** A fold over a set source (`count`, `filledCount`, `sum` with its `emptyFallback`, a `total` over
 members that are not time-dependent, `minimum`, `maximum`, `first`, `last`) is an accumulate in the left-hand side of
@@ -279,19 +307,26 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them built-in calls and quantifier folds, role membership, `Let` and
-  `IfThenElse`, allocation, uniqueness, day kinds, timelines (a total over the subject's own timeline or over a
-  time-dependent member among them), time windows and dimensions (a fold over a dimension selection among them);
+- the forms outside the trial, among them quantifier folds, role membership, an instance-set union as a value,
+  allocation, uniqueness, day kinds (a duration counted in a day kind and the dayKind predicate among them),
+  timelines (a total over the subject's own timeline or over a time-dependent member, the bucketing builtins
+  timeProportionalPart and dayCount, and wholePeriod among them), and a dimensioned attribute over a path or one a
+  form writes;
 - the creations it does not build yet: an object creation without a `connectingRole`, whose relation would follow from
   the pair of types, or with a back-link that is ambiguous (the exec-model branch faults there at fire), a created
-  relation that is not one of two roles, a division in a member initialisation, whose §6.5 deposit the branch does
-  not make, a fold whose range of more than one step goes over a created relation, and a fold whose filter can fault
-  over a created relation, whose made links have no place in the fold order;
+  relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
+  deposit the branch does not make, a fold whose range of more than one step goes over a created relation, and a fold
+  whose filter can fault over a created relation, whose made links have no place in the fold order;
 - the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many;
-- the forms not built yet, among them rounding, clamp, text composition, `power` and `percentageOf`, percentages, and
-  a version or a defaults group with a bounded validity (the branch binds no evaluation date yet);
+- the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
+  composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
+  ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
+  that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112), in
+  the sentence of the other two branches;
+- a parameter whose Java name is `rekendatum` beside a form that reads the evaluation date, since the case runner sets
+  the date under that name;
 - what the design cannot carry: two computing rules or two initialisations on one target, which the exec-model branch
   settles by agenda order (WF-079); a rule beside a defaults group of its type on its target (WF-050); a computing
   rule on a target outside the standing domain, where a computed leeg would have to empty the target (ch. 7.8); and a
@@ -300,7 +335,8 @@ built, never as a silent fall:
   default displaces, so a division by zero there is a fault on an intermediate state, which the branch withdraws once
   the default is displaced; whether such a fault counts waits on a decision of the norm (ch. 5.2, 5.4, 7.1, 7.7; card
   `fout-op-tussenstand`, where the reference interpreter gives the fault or the value of an initialisation beside
-  another writer depending on the order of the rules);
+  another writer depending on the order of the rules); and a square root in a default, whose §6.6 deposit a default
+  makes only where it decides (ch. 7.1);
 - every cycle of the dependency graph that the verifier refuses, refused by `Kringen` with a `tms:` sentence over the
   verifier's own graph (`checks.ml`, the nodes of IR-SPEC ch. 5.1: attribute, characteristic, channel, population,
   relation): a cycle that does not pass through a creation member of a recursive rule group (WF-045), and a negative
