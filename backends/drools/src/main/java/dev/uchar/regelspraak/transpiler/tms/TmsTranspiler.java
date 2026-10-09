@@ -3615,16 +3615,17 @@ public final class TmsTranspiler {
      * ({@code rsTijdKnipNiet}); a flat {@code all} of such checks, which clips by each in turn, the intersection of
      * their true periods; and a comparison of an own attribute on a timeline with a value, whose true periods are the
      * segments of that timeline whose value satisfies it ({@code rsTijdConditie}), where a leeg segment and a leeg bound
-     * satisfy no ordering and no equality. The fragments are kept apart, never coalesced, so a clip that splits one
+     * satisfy no ordering. The fragments are kept apart, never coalesced, so a clip that splits one
      * whole unit loses it. Every characteristic's true periods are bound off the bean ({@link Lezingen#tijdlijn}), the
      * compared timeline through its standing where a form writes it, and the bound like any value of the rule.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
-     * ordering, units that differ between the two sides, and the comparison "ongelijk aan": the runtime's
-     * {@code rsTijdConditie} reads a gap in the compared timeline as no period, where ch. 3.6 and the reference
-     * interpreter read it as leeg, which satisfies "ongelijk aan" against a filled bound (ch. 3.6, the worked example
-     * of 500,00); no golden has it.
+     * ordering, units that differ between the two sides, and the comparisons "gelijk aan" and "ongelijk aan": the
+     * runtime's {@code rsTijdConditie} reads an empty side, a gap in the compared timeline or a leeg bound, as no
+     * period, where ch. 3.6 and the reference interpreter apply the comparison of ch. 1.2 per period, so that two leeg
+     * sides are equal and exactly one leeg side is unequal (ch. 3.6, the worked example of 500,00); no golden has
+     * either.
      */
     private Knip knip(Conditie c, Lezingen lez, String wat) {
         if (c instanceof Conditie.Kenmerk k) {
@@ -3667,11 +3668,14 @@ public final class TmsTranspiler {
         Integer toets = Tijdrekening.toets(v.op());
         if (toets == null)
             throw new Weigering(wat + " met een datumvergelijking in de knip ('" + snippet(v) + "'): " + NOG_NIET);
-        if (v.op() == Conditie.Operator.ONGELIJK)
-            throw new Weigering(wat + " met 'ongelijk aan' in de knip ('" + snippet(v) + "'): " + NOG_NIET + "; de"
-                    + " rekenhulp rsTijdConditie leest een gat in de vergeleken tijdlijn als geen periode, waar"
-                    + " RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter het als leeg lezen, dat 'ongelijk aan' een"
-                    + " gevulde grens vervult; geen golden met cases heeft het");
+        // an ordering with a leeg side holds nowhere, in ch. 1.2 and in that helper alike; the equalities differ
+        if (v.op() == Conditie.Operator.GELIJK || v.op() == Conditie.Operator.ONGELIJK)
+            throw new Weigering(wat + " met '" + (v.op() == Conditie.Operator.GELIJK ? "gelijk aan" : "ongelijk aan")
+                    + "' in de knip ('" + snippet(v) + "'): " + NOG_NIET + "; de rekenhulp rsTijdConditie leest een"
+                    + " lege kant, een gat in de vergeleken tijdlijn of een lege grens, als geen periode, waar"
+                    + " RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de vergelijking van ch. 1.2 per periode"
+                    + " toepassen: twee lege kanten zijn gelijk, en precies één lege kant is ongelijk; geen golden met"
+                    + " cases heeft het");
         if (!(v.links() instanceof Expr.AttribuutRef a) || a.attribuut() == null || a.objecttype() != lez.subject
                 || navigatieBindingen.containsKey(a))
             throw new Weigering(wat + " met een vergelijking in de knip waarvan de linkerkant geen eigen"
