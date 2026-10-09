@@ -9,6 +9,9 @@
         "attributes": {
           "rang": {
             "number": "1"
+          },
+          "ketennummer": {
+            "number": "1"
           }
         },
         "roles": {},

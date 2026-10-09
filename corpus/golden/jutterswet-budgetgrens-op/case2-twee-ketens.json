@@ -9,6 +9,9 @@
         "attributes": {
           "rang": {
             "number": "1"
+          },
+          "ketennummer": {
+            "number": "1"
           }
         },
         "roles": {},
@@ -20,6 +23,9 @@
         "attributes": {
           "rang": {
             "number": "1"
+          },
+          "ketennummer": {
+            "number": "2"
           }
         },
         "roles": {},
@@ -48,6 +54,14 @@
     {
       "kind": "inconsistent",
       "rule": "rangplafond"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eerste keten aan het plafond"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "tweede keten aan het plafond"
     }
   ]
 }

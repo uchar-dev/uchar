@@ -32,8 +32,9 @@ branch have no creation budget, only a cap of 100 000 firings: they make all
 model without faulting`, and `scripts/check-rood.sh` lists the case with that
 reason, as it lists `finite-chain-over-budget` (measured 2026-10-09).
 
-The case keeps the golden's rule and consistency; the fault comes before
-either is observed. On the code before the cards
+The case keeps the golden's rule and its three consistencies, and W1 has
+ketennummer 1 as in the golden's first case; the fault comes before any of
+them is observed. On the code before the cards
 `creatie-initialisatie-leest-groeiende-waarde` and
 `creatiebudget-ref-en-clingo` both OCaml executors faulted here as well (main
 `8beff67a`: ref `no fixpoint within 100 passes`, clingo `generation budget

@@ -20,6 +20,16 @@
           },
           {
             "node": "Attribute",
+            "name": "ketennummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "opvolgerrang",
             "datatype": {
               "node": "Number",
@@ -150,6 +160,19 @@
                   }
                 },
                 "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "ketennummer",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "ketennummer",
+                  "subjectType": "Wachter",
+                  "source": {
+                    "snippet": "het ketennummer van de Wachter"
+                  }
+                },
+                "characteristic": false
               }
             ],
             "condition": {
@@ -237,7 +260,179 @@
             },
             "source": {
               "snippet": "De rang van een Wachter moet kleiner zijn dan 101",
-              "line": 16
+              "line": 17
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "eerste keten aan het plafond",
+        "versions": [
+          {
+            "subject": "Wachter",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "zijn rang"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "101"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "101"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn rang is kleiner dan 101"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ketennummer",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "zijn ketennummer"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ketennummer is ongelijk aan 1"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1."
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1.",
+              "line": 21
+            }
+          }
+        ]
+      },
+      {
+        "node": "Consistency",
+        "name": "tweede keten aan het plafond",
+        "versions": [
+          {
+            "subject": "Wachter",
+            "assertion": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "zijn rang"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "101"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "101"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn rang is kleiner dan 101"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "notEqual",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ketennummer",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "zijn ketennummer"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ketennummer is ongelijk aan 2"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2."
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "Een Wachter moet voldoen aan ten minste \u00e9\u00e9n van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2.",
+              "line": 27
             }
           }
         ]
@@ -256,7 +451,7 @@
         ],
         "source": {
           "snippet": "lange estafette",
-          "line": 18
+          "line": 31
         }
       }
     ]
