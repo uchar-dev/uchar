@@ -68,7 +68,7 @@ creaties één keer in documentvolgorde (`ref/lib/eval.ml` rond regel
 proefbestanden staan in `/tmp/lens-bugs/advies-probes/` (`q1-lezer-eerst`,
 `q1-schrijver-eerst`).
 
-## Besluit (voorlopig, 2026-10-09)
+## Besluit (voorlopig, 2026-10-09; bevestigd door de eigenaar dezelfde dag)
 
 *De eigenaar was offline en vroeg bij twijfel een Fable-adviseur te
 raadplegen. Het advies (Fable 5.1, alleen lezend, op main `54ba99f7`) staat in
@@ -300,3 +300,34 @@ Afgewezen: geen.
    times composite is typed whole, but the type derived from its operands is fractional").
 9. **Landing**: de branch staat op main `8beff67a`; main is verder gegaan met alleen kaarten. Vóór de ff-merge
    `git rebase main` en de gates opnieuw. `20261009-creatiebudget-ref-en-clingo` staat bovenop deze branch.
+
+### Landing (2026-10-09)
+
+De eigenaar bevestigde het besluit dezelfde dag, ook voor de voorwaarde van een creatie. Daarmee zijn de restposten
+"conditions that hold on absence" en "a value that grows" van ch. 6.1 een tekort van clingo, met een eigen kaart
+(`20261009-clingo-creatievoorwaarde-op-de-kring`); of zo'n voorwaarde een negatieve kant wordt, blijft open. De kaart
+landde samen met `20261009-creatiebudget-ref-en-clingo`, na een rebase op main; de fixrondes hieronder staan op die
+branch.
+
+Eindlens met Opus 5.5 (via Copilot, één run over beide kaarten, 15 premium requests); beide vondsten zijn nagemeten
+en overgenomen:
+- BLOKKEREND: sinds stap 1 vuurden de toetsen van het lopende stratum al na generatie 0. Een consistentie leest een
+  positief kenmerk niet strikt, kan dus in het stratum staan van een kring die dat kenmerk nog laat groeien, en een
+  kanaalfeit wordt nooit ingetrokken. Op een document met een recursieve feitcreatie die "ervaren" laat groeien gaf
+  ref "inconsistent" (W2 en W3), waar main, clingo en de tak met truth maintenance "consistent" geven. Nu vuren de
+  toetsen van een stratum na zijn laatste generatie en die van een lager stratum na elke generatie (ref-test
+  `WV-5.5-consistentie-op-een-groeiend-kenmerk`, rood op de oude tip; `WV-5.5-uniciteit-op-een-groeiende-sleutel` als
+  absolute getuige, rood op een mutant, omdat een uniciteit haar sleutels strikt leest).
+- ADVIES: de premisse onder "Welke vormen" in het besluit ("buiten zo'n kring leest de verifier elke attribuutlezing
+  van een creatie strikt") geldt niet voor een kenmerk. Een creatie buiten de kring kan in het stratum van een kring
+  staan en in generatie 1 een kenmerk tellen dat de kring nog laat groeien: ref 1, clingo stil 3 (bestond al op
+  main). Clingo weigert nu ook zo'n initialisatie: elke initialisatie die een knoop leest met een schrijver die een
+  creatie op een kring in het eigen stratum bereikt (checks `ch5.5 generations off the cycle`, rood op de oude tip).
+
+Sol6-herkeuring van die fixronde: één BLOKKEREND, nagemeten en overgenomen. De nieuwe arm telde ook een kringcreatie
+waarvan de casusdatum elke versie uitsluit, zodat clingo een gedateerde regelset weigerde die het eerder goed droeg
+(ref en clingo op main 1). Nu telt zo'n creatie niet mee, zoals de backend haar ook niet vertaalt. Een tweede sol6-herkeuring van die reparatie vond niets meer ("klaar voor de landing").
+
+Suites na de fixrondes: ref 1286 voorbeelden, clingo 2198 checks. Alle 16 gates groen op `900d5b4e`; ff-merge
+naar main. De CONSTRUCTS-rij (rij 21) en PLAN §9 landden in de boekhoudcommit erna, met de weigering van clingo zoals
+ze nu is.

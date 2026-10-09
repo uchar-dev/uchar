@@ -82,7 +82,7 @@ De Fable-adviseur (zie onder) mat beide richtingen na (proefbestanden in
   (`q2-grens-100/101/102`). De `NOTE.md` van dat rode geval ("no split window")
   klopt dus niet bij precies één generatie.
 
-## Besluit (voorlopig, 2026-10-09)
+## Besluit (voorlopig, 2026-10-09; vervangen door het herziene besluit hieronder)
 
 *De eigenaar was offline en vroeg bij twijfel een Fable-adviseur te
 raadplegen. Het advies (Fable 5.1, alleen lezend, op main `54ba99f7`) staat in
@@ -110,7 +110,7 @@ stratum voeden, vormen één kring, dus dat valt samen met per stratum). Het cor
 hoeft niet van de grens weg te blijven: na dit besluit is de grens norm, en dan
 hoort ze vastgezet.
 
-## Besluit herzien (voorlopig, 2026-10-09, na de lens op stap 1)
+## Besluit herzien (voorlopig, 2026-10-09, na de lens op stap 1; bevestigd door de eigenaar dezelfde dag)
 
 *De lens op stap 1 (`/tmp/lens-bugs/w9/lens1/lens.md`) vond twee vormen waarop de telling in generaties in clingo niet
 uit te drukken is: een recursieve feitcreatie die een sluiting van meer dan 100 links legt (ref faalt op het budget,
@@ -337,3 +337,13 @@ de benoemde weigering alleen voor documenten met een recursieve objectcreatie.
    commentaarblokken) zijn alle 16 gates groen (`bf1d3dec` in `wt/proefstapel`: 805 cases, 49 rode gevallen). Bij de
    landing van deze kaart na `20261009-drools-filterfout-buiten-de-lezende-regel` dus hetzelfde conflict, met dezelfde
    oplossing.
+
+### Landing (2026-10-09)
+
+De eigenaar bevestigde het herziene besluit (aanmaakdiepte per stratum) dezelfde dag. Na `git rebase` op main gaf
+alleen de pincommit van gate 12 een conflict met `20261009-drools-filterfout-buiten-de-lezende-regel`; opgelost zoals
+op de proefstapel: `EXPECTED_PLAYED` 242 en `EXPECTED_DRL_PLAYED` 196, met beide commentaarblokken. De Opus-eindlens
+over beide kaarten vond niets aan het budget (de diepte is in ref, clingo en de tak met truth maintenance gelijk; de
+golden en de rode gevallen kloppen met de hand). Haar twee vondsten en de herkeuring staan in de landing van
+`20261009-creatie-initialisatie-leest-groeiende-waarde`; hun fixes staan op deze branch. Alle 16 gates groen op
+`900d5b4e`; ff-merge naar main samen met die kaart.

@@ -1090,6 +1090,34 @@ refusals that wait on this decision (a division in a default, a division in
 an initialisation beside another writer) can go. The decision does not depend
 on whether numeric-zero division becomes a channel fact (decision (7)).
 
+**Creation reads by generations, and its budget counts depth (2026-10-09,
+cards `creatie-initialisatie-leest-groeiende-waarde` and
+`creatiebudget-ref-en-clingo`):** within a stratum evaluation proceeds in
+generations. Every creation of a generation, object creation and fact creation
+alike, reads the same settled world of the generation before, its condition as
+well as its member initialisations; afterwards the forms that make nothing
+settle stratum by stratum, the consistency and uniqueness forms of the lower
+strata fire again, and those of the stratum itself fire once its generations
+are done (RUNTIME-SEMANTICS ch. 5.5, Generations). The reference interpreter
+evaluates so, the truth-maintenance branch already did, and the ASP backend,
+which has no moment of making, refuses by name a member initialisation that
+reads what a later generation of its stratum can still change. The creation
+budget counts the creation depth per stratum: a mint at depth 101 is a fault,
+"creation budget exhausted", in the reference interpreter, the ASP backend and
+the truth-maintenance branch; fact creations and the forms that make nothing
+carry none, and the Drools fire cap and the ASP nesting bound are named
+resource bounds of an executor, not norm. This replaces the budget of 100
+passes per stratum in the entry on creation in the truth-maintenance lowering
+above. Both decisions were taken provisionally on Fable advice while the
+maintainer was offline (the budget first as generations per stratum, revised
+to depth when a lens found two forms the ASP backend cannot count in
+generations) and confirmed by the maintainer the same day. The generation
+reading also fixes the reference interpreter's answer for a creation's
+condition, so the residuals "conditions that hold on absence" and "a value
+that grows" (ch. 6.1) are an ASP shortfall now, not an open norm question
+(card `clingo-creatievoorwaarde-op-de-kring`); whether such a condition
+becomes a negative edge stays open.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
