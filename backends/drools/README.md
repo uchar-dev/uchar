@@ -352,12 +352,19 @@ timeline; and over a bucket scalar the clip of a total, the timeline a compariso
 pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `Lidfout`), an
 ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
 it, and the timeline the whole-period qualifier folds (below). A consumer that fills a session itself states the same
-facts; without them the branch reads every input timeline as a full timeline. The reference interpreter and the ASP
-backend read a pro-rata base, a compared timeline and a timeline under the whole-period qualifier given as a bucket
-scalar as no timeline today; this branch follows ch. 8.4 there, and they follow with a card. The own total without a
-clip in a session without an evaluation date has no bucket to take and faults, as in the reference interpreter
-("the temporal total of "bedrag" needs the evaluation date: the case carries the asOfDate bucket's value"), where the
-evaluation reaches it. Witnesses `TmsInvoervormWitnessTest` and `TmsTotaalRekendatumWitnessTest`.
+facts: an `Emmerinvoer` per bucket scalar, without which the branch reads every input timeline as a full timeline, and
+where the model reads them (`TmsTranspiler.leestLijstplaatsen`) a `Lijstplaats` per member of every to-many list,
+without which the fire stops with Drools' `ConsequenceException` around an `IllegalStateException` ("… heeft geen
+Lijstplaats onder het veld …") as soon as a rule needs the place of a member that has none. Every quantifier fold over a
+to-many role whose matrix compares or tests an attribute under the whole-period qualifier reads them, whether or not the
+input holds a bucket scalar, as in golden `jutterswet-reddingsvloot`: that matrix can fault per member on a bucket
+scalar, so the fold reads its members in order (`Lidtoets`, above); a characteristic check under the qualifier cannot
+fault and asks no places. The reference interpreter and the ASP backend read a pro-rata base, a compared timeline and a
+timeline under the whole-period qualifier given as a bucket scalar as no timeline today; this branch follows ch. 8.4
+there, and they follow with a card. The own total without a clip in a session without an evaluation date has no bucket
+to take and faults, as in the reference interpreter ("the temporal total of "bedrag" needs the evaluation date: the case
+carries the asOfDate bucket's value"), where the evaluation reaches it. Witnesses `TmsInvoervormWitnessTest` and
+`TmsTotaalRekendatumWitnessTest`.
 
 **The whole-period qualifier.** "gedurende het gehele jaar" and "gedurende de gehele maand" (RUNTIME-SEMANTICS ch. 3.9)
 fold a timeline that the left-hand side binds into a truth value: for every calendar year or month the timeline
