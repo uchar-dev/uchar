@@ -3678,32 +3678,48 @@ the minted term, read in the stable model, so it reads the end value; on
 the worked example it answered opvolgerbegin(W1) = 1. Carrying the
 generation reading would take a copy of the rule layer per generation,
 so the backend takes the second posture of `IR-SPEC.md` ch. 5.5. It
-refuses by name every member initialisation of a creation on a
-dependency cycle that WF-045 admits, where the initialisation reads a
-node that a form on that cycle can still change after the making: what
-a rule, an allocation or a defaults group on the cycle writes, also
-where a creation writes the same member, or a population or relation
-that a creation on the cycle grows (the number of the subject's
-opvolgers over the creation's own back-link, the number of its
-maatgevers over a relation a fact creation of the group lays). An
-attribute or characteristic that only creations write is set once per
-object, at its making, so its end value is the value at the making, and
-a read of it stays carried: the anchor below reads its rang so. A
-read of a member that a creation writes is refused as well when a rule
-on the cycle writes that member too: with the rang initialised to the
-rang plus 1 and the beginstand to the rang, and a rule that sets the
-rang of a Wachter with an opvolger to 2, W1's opvolger starts at
-**beginstand 1** while W1 ends at **rang 2**, and the backend refuses
-the document. The
-refusal reads the static dependency graph and not the values. So a rule
-on the cycle whose value on an object is fixed at the object's making (a
-basis computed as the rang plus 10) is refused as well, although the end
+refuses by name every member initialisation of an object creation that
+reads a node a later generation of the creation's own stratum can still
+change: a node with a writer that a creation on a dependency cycle in
+that stratum reaches in the dependency graph, the creation itself
+included where it lies on such a cycle (WF-045 admits the cycle through
+a recursive group). Only such a creation changes, after the making, a
+value the initialisation reads; a later stratum changes none (ch. 6.3).
+Refused are what a rule, an allocation or a defaults group writes there,
+also where a creation writes the same member, and a population or
+relation that a creation on the cycle grows (the number of the
+subject's opvolgers over the creation's own back-link, the number of its
+maatgevers over a relation a fact creation of the group lays). A
+creation off the cycle can share the cycle's stratum, since a positive
+characteristic read is not stratum-strict (ch. 6.1): beside "geef door"
+and "ervaren wachter" of `WV-5.5-consistentie-op-een-groeiend-kenmerk`
+above, the object creation "rapport van een haven" gives a Haven a
+Rapport whose aantal is the number of the Haven's wachters that are
+ervaren. It makes the Rapport in generation 1; over W1 → W2 → W3, all
+three wachters of H1 and W1 ervaren in the input, the reference
+interpreter answers rapportaantal(H1) = **1**, where the backend
+answered 3 until 2026-10-09 and now refuses the document. A creation a
+stratum higher than the cycle reads the end
+value, as the reference interpreter does, and stays carried: with the
+aantal read from an attribute of the Haven that counts its ervaren
+wachters, both answer **3**. An attribute or characteristic that only
+creations write is set once per object, at its making, so its end value
+is the value at the making, and a read of it stays carried: the anchor
+below reads its rang so. A read of a member that a creation writes is
+refused as well when a rule on the cycle writes that member too: with
+the rang initialised to the rang plus 1 and the beginstand to the rang,
+and a rule that sets the rang of a Wachter with an opvolger to 2, W1's
+opvolger starts at **beginstand 1** while W1 ends at **rang 2**, and
+the backend refuses the document. The refusal reads the static
+dependency graph and its strata, not the values. So a rule on the cycle
+whose value on an object is fixed at the object's making (a basis
+computed as the rang plus 10) is refused as well, although the end
 value would be right, and so is a writer on the cycle whose validity the
 case's date excludes; only a creation version the date excludes is not
 asked, since the backend does not translate it. The backend's suite pins
 the refusals, each beside the reference interpreter's absolute answer,
-and the carried forms (`ch5.5 generations`); no corpus document has a
-refused form.
+and the carried forms (`ch5.5 generations`, `ch5.5 generations off the
+cycle`); no corpus document has a refused form.
 
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank

@@ -8762,10 +8762,12 @@ producer of every default justification), each guarded by per-form
 auto-refusals — a loader Refusal
 or transpiler marker naming the uncovered form, loudly excluded at gate 12,
 never played mis-stratified. Since 2026-10-09 the ASP backend takes it for
-one form: a member initialisation of a creation on a dependency cycle that
-WF-045 admits, which reads a node that a form on that cycle can still
-change after the making; the backend has no moment of making and refuses
-such an initialisation by name (`RUNTIME-SEMANTICS.md` ch. 5.5,
+one form: a member initialisation of an object creation that reads a node
+a later generation of the creation's own stratum can still change, because
+a creation on a dependency cycle that WF-045 admits in that stratum, the
+creation itself included where it lies on one, reaches a writer of the
+node in the dependency graph; the backend has no moment of making and
+refuses such an initialisation by name (`RUNTIME-SEMANTICS.md` ch. 5.5,
 Generations). A backend realising a **coarser**
 stratification than the graph mandates without refusing the uncovered forms
 is non-conforming.
