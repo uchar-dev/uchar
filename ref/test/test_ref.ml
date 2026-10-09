@@ -1966,6 +1966,103 @@ let () =
     [ ("gemarkeerde post eerst", [ gemarkeerd; y; open_; a; bewaakt ]);
       ("a van een post eerst", [ a; y; open_; gemarkeerd; bewaakt ]) ]
 
+(* WV-6.3-consistentie-na-een-creatie (ch. 6.3, since 2026-10-09): a
+   consistency fires at the fixpoint of its stratum, and again after every
+   later generation, on what a creation of a higher stratum makes. "y van een
+   haven" writes y = 1 and "a van een post" a = 5 (stratum 0); "gesloten
+   haven" marks a Haven whose y is groter dan 1 (stratum 1); "open haven"
+   marks a Haven that is not gesloten (stratum 2, a negated read); "post voor
+   een open haven" gives an open Haven a Post (stratum 2); the consistency
+   "controle post" asserts that the a of a Post is kleiner dan 5 (stratum 1,
+   a strict read of a). H1 without input. In both orders of the rules: H1
+   open, one Post with a = 5, and one channel fact, "controle post" on that
+   Post. Until that date the consistency fired once, at the fixpoint of
+   stratum 1, before the creation of stratum 2 made the Post, and the Post
+   was never checked: the channel stayed empty. The same holds for a
+   uniqueness: with "eenmalige a" (the a of every Post is unique, stratum 1)
+   in place of the consistency and the Havens H1 and H2, each open Haven gets
+   a Post with a = 5, and both Posts carry a channel fact of "eenmalige a";
+   until that date the channel stayed empty there as well. *)
+let () =
+  let regel naam doel ot waarde voorwaarde presentatie =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s", "source": {"snippet": "%s"}}, "value": %s%s, "initialisation": false%s}]}|}
+        naam doel ot doel waarde
+        (match voorwaarde with Some c -> {|, "condition": |} ^ c | None -> "")
+        presentatie )
+  in
+  let getal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal_json n
+  in
+  let waar = {|{"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}|} in
+  let presentatie = {|, "presentation": "equation"|} in
+  let y = regel "y van een haven" "y" "Haven" (getal 1) None presentatie
+  and a = regel "a van een post" "a" "Post" (getal 5) None presentatie
+  and gesloten =
+    regel "gesloten haven" "gesloten" "Haven" waar
+      (Some
+         (Printf.sprintf
+            {|{"node": "Comparison", "op": "greater", "left": {"node": "AttributeReference", "attribute": "y", "subjectType": "Haven", "source": {"snippet": "zijn y"}}, "right": %s, "source": {"snippet": "y > 1"}}|}
+            (getal 1)))
+      ""
+  and open_ =
+    regel "open haven" "open" "Haven" waar
+      (Some
+         {|{"node": "CharacteristicCheck", "characteristic": "gesloten", "negated": true, "source": {"snippet": "hij is niet gesloten"}}|})
+      ""
+  in
+  let controle =
+    Printf.sprintf
+      {|{"node": "Consistency", "name": "controle post", "versions": [{"subject": "Post", "assertion": {"node": "Comparison", "op": "less", "left": {"node": "AttributeReference", "attribute": "a", "subjectType": "Post", "source": {"snippet": "zijn a"}}, "right": %s, "source": {"snippet": "zijn a is kleiner dan 5"}}, "validity": {"node": "Validity"}}]}|}
+      (getal 5)
+  and eenmalig =
+    {|{"node": "Uniqueness", "name": "eenmalige a", "versions": [{"sources": [{"node": "Source", "objectType": "Post", "keys": ["a"]}], "validity": {"node": "Validity"}}]}|}
+  in
+  let doc ?(consistenties = [ controle ]) ?(uniciteiten = []) regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Haven", "animate": false, "plural": "Havens", "attributes": [{"node": "Attribute", "name": "y", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "gesloten", "kind": "adjectival"}, {"node": "Characteristic", "name": "open", "kind": "adjectival"}]}, {"node": "ObjectType", "name": "Post", "animate": false, "plural": "Posten", "attributes": [{"node": "Attribute", "name": "a", "datatype": %s}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "havenpost", "reciprocal": false, "roles": [{"node": "Role", "name": "haven", "objectType": "Haven", "many": false}, {"node": "Role", "name": "post", "objectType": "Post", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "post voor een open haven", "versions": [{"createdType": "Post", "subject": "Haven", "initialisations": [], "condition": {"node": "CharacteristicCheck", "characteristic": "open", "negated": false, "source": {"snippet": "de Haven is open"}}, "validity": {"node": "Validity"}}]}], "allocations": [], "consistencies": [%s], "uniquenesses": [%s], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": []}, "diagnostics": []}|}
+      getal_json getal_json
+      (String.concat ", " (List.map snd regels))
+      (String.concat ", " consistenties) (String.concat ", " uniciteiten)
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "H1", "objectType": "Haven", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "characteristicPresent", "label": "H1", "characteristic": "open"}, {"kind": "inconsistent", "rule": "controle post"}]}|}
+  in
+  List.iter
+    (fun (volgorde, regels) ->
+      let naam = Printf.sprintf "WV-6.3-consistentie-na-een-creatie [%s]" volgorde in
+      speelt ~naam ~ir:(doc regels) ~zaak (fun final ->
+          let posten =
+            World.SMap.fold
+              (fun _ (i : World.instance) acc -> if i.otype = "Post" then i.label :: acc else acc)
+              final.instances []
+          in
+          check (naam ^ ": one Post") (posten = [ "oc0::H1" ]);
+          expect_num (naam ^ ": a of the Post = 5") (attr_van final "oc0::H1" "a") "5";
+          check (naam ^ ": the channel carries controle post on the Post, once")
+            (List.map (fun (f : World.error_fact) -> (f.rule, f.subject)) final.channel
+            = [ ("controle post", "oc0::H1") ])))
+    [ ("y, a, gesloten, open", [ y; a; gesloten; open_ ]);
+      ("open, gesloten, a, y", [ open_; gesloten; a; y ]) ];
+  let zaak2 =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "H1", "objectType": "Haven", "attributes": {}, "roles": {}, "characteristics": []}, {"label": "H2", "objectType": "Haven", "attributes": {}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "characteristicPresent", "label": "H1", "characteristic": "open"}, {"kind": "characteristicPresent", "label": "H2", "characteristic": "open"}, {"kind": "inconsistent", "rule": "eenmalige a"}]}|}
+  in
+  List.iter
+    (fun (volgorde, regels) ->
+      let naam = Printf.sprintf "WV-6.3-uniciteit-na-een-creatie [%s]" volgorde in
+      speelt ~naam
+        ~ir:(doc ~consistenties:[] ~uniciteiten:[ eenmalig ] regels)
+        ~zaak:zaak2
+        (fun final ->
+          check (naam ^ ": both Posts carry eenmalige a")
+            (List.sort compare
+               (List.map (fun (f : World.error_fact) -> (f.rule, f.subject)) final.channel)
+            = [ ("eenmalige a", "oc0::H1"); ("eenmalige a", "oc0::H2") ])))
+    [ ("y, a, gesloten, open", [ y; a; gesloten; open_ ]);
+      ("open, gesloten, a, y", [ open_; gesloten; a; y ]) ]
+
 (* WV-5.7-twee-schrijvers-twee-strata (since 2026-10-09): the forms that make
    nothing come to rest stratum by stratum, and each stratum's fixpoint runs
    the forms of every lower stratum again, so two writers of one target in

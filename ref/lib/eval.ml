@@ -4064,16 +4064,44 @@ let evaluate env world =
      each other that fixpoint is reached within as many passes as stratum j
      has forms that make nothing. The bound, the larger of 100 and that
      number plus one, only turns those two writers into the fault that
-     names them. *)
+     names them.
+
+     After the fixpoint of stratum j the consistency and uniqueness forms
+     of stratum j fire, in generation 0 and after every generation, so they
+     also check what a creation of a higher stratum makes. What they read
+     is at rest by then, their channel facts are idempotent (ch. 5.6), and
+     instances only come, never go, so firing again adds a fact only for a
+     new instance or for a key a new instance duplicates. Until 2026-10-09
+     they fired once, at the fixpoint of their own stratum: a consistency
+     of stratum 1 on Posts ("the a of a Post is kleiner dan 5") never saw
+     the Post a creation of stratum 2 made with a = 5, and the channel
+     stayed empty. *)
   let settling_upto = Array.init (kmax + 1) (fun j -> settling ~k:j) in
+  let checks j world =
+    let world =
+      List.fold_left
+        (fun w c -> if cons_stratum c = j then run_consistentie env w c else w)
+        world env.doc.consistenties
+    in
+    let world =
+      List.fold_left
+        (fun w u -> if uni_stratum u = j then run_uniciteit env w u else w)
+        world env.doc.uniciteiten
+    in
+    List.fold_left
+      (fun w u -> if uu_stratum u = j then run_uniciteit_unie env w u else w)
+      world env.doc.uniciteit_unies
+  in
   let settle ~k world =
     let rec upto j world =
       if j > k then world
       else
         let steps = settling_upto.(j) in
         let own = List.length steps - if j = 0 then 0 else List.length settling_upto.(j - 1) in
-        upto (j + 1)
-          (fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) world)
+        let world =
+          fixpoint ~budget:(max 100 (own + 1)) ~cause:(disagreement steps) (pass steps) world
+        in
+        upto (j + 1) (checks j world)
     in
     upto 0 world
   in
@@ -4082,10 +4110,11 @@ let evaluate env world =
      (ch. 5.5). Generation 0 is the fixpoint of the forms that make nothing;
      generation G+1 is every creation against generation G's settled world,
      after which the forms that make nothing settle again, stratum by
-     stratum ([settle]); the stratum is done when a generation makes and
-     links nothing. The consistency and uniqueness forms of stratum k fire
-     once at the stratum's fixpoint — their channel facts are idempotent
-     (ch. 5.6) *)
+     stratum, each stratum's consistency and uniqueness forms firing at its
+     fixpoint ([settle]); the stratum is done when a generation makes and
+     links nothing. Such a generation changes no instance, attribute,
+     characteristic or link, so the last settle has already checked the
+     world the stratum ends with. *)
   let world = ref world in
   for k = 0 to kmax do
     let creations = creations ~k in
@@ -4101,18 +4130,6 @@ let evaluate env world =
             generation_budget (g + 1) (String.concat ", " makers)
       | w, _ -> next (g + 1) (settle w)
     in
-    world := next 0 (settle !world);
-    world :=
-      List.fold_left
-        (fun w c -> if cons_stratum c = k then run_consistentie env w c else w)
-        !world env.doc.consistenties;
-    world :=
-      List.fold_left
-        (fun w u -> if uni_stratum u = k then run_uniciteit env w u else w)
-        !world env.doc.uniciteiten;
-    world :=
-      List.fold_left
-        (fun w u -> if uu_stratum u = k then run_uniciteit_unie env w u else w)
-        !world env.doc.uniciteit_unies
+    world := next 0 (settle !world)
   done;
   !world

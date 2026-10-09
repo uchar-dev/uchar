@@ -61,18 +61,23 @@ faults with file/position context — never a silent fallback.
   channel reads sit strictly above their producers. A dependency cycle
   reaching ref/ is a fault, never divergence.
 - **Creation runs in generations** (ch. 5.5). Within stratum k,
-  generation 0 is the fixpoint of the forms that make nothing (rules,
-  allocations, defaults groups); generation G+1 is every object and
-  fact creation of the stratum against generation G's settled world,
-  so no creation reads what another creation of its own generation
-  makes or links, and a member initialisation takes the value at the
-  moment of making whatever the document order. After each generation
-  the forms that make nothing settle again, stratum by stratum: for
-  j = 0, 1, …, k the forms of stratum ≤ j reach their fixpoint before
-  a form of stratum j + 1 runs, so on a new instance a form of a
-  higher stratum reads only what the lower strata have finished
-  writing there. The stratum is done when a generation makes and
-  links nothing; its consistency and uniqueness forms then fire once.
+  generation 0 brings the forms that make nothing (rules,
+  allocations, defaults groups) to rest; generation G+1 is every
+  object and fact creation of stratum ≤ k against generation G's
+  settled world, so no creation reads what another creation of its
+  own generation makes or links, and a member initialisation takes
+  the value at the moment of making whatever the document order;
+  after it the forms that make nothing come to rest again. Coming to
+  rest goes stratum by stratum, in generation 0 and after every
+  generation: for j = 0, 1, …, k the forms of stratum ≤ j reach their
+  fixpoint and then the consistency and uniqueness forms of stratum j
+  fire, before a form of stratum j + 1 runs. So on a new instance a
+  form of a higher stratum reads only what the lower strata have
+  finished writing there, and a consistency or uniqueness of a lower
+  stratum also checks what a later creation makes; its channel facts
+  are idempotent (ch. 5.6), so firing again adds a fact only for a
+  new instance or a key a new instance duplicates. The stratum is
+  done when a generation makes and links nothing.
 - **The generation budget** (ch. 5.5): a stratum admits 100
   generations that mint an object or lay a link, and a 101st that
   still does is the fault, never a truncation: "no fixpoint within
