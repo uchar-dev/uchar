@@ -3307,8 +3307,11 @@ public final class TmsTranspiler {
             case Conditie.Predicaat p -> predicaat(p, lez);
             case Conditie.Periode p -> tijdvenster(p, lez);
             case Conditie.Kwantorvouw q -> kwantorvouw(q, lez);
-            case Conditie.Rollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
-            case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
+            case Conditie.Rollidmaatschap rol -> rolcontrole(rol, lez);
+            // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
+            // ch. 4.5), so only a hand-built model reaches this
+            case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("VerreRollidmaatschap", c, "de verre rolcontrole"
+                    + " van v0, die sinds L2 de ene knoop RoleMembership is (IR-SPEC ch. 4.5) en die de lader niet maakt");
             case Conditie.Regelversie rv -> kanaallezing(rv, lez);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
             // reaches it, so a composite that settles before it reads it plays
@@ -3376,6 +3379,53 @@ public final class TmsTranspiler {
         Pad p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
         int i = lez.genavigeerd(p, lid(p.bereikt(), k.kenmerk(), true));
         return w -> w[i] != null && (Boolean) w[i] == gewenst;
+    }
+
+    /**
+     * A role check (RUNTIME-SEMANTICS ch. 5.8a, IR-SPEC ch. 4.5): whether a link of the fact type holds the subject in
+     * the role the check names and, where it names a counterpart type, an instance of that type at the other end, a
+     * class test that a subtype passes; negated, whether no such link exists. An existence question, never a count and
+     * never a pick, bound as a value the test reads, so the check stands in a composite as any condition does. A
+     * relation a form creates is read over its {@link Koppeling} facts, which its creations state while the session
+     * fires and which the input's links insert logically; any other relation is input and is read where the bean model
+     * stores it ({@link FactModelGenerator#lidmaatschapsopslag}): a to-one other role is the subject's own reference
+     * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
+     * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
+     * refused in the sentence the other two branches give.
+     */
+    private Toets rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
+        RolBindingRef rb = rolBindingen.get(r);
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
+        if (paar == null)
+            throw nietGelezen("RoleMembership", r, "de binding (" + (rb == null ? "geen" : rb.feittype() + ", " + rb.rol())
+                    + ") noemt geen gedeclareerde rol");
+        Objecttype tegenpartij = dev.uchar.regelspraak.loader.IrLoader.tegenpartij(r);
+        Class<?> klasse = tegenpartij == null ? null : bonenklasse(tegenpartij);
+        boolean ontkend = r.negatie();
+        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype()))) {
+            RegelSpraakModel.Feittype ft = feittype(rb.feittype());
+            if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
+                throw nietGelezen("RoleMembership", r, "over de gecreëerde relatie '" + rb.feittype() + "', die geen"
+                        + " relatie van twee rollen is: " + NOG_NIET);
+            boolean onderwerpIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(paar[0].naam()));
+            int i = lez.rolkoppelingen(Namen.norm(ft.naam), onderwerpIsEerste, klasse);
+            return w -> (((Number) w[i]).longValue() > 0) != ontkend;
+        }
+        FactModelGenerator.Lidmaatschapsopslag o = FactModelGenerator.lidmaatschapsopslag(model, rb);
+        if (o.weigering() != null) throw nietGelezen("RoleMembership", r, o.weigering());
+        if (o.opSubject()) {
+            if (!FactModelGenerator.heeftReferentieVeld(model, lez.subject, o.beanveld(), o.ander()))
+                throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, lez.subject,
+                        o.beanveld(), o.ander()) + " (§13.3.9 opslagrichting)");
+            int i = lez.rolveld(o.beanveld(), klasse);
+            return w -> (Boolean) w[i] != ontkend;
+        }
+        Objecttype vuller = tegenpartij != null ? tegenpartij : o.ander();
+        if (!FactModelGenerator.heeftReferentieVeld(model, vuller, o.beanveld(), lez.subject))
+            throw nietGelezen("RoleMembership", r, FactModelGenerator.geenReferentieveldReden(model, vuller,
+                    o.beanveld(), lez.subject) + " (§13.3.9 opslagrichting)");
+        int i = lez.rolvullers(bonenklasse(vuller), o.beanveld());
+        return w -> (((Number) w[i]).longValue() > 0) != ontkend;
     }
 
     /** A composite folds its members in wire order and stops at the first member after which the verdict stands
@@ -3980,6 +4030,57 @@ public final class TmsTranspiler {
                     .bind(w, KanaalStand::inconsistent));
             kanaalnamen.add(producent);
             return nieuw(sleutel, w);
+        }
+
+        /** Whether the reference field {@code veld} of this rule's subject is set, to an instance of {@code klasse} where
+         *  a role check narrows the other end (null: any): a link of an input relation stored on the subject
+         *  ({@link TmsTranspiler#rolcontrole}). Input does not change while the session fires, so it is bound off the
+         *  subject's bean, as an input member is ({@link #eigen}). */
+        int rolveld(String veld, Class<?> klasse) {
+            String sleutel = "rolveld " + veld + " " + (klasse == null ? "" : klasse.getName());
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            Function<Object, Object> getter = Accessors.getter(bonenklasse(subject), veld);
+            onderwerp.bind(w, o -> {
+                Object ander = getter.apply(o);
+                return ander != null && (klasse == null || klasse.isInstance(ander));
+            });
+            return nieuw(sleutel, w);
+        }
+
+        /** The number of beans of {@code klasse} whose reference field {@code veld} names this rule's subject: the links
+         *  of an input relation stored on the other end ({@link TmsTranspiler#rolcontrole}), bound off an accumulate,
+         *  which over no bean still binds a row. */
+        @SuppressWarnings("unchecked")
+        int rolvullers(Class<?> klasse, String veld) {
+            String sleutel = "rolvullers " + klasse.getName() + " " + veld;
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Object> vuller = (Variable<Object>) DSL.declarationOf(klasse, "$vuller_" + id("rol"));
+            Variable<Object> aantal = DSL.declarationOf(Object.class, "$vullers_" + id("rol"));
+            Function<Object, Object> getter = Accessors.getter(klasse, veld);
+            standen.add(DSL.accumulate(PatternDSL.pattern(vuller).expr(id("rolvuller"), s, (x, o) -> getter.apply(x) == o),
+                    DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), vuller).as(aantal)));
+            return nieuw(sleutel, aantal);
+        }
+
+        /** The number of links of the created relation {@code relatie} that hold this rule's subject at its first end
+         *  where {@code onderwerpIsEerste}, else at its second, with an instance of {@code klasse} at the other end (null:
+         *  any): the {@link Koppeling} facts, bound off an accumulate, which over no link still binds a row
+         *  ({@link TmsTranspiler#rolcontrole}). */
+        int rolkoppelingen(String relatie, boolean onderwerpIsEerste, Class<?> klasse) {
+            String sleutel = "rolkoppelingen " + relatie + " " + onderwerpIsEerste + " "
+                    + (klasse == null ? "" : klasse.getName());
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$rolkoppeling_" + id("rol"));
+            Variable<Object> aantal = DSL.declarationOf(Object.class, "$rolkoppelingen_" + id("rol"));
+            standen.add(DSL.accumulate(PatternDSL.pattern(k).expr(id("rolkoppeling"), x -> x.relatie().equals(relatie))
+                    .expr(id("rolkoppeling-onderwerp"), s, (x, o) -> (onderwerpIsEerste ? x.eerste() : x.tweede()) == o
+                            && (klasse == null || klasse.isInstance(onderwerpIsEerste ? x.tweede() : x.eerste()))),
+                    DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), k).as(aantal)));
+            return nieuw(sleutel, aantal);
         }
 
         private int bestaand(String sleutel) {
