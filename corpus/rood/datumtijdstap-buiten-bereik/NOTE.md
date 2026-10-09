@@ -59,9 +59,8 @@ backend answered dates for cases 1 to 3 before.
 ## What each executor says (measured 2026-10-09)
 
 - `ref`, at evaluation: cases 1 to 3 `EVALUATION FAULT: datum-tijd
-  arithmetic leaves the representable millisecond range (v0 raises
-  DateTimeException)`, case 4 `EVALUATION FAULT: duration count
-  18446744073709551617 is out of range`.
+  arithmetic leaves the representable millisecond range`, case 4
+  `EVALUATION FAULT: duration count 18446744073709551617 is out of range`.
 - The ASP backend refuses each count at translation, before any date
   arithmetic: `TRANSLATION FAULT: value 2000000000000 at 0 decimals exceeds
   clingo's integer range (grounding would wrap silently)`, and so for the

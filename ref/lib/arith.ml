@@ -608,12 +608,11 @@ let sub_day_ms : Ir_v0.Checks.time_unit -> int option = function
    units act on the civil day part through the day kernel above (linear
    days/weeks, the month-end clamp), preserving the time-of-day — the v0
    LocalDateTime mirror. A step that leaves the representable ms range
-   faults, never a silent wrap-around (v0's LocalDateTime.plus raises
-   DateTimeException past its range); the bounds are checked before the
-   product so the check itself cannot wrap. *)
+   [-2^62, 2^62 - 1] (RUNTIME-SEMANTICS ch. 3.8) faults, never a silent
+   wrap-around; the bounds are checked before the product so the check
+   itself cannot wrap. *)
 let ms_range_fault () =
-  fault "datum-tijd arithmetic leaves the representable millisecond range (v0 raises \
-         DateTimeException)"
+  fault "datum-tijd arithmetic leaves the representable millisecond range"
 
 let add_units_ms (tu : Ir_v0.Checks.time_unit) n t =
   match sub_day_ms tu with

@@ -49,7 +49,7 @@ day, so the sluittijdstip leaves the range.
 ## What each executor says (measured 2026-10-09)
 
 - `ref`, at evaluation: `EVALUATION FAULT: datum-tijd arithmetic leaves the
-  representable millisecond range (v0 raises DateTimeException)`. It tests the
+  representable millisecond range`. It tests the
   day its walk lands on, with the time of day riding through, before it
   builds the instant.
 - The ASP backend refuses the count of days at translation, before any date
