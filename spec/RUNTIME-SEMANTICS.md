@@ -3582,19 +3582,29 @@ so the backend takes the second posture of `IR-SPEC.md` ch. 5.5. It
 refuses by name every member initialisation of a creation on a
 dependency cycle that WF-045 admits, where the initialisation reads a
 node that a form on that cycle can still change after the making: what
-a rule, an allocation or a defaults group on the cycle writes, or a
-population or relation that a creation on the cycle grows (the number
-of the subject's opvolgers over the creation's own back-link, the number
-of its maatgevers over a relation a fact creation of the group lays).
-An attribute or characteristic that a creation writes is set once per
+a rule, an allocation or a defaults group on the cycle writes, also
+where a creation writes the same member, or a population or relation
+that a creation on the cycle grows (the number of the subject's
+opvolgers over the creation's own back-link, the number of its
+maatgevers over a relation a fact creation of the group lays). An
+attribute or characteristic that only creations write is set once per
 object, at its making, so its end value is the value at the making, and
-a read of it stays carried: the anchor below reads its rang so. The
-refusal follows the dependency graph and not the values, so a rule on
-the cycle whose value on an object is fixed at the object's making (a
+a read of it stays carried: the anchor below reads its rang so. A
+read of a member that a creation writes is refused as well when a rule
+on the cycle writes that member too: with the rang initialised to the
+rang plus 1 and the beginstand to the rang, and a rule that sets the
+rang of a Wachter with an opvolger to 2, W1's opvolger starts at
+**beginstand 1** while W1 ends at **rang 2**, and the backend refuses
+the document. The
+refusal reads the static dependency graph and not the values. So a rule
+on the cycle whose value on an object is fixed at the object's making (a
 basis computed as the rang plus 10) is refused as well, although the end
-value would be right. The backend's suite pins the refusals and the
-carried forms (`ch5.5 generations`); no corpus document has a refused
-form.
+value would be right, and so is a writer on the cycle whose validity the
+case's date excludes; only a creation version the date excludes is not
+asked, since the backend does not translate it. The backend's suite pins
+the refusals, each beside the reference interpreter's absolute answer,
+and the carried forms (`ch5.5 generations`); no corpus document has a
+refused form.
 
 Worked example (absolute; the anchor `jutterswet-wachtersketen`
 verbatim): the chain "a wachter of rank n recruits an opvolger of rank
