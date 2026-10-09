@@ -625,6 +625,9 @@ public final class TmsTranspiler {
         if (kanFalen)
             uit.add(voorwaardefoutregel(r.naam(), model.geëmitteerdeRegelNaam(r.naam()),
                     () -> new Lezingen(doel.objecttype()).geldig(r.geldigheid()), r.voorwaarde(), null));
+        Rule deponering = deponeerregel(r.naam(), model.geëmitteerdeRegelNaam(r.naam()),
+                () -> new Lezingen(doel.objecttype()).geldig(r.geldigheid()), r.voorwaarde(), null);
+        if (deponering != null) uit.add(deponering);
         return uit;
     }
 
@@ -639,9 +642,9 @@ public final class TmsTranspiler {
      * a square root of a negative number, insert the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the same
      * consequence, under the rule's name, where the evaluation reaches them: the probe the consequence puts in its value
      * array hears exactly the places that run ({@link Sonde}), so a place in a branch of an {@code IfThenElse} that is
-     * not taken, or in the value of a {@code Let} binder no read forces, deposits nothing (ch. 10.2, 10.6). The places
-     * that deposit are the ones the exec-model branch gives a companion: each operand a read of an attribute, of the
-     * subject or one role away, or a read of a {@code Let} binder. The condition of the rule holds there by construction.
+     * not taken, or in the value of a {@code Let} binder no read forces, deposits nothing (ch. 10.2, 10.6). Every
+     * division and every root is such a place, as in the reference interpreter. The condition of the rule holds there by
+     * construction; a deposit in the condition itself is the {@link #deponeerregel}'s.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
@@ -794,6 +797,8 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade));
+        Rule deponering = deponeerregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade);
+        if (deponering != null) uit.add(deponering);
         return uit;
     }
 
@@ -854,6 +859,43 @@ public final class TmsTranspiler {
         };
     }
 
+    /**
+     * The rule that deposits the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 for the condition {@code c} of
+     * {@code vorm}, whose rule is {@code regelnaam}: the reference interpreter deposits wherever its evaluation of a
+     * condition divides a filled dividend by a leeg divisor or takes the root of a negative number, whether the condition
+     * then holds or not (ch. 5.6), and only at the places that evaluation reaches (ch. 5.10). A condition is tested in the
+     * left-hand side, where Drools inserts nothing, so a rule of the form's own, with the same left-hand side
+     * ({@code blokkade} included) and the test that evaluating the condition reaches such a place ({@link Sonde}),
+     * inserts the deposit logically under the form and the subject; it goes when a read it rested on changes. Null where
+     * {@code c} holds no division and no root.
+     */
+    private Rule deponeerregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
+                               Function<Lezingen, List<RuleItemBuilder<?>>> blokkade) {
+        if (!deponeert(c)) return null;
+        Lezingen lez = nieuw.get();
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = voorwaarde(c, lez);
+        lez.stop();
+        int sonde = lez.sondeplaats();
+        if (sonde < 0) throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" deelt, maar kreeg geen sonde");
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> {
+            Sonde s = new Sonde();
+            w[sonde] = s;
+            try {
+                toets.test(w);
+            } catch (RuntimeException e) {
+                // a fault is the fault rule's; what the evaluation deposited before it stays heard
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+            }
+            return s.gemeld();
+        }, gelezen, c);
+        if (blokkade != null) items.addAll(blokkade.apply(lez));
+        items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
+                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, vorm, o))));
+        lez.vastleggen();
+        return PatternDSL.rule(PKG, regelnaam + ": deponering in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
+    }
+
     /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
      *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link Rekenfout}: a date step or a duration
      *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
@@ -904,6 +946,8 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null));
+        Rule deponering = deponeerregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null);
+        if (deponering != null) uit.add(deponering);
         Rule zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
@@ -923,8 +967,8 @@ public final class TmsTranspiler {
         if (!kanaalproducent(producent))
             throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
                     + snippet(rv) + "'): de truth-maintenance-tak draagt als producent van het §9.5-kanaal alleen een"
-                    + " Consistency en een rekenende regel of initialisatie met een deling of een wortel waarvan elke"
-                    + " operand een gelezen attribuut of een binder is (§6.5, §6.6)");
+                    + " Consistency en een regel met een deling of een wortel in haar voorwaarde of haar waarde (§6.5,"
+                    + " §6.6)");
         int i = lez.kanaal(producent);
         return w -> Boolean.TRUE.equals(w[i]);
     }
@@ -934,7 +978,8 @@ public final class TmsTranspiler {
         if (naam == null) return false;
         for (ResolvedConsistentie c : model.consistenties) if (naam.equals(c.naam())) return true;
         for (ResolvedRegel r : model.resolvedRegels)
-            if (naam.equals(r.naam()) && r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deponeert(r.waarde()))
+            if (naam.equals(r.naam()) && (deponeert(r.voorwaarde())
+                    || r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deponeert(r.waarde())))
                 return true;
         return false;
     }
@@ -970,14 +1015,12 @@ public final class TmsTranspiler {
         };
     }
 
-    /** Whether {@code e} is itself a place that deposits: a division whose operands each qualify, or a square root whose
-     *  radicand does ({@link #kwalificeert}). */
-    private boolean deponeerplek(Expr e) {
-        if (e instanceof Expr.Binair b)
-            return (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS)
-                    && kwalificeert(b.links()) && kwalificeert(b.rechts());
-        return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL && f.argumenten().size() == 1
-                && kwalificeert(f.argumenten().get(0));
+    /** Whether {@code e} is itself a place that deposits: every division and every square root, whatever its operands,
+     *  as the reference interpreter deposits wherever it divides a filled dividend by a leeg divisor or takes the root of
+     *  a negative number (RUNTIME-SEMANTICS ch. 1.2, 5.6). */
+    private static boolean deponeerplek(Expr e) {
+        if (e instanceof Expr.Binair b) return b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS;
+        return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL && f.argumenten().size() == 1;
     }
 
     /**
@@ -1091,6 +1134,11 @@ public final class TmsTranspiler {
         gebruik.add(herkomst);
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, oc.voorwaarde(),
                 creatiebewaking(naam, lez, fase));
+        // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
+        // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
+        Variable<Fout> eigenFout = DSL.declarationOf(Fout.class, "$eigen_fout");
+        items.add(DSL.not(PatternDSL.pattern(eigenFout).expr(id("eigen-fout"), x -> x.regel().equals(naam))
+                .expr(id("eigen-fout-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
         if (k.eenOpEen()) {
             // an instance linked toward the subject in the input world blocks the creation (ch. 5.5)
             Function<Object, Object> voorwaarts = Accessors.getter(bonenklasse(subject), k.fwdRef());
@@ -1111,19 +1159,20 @@ public final class TmsTranspiler {
                     fout = Rekenfout.benoem(e, regelnaam);
                 }
             }
+            // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
+            // making, as in the reference interpreter, which then makes nothing: no object, no mark and no link that
+            // another form could read and fault on. The fault is stated like everything a creation makes, and the
+            // rule's guard on it keeps the creation from firing again in a later generation
+            if (fout != null) {
+                drools.insert(new Fout(onderwerp, naam, fout));
+                return;
+            }
             int f = (Integer) w[fase];
             Object object = nieuweBoon(klasse);
             drools.insert(object);
             drools.insert(new Gemaakt(naam, onderwerp, object, f, stratum, diepte));
             drools.insert(nieuwIsEerste ? new Koppeling(relatie, object, onderwerp, f)
                     : new Koppeling(relatie, onderwerp, object, f));
-            // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
-            // making, as in the reference interpreter; stated like everything the creation makes, and the object is made
-            // all the same, so the generations end as they would, and the fault ends the session at the fixpoint
-            if (fout != null) {
-                drools.insert(new Fout(onderwerp, naam, fout));
-                return;
-            }
             for (int i = 0; i < inits.size(); i++) {
                 Lid lid = inits.get(i).lid();
                 Object v = waarden[i];
@@ -1142,6 +1191,8 @@ public final class TmsTranspiler {
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, OBJECTCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null));
+        Rule deponering = deponeerregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null);
+        if (deponering != null) uit.add(deponering);
         Rule zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
@@ -1281,6 +1332,8 @@ public final class TmsTranspiler {
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, FEITCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, nieuw, ankerguard, null));
+        Rule deponering = deponeerregel(fc.naam(), regelnaam, nieuw, ankerguard, null);
+        if (deponering != null) uit.add(deponering);
         Rule zonderDatum = geldigheidsfout(regelnaam, fc.naam(), fc.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
@@ -2406,9 +2459,9 @@ public final class TmsTranspiler {
      * Which places run depends on the evaluation itself — the branch an {@code IfThenElse} takes, the binders a body reads
      * (ch. 10.2, 10.6) — so a static test of the operands cannot tell. The consequence of a computing rule or an
      * initialisation puts a fresh probe in its slot of the value array ({@link Lezingen#sonde}) before it computes the
-     * value, every place that qualifies ({@link #deponeerplek}) reports to it where it runs, and the consequence deposits
-     * where one did. Outside such a consequence the slot is empty and a place reports to nothing: a condition deposits
-     * nothing, as before this probe.
+     * value, every place ({@link #deponeerplek}) reports to it where it runs, and the consequence deposits where one did.
+     * A condition gets its probe in the test of its deposit rule ({@link #deponeerregel}); elsewhere the slot is empty
+     * and a place reports to nothing.
      */
     private static final class Sonde {
         private boolean gemeld;
@@ -2422,13 +2475,6 @@ public final class TmsTranspiler {
         boolean gemeld() {
             return gemeld;
         }
-    }
-
-    /** Whether an operand lets a §6.5 or §6.6 place deposit, as at the exec-model branch: a read of an attribute of the
-     *  subject or one role away, or a read of a {@code Let} binder. A literal, a parameter, a compound operand and a read
-     *  over two or more roles do not count there, and so not here. */
-    private boolean kwalificeert(Expr e) {
-        return telt(e) || e instanceof Expr.BinderRef;
     }
 
     // ---------------- aggregations ----------------
@@ -3145,14 +3191,6 @@ public final class TmsTranspiler {
             cur = RegelSpraakRuntime.get(cur, v);
         }
         return cur;
-    }
-
-    /** Whether {@code e} is a read of an attribute of the subject or one role away, an operand that lets a §6.5 or §6.6
-     *  place deposit ({@link #kwalificeert}), as the exec-model branch's {@code delingCompanions} counts it. */
-    private boolean telt(Expr e) {
-        if (!(e instanceof Expr.AttribuutRef a)) return false;
-        List<RolBindingRef> pad = navigatieBindingen.get(a);
-        return pad == null || pad.size() == 1;
     }
 
     /** A read of an attribute: of the subject where the reference carries no path (it must name the subject's own type,

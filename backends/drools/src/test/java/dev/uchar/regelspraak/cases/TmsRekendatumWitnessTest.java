@@ -271,6 +271,53 @@ class TmsRekendatumWitnessTest {
         }
     }
 
+    /** "Een Jutter heeft een melding met jaar het Rekenjaar indien hij aangemeld is", beside "Het tweede jaar van een
+     *  Melding moet berekend worden als het Rekenjaar", in a session without a date (fixround 1 of the card, finding 3):
+     *  the initialisation faults at the making, and the reference interpreter then makes nothing, so it reports that
+     *  one fault, "EVALUATION FAULT: the evaluationYear context value needs an evaluation date; the case carries asOfDate
+     *  null", measured 2026-10-09 (the ASP runner faults at translation in the same sentence). With the date 2026-06-01
+     *  both play. <b>Red</b> on a3842004, which made the Melding all the same, so the rule faulted on it too: "but was:
+     *  &lt;Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels "melding van een jutter", "tweede jaar
+     *  van een melding": …&gt;". */
+    @Test void een_creatie_waarvan_een_initialisatie_faalt_maakt_niets() throws Exception {
+        String model = TmsDocumenten.model(List.of(
+                TmsDocumenten.objecttype("Jutter", List.of(), List.of("aangemeld")),
+                TmsDocumenten.objecttype("Melding", List.of(attribuut("jaar", GEHEEL), attribuut("tweede jaar", GEHEEL)),
+                        List.of())),
+                List.of(feittypeEenNaarVeel("jutmelding", "melder", "Jutter", "melding", "Melding", "meldingen")));
+        String meld = TmsCreatieWitnessTest.objectcreatie("melding van een jutter", "Jutter", "Melding",
+                List.of(TmsCreatieWitnessTest.init("jaar", contextwaarde("evaluationYear", GEHEEL))),
+                check("aangemeld", false), "jutmelding", "melding");
+        String tweede = rekenregel("tweede jaar van een melding", "BEREKENING", "Melding", "tweede jaar",
+                contextwaarde("evaluationYear", GEHEEL), "null");
+        Path ir = TmsCreatieWitnessTest.document(model, List.of(tweede), List.of(), List.of(meld), List.of(), List.of());
+        assertEquals(List.of("Rekenfout: fout in de regel \"melding van een jutter\": the evaluationYear context value"
+                        + " needs an evaluation date; the case carries asOfDate null", "gespeeld"),
+                List.of(TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaakOp(null, List.of(
+                                instantieMet("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent())),
+                                DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                        TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaakOp("2026-06-01", List.of(
+                                instantieMet("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent())),
+                                DroolsBackend.Branch.TRUTH_MAINTENANCE)));
+        // a sample of the orders of the generated rules: the one fault, and no Melding that the rule could read
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        int volgordes = 0;
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 60)) {
+            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
+            String fout;
+            try {
+                fout = TmsCreatieWitnessTest.vuur(b, volgorde, List.of(j1), sessie -> { }, sessie -> { });
+            } catch (RuntimeException e) {
+                fout = e.getClass().getSimpleName() + ": " + e.getMessage();
+            }
+            assertEquals("Rekenfout: fout in de regel \"melding van een jutter\": the evaluationYear context value needs"
+                    + " an evaluation date; the case carries asOfDate null", fout,
+                    "volgorde " + volgorde.stream().map(Rule::getName).toList());
+            volgordes++;
+        }
+        assertTrue(volgordes > 2);
+    }
+
     private static final String HAVENMODEL = TmsDocumenten.model(List.of(
             TmsDocumenten.objecttype("Kustwacht", List.of(), List.of()),
             TmsDocumenten.objecttype("Haven", List.of(attribuut("jutteraantal", GEHEEL)), List.of("vergund", "open")),

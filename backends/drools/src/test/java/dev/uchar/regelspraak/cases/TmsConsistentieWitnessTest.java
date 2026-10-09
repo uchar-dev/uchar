@@ -345,8 +345,8 @@ class TmsConsistentieWitnessTest {
                 () -> DroolsBackend.build(zonderProducent, DroolsBackend.Branch.TRUTH_MAINTENANCE));
         assertEquals("tms-transpiler SKIP: regel: nakijken — een Regelversie 'is inconsistent' over \"registratie\" in de"
                 + " voorwaarde ('regelversie registratie is inconsistent'): de truth-maintenance-tak draagt als producent"
-                + " van het §9.5-kanaal alleen een Consistency en een rekenende regel of initialisatie met een deling of"
-                + " een wortel waarvan elke operand een gelezen attribuut of een binder is (§6.5, §6.6)", f.getMessage());
+                + " van het §9.5-kanaal alleen een Consistency en een regel met een deling of een wortel in haar"
+                + " voorwaarde of haar waarde (§6.5, §6.6)", f.getMessage());
     }
 
     // ---------------- helpers ----------------

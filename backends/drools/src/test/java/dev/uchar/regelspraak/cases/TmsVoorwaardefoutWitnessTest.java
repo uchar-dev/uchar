@@ -184,7 +184,8 @@ class TmsVoorwaardefoutWitnessTest {
     }
 
     /** The fire reaches its fixpoint without throwing in every order of the generated rules of each document (the form,
-     *  its fault rule and the erkenning: six orders each), and the write-back reports the fault. */
+     *  its fault rule, its deposit rule and the erkenning: 24 orders each; six until the deposit rule of a condition,
+     *  fixround 1 of card tms-expressievormen-en-rekendatum), and the write-back reports the fault. */
     @Test void de_fout_in_een_voorwaarde_telt_aan_het_fixpunt_en_niet_in_de_fire() throws Exception {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (Vorm v : VORMEN) {
@@ -200,6 +201,6 @@ class TmsVoorwaardefoutWitnessTest {
             }
         }
         assertEquals(verwacht, uitkomsten);
-        assertEquals(24, uitkomsten.size());
+        assertEquals(96, uitkomsten.size());
     }
 }
