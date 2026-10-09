@@ -3539,12 +3539,20 @@ nothing settle again, stratum by stratum (ch. 6.3), those of the lower
 strata included, since they compute on the minted instances as well.
 The consistency and uniqueness forms of each stratum fire once that
 stratum has come to rest, in generation 0 and after every generation,
-so they also check the instances a creation mints (`ref/` tests
+so they also check the instances a creation mints. In the `ref/` tests
 `WV-6.3-consistentie-na-een-creatie` and
-`WV-6.3-uniciteit-na-een-creatie`). The stratum is done when a
-generation mints and links nothing. A
-creation's condition and member initialisations are evaluated on the
-settled world it reads, which is the moment of making; this is the
+`WV-6.3-uniciteit-na-een-creatie` (absolute, each in two rule orders) a
+creation of stratum 2 gives every open Haven a Post, and a rule of
+stratum 0 sets the a of every Post to 5. With one open Haven the
+consistency "controle post" of stratum 1 (the a of a Post is below 5)
+deposits **one** fact, on that Post; with two open Havens the
+uniqueness "eenmalige a" of stratum 1 (the a of every Post is unique)
+deposits a fact on **both** Posts. Until 2026-10-09 these forms fired
+once, at the fixpoint of their own stratum, and both channels stayed
+**empty**. The stratum is done when a generation mints and links
+nothing. A creation's condition and member initialisations are
+evaluated on the settled world it reads, which is the moment of
+making; this is the
 reading of "values evaluated on the subject" above and of "exactly one
 generation per instance" in the paragraph before. A later generation
 may change the value read; the minted instance's initialisations are
