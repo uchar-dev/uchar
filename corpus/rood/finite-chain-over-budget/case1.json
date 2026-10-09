@@ -18,7 +18,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "no fixpoint within",
-    "clingo": "generation budget exhausted"
+    "ref": "creation budget exhausted",
+    "clingo": "creation budget exhausted"
   }
 }
