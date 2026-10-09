@@ -102,7 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * expectations), B (10), C (8), F (4), G (6) and of D the eligible weights that sum to 0 (5), the empty pot of the
  * ordered method (4, no deposit beside the empty weight), the all-empty tie group (6) and the keys in two scales (5).
  * Twice the spec and the two executors part, each time where ch. 4.4 decides for v1 and they keep the v0 hole; both
- * executors are to follow the two decisions on a new card. An empty pot of the equal-shares and the proportional
+ * executors are to follow the two decisions on the card 20261009-verdeling-lege-pot-en-negatief-gewicht. An empty pot of the equal-shares and the proportional
  * method is no distribution, as this branch reads it, where the reference interpreter faults ("EVALUATION FAULT: empty
  * source amount in equal-shares allocation (v0 mirror hole, ch. 4.4)", and "… in proportional allocation …") and the
  * ASP runner is unsatisfiable on its guard on either ({@code viol("allocation: empty pot","B1")}). A negative
