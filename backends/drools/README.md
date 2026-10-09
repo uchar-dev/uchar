@@ -101,11 +101,10 @@ replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The 
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
 `tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date, the faults of date arithmetic as
 facts, the condition forms and the writers of one target (below). The third, `tms-verdeling-en-tijdlijnen`, adds
-allocations and timelines (below) and, in its last step, the whole-period qualifier and day kinds. It is no gate path
-yet: gate 12
+allocations, timelines, the whole-period qualifier and day kinds (below). It is no gate path yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 235 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 248 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -147,7 +146,8 @@ itself can call it after every fire. The session must not fire again afterwards:
 network never saw arrive.
 
 **Evaluation faults are logical facts.** A division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) is a fault,
-and so is every fault of `Rekenfout`: a date step or a duration count outside the range of ch. 3.8, a context value
+and so is every fault of `Rekenfout`: a date step or a duration count outside the range of ch. 3.8, a walk over the
+days of a day kind that passes its reach (ch. 3.8), a context value
 or a validity window in a session without an evaluation date (ch. 8.1, 8.2), an `Unresolved` node the evaluation
 reaches (ch. 5.7, WF-044), an argument a date builtin cannot take (easterSunday of a year that is not whole,
 dateWith over parts that name no day), and an irrational square root without a rounding (ch. 2.2), where the
@@ -349,12 +349,45 @@ standing join that fact, under `exists` and under `not`, and the input stands as
 where the evaluation reaches it, an `Invoervormfout` inserted logically as a `Fout`, in the reference interpreter's
 words and naming the object, by its case label where the write-back has one: the own total without a clip over a full
 timeline; and over a bucket scalar the clip of a total, the timeline a comparison clip compares, the base of a
-pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `Lidfout`), and
-an ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
-it. A consumer that fills a session itself states the same facts; without them the branch reads every input timeline
-as a full timeline. The reference interpreter and the ASP backend read a pro-rata base and a compared timeline given as
-a bucket scalar as no timeline today; this branch follows ch. 8.4 there, and they follow with a card. Witness
-`TmsInvoervormWitnessTest`.
+pro-rata part, a member of a per-element fold (the first in fold order, after the filter faults, as a `Lidfout`), an
+ever-unique key, on every instance of the type before the scope narrows the rows and up to an empty component before
+it, and the timeline the whole-period qualifier folds (below). A consumer that fills a session itself states the same
+facts; without them the branch reads every input timeline as a full timeline. The reference interpreter and the ASP
+backend read a pro-rata base, a compared timeline and a timeline under the whole-period qualifier given as a bucket
+scalar as no timeline today; this branch follows ch. 8.4 there, and they follow with a card. The own total without a
+clip in a session without an evaluation date has no bucket to take and faults, as in the reference interpreter
+("the temporal total of "bedrag" needs the evaluation date: the case carries the asOfDate bucket's value"), where the
+evaluation reaches it. Witnesses `TmsInvoervormWitnessTest` and `TmsTotaalRekendatumWitnessTest`.
+
+**The whole-period qualifier.** "gedurende het gehele jaar" and "gedurende de gehele maand" (RUNTIME-SEMANTICS ch. 3.9)
+fold a timeline that the left-hand side binds into a truth value: for every calendar year or month the timeline
+touches, the test must hold on every day of it. The branch folds with the runtime's `rsGeheelPeriode`, as the
+exec-model branch does: for a comparison, the subject's own timeline against a bound, which is any value of the rule,
+restated into the timeline's unit and read as a decimal, the operator reversed where the timeline stands on the right;
+for the leeg and the gevuld test, the timeline of an attribute of the subject or of the object a path of to-one roles
+reaches; for a characteristic check, its true periods, of the subject or over such a path. An attribute is read
+through its standing at the end of the path as well, so the fold reads it whole and faults on the asOfDate-bucket
+scalar (above), naming the object through the path ("the werf of "S1""). The grid is the
+qualifier's own, never the member's nor the session's: no rule of the qualifier binds the evaluation date, and a
+session without one answers. A timeline without segments, and the null timeline of a path whose link is absent, touch
+no bucket and pass, and the qualifier's own negation complements the fold. A leeg bound fails every day, never a
+fault, the inequality included, as ch. 3.9 says; the reference interpreter answers "ongelijk aan" against a leeg bound
+as true on every day (measured 2026-10-09; no golden has it). In a quantifier fold (ch. 3.9a) the qualified comparison
+is the matrix, so each member's verdict is a contribution of the fold, with its short circuit, and the qualifier's
+negation is read per member: a counting quantifier counts the members for which the fold fails. Witness
+`TmsGeheelPeriodeWitnessTest`, over timelines that a rule derives later, in every order of the rules.
+
+**Day kinds.** A day-kind definition (IR-SPEC ch. 3.7) reads nothing of working memory (WF-031), so its predicate over
+a calendar day is a constant of the document: the backend's day-kind compiler (`kern/Dagsoorten`) compiles it the first
+time a form steps or counts in its kind, and the value function of the form holds it. No rule binds anything for it,
+and a definition is no form of the manifest. A date or a date-time plus or minus a count of days of a kind walks the
+calendar (`rsDatumPlusDagsoort`, `rsDatumTijdPlusDagsoort`, ch. 3.8), and a duration in whole days of a kind between
+two dates counts them (`rsTijdsduurDagsoort`), from the date and the count that the rule binds, a derived one through
+its standing. A walk that passes the reach of ch. 3.8 without a day of the kind is an evaluation fault in the
+reference interpreter's sentence ("day-kind walk: no day of the kind within 40000 calendar days of …"), a `Fout` that
+counts only where it stands at the fixpoint. A definition that does not compile refuses nothing while no form uses
+it, so `jutterswet-schouwkalender`, whose hoogschouwdag tests a day kind on another day than the bound day, plays.
+Witness `TmsDagsoortWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
@@ -450,9 +483,7 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them day kinds (a duration counted in a day kind and the dayKind
-  predicate among them), the whole-period qualifier wholePeriod, and a dimensioned attribute over a path or one a
-  form writes;
+- the forms outside the trial, among them a dimensioned attribute over a path or one a form writes;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10), as the other two branches refuse it (golden `jutterswet-pachtvenster`); a
@@ -469,6 +500,17 @@ built, never as a silent fall:
   more than one period, a fold over a member on a timeline other than a sum or a total, a uniqueness key with two
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTijdlijnWeigeringWitnessTest`;
+- of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
+  check ("gedurende het gehele jaar niet …"), which both other branches refuse as well (ch. 3.12); and what the
+  reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
+  with none, and a date ordering (ch. 3.9, 3.12);
+- of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
+  outside a definition (ch. 3.12, 5.4); a duration in whole days of a kind between two date-times, which they refuse as
+  well (ch. 3.8, 3.12); and a form that steps or counts in a day kind whose definition does not compile: one that tests
+  a day kind on another day than the bound day, which no executor carries (red case `dagsoortverwijzing-andere-dag`),
+  one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
+  `jutterswet-havenrooster`, which the exec-model branch refuses as well), and any other shape outside the compiler.
+  Witness `TmsDagsoortWitnessTest`;
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
   either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the other two branches;
