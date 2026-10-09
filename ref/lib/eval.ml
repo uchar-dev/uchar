@@ -3010,8 +3010,9 @@ let run_feit_creatie env ~read world (fc : resolved_feit_creatie) =
             (w, false) targets)
   end
 
-(* ch. 5.5, non-recursive object creation: for each subject whose
-   condition holds, mint a deterministic instance of the created type,
+(* ch. 5.5, object creation, a member of a recursive group included
+   ([evaluate] runs every creation once per generation): for each subject
+   whose condition holds, mint a deterministic instance of the created type,
    apply the member initialisations (values evaluated on the subject;
    characteristic constants), and link new object and subject over the
    uniquely-derivable connecting relation — both ends. The idempotence

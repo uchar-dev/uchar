@@ -126,7 +126,7 @@ faults with file/position context — never a silent fallback.
   coercion.
 - **Not implemented** (each faults with context): day kinds,
   multi-period grids, dimension cells, dimension selections,
-  variable/constant refs, rule groups, the "is gevuurd" test (row 30:
+  variable/constant refs, the "is gevuurd" test (row 30:
   decided as a dialect-only fixpoint predicate, not yet implemented),
   and a granular parameter read in a SCALAR slot — vintage selection is
   ch. 8 scope.
@@ -134,5 +134,8 @@ faults with file/position context — never a silent fallback.
   ch. 3.7 pro-rata and ch. 3.8 day-count temporal targets, navigated
   scalar reads over a hop path (WF-053), the die/dat subselection filter
   on a fold, object and fact creation, parent-scoped uniqueness
-  (ch. 5.9, WF-054), uniqueness unions, and the temporal read of a
-  granular parameter's own timeline.
+  (ch. 5.9, WF-054), uniqueness unions, the temporal read of a
+  granular parameter's own timeline, and rule groups: membership of a
+  recursive group admits a creation's dependency cycle (WF-045), and
+  the chain runs to its fixpoint in generations (ch. 5.5, above); a
+  group adds nothing else to the evaluation.
