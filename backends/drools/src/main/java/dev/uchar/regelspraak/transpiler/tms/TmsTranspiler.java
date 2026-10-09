@@ -4477,14 +4477,14 @@ public final class TmsTranspiler {
 
     /** A characteristic check: of the subject, a bound truth value, complemented where the check is negated; over a
      *  role, the reached object's, and a check over an absent link holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8
-     *  rule 3). The standings are total, so no negation is needed here. */
+     *  rule 3). The standings are total, so no negation is needed here. Under the whole-period qualifier the check
+     *  folds the characteristic's true periods instead ({@link #geheelPeriodeKenmerk}). */
     private Toets kenmerkcheck(Conditie.Kenmerk k, Lezingen lez) {
-        if (k.periode() != null)
-            throw new Weigering("een CharacteristicCheck met wholePeriod ('" + snippet(k) + "'): tijdlijnen zijn " + BUITEN);
         // WF-109: the host is satisfied extensionally; a host the subject is no instance of names another object, which
         // a rule condition does not bind
         if (!Gastheer.hostOp(k, lez.subject))
             throw new Weigering("een CharacteristicCheck met een host die het onderwerp niet is ('" + snippet(k) + "')");
+        if (k.periode() != null) return geheelPeriodeKenmerk(k, lez);
         boolean gewenst = !k.negatie();
         List<RolBindingRef> nav = navigatieBindingen.get(k);
         if (nav == null) {
@@ -4496,6 +4496,161 @@ public final class TmsTranspiler {
         Pad p = pad(lez.subject, nav, null, "de kenmerkcheck '" + snippet(k) + "'");
         int i = lez.genavigeerd(p, lid(p.bereikt(), k.kenmerk(), true));
         return w -> w[i] != null && (Boolean) w[i] == gewenst;
+    }
+
+    // ---------------- the whole-period qualifier ----------------
+
+    /**
+     * A characteristic check under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the characteristic's
+     * true periods cover every day of every calendar year or month they touch ({@link #geheelPeriode}). The periods are
+     * those of the subject or of the object a path of to-one roles reaches, bound as a timeline; where a link on the
+     * path is absent the timeline is null, which touches no bucket and passes, as a characteristic without periods does,
+     * where the unqualified check over an absent link holds in neither polarity. No executor writes a characteristic on
+     * a timeline (ch. 3.11), so its periods are input. Refused by name: the negation inside the qualifier
+     * ("gedurende het gehele jaar niet …"), a per-day complement of the periods, which both other branches refuse as
+     * well (ch. 3.12).
+     */
+    private Toets geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
+        String wat = "een CharacteristicCheck met wholePeriod ('" + snippet(k) + "')";
+        if (k.negatie())
+            throw new Weigering(wat + " met de ontkenning binnen de kwalificatie: " + NOG_NIET + ", zoals de andere twee"
+                    + " takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen golden met cases heeft haar");
+        List<RolBindingRef> nav = navigatieBindingen.get(k);
+        if (nav == null) {
+            if (k.navigatie() != null) throw new Weigering(wat + " met een navigatie zonder binding");
+            return geheelPeriode(k.periode(), lez.tijdlijn(tijdlid(lez.subject, k.kenmerk(), true, wat)),
+                    TOETS_KENMERK, null, null);
+        }
+        Pad p = pad(lez.subject, nav, null, wat);
+        return geheelPeriode(k.periode(), lez.genavigeerd(p, tijdlid(p.bereikt(), k.kenmerk(), true, wat)),
+                TOETS_KENMERK, null, null);
+    }
+
+    /**
+     * A comparison under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the subject's own timeline
+     * satisfies the comparison with a bound on every day of every calendar year or month it touches
+     * ({@link #geheelPeriode}). One side is an own attribute on a timeline, the other the bound, a value of the rule like
+     * any other, evaluated whatever the timeline holds, as the reference interpreter evaluates it, and restated into the
+     * timeline's unit (ch. 2.6); a leeg bound fails every day, never a fault. Where the timeline stands on the right, the
+     * operator is reversed, never negated: on a leeg day the two differ. Refused by name, as the reference interpreter
+     * folds none of them: a timeline read over a path (ch. 3.12: it folds no navigated comparison), two timelines, no
+     * timeline, a date ordering (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
+     * other. The timeline is read before the bound, as the reference interpreter reads them.
+     */
+    private Toets geheelPeriodeVergelijking(Conditie.Vergelijking v, Lezingen lez) {
+        String wat = "een Comparison met wholePeriod ('" + snippet(v) + "')";
+        for (Expr kant : java.util.Arrays.asList(v.links(), v.rechts()))
+            if (kant instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a) && a.objecttype() != null
+                    && a.attribuut() != null && gedeclareerd(a.objecttype(), a.attribuut(), false).tijd() != null)
+                throw new Weigering(wat + " over een tijdlijn langs een pad ('" + snippet(a.bron()) + "'): de"
+                        + " referentie-interpreter vouwt alleen een eigen tijdsafhankelijk attribuut van het onderwerp"
+                        + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
+        boolean links = eigenTijdlijn(v.links(), lez), rechts = eigenTijdlijn(v.rechts(), lez);
+        if (links == rechts)
+            throw new Weigering(wat + (links ? " tussen twee tijdlijnen" : " zonder eigen tijdsafhankelijk attribuut aan"
+                    + " één kant") + ": de vouw toetst één tijdlijn van het onderwerp tegen een grens (RUNTIME-SEMANTICS"
+                    + " ch. 3.9)");
+        Expr.AttribuutRef tijd = (Expr.AttribuutRef) (links ? v.links() : v.rechts());
+        Expr grensExpr = links ? v.rechts() : v.links();
+        Integer toets = Tijdrekening.toets(links ? v.op() : Operatoren.omkeren(v.op()));
+        if (toets == null)
+            throw new Weigering(wat + " met een datumvergelijking: een datum over een gehele periode heeft geen lezing"
+                    + " (RUNTIME-SEMANTICS ch. 3.9, 3.12)");
+        Lid lid = tijdlid(lez.subject, tijd.attribuut(), false, wat);
+        if (!lid.datatype().isGetalachtig() || !eff.typeVan(grensExpr).isGetalachtig())
+            throw new Weigering(wat + " die geen getallen vergelijkt: de vouw toetst de waarde van een segment als getal"
+                    + " (RUNTIME-SEMANTICS ch. 3.9)");
+        int tijdlijn = lez.tijdlijn(lid);
+        Waardefunctie grens = herschaald(waarde(grensExpr, lez), eff.eenheidVan(grensExpr), eff.eenheidVan(tijd),
+                "een §8.2 tijdlijngrens");
+        return geheelPeriode(v.periode(), tijdlijn, toets, grens, emmerfout(lid, null, lez));
+    }
+
+    /**
+     * The leeg or the gevuld test under the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9): whether the timeline of an
+     * attribute reads leeg, or a value, on every day of every calendar year or month in which it reads a value
+     * ({@link #geheelPeriode}), the attribute the subject's own or that of the object a path of to-one roles reaches,
+     * whose absent link gives the null timeline, which passes. The inner negation is per day, so a negated test is its
+     * sister test; the loader already writes it so. A test of another kind and an operand that is no attribute on a
+     * timeline are refused by name (the loader refuses a parameter as the operand, in the sentence of the other two
+     * executors).
+     */
+    private Toets geheelPeriodePredicaat(Conditie.Predicaat p, Lezingen lez) {
+        String wat = "een Predicate met wholePeriod ('" + snippet(p) + "')";
+        boolean gevuld = switch (p.soort()) {
+            case LEEG -> p.negatie();
+            case GEVULD -> !p.negatie();
+            default -> throw new Weigering(wat + " van de soort " + Spelling.PREDICATE_KIND.spelling(p.soort()) + ": alleen"
+                    + " de leeg- en de gevuldtoets hebben een lezing onder de kwalificatie (RUNTIME-SEMANTICS ch. 3.9)");
+        };
+        if (!(p.operand() instanceof Expr.AttribuutRef a) || a.objecttype() == null || a.attribuut() == null)
+            throw new Weigering(wat + " over iets anders dan een attribuut: de vouw leest de tijdlijn van een"
+                    + " tijdsafhankelijk attribuut (RUNTIME-SEMANTICS ch. 3.9)");
+        int toets = gevuld ? TOETS_GEVULD : TOETS_LEEG;
+        List<RolBindingRef> pad = navigatieBindingen.get(a);
+        if (pad == null) {
+            if (a.objecttype() != lez.subject)
+                throw new Weigering(wat + " over een eigen lezing die " + a.objecttype().naam + " noemt op een "
+                        + lez.subject.naam + " (WF-053)");
+            Lid lid = tijdlid(lez.subject, a.attribuut(), false, wat);
+            return geheelPeriode(p.periode(), lez.tijdlijn(lid), toets, null, emmerfout(lid, null, lez));
+        }
+        Pad q = pad(lez.subject, pad, a.objecttype(), wat);
+        Lid lid = tijdlid(q.bereikt(), a.attribuut(), false, wat);
+        return geheelPeriode(p.periode(), lez.genavigeerd(q, lid), toets, null, emmerfout(lid, q, lez));
+    }
+
+    /**
+     * The fault of the whole-period fold over the attribute {@code lid} where the case gives its input as the
+     * asOfDate-bucket scalar ({@link Emmerscalair}): the fold reads the full timeline, and ch. 8.4 makes a form that needs
+     * the one convention and finds the other fault, never guess. It names the object by the subject of the rule, through
+     * the roles of {@code pad} where the attribute is read over one ("the werf of "S1""). Registers that the rule's
+     * evaluation can fault. The reference interpreter and the ASP backend read such an input as no timeline, which passes
+     * (measured 2026-10-09).
+     */
+    private static Function<Object[], Invoervormfout> emmerfout(Lid lid, Pad pad, Lezingen lez) {
+        int onderwerp = lez.lid();
+        lez.markeerFalen();
+        StringBuilder langs = new StringBuilder();
+        if (pad != null) for (int i = pad.rollen().size() - 1; i >= 0; i--)
+            langs.append("the ").append(pad.rollen().get(i)).append(" of ");
+        String voor = "the whole-period qualifier over \"" + lid.naam() + "\" needs the full timeline; " + langs;
+        return w -> new Invoervormfout(voor, w[onderwerp], " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)");
+    }
+
+    /** Whether {@code e} reads an attribute on a timeline of this rule's subject itself: an attribute reference without
+     *  a path, naming the subject's type, whose declaration on that type's chain lies on a timeline. */
+    private boolean eigenTijdlijn(Expr e, Lezingen lez) {
+        return e instanceof Expr.AttribuutRef a && a.objecttype() == lez.subject && a.attribuut() != null
+                && !navigatieBindingen.containsKey(a) && gedeclareerd(lez.subject, a.attribuut(), false).tijd() != null;
+    }
+
+    /** The tests of {@code rsGeheelPeriode}, by its own codes: a comparison takes the code {@link Tijdrekening#toets}
+     *  gives its operator. */
+    private static final int TOETS_GEVULD = 6, TOETS_KENMERK = 7, TOETS_LEEG = 8;
+
+    /**
+     * The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) over the timeline bound at {@code tijdlijn}, as
+     * the runtime folds it for the exec-model branch ({@code rsGeheelPeriode}): for every calendar year or month the
+     * timeline touches, the days on which the test holds must be all the days of that bucket. The grid is the
+     * qualifier's own, "het gehele jaar" or "de gehele maand", never the member's grid nor the session's, so the fold
+     * reads no evaluation date and a session without one answers. A leeg segment reads as a gap: it touches no bucket
+     * and satisfies no test but the leeg test. A timeline without segments, and a null one, touch no bucket and pass,
+     * so the qualifier's own negation ("niet gedurende …"), which complements the folded verdict, fails on them. The
+     * bound of a comparison is read as a decimal ({@code toBd}), as the exec-model branch reads it, after the timeline.
+     * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults with the fault
+     * {@code emmer} gives ({@link #emmerfout}); a characteristic, whose input is its true periods, has none
+     * ({@code emmer} null).
+     */
+    private static Toets geheelPeriode(Conditie.GeheelPeriode periode, int tijdlijn, int toets, Waardefunctie grens,
+                                       Function<Object[], Invoervormfout> emmer) {
+        String raster = periode.jaar() ? "JAAR" : "MAAND";
+        boolean niet = periode.niet();
+        return w -> {
+            List<?> tl = emmer == null ? (List<?>) w[tijdlijn] : volledig(w[tijdlijn], () -> emmer.apply(w));
+            BigDecimal g = grens == null ? null : RegelSpraakRuntime.toBd(grens.van(w));
+            return RegelSpraakRuntime.rsGeheelPeriode(tl, raster, toets, g) != niet;
+        };
     }
 
     /**
@@ -4769,11 +4924,11 @@ public final class TmsTranspiler {
      * number in the unit %, the right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of
      * one precision through {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a
      * truth value through {@link #tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated
-     * before the right one (ch. 5.11). Two sides whose types allow no comparison are refused.
+     * before the right one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period
+     * qualifier the comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
      */
     private Toets vergelijking(Conditie.Vergelijking v, Lezingen lez) {
-        if (v.periode() != null)
-            throw new Weigering("een Comparison met wholePeriod ('" + snippet(v) + "'): tijdlijnen zijn " + BUITEN);
+        if (v.periode() != null) return geheelPeriodeVergelijking(v, lez);
         Datatype lt = eff.typeVan(v.links()), rt = eff.typeVan(v.rechts());
         Conditie.Operator op = v.op();
         Waardefunctie l = waarde(v.links(), lez), r = waarde(v.rechts(), lez);
@@ -4859,10 +5014,10 @@ public final class TmsTranspiler {
     }
 
     /** A leeg or gevuld test of a value; a read over an absent link is leeg (RUNTIME-SEMANTICS ch. 5.8 rule 1). The loader
-     *  writes a negated test as its sister test. */
+     *  writes a negated test as its sister test. Under the whole-period qualifier the test folds a timeline instead
+     *  ({@link #geheelPeriodePredicaat}). */
     private Toets predicaat(Conditie.Predicaat p, Lezingen lez) {
-        if (p.periode() != null)
-            throw new Weigering("een Predicate met wholePeriod ('" + snippet(p) + "'): tijdlijnen zijn " + BUITEN);
+        if (p.periode() != null) return geheelPeriodePredicaat(p, lez);
         switch (p.soort()) {
             case LEEG, GEVULD -> {
                 Waardefunctie f = waarde(p.operand(), lez);
@@ -5005,7 +5160,8 @@ public final class TmsTranspiler {
             gelezen.putAll(afgeleid);
             for (Padlezing p : paden.values()) {
                 padlezingen.putIfAbsent(p.sleutel(), p);
-                if (schrijvers.containsKey(p.lid().sleutel())) gelezen.putIfAbsent(p.lid().sleutel(), p.lid());
+                if (schrijvers.containsKey(p.lid().sleutel()) || tijdlijnattribuut(p.lid()))
+                    gelezen.putIfAbsent(p.lid().sleutel(), p.lid());
             }
             kanalen.addAll(kanaalnamen);
             for (Vouw v : vouwen) {
@@ -5344,6 +5500,11 @@ public final class TmsTranspiler {
             return nieuw(sleutel, w);
         }
 
+        /** A member of the object {@code pad} reaches from this rule's subject, null where a link on the path is absent.
+         *  An attribute on a timeline is read through its standing at the end of the path, as {@link #tijdlijn} reads
+         *  one of the subject's own, so the read carries the case's input convention, a {@code List<Tijdvak>} or an
+         *  {@link Emmerscalair}; a characteristic on a timeline, which is input only, is bound as its true periods, a
+         *  {@code List<Tijdvak>} ({@link #invoerlezing}). */
         @SuppressWarnings({"unchecked", "rawtypes"})
         int genavigeerd(Pad pad, Lid lid) {
             String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
@@ -5351,9 +5512,12 @@ public final class TmsTranspiler {
             if (bekend >= 0) return bekend;
             Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
             ElementSleutel lk = lid.sleutel();
-            // a derived member, or any member at the end of a path whose links a form creates: through the path's
-            // standing, whose rules bind every link and the member in their left-hand sides
-            if (schrijvers.containsKey(lk) || pad.gecreeerd()) {
+            if (lid.tijd() != null && lid.kenmerk() && schrijvers.containsKey(lk))
+                throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
+                        + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
+            // a derived member, an attribute on a timeline, or any member at the end of a path whose links a form
+            // creates: through the path's standing, whose rules bind every link and the member in their left-hand sides
+            if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid) || pad.gecreeerd()) {
                 Padlezing p = new Padlezing(pad, lid);
                 String ps = pad.sleutel();
                 Variable<PadStand> st = DSL.declarationOf(PadStand.class, "$padstand_" + variabelen.size());
@@ -5363,12 +5527,10 @@ public final class TmsTranspiler {
                 paden.put(p.sleutel(), p);
             } else {
                 // input over links that are input: bound off the subject's bean, null where a link is absent
-                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-                boolean kenmerk = lid.kenmerk();
+                Function<Object, Object> lees = invoerlezing(lid);
                 onderwerp.bind(w, o -> {
                     Object d = pad.loop(o);
-                    if (d == null) return null;
-                    return kenmerk ? Boolean.TRUE.equals(getter.apply(d)) : getter.apply(d);
+                    return d == null ? null : lees.apply(d);
                 });
             }
             return nieuw(sleutel, w);
@@ -5678,8 +5840,9 @@ public final class TmsTranspiler {
      * created relation joining its {@link Koppeling} facts and a hop over an input relation the reference field of the
      * near bean, each ending in a pattern over the reached bean ({@link #keten}). Where the chain reaches an object the
      * standing carries the member's value there, read off that bean where no form writes the member and through its
-     * standing where one does; where it does not, the value is null, under a {@code not} over the same chain. A link that
-     * a creation adds takes the standing along.
+     * standing where one does, or where it is an attribute on a timeline, whose standing carries the case's input
+     * convention; where it does not, the value is null, under a {@code not} over the same chain. A link that a creation
+     * adds takes the standing along.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> koppelingpadstandregels(Padlezing p) {
@@ -5696,7 +5859,7 @@ public final class TmsTranspiler {
         items.add(PatternDSL.pattern(s1));
         PatternDSL.PatternDef<Object> bereikt = keten(pad.hops(), s1, items, null);
         Variable<Object> v = DSL.declarationOf(Object.class, "$v");
-        if (schrijvers.containsKey(lk)) {
+        if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid)) {
             Variable<Object> doel = bereikt.getFirstVariable();
             if (lid.kenmerk()) {
                 Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand");
@@ -5708,9 +5871,8 @@ public final class TmsTranspiler {
                         .expr(id("stand-bereikt"), doel, (x, b) -> x.onderwerp() == b).bind(v, Stand::waarde));
             }
         } else {
-            Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-            boolean kenmerk = lid.kenmerk();
-            bereikt.bind(v, o -> kenmerk ? Boolean.TRUE.equals(getter.apply(o)) : getter.apply(o));
+            Function<Object, Object> lees = invoerlezing(lid);
+            bereikt.bind(v, o -> lees.apply(o));
         }
         items.add(DSL.on(s1, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, w) ->
                 drools.logicalInsert(new PadStand(o, ps, lk, w))));
@@ -5777,6 +5939,23 @@ public final class TmsTranspiler {
      *  {@code List<Tijdvak>} ({@link Tijdvak}). */
     private record Lid(ElementSleutel sleutel, Objecttype declarant, String naam, boolean kenmerk, Datatype datatype,
                        Class<?> klasse, RegelSpraakModel.Granulariteit tijd) {}
+
+    /** Whether {@code lid} is an attribute on a timeline: one the branch reads through its standing, derived or input,
+     *  whose input stands in the convention the case gave it ({@link #attribuutstandregels}). */
+    private static boolean tijdlijnattribuut(Lid lid) {
+        return lid.tijd() != null && !lid.kenmerk();
+    }
+
+    /** The read of the input member {@code lid} off a bean of a type that declares it: a characteristic on a timeline as
+     *  its true periods, a {@code List<Tijdvak>} ({@link Tijdvak#lijst}), null for an absent timeline, a characteristic
+     *  that holds one truth value as that value, and any other member as its value. An attribute on a timeline is read
+     *  through its standing instead ({@link #tijdlijnattribuut}). */
+    private static Function<Object, Object> invoerlezing(Lid lid) {
+        Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
+        if (lid.tijd() != null) return o -> Tijdvak.lijst((List<?>) getter.apply(o));
+        if (lid.kenmerk()) return o -> Boolean.TRUE.equals(getter.apply(o));
+        return getter;
+    }
 
     /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names, holding one
      *  value. A member on a timeline is refused here: the positions that read or write one ask {@link #tijdlid}. A
