@@ -65,7 +65,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * draagt als producent van het §9.5-kanaal alleen een Consistency en een regel met een deling of een wortel …"; the
  * scoped one, "… SKIP: uniciteit: nummer per kust — een Uniqueness: buiten de proef van de truth-maintenance-tak"; the
  * build of the sampled orders, the same sentence for eenmalig nummer; the union, "… SKIP: uniciteit-unie: eenmalig
- * vondstnummer — een Uniqueness over meer bronnen: buiten de proef van de truth-maintenance-tak".
+ * vondstnummer — een Uniqueness over meer bronnen: buiten de proef van de truth-maintenance-tak". <b>Red by
+ * mutation</b> (not committed): with the violation inserted as a stated fact, the sampled orders fail, "expected:
+ * &lt;[eenmalig nummer @ V1, eenmalig nummer @ V3]&gt; but was: &lt;[eenmalig nummer @ V1, eenmalig nummer @ V2,
+ * eenmalig nummer @ V3]&gt;", while the documents in their own orders do not: there V2 never collided on the way.
  */
 class TmsUniciteitWitnessTest {
 

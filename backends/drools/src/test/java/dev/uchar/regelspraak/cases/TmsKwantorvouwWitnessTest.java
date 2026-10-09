@@ -2,7 +2,12 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.uchar.regelspraak.transpiler.tms.HeeftKenmerk;
+
+import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.event.rule.DefaultRuleRuntimeEventListener;
+import org.kie.api.event.rule.ObjectInsertedEvent;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,6 +30,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.samengesteld;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.verwacht;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The quantifier fold on the truth-maintenance branch (RUNTIME-SEMANTICS ch. 3.9a): one condition asked of every
@@ -55,6 +61,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * whose quotient exceeds 2 are gediplomeerd) over D (10 by 1, not gediplomeerd) and B: the filter of every member is
  * read before the matrix, so B's filter deposits although D's matrix settles the fold.
  *
+ * <p>The documents fix the order of the forms, not the order in which the agenda fires the generated rules, and in the
+ * orders of the documents W2 need not pass through the transient bevoegdheid at all. So per quantifier the generated
+ * rules of its document fire in 32 sampled orders over P1 of case B: the verdict is the fixpoint's in every one, and in
+ * some W2 was bevoegd on the way.
+ *
  * <p><b>Measured</b> (2026-10-09, on the documents of this class, every order; the verifier passes all 136). The
  * reference interpreter's runner passes every case the branch plays, in every order, and faults "EVALUATION FAULT:
  * division by numeric zero" on exactly the six the branch faults on (rustig over C, A; volledig over both lists; each
@@ -63,8 +74,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * documents with C, also where the verdict stands before C (rustig over A, C; krap and bezet over C alone), and it
  * deposits on the member, "… × B", also where the matrix does not reach B (rustig over A, B; krap over B alone).
  *
- * <p><b>Red</b> on deeaaa26: all five tests, every play "Excluded: tms-transpiler SKIP: regel: … — een
- * QuantifierFold in de voorwaarde ('…'): buiten de proef van de truth-maintenance-tak".
+ * <p><b>Red</b> on deeaaa26: all six tests, every play "Excluded: tms-transpiler SKIP: regel: … — een
+ * QuantifierFold in de voorwaarde ('…'): buiten de proef van de truth-maintenance-tak", the sampled orders on the
+ * build of their first document with the same sentence for sterkte. <b>Red by mutation</b> (not committed): with the
+ * stop triggers taken out of the replay, the two tests of the short circuit fail.
  */
 class TmsKwantorvouwWitnessTest {
 
@@ -209,6 +222,46 @@ class TmsKwantorvouwWitnessTest {
             }
         }
         assertEquals(verwacht, uitkomsten);
+    }
+
+    @Test void een_kenmerk_dat_onderweg_vervalt_telt_niet_in_elke_volgorde_van_de_gegenereerde_regels() throws Exception {
+        for (List<String> k : KWANTOREN) {
+            String kenmerk = k.get(0);
+            DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL,
+                    List.of(SCHORSING, BEVOEGDHEID, k.get(1))), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            int onderweg = 0;
+            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 30)) {
+                List<String> namen = volgorde.stream().map(Rule::getName).toList();
+                Object p1 = TmsDocumenten.boon(b.beanLoader(), "Ploeg", Map.of(), List.of());
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wacht", Map.of("dienstjaren", "8", "klachten", "0"), List.of());
+                Object w2 = TmsDocumenten.boon(b.beanLoader(), "Wacht", Map.of("dienstjaren", "9", "klachten", "3"), List.of());
+                Object w6 = TmsDocumenten.boon(b.beanLoader(), "Wacht", Map.of("dienstjaren", "10", "klachten", "0"),
+                        List.of());
+                for (Object w : List.of(w1, w2, w6)) zetRol(w, "ploeg", p1);
+                int[] bevoegd = {0};
+                TmsDocumenten.vuur(b, volgorde, List.of(p1, w1, w2, w6), sessie -> sessie.addEventListener(
+                        new DefaultRuleRuntimeEventListener() {
+                            @Override public void objectInserted(ObjectInsertedEvent e) {
+                                if (e.getObject() instanceof HeeftKenmerk h && h.onderwerp() == w2
+                                        && h.kenmerk().naam().equals("bevoegd")) bevoegd[0]++;
+                            }
+                        }), sessie -> { });
+                assertEquals(UITKOMST_B.get(kenmerk).get(0), TmsDocumenten.heeft(p1, kenmerk),
+                        () -> kenmerk + " van P1 in volgorde " + namen);
+                assertEquals(false, TmsDocumenten.heeft(w2, "bevoegd"), () -> "W2 in volgorde " + namen);
+                if (bevoegd[0] > 0) onderweg++;
+            }
+            assertTrue(onderweg > 0, "geen volgorde liet W2 onderweg bevoegd worden onder " + k.get(2));
+        }
+    }
+
+    private static void zetRol(Object boon, String rol, Object doel) throws Exception {
+        for (java.lang.reflect.Method m : boon.getClass().getMethods())
+            if (m.getName().equals(dev.uchar.regelspraak.transpiler.kern.Namen.setter(rol)) && m.getParameterCount() == 1) {
+                m.invoke(boon, doel);
+                return;
+            }
+        throw new AssertionError("geen setter voor " + rol + " op " + boon.getClass());
     }
 
     static final String A = melder("A", 10, 1, false), B = melder("B", 10, null, false),
