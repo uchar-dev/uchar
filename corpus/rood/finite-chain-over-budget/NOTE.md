@@ -11,16 +11,24 @@ a result). Both OCaml executors stop at that mint, in the same words:
 
 - ref: `EVALUATION FAULT: creation budget exhausted: object creation "werf
   de lange keten" of stratum 0 would mint at creation depth 101, on
-  oc0::…::W1 — …`. Pinned: `creation budget exhausted`.
+  oc0::…::W1 — …`. Pinned: the sentence up to `creation depth 101`, so a
+  fault of another creation or at another depth does not pass.
 - clingo: `UNSATISFIABLE — a fail-fast guard fired: viol("creation budget
-  exhausted",…)`, on the term of the 101st Wachter. Pinned: `creation
-  budget exhausted`.
+  exhausted",oc0(oc0(…("W1")…)))`, one witness, on the term of the 101st
+  Wachter. Pinned: `a fail-fast guard fired: viol("creation budget
+  exhausted",oc0(`, the witness on a mint of the creation and not on an
+  instance of the input; the ASP backend's suite checks the witness itself
+  on the same chain (`ch5.5 creation budget, a chain of 101 mints`):
+  exactly one witness, on the mint at depth 101.
 
 The Drools red run drives the exec-model branch, which has no creation
 budget, only a cap of 100 000 firings: it mints all 104 Wachters and
 reaches a fixpoint, so `scripts/check-rood.sh` lists the case as NOFAULT
 with that reason. The branch with truth maintenance (`--tms`), which the red
-run does not drive, faults here with the same fragment.
+run does not drive, faults at the same mint: `creation budget exhausted:
+objectcreatie "werf de lange keten" van stratum 0 zou een object maken op
+aanmaakdiepte 101, voor een Wachter op diepte 100 — …`, pinned whole in
+`TmsCreatieWitnessTest` (`het_creatiebudget_ligt_waar_het_corpus_het_pint`).
 
 The green side of the bound is pinned twice: `corpus/golden/
 synth2-budgetgrens-onder` (the same shape bounded at rank < 98, 97 mints,
@@ -40,4 +48,7 @@ rule in the chain's stratum ref faulted at 100 as well, since its budget was
 then 100 passes. Since the card `creatiebudget-ref-en-clingo` (2026-10-09)
 100 mints play and 101 fault in ref, clingo and the truth-maintenance branch,
 in both forms. Until that card the fragments pinned here were `no fixpoint
-within` (ref) and `generation budget exhausted` (clingo).
+within` (ref) and `generation budget exhausted` (clingo); from its third
+step until its fix round the same day both pinned `creation budget
+exhausted` only, which a fault on another object or at another depth
+satisfied as well.

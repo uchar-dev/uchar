@@ -13,18 +13,28 @@ cut off at 100:
 
 - ref: `EVALUATION FAULT: creation budget exhausted: object creation "werf
   de lange keten" of stratum 0 would mint at creation depth 101, on
-  oc0::…::W1 — …`. Pinned: `creation budget exhausted`.
+  oc0::…::W1 — …`. Pinned: the sentence up to `creation depth 101`, so a
+  fault of another creation or at another depth does not pass.
 - clingo: `UNSATISFIABLE — a fail-fast guard fired: viol("creation budget
-  exhausted",…)`, on the term of the 101st Wachter. Pinned: `creation
-  budget exhausted`.
+  exhausted",oc0(oc0(…("W1")…)))`, one witness, on the term of the 101st
+  Wachter (101 levels of `oc0`). Pinned: `a fail-fast guard fired:
+  viol("creation budget exhausted",oc0(`, the witness on a mint of the
+  creation and not on an instance of the input. A fragment cannot carry the
+  term of 101 levels whole, so the ASP backend's suite checks the witness
+  itself on the same chain (`ch5.5 creation budget, a chain of 101 mints`):
+  exactly one witness, on the mint at depth 101.
 - the Drools branch with truth maintenance (`--tms`), which the red run does
   not drive: `creation budget exhausted: objectcreatie "werf de lange keten"
   van stratum 0 zou een object maken op aanmaakdiepte 101, voor een Wachter
-  op diepte 100 — …`.
+  op diepte 100 — …`, pinned whole in `TmsCreatieWitnessTest`
+  (`het_creatiebudget_ligt_waar_het_corpus_het_pint`), beside the two pins
+  above.
 
 Until the card's third step (2026-10-09) the fragments were `no fixpoint
 within` (ref, which counted 100 generations per stratum that mint or link)
-and `generation budget exhausted` (clingo).
+and `generation budget exhausted` (clingo); from then until the card's fix
+round the same day both pinned `creation budget exhausted` only, which a
+fault on another object or at another depth satisfied as well.
 
 The Drools red run drives the exec-model branch. That branch and the DRL-text
 branch have no creation budget, only a cap of 100 000 firings: they make all

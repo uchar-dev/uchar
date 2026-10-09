@@ -15247,25 +15247,40 @@ let () =
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
   in
-  (* both executors fault on the budget, each in its own words *)
-  let budget_op ~name ~ir ~case_text =
+  (* both executors fault on the budget, each in its own words, and at the
+     same place: the mint at creation depth 101 that the object creation
+     [creatie] (index [idx], stratum 0) would make on the chain from the
+     input instance [root]. ref names the creation, its stratum, the depth
+     and the subject at depth 100; this backend's one viol/2 witness carries
+     the term of that mint. A fault on another object — the root, the
+     subject at depth 100, a mint one deeper — fails the frame, where the
+     shared words alone would let it pass (the lens on the card's last
+     step). *)
+  let budget_op ~name ~ir ~case_text ~creatie ~idx ~root =
     verifier_clean ~name ~ir;
     let doc, case = load_pair ~ir ~case_text in
+    let herhaal n s = String.concat "" (List.init n (fun _ -> s)) in
+    let ref_plek =
+      Printf.sprintf
+        "creation budget exhausted: object creation \"%s\" of stratum 0 would mint at creation depth 101, on %s%s "
+        creatie (herhaal 100 (Printf.sprintf "oc%d::" idx)) root
+    and clingo_plek =
+      Printf.sprintf "viol(\"creation budget exhausted\",%s\"%s\"%s)" (herhaal 101 (Printf.sprintf "oc%d(" idx)) root
+        (String.make 101 ')')
+    in
     (match ref_report doc case with
     | _ -> check (name ^ ": ref faults on the budget (it evaluated)") false
     | exception Uchar_ref.Value.Fault m ->
-        check (name ^ ": ref faults on the budget (" ^ m ^ ")")
-          (Uchar_ref.Case.contains ~needle:"creation budget exhausted" m));
-    let label = name ^ ": clingo is UNSAT on the budget" in
+        check (name ^ ": ref faults on the budget, at the mint at depth 101 (" ^ m ^ ")")
+          (Uchar_ref.Case.contains ~needle:ref_plek m));
+    let label = name ^ ": clingo is UNSAT on the budget, with one witness, on the mint at depth 101" in
     match translate doc case with
     | exception Uchar_ref.Value.Fault m -> check (label ^ " (translation fault: " ^ m ^ ")") false
     | program -> (
         match Solve.run_clingo program with
         | _, Unix.WEXITED 20 ->
             let ws = Solve.diagnose program in
-            check
-              (label ^ " (" ^ String.concat "; " ws ^ ")")
-              (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"creation budget exhausted" w) ws)
+            check (label ^ " (" ^ String.concat "; " ws ^ ")") (ws = [ clingo_plek ])
         | _, Unix.WEXITED (10 | 30) -> check (label ^ " (clingo found a model)") false
         | _, Unix.WEXITED 127 -> check (label ^ " (clingo NOT FOUND on PATH)") false
         | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d)" c) false
@@ -15291,7 +15306,9 @@ let () =
         speelt ~name:(name ^ " with its rank detector") ~ir:(lange_keten ~met_detector:true grens)
           ~case_text:(zaak [ waarde "W1" "rang" "1"; inconsistent "rangdetector" ])
       end
-      else budget_op ~name ~ir:(lange_keten grens) ~case_text:(zaak [ waarde "W1" "rang" "1" ]))
+      else
+        budget_op ~name ~ir:(lange_keten grens) ~case_text:(zaak [ waarde "W1" "rang" "1" ])
+          ~creatie:"werf de lange keten" ~idx:0 ~root:"W1")
     [ (100, 99); (101, 100); (102, 101) ];
   (* 50 + 1 + 50 over three strata *)
   let werf grens =
@@ -15419,7 +15436,7 @@ let () =
   speelt ~name:"ch5.5 creation budget, a chain that waits for links, W101 at depth 100" ~ir:(wacht_op_link 101)
     ~case_text:wacht_zaak;
   budget_op ~name:"ch5.5 creation budget, a chain that waits for links, W102 at depth 101"
-    ~ir:(wacht_op_link 102) ~case_text:wacht_zaak;
+    ~ir:(wacht_op_link 102) ~case_text:wacht_zaak ~creatie:"werf de opvolger" ~idx:0 ~root:"W1";
   (* the clamp: a forged instance with a depth in stratum 1 only, an instance
      of the subject type of "werf de lange keten", of stratum 0 *)
   let name = "ch5.5 creation budget, the clamp on a subject without a depth in the creation's stratum" in

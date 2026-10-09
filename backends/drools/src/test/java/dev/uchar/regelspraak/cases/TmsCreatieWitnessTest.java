@@ -664,24 +664,33 @@ class TmsCreatieWitnessTest {
     }
 
     /** The two sides of the budget the reference interpreter and the ASP backend pin: a chain of 97 mints plays
-     *  ({@code synth2-budgetgrens-onder}), one of 104 and one that does not stop fault at the mint at depth 101
-     *  ({@code corpus/rood} {@code finite-chain-over-budget} and {@code runaway-recursion}), with the fragment the red
-     *  cases pin for the other two. A red case pins no expectation, so it plays here with none. */
+     *  ({@code synth2-budgetgrens-onder}), and the chains of the three red cases fault at the mint at depth 101
+     *  ({@code corpus/rood} {@code jutterswet-budgetgrens-over}, {@code finite-chain-over-budget} and
+     *  {@code runaway-recursion}), with a sentence that names the creation, its stratum, the depth of the mint and the
+     *  type and depth of its subject. The red cases pin the same place for the other two: the reference interpreter's
+     *  fragment names the same creation, stratum and depth, and the ASP backend's names its witness on a mint of that
+     *  creation, whose depth its own suite checks (the gate's fragment cannot carry a term of 101 levels). Until
+     *  2026-10-09 the three executors pinned only the shared words "creation budget exhausted", which a fault on
+     *  another object or at another depth satisfied as well. A red case pins no expectation, so it plays here with
+     *  none. */
     @Test void het_creatiebudget_ligt_waar_het_corpus_het_pint() throws Exception {
         Path onder = CORPUS.resolve("golden").resolve("synth2-budgetgrens-onder");
         assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(onder.resolve("ir.json"),
                 List.of(onder.resolve("case1.json"))).status());
-        for (Map.Entry<String, String> rood : Map.of("finite-chain-over-budget", "werf de lange keten",
-                "runaway-recursion", "werf eeuwig").entrySet()) {
+        for (Map.Entry<String, String> rood : Map.of("jutterswet-budgetgrens-over", "werf de lange keten",
+                "finite-chain-over-budget", "werf de lange keten", "runaway-recursion", "werf eeuwig").entrySet()) {
             Path d = CORPUS.resolve("rood").resolve(rood.getKey());
             JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(d.resolve("case1.json")));
             ((com.fasterxml.jackson.databind.node.ObjectNode) zaak).putArray("expected");
             String zin = TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
             assertEquals("case: " + TmsCreatiestratumWitnessTest.budget(rood.getValue(), 0, "Wachter"), zin,
                     rood.getKey());
-            for (String executor : List.of("ref", "clingo"))
-                assertTrue(zin.contains(zaak.get("expectedFault").get(executor).asText()),
-                        () -> rood.getKey() + ": het fragment van " + executor);
+            JsonNode pin = zaak.get("expectedFault");
+            assertEquals("creation budget exhausted: object creation \"" + rood.getValue()
+                    + "\" of stratum 0 would mint at creation depth 101", pin.get("ref").asText(),
+                    () -> rood.getKey() + ": het fragment van ref noemt de creatie, het stratum en de diepte van deze tak");
+            assertEquals("a fail-fast guard fired: viol(\"creation budget exhausted\",oc0(", pin.get("clingo").asText(),
+                    () -> rood.getKey() + ": het fragment van clingo noemt de getuige op een aanmaak van de creatie");
         }
     }
 

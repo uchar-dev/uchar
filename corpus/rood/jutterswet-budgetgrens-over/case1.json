@@ -21,7 +21,7 @@
     "parameters": {}
   },
   "expectedFault": {
-    "ref": "creation budget exhausted",
-    "clingo": "creation budget exhausted"
+    "ref": "creation budget exhausted: object creation \"werf de lange keten\" of stratum 0 would mint at creation depth 101",
+    "clingo": "a fail-fast guard fired: viol(\"creation budget exhausted\",oc0("
   }
 }
