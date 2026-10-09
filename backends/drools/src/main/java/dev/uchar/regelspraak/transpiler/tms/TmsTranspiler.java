@@ -117,7 +117,8 @@ import java.util.function.UnaryOperator;
  * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
  * duplicates are as well ({@link #uniciteitsregels}); a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
- * ordinary rule on an ancestor's level folds, so that it does not fire on that type; and an object creation over a
+ * ordinary rule on an ancestor's level folds, so that it does not fire on that type; an allocation, as a computation
+ * over the recipients its left-hand side binds ({@link #verdeling}); and an object creation over a
  * {@code connectingRole} and a fact creation, each over a relation of two roles. Each always valid or gated on the
  * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
  * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
@@ -519,7 +520,7 @@ public final class TmsTranspiler {
         for (ResolvedUniciteit u : model.uniciteiten)
             regels.addAll(meet("uniciteit", naamOf(u.naam()), () -> uniciteitRegels(u)));
         for (ResolvedVerdeling v : model.verdelingen)
-            weiger("verdeling", naamOf(v.naam()), "een Allocation: " + BUITEN);
+            regels.addAll(meet("verdeling", naamOf(v.naam()), () -> verdeling(v)));
         for (ResolvedObjectCreatie o : model.objectCreaties)
             regels.addAll(meet("objectcreatie", naamOf(o.naam()), () -> objectCreatie(o)));
         for (ResolvedFeitCreatie f : model.feitCreaties)
@@ -1334,6 +1335,222 @@ public final class TmsTranspiler {
                 DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
                         drools.logicalInsert(new KanaalStand(producent, false))));
         return List.of(inconsistent, consistent);
+    }
+
+    // ---------------- an allocation ----------------
+
+    /**
+     * An allocation (IR-SPEC ch. 3.2, RUNTIME-SEMANTICS ch. 4): a computation over the set of recipients that the
+     * left-hand side binds. One rule of the allocation inserts, per source and per recipient, an {@link Ontvanger}
+     * logically: the recipient is an instance of {@code targetType} that the connecting relation links to the source
+     * ({@link #ontvangersjoin}), so a related instance that is no {@code targetType} receives nothing and stays leeg
+     * (ch. 4.1), and its weight, ordering key and cap are bound in that rule's left-hand side, a derived one through its
+     * standing. The allocation's own rule binds the source, its pot, the reads of its condition and, through an
+     * accumulate, the list of the source's {@link Ontvanger} facts ({@link Lezingen#ontvangers}), and its consequence
+     * computes the distribution from those bound values only ({@link Verdeling}): each share and the rest are a
+     * {@link Waarde} with the allocation as the writer, and each degradation of ch. 4.3 and 4.4 (an empty weight, a
+     * negative proportional weight, an empty or negative cap) is the allocation's §9.5 deposit on that recipient. All of
+     * it is logical, so a recipient that arrives or leaves, a weight, key, cap or pot that changes, and a condition that
+     * stops holding take the whole distribution of the source along, the rest included (ch. 4.3), and a deposit made on
+     * an intermediate state goes again: like a fault it counts at the fixpoint (PLAN §9, 2026-10-09). An empty pot of
+     * the equal-shares or the proportional method with recipients is the reference interpreter's fault (ch. 4.4), a
+     * {@link Fout} on the source. A version with a bounded validity gates on the evaluation date and faults a session
+     * without one, as a rule's version does; a condition that can fault or deposit has its own fault and deposit rules,
+     * on the source, as the reference interpreter evaluates the condition per source before anything else.
+     *
+     * <p>A share or a rest replaces the input on its target, as the reference interpreter overwrites it, and a recipient
+     * that receives nothing keeps its input; the member value an object creation sets is the input of the object it
+     * makes. Every other writer of a target is refused ({@link #verdelingsschrijvers}): two allocations on one target
+     * are ill-formed (WF-026), so is a defaults group beside an allocation (WF-050), and a rule beside one, a computing
+     * rule or an initialisation, this branch does not carry yet.
+     */
+    private List<Rule> verdeling(ResolvedVerdeling v) {
+        String naam = v.naam();
+        // the rules of a form are named by the form, and the deposits and shares carry that name
+        if (naam == null) throw new Weigering("een verdeling zonder naam (WF-107)");
+        Objecttype bron = v.bronType(), doel = v.doelType();
+        ResolvedVerdeling.Methode methode = v.methode();
+        if (bron == null || doel == null || v.bronAttribuut() == null || v.doelAttribuut() == null || methode == null)
+            throw new Weigering("een verdeling zonder opgeloste bron, doel of methode");
+        RolBindingRef rb = rolBindingen.get(v);
+        if (rb == null) throw new Weigering("een verdeling zonder connectingRole (IR-SPEC ch. 3.2)");
+        // WF-025, which the verifier holds and this backend does not run: the fields each method carries
+        boolean gelijk = methode == ResolvedVerdeling.Methode.GELIJKE_DELEN;
+        if (methode == ResolvedVerdeling.Methode.NAAR_RATO && v.ratoAttribuut() == null)
+            throw new Weigering("een verdeling naar rato zonder gewicht (WF-025)");
+        if (gelijk && v.ratoAttribuut() != null)
+            throw new Weigering("een verdeling in gelijke delen met een gewicht (WF-025)");
+        if (v.maximumAttribuut() != null && v.ratoAttribuut() == null)
+            throw new Weigering("een verdeling met een maximum zonder gewicht (WF-025)");
+        if (methode != ResolvedVerdeling.Methode.OP_VOLGORDE && v.groepeerAttribuut() != null)
+            throw new Weigering("een volgordesleutel op een verdeling die niet op volgorde verdeelt (WF-025)");
+        Lid pot = getallid(bron, v.bronAttribuut(), "de pot");
+        Lid aandeel = getallid(doel, v.doelAttribuut(), "het aandeel");
+        Lid rest = v.restantAttribuut() == null ? null : getallid(bron, v.restantAttribuut(), "het restant");
+        Lid gewicht = v.ratoAttribuut() == null ? null : getallid(doel, v.ratoAttribuut(), "het gewicht");
+        Lid maximum = v.maximumAttribuut() == null ? null : getallid(doel, v.maximumAttribuut(), "het maximum");
+        Lid sleutel = v.groepeerAttribuut() == null ? null : lid(doel, v.groepeerAttribuut(), false);
+        if (sleutel != null && !sleutel.datatype().isOrdenbaar())
+            throw new Weigering("de volgordesleutel '" + sleutel.naam() + "' van type " + typenaam(sleutel.datatype())
+                    + " is niet ordenbaar (WF-025)");
+        verdelingsschrijvers(v, doel, aandeel);
+        if (rest != null) verdelingsschrijvers(v, bron, rest);
+
+        String regelnaam = model.geëmitteerdeRegelNaam(naam);
+        List<Rule> uit = new ArrayList<>();
+
+        // per source and recipient: the recipient's values, bound in this rule's left-hand side
+        Lezingen lid = bijdragelezingen(bron, doel, ontvangersjoin(rb, bron, doel, naam));
+        Set<Integer> lidgebruik = lid.volg();
+        int ontvanger = lid.lid();
+        int g = gewicht == null ? -1 : lid.eigen(gewicht);
+        int k = sleutel == null ? -1 : lid.eigen(sleutel);
+        int m = maximum == null ? -1 : lid.eigen(maximum);
+        lid.stop();
+        List<RuleItemBuilder<?>> lidregel = lid.linkerkant(null, Set.of(), null);
+        lidregel.add(gevolg(lid, lid.drager, posities(lidgebruik), (drools, b, w) ->
+                drools.logicalInsert(new Ontvanger(naam, b, w[ontvanger], g < 0 ? null : w[g], k < 0 ? null : w[k],
+                        m < 0 ? null : w[m])), lid.variabelen.size()));
+        lid.vastleggen();
+        uit.add(PatternDSL.rule(PKG, regelnaam + ": ontvanger").build(lidregel.toArray(new RuleItemBuilder[0])));
+
+        // per source: the condition, the pot and the list of recipients, and the distribution computed from them
+        Supplier<Lezingen> nieuw = () -> new Lezingen(bron).geldig(v.geldigheid());
+        Lezingen lez = nieuw.get();
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = v.voorwaarde() == null ? null : voorwaarde(v.voorwaarde(), lez);
+        boolean kanFalen = lez.kanFalen();
+        lez.stop();
+        Set<Integer> gebruik = lez.volg();
+        int p = lez.eigen(pot);
+        int lijst = lez.ontvangers(naam);
+        lez.stop();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, v.voorwaarde());
+        ElementSleutel aandeelSleutel = aandeel.sleutel(), restSleutel = rest == null ? null : rest.sleutel();
+        boolean gewogen = gewicht != null, gemaximeerd = maximum != null, afnemend = v.afnemend();
+        Integer decimalen = v.afrondingDecimalen();
+        items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
+            List<Ontvanger> ontvangers = new ArrayList<>();
+            for (Object o : (List<?>) w[lijst]) ontvangers.add((Ontvanger) o);
+            Verdeling.Uitslag u;
+            try {
+                u = Verdeling.bereken(methode, w[p], ontvangers, gewogen, gemaximeerd, decimalen, afnemend);
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                drools.logicalInsert(new Fout(onderwerp, naam, Rekenfout.benoem(e, regelnaam)));
+                return;
+            }
+            for (Object r : u.deponeringen())
+                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, r));
+            for (Map.Entry<Object, BigDecimal> e : u.aandelen().entrySet())
+                drools.logicalInsert(new Waarde(e.getKey(), aandeelSleutel, e.getValue(), naam));
+            if (restSleutel != null && u.rest() != null)
+                drools.logicalInsert(new Waarde(onderwerp, restSleutel, u.rest(), naam));
+        }, lez.variabelen.size()));
+        lez.vastleggen();
+        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        afgeleid.put(aandeelSleutel, aandeel);
+        if (rest != null) afgeleid.put(restSleutel, rest);
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, v.voorwaarde(), null));
+        Rule deponering = deponeerregel(naam, regelnaam, nieuw, v.voorwaarde(), null);
+        if (deponering != null) uit.add(deponering);
+        Rule zonderDatum = geldigheidsfout(regelnaam, naam, v.geldigheid());
+        if (zonderDatum != null) uit.add(zonderDatum);
+        return uit;
+    }
+
+    /** Attribute {@code naam} of {@code houder} as an allocation reads or writes it as a number: the pot, a share, the
+     *  rest, a weight or a cap, {@code rol} naming which. The distribution computes with numbers only, as the
+     *  exec-model branch does, so another datatype is refused by name. */
+    private Lid getallid(Objecttype houder, String naam, String rol) {
+        Lid lid = lid(houder, naam, false);
+        if (!lid.datatype().isGetalachtig())
+            throw new Weigering("een verdeling waarvan " + rol + " het attribuut '" + lid.naam() + "' van "
+                    + lid.declarant().naam + " is, van type " + typenaam(lid.datatype()) + " en geen getal: " + NOG_NIET);
+        return lid;
+    }
+
+    /**
+     * Refuses the allocation {@code v} where another form writes the attribute {@code lid} that it writes on
+     * {@code type}, its share target or its rest, on an instance it writes too: on {@code type}, an ancestor or a
+     * descendant ({@link #verwant}), read per concrete type as WF-026 and WF-050 read it, so a form on a sister subtype
+     * does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026), and so is a
+     * defaults group (WF-050). A rule beside it is well-formed, and refused until this branch carries it: a computing
+     * rule is a second equation of the target, whose value must agree at the fixpoint (RUNTIME-SEMANTICS ch. 5.7), a
+     * disagreement this branch keys on two computing rules only ({@link #verschilregel}); an initialisation is the
+     * lowest default beside the allocation (ch. 7.7), whose guard would read the allocation's shares as it reads every
+     * other writer's value, but no witness holds that pair against the reference interpreter yet. The member value an
+     * object creation sets is no writer here: it is the input of the object it makes, which a share replaces.
+     */
+    private void verdelingsschrijvers(ResolvedVerdeling v, Objecttype type, Lid lid) {
+        ElementSleutel el = lid.sleutel();
+        String eigen = ProducentConsument.basisNaam(v.naam());
+        Set<String> verdelingen = new LinkedHashSet<>(), groepen = new LinkedHashSet<>(), regels = new LinkedHashSet<>();
+        for (ResolvedVerdeling o : model.verdelingen) {
+            if (o.naam() != null && ProducentConsument.basisNaam(o.naam()).equals(eigen)) continue;
+            boolean schrijft = o.doelType() != null && o.doelAttribuut() != null && verwant(o.doelType(), type)
+                    && ProducentConsument.elementVan(o.doelType(), o.doelAttribuut(), false).equals(el)
+                    || o.bronType() != null && o.restantAttribuut() != null && verwant(o.bronType(), type)
+                    && ProducentConsument.elementVan(o.bronType(), o.restantAttribuut(), false).equals(el);
+            if (schrijft) verdelingen.add("\"" + naamOf(o.naam()) + "\"");
+        }
+        if (!verdelingen.isEmpty())
+            throw new Weigering("twee verdelingen schrijven het attribuut '" + lid.naam() + "' van " + type.naam
+                    + " (ook " + String.join(", ", verdelingen) + "): een doel heeft hoogstens één verdeling (WF-026)");
+        for (int i = 0; i < defaults.size(); i++) {
+            PrioritizedDefaults pd = defaults.get(i);
+            Objecttype t = model.objecttypeOpNaam(pd.onderwerp());
+            if (t != null && pd.doel() != null && !pd.isKenmerk() && verwant(t, type)
+                    && ProducentConsument.elementVan(t, pd.doel(), false).equals(el))
+                groepen.add(pd.naam() != null ? "\"" + pd.naam() + "\"" : "/rules/prioritizedDefaults/" + i);
+        }
+        if (!groepen.isEmpty())
+            throw new Weigering("een verdeling naast de defaultsgroep " + String.join(", ", groepen) + " op het attribuut '"
+                    + lid.naam() + "' van " + type.naam + ": een doel van een defaultsgroep heeft geen andere schrijver"
+                    + " (WF-050)");
+        for (ResolvedRegel r : model.resolvedRegels)
+            if (r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING
+                    && r.doel() instanceof Expr.AttribuutRef d && d.objecttype() != null && d.attribuut() != null
+                    && verwant(d.objecttype(), type)
+                    && ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false).equals(el))
+                regels.add("\"" + naamOf(r.naam()) + "\"");
+        if (!regels.isEmpty())
+            throw new Weigering("een verdeling naast de regel " + String.join(", ", regels) + " op het attribuut '"
+                    + lid.naam() + "' van " + type.naam + ": een verdeling naast een rekenende regel of een initialisatie"
+                    + " op één doel; " + NOG_NIET);
+    }
+
+    /**
+     * How the rule of an allocation joins a recipient, its subject, to the source, its {@link Lezingen#drager}, over the
+     * connecting relation {@code rb}, whose bound role is the recipient's and its sibling the source's (IR-SPEC ch. 3.2),
+     * as a fold's one-step range joins a member ({@link #eenstapsbereik}): over a relation a form creates, through a
+     * {@link Koppeling} in an {@code exists}; over an input relation, through the one scalar bean field §13.3.9 stores
+     * it in, on the source where the recipient role is to-one and else on the recipient. Refused as there: a binding
+     * that names no role pair, a to-one recipient role whose sibling is to-many, and a join the bean model gives no
+     * field.
+     */
+    private Consumer<Lezingen> ontvangersjoin(RolBindingRef rb, Objecttype bron, Objecttype doel, String naam) {
+        RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, rb);
+        if (paar == null)
+            throw new Weigering("de connectingRole van de verdeling noemt geen gedeclareerde rol (" + rb.feittype() + ", "
+                    + rb.rol() + ")");
+        if (rb.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(rb.feittype())))
+            return koppelingsbereik(rb, paar[0], "de verdeling '" + naam + "'").koppel();
+        String ontvangerrol = paar[0].naam(), bronrol = paar[1].naam();
+        boolean voorwaarts = !model.naarVeelRol(bron, doel, ontvangerrol);
+        if (voorwaarts && model.naarVeelRol(doel, bron, bronrol))
+            throw new Weigering("een verdeling over de enkelvoudige ontvangerrol '" + ontvangerrol + "' wiens zusterrol '"
+                    + bronrol + "' meervoudig is: dat feittype heeft één beanveld voor beide richtingen, zoals een vouw"
+                    + " over zo'n rol weigert (§13.3.9 opslagrichting)");
+        Objecttype drager = voorwaarts ? bron : doel, ander = voorwaarts ? doel : bron;
+        String rol = voorwaarts ? ontvangerrol : bronrol;
+        if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, ander))
+            throw new Weigering("de join van de verdeling heeft geen beanveld — "
+                    + FactModelGenerator.geenJoinveldReden(model, drager, rol, ander) + " (§13.3.9 opslagrichting)");
+        Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
+        return lid -> lid.onderwerp.expr(id("ontvanger-bron"), lid.drager, voorwaarts
+                ? (e, s) -> veld.apply(s) == e
+                : (e, s) -> veld.apply(e) == s);
     }
 
     // ---------------- object and fact creation ----------------
@@ -4332,6 +4549,22 @@ public final class TmsTranspiler {
          *  subject, bound as a list off an accumulate: empty for an object of the input, one mark for an object a
          *  creation made. An accumulate over no fact still binds a row, so the rule reads an object of the input as
          *  well. An object creation reads the depth of its subject off it ({@link TmsTranspiler#diepte}). */
+        /** The {@link Ontvanger} facts of the allocation {@code verdeling} whose source is this rule's subject, bound as
+         *  a list off an accumulate: the recipients with their weights, keys and caps as their own rule bound them
+         *  ({@link TmsTranspiler#verdeling}). A recipient whose fact changes changes the list, and the activation that
+         *  read it fires again. An accumulate over no fact still binds a row, an empty list. */
+        int ontvangers(String verdeling) {
+            String sleutel = "ontvangers " + verdeling;
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            Variable<Ontvanger> o = DSL.declarationOf(Ontvanger.class, "$ontvanger_" + id("verdeling"));
+            Variable<Object> lijst = DSL.declarationOf(Object.class, "$ontvangers_" + id("verdeling"));
+            standen.add(DSL.accumulate(PatternDSL.pattern(o).expr(id("ontvanger"), x -> x.verdeling().equals(verdeling))
+                            .expr(id("ontvanger-bron"), s, (x, b) -> x.bron() == b),
+                    DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), o).as(lijst)));
+            return nieuw(sleutel, lijst);
+        }
+
         int herkomst() {
             int bekend = bestaand("herkomst");
             if (bekend >= 0) return bekend;
