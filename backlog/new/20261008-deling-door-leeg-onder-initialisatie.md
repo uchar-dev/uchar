@@ -100,3 +100,7 @@ Na het besluit van 2026-10-08 (PLAN §9) vervangt `20261008-tms-omschakeling`
 de exec-modeltak door de verlaging met truth maintenance. Deze kaart is klein
 en kan daarvóór landen zoals ze staat. Landt ze erna, dan vervalt (b) voor de
 exec-modeltak, want de nieuwe verlaging geeft hier al het goede antwoord.
+
+Document D van `20261008-fout-op-tussenstand` (2026-10-09) is de variant met de deling in de voorwaarde van een
+initialisatie waarvan het doel in de invoer gevuld is: daar deponeren ref en clingo nog, waar het besluit van
+2026-10-09 nee zegt. Die kaart repareert het; de tak met truth maintenance geeft al het besloten antwoord.

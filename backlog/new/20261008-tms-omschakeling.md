@@ -125,6 +125,38 @@ het besluit van de eigenaar van 2026-10-08 (PLAN §9):
     `TmsTranspiler` `FEITCREATIE`, `OBJECTCREATIE`, `creatieregels()`,
     `creatiestrata()`, `lidstratum(…)` en `leestLijstplaatsen()`.
 
+## Aanvulling na `20261008-tms-expressievormen-en-rekendatum` (2026-10-09)
+
+Uit het `Result:` van die kaart (open punten en bijvangst). De tak speelt daarna 196 van de 242 goldens van de
+exec-modeltak; de overige 46 weigert hij eerst op een vorm van `20261008-tms-verdeling-en-tijdlijnen`.
+
+13. **Gedrag dat alleen de destructieve exec-modeltak heeft** (afspraak van de eigenaar van 2026-10-09: geen eigen
+    kaart; het verdwijnt met de omschakeling, en de doorloop van punt 1 telt het niet als verlies):
+    - een versie met een begrensde geldigheid in een sessie zonder rekendatum speelt, waar ref faalt;
+    - de terugvalwaarde van een som in een andere eenheid wordt niet herrekend (1 waar 1000 hoort);
+    - een irrationale wortel zonder afronding geeft een benadering, waar ref faalt;
+    - een deling door leeg deponeert niet in een voorwaarde, niet bij een operand die geen gelezen attribuut is ("5
+      gedeeld door zijn noemer"), en niet in het filter van een vouw;
+    - een tekstdeel van een getal of een waarheidswaarde in een tekstsamenstelling schrijft "5.50" en "true"; de tak
+      met truth maintenance weigert zo'n deel met naam tot `20261009-tekst-van-een-waarde-in-een-tekstsamenstelling`
+      de norm vastlegt.
+14. **Voor de schaalproef van punt 9:** uniciteit vergelijkt elke sleutel met elke sleutel, zoals de exec-modeltak;
+    punt 5 van die kaart (de leeslaag) is niet gebouwd, dus de gesloten woordenschat met gelijke ids, waarmee Drools
+    knopen deelt, is hier het middel als de vloer niet gehaald wordt; de kolom "Los" van `TmsMeting` kan sinds
+    `e92d5fee` niet meer gevuld raken.
+15. **Voor het contract van punt 12:** `zetAfgeleideWaarden` gooit bij één staande fout ook `Rekenfout` (een
+    evaluatiefout van een rekenvorm of van de rekendatum) of `Schrijversconflict` (twee schrijvers van één doel, ch.
+    5.7). De schrijversfout noemt een object bij zijn caselabel alleen via
+    `TmsTranspiler.zetAfgeleideWaarden(KieSession, Function)`, die de replay gebruikt; een afnemer van de publieke
+    ingang ziet type en identiteit. Nieuw publiek in het pakket van de tak sinds die kaart: `Filterdeponering`,
+    `Lidtoets`, `Rekendatum`, `Rekenfout`, `Schrijversconflict`, `Uniciteitsschending`, `Uniciteitssleutel`.
+16. **README (punt 6):** "Recorded: two writers of one target" zegt dat ref bij drie schrijvers alle drie noemt;
+    gemeten noemt ref de twee die het laatst veranderden, en de tak met truth maintenance elke schrijver die aan het
+    fixpunt staat.
+17. **Nog geweigerd, zonder golden:** een vouw, bereik of stap over een gecreëerde relatie, en een binder van een
+    omsluitende `Let` in het filter of de matrix van een vouw (de oude takken weigeren die ook). Een gewone regelset
+    van de distributie kan ze bevatten; voorstel daar: eerst een golden.
+
 ## Acceptatie
 
 - (a) De doorloop van punt 1, als tabel in het `Result:`.

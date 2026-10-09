@@ -149,6 +149,32 @@ subject. Re-evaluation under freshness (ch. 5.1) replaces the earlier outcome,
 and a form that does not decide (ch. 7.1, 7.3) is not evaluated; the session
 reports the outcomes standing at the fixpoint of the form's stratum."
 
+## Aanvulling (2026-10-09, avond): document D, een deponering onder een initialisatie die niet beslist
+
+Gevonden door een herkeuring tijdens `20261008-tms-expressievormen-en-rekendatum` en door de hoofdsessie nagemeten,
+met ref, clingo en de verifier uit `_build` van die worktree en de shaded jar van haar tip (generator
+`/tmp/lens-tms-k2/proef/herkeuring1.py`).
+
+Document D: objecttype Jutter met `b` en `heffing` (getallen met 2 decimalen) en één regel:
+
+    Regel heffing van een jutter: De heffing van een Jutter moet
+        geïnitialiseerd worden op 7 indien 5 gedeeld door zijn b leeg is.
+
+Case: J1 met heffing 9 in de invoer, b leeg. De initialisatie schrijft niet, want haar doel is in de invoer gevuld;
+onder het besluit hierboven beslist ze niet en wordt ze niet uitgerekend. Verwachting: heffing 9, consistent.
+
+| Uitvoerder | D |
+|---|---|
+| ref | `MISMATCH: expected consistent, but the channel carries: heffing van een jutter × J1` |
+| clingo | `MISMATCH: expected consistent, but the model carries 1 inconsistent fact(s)` |
+| Drools, exec-modeltak | `EXCLUDE … (voorwaarde buiten Phase-B scope)` |
+| Drools, DRL-teksttak | `PLAYED 1` |
+| Drools, tak met truth maintenance | `PLAYED 1` |
+
+D is de deponeringsvariant van C: ref rekent de voorwaarde uit vóór de blokkade op het doel. De fix die het besluit
+voor C noemt (in ref de blokkade vóór de voorwaarde, in clingo de guard van de `val`-kop) lost D mee op. Neem D mee in
+(b) en (c).
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Het besluit staat in de spec (beschermd pad: voorstel aan de

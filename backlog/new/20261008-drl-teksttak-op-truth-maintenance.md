@@ -65,6 +65,21 @@ de maatregelen tegen destructief schrijven verdwijnen uit deze tak.
 - Gate 13 (`scripts/check-reftype-derivation.sh`) speelt ook `--drl`; zijn
   telling en vloer gaan mee.
 
+## Aanvulling na `20261008-tms-expressievormen-en-rekendatum` (2026-10-09)
+
+- **De scheiding van analyse en weergave blijft de keuze van deze kaart.** Punt 5 van die kaart (een leestabel naast
+  `Lezingen`, een gesloten woordenschat van structurele constraints met één mapper naar PatternDSL, en de IR-knoop bij
+  elke gecompileerde toets en waardefunctie) is daar niet gebouwd, omdat het deze keuze zou voornemen (verslag van
+  stap 2 in haar `Result:`). De tak met truth maintenance mengt analyse en PatternDSL dus nog. Zijn vormen sinds die
+  kaart (de waardevormen, de voorwaardevormen, de schrijvers, de deponeringen via een sonde, de rekendatum als feit)
+  zijn wat deze tak in DRL-tekst moet weergeven.
+- **Gedrag dat alleen de destructieve DRL-teksttak heeft** (afspraak van de eigenaar van 2026-10-09: geen eigen kaart;
+  het verdwijnt met deze kaart): een versie met een begrensde geldigheid in een sessie zonder rekendatum speelt, waar
+  ref faalt; de terugvalwaarde van een som in een andere eenheid wordt niet herrekend; een kenmerk dat op een
+  tussenstand gezet werd, blijft staan (het eenheiddocument van `TmsRekenvormWitnessTest` faalt in 8 van de 24
+  volgordes); een deling door leeg deponeert niet in een voorwaarde, bij een operand die geen gelezen attribuut is, of
+  in het filter van een vouw; een tekstdeel van een getal of een waarheidswaarde schrijft "5.50" en "true".
+
 ## Acceptatie
 
 - (a) Rood-eerst getuigen in deze tak voor de vormen van

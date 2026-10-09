@@ -66,6 +66,31 @@ vouw die wel bereikt wordt: ref geeft leeg en een §9.5-deponering
 onderzoeken alleen de waarde van een regel, zodat de takken consistent kunnen
 blijven waar ref een inconsistentie meldt. Eerst meten.
 
+## Aanvulling (2026-10-09, avond): de deponering in clingo, na `20261008-tms-expressievormen-en-rekendatum`
+
+Gemeten tijdens die kaart met ref, clingo en de verifier uit `_build` van haar worktree (documenten onder
+`/tmp/lens-tms-k2/proef/clingo-filter/` en `/tmp/lens-tms-k2/eindfix/proef/`):
+
+- **Het onderwerp van een deponering uit een vouwfilter.** Het `ir.json` van `jutterswet-filterwacht` met een case
+  waarin V3 geen deelnemers heeft (filter "zijn gewicht gedeeld door zijn deelnemers is groter dan 2"): ref deponeert
+  "zware vondsten × J2; drukte × J2", onder elke vorm die de vouw leest en op het onderwerp van de vouw; clingo
+  deponeert op V3, het lid (gemeten met een verwachting `inconsistent` per regel en label). Volgens de bouwer van die
+  kaart deponeert clingo ook waar de vouw niet bereikt wordt, en bij een unie op het lid ("unietelling × V3"). Ch. 5.6
+  ("one error fact per rule × subject") en de filtertekst van IR-SPEC ch. 4.3 ("the element is the condition's
+  subject") laten ruimte; ref en sinds `f9929a07` de tak met truth maintenance nemen het onderwerp van de lezende vorm.
+  Een zin in ch. 5.6 die dat vastlegt, hoort bij deze kaart (voorstel).
+- **De kwantorvouw.** Clingo heeft geen kortsluiting in de fout- en deponeerbewaking van de matrix van een kwantorvouw
+  (gemeld door de bouwer van stap 2 van die kaart; zie ook `c6e-kwantorvouw-matrix-stop` hierboven).
+- **Een uitzonderingsgroep onder een verdrongen default.** Clingo deponeert een deling door leeg uit een
+  uitzonderingsgroep onder een default die een hogere positie verdrong, waar ref niets deponeert (ch. 7.1), en dan
+  onder het label van een andere vorm ("wrakverklaring × V1"; zonder die regels "? × V1"); in de bereikte case
+  deponeert ref "Vondst.heffing × V2" en clingo "wrakverklaring × V2" (`proef/diep1--deling/` en de andere
+  `*--deling`-mappen, case `case-verdrongen.json`, nagemeten door de hoofdsessie: ref PASS, clingo 1 inconsistent
+  feit). Hetzelfde gat als `c7b-defaults-hoger-beslist` hierboven: de bewakingen van clingo dragen de beslissing van de
+  defaults-groep niet.
+- De exec-modeltak en de DRL-teksttak deponeren in een vouwfilter niets; dat verdwijnt met
+  `20261008-tms-omschakeling` en `20261008-drl-teksttak-op-truth-maintenance`.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) De golden `jutterswet-filterwacht` krijgt de case met J1 en J2 samen (of
