@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Default;
 import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.ir.PrioritizedDefaults;
 import dev.uchar.regelspraak.ir.ResolvedConsistentie;
 import dev.uchar.regelspraak.ir.ResolvedDagsoort;
@@ -37,6 +38,7 @@ import dev.uchar.regelspraak.transpiler.kern.Gastheer;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.kern.Operatoren;
 import dev.uchar.regelspraak.transpiler.kern.StaandeDoelen;
+import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 
 import org.drools.model.DSL;
 import org.drools.model.Global;
@@ -65,8 +67,13 @@ import org.drools.model.impl.ModelImpl;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -108,14 +115,18 @@ import java.util.function.UnaryOperator;
  * consistency, whose violation is a logical §9.5 inconsistency; a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
  * ordinary rule on an ancestor's level folds, so that it does not fire on that type; and an object creation over a
- * {@code connectingRole} and a fact creation, each over a relation of two roles. Each always valid, with the §6.5
- * deposit of a division by leeg (a default carries no division at all), whose condition, assertion or justification
- * is built from characteristic checks (own or over a path, negated or not), comparisons, leeg and gevuld tests, tests
- * of the channel of a consistency or of a rule that deposits, and {@code Compound}s of those under any quantifier, and
- * whose value is a literal, a read of an attribute (own or over a path of roles), a parameter, an aggregation, or a
- * sum, difference, product or quotient of those, or a date plus or minus a duration. Every other form is in the
- * coverage manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the document on the
- * first such entry.
+ * {@code connectingRole} and a fact creation, each over a relation of two roles. Each always valid or gated on the
+ * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
+ * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
+ * root at all), whose condition, assertion or justification is built from characteristic checks (own or over a path,
+ * negated or not), comparisons, leeg, gevuld, eleven and exact-digit tests, time windows, tests of the channel of a
+ * consistency or of a rule that deposits, and {@code Compound}s of those under any quantifier, and whose value is a
+ * literal, a read of an attribute (own or over a path of roles, or a dimension cell), a parameter, a context value, an
+ * aggregation, a {@code Let} with its binder reads, an {@code IfThenElse}, a rounding, a clamp, a builtin call, a text
+ * composition of texts, or an arithmetic of those: a sum, difference, product, quotient, power with a whole exponent or
+ * percentage, with the units restated where they differ (ch. 2.6), or a date plus or minus a duration. Every other form
+ * is in the coverage manifest as not lowered, with a reason that names it, and {@code DroolsBackend} refuses the
+ * document on the first such entry.
  *
  * <p>An aggregation over a set source is an accumulate in the left-hand side of the rule that reads it, over the
  * {@link Bijdrage} facts its contribution rules insert logically, one per member of its range ({@link #vouw}); a
@@ -123,9 +134,11 @@ import java.util.function.UnaryOperator;
  * whose value or filter reading changes takes its contribution along. A listed fold is computed from its operands'
  * bound values ({@link #gelijsteVouw}).
  *
- * <p>An evaluation fault, a division by a numeric zero in a value or a condition (RUNTIME-SEMANTICS ch. 1.4, point 4),
- * is a {@link Fout} inserted logically and never an exception out of the fire: the branch passes intermediate states
- * the reference interpreter does not see, and a fault thrown there could not be withdrawn when the state passes. The
+ * <p>An evaluation fault in a value or a condition — a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4),
+ * or one of the faults of {@link Rekenfout}: a date step or a duration count outside the range of ch. 3.8, a context
+ * value or a validity window without an evaluation date, an {@code Unresolved} node the evaluation reaches — is a
+ * {@link Fout} inserted logically and never an exception out of the fire: the branch passes intermediate states the
+ * reference interpreter does not see, and a fault thrown there could not be withdrawn when the state passes. The
  * consequence that computes a value inserts the fault instead of the value. A condition is tested in the left-hand
  * side, where Drools cannot take an exception as a fact, so its test answers that it does not hold where it faults,
  * and a rule of the form's own inserts the fault ({@link #voorwaardefoutregel}). A fold's filter that faults for a
@@ -238,6 +251,12 @@ public final class TmsTranspiler {
     private final Set<String> kanalen = new LinkedHashSet<>();
     /** The parameters a lowered rule reads, as the globals the case runner sets by name. */
     private final Map<String, Global<?>> globals = new LinkedHashMap<>();
+    /** The global the case runner sets from the case's {@code asOfDate}, the session's evaluation date
+     *  (RUNTIME-SEMANTICS ch. 8.1), read through the {@link Rekendatum} fact; null until a lowered form needs the date,
+     *  so a model whose forms are all always valid and read no context value declares none. */
+    private Global<LocalDate> rekendatumGlobal;
+    /** The name of that global, the one the case runner sets for every branch. */
+    static final String REKENDATUM = "rekendatum";
     /** The relations a form of the document creates, by normalised fact type name: the connecting relation of an
      *  object creation and the relation of a fact creation. Their links are {@link Koppeling} facts, and every form
      *  that reads such a relation joins over those ({@link #koppelingshop}, {@link #koppelingsbereik}). */
@@ -476,6 +495,18 @@ public final class TmsTranspiler {
         for (String producent : kanalen) standen.addAll(kanaalstandregels(producent));
         for (Map.Entry<String, Global<?>> g : globals.entrySet()) standen.add(parameterstandregel(g.getKey(), g.getValue()));
         ModelImpl m = new ModelImpl(PKG);
+        if (rekendatumGlobal != null) {
+            // the case runner sets the evaluation date under this name after the parameters, so a parameter of the same
+            // Java name would read the date, or the date the parameter
+            if (globals.containsKey(REKENDATUM))
+                weiger("parameter", REKENDATUM, "een parameter met de Java-naam '" + REKENDATUM + "' naast een vorm die"
+                        + " de rekendatum leest: de caserunner zet de rekendatum onder die naam, zodat de twee één global"
+                        + " delen");
+            else {
+                m.addGlobal(rekendatumGlobal);
+                standen.add(rekendatumstandregel(rekendatumGlobal));
+            }
+        }
         globals.values().forEach(m::addGlobal);
         regels.forEach(m::addRule);
         standen.forEach(m::addRule);
@@ -519,13 +550,51 @@ public final class TmsTranspiler {
         if (!(r.doel() instanceof Expr.AttribuutRef doel) || doel.objecttype() == null || doel.attribuut() == null)
             throw new Weigering("een regel zonder opgelost doel");
         if (navigatieBindingen.containsKey(doel)) throw new Weigering("een regel op een genavigeerd doel");
-        if (r.geldigheid() != null && !r.geldigheid().altijd())
-            throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
-        return switch (r.soort()) {
+        // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
+        // admits it (Lezingen.geldig), and beside them a rule faults the session that carries no date
+        List<Rule> uit = new ArrayList<>(switch (r.soort()) {
             case KENMERKTOEKENNING -> kenmerkRegel(r, doel);
             case GELIJKSTELLING, BEREKENING -> rekenRegel(r, doel);
             case INITIALISATIE -> initialisatieRegel(r, doel);
-        };
+        });
+        Rule zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(r.naam()), r.naam(), r.geldigheid());
+        if (zonderDatum != null) uit.add(zonderDatum);
+        return uit;
+    }
+
+    /**
+     * The rule beside a form with a bounded validity, {@code vorm}, whose Drools rule is {@code regelnaam}, that faults
+     * a session without an evaluation date: such a form needs the date (RUNTIME-SEMANTICS ch. 8.1), and the reference
+     * interpreter faults the session as soon as it evaluates the form, whether or not the form has a subject, in the
+     * sentence {@link Rekenfout#GELDIGHEID_ZONDER_DATUM}. The fault is on the session's {@link Rekendatum}, the one fact
+     * the date is, and like every evaluation fault it counts where it stands at the fixpoint. Null for a form that is
+     * always valid, which needs no date.
+     */
+    private Rule geldigheidsfout(String regelnaam, String vorm, Geldigheid g) {
+        if (g == null || g.altijd()) return null;
+        rekendatumGlobal();
+        Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$rekendatum");
+        return PatternDSL.rule(PKG, regelnaam + ": geen rekendatum").build(
+                PatternDSL.pattern(r).expr(id("geen-rekendatum"), x -> x.datum() == null),
+                DSL.on(r).execute((Block2<org.drools.model.Drools, Rekendatum>) (drools, x) -> drools.logicalInsert(
+                        new Fout(x, vorm, new Rekenfout(Rekenfout.GELDIGHEID_ZONDER_DATUM).inDeRegel(regelnaam)))));
+    }
+
+    /** The global of the evaluation date, declared the first time a lowered form needs the date. */
+    private Global<LocalDate> rekendatumGlobal() {
+        if (rekendatumGlobal == null) rekendatumGlobal = DSL.globalOf(LocalDate.class, PKG, REKENDATUM);
+        return rekendatumGlobal;
+    }
+
+    /** The rule that puts the session's {@link Rekendatum} in working memory, from the global the case runner sets
+     *  where the case carries an {@code asOfDate} and leaves unset, null, where it carries none. Like a parameter's
+     *  standing ({@link #parameterstandregel}) it matches no fact and fires once per session; the global does not
+     *  change while the session fires. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Rule rekendatumstandregel(Global<LocalDate> g) {
+        return PatternDSL.rule(PKG, "rekendatumstand").build(
+                DSL.on((Global) g).execute((Block2<org.drools.model.Drools, Object>) (drools, v) ->
+                        drools.logicalInsert(new Rekendatum((LocalDate) v))));
     }
 
     /**
@@ -540,7 +609,7 @@ public final class TmsTranspiler {
         if (!(r.waarde() instanceof Expr.Literal l && "waar".equals(l.waarde()) && l.type() instanceof Datatype.Booleaan))
             throw new Weigering("een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)");
         Lid lid = lid(doel.objecttype(), doel.attribuut(), true);
-        Lezingen lez = new Lezingen(doel.objecttype());
+        Lezingen lez = new Lezingen(doel.objecttype()).geldig(r.geldigheid());
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
@@ -555,7 +624,7 @@ public final class TmsTranspiler {
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(r.naam())).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen)
             uit.add(voorwaardefoutregel(r.naam(), model.geëmitteerdeRegelNaam(r.naam()),
-                    () -> new Lezingen(doel.objecttype()), r.voorwaarde(), null));
+                    () -> new Lezingen(doel.objecttype()).geldig(r.geldigheid()), r.voorwaarde(), null));
         return uit;
     }
 
@@ -564,12 +633,15 @@ public final class TmsTranspiler {
      * and a consequence that computes the value from the values it binds and inserts a {@link Waarde} logically when the
      * value is gevuld. A computed leeg writes nothing, so the input on the target stands, or the initialisation beside the
      * rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is its
-     * target's only computing writer, beside at most one unconditional initialisation, which this method demands). A
-     * division by a numeric zero is an evaluation fault: the consequence inserts it logically as a {@link Fout} in place
-     * of the value, named after the rule. A division of a filled dividend by a leeg divisor inserts the §9.5
-     * inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the same consequence, for the divisions the exec-model branch gives
-     * a companion (both operands a read of an attribute, of the subject or one role away), under the rule's name: the
-     * condition of the rule holds there by construction.
+     * target's only computing writer, beside at most one unconditional initialisation, which this method demands). An
+     * evaluation fault, a division by a numeric zero or a {@link Rekenfout}, is inserted logically by the consequence as
+     * a {@link Fout} in place of the value, named after the rule. A division of a filled dividend by a leeg divisor, and
+     * a square root of a negative number, insert the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 from the same
+     * consequence, under the rule's name, where the evaluation reaches them: the probe the consequence puts in its value
+     * array hears exactly the places that run ({@link Sonde}), so a place in a branch of an {@code IfThenElse} that is
+     * not taken, or in the value of a {@code Let} binder no read forces, deposits nothing (ch. 10.2, 10.6). The places
+     * that deposit are the ones the exec-model branch gives a companion: each operand a read of an attribute, of the
+     * subject or one role away, or a read of a {@code Let} binder. The condition of the rule holds there by construction.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
@@ -664,9 +736,9 @@ public final class TmsTranspiler {
         return schrijfregel(r, doel.objecttype(), lid, lez -> {
             lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
             Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
-            return DSL.not(PatternDSL.pattern(w)
+            return List.of(DSL.not(PatternDSL.pattern(w)
                     .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
-                    .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o));
+                    .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
         }, geabsorbeerd);
     }
 
@@ -681,48 +753,47 @@ public final class TmsTranspiler {
      * fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
     private List<Rule> schrijfregel(ResolvedRegel r, Objecttype subject, Lid lid,
-                                    Function<Lezingen, RuleItemBuilder<?>> blokkade, Set<Class<?>> geabsorbeerd) {
+                                    Function<Lezingen, List<RuleItemBuilder<?>>> blokkade, Set<Class<?>> geabsorbeerd) {
         ElementSleutel sleutel = lid.sleutel();
-        Lezingen lez = lezingen(subject, geabsorbeerd);
+        Supplier<Lezingen> nieuw = () -> lezingen(subject, geabsorbeerd).geldig(r.geldigheid());
+        Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Set<Integer> gebruik = lez.volg();
-        Waardefunctie waarde = waarde(r.waarde(), lez);
-        List<Deling> delingen = new ArrayList<>();
-        delingen(r.waarde(), lez, delingen);
+        // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6)
+        Waardefunctie waarde = herschaald(waarde(r.waarde(), lez), eff.eenheidVan(r.waarde()),
+                lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
         lez.stop();
-        // the write boundary: the value in the target's declared unit (RUNTIME-SEMANTICS ch. 2.4)
-        eenheden(eff.eenheidVan(r.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
+        int sonde = lez.sondeplaats();
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
-        if (blokkade != null) items.add(blokkade.apply(lez));
+        if (blokkade != null) items.addAll(blokkade.apply(lez));
         String naam = r.naam();
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
         int[] posities = posities(gebruik);
         int n = lez.variabelen.size();
         items.add(gevolg(lez, posities, (drools, onderwerp, w) -> {
+            // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
+            Sonde s = sonde < 0 ? null : new Sonde();
+            if (s != null) w[sonde] = s;
             Object v;
             try {
                 v = collapse(waarde.van(w));
-            } catch (Breuk.DelingDoorNul nul) {
-                drools.logicalInsert(new Fout(onderwerp, naam, nul.inDeRegel(regelnaam, nul)));
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                drools.logicalInsert(new Fout(onderwerp, naam, Rekenfout.benoem(e, regelnaam)));
                 return;
             }
-            for (Deling d : delingen)
-                if (w[d.deeltal()] != null && w[d.deler()] == null) {
-                    drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, onderwerp));
-                    break;
-                }
+            if (s != null && s.gemeld())
+                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, onderwerp));
             if (v != null) drools.logicalInsert(new Waarde(onderwerp, sleutel, v, naam));
         }, n));
         afgeleid.put(sleutel, lid);
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen)
-            uit.add(voorwaardefoutregel(naam, regelnaam, () -> lezingen(subject, geabsorbeerd), r.voorwaarde(),
-                    blokkade));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, r.voorwaarde(), blokkade));
         return uit;
     }
 
@@ -751,20 +822,20 @@ public final class TmsTranspiler {
      * ({@link #filterfoutregel}).
      */
     private Rule voorwaardefoutregel(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                     Function<Lezingen, RuleItemBuilder<?>> blokkade) {
+                                     Function<Lezingen, List<RuleItemBuilder<?>>> blokkade) {
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = voorwaarde(c, lez);
         lez.stop();
         List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, c);
-        if (blokkade != null) items.add(blokkade.apply(lez));
+        if (blokkade != null) items.addAll(blokkade.apply(lez));
         String zinregel = model.geëmitteerdeRegelNaam(vorm);
         items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
-            Breuk.DelingDoorNul nul = fout(toets, w);
-            if (nul == null)
+            RuntimeException f = fout(toets, w);
+            if (f == null)
                 throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
                         + " gevolg, over dezelfde gebonden waarden");
-            drools.logicalInsert(new Fout(onderwerp, vorm, nul.inDeRegel(zinregel, nul)));
+            drools.logicalInsert(new Fout(onderwerp, vorm, Rekenfout.benoem(f, zinregel)));
         }, lez.variabelen.size()));
         lez.vastleggen();
         return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
@@ -776,21 +847,25 @@ public final class TmsTranspiler {
         return w -> {
             try {
                 return toets.test(w);
-            } catch (Breuk.DelingDoorNul nul) {
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
                 return false;
             }
         };
     }
 
-    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. The one evaluation fault the
-     *  forms this branch lowers can raise is a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4); any
-     *  other exception is a broken contract or a bug and leaves the fire as it is. */
-    private static Breuk.DelingDoorNul fout(Toets toets, Object[] w) {
+    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
+     *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link Rekenfout}: a date step or a duration
+     *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
+     *  {@code Unresolved} node reached, and the other faults that class names. Any other exception is a broken contract
+     *  or a bug and leaves the fire as it is. */
+    private static RuntimeException fout(Toets toets, Object[] w) {
         try {
             toets.test(w);
             return null;
-        } catch (Breuk.DelingDoorNul nul) {
-            return nul;
+        } catch (RuntimeException e) {
+            if (!Rekenfout.isEvaluatiefout(e)) throw e;
+            return e;
         }
     }
 
@@ -813,9 +888,8 @@ public final class TmsTranspiler {
         // the rule is named by the form, and the channel test reads the error facts by that name
         if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
         if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
-        if (c.geldigheid() != null && !c.geldigheid().altijd())
-            throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
-        Lezingen lez = new Lezingen(c.subject());
+        Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject()).geldig(c.geldigheid());
+        Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets houdt = voorwaarde(c.assertie(), lez);
         boolean kanFalen = lez.kanFalen();
@@ -829,9 +903,9 @@ public final class TmsTranspiler {
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen)
-            uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), () -> new Lezingen(c.subject()),
-                    c.assertie(), null));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null));
+        Rule zonderDatum = geldigheidsfout(model.geëmitteerdeRegelNaam(naam), naam, c.geldigheid());
+        if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
 
@@ -849,8 +923,8 @@ public final class TmsTranspiler {
         if (!kanaalproducent(producent))
             throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
                     + snippet(rv) + "'): de truth-maintenance-tak draagt als producent van het §9.5-kanaal alleen een"
-                    + " Consistency en een rekenende regel of initialisatie met een deling tussen twee gelezen attributen"
-                    + " (§6.5)");
+                    + " Consistency en een rekenende regel of initialisatie met een deling of een wortel waarvan elke"
+                    + " operand een gelezen attribuut of een binder is (§6.5, §6.6)");
         int i = lez.kanaal(producent);
         return w -> Boolean.TRUE.equals(w[i]);
     }
@@ -865,14 +939,45 @@ public final class TmsTranspiler {
         return false;
     }
 
-    /** Whether a value holds a division the §6.5 deposit of {@link #schrijfregel} covers, as {@link #delingen} finds
-     *  them. */
+    /** Whether a value holds a place the §6.5 or §6.6 deposit of {@link #schrijfregel} covers ({@link #deponeerplek}),
+     *  where the rule's own evaluation of the value can reach it: through every form {@link #waarde} evaluates in the
+     *  rule itself, and not into the argument or the filter of a fold over a set source, which a contribution rule
+     *  evaluates. */
     private boolean deponeert(Expr e) {
-        if (!(e instanceof Expr.Binair b)) return false;
-        if ((b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) && telt(b.links())
-                && telt(b.rechts()))
-            return true;
-        return deponeert(b.links()) || deponeert(b.rechts());
+        return switch (e) {
+            case null -> false;
+            case Expr.Binair b -> deponeerplek(b) || deponeert(b.links()) || deponeert(b.rechts());
+            case Expr.Functie f -> deponeerplek(f) || (isVouw(f.kind()) && !isGelisteVouw(f)
+                    ? deponeert(f.leegwaarde())
+                    : f.argumenten().stream().anyMatch(this::deponeert) || deponeert(f.leegwaarde()));
+            case Expr.Afgerond a -> deponeert(a.basis());
+            case Expr.Begrensd g -> deponeert(g.basis()) || deponeert(g.minimum()) || deponeert(g.maximum());
+            case Expr.Let l -> deponeert(l.value()) || deponeert(l.body());
+            case Expr.IfThenElse k -> deponeert(k.conditie()) || deponeert(k.dan()) || deponeert(k.anders());
+            case Expr.TekstReeks t -> t.delen().stream()
+                    .anyMatch(d -> d instanceof Expr.TekstReeks.Ingevoegd i && deponeert(i.expr()));
+            default -> false;
+        };
+    }
+
+    private boolean deponeert(Conditie c) {
+        return switch (c) {
+            case null -> false;
+            case Conditie.Vergelijking v -> deponeert(v.links()) || deponeert(v.rechts());
+            case Conditie.Predicaat p -> deponeert(p.operand());
+            case Conditie.Samengesteld s -> s.onderdelen().stream().anyMatch(this::deponeert);
+            default -> false;
+        };
+    }
+
+    /** Whether {@code e} is itself a place that deposits: a division whose operands each qualify, or a square root whose
+     *  radicand does ({@link #kwalificeert}). */
+    private boolean deponeerplek(Expr e) {
+        if (e instanceof Expr.Binair b)
+            return (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS)
+                    && kwalificeert(b.links()) && kwalificeert(b.rechts());
+        return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL && f.argumenten().size() == 1
+                && kwalificeert(f.argumenten().get(0));
     }
 
     /**
@@ -937,8 +1042,6 @@ public final class TmsTranspiler {
         if (oc.naam() == null) throw new Weigering("een objectcreatie zonder naam (WF-107)");
         Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
         if (nieuw == null || subject == null) throw new Weigering("een objectcreatie zonder opgelost type");
-        if (oc.geldigheid() != null && !oc.geldigheid().altijd())
-            throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
         RolBindingRef vr = rolBindingen.get(oc);
         FactModelGenerator.Creatiekoppeling k = FactModelGenerator.creatiekoppeling(model, nieuw, subject, vr, oc.naam());
         if (k.dubbelzinnig() != null)
@@ -955,7 +1058,8 @@ public final class TmsTranspiler {
         boolean nieuwIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRol()));
         String naam = oc.naam();
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        Lezingen lez = new Lezingen(subject);
+        Supplier<Lezingen> nieuwe = () -> new Lezingen(subject).geldig(oc.geldigheid());
+        Lezingen lez = nieuwe.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
@@ -969,10 +1073,14 @@ public final class TmsTranspiler {
             if (deling != null)
                 throw new Weigering("een deling in een ledeninitialisatie ('" + deling + "'), waarvan deze tak de §6.5-"
                         + "deponering niet maakt: " + NOG_NIET);
+            String wortel = wortel(t.waarde());
+            if (wortel != null)
+                throw new Weigering("een wortel in een ledeninitialisatie ('" + wortel + "'), waarvan deze tak de §6.6-"
+                        + "deponering niet maakt: " + NOG_NIET);
             Lid lid = lid(nieuw, t.attribuut(), t.kenmerk());
             Waardefunctie w = waarde(t.waarde(), lez);
             if (!t.kenmerk())
-                eenheden(eff.eenheidVan(t.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
+                w = herschaald(w, eff.eenheidVan(t.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
             inits.add(new Initialisatie(lid, w));
         }
         lez.stop();
@@ -994,13 +1102,28 @@ public final class TmsTranspiler {
             // the budget first: a mint past it is the fault at the making, before anything is made
             int diepte = diepte(naam, stratum, subjecttype, (List<?>) w[herkomst]);
             Object[] waarden = new Object[inits.size()];
-            for (int i = 0; i < inits.size(); i++) waarden[i] = collapse(inits.get(i).waarde().van(w));
+            RuntimeException fout = null;
+            for (int i = 0; i < inits.size() && fout == null; i++) {
+                try {
+                    waarden[i] = collapse(inits.get(i).waarde().van(w));
+                } catch (RuntimeException e) {
+                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                    fout = Rekenfout.benoem(e, regelnaam);
+                }
+            }
             int f = (Integer) w[fase];
             Object object = nieuweBoon(klasse);
             drools.insert(object);
             drools.insert(new Gemaakt(naam, onderwerp, object, f, stratum, diepte));
             drools.insert(nieuwIsEerste ? new Koppeling(relatie, object, onderwerp, f)
                     : new Koppeling(relatie, onderwerp, object, f));
+            // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
+            // making, as in the reference interpreter; stated like everything the creation makes, and the object is made
+            // all the same, so the generations end as they would, and the fault ends the session at the fixpoint
+            if (fout != null) {
+                drools.insert(new Fout(onderwerp, naam, fout));
+                return;
+            }
             for (int i = 0; i < inits.size(); i++) {
                 Lid lid = inits.get(i).lid();
                 Object v = waarden[i];
@@ -1018,7 +1141,9 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, OBJECTCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, () -> new Lezingen(subject), oc.voorwaarde(), null));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null));
+        Rule zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
+        if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
 
@@ -1105,8 +1230,6 @@ public final class TmsTranspiler {
         Objecttype anker = fc.anker(), doel = fc.doel();
         if (anker == null || doel == null || fc.feittype() == null || fc.joinRol() == null || fc.ankerRol() == null)
             throw new Weigering("een feitcreatie zonder opgelost anker, doel, feittype of pad");
-        if (fc.geldigheid() != null && !fc.geldigheid().altijd())
-            throw new Weigering("een versie met een begrensde geldigheid (Validity met from of to): " + NOG_NIET);
         RegelSpraakModel.Feittype ft = feittype(fc.feittype());
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
             throw new Weigering("een feitcreatie van de relatie '" + fc.feittype() + "', die geen relatie van twee rollen"
@@ -1120,7 +1243,8 @@ public final class TmsTranspiler {
             throw new Weigering(Gastheer.DOELPOGING_GENEST);
         String regelnaam = model.geëmitteerdeRegelNaam(fc.naam());
         Conditie ankerguard = doelcheck == null ? c : null;
-        Lezingen lez = new Lezingen(anker);
+        Supplier<Lezingen> nieuw = () -> new Lezingen(anker).geldig(fc.geldigheid());
+        Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
         boolean kanFalen = lez.kanFalen();
@@ -1156,7 +1280,9 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, FEITCREATIE)
                 .build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, () -> new Lezingen(anker), ankerguard, null));
+        if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, nieuw, ankerguard, null));
+        Rule zonderDatum = geldigheidsfout(regelnaam, fc.naam(), fc.geldigheid());
+        if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
     }
 
@@ -1286,7 +1412,7 @@ public final class TmsTranspiler {
      * groups, their chains, numbered consecutively from {@code eersteLid}.
      */
     private record Knoop(Default d, Objecttype niveau, int keten, int positie, String label, String sleutel,
-                         List<List<Knoop>> leden, int eersteLid) {
+                         List<List<Knoop>> leden, int eersteLid, Geldigheid geldigheid) {
         boolean heeftLeden() { return leden != null; }
     }
 
@@ -1342,20 +1468,20 @@ public final class TmsTranspiler {
             throw new Weigering("een kenmerkdoel met de naam van een attribuut ('" + doel + "' van " + eigenaar.naam
                     + "): de boon draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
                     + " en niet te onderscheiden is");
-        for (PrioritizedDefaults l : st.leden())
-            if (l.geldigheid() != null && !l.geldigheid().altijd())
-                throw new Weigering("een defaultsgroep met een gedateerde geldigheid ('" + naamOf(l.naam()) + "'): "
-                        + NOG_NIET);
         Lid lid = lid(eigenaar, doel, kenmerk);
         Objecttype declarant = eigenaar.declarantVan(doel);
         Stapelbouw b = new Stapelbouw(stapelnaam(st), lid, kenmerk, bonenklasse(eigenaar),
                 (declarant != null ? declarant.naam : l0.onderwerp()) + "." + doel, st.leden().size());
         List<List<Knoop>> wortel = new ArrayList<>();
+        // a group with a dated validity gates its own chain, the exception groups below its defaults included: where
+        // the window does not admit the date the group decides nothing (RUNTIME-SEMANTICS ch. 8.2)
         for (int m = 0; m < st.leden().size(); m++)
             wortel.add(keten(b, st.leden().get(m).defaults(), m, null, eigenaar, List.of(),
-                    st.leden().size() == 1 ? "" : m + ":"));
+                    st.leden().size() == 1 ? "" : m + ":", st.leden().get(m).geldigheid()));
         boolean algemeen = wortel.size() > 1 || wortel.stream().flatMap(List::stream).anyMatch(Knoop::heeftLeden);
-        List<Rule> regels = algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0));
+        List<Rule> regels = new ArrayList<>(algemeen ? algemeneVorm(b, wortel) : eenvoudigeVorm(b, wortel.get(0)));
+        if (st.leden().stream().anyMatch(l -> l.geldigheid() != null && !l.geldigheid().altijd()))
+            regels.add(stapelGeldigheidsfout(b));
         // registered only once every default of the stack lowered, as a single rule registers its reads
         for (Lezingen lez : b.lezingen) lez.vastleggen();
         afgeleid.put(lid.sleutel(), lid);
@@ -1364,6 +1490,24 @@ public final class TmsTranspiler {
         defaultsgroepen.add(new Defaultsgroep(b.naam, algemeen, regels.size(), List.copyOf(b.stuurfeiten),
                 Map.copyOf(eigenaars)));
         return regels;
+    }
+
+    /** The rule that faults every object of the stack's owner, of exactly its type, in a session without an evaluation
+     *  date, where a group of the stack has a dated validity: the reference interpreter asks the validity of a group when
+     *  it evaluates the stack on an object, and faults there (RUNTIME-SEMANTICS ch. 8.1), so an owner without objects
+     *  faults nothing. */
+    private Rule stapelGeldigheidsfout(Stapelbouw b) {
+        rekendatumGlobal();
+        String naam = b.naam;
+        Class<?> klasse = b.klasse;
+        @SuppressWarnings("unchecked")
+        Variable<Object> s = (Variable<Object>) DSL.declarationOf(klasse, "$onderwerp");
+        Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$rekendatum");
+        return PatternDSL.rule(PKG, naam + ": geen rekendatum").build(
+                PatternDSL.pattern(s).expr(id("concreet-type"), o -> o.getClass() == klasse),
+                PatternDSL.pattern(r).expr(id("geen-rekendatum"), x -> x.datum() == null),
+                DSL.on(s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) -> drools.logicalInsert(
+                        new Fout(o, naam, new Rekenfout(Rekenfout.GELDIGHEID_ZONDER_DATUM).inDeRegel(naam)))));
     }
 
     /** Per member chain below {@code keten}, at any depth, the default whose exception group it is. */
@@ -1378,9 +1522,10 @@ public final class TmsTranspiler {
     }
 
     /** The knots of one chain, {@code id}, with its defaults' levels: a root default's own ({@link Stapels#niveau}), an
-     *  exception group's defaults on the level of the default that carries them ({@code drager}). */
+     *  exception group's defaults on the level of the default that carries them ({@code drager}); every knot carries
+     *  the validity of the group at the root of its chain. */
     private List<Knoop> keten(Stapelbouw b, List<Default> ds, int id, Objecttype drager, Objecttype eigenaar,
-                              List<Integer> pad, String voorvoegsel) {
+                              List<Integer> pad, String voorvoegsel, Geldigheid geldigheid) {
         List<Knoop> uit = new ArrayList<>();
         for (int i = 0; i < ds.size(); i++) {
             Default d = ds.get(i);
@@ -1400,9 +1545,9 @@ public final class TmsTranspiler {
                 leden = new ArrayList<>();
                 for (int m = 0; m < groepen.size(); m++)
                     leden.add(keten(b, groepen.get(m).defaults(), eerste + m, niveau, eigenaar, eigenPad,
-                            label + "." + m + "."));
+                            label + "." + m + ".", geldigheid));
             }
-            uit.add(new Knoop(d, niveau, id, i, label, sleutel.toString(), leden, eerste));
+            uit.add(new Knoop(d, niveau, id, i, label, sleutel.toString(), leden, eerste, geldigheid));
         }
         return uit;
     }
@@ -1421,6 +1566,10 @@ public final class TmsTranspiler {
                     + " hij leest staat, ook een die een hogere default verdringt; een deling door nul daar is een fout op"
                     + " een tussenstand, die deze tak intrekt zodra de hogere default beslist: of zo'n fout telt, wacht op"
                     + " een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)");
+        String wortel = wortel(d.voorwaarde(), d.consequentie());
+        if (wortel != null)
+            throw new Weigering("een wortel in een default ('" + wortel + "'), waarvan deze tak de §6.6-deponering niet"
+                    + " maakt: een default deponeert alleen waar hij beslist (RUNTIME-SEMANTICS ch. 7.1)");
     }
 
     /** The snippet of the first division in {@code voorwaarde} or {@code waarde}, or null: in the justification or the
@@ -1430,42 +1579,46 @@ public final class TmsTranspiler {
      *  evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault on an
      *  intermediate state, which this branch would withdraw ({@link Fout}); whether such a fault counts waits on a
      *  decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
-     *  no evaluation fault ({@link #eigenRegel}). */
+     *  no division fault ({@link #eigenRegel}). The walk enters every expression and condition the forms carry, a
+     *  {@code Let}'s value and body, both branches of an {@code IfThenElse} and its condition, a rounding, a clamp's
+     *  bounds and a fold's argument, fallback and filter among them, so a division under one of them is found too. */
     private static String deling(Conditie voorwaarde, Expr waarde) {
-        String c = voorwaarde == null ? null : deling(voorwaarde);
-        return c != null ? c : deling(waarde);
-    }
-
-    private static String deling(Conditie c) {
-        return switch (c) {
-            case Conditie.Vergelijking v -> deling(v.links()) != null ? deling(v.links()) : deling(v.rechts());
-            case Conditie.Predicaat p -> deling(p.operand());
-            case Conditie.Samengesteld s -> s.onderdelen().stream().map(TmsTranspiler::deling)
-                    .filter(Objects::nonNull).findFirst().orElse(null);
-            default -> null;
-        };
+        return eerste(voorwaarde, waarde, TmsTranspiler::isDeling);
     }
 
     private static String deling(Expr e) {
-        if (e instanceof Expr.Functie f) {
-            for (Expr a : f.argumenten()) {
-                String d = deling(a);
-                if (d != null) return d;
-            }
-            String d = f.leegwaarde() == null ? null : deling(f.leegwaarde());
-            return d != null || f.filter() == null ? d : deling(f.filter());
-        }
-        if (e instanceof Expr.InstanceSetUnion u) {
-            for (Expr.InstanceSetUnion.Tak t : u.takken()) {
-                String d = t.filter() == null ? null : deling(t.filter());
-                if (d != null) return d;
-            }
-            return null;
-        }
-        if (!(e instanceof Expr.Binair b)) return null;
-        if (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS) return snippet(b.bron());
-        String l = deling(b.links());
-        return l != null ? l : deling(b.rechts());
+        return eerste(null, e, TmsTranspiler::isDeling);
+    }
+
+    /** The snippet of the first square root in {@code waarde}, or null: a place of the §6.6 deposit, which a member
+     *  initialisation and a default do not make. */
+    private static String wortel(Expr e) {
+        return eerste(null, e, TmsTranspiler::isWortel);
+    }
+
+    private static String wortel(Conditie voorwaarde, Expr waarde) {
+        return eerste(voorwaarde, waarde, TmsTranspiler::isWortel);
+    }
+
+    private static boolean isDeling(Expr e) {
+        return e instanceof Expr.Binair b && (b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS);
+    }
+
+    private static boolean isWortel(Expr e) {
+        return e instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL;
+    }
+
+    /** The snippet of the first expression node for which {@code soort} holds, in {@code voorwaarde} and then in
+     *  {@code waarde} (either may be null), each walked node before its operands, or null. */
+    private static String eerste(Conditie voorwaarde, Expr waarde, java.util.function.Predicate<Expr> soort) {
+        String[] gevonden = {null};
+        java.util.function.Predicate<Expr> raak = x -> {
+            if (!soort.test(x)) return false;
+            gevonden[0] = snippet(x.bron());
+            return true;
+        };
+        if (Conditie.bevatOperand(voorwaarde, raak) || Expr.bevat(waarde, raak)) return gevonden[0];
+        return null;
     }
 
     /** Whether {@code d} decides anything itself: a decision on a characteristic, a consequence on an attribute. */
@@ -1495,7 +1648,7 @@ public final class TmsTranspiler {
             int i = k.positie();
             boolean hoger = j > 0, lager = j < beslissend.size() - 1;
             if (lager) b.stuurfeiten.add("Beslist");
-            uit.add(eigenRegel(b, k, naam + ": default " + k.label(),
+            uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(),
                     s -> hoger ? List.of(geenBeslist(naam, i, s)) : List.of(),
                     (drools, o, v) -> {
                         if (!kenmerk) drools.logicalInsert(new Waarde(o, sleutel, v, naam));
@@ -1541,7 +1694,7 @@ public final class TmsTranspiler {
             if (!k.heeftLeden()) {
                 if (!beslistZelf(b, k.d())) continue;
                 b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
-                uit.add(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, beslist));
+                uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, beslist));
                 continue;
             }
             for (List<Knoop> lid : k.leden()) ketenregels(b, lid, uit);
@@ -1552,7 +1705,7 @@ public final class TmsTranspiler {
                             new Uitkomst(o, naam, id, i, Uitkomst.Soort.CONFLICT, null, (String) s)),
                     beslist, false, true, uit);
             if (beslistZelf(b, k.d()))
-                uit.add(eigenRegel(b, k, naam + ": terugval " + k.label(), o -> {
+                uit.addAll(eigenRegel(b, k, naam + ": terugval " + k.label(), o -> {
                     List<RuleItemBuilder<?>> wacht = new ArrayList<>();
                     wacht.add(DSL.not(uitkomsten(naam, eerste, tot, null, o)));
                     wacht.addAll(nietHoger.apply(o));
@@ -1667,43 +1820,68 @@ public final class TmsTranspiler {
      * owner, with the input test of an initialisation default; the reads of its justification and its consequence bound
      * as any rule binds them; {@code wacht}, the control-fact patterns, before the test of the justification; and a
      * consequence that hands the decision to {@code besluit}: a characteristic's decision as declared, an attribute's
-     * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). A default carries no
-     * division ({@link #controleer}), so neither its test nor its consequence raises an evaluation fault, and neither
-     * catches one as a rule does ({@link #schrijfregel}, {@link #voorwaardefoutregel}).
+     * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). The validity of the group
+     * at the root of the default's chain gates the rule on the evaluation date ({@link Lezingen#geldig}).
+     *
+     * <p>A default carries no division and no square root ({@link #controleer}), but its justification or its
+     * consequence can still fault, a date step out of range or a context value without an evaluation date
+     * ({@link Rekenfout}). Such a fault is a {@link Fout} under the stack's name, as in a rule: the consequence inserts
+     * it in place of the decision, and where the justification can fault, a fault rule with the rule's own left-hand
+     * side, its control-fact patterns included, inserts it ({@link #voorwaardefoutregel}). A default a higher one
+     * displaces loses its match, and the fault it raised goes with it, so a fault counts only where its default is
+     * evaluated at the fixpoint (PLAN §9, 2026-10-09).
      */
-    private Rule eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
-                            Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {
+    private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
+                                  Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {
         Default d = k.d();
-        Lezingen lez = new Lezingen(k.niveau());
         Class<?> klasse = b.klasse;
-        lez.onderwerp.expr(id("concreet-type"), o -> o.getClass() == klasse);
-        if (d.initialisatie()) {
-            Function<Object, Object> invoer = Accessors.getter(b.lid.klasse(), b.lid.naam());
-            lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
-        }
+        Supplier<Lezingen> nieuw = () -> {
+            Lezingen l = new Lezingen(k.niveau());
+            l.onderwerp.expr(id("concreet-type"), o -> o.getClass() == klasse);
+            if (d.initialisatie()) {
+                Function<Object, Object> invoer = Accessors.getter(b.lid.klasse(), b.lid.naam());
+                l.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
+            }
+            return l.geldig(k.geldigheid());
+        };
+        Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Toets toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
+        boolean kanFalen = lez.kanFalen();
         lez.stop();
+        Toets getoetst = kanFalen ? zonderFout(toets) : toets;
+        String naam = b.naam;
         List<RuleItemBuilder<?>> items;
         if (b.kenmerk) {
-            items = lez.linkerkant(toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(getoetst, gelezen, d.voorwaarde(), wacht.apply(lez.s));
             Boolean beslissing = d.besluit();
             items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                     besluit.voer(drools, o, beslissing)));
         } else {
             Set<Integer> gebruik = lez.volg();
-            Waardefunctie waarde = waarde(d.consequentie(), lez);
+            Waardefunctie waarde = herschaald(waarde(d.consequentie(), lez), eff.eenheidVan(d.consequentie()),
+                    b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
             lez.stop();
-            eenheden(eff.eenheidVan(d.consequentie()), b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel");
-            items = lez.linkerkant(toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(getoetst, gelezen, d.voorwaarde(), wacht.apply(lez.s));
             int n = lez.variabelen.size();
             items.add(gevolg(lez, posities(gebruik), (drools, o, w) -> {
-                Object v = collapse(waarde.van(w));
+                Object v;
+                try {
+                    v = collapse(waarde.van(w));
+                } catch (RuntimeException e) {
+                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                    drools.logicalInsert(new Fout(o, naam, Rekenfout.benoem(e, naam)));
+                    return;
+                }
                 if (v != null) besluit.voer(drools, o, v);
             }, n));
         }
         b.lezingen.add(lez);
-        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
+        List<Rule> uit = new ArrayList<>();
+        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
+        if (kanFalen)
+            uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, d.voorwaarde(), l -> wacht.apply(l.s)));
+        return uit;
     }
 
     /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here, as at
@@ -1728,18 +1906,25 @@ public final class TmsTranspiler {
             case Expr.AttribuutRef a -> { int i = attribuutlezing(a, lez); yield w -> w[i]; }
             case Expr.ParameterRef p -> { int i = lez.parameter(p.parameter()); yield w -> w[i]; }
             case Expr.Binair b -> binair(b, lez);
-            case Expr.TekstReeks t -> throw nietBerekend("TextComposition", t.bron(), NOG_NIET);
+            case Expr.TekstReeks t -> tekstreeks(t, lez);
             case Expr.Functie f -> functie(f, lez);
             case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), BUITEN);
-            case Expr.Afgerond a -> throw nietBerekend("Rounding", a.bron(), NOG_NIET);
-            case Expr.Begrensd b -> throw nietBerekend("Clamp", b.bron(), NOG_NIET);
-            case Expr.DimensieCel c -> throw nietBerekend("DimensionCellRead", c.bron(), BUITEN);
-            case Expr.VariabeleRef v -> throw nietBerekend("VariableReference", v.bron(), BUITEN);
-            case Expr.Let l -> throw nietBerekend("Let", l.bron(), BUITEN);
-            case Expr.BinderRef b -> throw nietBerekend("BinderRef", b.bron(), BUITEN);
-            case Expr.IfThenElse i -> throw nietBerekend("IfThenElse", i.bron(), BUITEN);
-            case Expr.Constante c -> throw nietBerekend("contextwaarde (" + c.naam() + ")", c.bron(), BUITEN);
-            case Expr.Onopgelost o -> throw nietBerekend("Unresolved", o.bron(), BUITEN);
+            case Expr.Afgerond a -> afronding(a, lez);
+            case Expr.Begrensd b -> begrenzing(b, lez);
+            case Expr.DimensieCel c -> dimensiecel(c, lez);
+            case Expr.VariabeleRef v -> throw nietBerekend("VariableReference", v.bron(), "het merkteken van een"
+                    + " variabele die de frontend niet bond, dat de lader weigert (WF-034), zodat het deze tak alleen in een"
+                    + " met de hand gebouwd model bereikt");
+            case Expr.Let l -> let(l, lez);
+            case Expr.BinderRef b -> binderlezing(b, lez);
+            case Expr.IfThenElse i -> keuze(i, lez);
+            case Expr.Constante c -> contextwaarde(c, lez);
+            // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the rule's evaluation where the evaluation reaches it,
+            // and only there, so a marker in a branch that is not taken plays
+            case Expr.Onopgelost o -> {
+                lez.markeerFalen();
+                yield w -> { throw new Rekenfout(Rekenfout.ONOPGELOST); };
+            }
         };
     }
 
@@ -1755,11 +1940,11 @@ public final class TmsTranspiler {
         return snippet(c.bron());
     }
 
-    /** A literal as the exec-model branch reads it: a number exact where its quotient does not terminate, a date, a
-     *  boolean, and a text or an enumeration label as its string. */
+    /** A literal as the exec-model branch reads it: a number, and a percentage, a number in the unit %, exact where its
+     *  quotient does not terminate, a date, a boolean, and a text or an enumeration label as its string. */
     private static Waardefunctie literaal(Expr.Literal l) {
         Datatype t = l.type();
-        if (t instanceof Datatype.Numeriek) {
+        if (t instanceof Datatype.Numeriek || t instanceof Datatype.Percentage) {
             BigDecimal[] r = Rationaal.van(l.waarde());
             if (r == null) throw new Weigering("een getal dat niet te lezen is ('" + l.waarde() + "')");
             Breuk b = Breuk.van(r[0]).delen(Breuk.van(r[1]));
@@ -1771,56 +1956,95 @@ public final class TmsTranspiler {
             return w -> v;
         }
         if (t instanceof Datatype.DatumInDagen) {
-            java.time.LocalDate v = Literalen.parseDatum(l.waarde());
+            LocalDate v = Literalen.parseDatum(l.waarde());
             if (v == null) throw new Weigering("een datum die niet te lezen is ('" + l.waarde() + "')");
             return w -> v;
         }
         if (t instanceof Datatype.DatumTijd) {
-            java.time.LocalDateTime v = Literalen.parseDatumTijd(l.waarde());
+            LocalDateTime v = Literalen.parseDatumTijd(l.waarde());
             if (v == null) throw new Weigering("een datum-tijd die niet te lezen is ('" + l.waarde() + "')");
             return w -> v;
         }
-        if (t instanceof Datatype.Percentage)
-            throw new Weigering("een Literal van een percentage ('" + l.waarde() + "'): " + NOG_NIET);
         String label = Literalen.tekstOfEnumLabel(l);
         if (label == null) throw new Weigering("een Literal van type " + t + ": " + NOG_NIET);
         return w -> label;
     }
 
-    /** The five operators of the proef on numbers, through the runtime's exact helpers and with their leeg tables
-     *  (RUNTIME-SEMANTICS ch. 1.2); a date plus or minus a duration through {@link #datumrekening}. */
+    /** The arithmetic operators on numbers, a percentage being a number in the unit % (RUNTIME-SEMANTICS ch. 2.2, 2.6),
+     *  through the runtime's exact helpers and with their leeg tables (ch. 1.2); a date plus or minus a duration through
+     *  {@link #datumrekening}, a power through {@link #macht}. A sum or a difference restates its right operand into the
+     *  left one's unit (ch. 2.6); a product, a quotient and a percentage of a value do not. A division faults on a numeric
+     *  zero (ch. 1.4, point 4), and one of a filled dividend by a leeg divisor deposits where the evaluation reaches it and
+     *  its operands qualify ({@link #deponeerplek}, {@link Sonde}). The operands are evaluated left before right
+     *  (ch. 5.11). */
     private Waardefunctie binair(Expr.Binair b, Lezingen lez) {
         Datatype lt = eff.typeVan(b.links()), rt = eff.typeVan(b.rechts());
         if (lt.isDatum() || rt.isDatum()) return datumrekening(b, lez);
-        if (lt.isPercentage() || rt.isPercentage())
-            throw new Weigering("een Binary over een percentage ('" + snippet(b.bron()) + "'): " + NOG_NIET);
         Expr.BinOp op = b.op();
-        switch (op) {
-            case PLUS, MIN, VERMINDERD_MET, MAAL, GEDEELD_DOOR, GEDEELD_DOOR_ABS -> { }
-            default -> throw new Weigering("een Binary " + Spelling.BINARY_OP.spelling(op) + " ('" + snippet(b.bron())
-                    + "'): " + NOG_NIET);
-        }
-        // a division faults on a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4): a condition that holds one carries the
-        // rule that inserts its fault (voorwaardefoutregel)
-        if (op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS) lez.markeerFalen();
-        Waardefunctie l = waarde(b.links(), lez), r = waarde(b.rechts(), lez);
-        // a sum or a difference restates its right operand into the left one's unit; a product and a quotient do not
-        if (op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET)
-            eenheden(eff.eenheidVan(b.rechts()), eff.eenheidVan(b.links()), "een additieve operandgrens");
+        if (op == Expr.BinOp.TOT_DE_MACHT) return macht(b, lez);
+        boolean deling = op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS;
+        // a condition that holds a division carries the rule that inserts its fault (voorwaardefoutregel)
+        if (deling) lez.markeerFalen();
+        Waardefunctie l = waarde(b.links(), lez), rechts = waarde(b.rechts(), lez);
+        Waardefunctie r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
+                ? herschaald(rechts, eff.eenheidVan(b.rechts()), eff.eenheidVan(b.links()), "een additieve operandgrens")
+                : rechts;
+        int sonde = deling && deponeerplek(b) ? lez.sonde() : -1;
         return switch (op) {
             case PLUS -> w -> RegelSpraakRuntime.rsPlus(l.van(w), r.van(w));
             case MIN -> w -> RegelSpraakRuntime.rsMin(l.van(w), r.van(w));
             case VERMINDERD_MET -> w -> RegelSpraakRuntime.rsVerminderd(l.van(w), r.van(w));
             case MAAL -> w -> RegelSpraakRuntime.rsMaal(l.van(w), r.van(w));
-            case GEDEELD_DOOR -> w -> RegelSpraakRuntime.rsGedeeld(l.van(w), r.van(w));
-            case GEDEELD_DOOR_ABS -> w -> RegelSpraakRuntime.rsGedeeldAbs(l.van(w), r.van(w));
-            default -> throw new IllegalStateException("operator " + op + " na de controle hierboven");
+            case PERCENTAGE_VAN -> w -> RegelSpraakRuntime.rsPercentageVan(l.van(w), r.van(w));
+            case GEDEELD_DOOR -> w -> {
+                Object lv = l.van(w), rv = r.van(w);
+                if (lv != null && rv == null) Sonde.meld(w, sonde);
+                return RegelSpraakRuntime.rsGedeeld(lv, rv);
+            };
+            case GEDEELD_DOOR_ABS -> w -> {
+                Object lv = l.van(w), rv = r.van(w);
+                if (lv != null && rv == null) Sonde.meld(w, sonde);
+                return RegelSpraakRuntime.rsGedeeldAbs(lv, rv);
+            };
+            case TOT_DE_MACHT -> throw new IllegalStateException("een macht gaat door macht()");
         };
+    }
+
+    /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
+     *  leeg (ch. 1.2), as the exec-model branch computes that shape ({@code rsMacht}). Any other exponent is refused: a
+     *  negative or fractional literal, or a value read while the session fires, reaches the real power, which ch. 2.1
+     *  leaves OPEN, where the reference interpreter answers an exact root or faults and the exec-model branch computes a
+     *  binary double. */
+    private Waardefunctie macht(Expr.Binair b, Lezingen lez) {
+        Integer n = b.rechts() instanceof Expr.Literal lit && lit.type().isGetalachtig() ? heleExponent(lit.waarde()) : null;
+        if (n == null)
+            throw new Weigering("een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('"
+                    + snippet(b.bron()) + "'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de"
+                    + " referentie-interpreter een exacte wortel geeft of faalt en de exec-modeltak een binaire double rekent");
+        Waardefunctie basis = waarde(b.links(), lez);
+        int exponent = n;
+        return w -> RegelSpraakRuntime.rsMacht(basis.van(w), exponent);
+    }
+
+    /** The whole exponent of at least 0 the lexeme writes, or null. */
+    private static Integer heleExponent(String lexeem) {
+        BigDecimal[] r = Rationaal.van(lexeem);
+        if (r == null || r[1].signum() == 0) return null;
+        try {
+            BigDecimal v = r[0].divide(r[1]);
+            if (v.signum() < 0 || v.stripTrailingZeros().scale() > 0) return null;
+            int n = v.intValueExact();
+            return n <= 999_999_999 ? n : null;
+        } catch (ArithmeticException geenGeheelGetal) {
+            return null;
+        }
     }
 
     /** A date plus or minus a duration with a calendar or clock unit, as the exec-model branch computes it
      *  ({@code datumRekenWaarde}): no date minus date, no duration minus a date, a clock unit only on a date-time. A
-     *  duration counted in a day kind is refused: day kinds are outside the proef. */
+     *  duration counted in a day kind is refused: day kinds are outside the proef. A step or a count outside the range of
+     *  RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault ({@link #datumfout}); the date is evaluated before the duration
+     *  (ch. 5.11). */
     private Waardefunctie datumrekening(Expr.Binair b, Lezingen lez) {
         Expr.BinOp op = b.op();
         if (op != Expr.BinOp.PLUS && op != Expr.BinOp.MIN && op != Expr.BinOp.VERMINDERD_MET)
@@ -1839,18 +2063,372 @@ public final class TmsTranspiler {
         boolean klok = switch (eenheid) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
         if (klok && !(eff.typeVan(datumExpr) instanceof Datatype.DatumTijd))
             throw new Weigering("een klokeenheid bij een datum zonder tijd ('" + snippet(b.bron()) + "')");
+        lez.markeerFalen();
         Waardefunctie d = waarde(datumExpr, lez), n = waarde(duurExpr, lez);
-        return w -> RegelSpraakRuntime.rsDatumReken((java.time.temporal.Temporal) d.van(w), n.van(w),
-                eenheid, optellen);
+        return w -> {
+            java.time.temporal.Temporal datum = (java.time.temporal.Temporal) d.van(w);
+            Object aantal = n.van(w);
+            try {
+                return RegelSpraakRuntime.rsDatumReken(datum, aantal, eenheid, optellen);
+            } catch (IllegalStateException e) {
+                throw datumfout(e);
+            }
+        };
     }
 
-    /** A restatement between two units is not built in this branch: two units that need one are refused, and two that
-     *  cannot be compared at all fault as at the exec-model branch ({@link Eenheidsconflict}). */
-    private static void eenheden(Eenheid van, Eenheid naar, String plek) {
+    /** The fault of a date step the runtime raised as {@code e}, as an evaluation fault in its own sentence, which is
+     *  the reference interpreter's: a step that leaves the representable range of a datum-tijd, a duration count outside
+     *  that range (RUNTIME-SEMANTICS ch. 3.8), and a step on a date beyond the years the runtime's dates hold. Any other
+     *  {@code IllegalStateException} out of the date step is no evaluation fault and is thrown as it is. */
+    private static RuntimeException datumfout(IllegalStateException e) {
+        String zin = String.valueOf(e.getMessage());
+        boolean bereik = zin.equals(RegelSpraakRuntime.DATUMTIJD_BUITEN_BEREIK)
+                || zin.equals(RegelSpraakRuntime.DATUM_BUITEN_JAREN)
+                || (zin.startsWith("duration count ") && zin.endsWith(" is out of range"));
+        return bereik ? new Rekenfout(zin, e) : e;
+    }
+
+    /** {@code f} restated from unit {@code van} into unit {@code naar} (RUNTIME-SEMANTICS ch. 2.6): times the exact
+     *  canonical factors {@code num ÷ den} as rationals where both are known, so a restatement that does not terminate
+     *  stays exact until a collapse point (ch. 2.1), as the reference interpreter restates; times the single ratio of the
+     *  two units otherwise, a rate whose factors are not both known; unchanged where no restatement is due, a unitless
+     *  side adopting the other's unit. A leeg value stays leeg and a value that is not a number passes through. Two units
+     *  that do not convert fault while the model is built ({@link Eenheidsconflict}), as at the exec-model branch. */
+    private static Waardefunctie herschaald(Waardefunctie f, Eenheid van, Eenheid naar, String plek) {
         Eenheidsconflict.eisHerschaalbaar(van, naar, plek);
-        if (van != null && naar != null && van.convertibleNaar(naar) && van.vereistOmrekening(naar))
-            throw new Weigering(plek + " over eenheden die herrekend moeten worden (" + van.afkorting() + " naar "
-                    + naar.afkorting() + "): " + NOG_NIET);
+        if (van == null || naar == null || !van.convertibleNaar(naar) || !van.vereistOmrekening(naar)) return f;
+        BigDecimal[] exact = van.exacteHerschaalFactoren(naar);
+        if (exact != null) {
+            BigDecimal num = exact[0], den = exact[1];
+            return w -> {
+                Object v = f.van(w);
+                return v instanceof BigDecimal || v instanceof Breuk
+                        ? RegelSpraakRuntime.rsGedeeld(RegelSpraakRuntime.rsMaal(v, num), den) : v;
+            };
+        }
+        BigDecimal factor = van.omrekenfactorNaar(naar);
+        return w -> {
+            Object v = f.van(w);
+            return v instanceof BigDecimal || v instanceof Breuk ? RegelSpraakRuntime.rsMaal(v, factor) : v;
+        };
+    }
+
+    // ---------------- the forms of a value beside the arithmetic ----------------
+
+    /** A rounding (RUNTIME-SEMANTICS ch. 2.5) of its base, a leeg base leeg (ch. 1.2), through {@code rsAfronding}, which
+     *  rounds an exact rational on its true value; a square root as the base is the root under its mandatory rounding
+     *  ({@link #wortelwaarde}). */
+    private Waardefunctie afronding(Expr.Afgerond a, Lezingen lez) {
+        java.math.RoundingMode modus = afrondModus(a.modus());
+        int decimalen = a.decimalen();
+        Waardefunctie basis = a.basis() instanceof Expr.Functie f && f.kind() == Expr.FunctieKind.WORTEL
+                ? wortelwaarde(f, lez) : waarde(a.basis(), lez);
+        return w -> RegelSpraakRuntime.rsAfronding(basis.van(w), decimalen, modus);
+    }
+
+    private static java.math.RoundingMode afrondModus(Expr.AfrondModus m) {
+        return switch (m) {
+            case NAAR_BENEDEN -> java.math.RoundingMode.FLOOR;
+            case NAAR_BOVEN -> java.math.RoundingMode.CEILING;
+            case REKENKUNDIG -> java.math.RoundingMode.HALF_UP;
+            case RICHTING_NUL -> java.math.RoundingMode.DOWN;
+            case WEG_VAN_NUL -> java.math.RoundingMode.UP;
+        };
+    }
+
+    /** A square root under its rounding (§13.4.17.13), as the exec-model branch computes it: the runtime's root at 34
+     *  digits ({@code rsWortel}), which the rounding above it collapses; a leeg radicand leeg, and a negative one leeg
+     *  with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (RUNTIME-SEMANTICS ch. 1.2,
+     *  {@link Sonde}). */
+    private Waardefunctie wortelwaarde(Expr.Functie f, Lezingen lez) {
+        if (f.argumenten().size() != 1)
+            throw new Weigering("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+                    + "'): de wortel heeft er één (WF-037)");
+        Waardefunctie radicand = waarde(f.argumenten().get(0), lez);
+        int sonde = deponeerplek(f) ? lez.sonde() : -1;
+        return w -> {
+            Object x = radicand.van(w);
+            BigDecimal getal = RegelSpraakRuntime.toBd(x);
+            if (getal != null && getal.signum() < 0) Sonde.meld(w, sonde);
+            return RegelSpraakRuntime.rsWortel(x);
+        };
+    }
+
+    /** A clamp (RUNTIME-SEMANTICS ch. 2.7): its base, then its minimum, then its maximum, in the order of ch. 5.11 and
+     *  of the bounds' application, each bound restated into the base's unit (ch. 2.6); a leeg base leeg, an absent or
+     *  leeg bound no bound ({@code rsBegrens}). */
+    private Waardefunctie begrenzing(Expr.Begrensd g, Lezingen lez) {
+        Waardefunctie basis = waarde(g.basis(), lez);
+        Eenheid eenheid = eff.eenheidVan(g.basis());
+        Waardefunctie minimum = g.minimum() == null ? null
+                : herschaald(waarde(g.minimum(), lez), eff.eenheidVan(g.minimum()), eenheid, "een begrenzing (minimum)");
+        Waardefunctie maximum = g.maximum() == null ? null
+                : herschaald(waarde(g.maximum(), lez), eff.eenheidVan(g.maximum()), eenheid, "een begrenzing (maximum)");
+        return w -> {
+            Object x = basis.van(w);
+            Object laag = minimum == null ? null : minimum.van(w);
+            Object hoog = maximum == null ? null : maximum.van(w);
+            return RegelSpraakRuntime.rsBegrens(x, laag, hoog);
+        };
+    }
+
+    /** A text composition (IR-SPEC ch. 4.2): the literal chunks and the inserted parts in part order (RUNTIME-SEMANTICS
+     *  ch. 5.11), each as its text ({@link #tekstdeel}). */
+    private Waardefunctie tekstreeks(Expr.TekstReeks t, Lezingen lez) {
+        List<Waardefunctie> delen = new ArrayList<>();
+        for (Expr.TekstReeks.Deel d : t.delen()) {
+            switch (d) {
+                case Expr.TekstReeks.Letterlijk l -> {
+                    String tekst = l.tekst() == null ? "" : l.tekst();
+                    delen.add(w -> tekst);
+                }
+                case Expr.TekstReeks.Ingevoegd i -> delen.add(tekstdeel(i.expr(), lez, "TextComposition"));
+            }
+        }
+        return w -> {
+            StringBuilder uit = new StringBuilder();
+            for (Waardefunctie deel : delen) uit.append((String) deel.van(w));
+            return uit.toString();
+        };
+    }
+
+    /** An inserted part of a text composition or an argument of a concatenation, as its text: a text or an enumeration
+     *  label is its own text, and a leeg part reads "" (RUNTIME-SEMANTICS ch. 1.2). A part of another type is refused by
+     *  name: the spec states the leeg rule and nothing more, and for the text of a number, a truth value or a date the
+     *  reference interpreter (5,50 as "5.5", waar as "waar") and the runtime's {@code rsTekst} (5.50, true) differ. */
+    private Waardefunctie tekstdeel(Expr e, Lezingen lez, String waar) {
+        Datatype t = eff.typeVan(e);
+        if (!(t instanceof Datatype.Tekst) && !(t instanceof Datatype.Enumeratie))
+            throw new Weigering("een tekstdeel van type " + typenaam(t) + " in een " + waar + " ('" + snippet(e.bron())
+                    + "'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest; de tekst van een getal,"
+                    + " een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de"
+                    + " runtimehulp rsTekst geven er een verschillende");
+        Waardefunctie f = waarde(e, lez);
+        return w -> {
+            Object v = f.van(w);
+            return v == null ? "" : v.toString();
+        };
+    }
+
+    /** A cell of a dimensioned attribute (§3.6): the value at its one label in the attribute's {@code Map<label, value>}
+     *  bean member, leeg where the map or the label is absent, as the exec-model branch reads it. The attribute is
+     *  input, read off the subject's own bean ({@link #dimensielezing}); a cell over several dimensions is refused by
+     *  name, as that branch refuses it. The reference interpreter and the ASP backend do not read a cell. */
+    private Waardefunctie dimensiecel(Expr.DimensieCel c, Lezingen lez) {
+        if (c.labels() == null || c.labels().size() != 1)
+            throw new Weigering("een DimensionCellRead over " + (c.labels() == null ? 0 : c.labels().size())
+                    + " dimensies ('" + snippet(c.bron()) + "'): de exec-modeltak en deze tak lezen alleen een cel van"
+                    + " één dimensie");
+        int i = dimensielezing(c.attribuut(), lez, "een DimensionCellRead");
+        String label = c.labels().get(0);
+        return w -> w[i] instanceof Map<?, ?> m ? m.get(label) : null;
+    }
+
+    /** A sum, minimum or maximum over a dimension selection (§5.8.5): the attribute's cells at the selected labels, a
+     *  leeg cell skipped and an all-leeg selection leeg, as the exec-model branch folds them ({@code rsDimSom},
+     *  {@code rsDimMin}, {@code rsDimMax}); a sum's {@code emptyFallback} is evaluated after the cells, every time
+     *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The reference interpreter and the ASP backend do
+     *  not fold a dimension selection. */
+    private Waardefunctie dimensievouw(Expr.Functie f, Lezingen lez) {
+        Expr.FunctieKind kind = f.kind();
+        if (kind != Expr.FunctieKind.SOM && kind != Expr.FunctieKind.MINIMUM && kind != Expr.FunctieKind.MAXIMUM)
+            throw new Weigering("een Aggregation " + kind + " over een dimensieselectie ('" + snippet(f.bron())
+                    + "'): alleen een som, een minimum en een maximum vouwen een dimensieselectie (WF-037)");
+        if (f.leegwaarde() != null && kind != Expr.FunctieKind.SOM)
+            throw new Weigering("een emptyFallback op een Aggregation " + kind + " ('" + snippet(f.bron()) + "'): alleen"
+                    + " een som heeft er een (WF-037)");
+        if (f.argumenten().size() != 1 || !(f.argumenten().get(0) instanceof Expr.AttribuutRef a))
+            throw new Weigering("een Aggregation over een dimensieselectie over iets anders dan één attribuut ('"
+                    + snippet(f.bron()) + "')");
+        int i = dimensielezing(a, lez, "een Aggregation over een dimensieselectie");
+        List<String> labels = List.copyOf(f.dimensieSelectie().labels());
+        Waardefunctie terugval = f.leegwaarde() == null ? null : herschaald(waarde(f.leegwaarde(), lez),
+                eff.eenheidVan(f.leegwaarde()), eff.eenheidVan(a), "een §5.8.2 terugvalwaarde");
+        return w -> {
+            Map<?, ?> m = w[i] instanceof Map<?, ?> x ? x : null;
+            BigDecimal r = switch (kind) {
+                case SOM -> RegelSpraakRuntime.rsDimSom(m, labels);
+                case MINIMUM -> RegelSpraakRuntime.rsDimMin(m, labels);
+                default -> RegelSpraakRuntime.rsDimMax(m, labels);
+            };
+            Object t = terugval == null ? null : terugval.van(w);
+            return kind == Expr.FunctieKind.SOM && r == null ? t : r;
+        };
+    }
+
+    /** The read of the dimensioned attribute {@code a} as its whole map: the subject's own attribute, which no form
+     *  writes, bound off its bean. A dimensioned attribute over a path, or one a form writes, is refused by name. */
+    private int dimensielezing(Expr.AttribuutRef a, Lezingen lez, String wat) {
+        if (a.objecttype() == null || a.attribuut() == null)
+            throw new Weigering("een onopgeloste AttributeReference in " + wat + " ('" + snippet(a.bron()) + "')");
+        if (navigatieBindingen.containsKey(a))
+            throw new Weigering(wat + " over een pad ('" + snippet(a.bron()) + "'): de tak leest een gedimensioneerd"
+                    + " attribuut alleen op het eigen onderwerp");
+        if (a.objecttype() != lez.subject)
+            throw new Weigering("een eigen lezing die " + a.objecttype().naam + " noemt op een " + lez.subject.naam
+                    + " ('" + snippet(a.bron()) + "', WF-053)");
+        Lid lid = gedimensioneerdLid(lez.subject, a.attribuut());
+        if (schrijvers.containsKey(lid.sleutel()))
+            throw new Weigering(wat + " over het attribuut '" + lid.naam() + "', dat een vorm schrijft ('"
+                    + snippet(a.bron()) + "'): de tak leest een gedimensioneerd attribuut alleen als invoer");
+        return lez.eigen(lid);
+    }
+
+    /**
+     * A {@code Let} (RUNTIME-SEMANTICS ch. 10.6): the body evaluated with the binder bound to its value as a need. The
+     * value is evaluated in the enclosing scope (WF-076), at the first read of the binder, and that one result serves
+     * every further read (clause 1); a read whose value is leeg ends the {@code Let} with leeg (clause 2), the barrier
+     * belonging to the {@code Let} whose binder was read; a body that never reads the binder evaluates nothing of the
+     * value, so no leeg, no fault and no deposit come of it (clause 3). The binder is a slot of the value array that no
+     * pattern binds ({@link Lezingen#binder}): the {@code Let} hands its body a copy of the array with the need in that
+     * slot, so the lambda keeps no state and one KieBase serves any number of sessions. Every read the value and the body
+     * make is bound in the left-hand side all the same, read or not: truth maintenance follows each value the evaluation
+     * may need, and a read through a total standing never keeps the rule from matching.
+     */
+    private Waardefunctie let(Expr.Let l, Lezingen lez) {
+        if (l.binder() == null) throw new Weigering("een Let zonder binder ('" + snippet(l.bron()) + "')");
+        Waardefunctie waarde = waarde(l.value(), lez);
+        int slot = lez.binder();
+        String sleutel = Namen.norm(l.binder());
+        Integer buiten = lez.binders.put(sleutel, slot);
+        Waardefunctie lichaam;
+        try {
+            lichaam = waarde(l.body(), lez);
+        } finally {
+            if (buiten == null) lez.binders.remove(sleutel);
+            else lez.binders.put(sleutel, buiten);
+        }
+        return w -> {
+            Barriere barriere = new Barriere();
+            Object[] binnen = w.clone();
+            binnen[slot] = new Behoefte(() -> waarde.van(w), barriere);
+            try {
+                return lichaam.van(binnen);
+            } catch (Barriere b) {
+                if (b != barriere) throw b;
+                return null;
+            }
+        };
+    }
+
+    /** A read of the binder of the nearest enclosing {@code Let} of that name (WF-064): it forces the need and raises
+     *  the {@code Let}'s barrier where the value is leeg ({@link Behoefte#lees}). */
+    private Waardefunctie binderlezing(Expr.BinderRef b, Lezingen lez) {
+        Integer slot = b.naam() == null ? null : lez.binders.get(Namen.norm(b.naam()));
+        if (slot == null)
+            throw new Weigering("een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
+                    + snippet(b.bron()) + "', WF-064)");
+        int i = slot;
+        return w -> ((Behoefte) w[i]).lees();
+    }
+
+    /** An {@code IfThenElse} (RUNTIME-SEMANTICS ch. 10.2): the condition evaluated as any condition of this branch, then
+     *  exactly the branch it chooses; the other branch evaluates nothing, so it reads no binder, faults nowhere and
+     *  deposits nothing. The reads of both branches are bound in the left-hand side all the same. */
+    private Waardefunctie keuze(Expr.IfThenElse k, Lezingen lez) {
+        Toets voorwaarde = voorwaarde(k.conditie(), lez);
+        Waardefunctie dan = waarde(k.dan(), lez), anders = waarde(k.anders(), lez);
+        return w -> voorwaarde.test(w) ? dan.van(w) : anders.van(w);
+    }
+
+    /** A context value (RUNTIME-SEMANTICS ch. 8.2): evaluationDate, the session's evaluation date, and evaluationYear,
+     *  its calendar year as a whole number without a unit ({@code rsRekenjaar}). Both read the session's
+     *  {@link Rekendatum}, bound in the left-hand side, and fault where the session carries no date, in the reference
+     *  interpreter's sentences. The bound day of a day-kind definition, read outside such a definition, faults as in that
+     *  executor, since it denotes nothing there; a day-kind definition itself is outside this branch. */
+    private Waardefunctie contextwaarde(Expr.Constante c, Lezingen lez) {
+        String naam = c.naam() == null ? "" : c.naam();
+        switch (naam) {
+            case "Rekendatum" -> {
+                int i = lez.rekendatum();
+                lez.markeerFalen();
+                return w -> {
+                    if (w[i] == null) throw new Rekenfout(Rekenfout.REKENDATUM_ZONDER_DATUM);
+                    return w[i];
+                };
+            }
+            case "Rekenjaar" -> {
+                int i = lez.rekendatum();
+                lez.markeerFalen();
+                return w -> {
+                    if (w[i] == null) throw new Rekenfout(RegelSpraakRuntime.REKENJAAR_ZONDER_REKENDATUM);
+                    return RegelSpraakRuntime.rsRekenjaar((LocalDate) w[i]);
+                };
+            }
+            case "de dag" -> {
+                lez.markeerFalen();
+                return w -> { throw new Rekenfout(Rekenfout.DE_DAG_BUITEN_DAGSOORT); };
+            }
+            default -> throw new Weigering("de contextwaarde '" + naam + "' ('" + snippet(c.bron()) + "'): de lader laat"
+                    + " alleen evaluationDate, evaluationYear en de gebonden dag toe (WF-098)");
+        }
+    }
+
+    /** The barrier of one evaluation of a {@code Let} (RUNTIME-SEMANTICS ch. 10.6, clause 2): raised by a read of its
+     *  binder whose value is leeg, and caught by that evaluation alone, since every evaluation makes its own, so a
+     *  nested {@code Let} lets an enclosing one's barrier pass. A signal, not a diagnosis: no stack trace. */
+    private static final class Barriere extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        Barriere() {
+            super(null, null, false, false);
+        }
+    }
+
+    /** The need of a binder in one evaluation of its {@code Let} (RUNTIME-SEMANTICS ch. 10.6, clause 1): the value,
+     *  evaluated at the first read and kept for every further one; a leeg value raises the {@code Let}'s barrier at each
+     *  read. Made inside that evaluation and reached only through its copy of the value array, so it is never shared
+     *  between sessions or threads. */
+    private static final class Behoefte {
+        private final Supplier<Object> waarde;
+        private final Barriere barriere;
+        private boolean berekend;
+        private Object uitkomst;
+
+        Behoefte(Supplier<Object> waarde, Barriere barriere) {
+            this.waarde = waarde;
+            this.barriere = barriere;
+        }
+
+        Object lees() {
+            if (!berekend) {
+                uitkomst = waarde.get();
+                berekend = true;
+            }
+            if (uitkomst == null) throw barriere;
+            return uitkomst;
+        }
+    }
+
+    /**
+     * The probe of the §6.5 and §6.6 deposit (RUNTIME-SEMANTICS ch. 1.2): a division of a filled dividend by a leeg
+     * divisor, and a square root of a negative number, deposit a §9.5 inconsistency where the evaluation reaches them.
+     * Which places run depends on the evaluation itself — the branch an {@code IfThenElse} takes, the binders a body reads
+     * (ch. 10.2, 10.6) — so a static test of the operands cannot tell. The consequence of a computing rule or an
+     * initialisation puts a fresh probe in its slot of the value array ({@link Lezingen#sonde}) before it computes the
+     * value, every place that qualifies ({@link #deponeerplek}) reports to it where it runs, and the consequence deposits
+     * where one did. Outside such a consequence the slot is empty and a place reports to nothing: a condition deposits
+     * nothing, as before this probe.
+     */
+    private static final class Sonde {
+        private boolean gemeld;
+
+        /** A place that qualifies ran and deposits; {@code plaats} is its probe's slot, -1 where the place does not
+         *  qualify. */
+        static void meld(Object[] w, int plaats) {
+            if (plaats >= 0 && w[plaats] instanceof Sonde s) s.gemeld = true;
+        }
+
+        boolean gemeld() {
+            return gemeld;
+        }
+    }
+
+    /** Whether an operand lets a §6.5 or §6.6 place deposit, as at the exec-model branch: a read of an attribute of the
+     *  subject or one role away, or a read of a {@code Let} binder. A literal, a parameter, a compound operand and a read
+     *  over two or more roles do not count there, and so not here. */
+    private boolean kwalificeert(Expr e) {
+        return telt(e) || e instanceof Expr.BinderRef;
     }
 
     // ---------------- aggregations ----------------
@@ -1877,20 +2455,181 @@ public final class TmsTranspiler {
         return ordenend && f.argumenten().size() >= 2 && f.filter() == null;
     }
 
-    /** An aggregation, listed or over a set source; every other function node is a builtin, which this branch does not
-     *  compute yet, and so is a fold over a dimension selection, which reads a dimensioned attribute. */
+    /** An aggregation, listed, over a set source or over a dimension selection; every other function node is a builtin
+     *  call ({@link #builtin}). */
     private Waardefunctie functie(Expr.Functie f, Lezingen lez) {
-        if (!isVouw(f.kind())) throw nietBerekend("BuiltinCall", f.bron(), BUITEN);
-        if (f.dimensieSelectie() != null)
-            throw nietBerekend("Aggregation over een dimensieselectie", f.bron(), "gedimensioneerde attributen zijn " + BUITEN);
+        if (f.dimensieSelectie() != null) return dimensievouw(f, lez);
+        if (!isVouw(f.kind())) return builtin(f, lez);
         return isGelisteVouw(f) ? gelijsteVouw(f, lez) : vouw(f, lez);
+    }
+
+    /**
+     * A builtin call (IR-SPEC ch. 4.3), its arguments evaluated in wire order (RUNTIME-SEMANTICS ch. 5.11), through the
+     * runtime's helpers where the exec-model branch uses them: the absolute value ({@code rsAbs}); a concatenation of
+     * texts ({@link #tekstdeel}); the duration and the absolute duration in a calendar unit ({@code rsTijdsduur},
+     * ch. 3.8); the year, month and day of a date and the hour, minute, second and millisecond of a date-time
+     * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #paasdag}); a date and a date-time made of their parts
+     * ({@link #datumconstructie}). A square root is carried as the base of its mandatory rounding ({@link #afronding}). A
+     * bucketing builtin over a timeline and a duration in day kinds belong to the card of timelines and day kinds, and
+     * are refused by name.
+     */
+    private Waardefunctie builtin(Expr.Functie f, Lezingen lez) {
+        Expr.FunctieKind kind = f.kind();
+        String spelling = Spelling.BUILTIN_KIND.spelling(kind);
+        if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN)
+            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "tijdlijnen zijn " + BUITEN);
+        if (f.filter() != null)
+            throw new Weigering("een BuiltinCall " + spelling + " met een filter ('" + snippet(f.bron()) + "'): alleen een"
+                    + " bucketing over een tijdlijn draagt er een");
+        List<Expr> a = f.argumenten();
+        return switch (kind) {
+            case WORTEL -> throw new Weigering("een squareRoot die niet de basis van een afronding is ('"
+                    + snippet(f.bron()) + "'): §13.4.17.13 schrijft de afronding voor, en de referentie-interpreter faalt"
+                    + " op een irrationale wortel zonder");
+            case ABSOLUTE_WAARDE -> {
+                Waardefunctie x = waarde(eenArgument(f, spelling), lez);
+                yield w -> RegelSpraakRuntime.rsAbs(x.van(w));
+            }
+            case CONCATENATIE -> {
+                List<Waardefunctie> delen = new ArrayList<>();
+                for (Expr arg : a) delen.add(tekstdeel(arg, lez, "concatenation"));
+                yield w -> {
+                    StringBuilder uit = new StringBuilder();
+                    for (Waardefunctie deel : delen) uit.append((String) deel.van(w));
+                    return uit.toString();
+                };
+            }
+            case TIJDSDUUR, ABSOLUTE_TIJDSDUUR -> tijdsduur(f, lez, spelling);
+            case EERSTE_PAASDAG -> paasdag(f, lez, spelling);
+            case JAAR_UIT -> datumdeel(f, lez, spelling, ChronoField.YEAR, false);
+            case MAAND_UIT -> datumdeel(f, lez, spelling, ChronoField.MONTH_OF_YEAR, false);
+            case DAG_UIT -> datumdeel(f, lez, spelling, ChronoField.DAY_OF_MONTH, false);
+            case UUR_UIT -> datumdeel(f, lez, spelling, ChronoField.HOUR_OF_DAY, true);
+            case MINUUT_UIT -> datumdeel(f, lez, spelling, ChronoField.MINUTE_OF_HOUR, true);
+            case SECONDE_UIT -> datumdeel(f, lez, spelling, ChronoField.SECOND_OF_MINUTE, true);
+            case MILLISECONDE_UIT -> datumdeel(f, lez, spelling, ChronoField.MILLI_OF_SECOND, true);
+            case DATUM_MET, DATUMTIJD_MET -> datumconstructie(f, lez, spelling);
+            default -> throw new IllegalStateException("de soort " + kind + " is een vouw, geen builtin");
+        };
+    }
+
+    /** The one argument of {@code f}; a call with another number is refused (WF-037). */
+    private static Expr eenArgument(Expr.Functie f, String spelling) {
+        if (f.argumenten().size() != 1)
+            throw new Weigering("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+                    + "'): deze builtin heeft er één (WF-037)");
+        return f.argumenten().get(0);
+    }
+
+    /** The duration and the absolute duration from argument 0 to argument 1 in whole units of the node's own unit
+     *  (RUNTIME-SEMANTICS ch. 3.8, WF-038), the "van" evaluated before the "tot" (ch. 5.11); a leeg operand leeg. */
+    private Waardefunctie tijdsduur(Expr.Functie f, Lezingen lez, String spelling) {
+        List<Expr> a = f.argumenten();
+        if (a.size() != 2)
+            throw new Weigering("een " + spelling + " met " + a.size() + " argumenten ('" + snippet(f.bron()) + "'): een"
+                    + " tijdsduur heeft er twee (WF-037)");
+        Datatype van = eff.typeVan(a.get(0)), tot = eff.typeVan(a.get(1));
+        if (!van.isDatum() || !tot.isDatum() || !zelfdeDatumsoort(van, tot))
+            throw new Weigering("een " + spelling + " die niet twee datums van één precisie meet ('" + snippet(f.bron())
+                    + "', WF-038)");
+        Datatype type = eff.typeVan(f);
+        if (Tijdrekening.dagsoortVoorEenheid(model, type.eenheidOf()) != null)
+            throw new Weigering("een " + spelling + " in dagsoorten ('" + snippet(f.bron()) + "'): dagsoorten zijn " + BUITEN);
+        String eenheid = Tijdrekening.chronoUnit(type);
+        if (eenheid == null)
+            throw new Weigering("een " + spelling + " zonder tijdseenheid ('" + snippet(f.bron()) + "', WF-038)");
+        boolean klok = switch (eenheid) { case "HOURS", "MINUTES", "SECONDS", "MILLIS" -> true; default -> false; };
+        if (klok && !(van instanceof Datatype.DatumTijd))
+            throw new Weigering("een " + spelling + " in een klokeenheid tussen datums zonder tijd ('" + snippet(f.bron())
+                    + "', WF-038)");
+        Waardefunctie vanaf = waarde(a.get(0), lez), totaan = waarde(a.get(1), lez);
+        boolean absoluut = f.kind() == Expr.FunctieKind.ABSOLUTE_TIJDSDUUR;
+        return w -> {
+            Object v = vanaf.van(w), t = totaan.van(w);
+            return RegelSpraakRuntime.rsTijdsduur((java.time.temporal.Temporal) v, (java.time.temporal.Temporal) t,
+                    eenheid, absoluut);
+        };
+    }
+
+    /** A part of a date or a date-time, as a whole number without a unit; a leeg date leeg (RUNTIME-SEMANTICS ch. 1.2,
+     *  3.8). A clock part demands a date-time, as the exec-model branch demands it. */
+    private Waardefunctie datumdeel(Expr.Functie f, Lezingen lez, String spelling, ChronoField veld, boolean klok) {
+        Expr arg = eenArgument(f, spelling);
+        Datatype t = eff.typeVan(arg);
+        if (!t.isDatum() || (klok && !(t instanceof Datatype.DatumTijd)))
+            throw new Weigering("een " + spelling + " uit iets anders dan een " + (klok ? "datum-tijd" : "datum") + " ('"
+                    + snippet(f.bron()) + "')");
+        Waardefunctie d = waarde(arg, lez);
+        return w -> RegelSpraakRuntime.rsDatumDeel(d.van(w), veld);
+    }
+
+    /** easterSunday of a whole year without a unit (RUNTIME-SEMANTICS ch. 3.8, WF-038), by the algorithm of that chapter
+     *  ({@code rsEerstePaasdag}); a leeg year leeg. A year that is not whole is a fault in the reference interpreter's
+     *  sentence, never a silent truncation, and so is a year outside the years this backend's dates hold. */
+    private Waardefunctie paasdag(Expr.Functie f, Lezingen lez, String spelling) {
+        Expr arg = eenArgument(f, spelling);
+        Eenheid eenheid = eff.eenheidVan(arg);
+        if (eenheid != null)
+            throw new Weigering("een " + spelling + " van een jaar met de eenheid " + eenheid.weergave() + " ('"
+                    + snippet(f.bron()) + "'): het jaar is een geheel getal zonder eenheid (WF-038)");
+        lez.markeerFalen();
+        Waardefunctie jaar = waarde(arg, lez);
+        return w -> {
+            Object v = jaar.van(w);
+            if (v == null) return null;
+            Breuk q = Breuk.van(v);
+            if (!q.noemer().equals(BigInteger.ONE))
+                throw new Rekenfout("easterSunday: expected a whole unitless year, got " + getaltekst(q));
+            if (q.teller().abs().compareTo(BigInteger.valueOf(999_999_999)) > 0)
+                throw new Rekenfout("easterSunday: the year " + q.teller() + " lies outside the years -999999999 to"
+                        + " 999999999 that this backend's dates hold");
+            return RegelSpraakRuntime.rsEerstePaasdag(new BigDecimal(q.teller()));
+        };
+    }
+
+    /** A date of three parts or a date-time of seven, as the exec-model branch makes them ({@code rsDatumMet},
+     *  {@code rsDatumtijdMet}): every part evaluated in order (RUNTIME-SEMANTICS ch. 5.11), any leeg part leeg (ch. 1.2).
+     *  A part that is not a whole number within the range of a date part, or parts that name no day, fault: the
+     *  reference interpreter makes no such date, and the runtime would truncate the part or throw past the fire. */
+    private Waardefunctie datumconstructie(Expr.Functie f, Lezingen lez, String spelling) {
+        boolean tijd = f.kind() == Expr.FunctieKind.DATUMTIJD_MET;
+        int aantal = tijd ? 7 : 3;
+        if (f.argumenten().size() != aantal)
+            throw new Weigering("een " + spelling + " met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
+                    + "'): deze builtin heeft er " + aantal + " (WF-037)");
+        lez.markeerFalen();
+        List<Waardefunctie> delen = new ArrayList<>();
+        for (Expr arg : f.argumenten()) delen.add(waarde(arg, lez));
+        return w -> {
+            Object[] v = new Object[aantal];
+            for (int i = 0; i < aantal; i++) v[i] = delen.get(i).van(w);
+            for (Object deel : v) if (deel == null) return null;
+            for (Object deel : v) {
+                Breuk q = Breuk.van(deel);
+                if (!q.noemer().equals(BigInteger.ONE) || q.teller().bitLength() > 31)
+                    throw new Rekenfout(spelling + ": the part " + getaltekst(q) + " is no whole number within the range"
+                            + " of a date part");
+            }
+            try {
+                return tijd ? RegelSpraakRuntime.rsDatumtijdMet(v[0], v[1], v[2], v[3], v[4], v[5], v[6])
+                        : RegelSpraakRuntime.rsDatumMet(v[0], v[1], v[2]);
+            } catch (java.time.DateTimeException e) {
+                throw new Rekenfout(spelling + ": " + e.getMessage(), e);
+            }
+        };
+    }
+
+    /** A number as the reference interpreter writes it in a sentence: a terminating one as its plain decimal, another as
+     *  numerator/denominator. */
+    private static String getaltekst(Breuk q) {
+        return q.isTerminerend() ? q.naarDecimal().toPlainString() : q.teller() + "/" + q.noemer();
     }
 
     /**
      * A listed fold (RUNTIME-SEMANTICS ch. 1.2e): minimum and eerste keep the least operand value, maximum and laatste
      * the greatest; a leeg operand is skipped, an all-leeg fold is leeg, and a tie takes the later operand. The operands
-     * are computed from the values the rule binds, in wire order; an operand that would need a restatement into the
-     * first one's unit is refused, as everywhere in this branch.
+     * are computed from the values the rule binds, in wire order, each after the first restated into the first one's
+     * unit, the unit of the result (§4.6 Eenheid1, RUNTIME-SEMANTICS ch. 2.6).
      */
     private Waardefunctie gelijsteVouw(Expr.Functie f, Lezingen lez) {
         boolean kleinste = f.kind() == Expr.FunctieKind.MINIMUM || f.kind() == Expr.FunctieKind.EERSTE;
@@ -1898,8 +2637,8 @@ public final class TmsTranspiler {
         List<Waardefunctie> operanden = new ArrayList<>();
         for (int i = 0; i < f.argumenten().size(); i++) {
             Expr a = f.argumenten().get(i);
-            if (i > 0) eenheden(eff.eenheidVan(a), eerste, "een §5.8.3 operand van een gelijste vouw");
-            operanden.add(waarde(a, lez));
+            Waardefunctie op = waarde(a, lez);
+            operanden.add(i == 0 ? op : herschaald(op, eff.eenheidVan(a), eerste, "een §5.8.3 operand van een gelijste vouw"));
         }
         return w -> {
             Object acc = null;
@@ -1989,8 +2728,6 @@ public final class TmsTranspiler {
                     f.filter(), lid, regels, lezingen);
             return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen);
         });
-        if (arg != null && f.leegwaarde() != null)
-            eenheden(eff.eenheidVan(f.leegwaarde()), eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
         Class<?> functie = switch (kind) {
             case SOM, TOTAAL -> accumulatiefunctie("BigDecimalSumAccumulateFunction");
             case MINIMUM, EERSTE -> accumulatiefunctie("MinAccumulateFunction");
@@ -1999,7 +2736,9 @@ public final class TmsTranspiler {
         };
         int[] i = lez.vouw(v, functie);
         if (v.kanFalen()) lez.markeerFalen();
-        Waardefunctie terugval = f.leegwaarde() == null ? null : waarde(f.leegwaarde(), lez);
+        // the fallback restated into the unit of the folded member (RUNTIME-SEMANTICS ch. 2.6)
+        Waardefunctie terugval = f.leegwaarde() == null ? null : herschaald(waarde(f.leegwaarde(), lez),
+                eff.eenheidVan(f.leegwaarde()), arg == null ? null : eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
         Waardefunctie uitkomst = switch (kind) {
             case AANTAL, AANTAL_GEVULDE -> w -> aantal(w[i[0]]);
             case SOM -> w -> {
@@ -2139,8 +2878,8 @@ public final class TmsTranspiler {
         }
         List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
-            Breuk.DelingDoorNul nul = fout(toets, w);
-            if (nul == null)
+            RuntimeException fout = fout(toets, w);
+            if (fout == null)
                 throw new IllegalStateException("het filter van " + sleutel + " faalde in de toets en niet in het gevolg,"
                         + " over dezelfde gebonden waarden");
             List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
@@ -2153,7 +2892,7 @@ public final class TmsTranspiler {
                             + " niet te bepalen (RUNTIME-SEMANTICS ch. 5.11)");
                 plaats.add(((Number) w[p.plaats()]).intValue());
             }
-            drools.logicalInsert(new Filterfout(sleutel, onderwerp, w[lid], nul, plaats));
+            drools.logicalInsert(new Filterfout(sleutel, onderwerp, w[lid], fout, plaats));
         }, lez.variabelen.size()));
         vastleggen.accept(lez);
         return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
@@ -2380,22 +3119,8 @@ public final class TmsTranspiler {
         return cur;
     }
 
-    /** A division whose dividend and divisor are bound reads: the indices of the two. */
-    private record Deling(int deeltal, int deler) {}
-
-    /** The divisions in a value the exec-model branch gives a §6.5 companion ({@code delingCompanions}): each operand a
-     *  read of an attribute, of the subject or one role away; a literal, a parameter, a nested expression and a read
-     *  over two or more roles do not count there, and so not here. */
-    private void delingen(Expr e, Lezingen lez, List<Deling> uit) {
-        if (!(e instanceof Expr.Binair b)) return;
-        if ((b.op() == Expr.BinOp.GEDEELD_DOOR || b.op() == Expr.BinOp.GEDEELD_DOOR_ABS)
-                && telt(b.links()) && telt(b.rechts()))
-            uit.add(new Deling(attribuutlezing((Expr.AttribuutRef) b.links(), lez),
-                    attribuutlezing((Expr.AttribuutRef) b.rechts(), lez)));
-        delingen(b.links(), lez, uit);
-        delingen(b.rechts(), lez, uit);
-    }
-
+    /** Whether {@code e} is a read of an attribute of the subject or one role away, an operand that lets a §6.5 or §6.6
+     *  place deposit ({@link #kwalificeert}), as the exec-model branch's {@code delingCompanions} counts it. */
     private boolean telt(Expr e) {
         if (!(e instanceof Expr.AttribuutRef a)) return false;
         List<RolBindingRef> pad = navigatieBindingen.get(a);
@@ -2434,12 +3159,49 @@ public final class TmsTranspiler {
             case Conditie.Samengesteld s -> samengesteld(s, lez);
             case Conditie.Vergelijking v -> vergelijking(v, lez);
             case Conditie.Predicaat p -> predicaat(p, lez);
-            case Conditie.Periode p -> throw nietGelezen("TimeWindow", c, BUITEN);
+            case Conditie.Periode p -> tijdvenster(p, lez);
             case Conditie.Kwantorvouw q -> throw nietGelezen("QuantifierFold", c, BUITEN);
             case Conditie.Rollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
             case Conditie.VerreRollidmaatschap rol -> throw nietGelezen("RoleMembership", c, BUITEN);
             case Conditie.Regelversie rv -> kanaallezing(rv, lez);
-            case Conditie.Onopgelost o -> throw nietGelezen("Unresolved", c, BUITEN);
+            // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
+            // reaches it, so a composite that settles before it reads it plays
+            case Conditie.Onopgelost o -> {
+                lez.markeerFalen();
+                yield w -> { throw new Rekenfout(Rekenfout.ONOPGELOSTE_VOORWAARDE); };
+            }
+        };
+    }
+
+    /**
+     * A time window on a scalar target, the evaluation-date gate (RUNTIME-SEMANTICS ch. 3.10): it holds where the
+     * session's evaluation date lies in the window, {@code from} inclusive, {@code to} exclusive or inclusive where the
+     * source wrote "tot en met" ({@code toInclusive}), an absent bound open. An unset evaluation date never matches, nor
+     * does a leeg bound; neither is a fault. Both bounds are read, {@code from} before {@code to}, before the date decides
+     * (ch. 5.11). A bound is a date literal or the subject's own scalar date attribute (WF-111), read per subject, also
+     * where another rule derives it; any other bound is refused by name ({@link Vensterpositie#GRENSVORM}). On a
+     * time-dependent target the window would clip the timeline instead, and such a target is refused before this
+     * ({@link #lid}).
+     */
+    private Toets tijdvenster(Conditie.Periode p, Lezingen lez) {
+        if (p.vanaf() == null && p.tot() == null)
+            throw new Weigering("een periodevenster zonder grens ('" + snippet(p) + "'): er is geen venster om op te"
+                    + " poorten");
+        for (Expr grens : java.util.Arrays.asList(p.vanaf(), p.tot()))
+            if (grens != null && !Vensterpositie.grensLowerbaar(grens, lez.subject, navigatieBindingen::containsKey))
+                throw new Weigering(Vensterpositie.GRENSVORM + ": " + snippet(p));
+        Waardefunctie vanaf = p.vanaf() == null ? null : waarde(p.vanaf(), lez);
+        Waardefunctie tot = p.tot() == null ? null : waarde(p.tot(), lez);
+        int datum = lez.rekendatum();
+        boolean totInclusief = p.totInclusief();
+        return w -> {
+            Object van = vanaf == null ? null : vanaf.van(w);
+            Object eind = tot == null ? null : tot.van(w);
+            if (!(w[datum] instanceof LocalDate dag)) return false;
+            if (vanaf != null && !(van instanceof LocalDate v && !dag.isBefore(v))) return false;
+            if (tot != null && !(eind instanceof LocalDate t && (totInclusief ? !dag.isAfter(t) : dag.isBefore(t))))
+                return false;
+            return true;
         };
     }
 
@@ -2474,6 +3236,10 @@ public final class TmsTranspiler {
      *  (RUNTIME-SEMANTICS ch. 5.10), so a member that would fault, a comparison with a division by zero, is not read
      *  where an earlier member settled the verdict, and the composite faults only where it reads such a member. */
     private Toets samengesteld(Conditie.Samengesteld s, Lezingen lez) {
+        // a window under GEEN or a counting quantifier has no reading (WF-112), refused in the sentence both other
+        // branches give
+        String venster = Vensterpositie.weigering(s);
+        if (venster != null) throw new Weigering(venster + ": " + snippet(s));
         List<Toets> leden = new ArrayList<>();
         for (Conditie deel : s.onderdelen()) leden.add(voorwaarde(deel, lez));
         Conditie.Kwantor kw = s.kwantor();
@@ -2511,9 +3277,11 @@ public final class TmsTranspiler {
     /**
      * A comparison of two values the rule binds or computes, with the empty operand of RUNTIME-SEMANTICS ch. 1.2 as the
      * exec-model branch reads it: numbers through {@code rsAggVergelijk} (an ordering with a leeg operand is onwaar, two
-     * leeg numbers are equal, exactly one leeg is unequal; exact where a value is a rational); dates of one precision
-     * through {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a truth value
-     * through {@link #tekstGelijk}, an enumeration up to its normalised label. Units that need a restatement are refused.
+     * leeg numbers are equal, exactly one leeg is unequal; exact where a value is a rational), a percentage being a
+     * number in the unit %, the right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of
+     * one precision through {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a
+     * truth value through {@link #tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated
+     * before the right one (ch. 5.11). Two sides whose types allow no comparison are refused.
      */
     private Toets vergelijking(Conditie.Vergelijking v, Lezingen lez) {
         if (v.periode() != null)
@@ -2521,10 +3289,14 @@ public final class TmsTranspiler {
         Datatype lt = eff.typeVan(v.links()), rt = eff.typeVan(v.rechts());
         Conditie.Operator op = v.op();
         Waardefunctie l = waarde(v.links(), lez), r = waarde(v.rechts(), lez);
-        if (lt.isNumeriek() && rt.isNumeriek() && !isDatumOp(op)) {
-            eenheden(eff.eenheidVan(v.links()), eff.eenheidVan(v.rechts()), "een §5.1 vergelijking");
+        if (lt.isGetalachtig() && rt.isGetalachtig() && !isDatumOp(op)) {
+            Waardefunctie rechts = herschaald(r, eff.eenheidVan(v.rechts()), eff.eenheidVan(v.links()),
+                    "een §5.1 vergelijking");
             String symbool = Operatoren.symbool(op);
-            return w -> RegelSpraakRuntime.rsAggVergelijk(l.van(w), r.van(w), symbool);
+            return w -> {
+                Object links = l.van(w);
+                return RegelSpraakRuntime.rsAggVergelijk(links, rechts.van(w), symbool);
+            };
         }
         if (lt.isDatum() && rt.isDatum() && (isDatumOp(op) || op == Conditie.Operator.GELIJK
                 || op == Conditie.Operator.ONGELIJK)) {
@@ -2540,7 +3312,8 @@ public final class TmsTranspiler {
             return w -> tekstGelijk(lezing.apply(l.van(w)), lezing.apply(r.van(w)), gelijk);
         }
         throw new Weigering("een Comparison " + Spelling.COMPARISON_OP.spelling(op) + " tussen " + typenaam(lt) + " en "
-                + typenaam(rt) + " ('" + snippet(v) + "'): " + NOG_NIET);
+                + typenaam(rt) + " ('" + snippet(v) + "'): de typen van de twee kanten laten deze vergelijking niet toe"
+                + " (RUNTIME-SEMANTICS ch. 1.2)");
     }
 
     private static String typenaam(Datatype t) {
@@ -2602,12 +3375,38 @@ public final class TmsTranspiler {
     private Toets predicaat(Conditie.Predicaat p, Lezingen lez) {
         if (p.periode() != null)
             throw new Weigering("een Predicate met wholePeriod ('" + snippet(p) + "'): tijdlijnen zijn " + BUITEN);
-        if (p.soort() != Conditie.Predicaatsoort.LEEG && p.soort() != Conditie.Predicaatsoort.GEVULD)
-            throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " ('" + snippet(p)
-                    + "'): " + NOG_NIET);
+        switch (p.soort()) {
+            case LEEG, GEVULD -> {
+                Waardefunctie f = waarde(p.operand(), lez);
+                boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
+                return w -> (f.van(w) == null) == leeg;
+            }
+            case ELFPROEF, NUMERIEK_MET_EXACT -> {
+                return cijferproef(p, lez);
+            }
+            case DAGSOORT -> throw new Weigering("een Predicate dayKind ('" + snippet(p) + "'): dagsoorten zijn " + BUITEN);
+            default -> throw new IllegalStateException("predicaatsoort " + p.soort());
+        }
+    }
+
+    /** The eleven test and the exact-digit test (§8.1.3, §8.1.4), as the exec-model branch tests them
+     *  ({@code rsElfproef}, {@code rsNumeriekMetExact}), the written negation complementing the verdict: a leeg value
+     *  passes neither test. The operand is read as any value; over a path of roles that branch makes an absent link fail
+     *  both polarities, which a leeg read here cannot tell from a leeg value, so such an operand is refused by name. The
+     *  reference interpreter and the ASP backend do not evaluate these predicates. */
+    private Toets cijferproef(Conditie.Predicaat p, Lezingen lez) {
+        if (p.operand() instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a))
+            throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
+                    + snippet(p) + "'): de exec-modeltak laat een afwezige link beide polariteiten onwaar maken, wat"
+                    + " een lege lezing hier niet van een lege waarde onderscheidt");
         Waardefunctie f = waarde(p.operand(), lez);
-        boolean leeg = p.soort() == Conditie.Predicaatsoort.LEEG;
-        return w -> (f.van(w) == null) == leeg;
+        boolean elf = p.soort() == Conditie.Predicaatsoort.ELFPROEF;
+        int cijfers = p.cijfers();
+        boolean gewenst = !p.negatie();
+        return w -> {
+            Object v = f.van(w);
+            return (elf ? RegelSpraakRuntime.rsElfproef(v) : RegelSpraakRuntime.rsNumeriekMetExact(v, cijfers)) == gewenst;
+        };
     }
 
     // ---------------- the reads of one rule ----------------
@@ -2644,6 +3443,12 @@ public final class TmsTranspiler {
         final List<RuleItemBuilder<?>> bereik = new ArrayList<>();
         /** The folds this rule reads, registered with it ({@link #vastleggen}). */
         private final List<Vouw> vouwen = new ArrayList<>();
+        /** The binders of the {@code Let}s around the expression being compiled, by normalised name, each to its slot
+         *  in the value array ({@link #binder}); a nested {@code Let} of the same name shadows the outer one while its
+         *  body compiles (WF-064). */
+        final Map<String, Integer> binders = new HashMap<>();
+        /** The slot of the probe of this rule's deposits ({@link #sonde}), -1 while no place that deposits compiled. */
+        private int sonde = -1;
 
         @SuppressWarnings("unchecked")
         Lezingen(Objecttype subject) {
@@ -2751,6 +3556,52 @@ public final class TmsTranspiler {
                     DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
             uit[2] = nieuw("filterfout " + sleutel, eerste);
             return uit;
+        }
+
+        /** The session's evaluation date (RUNTIME-SEMANTICS ch. 8.1), bound off its {@link Rekendatum}: one fact for the
+         *  whole session, joined to no subject, bound among the parameters; null where the case carries no date. */
+        int rekendatum() {
+            int bekend = bestaand("rekendatum");
+            if (bekend >= 0) return bekend;
+            rekendatumGlobal();
+            Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$rekendatum_" + variabelen.size());
+            Variable<Object> d = DSL.declarationOf(Object.class, "$rekendatumwaarde_" + variabelen.size());
+            parameters.add(PatternDSL.pattern(r).bind(d, Rekendatum::datum));
+            return nieuw("rekendatum", d);
+        }
+
+        /** Gates this rule on the evaluation date (RUNTIME-SEMANTICS ch. 8.2): it matches only where the validity
+         *  window {@code g} admits the date, both bounds inclusive and an absent one open (IR-SPEC ch. 3.10), and never
+         *  in a session without a date, where the form faults instead ({@link #geldigheidsfout}). A window that is always
+         *  valid adds nothing. The date is constant while the session fires, so the gate never changes a match. */
+        Lezingen geldig(Geldigheid g) {
+            if (g == null || g.altijd()) return this;
+            rekendatumGlobal();
+            Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$geldigheid_" + variabelen.size());
+            parameters.add(PatternDSL.pattern(r).expr(id("geldig"), x -> g.bevat(x.datum())));
+            return this;
+        }
+
+        /** A slot of the value array for the binder of a {@code Let} ({@link TmsTranspiler#let}): no pattern binds it, so
+         *  it is no position a condition reads or a consequence binds, and the array is sized past it. */
+        int binder() {
+            variabelen.add(null);
+            return variabelen.size() - 1;
+        }
+
+        /** The slot of the probe of this rule's deposits ({@link Sonde}), made at the first place that deposits; like a
+         *  binder's slot no pattern binds it. */
+        int sonde() {
+            if (sonde < 0) {
+                variabelen.add(null);
+                sonde = variabelen.size() - 1;
+            }
+            return sonde;
+        }
+
+        /** The slot of the probe, or -1 where no place that deposits compiled. */
+        int sondeplaats() {
+            return sonde;
         }
 
         /** The number of the {@link Creatiefase} the driver opened, for a creation rule of stratum {@code stratum}: one
@@ -3260,6 +4111,26 @@ public final class TmsTranspiler {
         }
         throw new Weigering("het " + (kenmerk ? "kenmerk" : "attribuut") + " '" + naam + "' is niet gedeclareerd op "
                 + houder.naam + " of een supertype");
+    }
+
+    /** The dimensioned attribute {@code naam} as declared on {@code houder}'s chain (§3.6): its bean member is a
+     *  {@code Map<label, value>}, read whole by a dimension cell or a fold over a dimension selection. An attribute that
+     *  is not dimensioned, or that also lies on a timeline, is refused by name. */
+    private Lid gedimensioneerdLid(Objecttype houder, String naam) {
+        for (Objecttype t : houder.keten())
+            for (Map.Entry<String, Datatype> e : t.attributen.entrySet())
+                if (Namen.norm(e.getKey()).equals(Namen.norm(naam))) {
+                    String a = e.getKey();
+                    if (!t.attribuutDimensies.containsKey(a))
+                        throw new Weigering("een dimensielezing van het attribuut '" + a + "' van " + t.naam + ", dat niet"
+                                + " gedimensioneerd is");
+                    if (t.attribuutGranulariteit.containsKey(a))
+                        throw new Weigering("het tijdsafhankelijke attribuut '" + a + "' van " + t.naam + ": tijdlijnen"
+                                + " zijn " + BUITEN);
+                    return new Lid(ProducentConsument.elementVan(houder, naam, false), t, a, false, e.getValue(),
+                            bonenklasse(t));
+                }
+        throw new Weigering("het attribuut '" + naam + "' is niet gedeclareerd op " + houder.naam + " of een supertype");
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk

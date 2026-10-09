@@ -43,12 +43,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * gebouwd&gt;"). The side-table row was green from the start: the frame it pins was written before it.
  *
  * <p>Two rows of the first step pinned the refusal of an attribute target and of a leeg or gevuld test; the second
- * step lowers both, and their rows now pin a value and a condition outside the trial, a BuiltinCall (an Aggregation
- * until the aggregations were carried) and a QuantifierFold. <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
+ * step lowers both, and their rows now pin a value and a condition outside the trial, a BuiltinCall over a timeline
+ * (an Aggregation until the aggregations were carried, the absolute value until the value forms were) and a
+ * QuantifierFold. <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
  * "but was: &lt;tms-transpiler SKIP: regel: lampental — een attribuutdoel (berekening van 'lampental' van Vuurtoren): de
  * truth-maintenance-tak leidt nog alleen kenmerken af&gt;" and "but was: &lt;tms-transpiler SKIP: regel: helder — een
  * QuantifierFold in de voorwaarde ('de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5'): de
- * truth-maintenance-tak leest nog alleen kenmerken van het eigen onderwerp, ook ontkend en in een Compound&gt;".
+ * truth-maintenance-tak leest nog alleen kenmerken van het eigen onderwerp, ook ontkend en in een Compound&gt;". The
+ * value row's dayCount, <b>red at the claim of the card tms-expressievormen-en-rekendatum</b> (measured 2026-10-09),
+ * where every builtin call was refused in one sentence: "but was: &lt;tms-transpiler SKIP: regel: lampental — een
+ * BuiltinCall in een waarde ('het aantal dagen in het jaar dat hij helder is'): buiten de proef van de
+ * truth-maintenance-tak&gt;".
  */
 class TmsSkeletWitnessTest {
 
@@ -70,21 +75,26 @@ class TmsSkeletWitnessTest {
         assertEquals(RuleBaseConfiguration.AssertBehaviour.IDENTITY, gelijkheid(exec.kieBase()));
     }
 
-    /** "Het lampental van een Vuurtoren moet berekend worden als de absolute waarde van -3": a BuiltinCall, outside
-     *  the trial. Until the aggregations were carried (card tms-aggregaties-creatie-en-fouten, 2026-10-08) this row
-     *  pinned the refusal of "het aantal lampen van de Vuurtoren", an Aggregation. */
+    /** "Het lampental van een Vuurtoren moet berekend worden als het aantal dagen in het jaar dat hij helder is": a
+     *  BuiltinCall that buckets a timeline, which the branch refuses until the card of allocation and timelines. Until
+     *  the aggregations were carried (card tms-aggregaties-creatie-en-fouten, 2026-10-08) this row pinned the refusal
+     *  of "het aantal lampen van de Vuurtoren", an Aggregation, and until the value forms were carried (card
+     *  tms-expressievormen-en-rekendatum, 2026-10-09) that of "de absolute waarde van -3", which the branch now
+     *  computes. */
     @Test void een_waarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
-        String absoluut = "{\"node\":\"BuiltinCall\",\"kind\":\"absoluteValue\",\"arguments\":["
-                + IrPad.literal("-3", GEHEEL, "-3") + "],\"type\":" + GEHEEL + ",\"source\":{\"snippet\":"
-                + "\"de absolute waarde van -3\"}}";
+        String dagen = "{\"node\":\"BuiltinCall\",\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":"
+                + "\"CharacteristicCheck\",\"characteristic\":\"helder\",\"negated\":false,\"source\":{\"snippet\":"
+                + "\"hij helder is\"}},\"granularity\":\"year\",\"type\":" + GEHEEL + ",\"source\":{\"snippet\":"
+                + "\"het aantal dagen in het jaar dat hij helder is\"}}";
         String lampental = IrPad.regel("lampental", "BEREKENING", "{\"node\":\"AttributeReference\",\"attribute\":"
                 + "\"lampental\",\"subjectType\":\"Vuurtoren\",\"source\":{\"snippet\":\"Het lampental van een Vuurtoren\"}}",
-                absoluut, "null");
+                dagen, "null");
         Path ir = TmsDocumenten.document(VUURTOREN, List.of(lampental));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: lampental — een BuiltinCall in een waarde ('de absolute waarde van -3'):"
-                + " buiten de proef van de truth-maintenance-tak", e.getMessage());
+        assertEquals("tms-transpiler SKIP: regel: lampental — een BuiltinCall dayCount in een waarde ('het aantal dagen in"
+                + " het jaar dat hij helder is'): tijdlijnen zijn buiten de proef van de truth-maintenance-tak",
+                e.getMessage());
     }
 
     /** "Een Vuurtoren is helder indien de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5": a

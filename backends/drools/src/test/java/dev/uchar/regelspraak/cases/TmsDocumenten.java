@@ -459,6 +459,199 @@ final class TmsDocumenten {
         return uit;
     }
 
+    // ---------------- documents with dates, texts, units, the value forms and an evaluation date ----------------
+
+    static final String DATUM = "{\"node\":\"Date\",\"precision\":\"day\"}";
+    static final String DATUMTIJD = "{\"node\":\"Date\",\"precision\":\"millisecond\"}";
+    static final String TEKST = "{\"node\":\"Text\"}";
+
+    /** A number type, whole or with {@code decimalen} decimals, with the unit {@code eenheid} (a Unit node, or null). */
+    static String getaltype(boolean geheel, int decimalen, String eenheid) {
+        return "{\"node\":\"Number\",\"whole\":" + geheel + ",\"decimals\":" + decimalen + ",\"sign\":\"unspecified\""
+                + (eenheid == null ? "" : ",\"unit\":" + eenheid) + "}";
+    }
+
+    /** A Unit of system {@code stelsel}, {@code num}/{@code den} of the canonical unit {@code canoniek}. */
+    static String eenheid(String afkorting, String stelsel, String canoniek, int num, int den) {
+        return "{\"node\":\"Unit\",\"abbreviation\":\"" + afkorting + "\"" + (stelsel == null ? "" : ",\"system\":\""
+                + stelsel + "\"") + ",\"canonical\":\"" + canoniek + "\",\"factorToCanonical\":{\"num\":" + num
+                + ",\"den\":" + den + "}}";
+    }
+
+    /** A Unit written by its abbreviation alone, as a calendar unit is (RUNTIME-SEMANTICS ch. 3.8). */
+    static String eenheid(String afkorting) {
+        return "{\"node\":\"Unit\",\"abbreviation\":\"" + afkorting + "\"}";
+    }
+
+    /** The unit of a percentage, which the loader reads as the Percentage datatype. */
+    static final String PROCENT = eenheid("%", null, "%", 1, 1);
+
+    /** A unit system of {@code eenheden}, Unit nodes of that system. */
+    static String eenheidstelsel(String naam, List<String> eenheden) {
+        return "{\"node\":\"UnitSystem\",\"name\":\"" + naam + "\",\"units\":[" + String.join(",", eenheden) + "]}";
+    }
+
+    /** A model with object types, fact types, parameters as written ({@link #parameter}) and unit systems. */
+    static String modelMet(List<String> objecttypen, List<String> feittypen, List<String> parameters,
+                           List<String> stelsels) {
+        return "{\"objectTypes\":[" + String.join(",", objecttypen) + "],\"factTypes\":[" + String.join(",", feittypen)
+                + "],\"parameters\":[" + String.join(",", parameters) + "],\"domains\":[],\"unitSystems\":["
+                + String.join(",", stelsels) + "],\"dimensions\":[],\"timelines\":[],\"dayKinds\":[]}";
+    }
+
+    /** A Parameter of datatype {@code type}. */
+    static String parameter(String naam, String type) {
+        return "{\"node\":\"Parameter\",\"name\":\"" + naam + "\",\"datatype\":" + type + "}";
+    }
+
+    /** A Literal of {@code type}, its snippet the lexeme. */
+    static String literaal(String lexeem, String type) {
+        return IrPad.literal(lexeem, type, lexeem);
+    }
+
+    /** A binary operation in its wire spelling with the result {@code type}. */
+    static String binair(String op, String links, String rechts, String type) {
+        return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + links + ",\"right\":" + rechts + ",\"type\":" + type
+                + ",\"source\":{\"snippet\":\"" + op + "\"}}";
+    }
+
+    /** "{@code basis} afgerond op {@code decimalen} decimalen" in the mode's wire spelling. */
+    static String afronding(String basis, String modus, int decimalen, String type) {
+        return "{\"node\":\"Rounding\",\"base\":" + basis + ",\"mode\":\"" + modus + "\",\"decimals\":" + decimalen
+                + ",\"type\":" + type + ",\"source\":{\"snippet\":\"afgerond op " + decimalen + " decimalen\"}}";
+    }
+
+    /** "{@code basis} begrensd" with a minimum and a maximum, each "null" for none. */
+    static String begrenzing(String basis, String minimum, String maximum, String type) {
+        return "{\"node\":\"Clamp\",\"base\":" + basis + (minimum.equals("null") ? "" : ",\"minimum\":" + minimum)
+                + (maximum.equals("null") ? "" : ",\"maximum\":" + maximum) + ",\"type\":" + type
+                + ",\"source\":{\"snippet\":\"begrensd\"}}";
+    }
+
+    /** A BuiltinCall of {@code kind} in its wire spelling over {@code argumenten}, with the result {@code type}. */
+    static String builtin(String kind, List<String> argumenten, String type, String bron) {
+        return "{\"node\":\"BuiltinCall\",\"kind\":\"" + kind + "\",\"arguments\":[" + String.join(",", argumenten)
+                + "],\"type\":" + type + ",\"source\":{\"snippet\":\"" + bron + "\"}}";
+    }
+
+    /** "Daarbij geldt: {@code binder} is {@code waarde}" around {@code lichaam}: a Let of the body's {@code type}. */
+    static String let(String binder, String waarde, String lichaam, String type) {
+        return "{\"node\":\"Let\",\"type\":" + type + ",\"binder\":\"" + binder + "\",\"value\":" + waarde + ",\"body\":"
+                + lichaam + ",\"source\":{\"snippet\":\"" + binder + " is …\"}}";
+    }
+
+    /** A read of the binder {@code binder}. */
+    static String binderlezing(String binder) {
+        return "{\"node\":\"BinderRef\",\"name\":\"" + binder + "\",\"source\":{\"snippet\":\"" + binder + "\"}}";
+    }
+
+    /** "als {@code voorwaarde} dan {@code dan} anders {@code anders}" of {@code type}. */
+    static String keuze(String voorwaarde, String dan, String anders, String type) {
+        return "{\"node\":\"IfThenElse\",\"type\":" + type + ",\"condition\":" + voorwaarde + ",\"then\":" + dan
+                + ",\"else\":" + anders + ",\"source\":{\"snippet\":\"als … dan … anders …\"}}";
+    }
+
+    /** The context value {@code naam} (evaluationDate, evaluationYear) of {@code type}. */
+    static String contextwaarde(String naam, String type) {
+        return "{\"node\":\"ContextValue\",\"name\":\"" + naam + "\",\"type\":" + type + ",\"source\":{\"snippet\":\"het "
+                + naam + "\"}}";
+    }
+
+    /** A TimeWindow from {@code van} to {@code tot}, each "null" for an open bound. */
+    static String venster(String van, String tot, boolean totInclusief) {
+        return "{\"node\":\"TimeWindow\"" + (van.equals("null") ? "" : ",\"from\":" + van)
+                + (tot.equals("null") ? "" : ",\"to\":" + tot) + ",\"toInclusive\":" + totInclusief
+                + ",\"source\":{\"snippet\":\"van … tot …\"}}";
+    }
+
+    /** A TextComposition of {@code delen}, each a {@link #tekstdeel} or an {@link #tekstexpressie}. */
+    static String tekstreeks(List<String> delen) {
+        return "{\"node\":\"TextComposition\",\"parts\":[" + String.join(",", delen) + "],\"type\":" + TEKST
+                + ",\"source\":{\"snippet\":\"de reeks van …\"}}";
+    }
+
+    static String tekstdeel(String tekst) {
+        return "{\"node\":\"LiteralChunk\",\"text\":\"" + tekst + "\"}";
+    }
+
+    static String tekstexpressie(String expr) {
+        return "{\"node\":\"EmbeddedExpression\",\"expr\":" + expr + "}";
+    }
+
+    /** A Validity from {@code van} to {@code tot}, both inclusive, each null for an open bound. */
+    static String geldigheid(String van, String tot) {
+        return "{\"node\":\"Validity\"" + (van == null ? "" : ",\"from\":\"" + van + "\"")
+                + (tot == null ? "" : ",\"to\":\"" + tot + "\"") + "}";
+    }
+
+    /** The case with the evaluation date {@code asOfDate} (null for a time-free session). */
+    static JsonNode zaakOp(String asOfDate, List<String> instanties, List<String> verwachtingen) throws Exception {
+        return JSON.readTree("{\"format\":\"uchar-case-v0\",\"asOfDate\":"
+                + (asOfDate == null ? "null" : "\"" + asOfDate + "\"") + ",\"input\":{\"instances\":["
+                + String.join(",", instanties) + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwachtingen)
+                + "]}");
+    }
+
+    /** An instance whose attributes are given as case values in the wire's shape ({@code {"number":"5"}},
+     *  {@code {"date":"2026-01-01"}}, {@code {"text":"…"}}), by attribute. */
+    static String instantieMet(String label, String type, Map<String, String> waarden, List<String> kenmerken) {
+        List<String> a = new ArrayList<>(), k = new ArrayList<>();
+        waarden.forEach((naam, waarde) -> a.add("\"" + naam + "\":" + waarde));
+        for (String kenmerk : kenmerken) k.add("\"" + kenmerk + "\"");
+        return "{\"label\":\"" + label + "\",\"objectType\":\"" + type + "\",\"attributes\":{" + String.join(",", a)
+                + "},\"roles\":{},\"characteristics\":[" + String.join(",", k) + "]}";
+    }
+
+    /** The expectation that attribute {@code attribuut} of {@code label} ends at a case value in the wire's shape. */
+    static String waardeJson(String label, String attribuut, String waarde) {
+        return "{\"kind\":\"attributeValue\",\"label\":\"" + label + "\",\"attribute\":\"" + attribuut + "\",\"value\":"
+                + waarde + "}";
+    }
+
+    static String getalwaarde(String lexeem) {
+        return "{\"number\":\"" + lexeem + "\"}";
+    }
+
+    static String datumwaarde(String iso) {
+        return "{\"date\":\"" + iso + "\"}";
+    }
+
+    static String tekstwaarde(String tekst) {
+        return "{\"text\":\"" + tekst + "\"}";
+    }
+
+    /** Fires {@code bonen} through the rules of {@code b} added in {@code volgorde}, with {@code voor} seeing the session
+     *  before the fire (a listener, a global). The fire must reach its fixpoint below the cap without throwing: an
+     *  evaluation fault is a fact of the session, not an exception out of the fire. Returns the fault the write-back
+     *  raises at the fixpoint as "SimpleName: message", or null where it writes the derivations back. */
+    static String fixpunt(DroolsBackend.Build b, List<org.drools.model.Rule> volgorde, List<Object> bonen,
+                          java.util.function.Consumer<org.kie.api.runtime.KieSession> voor) {
+        List<String> namen = volgorde.stream().map(org.drools.model.Rule::getName).toList();
+        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(b.beanLoader());
+        org.kie.api.runtime.KieSession sessie = kieBase(b, volgorde).newKieSession();
+        try {
+            voor.accept(sessie);
+            for (Object boon : bonen) sessie.insert(boon);
+            int vuringen;
+            try {
+                vuringen = sessie.fireAllRules(100_000);
+            } catch (RuntimeException e) {
+                throw new AssertionError("de fire wierp in volgorde " + namen + ": " + e, e);
+            }
+            if (vuringen >= 100_000) throw new AssertionError("geen fixpunt in volgorde " + namen);
+            try {
+                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                return null;
+            } catch (RuntimeException e) {
+                return e.getClass().getSimpleName() + ": " + e.getMessage();
+            }
+        } finally {
+            sessie.dispose();
+            Thread.currentThread().setContextClassLoader(vorige);
+        }
+    }
+
     /** Every order of {@code l}. */
     static <T> List<List<T>> permutaties(List<T> l) {
         if (l.size() <= 1) return List.of(l);

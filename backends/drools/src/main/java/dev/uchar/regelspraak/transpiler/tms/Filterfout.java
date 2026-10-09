@@ -8,13 +8,13 @@ import java.util.Objects;
 /**
  * A member of a fold's range for which the fold's filter faults, inserted logically by the filter fault rule of the
  * fold: {@code element} is a member of the range of the fold {@code vouw}, reached from the fold's subject
- * {@code onderwerp}, and the filter divides by a numeric zero for it ({@code fout}, as {@link Breuk#delen} threw it).
- * It is no fault by itself. The reference interpreter evaluates a filter only where the evaluation of a form reaches
- * the fold: where the form's condition holds, or within its condition up to the member after which a composite's
- * verdict stands (RUNTIME-SEMANTICS ch. 5.10), and only there does the division happen (ch. 1.4, point 4). The rule
- * that reads the fold therefore binds these facts beside the contributions, and where its own evaluation reaches the
- * fold while one stands, that evaluation faults as a division in it would; the {@link Fout} is that rule's, justified
- * by its activation.
+ * {@code onderwerp}, and the filter raises an evaluation fault for it ({@code fout}, unnamed): a division by a numeric
+ * zero as {@link Breuk#delen} threw it, or a {@link Rekenfout}. It is no fault by itself. The reference interpreter
+ * evaluates a filter only where the evaluation of a form reaches the fold: where the form's condition holds, or within
+ * its condition up to the member after which a composite's verdict stands (RUNTIME-SEMANTICS ch. 5.10), and only there
+ * does the fault happen (ch. 1.4, point 4; ch. 3.8). The rule that reads the fold therefore binds these facts beside
+ * the contributions, and where its own evaluation reaches the fold while one stands, that evaluation faults as the same
+ * fault in it would; the {@link Fout} is that rule's, justified by its activation.
  *
  * <p>{@code plaats} is the member's place in the fold order (RUNTIME-SEMANTICS ch. 5.11: the filter per member, members
  * in fold order): the number of the selection of an instance-set union, 0 for any other fold, and then, per to-many
@@ -33,19 +33,19 @@ public final class Filterfout implements Comparable<Filterfout> {
     private final String vouw;
     private final Object onderwerp;
     private final Object element;
-    private final Breuk.DelingDoorNul fout;
+    private final RuntimeException fout;
     private final List<Integer> plaats;
     private final String zin;
 
-    public Filterfout(String vouw, Object onderwerp, Object element, Breuk.DelingDoorNul fout, List<Integer> plaats) {
+    public Filterfout(String vouw, Object onderwerp, Object element, RuntimeException fout, List<Integer> plaats) {
         this.vouw = Objects.requireNonNull(vouw, "vouw");
         this.onderwerp = Objects.requireNonNull(onderwerp, "onderwerp");
         this.element = Objects.requireNonNull(element, "element");
         this.fout = Objects.requireNonNull(fout, "fout");
         this.plaats = List.copyOf(plaats);
         if (this.plaats.isEmpty()) throw new IllegalArgumentException("een plaats in de vouwvolgorde begint met de selectie");
-        // the division named after the fold: the sentence carries the dividend, which the exception does not expose
-        this.zin = fout.inDeRegel(vouw, fout).getMessage();
+        // the fault named after the fold: a division's sentence carries the dividend, which the exception does not expose
+        this.zin = Rekenfout.benoem(fout, vouw).getMessage();
     }
 
     public String vouw() { return vouw; }
@@ -54,8 +54,8 @@ public final class Filterfout implements Comparable<Filterfout> {
 
     public Object element() { return element; }
 
-    /** The division as the filter raised it, unnamed: the rule whose evaluation reaches the fold names it. */
-    public Breuk.DelingDoorNul fout() { return fout; }
+    /** The fault as the filter raised it, unnamed: the rule whose evaluation reaches the fold names it. */
+    public RuntimeException fout() { return fout; }
 
     /** The member's place in the fold order: the selection, then its place per to-many step of its route. */
     public List<Integer> plaats() { return plaats; }
