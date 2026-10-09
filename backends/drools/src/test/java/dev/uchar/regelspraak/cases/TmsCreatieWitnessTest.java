@@ -348,8 +348,11 @@ class TmsCreatieWitnessTest {
      * "meld" and binds no {@code Creatiefase} of meld's stratum, so it gets no match on the state above under the mutant
      * either, and this test passes on it; on {@code e15baf01} only the three tests named above failed in this class, on
      * the phase. Since a generation is one phase (2026-10-09) there is no phase of the fact creations to fire in, and
-     * under the mutant every test of this class and of {@code TmsCreatiestratumWitnessTest} passes: no witness here
-     * catches auto-focus on the object creations any more.
+     * under the mutant every test of this class passes. The witness for it is now document R of
+     * {@code TmsCreatiestratumWitnessTest}
+     * ({@code een_objectcreatie_die_de_regellaag_mogelijk_maakt_vuurt_in_de_volgende_generatie}): an object creation
+     * whose condition holds once the rule layer has settled, and stays true, fires there under the mutant in the
+     * generation before its own, and the next creation of the chain reads what it made.
      */
     @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
         Path ir = documentH();

@@ -67,6 +67,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       the Penning of the stratum below ({@link #twee_creaties_van_een_stratum_vuren_in_een_generatie}).</li>
  *   <li>Every creation of a generation reads the same settled world: an object creation does not count the link a
  *       fact creation of its own generation lays ({@link #de_creaties_van_een_generatie_lezen_een_wereld}).</li>
+ *   <li>An object creation whose condition the rule layer makes true after a generation fires in the next generation,
+ *       and the creations of that generation do not read what it makes: W3 starts at beginbeloning 0, though W1 gets
+ *       its Beloning in the generation in which W2 makes W3
+ *       ({@link #een_objectcreatie_die_de_regellaag_mogelijk_maakt_vuurt_in_de_volgende_generatie}).</li>
  *   <li>The budget of 100 generations holds per stratum, as the reference interpreter counts its generations per
  *       stratum: two chains of 51 generations in two strata play ({@link #het_generatiebudget_geldt_per_stratum}), and
  *       so does a chain over three strata, 50 + 1 + 50 ({@link #een_keten_over_drie_strata_telt_per_stratum}).</li>
@@ -87,7 +91,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fixpoint within 100 generations — generation 101 still mints or links (object creation "werf de lange keten") …" and
  * the ASP backend with "UNSATISFIABLE — a fail-fast guard fired: viol("generation budget exhausted", …)". Document V the
  * reference interpreter plays and the ASP backend refuses by name: "the initialisation of beginstand reads
- * rel:maatschap, which fact creation "maak maten" writes on a dependency cycle through the creation …". Until
+ * rel:maatschap, which fact creation "maak maten" writes on a dependency cycle through the creation …"; document R
+ * likewise, "the initialisation of beginbeloning reads attr:wachter:erfbeloning, which rule "erfbeloning" writes on a
+ * dependency cycle through the creation …". Until
  * 2026-10-09 the two counted their budgets apart (measured 2026-10-08): on the chain of document L whose last Boei gets
  * its kopie both faulted, the reference interpreter with "no fixpoint within 100 passes — divergence is a fault
  * (ch. 5.7)", and on the chains of L to B101 without the kopie and with "genummerd" the reference interpreter played and
@@ -652,6 +658,126 @@ class TmsCreatiestratumWitnessTest {
             for (Object[] l : links) fasen.add((Integer) l[2]);
             fasen.sort(null);
             assertEquals(List.of(2, 3, 4), fasen, () -> "fasen van de maatschap in volgorde " + namen);
+        }
+    }
+
+    // ---------------- document R: an object creation the rule layer enables waits for the next generation ----------
+
+    private static final String OPVOLGERS = "{\"node\":\"AttributeReference\",\"attribute\":\"opvolgers\","
+            + "\"subjectType\":\"Wachter\",\"source\":{\"snippet\":\"opvolgers van de Wachter\"}}";
+
+    private static final String BELONINGEN = "{\"node\":\"AttributeReference\",\"attribute\":\"beloningen\","
+            + "\"subjectType\":\"Wachter\",\"source\":{\"snippet\":\"beloningen van de Wachter\"}}";
+
+    /** "Eén voorganger heeft één opvolger", the opvolger role with the plural a count over it spells, and "Een
+     *  ontvanger heeft meerdere beloningen". */
+    private static final String MODEL_R = TmsDocumenten.model(List.of(
+            objecttype("Wachter", List.of(attribuut("rang", GEHEEL), attribuut("stand", GEHEEL),
+                    attribuut("beloningaantal", GEHEEL), attribuut("erfbeloning", GEHEEL),
+                    attribuut("beginbeloning", GEHEEL), attribuut("opvolgerbegin", GEHEEL),
+                    attribuut("verder", GEHEEL)), List.of()),
+            objecttype("Beloning", List.of(), List.of())),
+            List.of("{\"node\":\"FactType\",\"name\":\"opvolging\",\"reciprocal\":false,\"roles\":["
+                            + "{\"node\":\"Role\",\"name\":\"voorganger\",\"objectType\":\"Wachter\",\"many\":false},"
+                            + "{\"node\":\"Role\",\"name\":\"opvolger\",\"objectType\":\"Wachter\","
+                            + "\"plural\":\"opvolgers\",\"many\":false}]}",
+                    feittypeEenNaarVeel("toekenning", "ontvanger", "Wachter", "beloning", "Beloning", "beloningen")));
+
+    /** "werf de opvolger": a Wachter of rang below 4 gets an opvolger with rang plus 1 and beginbeloning its
+     *  erfbeloning. */
+    private static final String WERF_R = objectcreatie("werf de opvolger", "Wachter", "Wachter", List.of(
+            init("rang", binair("plus", lezing("rang", "Wachter"), getal("1"))),
+            init("beginbeloning", lezing("erfbeloning", "Wachter"))),
+            vergelijking("less", lezing("rang", "Wachter"), getal("4")), "opvolging", "opvolger");
+
+    /** "beloon de wachter": a Wachter whose stand is above 0 gets a Beloning. */
+    private static final String BELOON_R = objectcreatie("beloon de wachter", "Wachter", "Beloning", List.of(),
+            vergelijking("greater", lezing("stand", "Wachter"), getal("0")), "toekenning", "beloning");
+
+    /** The rules on the cycle of document R: the stand counts the opvolgers, the beloningaantal the beloningen, and the
+     *  erfbeloning reads the beloningaantal of the voorganger. */
+    private static final List<String> KRING_R = List.of(
+            rekenregel("stand van een wachter", "BEREKENING", "Wachter", "stand", aggregatie("count", OPVOLGERS,
+                    "Wachter", bronrol("opvolging", "opvolger"), "null", "null", TELLING,
+                    "het aantal opvolgers van de Wachter"), "null"),
+            rekenregel("beloningaantal", "BEREKENING", "Wachter", "beloningaantal", aggregatie("count", BELONINGEN,
+                    "Beloning", bronrol("toekenning", "beloning"), "null", "null", TELLING,
+                    "het aantal beloningen van de Wachter"), "null"),
+            rekenregel("erfbeloning", "GELIJKSTELLING", "Wachter", "erfbeloning",
+                    padlezing("beloningaantal", "Wachter", "opvolging", "voorganger"), "null"));
+
+    /** The rules that read the chain back onto W1: "opvolgerbegin" the beginbeloning of the opvolger, "verder" the
+     *  opvolgerbegin of the opvolger. */
+    private static final List<String> WAARNEMING_R = List.of(
+            rekenregel("opvolgerbegin", "GELIJKSTELLING", "Wachter", "opvolgerbegin",
+                    padlezing("beginbeloning", "Wachter", "opvolging", "opvolger"), "null"),
+            rekenregel("verder", "GELIJKSTELLING", "Wachter", "verder",
+                    padlezing("opvolgerbegin", "Wachter", "opvolging", "opvolger"), "null"));
+
+    /** The recursive group "estafette" of "werf de opvolger" and "beloon de wachter", the {@code creaties} and the
+     *  rules on the cycle ({@code regels}) in the order given, then {@link #WAARNEMING_R}. One cycle runs through both
+     *  creations, so they share a stratum: "werf" makes the opvolger that "stand" counts, "beloon" reads the stand and
+     *  makes the Beloning that "beloningaantal" counts, and "werf" initialises the beginbeloning from the
+     *  erfbeloning, which reads that count on the voorganger. */
+    static Path documentR(List<String> creaties, List<String> regels) throws Exception {
+        List<String> alle = new ArrayList<>(regels);
+        alle.addAll(WAARNEMING_R);
+        return document(MODEL_R, alle, List.of(), creaties, List.of(),
+                List.of(regelgroep("estafette", List.of("werf de opvolger", "beloon de wachter"))));
+    }
+
+    /**
+     * An object creation whose condition the rule layer makes true after a generation fires in the next generation,
+     * on the settled world, together with the other creations of that generation, and none of them reads what it
+     * makes (RUNTIME-SEMANTICS ch. 5.5, Generations). W1 makes W2 in generation 1; after it the stand of W1 is 1, so
+     * "beloon" gives W1 its Beloning in generation 2, while W2 makes W3 on the world of generation 1, in which W1 has
+     * no Beloning yet: W3 starts at beginbeloning 0. The same holds one link further: W4 starts at 0, and the
+     * Beloningen of W1, W2 and W3 come in generations 2, 3 and 4. W2 starts without a beginbeloning, since W1 has no
+     * voorganger. The reference interpreter gives stand(W1) = 1, beloningaantal(W1) = 1, opvolgerbegin(W1) leeg and
+     * verder(W1) = 0 in each of the twelve orders of the two creations and the three rules on the cycle in the
+     * document.
+     *
+     * <p>This is the witness for an object creation that fires outside the driver ({@code DroolsBackend.vuur}). The
+     * driver gives the group of the object creations the focus once per generation, at a fixpoint of the rule layer.
+     * With auto-focus on the object creations "beloon" gets its match, and the focus, as soon as the rule layer sets
+     * the stand of W1 to 1 in generation 1, and fires in that generation, on a world that is not settled. The rule
+     * layer then counts the Beloning before W2 makes W3, so W3 and W4 start at beginbeloning 1, verder(W1) is 1, and
+     * the Beloningen come in phases 1, 2 and 3. Measured on 2026-10-09 with that mutant
+     * ({@code .attribute(Rule.Attribute.AUTO_FOCUS, true)} on the rule of an object creation in
+     * {@code TmsTranspiler.objectCreatie}): the replay fails in all twelve orders, "case: attribuut verder: verwacht
+     * 0, werkelijk 1". Until then no witness of this class or of {@code TmsCreatieWitnessTest} failed on that mutant.
+     *
+     * <p>The ASP backend refuses the document by name: "the initialisation of beginbeloning reads
+     * attr:wachter:erfbeloning, which rule "erfbeloning" writes on a dependency cycle through the creation …"
+     * (RUNTIME-SEMANTICS ch. 5.5, the ASP backend's second posture).
+     */
+    @Test void een_objectcreatie_die_de_regellaag_mogelijk_maakt_vuurt_in_de_volgende_generatie() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
+                Map.of())), List.of(waarde("W1", "stand", "1"), waarde("W1", "beloningaantal", "1"),
+                waarde("W1", "opvolgerbegin", null), waarde("W1", "verder", "0")));
+        speeltInElkeVolgorde(List.of(WERF_R, BELOON_R), KRING_R, TmsCreatiestratumWitnessTest::documentR, zaak);
+        DroolsBackend.Build b = DroolsBackend.build(documentR(List.of(WERF_R, BELOON_R), KRING_R),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+            List<String> namen = volgorde.stream().map(Rule::getName).toList();
+            Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+            List<Object[]> objecten = new ArrayList<>();
+            assertNull(vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> objecten.addAll(gemaakt(sessie))),
+                    () -> "volgorde " + namen);
+            assertGetal("0", TmsDocumenten.lees(w1, "verder"), "verder van W1 in volgorde " + namen);
+            assertGetal("1", TmsDocumenten.lees(w1, "beloningaantal"), "beloningaantal van W1 in volgorde " + namen);
+            List<String> soorten = new ArrayList<>(soorten(objecten));
+            soorten.sort(null);
+            assertEquals(List.of("Beloning in fase 2", "Beloning in fase 3", "Beloning in fase 4", "Wachter in fase 1",
+                    "Wachter in fase 2", "Wachter in fase 3"), soorten, () -> "volgorde " + namen);
+            for (Object[] g : objecten) {
+                if (!g[1].getClass().getSimpleName().equals("Wachter")) continue;
+                if ((Integer) g[2] == 1)
+                    assertNull(TmsDocumenten.lees(g[1], "beginbeloning"),
+                            () -> "beginbeloning van W2 in volgorde " + namen);
+                else
+                    assertGetal("0", TmsDocumenten.lees(g[1], "beginbeloning"), "beginbeloning in volgorde " + namen);
+            }
         }
     }
 
