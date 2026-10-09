@@ -38,6 +38,7 @@ import static dev.uchar.regelspraak.cases.TmsTijdlijnDocumenten.tijdlijn;
 import static dev.uchar.regelspraak.cases.TmsTijdlijnDocumenten.tijdsevenredig;
 import static dev.uchar.regelspraak.cases.TmsTijdlijnDocumenten.verwachteTijdlijn;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The timeline forms the truth-maintenance branch refuses by name (RUNTIME-SEMANTICS ch. 3), each in a document of its
@@ -79,6 +80,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand); the reference interpreter
  * answers 10, the ASP runner refuses the factor 12, and the other two branches, which weigh the helper's whole months
  * unit-blind, answer "verwacht 10, werkelijk 120", the divergence the executor note of ch. 3.6 records.
+ * <li><b>A rate over a grid whose unit the document does not declare as one unit</b>: the same 10 EUR/mnd through 2024
+ * in a document whose only unit system is Munt, the denominator written by its abbreviation alone, and in one where the
+ * systems Tijd and Kalender both declare an mnd, the one canonical, the other thirty dg. The reference interpreter
+ * refuses both, "the temporal total of a EUR/mnd value: the document declares no mnd unit, so this timeline's grid has
+ * no unit to integrate against (ch. 3.6)" and "… the document declares 2 different mnd units, so this timeline's grid
+ * has no single unit to integrate against (ch. 3.6)", the ASP runner with the same reason after a head of its own,
+ * and the other two branches play 120. The case holds 120, the total where the system Tijd alone declares mnd: the
+ * control {@link #een_tarief_over_een_gedeclareerde_rastereenheid_speelt}, which the reference interpreter and the ASP
+ * runner answer as well.
  * <li><b>The total without a clip over a timeline a rule derives</b>: the reference interpreter refuses it, "the
  * temporal total of "maanddeel" over a case-supplied full timeline is not exercised by any corpus case; the
  * asOfDate-bucket convention carries the total", and the ASP runner leaves the total leeg.
@@ -89,7 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * "penningbedrag" is granular; reading a vintage in a rule is ch. 8 scope", and so does the ASP runner.
  * </ul>
  *
- * <p><b>Measured</b> 2026-10-09 on the documents of {@link #main}: the verifier passes all eleven. <b>Red</b> on
+ * <p><b>Measured</b> 2026-10-09 on the documents of {@link #main}: the verifier passes all thirteen. <b>Red</b> on
  * b9f77aa7, the code before timelines were carried: every row on the refusal of the timeline as outside the trial,
  * "… — het tijdsafhankelijke attribuut 'jaardeel' van Jutter: tijdlijnen zijn buiten de proef van de
  * truth-maintenance-tak", "… — een Aggregation total over de eigen tijdlijn in een waarde ('het totaal van zijn
@@ -97,6 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * tijdlijnen zijn buiten de proef …", "… — de tijdsafhankelijke parameter 'penningbedrag': tijdlijnen zijn buiten de
  * proef …". <b>Red</b> on 24c8688b, before "gelijk aan" was refused: "knip-gelijk: gebouwd", and the earlier sentence of
  * "ongelijk aan", "… de rekenhulp rsTijdConditie leest een gat in de vergeleken tijdlijn als geen periode, …".
+ * <b>Red</b> on 2e09716a, before the grid's unit was asked: "kale-noemer: gebouwd, twee-rastereenheden: gebouwd".
  */
 class TmsTijdlijnWeigeringWitnessTest {
 
@@ -237,19 +248,26 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(waarde("J1", "wachtsom", "500"))),
                 List.of(knipzin("ongelijke wachtsom", "ongelijk aan", "notEqual"))));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
-        uit.add(new Rij("vreemde-noemer", TmsTijdlijnDocumenten.ir(MODEL_TARIEF, List.of(rekenregel("wachtsom",
-                        "BEREKENING", "Jutter", "wachtsom", "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":["
-                                + lezing("vergoeding", "Jutter") + "],\"elementType\":\"Jutter\",\"filter\":"
-                                + check("wachtplichtig", false) + ",\"type\":" + TmsDocumenten.getaltype(true, 0, EUR)
-                                + ",\"source\":{\"snippet\":\"het totaal van zijn vergoeding\"}}", "null")), List.of()),
-                TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of("vergoeding",
-                                tijdlijn(List.of(segment("2024-01-01", "2025-01-01", "10")))), List.of(),
-                                Map.of("wachtplichtig", List.of(periode("2024-01-01", "2025-01-01"))), Map.of())),
-                        List.of(waarde("J1", "wachtsom", "10"))),
+        uit.add(new Rij("vreemde-noemer", TmsTijdlijnDocumenten.ir(MODEL_TARIEF, List.of(WACHTSOM_TARIEF), List.of()),
+                tariefzaak("10"),
                 List.of("tms-transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " vergoeding') over 'vergoeding' met het tarief EUR/jr op een raster van MAAND: de noemer"
                         + " is niet de eenheid van het raster, en de tak herrekent hem niet (RUNTIME-SEMANTICS ch. 3.6);"
                         + " geen golden met cases heeft het")));
+        // a rate over a grid whose unit the document does not declare: no unit system spells mnd at all, or two spell
+        // it with different canonical chains
+        uit.add(new Rij("kale-noemer", TmsTijdlijnDocumenten.ir(tariefmodel(EUR_PER_KALE_MND,
+                        List.of(TmsDocumenten.eenheidstelsel("Munt", List.of(EUR)))), List.of(WACHTSOM_TARIEF), List.of()),
+                tariefzaak("120"), List.of(rastereenheidzin("the document declares no mnd unit, so this timeline's grid"
+                        + " has no unit to integrate against (ch. 3.6)"))));
+        uit.add(new Rij("twee-rastereenheden", TmsTijdlijnDocumenten.ir(tariefmodel(EUR_PER_MND, List.of(
+                                TmsDocumenten.eenheidstelsel("Munt", List.of(EUR)),
+                                TmsDocumenten.eenheidstelsel("Tijd", List.of(MND, JR)),
+                                TmsDocumenten.eenheidstelsel("Kalender", List.of(TmsDocumenten.eenheid("dg", "Kalender",
+                                        "dg", 1, 1), TmsDocumenten.eenheid("mnd", "Kalender", "dg", 30, 1))))),
+                        List.of(WACHTSOM_TARIEF), List.of()),
+                tariefzaak("120"), List.of(rastereenheidzin("the document declares 2 different mnd units, so this"
+                        + " timeline's grid has no single unit to integrate against (ch. 3.6)"))));
         // the total without a clip over a timeline a rule derives
         uit.add(new Rij("totaal-zonder-knip", TmsTijdlijnDocumenten.ir(TmsDocumenten.model(List.of(objecttype("Jutter",
                                 List.of(tijdattribuut("jaartarief", GEHEEL, "year"), tijdattribuut("maanddeel", GEHEEL,
@@ -323,13 +341,48 @@ class TmsTijdlijnWeigeringWitnessTest {
     static final String EUR_PER_JR = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
             + TmsDocumenten.eenheid("jr", "Tijd", "mnd", 12, 1) + "}";
 
-    static final String MODEL_TARIEF = TmsDocumenten.modelMet(List.of(objecttype("Jutter", List.of(
-                    "{\"node\":\"Attribute\",\"name\":\"vergoeding\",\"datatype\":" + TmsDocumenten.getaltype(true, 0,
-                            EUR_PER_JR) + ",\"timeline\":" + TmsTijdlijnDocumenten.facet("month", null) + "}",
-                    TmsDocumenten.attribuut("wachtsom", TmsDocumenten.getaltype(true, 0, EUR))),
-            List.of(tijdkenmerk("wachtplichtig", "month")))), List.of(), List.of(),
-            List.of(TmsDocumenten.eenheidstelsel("Munt", List.of(EUR)), TmsDocumenten.eenheidstelsel("Tijd",
-                    List.of(MND, JR))));
+    /** EUR per mnd, the month grid's own unit as the system Tijd declares it. */
+    static final String EUR_PER_MND = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
+            + TmsDocumenten.eenheid("mnd", "Tijd", "mnd", 1, 1) + "}";
+    /** EUR per mnd with the denominator written by its abbreviation alone, as a calendar unit may be. */
+    static final String EUR_PER_KALE_MND = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
+            + TmsDocumenten.eenheid("mnd") + "}";
+
+    static final String MODEL_TARIEF = tariefmodel(EUR_PER_JR, List.of(TmsDocumenten.eenheidstelsel("Munt",
+            List.of(EUR)), TmsDocumenten.eenheidstelsel("Tijd", List.of(MND, JR))));
+
+    /** A Jutter with a vergoeding on a month grid in the rate unit {@code tarief}, a wachtsom in EUR and the
+     *  characteristic wachtplichtig on a timeline, under the unit systems {@code stelsels}. */
+    static String tariefmodel(String tarief, List<String> stelsels) {
+        return TmsDocumenten.modelMet(List.of(objecttype("Jutter", List.of(
+                        "{\"node\":\"Attribute\",\"name\":\"vergoeding\",\"datatype\":" + TmsDocumenten.getaltype(true, 0,
+                                tarief) + ",\"timeline\":" + TmsTijdlijnDocumenten.facet("month", null) + "}",
+                        TmsDocumenten.attribuut("wachtsom", TmsDocumenten.getaltype(true, 0, EUR))),
+                List.of(tijdkenmerk("wachtplichtig", "month")))), List.of(), List.of(), stelsels);
+    }
+
+    /** "De wachtsom van een Jutter moet berekend worden als het totaal van zijn vergoeding gedurende de tijd dat hij
+     *  wachtplichtig is", in EUR. */
+    static final String WACHTSOM_TARIEF = rekenregel("wachtsom", "BEREKENING", "Jutter", "wachtsom",
+            "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + lezing("vergoeding", "Jutter")
+                    + "],\"elementType\":\"Jutter\",\"filter\":" + check("wachtplichtig", false) + ",\"type\":"
+                    + TmsDocumenten.getaltype(true, 0, EUR) + ",\"source\":{\"snippet\":\"het totaal van zijn"
+                    + " vergoeding\"}}", "null");
+
+    /** J1 with a vergoeding of 10 through 2024 and wachtplichtig through 2024, its wachtsom expected {@code verwacht}. */
+    static JsonNode tariefzaak(String verwacht) throws Exception {
+        return TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of("vergoeding",
+                        tijdlijn(List.of(segment("2024-01-01", "2025-01-01", "10")))), List.of(),
+                        Map.of("wachtplichtig", List.of(periode("2024-01-01", "2025-01-01"))), Map.of())),
+                List.of(waarde("J1", "wachtsom", verwacht)));
+    }
+
+    /** The refusal of the wachtsom over the rate EUR/mnd where the document does not declare the month grid's unit as
+     *  exactly one unit: the form, the member and the reference interpreter's sentence, which ends in {@code reden}. */
+    static String rastereenheidzin(String reden) {
+        return "tms-transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                + " vergoeding') over 'vergoeding': the temporal total of a EUR/mnd value: " + reden;
+    }
 
     // ---------------- the model of the row of a variable start point ----------------
 
@@ -342,6 +395,17 @@ class TmsTijdlijnWeigeringWitnessTest {
             // the model builder declares no named timeline; this row needs the one its member lies on
             .replace("\"timelines\":[]", "\"timelines\":[{\"node\":\"Timeline\",\"name\":\"boekjaar\","
                     + "\"variableStart\":true,\"granularity\":\"year\",\"count\":1}]");
+
+    /** The control of the rows of the grid's unit: the same rate over a document whose system Tijd declares mnd, the
+     *  month grid's unit, builds, and its total integrates twelve months of 10 EUR/mnd to 120 EUR, as the reference
+     *  interpreter and the ASP runner answer. */
+    @Test void een_tarief_over_een_gedeclareerde_rastereenheid_speelt() throws Exception {
+        Path ir = Files.writeString(Files.createTempFile("tms-rastereenheid", ".json"), TmsTijdlijnDocumenten.ir(
+                tariefmodel(EUR_PER_MND, List.of(TmsDocumenten.eenheidstelsel("Munt", List.of(EUR)),
+                        TmsDocumenten.eenheidstelsel("Tijd", List.of(MND, JR)))), List.of(WACHTSOM_TARIEF), List.of()));
+        ir.toFile().deleteOnExit();
+        assertNull(CaseRunner.speelCase(ir, tariefzaak("120"), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+    }
 
     @Test void elke_tijdlijnvorm_die_de_tak_niet_draagt_wordt_geweigerd_met_haar_zin() throws Exception {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();

@@ -3702,9 +3702,11 @@ public final class TmsTranspiler {
      * count of whole units of the member's grid, as the runtime's {@code rsTijdTotaal} computes it: a number without a
      * unit, with a unit without a denominator, or a rate whose denominator is the time unit of the grid itself
      * ({@code EUR/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6 cancels it one for one.
-     * Refused by name: a value that is no number (WF-091), and a rate whose denominator is another unit, which the
-     * reference interpreter integrates through the declared factors and {@code rsTijdTotaal} would weigh unit-blind
-     * (the executor note of ch. 3.6); no golden has it.
+     * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
+     * as exactly one unit ({@link #rastereenheid}), which the reference interpreter refuses to integrate (ch. 3.6) and
+     * {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator is another unit, which the reference
+     * interpreter integrates through the declared factors and {@code rsTijdTotaal} would weigh unit-blind (the executor
+     * note of ch. 3.6); no golden has it.
      */
     private Lid integreerbaar(Lid lid, String wat) {
         if (!lid.datatype().isNumeriek())
@@ -3718,11 +3720,49 @@ public final class TmsTranspiler {
             case KWARTAAL -> "KWARTAAL";
             case JAAR -> "YEARS";
         };
+        // the reference interpreter resolves the grid's unit before it looks at the denominator, so a document without
+        // one is refused for that whatever the denominator
+        String zonderRastereenheid = rastereenheid(lid.tijd(), raster);
+        if (zonderRastereenheid != null)
+            throw new Weigering(wat + " over '" + lid.naam() + "': the temporal total of a " + e.weergave() + " value: "
+                    + zonderRastereenheid);
         if (!raster.equals(Tijdrekening.chronoUnit(e.noemer())))
             throw new Weigering(wat + " over '" + lid.naam() + "' met het tarief " + e.weergave() + " op een raster van "
                     + lid.tijd() + ": de noemer is niet de eenheid van het raster, en de tak herrekent hem niet"
                     + " (RUNTIME-SEMANTICS ch. 3.6); geen golden met cases heeft het");
         return lid;
+    }
+
+    /**
+     * Whether the document declares the unit of the grid {@code g}, which a rate over that grid integrates against, as
+     * the reference interpreter resolves it once per fold (RUNTIME-SEMANTICS ch. 3.6, "Units, the explicit rate
+     * operand"): among the units the unit systems declare without a denominator, those whose abbreviation the calendar
+     * table spells as the grid's unit ({@code raster}, as {@link Tijdrekening#chronoUnit} names it), counted once per
+     * canonical chain, the canonical unit and the exact factor. Null where there is exactly one chain; otherwise the
+     * reference interpreter's reason, that the document declares none or several.
+     */
+    private String rastereenheid(RegelSpraakModel.Granulariteit g, String raster) {
+        record Keten(String canoniek, RegelSpraakModel.Eenheidstelsel.Factor factor) {}
+        Set<Keten> ketens = new LinkedHashSet<>();
+        for (RegelSpraakModel.Eenheidstelsel s : model.eenheidstelsels.values())
+            for (Map.Entry<String, Eenheid> u : s.eenheden.entrySet())
+                if (u.getValue().noemer() == null && raster.equals(Tijdrekening.chronoUnit(u.getValue())))
+                    ketens.add(new Keten(u.getValue().canoniek() == null ? null : Namen.norm(u.getValue().canoniek()),
+                            s.exacteFactoren.get(u.getKey())));
+        if (ketens.size() == 1) return null;
+        // the grid's unit in the spelling the reference interpreter's sentence gives it
+        String spelling = switch (g) {
+            case DAG -> "dg";
+            case WEEK -> "wk";
+            case MAAND -> "mnd";
+            case KWARTAAL -> "kw";
+            case JAAR -> "jr";
+        };
+        return ketens.isEmpty()
+                ? "the document declares no " + spelling + " unit, so this timeline's grid has no unit to integrate"
+                        + " against (ch. 3.6)"
+                : "the document declares " + ketens.size() + " different " + spelling + " units, so this timeline's grid"
+                        + " has no single unit to integrate against (ch. 3.6)";
     }
 
     /**
