@@ -365,22 +365,39 @@ shared-derivation bug from ever passing silently.
 
 Recorded limitations:
 
-- Clingo aborts (SIGABRT) while it writes a model as JSON (`--outf=2`,
-  the form the runner reads) once a shown atom carries a term nested
-  deeper than about 200 levels: measured on clingo 5.8.2 (2026-10-09),
-  `heeft(X,"k")` aborts with X nested 201 levels and `val(X,"a",V)` with
-  X nested 202, and both print at 200. A minted instance is a term that
-  nests one level per creation, over all strata. Until 2026-10-09 the
-  creation depth ran on over the strata and kept every term under 101
-  levels; per stratum it no longer does (a chain of 100 + 1 + 100 nests
-  201 levels). So every creation also carries `nest(S,Nest), Nest <
-  oc_nest` and derives `nest(ocN(S),Nest+1)`, with `oc_nest` = 190, and
-  an instance at that depth derives the named witness `viol("term
-  nesting bound reached …", _)` → UNSAT: a chain of 190 nested creations
-  over all strata is refused by name here, where the reference
-  interpreter, which keeps no such bound, plays it. The suite pins the
-  refusal on the 50 + 1 + 50 frame with the bound lowered to 60 in the
-  program text.
+- Clingo 5.8.2 aborts (SIGABRT) while it writes a model as JSON
+  (`--outf=2`, the form the runner reads) when a shown atom that holds a
+  string has one of certain lengths, whatever the nesting of its terms;
+  the runner then reports `clingo killed`, loud but without a name.
+  Measured 2026-10-09: `a("x…x")` aborts with a string of 1 017, 2 040,
+  3 063, 5 109, 7 155 and 8 178 characters and with no other length from
+  1 to 8 999; `heeft(X,"k")` with X nested 201 levels of `oc0` around
+  `"W1"` aborts, with 195 to 200 and 202 to 229 levels it prints, and
+  `val(X,"a",1)` aborts at 202 levels only. An atom without a string, and
+  the text output (`--outf=0`), abort at none of those lengths. A minted
+  instance is a term that grows by one functor per creation, so a long
+  chain of creations reaches such a length: a document whose chain of 187
+  object creations over 188 object types, without a recursive group
+  (functors `oc0` to `oc186`), ends in a creation that sets a
+  characteristic aborts clingo, and the same document with 120 to 186 or
+  188 to 260 creations plays. This backend kept no bound there before the
+  card `creatiebudget-ref-en-clingo` either, and behaved the same.
+- In a document with an object creation in a recursive group every
+  creation also carries `nest(S,Nest), Nest < oc_nest` and derives
+  `nest(ocN(S),Nest+1)`, with `oc_nest` = 190, and an instance at that
+  depth derives the named witness `viol("term nesting bound reached …",
+  _)` → UNSAT: a chain of 190 nested creations over all strata is refused
+  by name here, where the reference interpreter, which keeps no such
+  bound, plays it. The bound was set (2026-10-09) on the reading that
+  clingo aborts once a term nests past about 200 levels; the measurement
+  above shows that the abort follows the length of the printed atom. With
+  the functor `oc0` and a short label and short names the bound keeps
+  every shown atom below the first length that aborts; with longer
+  functors, labels or names it does not. Until 2026-10-09 the creation
+  depth ran on over the strata and kept every term under 101 levels; per
+  stratum it no longer does (a chain of 100 + 1 + 100 nests 201 levels).
+  The suite pins the refusal on the 50 + 1 + 50 frame with the bound
+  lowered to 60 in the program text.
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails

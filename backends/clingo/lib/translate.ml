@@ -854,10 +854,13 @@ let case_supplies ctx ~otype ~attr =
    strata in which a creation depth is kept *)
 let oc_strata_of ctx = List.sort_uniq compare (List.map snd ctx.oc_strata)
 
-(* the deepest a minted term may nest, over all strata. Measured on clingo
-   5.8.2 (2026-10-09): its JSON output aborts (SIGABRT) on heeft(X,"k") once
-   X nests 201 levels and on val(X,"a",V) at 202, and prints both at 200; the
-   bound keeps a margin below that *)
+(* the deepest a minted term may nest, over all strata. Set (2026-10-09) on
+   the reading that clingo 5.8.2's JSON output aborts (SIGABRT) once a term
+   nests past about 200 levels: heeft(X,"k") aborted with X nested 201
+   levels and val(X,"a",V) at 202. It aborts on a shown string atom of
+   certain lengths instead, whatever its nesting (heeft at 202 to 229 levels
+   prints; README, Recorded limitations); with the functor oc0 and short
+   names and labels, 190 levels stay below the first of those lengths *)
 let oc_nest = 190
 
 (* does any recursive rule group carry an object-creation member? —
@@ -9905,11 +9908,13 @@ let bool_atoms ctx ~subject ~subject_ot (e : expr) : string list =
    subject instead of firing silently on none.
 
    The depth no longer bounds the nesting of the terms, which grows by one
-   per creation over all strata, and clingo aborts while it prints an
-   atom whose term nests past 200 levels (README, Recorded limitations).
+   per creation over all strata, and clingo 5.8.2 aborts while it prints a
+   string atom of certain lengths, which a deep term reaches (README,
+   Recorded limitations).
    nest/2 counts that nesting, and a creation admits a subject below
    oc_nest; an instance at oc_nest derives a viol/2 witness of its own, a
-   loud refusal of a chain this backend cannot carry where ref plays it.
+   loud refusal, where ref plays the chain, of terms that could reach those
+   lengths.
    A depth or nesting guard is part of every creation's body, so the
    grounding, which does not settle the conditions of the chain, stops
    there too. *)
@@ -11638,8 +11643,9 @@ let translate (doc : document) (case : Case.t) : string =
        derives the viol/2 witness — UNSAT where ref/ faults, with the same
        words. An instance a lower stratum made is depth 0 in every higher
        stratum of a creation. hasdepth/2 serves the clamp each creation
-       carries. The nesting bound keeps every term under clingo's abort
-       (README, Recorded limitations). *)
+       carries. The nesting bound keeps a term of short names under the
+       first length at which clingo's JSON output aborts (README, Recorded
+       limitations). *)
     emit ctx "#const oc_budget = 100. #const oc_nest = %d. #defined depth/3. #defined nest/2." oc_nest;
     emit ctx "viol(\"creation budget exhausted\",X) :- depth(X,_,D), D > oc_budget.";
     emit ctx "hasdepth(X,K) :- depth(X,K,_).";
