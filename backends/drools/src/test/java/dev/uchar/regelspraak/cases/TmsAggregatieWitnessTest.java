@@ -398,7 +398,9 @@ class TmsAggregatieWitnessTest {
                     new TmsFoutWitnessTest.Foutfeiten()), () -> "volgorde " + namen);
             volgordes++;
         }
-        assertEquals(6, volgordes);
+        // four generated rules: the reading rule, the contribution rule, the filter fault rule and, since the filter
+        // divides, the filter deposit rule (fixround 1 of tms-expressievormen-en-rekendatum)
+        assertEquals(24, volgordes);
     }
 
     // ---------------- a listed fold ----------------

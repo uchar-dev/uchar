@@ -146,7 +146,12 @@ import java.util.function.UnaryOperator;
  * the fold, as the reference interpreter evaluates the filter only there, with the fault of the first member in fold
  * order whose filter faults, a place the case input states per to-many list ({@link Lijstplaats}) ({@link #vouw}). Only
  * the faults that stand at
- * the fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back.
+ * the fixpoint count: {@link #zetAfgeleideWaarden} reports them before it writes anything back. A division of a filled
+ * dividend by a leeg divisor, and a square root of a negative number, deposit the §9.5 inconsistency of ch. 1.2 under
+ * the form whose evaluation reaches them, on its subject: the consequence that computes a value through a probe in its
+ * value array ({@link Sonde}), a condition through a rule of the form's own ({@link #deponeerregel}), and a fold's
+ * filter through a {@link Filterdeponering} of the member, which the form that reads the fold hears where its own
+ * evaluation reaches the fold ({@link #gelezenVouw}).
  *
  * <p>A creation is the one form whose output is stated, not logical (RUNTIME-SEMANTICS ch. 5.5): a creation fires only
  * at a fixpoint of the rule layer, and what it makes stands, as in the reference interpreter, which keeps a minted
@@ -986,15 +991,17 @@ public final class TmsTranspiler {
 
     /** Whether a value holds a place the §6.5 or §6.6 deposit of {@link #schrijfregel} covers ({@link #deponeerplek}),
      *  where the rule's own evaluation of the value can reach it: through every form {@link #waarde} evaluates in the
-     *  rule itself, and not into the argument or the filter of a fold over a set source, which a contribution rule
-     *  evaluates. */
+     *  rule itself, and into the filter of a fold over a set source and of each selection of an instance-set union,
+     *  which a filter deposit rule evaluates and the reading rule hears where it reaches the fold
+     *  ({@link #filterdeponeerregel}, {@link #gelezenVouw}). The argument of such a fold is a read of the member's
+     *  attribute or the union, nothing else (WF-037, refused by the loader), so it holds no place of its own. */
     private boolean deponeert(Expr e) {
         return switch (e) {
             case null -> false;
             case Expr.Binair b -> deponeerplek(b) || deponeert(b.links()) || deponeert(b.rechts());
-            case Expr.Functie f -> deponeerplek(f) || (isVouw(f.kind()) && !isGelisteVouw(f)
-                    ? deponeert(f.leegwaarde())
-                    : f.argumenten().stream().anyMatch(this::deponeert) || deponeert(f.leegwaarde()));
+            case Expr.Functie f -> deponeerplek(f) || f.argumenten().stream().anyMatch(this::deponeert)
+                    || deponeert(f.leegwaarde()) || deponeert(f.filter());
+            case Expr.InstanceSetUnion u -> u.takken().stream().anyMatch(t -> deponeert(t.filter()));
             case Expr.Afgerond a -> deponeert(a.basis());
             case Expr.Begrensd g -> deponeert(g.basis()) || deponeert(g.minimum()) || deponeert(g.maximum());
             case Expr.Let l -> deponeert(l.value()) || deponeert(l.body());
@@ -2460,8 +2467,10 @@ public final class TmsTranspiler {
      * (ch. 10.2, 10.6) — so a static test of the operands cannot tell. The consequence of a computing rule or an
      * initialisation puts a fresh probe in its slot of the value array ({@link Lezingen#sonde}) before it computes the
      * value, every place ({@link #deponeerplek}) reports to it where it runs, and the consequence deposits where one did.
-     * A condition gets its probe in the test of its deposit rule ({@link #deponeerregel}); elsewhere the slot is empty
-     * and a place reports to nothing.
+     * A condition gets its probe in the test of its deposit rule ({@link #deponeerregel}), and a fold's filter in the
+     * test of its filter deposit rule ({@link #filterdeponeerregel}), whose {@link Filterdeponering} the evaluation of
+     * the fold in the reading rule reports to that rule's probe ({@link #gelezenVouw}); elsewhere the slot is empty and
+     * a place reports to nothing.
      */
     private static final class Sonde {
         private boolean gemeld;
@@ -2480,10 +2489,12 @@ public final class TmsTranspiler {
     // ---------------- aggregations ----------------
 
     /** A fold this branch lowers: the key its contributions carry ({@link Bijdrage#vouw}), its contribution rules (one
-     *  per range, beside the filter fault rule of a filter that can fault), the reads of those rules, registered when a
-     *  form that reads the fold lowers ({@link Lezingen#vastleggen}), and whether its filter can fault, in which case
-     *  the rule that reads it binds its {@link Filterfout} facts as well. */
-    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen) {}
+     *  per range, beside the filter fault rule of a filter that can fault and the filter deposit rule of a filter that
+     *  can deposit), the reads of those rules, registered when a form that reads the fold lowers
+     *  ({@link Lezingen#vastleggen}), whether its filter can fault, in which case the rule that reads it binds its
+     *  {@link Filterfout} facts as well, and whether its filter can deposit, in which case that rule counts its
+     *  {@link Filterdeponering} facts. */
+    private record Vouw(String sleutel, List<Rule> regels, List<Lezingen> lezingen, boolean kanFalen, boolean deponeert) {}
 
     /** The kinds of an aggregation, as against the builtins that share the node. */
     private static boolean isVouw(Expr.FunctieKind k) {
@@ -2751,7 +2762,9 @@ public final class TmsTranspiler {
      * fold's value faults with that division where it is computed, before the fallback, which the reference
      * interpreter evaluates after the members ({@link #filterfout}). The fault is then this rule's, as a division in its
      * own value or condition is: inserted by its consequence or by its fault rule ({@link #voorwaardefoutregel}), and
-     * only where its evaluation reaches the fold.
+     * only where its evaluation reaches the fold. A filter that deposits for a member is a {@link Filterdeponering} of
+     * the member in the same way: the reference interpreter evaluates the filter with this rule's collector, so the
+     * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #gelezenVouw}).
      *
      * <p>Refused by name: a total without a range, which reads the subject's own timeline, and a fold over a member on
      * a timeline; the timelines are of a later card.
@@ -2762,12 +2775,7 @@ public final class TmsTranspiler {
                 && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
             Vouw v = unievouw(f, u, lez.subject);
             int[] i = lez.vouw(v, null);
-            if (!v.kanFalen()) return w -> aantal(w[i[0]]);
-            lez.markeerFalen();
-            return w -> {
-                filterfout(w[i[2]]);
-                return aantal(w[i[0]]);
-            };
+            return gelezenVouw(v, i, lez, w -> aantal(w[i[0]]));
         }
         Objecttype elem = f.elementObjecttype();
         if (elem == null) throw new Weigering("een Aggregation " + kind + " zonder elementtype ('" + snippet(f.bron()) + "')");
@@ -2800,7 +2808,7 @@ public final class TmsTranspiler {
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem), 0,
                     f.filter(), lid, regels, lezingen);
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen);
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert(f.filter()));
         });
         Class<?> functie = switch (kind) {
             case SOM, TOTAAL -> accumulatiefunctie("BigDecimalSumAccumulateFunction");
@@ -2809,7 +2817,6 @@ public final class TmsTranspiler {
             default -> null;
         };
         int[] i = lez.vouw(v, functie);
-        if (v.kanFalen()) lez.markeerFalen();
         // the fallback restated into the unit of the folded member (RUNTIME-SEMANTICS ch. 2.6)
         Waardefunctie terugval = f.leegwaarde() == null ? null : herschaald(waarde(f.leegwaarde(), lez),
                 eff.eenheidVan(f.leegwaarde()), arg == null ? null : eff.eenheidVan(arg), "een §5.8.2 terugvalwaarde");
@@ -2822,9 +2829,25 @@ public final class TmsTranspiler {
             case TOTAAL -> w -> leeg(w[i[0]]) ? BigDecimal.ZERO : w[i[1]];
             default -> w -> leeg(w[i[0]]) ? null : w[i[1]];
         };
-        if (!v.kanFalen()) return uitkomst;
+        return gelezenVouw(v, i, lez, uitkomst);
+    }
+
+    /**
+     * The evaluation of the fold {@code v} in the rule that reads it, bound at {@code i} ({@link Lezingen#vouw}): where
+     * its filter deposited for a member, the deposit is heard by this rule's probe ({@link Sonde}), since the reference
+     * interpreter evaluates the filter with the reading form's collector, only where that form's evaluation reaches the
+     * fold (RUNTIME-SEMANTICS ch. 5.10, 5.11); then, where its filter faulted for a member, the fault of the first in
+     * fold order ({@link #filterfout}); then {@code uitkomst}, the fold's value, whose fallback the reference interpreter
+     * evaluates after the members. A deposit for a member after the one that faults, which the reference interpreter
+     * does not reach, is heard as well: the session faults at the fixpoint, so it changes no outcome.
+     */
+    private static Waardefunctie gelezenVouw(Vouw v, int[] i, Lezingen lez, Waardefunctie uitkomst) {
+        if (v.kanFalen()) lez.markeerFalen();
+        int sonde = v.deponeert() ? lez.sonde() : -1;
+        if (!v.kanFalen() && sonde < 0) return uitkomst;
         return w -> {
-            filterfout(w[i[2]]);
+            if (sonde >= 0 && ((Number) w[i[3]]).longValue() > 0) Sonde.meld(w, sonde);
+            if (v.kanFalen()) filterfout(w[i[2]]);
             return uitkomst.van(w);
         };
     }
@@ -2871,7 +2894,7 @@ public final class TmsTranspiler {
         return vouwVoor(f, subject, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
-            boolean kanFalen = false;
+            boolean kanFalen = false, deponeert = false;
             for (int k = 0; k < u.takken().size(); k++) {
                 Expr.InstanceSetUnion.Tak t = u.takken().get(k);
                 if (t.elementType() == null)
@@ -2879,8 +2902,9 @@ public final class TmsTranspiler {
                 kanFalen |= bijdrageregels(sleutel, naam + ", selectie " + k, Expr.FunctieKind.AANTAL, subject,
                         t.elementType(), eenstapsbereik(t.bronRol(), subject, t.elementType(), snippet(t.bron())), k,
                         t.filter(), null, regels, lezingen);
+                deponeert |= deponeert(t.filter());
             }
-            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen);
+            return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert);
         });
     }
 
@@ -2890,9 +2914,11 @@ public final class TmsTranspiler {
      * filter's subject, RUNTIME-SEMANTICS ch. 3.4a), and a consequence that inserts the member's {@link Bijdrage}
      * logically: for a count the member; for a filled count the member where its value is gevuld; for the other folds
      * the member's value where it is gevuld, since a leeg member is skipped (ch. 1.2). Beside it, where the filter can
-     * fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}); {@code selectie} is the
-     * number of the selection of an instance-set union, 0 for any other fold. The rules go into {@code uit} and their
-     * reads into {@code lezingen}, to be registered with the form; returns whether the filter can fault.
+     * fault, the rule that inserts the member's {@link Filterfout} ({@link #filterfoutregel}), and where the filter can
+     * deposit, the rule that inserts the member's {@link Filterdeponering} ({@link #filterdeponeerregel});
+     * {@code selectie} is the number of the selection of an instance-set union, 0 for any other fold. The rules go into
+     * {@code uit} and their reads into {@code lezingen}, to be registered with the form; returns whether the filter can
+     * fault.
      */
     private boolean bijdrageregels(String sleutel, String naam, Expr.FunctieKind kind, Objecttype subject,
                                    Objecttype elem, Bereik bereik, int selectie, Conditie filter,
@@ -2921,7 +2947,47 @@ public final class TmsTranspiler {
         lezingen.add(lez);
         if (kanFalen) uit.add(filterfoutregel(sleutel, vormnaam + ": filterfout in " + naam, subject, elem, bereik,
                 selectie, filter, lezingen::add));
+        if (deponeert(filter)) uit.add(filterdeponeerregel(sleutel, vormnaam + ": filterdeponering in " + naam, subject,
+                elem, bereik, filter, lezingen::add));
         return kanFalen;
+    }
+
+    /**
+     * The rule beside a contribution rule whose filter can deposit: that rule's left-hand side built again over fresh
+     * declarations, the test that evaluating the filter for the member reaches a place that deposits (a division of a
+     * filled dividend by a leeg divisor or the square root of a negative number, RUNTIME-SEMANTICS ch. 1.2), heard by a
+     * probe in the test as {@link #deponeerregel} hears a condition's ({@link Sonde}), so a place the filter's own
+     * composite does not reach deposits nothing (ch. 5.10), and a consequence that inserts the member's
+     * {@link Filterdeponering} logically, on the fold's subject. No inconsistency: the reference interpreter evaluates
+     * the filter only where the evaluation of the form that reads the fold reaches it, and deposits under that form
+     * ({@link #gelezenVouw}). A filter that faults after a place that deposits has deposited, as there; the fault is the
+     * reading form's ({@link #filterfoutregel}). The fact goes when a read it rested on changes, as a contribution does.
+     */
+    private Rule filterdeponeerregel(String sleutel, String regelnaam, Objecttype subject, Objecttype elem,
+                                     Bereik bereik, Conditie filter, Consumer<Lezingen> vastleggen) {
+        Lezingen lez = bijdragelezingen(subject, elem, bereik.koppel());
+        Set<Integer> gelezen = lez.volg();
+        Toets toets = voorwaarde(filter, lez);
+        lez.stop();
+        int sonde = lez.sondeplaats();
+        if (sonde < 0) throw new IllegalStateException("het filter van " + sleutel + " deponeert, maar kreeg geen sonde");
+        Set<Integer> gebruik = lez.volg();
+        int lid = lez.lid();
+        lez.stop();
+        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> {
+            Sonde s = new Sonde();
+            w[sonde] = s;
+            try {
+                toets.test(w);
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+            }
+            return s.gemeld();
+        }, gelezen, filter);
+        items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) ->
+                drools.logicalInsert(new Filterdeponering(sleutel, onderwerp, w[lid])), lez.variabelen.size()));
+        vastleggen.accept(lez);
+        return PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0]));
     }
 
     /**
@@ -3583,17 +3649,20 @@ public final class TmsTranspiler {
         /**
          * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
          * accumulate over them that counts them and, where {@code functie} names an accumulate function, folds their
-         * values with it; and where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts
-         * on this subject, which binds the least of them, the first in fold order, or null. Returns the index of the count, that of the folded
-         * value and that of the least filter fault, each -1 without one. An accumulate over no fact still binds a row,
-         * through the count, so the rule reads an empty fold, and a fold without a filter fault, as well.
+         * values with it; where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts
+         * on this subject, which binds the least of them, the first in fold order, or null; and where the filter can
+         * deposit, an accumulate that counts its {@link Filterdeponering} facts on this subject. Returns the index of
+         * the count, that of the folded value, that of the least filter fault and that of the count of filter deposits,
+         * each -1 without one. An accumulate over no fact still binds a row, through the count, so the rule reads an
+         * empty fold, and a fold without a filter fault or a filter deposit, as well.
          */
         int[] vouw(Vouw v, Class<?> functie) {
             vouwen.add(v);
             String sleutel = v.sleutel();
             int bekend = bestaand("vouw " + sleutel);
             if (bekend >= 0) return new int[]{bekend, functie == null ? -1 : bestaand("vouwwaarde " + sleutel),
-                    v.kanFalen() ? bestaand("filterfout " + sleutel) : -1};
+                    v.kanFalen() ? bestaand("filterfout " + sleutel) : -1,
+                    v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1};
             Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
             PatternDSL.PatternDef<Bijdrage> p = PatternDSL.pattern(b).expr(id("vouw"), x -> x.vouw().equals(sleutel))
                     .expr(id("vouw-onderwerp"), s, (x, o) -> x.onderwerp() == o);
@@ -3602,25 +3671,36 @@ public final class TmsTranspiler {
             if (functie == null) {
                 standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
                         .as(aantal)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1};
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1, -1};
             } else {
                 Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
                 Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
                 p.bind(bijdragewaarde, Bijdrage::waarde);
                 standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
                         .as(aantal), DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1};
+                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1, -1};
             }
-            if (!v.kanFalen()) return uit;
-            Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
-            PatternDSL.PatternDef<Filterfout> q = PatternDSL.pattern(f)
-                    .expr(id("filterfout"), x -> x.vouw().equals(sleutel))
-                    .expr(id("filterfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
-            Variable<Object> fouten = DSL.declarationOf(Object.class, "$filterfouten_" + id("vouw"));
-            Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_filterfout_" + id("vouw"));
-            standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f).as(fouten),
-                    DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
-            uit[2] = nieuw("filterfout " + sleutel, eerste);
+            if (v.kanFalen()) {
+                Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
+                PatternDSL.PatternDef<Filterfout> q = PatternDSL.pattern(f)
+                        .expr(id("filterfout"), x -> x.vouw().equals(sleutel))
+                        .expr(id("filterfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                Variable<Object> fouten = DSL.declarationOf(Object.class, "$filterfouten_" + id("vouw"));
+                Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_filterfout_" + id("vouw"));
+                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
+                        .as(fouten), DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
+                uit[2] = nieuw("filterfout " + sleutel, eerste);
+            }
+            if (v.deponeert()) {
+                Variable<Filterdeponering> d = DSL.declarationOf(Filterdeponering.class, "$filterdeponering_" + id("vouw"));
+                PatternDSL.PatternDef<Filterdeponering> q = PatternDSL.pattern(d)
+                        .expr(id("filterdeponering"), x -> x.vouw().equals(sleutel))
+                        .expr(id("filterdeponering-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                Variable<Object> deponeringen = DSL.declarationOf(Object.class, "$filterdeponeringen_" + id("vouw"));
+                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), d)
+                        .as(deponeringen)));
+                uit[3] = nieuw("filterdeponering " + sleutel, deponeringen);
+            }
             return uit;
         }
 
