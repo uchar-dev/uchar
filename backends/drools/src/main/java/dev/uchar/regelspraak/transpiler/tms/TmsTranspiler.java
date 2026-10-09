@@ -292,7 +292,7 @@ public final class TmsTranspiler {
     private Map<Object, Integer> strata = Map.of();
     /** The strata of the lowered creation rules ({@link #creatiestrata}). */
     private final Set<Integer> creatiestrata = new TreeSet<>();
-    /** Whether a filter fault rule reads a {@link Lijstplaats} ({@link #plaats}). */
+    /** Whether a rule reads a {@link Lijstplaats} ({@link #plaats}; see {@link #leestLijstplaatsen}). */
     private boolean lijstplaatsen;
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
      *  two different tests under one id would collapse into the first. */
@@ -352,8 +352,10 @@ public final class TmsTranspiler {
      *  ({@link Creatiefase}). Empty where {@link #creatieregels} is. */
     public List<Integer> creatiestrata() { return List.copyOf(creatiestrata); }
 
-    /** Whether a rule of the model reads a {@link Lijstplaats}: a fold whose filter can fault over a range with a
-     *  to-many step. Only then does the case input state the places of its to-many lists. */
+    /** Whether a rule of the model reads a {@link Lijstplaats}: the filter fault rule of a fold whose filter can fault,
+     *  the member fault rule of a per-element fold over a timeline, or the contribution rule of a quantifier fold whose
+     *  matrix can fault or deposit, each over a range with a to-many step. Only then does the case input state the
+     *  places of its to-many lists, and a consumer that fills a session itself states them too. */
     public boolean leestLijstplaatsen() { return lijstplaatsen; }
 
     /**
