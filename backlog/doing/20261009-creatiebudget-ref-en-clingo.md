@@ -110,6 +110,27 @@ stratum voeden, vormen één kring, dus dat valt samen met per stratum). Het cor
 hoeft niet van de grens weg te blijven: na dit besluit is de grens norm, en dan
 hoort ze vastgezet.
 
+## Besluit herzien (voorlopig, 2026-10-09, na de lens op stap 1)
+
+*De lens op stap 1 (`/tmp/lens-bugs/w9/lens1/lens.md`) vond twee vormen waarop de telling in generaties in clingo niet
+uit te drukken is: een recursieve feitcreatie die een sluiting van meer dan 100 links legt (ref faalt op het budget,
+clingo speelt), en een keten waarin aanmaken en links elkaar afwisselen (generatie 101 maakt pas W52: ref faalt, clingo
+speelt). De hoofdsessie twijfelde en vroeg een tweede Fable-advies (`/tmp/lens-bugs/advies2-fable.md`); dat wordt het
+voorlopige besluit, en het vervangt het besluit hierboven. Het blijft voorlopig tot de eigenaar het bevestigt.*
+
+**Het budget telt de aanmaakdiepte per stratum.** Elk gemaakt object heeft een diepte in het stratum van de creatie die
+het maakte: één meer dan de diepte van zijn onderwerp in dat stratum; een invoerobject, en een object dat een lager
+stratum maakte, heeft diepte 0. Een aanmaak op diepte 101 is in elke executor een fout, bij het maken. Feitcreaties
+hebben geen budget: ze maken niets, en over het eindige universum dat de aanmaken van een stratum achterlaten zijn de
+links eindig (ch. 5.5 zegt al dat een relatiecreatie geen guard nodig heeft). De vormen die niets maken hebben geen
+budget (WF-045), wel een begrenzing als detector van twee schrijvers. De generaties van
+`20261009-creatie-initialisatie-leest-groeiende-waarde` blijven het leesmoment; alleen de teller verandert. Terminatie:
+elk (creatie, onderwerp) maakt hooguit één object, dus de boom van aanmaken per stratum vertakt eindig en heeft hoogte
+ten hoogste 100. Op een zuivere keten is diepte gelijk aan generatie, zodat de pins van
+`finite-chain-over-budget`, `synth2-budgetgrens-onder` en de nieuwe grensgolden hun uitkomst houden; de foutzin wordt
+in elke executor "creation budget exhausted". Clingo telt al zo (stap 1); ref en de tak met truth maintenance passen
+zich aan (stap 3). De nestgrens van clingo (190 geneste termniveaus) blijft een benoemde backendgrens.
+
 ## Acceptatie
 
 - (a) **Ref**: per stratum een buitenste lus van ten hoogste 100 generaties om de
