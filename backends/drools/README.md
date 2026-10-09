@@ -100,10 +100,11 @@ replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The 
 `tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
 `tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date, the faults of date arithmetic as
-facts, the condition forms and the writers of one target (below). It is no gate path yet: gate 12
+facts, the condition forms and the writers of one target (below). The third, `tms-verdeling-en-tijdlijnen`, adds
+allocations (below) and, in its later steps, timelines and day kinds. It is no gate path yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 201 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 216 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -283,6 +284,34 @@ and the two writers disagree, where the reference interpreter faults on the pass
 Witnesses `TmsSchrijversWitnessTest` and, for a member an object creation sets and a division in an initialisation
 beside a writer on a sister subtype, `TmsCreatieInvoerWitnessTest`.
 
+**Allocations.** An allocation (RUNTIME-SEMANTICS ch. 4) is a computation over the recipients that the left-hand
+side binds. A rule of the allocation inserts, per source and per recipient, an `Ontvanger` logically: an instance of
+`targetType` that the connecting relation links to the source, through the bean field of an input relation or the
+`Koppeling` facts of a relation a form creates, so a recipient a creation adds counts as well, with its weight,
+ordering key and cap bound in that rule's left-hand side, a derived one through its standing. The allocation's own
+rule binds the source, its pot, the reads of its condition and, through an accumulate, the list of the source's
+`Ontvanger` facts; its consequence computes the distribution from those values alone (`Verdeling.bereken`, a public
+function of plain values, so that a rendering as DRL text can call it too). Every share and the rest is a `Waarde`
+with the allocation as its writer, and every degradation of ch. 4.3 and 4.4, an empty weight, a negative proportional
+weight, an empty or negative cap, is the allocation's §9.5 deposit on that recipient. All of it is logical, so a
+recipient that arrives or leaves, a weight, key, cap or pot that a rule derives later or changes, and a condition that
+stops holding take the source's whole distribution along, the rest included (ch. 4.3), and a deposit made on an
+intermediate state goes again. It computes as the exec-model branch does, with `rsPlafond`, `rsAfronding` and
+`rsVerdeelOpVolgorde`: a share is the quotient at 16 significant digits, capped, then floored, the v0 residual ch. 4.2
+records beside the exact fractions. The edge rows of ch. 4.4 are the reference interpreter's: no recipients, an empty
+pot of the ordered method and eligible proportional weights that sum to 0 write nothing, the last still with the
+deposit of an empty weight beside them, and an empty pot of the equal-shares or the proportional method with
+recipients is that executor's fault, a `Fout` on the source ("empty source amount in equal-shares allocation (v0
+mirror hole, ch. 4.4)"). Three readings differ from the exec-model branch, each as the spec has it: a negative weight
+of the proportional method counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter and
+the exec-model branch keep the unclamped v0 hole and the ASP backend faults; an empty tie-break weight counts as 0 also
+where every weight of its group is empty, as the reference interpreter and the ASP backend read it, where
+`rsVerdeelOpVolgorde` splits such a group in equal parts; and two ordering keys of one value in two scales, 2019 and
+2019.0, are one group, as those two executors compare them, where that helper groups by `equals`. A version with a
+bounded validity gates on the evaluation date and faults a session without one; a condition faults and deposits
+through rules of its own, on the source. A share or a rest replaces the input on its target, and a recipient that
+receives nothing keeps its input. Witness `TmsVerdelingWitnessTest`.
+
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
@@ -377,7 +406,7 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them allocation, day kinds (a duration counted in a day kind and the dayKind
+- the forms outside the trial, among them day kinds (a duration counted in a day kind and the dayKind
   predicate among them), timelines (a total over the subject's own timeline or over a time-dependent member, the
   bucketing builtins timeProportionalPart and dayCount, wholePeriod, and a uniqueness key on a timeline, which reads
   ever-uniqueness, among them), and a dimensioned attribute over a path or one a form writes;
@@ -415,6 +444,11 @@ built, never as a silent fall:
   `fout-op-tussenstand`, where the reference interpreter gives the fault or the value of an initialisation beside
   another writer depending on the order of the rules); and a square root in a default, whose §6.6 deposit a default
   makes only where it decides (ch. 7.1);
+- of an allocation: another writer of its share target or its rest on an instance it writes (per concrete type, so
+  not a writer on a sister subtype), a second allocation (WF-026) or a defaults group (WF-050), both ill-formed, and a
+  computing rule or an initialisation, which this branch does not carry beside an allocation yet; a pot, share, rest,
+  weight or cap that is no number; a to-one recipient role whose sibling is to-many, and a join the bean model gives
+  no field, as a fold over such a role is refused; and the combinations of method and fields that WF-025 refuses;
 - every cycle of the dependency graph that the verifier refuses, refused by `Kringen` with a `tms:` sentence over the
   verifier's own graph (`checks.ml`, the nodes of IR-SPEC ch. 5.1: attribute, characteristic, channel, population,
   relation): a cycle that does not pass through a creation member of a recursive rule group (WF-045), and a negative
