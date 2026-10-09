@@ -99,11 +99,11 @@ tree produces them, and its javadoc says how to run it. On them the owner decide
 replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The first,
 `tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
-`tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date and the faults of date arithmetic as
-facts (below); the condition forms and the writers of that card follow. It is no gate path yet: gate 12
+`tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date, the faults of date arithmetic as
+facts and the condition forms (below); the writers of that card follow. It is no gate path yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 171 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 190 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -229,6 +229,32 @@ subject)"). The rule that reads the fold counts these facts on its subject besid
 own probe where its evaluation reaches the fold while one stands; the filter of each selection of an
 `InstanceSetUnion` does the same. Witness `TmsFilterdeponeringWitnessTest`.
 
+**Condition forms.** A quantifier fold (RUNTIME-SEMANTICS ch. 3.9a) has the contributions of an aggregation over its
+one-step range: a contribution rule per member that passes the filter binds the member's reads of the filter and of
+the matrix, the condition the fold asks of each member, and inserts a `Bijdrage` with 1 or 0 for the member's verdict,
+so the rule that reads the fold counts the contributors and the hits with one accumulate, and all, none and the three
+counting quantifiers compare those; over no contributor all and none hold. A member whose derived value changes takes
+its contribution along. Where the matrix can fault or deposit, the order of the members shows: the reference
+interpreter reads the matrix in the contributors' order and stops at the first one after which the verdict stands
+(ch. 5.10), so a member it does not reach neither faults nor deposits. The contribution then carries the matrix's
+outcome and the member's place in the list of the fold's subject (`Lidtoets`, the place a `Lijstplaats` gives, as for
+a filter fault), and the reading rule collects them and replays the stop triggers of ch. 5.10 in that order, the empty
+prefix included; over a created relation, whose made links have no place, such a matrix is refused. The filter is
+settled for every member before the matrix, with its faults and deposits as for any fold. A role check (ch. 5.8a) is
+an existence question bound as a value, so it stands in a composite like any condition: over a relation a form
+creates, an accumulate over the relation's `Koppeling` facts that hold the subject at its end; over an input
+relation, the subject's own reference field where the other role is to-one, and else an accumulate over the beans
+whose field names the subject, as the bean model stores the link (`FactModelGenerator.lidmaatschapsopslag`); a
+counterpart type is a class test, which a subtype passes. A uniqueness (ch. 5.9), over one source or more: per source a
+rule inserts each instance's key (`Uniciteitssleutel`), its components bound in the left-hand side, a derived one
+through its standing, and for a scoped form its parent, where every component is gevuld and the parent is there; the
+form's rule counts per key the keys that collide with it, and where more than one does, marks the instance
+(`Uniciteitsschending`), which a rule of the form puts on the §9.5 channel once per instance. A key belongs to its
+source, so an instance whose keys in two sources of a union are equal duplicates against itself. Everything is
+logical, so a duplicate that arises on an intermediate state is gone at the fixpoint, where the reference interpreter
+evaluates the form. Witnesses `TmsKwantorvouwWitnessTest`, `TmsRolcontroleWitnessTest` and
+`TmsUniciteitWitnessTest`.
+
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
@@ -319,16 +345,19 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 **What it refuses**, from its manifest as `tms-transpiler SKIP: <family>: <name> — <reason>` before the KieBase is
 built, never as a silent fall:
 
-- the forms outside the trial, among them quantifier folds, role membership, an instance-set union as a value,
-  allocation, uniqueness, day kinds (a duration counted in a day kind and the dayKind predicate among them),
-  timelines (a total over the subject's own timeline or over a time-dependent member, the bucketing builtins
-  timeProportionalPart and dayCount, and wholePeriod among them), and a dimensioned attribute over a path or one a
-  form writes;
+- the forms outside the trial, among them allocation, day kinds (a duration counted in a day kind and the dayKind
+  predicate among them), timelines (a total over the subject's own timeline or over a time-dependent member, the
+  bucketing builtins timeProportionalPart and dayCount, wholePeriod, and a uniqueness key on a timeline, which reads
+  ever-uniqueness, among them), and a dimensioned attribute over a path or one a form writes;
+- what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
+  over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
+  either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the other two branches;
 - the creations it does not build yet: an object creation without a `connectingRole`, whose relation would follow from
   the pair of types, or with a back-link that is ambiguous (the exec-model branch faults there at fire), a created
   relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
-  deposit the branch does not make, a fold whose range of more than one step goes over a created relation, and a fold
-  whose filter can fault over a created relation, whose made links have no place in the fold order;
+  deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
+  whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,
+  whose made links have no place in the fold order, and the scope of a uniqueness over a created relation;
 - the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many;

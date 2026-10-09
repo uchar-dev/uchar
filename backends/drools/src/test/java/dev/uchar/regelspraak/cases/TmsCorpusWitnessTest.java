@@ -49,8 +49,12 @@ class TmsCorpusWitnessTest {
      *
      *  <p>Raised from 120 to 171 on purpose (card tms-expressievormen-en-rekendatum, step 1, acceptance (b)), measured
      *  2026-10-09 through this test after the branch took on the value forms, the evaluation date and the faults of
-     *  date arithmetic as facts: 171 of the 294 goldens with cases play, none FAILs. */
-    private static final int EXPECTED_MIN_PLAYED = 171;
+     *  date arithmetic as facts: 171 of the 294 goldens with cases play, none FAILs.
+     *
+     *  <p>Raised from 171 to 190 on purpose (card tms-expressievormen-en-rekendatum, step 2, acceptance (b)), measured
+     *  2026-10-09 over the corpus with the jar of this step after the branch took on the quantifier fold, the role check
+     *  and uniqueness: 190 of the 294 goldens with cases play, none FAILs. */
+    private static final int EXPECTED_MIN_PLAYED = 190;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;

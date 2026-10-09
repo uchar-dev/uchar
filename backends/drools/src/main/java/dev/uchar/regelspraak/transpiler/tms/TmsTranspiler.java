@@ -112,15 +112,18 @@ import java.util.function.UnaryOperator;
  * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject that
  * is the only computing rule on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
  * initialisation, the desugaring domain of ch. 7.7); an initialisation (ch. 5.4), the only one on its target; a
- * consistency, whose violation is a logical §9.5 inconsistency; a prioritized-defaults group, as the effective
+ * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
+ * duplicates are as well ({@link #uniciteitsregels}); a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
  * ordinary rule on an ancestor's level folds, so that it does not fire on that type; and an object creation over a
  * {@code connectingRole} and a fact creation, each over a relation of two roles. Each always valid or gated on the
  * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
  * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
  * root at all), whose condition, assertion or justification is built from characteristic checks (own or over a path,
- * negated or not), comparisons, leeg, gevuld, eleven and exact-digit tests, time windows, tests of the channel of a
- * consistency or of a rule that deposits, and {@code Compound}s of those under any quantifier, and whose value is a
+ * negated or not), comparisons, leeg, gevuld, eleven and exact-digit tests, time windows, role checks
+ * ({@link #rolcontrole}), quantifier folds over a linked set ({@link #kwantorvouw}), tests of the channel of a
+ * consistency, a uniqueness or a rule that deposits, and {@code Compound}s of those under any quantifier, and whose
+ * value is a
  * literal, a read of an attribute (own or over a path of roles, or a dimension cell), a parameter, a context value, an
  * aggregation, a {@code Let} with its binder reads, an {@code IfThenElse}, a rounding, a clamp, a builtin call, a text
  * composition of texts, or an arithmetic of those: a sum, difference, product, quotient, power with a whole exponent or
@@ -132,7 +135,9 @@ import java.util.function.UnaryOperator;
  * {@link Bijdrage} facts its contribution rules insert logically, one per member of its range ({@link #vouw}); a
  * contribution rule binds the member's value and the reads of the fold's filter in its own left-hand side, so a member
  * whose value or filter reading changes takes its contribution along. A listed fold is computed from its operands'
- * bound values ({@link #gelijsteVouw}).
+ * bound values ({@link #gelijsteVouw}). A quantifier fold has the same contributions, each carrying its member's
+ * verdict on the matrix, and where the matrix can fault or deposit also the member's place, so the rule that reads the
+ * fold replays the short circuit of RUNTIME-SEMANTICS ch. 5.10 over them ({@link #kwantorvouw}).
  *
  * <p>An evaluation fault in a value or a condition — a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4),
  * or one of the faults of {@link Rekenfout}: a date step or a duration count outside the range of ch. 3.8, a context
