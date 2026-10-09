@@ -187,17 +187,25 @@ spec bug.
   admits it through a recursive group) whose initialisation reads a node
   that a form on that cycle writes is refused by name (IR-SPEC ch. 5.5):
   a value a rule, an allocation or a defaults group on the cycle
-  computes, or a population or relation a creation on the cycle grows
-  (the creation's own back-link included). An attribute or characteristic
-  a creation writes is set once per object, at its making, so a read of
-  it stays carried: the anchor `jutterswet-wachtersketen` reads its rang
-  so. The test reads the dependency graph of `Ir_v0.Checks` (the graph
-  ref stratifies), not the values, so a rule on the cycle whose value on
-  an object is fixed at the object's making is refused as well. On the
-  worked example of ch. 5.5 (beginstand = zijn stand, the stand counting
-  the opvolgers) ref answers opvolgerbegin(W1) = 0, and this backend
-  answered 1 before the refusal; the suite's `ch5.5 generations` frames
-  pin the refusals and the carried forms.
+  computes, also where a creation writes the same member, or a
+  population or relation a creation on the cycle grows (the creation's
+  own back-link included). An attribute or characteristic that only
+  creations write is set once per object, at its making, so a read of it
+  stays carried: the anchor `jutterswet-wachtersketen` reads its rang so.
+  A member that a creation and a rule on the cycle both write is
+  refused: with rang plus 1 and beginstand = zijn rang initialised, and a
+  rule that sets the rang of a Wachter with an opvolger to 2, ref starts
+  W1's opvolger at beginstand 1 while W1 ends at rang 2. The test reads
+  the static dependency graph of `Ir_v0.Checks` (the graph ref
+  stratifies), not the values: a rule on the cycle whose value on an
+  object is fixed at the object's making is refused as well, and so is a
+  writer on the cycle whose validity the case's date excludes. Only a
+  creation version the date excludes is not asked, because it is not
+  translated. On the worked example of ch. 5.5 (beginstand = zijn stand,
+  the stand counting the opvolgers) ref answers opvolgerbegin(W1) = 0,
+  and this backend answered 1 before the refusal; the suite's `ch5.5
+  generations` frames pin the refusals, each beside ref's absolute
+  answer, and the carried forms.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —

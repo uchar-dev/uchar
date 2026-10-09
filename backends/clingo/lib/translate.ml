@@ -11275,12 +11275,18 @@ let writer_conflicts ctx =
    through a member of a recursive group. A rule, an allocation or a
    defaults group on the cycle recomputes its target while the chain grows,
    and a creation on the cycle grows a population (the objects it makes) or
-   a relation (its back-link, or the links of a fact creation). An
-   attribute or characteristic that a creation writes is set once per
-   object, when the object is made, so its end value is the value at the
-   making: the anchor jutterswet-wachtersketen reads its rang that way and
-   stays carried. A writer off the cycle reads nothing the cycle produces,
-   and its value is complete before the creation reads it (ch. 6.3).
+   a relation (its back-link, or the links of a fact creation). A
+   creation's own write of an attribute or characteristic is no such
+   change: it sets the member once per object, when the object is made. So
+   a member that only creations write keeps the value of its making, and
+   the anchor jutterswet-wachtersketen reads its rang that way and stays
+   carried. A member that a creation writes and a rule on the cycle writes
+   as well is refused, because the rule can change it after the making:
+   with rang plus 1 and beginstand = zijn rang initialised, and a rule that
+   sets the rang of a Wachter with an opvolger to 2, the opvolger W1 makes
+   starts at beginstand 1 while W1 ends at rang 2. A writer off the cycle
+   reads nothing the cycle produces, and its value is complete before the
+   creation reads it (ch. 6.3).
 
    Measured 2026-10-09 on the card's document (beginstand = zijn stand, the
    stand counting the opvolgers): ref answers opvolgerbegin(W1) = 0 and this
@@ -11289,14 +11295,17 @@ let writer_conflicts ctx =
    relation that a fact creation in the same group lays, the split was the
    same. Carrying these forms would need a copy of the rule layer per
    generation, so such an initialisation is refused by name, the second
-   posture of IR-SPEC ch. 5.5. The test follows the graph and not the
-   values, so it also refuses a rule on the cycle whose value on an object
+   posture of IR-SPEC ch. 5.5. The test follows the static graph and not
+   the values. It also refuses a rule on the cycle whose value on an object
    is fixed at the object's making (basis = zijn rang plus 10), where the
-   end value would be right. The graph is the verifier's
-   ([Ir_v0.Checks.dep_forms]), built over the document as loaded, which is
-   the graph ref stratifies. A creation version that the case's date
-   excludes makes nothing, as [translate_object_creatie] skips it, and is
-   not refused. *)
+   end value would be right, and a writer on the cycle whose validity the
+   case's date excludes, which writes nothing in that case; a filter on the
+   writer alone would still read the cycle off the static graph, as ref's
+   strata do. The graph is the verifier's ([Ir_v0.Checks.dep_forms]), built
+   over the document as loaded, which is the graph ref stratifies. A
+   creation version that the case's date excludes makes nothing and is not
+   translated ([translate_object_creatie] skips it), so it is not
+   refused. *)
 let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
   let cctx = { Ir_v0.Checks.doc } in
   let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
