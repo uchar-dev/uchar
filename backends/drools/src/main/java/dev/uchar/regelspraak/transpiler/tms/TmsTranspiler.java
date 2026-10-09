@@ -231,6 +231,9 @@ public final class TmsTranspiler {
     /** The contribution rules of the folds the lowered forms read, by the fold's key. */
     private final Map<String, List<Rule>> bijdrageregels = new LinkedHashMap<>();
     private int vouwteller;
+    /** While the rules of a fold are built ({@link #vouwVoor}), the binders in scope at the fold, by normalised name:
+     *  the rule that reads the fold binds them, its contribution rules do not ({@link Lezingen#buiten}). */
+    private Set<String> vouwbinders = Set.of();
     /** The name of the form being lowered, as the manifest shows it: the key of its folds starts with it, and a fault in
      *  a fold's filter is named after it. */
     private String vorm;
@@ -2667,9 +2670,16 @@ public final class TmsTranspiler {
     }
 
     /** A read of the binder of the nearest enclosing {@code Let} of that name (WF-064): it forces the need and raises
-     *  the {@code Let}'s barrier where the value is leeg ({@link Behoefte#lees}). */
+     *  the {@code Let}'s barrier where the value is leeg ({@link Behoefte#lees}). A binder of a {@code Let} around a
+     *  fold, read in the fold's filter or matrix, is in scope but bound in another rule than this contribution rule
+     *  ({@link Lezingen#buiten}), and refused as a form this branch does not carry yet. */
     private Waardefunctie binderlezing(Expr.BinderRef b, Lezingen lez) {
-        Integer slot = b.naam() == null ? null : lez.binders.get(Namen.norm(b.naam()));
+        String naam = b.naam() == null ? null : Namen.norm(b.naam());
+        Integer slot = naam == null ? null : lez.binders.get(naam);
+        if (slot == null && naam != null && lez.buiten.contains(naam))
+            throw new Weigering("een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix van"
+                    + " die vouw ('" + snippet(b.bron()) + "'): de bijdrageregels van de vouw rekenen het filter en de"
+                    + " matrix per lid uit en binden de waarde van de Let niet: " + NOG_NIET);
         if (slot == null)
             throw new Weigering("een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
                     + snippet(b.bron()) + "', WF-064)");
@@ -3081,7 +3091,7 @@ public final class TmsTranspiler {
         Expr.FunctieKind kind = f.kind();
         if (kind == Expr.FunctieKind.AANTAL && f.argumenten().size() == 1
                 && f.argumenten().get(0) instanceof Expr.InstanceSetUnion u) {
-            Vouw v = unievouw(f, u, lez.subject);
+            Vouw v = unievouw(f, u, lez);
             int[] i = lez.vouw(v, null);
             return gelezenVouw(v, i, lez, w -> aantal(w[i[0]]));
         }
@@ -3111,7 +3121,7 @@ public final class TmsTranspiler {
             throw new Weigering("een Aggregation " + kind + " zonder bereik ('" + snippet(f.bron()) + "'): IR-SPEC ch. 4.3"
                     + " eist een sourceRole of sourcePath");
         Expr.AttribuutRef lid = arg;
-        Vouw v = vouwVoor(f, lez.subject, (sleutel, naam) -> {
+        Vouw v = vouwVoor(f, lez, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = bijdrageregels(sleutel, naam, kind, lez.subject, elem, bereik(f, lez.subject, elem), 0,
@@ -3182,15 +3192,22 @@ public final class TmsTranspiler {
         }
     }
 
-    /** The fold of {@code f}, an aggregation or a quantifier fold, on {@code subject}, built by {@code bouw} from its key
-     *  and its name the first time it is read. */
-    private Vouw vouwVoor(Object f, Objecttype subject, BiFunction<String, String, Vouw> bouw) {
+    /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code lez}, the rule that reads
+     *  it, built by {@code bouw} from its key and its name the first time it is read. While it is built, the binders in
+     *  scope in {@code lez} are those its contribution rules see from outside ({@link #vouwbinders}). */
+    private Vouw vouwVoor(Object f, Lezingen lez, BiFunction<String, String, Vouw> bouw) {
         Map<Objecttype, Vouw> perOnderwerp = vouwen.computeIfAbsent(f, k -> new IdentityHashMap<>());
-        Vouw v = perOnderwerp.get(subject);
+        Vouw v = perOnderwerp.get(lez.subject);
         if (v == null) {
             String naam = "vouw " + vouwteller++;
-            v = bouw.apply(vorm + ": " + naam, naam);
-            perOnderwerp.put(subject, v);
+            Set<String> buiten = vouwbinders;
+            vouwbinders = lez.binderbereik();
+            try {
+                v = bouw.apply(vorm + ": " + naam, naam);
+            } finally {
+                vouwbinders = buiten;
+            }
+            perOnderwerp.put(lez.subject, v);
         }
         return v;
     }
@@ -3198,8 +3215,9 @@ public final class TmsTranspiler {
     /** The count over an instance-set union (RUNTIME-SEMANTICS ch. 3.4d): a contribution rule per selection, each with
      *  its own relation and its own filter, all under one key; a member two selections select gives two equal
      *  contributions, which merge into one fact, so the count is that of the union. */
-    private Vouw unievouw(Expr.Functie f, Expr.InstanceSetUnion u, Objecttype subject) {
-        return vouwVoor(f, subject, (sleutel, naam) -> {
+    private Vouw unievouw(Expr.Functie f, Expr.InstanceSetUnion u, Lezingen lez) {
+        Objecttype subject = lez.subject;
+        return vouwVoor(f, lez, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
             boolean kanFalen = false, deponeert = false;
@@ -3351,6 +3369,7 @@ public final class TmsTranspiler {
     @SuppressWarnings("unchecked")
     private Lezingen bijdragelezingen(Objecttype subject, Objecttype elem, Consumer<Lezingen> bereik) {
         Lezingen lez = new Lezingen(elem);
+        lez.buiten = vouwbinders;
         lez.drager = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$vouwonderwerp");
         lez.kop.add(PatternDSL.pattern(lez.drager));
         bereik.accept(lez);
@@ -3800,7 +3819,7 @@ public final class TmsTranspiler {
                     + " stappen (WF-108 (c))");
         Conditie.Kwantor kw = kv.kwantor();
         int drempel = kv.drempel();
-        Vouw v = vouwVoor(kv, lez.subject, (sleutel, naam) -> kwantorbijdragen(kv, sleutel, naam, lez.subject, elem));
+        Vouw v = vouwVoor(kv, lez, (sleutel, naam) -> kwantorbijdragen(kv, sleutel, naam, lez.subject, elem));
         if (!v.geordend()) {
             int[] i = lez.vouw(v, accumulatiefunctie("BigDecimalSumAccumulateFunction"));
             Waardefunctie oordeel = gelezenVouw(v, i, lez, w -> {
@@ -4112,6 +4131,10 @@ public final class TmsTranspiler {
          *  in the value array ({@link #binder}); a nested {@code Let} of the same name shadows the outer one while its
          *  body compiles (WF-064). */
         final Map<String, Integer> binders = new HashMap<>();
+        /** In a contribution rule, the binders in scope at its fold, by normalised name: those of the {@code Let}s
+         *  around the fold in the rule that reads it, which bind them there, and for a fold in a fold's filter those in
+         *  scope at the outer fold as well. This rule binds none of their values; empty in every other rule. */
+        Set<String> buiten = Set.of();
         /** The slot of the probe of this rule's deposits ({@link #sonde}), -1 while no place that deposits compiled. */
         private int sonde = -1;
 
@@ -4120,6 +4143,14 @@ public final class TmsTranspiler {
             this.subject = subject;
             this.s = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$onderwerp");
             this.onderwerp = PatternDSL.pattern(s);
+        }
+
+        /** The binders in scope where the expression being compiled stands: this rule's own and {@link #buiten}. */
+        Set<String> binderbereik() {
+            if (binders.isEmpty()) return buiten;
+            Set<String> uit = new LinkedHashSet<>(buiten);
+            uit.addAll(binders.keySet());
+            return uit;
         }
 
         /** The subject itself as a bound value, for a consequence that hands on another object beside it. */

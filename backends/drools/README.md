@@ -390,6 +390,11 @@ built, never as a silent fall:
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
   whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,
   whose made links have no place in the fold order, and the scope of a uniqueness over a created relation;
+- a binder of a `Let` around a fold, read in the fold's filter or matrix: the contribution rules compute the filter
+  and the matrix per member and do not bind the `Let`'s value, which carrying it would bind, read on the fold's
+  subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
+  binder that no `Let` encloses keeps its WF-064 refusal, and a `Let` inside the filter plays. Witness
+  `TmsVouwbinderWitnessTest`;
 - the shapes of a fold's range the bean model gives no field, refused as the exec-model branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many;
