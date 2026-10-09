@@ -702,27 +702,45 @@ public final class TmsTranspiler {
      * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
      * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
      *
-     * <p>A rule outside the standing domain on a member that an object creation sets when it makes an object the rule
-     * applies to (the rule is on the created type or on an ancestor of it) is refused by name: the branch keeps that
-     * member value as the creation's stated {@link Waarde}, which the rule's value would meet as a second writer, where
-     * the reference interpreter overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
+     * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreatie}), so a rule on it
+     * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
+     * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
      */
     private List<Rule> rekenRegel(ResolvedRegel r, Expr.AttribuutRef doel) {
         Lid lid = lid(doel.objecttype(), doel.attribuut(), false);
         Set<Class<?>> geabsorbeerd = geabsorbeerd(doel, lid);
         boolean schrijftLeeg = !staandeDoelen.staandScalair(r);
-        if (schrijftLeeg)
-            for (ResolvedObjectCreatie oc : model.objectCreaties)
-                if (oc.nieuwType() != null && oc.nieuwType().keten().contains(doel.objecttype()))
-                    for (var t : oc.toekenningen())
-                        if (!t.kenmerk() && ProducentConsument.elementVan(oc.nieuwType(), t.attribuut(), false)
-                                .equals(lid.sleutel()))
-                            throw new Weigering("een rekenende regel buiten het staande domein op een lid dat een"
-                                    + " objectcreatie bij het maken zet ('" + lid.naam() + "' van " + lid.declarant().naam
-                                    + ", gezet door \"" + oc.naam() + "\"): deze tak houdt die waarde als een Waarde van de"
-                                    + " creatie, die de waarde van de regel als tweede schrijver zou ontmoeten, waar de"
-                                    + " referentie de waarde van het maken overschrijft (RUNTIME-SEMANTICS ch. 5.5, 1.2g)");
         return schrijfregel(r, doel.objecttype(), lid, null, geabsorbeerd, schrijftLeeg);
+    }
+
+    /**
+     * The forms other than the initialisation {@code r} on {@code type} that write the attribute {@code sleutel} on an
+     * instance {@code r} writes too, by the names the producer index gives them, in its order: a rule, an allocation or
+     * a defaults group on {@code type}, an ancestor or a descendant of it ({@link #verwant}), read per concrete type as
+     * WF-079 reads the single-writer rule; forms on sister subtypes never write one instance. An object creation is no
+     * writer here: the member values it sets are the input of the object it makes ({@link #objectCreatie}), which the
+     * initialisation finds filled there.
+     */
+    private List<String> andereSchrijvers(ResolvedRegel r, Objecttype type, ElementSleutel sleutel) {
+        Set<String> uit = new LinkedHashSet<>();
+        for (ResolvedRegel x : model.resolvedRegels)
+            if (x != r && x.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && x.doel() instanceof Expr.AttribuutRef d
+                    && d.objecttype() != null && d.attribuut() != null && verwant(d.objecttype(), type)
+                    && ProducentConsument.elementVan(d.objecttype(), d.attribuut(), false).equals(sleutel))
+                uit.add(ProducentConsument.basisNaam(x.naam()));
+        for (ResolvedVerdeling v : model.verdelingen)
+            if (v.doelType() != null && v.doelAttribuut() != null && verwant(v.doelType(), type)
+                    && ProducentConsument.elementVan(v.doelType(), v.doelAttribuut(), false).equals(sleutel))
+                uit.add(ProducentConsument.basisNaam(v.naam()));
+        for (int i = 0; i < defaults.size(); i++) {
+            PrioritizedDefaults p = defaults.get(i);
+            Objecttype t = model.objecttypeOpNaam(p.onderwerp());
+            if (t != null && p.doel() != null && !p.isKenmerk() && verwant(t, type)
+                    && ProducentConsument.elementVan(t, p.doel(), false).equals(sleutel))
+                uit.add(p.naam() != null ? ProducentConsument.basisNaam(p.naam()) : "/rules/prioritizedDefaults/" + i);
+        }
+        uit.remove(ProducentConsument.basisNaam(r.naam()));
+        return List.copyOf(uit);
     }
 
     /** Whether one of the two types is the other or an ancestor of it: a form on the one then writes instances of the
@@ -772,7 +790,8 @@ public final class TmsTranspiler {
      * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
      * sister subtypes never do (ch. 7.10).
      *
-     * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default
+     * <p>Beside another writer of its target on an instance it writes ({@link #andereSchrijvers}: per concrete type, so
+     * not a writer on a sister subtype) an initialisation is the lowest default (ch. 7.7), and only the default
      * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
      * writer displaces it later. A division by zero there is a fault on an intermediate state: this branch inserts it as
      * a {@link Fout}, which goes when the other writer displaces the initialisation, and answers the other writer's
@@ -795,8 +814,7 @@ public final class TmsTranspiler {
         // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
         boolean leegNaast = rekenregels.getOrDefault(sleutel, List.of()).stream().anyMatch(x ->
                 !staandeDoelen.staandScalair(x) && verwant(((Expr.AttribuutRef) x.doel()).objecttype(), doel.objecttype()));
-        Set<String> anderen = new LinkedHashSet<>(schrijvers.getOrDefault(sleutel, Set.of()));
-        anderen.remove(ProducentConsument.basisNaam(r.naam()));
+        List<String> anderen = andereSchrijvers(r, doel.objecttype(), sleutel);
         String deling = deling(r.voorwaarde(), r.waarde());
         if (deling != null && !anderen.isEmpty())
             throw new Weigering("een deling in een initialisatie waarvan het doel nog een schrijver heeft ('" + deling
@@ -1326,13 +1344,15 @@ public final class TmsTranspiler {
      * {@link Creatiefase} the driver opened, no {@link Gemaakt} of this creation for the subject, no {@link Gemaakt} that
      * makes the subject itself in this phase, and the condition as the test; and a consequence that makes a new bean of
      * the created type and inserts, stated, the bean, its {@link Gemaakt}, the {@link Koppeling} of the connecting
-     * relation and the member initialisations as {@link Waarde} and {@link HeeftKenmerk} facts: a characteristic where
-     * its value is true, an attribute where its value is gevuld, each computed from the values the rule binds when it
-     * fires. The driver fires this group only at a fixpoint of the rule layer, so the condition and the values are those
-     * of that fixpoint; and nothing the creation made lapses, as in the reference interpreter, which keeps a minted
-     * instance under a fixed label. One object per creation per subject, then. The object is a bean of the created type,
-     * so every pattern over that type sees it, and nothing is written on a bean that was there before: the link toward
-     * it is the {@link Koppeling}, which the readers of the relation join over.
+     * relation and a {@link HeeftKenmerk} for a characteristic initialisation whose value is true. An attribute
+     * initialisation whose value is gevuld is set on the new bean before it is inserted: it is the input of the made
+     * object, as the reference interpreter reads it, so a writer of the member displaces it as it displaces case input,
+     * and an initialisation rule on the member finds the target filled. Each value is computed from the values the rule
+     * binds when it fires. The driver fires this group only at a fixpoint of the rule layer, so the condition and the
+     * values are those of that fixpoint; and nothing the creation made lapses, as in the reference interpreter, which
+     * keeps a minted instance under a fixed label. One object per creation per subject, then. The object is a bean of
+     * the created type, so every pattern over that type sees it, and nothing is written on a bean that was there before:
+     * the link toward it is the {@link Koppeling}, which the readers of the relation join over.
      *
      * <p>The 1:1 shape guards on the input world, as ch. 5.5 says: a subject whose reference field toward the created
      * type is filled in the case input creates nothing; this branch writes no bean while it fires, so the field is the
@@ -1408,6 +1428,10 @@ public final class TmsTranspiler {
         }
         Class<?> klasse = bonenklasse(nieuw);
         String subjecttype = subject.naam;
+        // the setter of each attribute an initialisation sets, null for a characteristic
+        List<BiConsumer<Object, Object>> zetters = new ArrayList<>();
+        for (Initialisatie i : inits)
+            zetters.add(i.lid().kenmerk() ? null : Accessors.setter(i.lid().klasse(), i.lid().naam()));
         items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
             // the budget first: a mint past it is the fault at the making, before anything is made
             int diepte = diepte(naam, stratum, subjecttype, (List<?>) w[herkomst]);
@@ -1431,19 +1455,18 @@ public final class TmsTranspiler {
             }
             int f = (Integer) w[fase];
             Object object = nieuweBoon(klasse);
+            // the member values are the input of the new object, as the reference interpreter reads them: they go on
+            // the new bean before it enters working memory, so no rule ever saw it without them and no bean in the
+            // session changes; a writer of the member then displaces them as it displaces case input (ch. 5.5, 7.8)
+            for (int i = 0; i < inits.size(); i++)
+                if (zetters.get(i) != null && waarden[i] != null) zetters.get(i).accept(object, waarden[i]);
             drools.insert(object);
             drools.insert(new Gemaakt(naam, onderwerp, object, f, stratum, diepte));
             drools.insert(nieuwIsEerste ? new Koppeling(relatie, object, onderwerp, f)
                     : new Koppeling(relatie, onderwerp, object, f));
-            for (int i = 0; i < inits.size(); i++) {
-                Lid lid = inits.get(i).lid();
-                Object v = waarden[i];
-                if (lid.kenmerk()) {
-                    if (Boolean.TRUE.equals(v)) drools.insert(new HeeftKenmerk(object, lid.sleutel()));
-                } else if (v != null) {
-                    drools.insert(new Waarde(object, lid.sleutel(), v, naam));
-                }
-            }
+            for (int i = 0; i < inits.size(); i++)
+                if (zetters.get(i) == null && Boolean.TRUE.equals(waarden[i]))
+                    drools.insert(new HeeftKenmerk(object, inits.get(i).lid().sleutel()));
         }, lez.variabelen.size()));
         for (Initialisatie i : inits) afgeleid.put(i.lid().sleutel(), i.lid());
         lez.vastleggen();

@@ -278,13 +278,18 @@ on the subtype's instances. An initialisation's guard reads the target as the ot
 reference interpreter's guard reads the running fact base: a value another writer places switches it off, and a leeg
 that a writer outside the standing domain writes leaves the target empty, input or not, so the initialisation fills it
 and the two writers disagree, where the reference interpreter faults on the pass budget with the same two writers.
-Witness `TmsSchrijversWitnessTest`.
+Witnesses `TmsSchrijversWitnessTest` and, for a member an object creation sets and a division in an initialisation
+beside a writer on a sister subtype, `TmsCreatieInvoerWitnessTest`.
 
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
 its own output once the state that made it had passed, and its initialisations would follow later changes, where
-ch. 5.5 evaluates them when the object is made. So the creation rules sit in two agenda groups of their own,
+ch. 5.5 evaluates them when the object is made. The attribute values an object creation sets are the input of the
+object it makes, as the reference interpreter reads them: they go on the new bean before it enters working memory, so
+no rule sees the object without them and no bean in the session changes; a writer of the member displaces them as it
+displaces case input, a leeg written outside the standing domain erases them, and an initialisation finds the member
+filled. So the creation rules sit in two agenda groups of their own,
 `TmsTranspiler.FEITCREATIE` and `TmsTranspiler.OBJECTCREATIE`, and the driver `DroolsBackend.vuur` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
 evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `Creatiefase` with its
@@ -395,10 +400,8 @@ built, never as a silent fall:
   the date under that name;
 - what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a
   type and its ancestor, which nothing ranks (ch. 5.4, WF-079); a rule beside a defaults group of its type on its
-  target (WF-050); a computing rule outside the standing domain on a member an object creation sets on objects the
-  rule applies to, since the branch keeps that member as the creation's `Waarde`, which the rule's value would meet as
-  a second writer, where the reference interpreter overwrites the value of the making (ch. 5.5, 1.2g); and a division
-  in a default, or in the condition or the value of an initialisation whose target has another writer, which
+  target (WF-050); and a division in a default, or in the condition or the value of an initialisation whose target
+  has another writer on an instance it writes (per concrete type: a writer on a sister subtype does not count), which
   ch. 7.7 reads as the lowest default beside it: the branch computes every default whose reads stand, also one another
   default displaces, so a division by zero there is a fault on an intermediate state, which the branch withdraws once
   the default is displaced; whether such a fault counts waits on a decision of the norm (ch. 5.2, 5.4, 7.1, 7.7; card

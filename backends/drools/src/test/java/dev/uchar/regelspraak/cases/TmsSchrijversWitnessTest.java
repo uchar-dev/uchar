@@ -69,8 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of orders of the generated rules.
  *
  * <p>Two initialisations on sister subtypes play, and one on their supertype beside them is refused (WF-079 per
- * concrete type); a computing rule outside the standing domain on a member an object creation sets is refused by
- * name.
+ * concrete type). A rule on a member an object creation sets: {@code TmsCreatieInvoerWitnessTest}.
  *
  * <p>The red case {@code corpus/rood/jutterswet-dubbele-melding} gives on this branch the fault in the sentence its
  * {@code expectedFault} pins for Drools, the writers in the order of the document, as the reference interpreter names
@@ -97,11 +96,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * buiten het staande domein ('doel' van Vondst), waar een berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch.
  * 7.8): de truth-maintenance-tak draagt deze vorm nog niet"; the red case gave that refusal for its two rules instead of
  * the fault; the initialisations on sister subtypes were refused, "twee of meer initialisaties op één doel ('doel' van
- * Vondst: "standaarddoel van drijfgoed", "standaarddoel van wrakgoed"), voorwaardelijk of niet: …"; and the rule on the
- * member a creation sets got the refusal outside the standing domain above, "but was: &lt;tms-transpiler SKIP: regel:
- * waarde van een melding — een rekenende regel op een doel buiten het staande domein ('waarde' van Melding), waar een
- * berekende leeg het doel leeg maakt (RUNTIME-SEMANTICS ch. 7.8): de truth-maintenance-tak draagt deze vorm nog
- * niet&gt;". Only the row on the exec-model branch was green.
+ * Vondst: "standaarddoel van drijfgoed", "standaarddoel van wrakgoed"), voorwaardelijk of niet: …". Only the row on
+ * the exec-model branch was green.
  *
  * <p><b>Red by mutation</b> (measured the same day, not committed). (1) The guard of the initialisation that does not
  * count a written leeg: V5 of the third document played, "Expected java.lang.RuntimeException to be thrown, but nothing
@@ -283,34 +279,6 @@ class TmsSchrijversWitnessTest {
                 + " ('doel' van Vondst: \"standaarddoel van drijfgoed\", \"standaarddoel van een vondst\"), voorwaardelijk of"
                 + " niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de waarde niet"
                 + " (RUNTIME-SEMANTICS ch. 5.4, WF-079)", e.getMessage());
-    }
-
-    // ---------------- a computing rule on a member a creation sets ----------------
-
-    /** "Een Jutter heeft een melding met de waarde zijn vangst", an object creation, and "De waarde van een Melding moet
-     *  gesteld worden op zijn bonus, indien zijn bonus gevuld is": the creation writes the waarde, so the rule is outside
-     *  the standing domain, and the branch keeps the value the creation wrote as the creation's {@code Waarde}, which
-     *  the rule's value would meet as a second writer. Refused by name. */
-    @Test void een_rekenende_regel_op_een_lid_dat_een_creatie_zet_weigert_de_tak() throws Exception {
-        String model = TmsDocumenten.model(List.of(
-                TmsDocumenten.objecttype("Jutter", List.of(attribuut("vangst", GEHEEL)), List.of()),
-                TmsDocumenten.objecttype("Melding", List.of(attribuut("waarde", GEHEEL), attribuut("bonus", GEHEEL)),
-                        List.of())),
-                List.of(TmsDocumenten.feittypeEenNaarVeel("jutmelding", "melder", "Jutter", "melding", "Melding",
-                        "meldingen")));
-        Path ir = TmsCreatieWitnessTest.document(model,
-                List.of(rekenregel("waarde van een melding", "GELIJKSTELLING", "Melding", "waarde",
-                        lezing("bonus", "Melding"), predicaat("filled", lezing("bonus", "Melding")))),
-                List.of(), List.of(TmsCreatieWitnessTest.objectcreatie("meld de vangst", "Jutter", "Melding",
-                        List.of(TmsCreatieWitnessTest.init("waarde", lezing("vangst", "Jutter"))), "null", "jutmelding",
-                        "melding")), List.of(), List.of());
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: waarde van een melding — een rekenende regel buiten het staande domein"
-                + " op een lid dat een objectcreatie bij het maken zet ('waarde' van Melding, gezet door \"meld de"
-                + " vangst\"): deze tak houdt die waarde als een Waarde van de creatie, die de waarde van de regel als"
-                + " tweede schrijver zou ontmoeten, waar de referentie de waarde van het maken overschrijft"
-                + " (RUNTIME-SEMANTICS ch. 5.5, 1.2g)", e.getMessage());
     }
 
     // ---------------- a computing rule beside a conditional initialisation ----------------
