@@ -74,7 +74,8 @@ class TmsVouwbinderWitnessTest {
     private static String kwantorvouw(String filter, String toets) {
         return "{\"node\":\"QuantifierFold\",\"quantifier\":\"all\",\"elementType\":\"Brokstuk\""
                 + (filter == null ? "" : ",\"filter\":" + filter) + ",\"test\":" + toets + ","
-                + bronrol("samenstelling", "brokstuk") + ",\"source\":{\"snippet\":\"alle brokstukken van de Vondst\"}}";
+                + bronrol("samenstelling", "brokstuk")
+                + ",\"source\":{\"snippet\":\"alle brokstukken van de Vondst\"}}";
     }
 
     private static String groter(String links, String rechts) {
@@ -98,10 +99,10 @@ class TmsVouwbinderWitnessTest {
         }
     }
 
-    private static final String NOG_NIET = "tms-transpiler SKIP: regel: zware vondsten van een jutter — een BinderRef"
-            + " 'grens' van een Let om een vouw, in het filter of de matrix van die vouw ('grens'): de bijdrageregels van"
-            + " de vouw rekenen het filter en de matrix per lid uit en binden de waarde van de Let niet: de"
-            + " truth-maintenance-tak draagt deze vorm nog niet";
+    private static final String NOG_NIET = "tms-transpiler SKIP: regel: zware vondsten van een jutter — een"
+            + " BinderRef 'grens' van een Let om een vouw, in het filter of de matrix van die vouw ('grens'): de"
+            + " bijdrageregels van de vouw rekenen het filter en de matrix per lid uit en binden de waarde van de Let"
+            + " niet: de truth-maintenance-tak draagt deze vorm nog niet";
 
     @Test void een_binder_in_het_filter_of_de_matrix_van_een_vouw_wacht_op_een_latere_kaart() throws Exception {
         List<String> werkelijk = new ArrayList<>();
@@ -121,8 +122,8 @@ class TmsVouwbinderWitnessTest {
     }
 
     @Test void een_let_in_het_filter_speelt() throws Exception {
-        Path ir = document(let("grens", DREMPEL, telling(groter(VONDSTGEWICHT, let("grens", getal("6"), GRENS, GEHEEL))),
-                GEHEEL));
+        String zes = let("grens", getal("6"), GRENS, GEHEEL);
+        Path ir = document(let("grens", DREMPEL, telling(groter(VONDSTGEWICHT, zes)), GEHEEL));
         List<String> instanties = new ArrayList<>(List.of(
                 instantieMetRollen("J1", "Jutter", Map.of("drempel", "5"), List.of(), Map.of("vondsten",
                         List.of("V1", "V2", "V3"))),

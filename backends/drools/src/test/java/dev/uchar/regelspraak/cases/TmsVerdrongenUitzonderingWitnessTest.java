@@ -51,32 +51,33 @@ import static org.junit.jupiter.api.Assertions.fail;
  * forms: "20 indien het Rekenjaar groter is dan 2025" and "het Rekenjaar indien hij geregistreerd is" in a session
  * without an evaluation date, an {@code Unresolved} value and an {@code Unresolved} justification, and "20 indien zijn
  * vinddatum plus 18446744073709551617 dagen later is dan 2026-01-01". V1 (aangespoeld, geregistreerd): heffing 10,
- * consistent; the displacing default reads wrak, which the two rules derive later. V2 (geregistreerd): nothing displaces
- * the lower default, and the session faults with the reference interpreter's sentence. Beside them the document of the
- * lens that found the defect: no rules, wrak as input, the first faulting form below the lower default.
+ * consistent; the displacing default reads wrak, which the two rules derive later. V2 (geregistreerd): nothing
+ * displaces the lower default, and the session faults with the reference interpreter's sentence. Beside them the
+ * document of the lens that found the defect: no rules, wrak as input, the first faulting form below the lower
+ * default.
  *
  * <p><b>Measured</b> (2026-10-09, the reference interpreter's runner on every document in both orders of its rules,
- * verifier-clean, under {@code /tmp/lens-tms-k2/eindfix/proef}): V1 passes everywhere, heffing 10 and consistent; V2
- * faults with "the evaluationYear context value needs an evaluation date; the case carries asOfDate null", "Unresolved
- * reached in evaluation: this rule fails observably", "Unresolved condition reached in evaluation" and "duration count
- * 18446744073709551617 is out of range". The ASP runner declines every one of these documents at translation (the
- * context value without a date, "Unresolved reached in translation", a count beyond its 32-bit integers). The deposit
- * variant, a division by a leeg noemer in the justification of the faulting default, which this branch refuses as a
- * division in a default: the reference interpreter passes V1 consistent, and the ASP runner deposits there, a fact whose
- * rule is no form of the document.
+ * each document verifier-clean): V1 passes everywhere, heffing 10 and consistent; V2 faults with "the evaluationYear
+ * context value needs an evaluation date; the case carries asOfDate null", "Unresolved reached in evaluation: this rule
+ * fails observably", "Unresolved condition reached in evaluation" and "duration count 18446744073709551617 is out of
+ * range". The ASP runner declines every one of these documents at translation (the context value without a date,
+ * "Unresolved reached in translation", a count beyond its 32-bit integers). The deposit variant, a division by a leeg
+ * noemer in the justification of the faulting default, which this branch refuses as a division in a default: the
+ * reference interpreter passes V1 consistent, and the ASP runner deposits on V1, under a rule that is not the
+ * default's ("wrakverklaring × V1" with the two rules, "? × V1" without them).
  *
- * <p><b>Red before the change</b> (measured 2026-10-09 on 8185e0d6, see {@link #elke_plaats_en_elke_fout_in_elke_volgorde_van_de_regels}
- * and the other two tests): every V1 in every place and every order ended in the fault of the displaced exception
- * group, for the lens document "Rekenfout: fout in de regel "defaults A:Vondst.heffing": the evaluationYear context
- * value needs an evaluation date; the case carries asOfDate null".
+ * <p><b>Red before the change</b> (measured 2026-10-09 on 8185e0d6): all three tests failed. Every V1, in every place,
+ * form and order, ended in the fault of the displaced exception group, none of the fifty played; the lens document
+ * ended in "Rekenfout: fout in de regel "defaults A:Vondst.heffing": the evaluationYear context value needs an
+ * evaluation date; the case carries asOfDate null"; and the sample failed in its first order on that fault.
  */
 class TmsVerdrongenUitzonderingWitnessTest {
 
     private static final String GEHEEL = getaltype(true, 0, null), DAGEN = getaltype(true, 0, eenheid("dagen"));
     private static final String TE_GROOT = "18446744073709551617";
     private static final String STAPEL = "defaults A:Vondst.heffing";
-    private static final String REKENJAAR = "the evaluationYear context value needs an evaluation date; the case carries"
-            + " asOfDate null";
+    private static final String REKENJAAR = "the evaluationYear context value needs an evaluation date; the case"
+            + " carries asOfDate null";
 
     private static final String MODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
             List.of(attribuut("heffing", GEHEEL), attribuut("vinddatum", DATUM)),
@@ -186,7 +187,8 @@ class TmsVerdrongenUitzonderingWitnessTest {
                 DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS, List.of(),
                         List.of(groep(p, f))), DroolsBackend.Branch.TRUTH_MAINTENANCE);
                 int tussenstand = 0;
-                for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 40)) {
+                List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 40)) {
                     List<String> namen = volgorde.stream().map(Rule::getName).toList();
                     Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(),
                             List.of("aangespoeld", "geregistreerd"));

@@ -2677,9 +2677,9 @@ public final class TmsTranspiler {
         String naam = b.naam() == null ? null : Namen.norm(b.naam());
         Integer slot = naam == null ? null : lez.binders.get(naam);
         if (slot == null && naam != null && lez.buiten.contains(naam))
-            throw new Weigering("een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix van"
-                    + " die vouw ('" + snippet(b.bron()) + "'): de bijdrageregels van de vouw rekenen het filter en de"
-                    + " matrix per lid uit en binden de waarde van de Let niet: " + NOG_NIET);
+            throw new Weigering("een BinderRef '" + b.naam() + "' van een Let om een vouw, in het filter of de matrix"
+                    + " van die vouw ('" + snippet(b.bron()) + "'): de bijdrageregels van de vouw rekenen het filter en"
+                    + " de matrix per lid uit en binden de waarde van de Let niet: " + NOG_NIET);
         if (slot == null)
             throw new Weigering("een BinderRef '" + b.naam() + "' zonder omsluitende Let die hem bindt ('"
                     + snippet(b.bron()) + "', WF-064)");
