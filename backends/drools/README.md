@@ -204,10 +204,10 @@ reads the same settled world, as in the reference interpreter (RUNTIME-SEMANTICS
 creation does not read what a fact creation of its own generation links. Until 2026-10-09 a generation was a phase of
 fact creations and a phase of object creations with the rule layer at rest between them, and an initialisation that
 counts the maatgevers of a Wachter, over a relation a fact creation in the same recursive group lays, gave 1 where the
-reference interpreter gives 0. The budget counts generations (below): a stratum ends at its first generation that makes
-nothing, and a generation past the hundredth of one stratum that still makes something ends the run without a fixpoint
-("geen fixpunt binnen 100 generaties"), the bound of the reference interpreter that `corpus/rood`
-`finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides. An agenda filter cannot
+reference interpreter gives 0. A stratum ends at its first generation that makes nothing, and the creation budget
+(below) ends a chain of mints that does not stop, at its mint at depth 101 ("creation budget exhausted"), the bound
+that `corpus/rood` `finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides for
+every executor. An agenda filter cannot
 keep the creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for
 good. The groups do: Drools evaluates a rule lazily, when the agenda takes it from the group that has the focus, so a
 creation rule gets no match on an intermediate state of the rule layer. Auto-focus on a creation rule would make it
@@ -228,24 +228,31 @@ reference interpreter over stratum k runs every form of stratum k and below, and
 the driver the strata in ascending order. The stratum is a field of the phase and a test in the rule rather than an
 agenda group per stratum: that keeps the two groups and their order within a generation, and stratum k needs no
 focus on the groups of the strata below it. The budget holds per stratum, as the reference interpreter counts the
-generations of every stratum apart. Only the creations are ordered by stratum, since only their output is
+depth of a mint in every stratum apart. Only the creations are ordered by stratum, since only their output is
 stated; the rule layer stays under truth maintenance without strata and reaches its fixpoint after every phase. Over
 the corpus the strata equal those the reference interpreter's algorithm gives on the verifier's `--dependency-edges`
 for every creation of a document the loader loads (83 creations in 68 documents, 7 of them in stratum 1, among them
 `anchor/jutterswet-erflijn`, whose recursive "erf de lijn door" now walks the direct links in a later stratum, and the
 three wrakboekingen). Witness `TmsCreatiestratumWitnessTest`.
 
-**The budget counts generations that make something.** A stratum admits at most 100 generations that make an object or
-lay a link, in the reference interpreter and here (RUNTIME-SEMANTICS ch. 5.5): a generation in which a creation rule
-fires counts, and a 101st that still makes something ends the run without a fixpoint. The rule layer has no budget of
-its own; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Until 2026-10-09 a generation
-counted as a pass of the reference interpreter of then, which also counted a pass in which only the rule layer changed
-(`TmsTranspiler.lidstratum`, since removed): a chain of 100 generations whose last object a rule of its stratum still
-gave a value ended without a fixpoint, and it plays now, as in the reference interpreter and the ASP backend. The ASP
-backend counts the depth of a chain of mints per stratum (`oc_budget`); it counts no generation in which a mint waits
-for a link or a value, which the reference interpreter and this branch do count (`backends/clingo/README.md`).
-Witnesses in `TmsCreatiestratumWitnessTest`: one chain at 99, 100 and 101 generations, 50 + 1 + 50 over three strata,
-and document L with the kopie.
+**The budget counts the depth of a chain of mints.** Every object a creation makes has a creation depth in the stratum
+of that creation, one more than its subject's depth there, where an object of the input and one a lower stratum made
+stand at 0, and a mint at depth 101 is the fault, in the reference interpreter, in the ASP backend (`oc_budget`) and
+here (RUNTIME-SEMANTICS ch. 5.5). The `Gemaakt` mark of an object carries its stratum and depth; the creation rule binds
+the marks of its subject through an accumulate (`TmsTranspiler.Lezingen.herkomst`), computes the depth of what it makes
+(`TmsTranspiler.diepte`) and, past `TmsTranspiler.CREATIEBUDGET`, throws `Creatiebudget` before it makes anything; the
+driver ends the run with its sentence, which opens with the fragment of the other two executors, "creation budget
+exhausted". A mint that waits generations for a link or a value keeps its subject's depth, and a fact creation, which
+makes no object, has no budget; the generations need no bound of their own, since under the budget a stratum makes
+finitely many objects and links. A subject that a higher stratum made cannot occur, since a creation reads its
+subject's population strictly; `TmsTranspiler.diepte` throws on one as a fault of the transpiler. The rule layer has no
+budget either; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Until 2026-10-09 the
+driver counted generations: at first as passes of the reference interpreter of then, a pass in which only the rule layer
+changed included (`TmsTranspiler.lidstratum`, since removed), then at most 100 generations per stratum that make
+something, which ended a chain whose every mint waits a generation for a link, and a fact creation that lays a closure
+of 102 hops, at their 101st generation. Witnesses in `TmsCreatiestratumWitnessTest`: one chain at 99, 100 and 101
+mints, 50 + 1 + 50 over three strata, document L with the kopie, the erflijn over 103 Wachters, a chain that waits for
+links to depth 100 and 101, and a forged subject of a higher stratum.
 
 An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `Creatiefase`,
 the absence of its own `Gemaakt` mark for the subject (one object per creation per subject) and the absence of a

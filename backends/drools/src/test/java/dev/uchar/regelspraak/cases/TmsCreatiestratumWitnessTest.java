@@ -71,34 +71,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       and the creations of that generation do not read what it makes: W3 starts at beginbeloning 0, though W1 gets
  *       its Beloning in the generation in which W2 makes W3
  *       ({@link #een_objectcreatie_die_de_regellaag_mogelijk_maakt_vuurt_in_de_volgende_generatie}).</li>
- *   <li>The budget of 100 generations holds per stratum, as the reference interpreter counts its generations per
- *       stratum: two chains of 51 generations in two strata play ({@link #het_generatiebudget_geldt_per_stratum}), and
+ *   <li>The creation budget holds per stratum, as the reference interpreter counts the depth of a mint in the stratum
+ *       of its creation: two chains of 51 mints in two strata play ({@link #het_creatiebudget_geldt_per_stratum}), and
  *       so does a chain over three strata, 50 + 1 + 50 ({@link #een_keten_over_drie_strata_telt_per_stratum}).</li>
- *   <li>The budget counts the generations that make an object or lay a link (RUNTIME-SEMANTICS ch. 5.5): one chain
- *       plays 99 and 100 generations and ends without a fixpoint at a 101st
- *       ({@link #de_honderdste_generatie_speelt_en_een_101e_is_een_fout}); a chain of 100 generations plays with a rule
- *       of its stratum that gives the last object a value after the hundredth generation
+ *   <li>The budget counts the depth of a chain of mints (RUNTIME-SEMANTICS ch. 5.5): one chain plays 99 and 100 mints,
+ *       and its mint at depth 101 is the fault, at the making
+ *       ({@link #een_aanmaak_op_diepte_100_speelt_en_een_op_diepte_101_is_een_fout}); a chain of 100 mints plays with a
+ *       rule of its stratum that gives the last object a value after the hundredth generation
  *       ({@link #een_generatie_waarin_alleen_de_regellaag_verandert_telt_niet_mee_voor_het_budget}), and so does the
  *       chain one shorter ({@link #een_keten_die_een_pas_korter_is_speelt}), the chain without the rule
  *       ({@link #dezelfde_keten_zonder_de_berekende_eigenschap_speelt}) and the chain with a rule of a higher stratum
- *       that reacts to the last object ({@link #een_reactie_uit_een_hoger_stratum_telt_niet_mee}).</li>
+ *       that reacts to the last object ({@link #een_reactie_uit_een_hoger_stratum_telt_niet_mee}). A recursive fact
+ *       creation that lays a closure of 102 hops plays, since a fact creation mints nothing and has no budget
+ *       ({@link #een_feitcreatie_heeft_geen_budget}); a chain whose every mint waits a generation for a link plays to
+ *       depth 100, in 199 generations, and its mint at depth 101 is the fault
+ *       ({@link #een_aanmaak_die_op_een_link_wacht_houdt_de_diepte_van_haar_onderwerp}); and a subject that a higher
+ *       stratum made, which no verifier-clean document gives a creation, fails loudly
+ *       ({@link #een_onderwerp_uit_een_hoger_stratum_faalt_luid}).</li>
  * </ul>
  *
  * <p><b>The other executors</b> (measured 2026-10-09, cards creatie-initialisatie-leest-groeiende-waarde and
  * creatiebudget-ref-en-clingo). Every document written here passes the verifier, and the reference interpreter and the
  * ASP backend give the expectations of each case in every order of its creations and rules in the document, apart from
- * two. On the chain of document G that a 101st generation would extend both fault, the reference interpreter with "no
- * fixpoint within 100 generations — generation 101 still mints or links (object creation "werf de lange keten") …" and
- * the ASP backend with "UNSATISFIABLE — a fail-fast guard fired: viol("generation budget exhausted", …)". Document V the
- * reference interpreter plays and the ASP backend refuses by name: "the initialisation of beginstand reads
- * rel:maatschap, which fact creation "maak maten" writes on a dependency cycle through the creation …"; document R
- * likewise, "the initialisation of beginbeloning reads attr:wachter:erfbeloning, which rule "erfbeloning" writes on a
- * dependency cycle through the creation …". Until
- * 2026-10-09 the two counted their budgets apart (measured 2026-10-08): on the chain of document L whose last Boei gets
- * its kopie both faulted, the reference interpreter with "no fixpoint within 100 passes — divergence is a fault
- * (ch. 5.7)", and on the chains of L to B101 without the kopie and with "genummerd" the reference interpreter played and
- * the ASP backend faulted with "generation budget exhausted": its budget was the depth of a chain of mints, which reached
- * 100 at the hundredth mint.
+ * two. On the chains of document G and document E that a mint at depth 101 would extend both fault, in the words this
+ * branch faults with: the reference interpreter with "creation budget exhausted: object creation "werf de lange keten"
+ * of stratum 0 would mint at creation depth 101, on oc0::…::W1 — …" and the ASP backend with "UNSATISFIABLE — a
+ * fail-fast guard fired: viol("creation budget exhausted", …)" (measured on G and, for E, on the same shape written by
+ * hand, to rang 101 and 102). Document V the reference interpreter plays and the ASP backend refuses by name: "the
+ * initialisation of beginstand reads rel:maatschap, which fact creation "maak maten" writes on a dependency cycle
+ * through the creation …"; document R likewise, "the initialisation of beginbeloning reads attr:wachter:erfbeloning,
+ * which rule "erfbeloning" writes on a dependency cycle through the creation …". The anchor
+ * {@code jutterswet-erflijn} over 103 Wachters plays in both ({@code ref/test} {@code WV-5.5-budget-erflijn}, the clingo
+ * suite). Until 2026-10-09 the two counted their budgets apart (measured 2026-10-08): on the chain of document L whose
+ * last Boei gets its kopie both faulted, the reference interpreter with "no fixpoint within 100 passes — divergence is a
+ * fault (ch. 5.7)", and on the chains of L to B101 without the kopie and with "genummerd" the reference interpreter
+ * played and the ASP backend faulted with "generation budget exhausted": its budget was the depth of a chain of mints,
+ * which reached 100 at the hundredth mint. Later that day the reference interpreter counted 100 generations per stratum
+ * that mint or link and faulted on the erflijn over 103 Wachters and on E to rang 101, both of which the ASP backend
+ * played.
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on {@code 6b4c966f}, all creations of a generation in one
  * phase): all five failed, in every document order: "case: attribuut penningaantal: verwacht 1, werkelijk 0" on P and
@@ -125,6 +135,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * own generation had laid, "case: attribuut verder: verwacht 0, werkelijk 1", in both orders of the rules. Documents G
  * and D played and ended where they end now; they failed on the phases alone ("expected: &lt;Wachter in fase 1&gt; but
  * was: &lt;Wachter in fase 2&gt;"), as did every witness above that pins a phase, since a generation is one phase now.
+ *
+ * <p><b>Red before the creation depth</b> (measured 2026-10-09 on {@code 7b86bd55}, which counted at most 100
+ * generations per stratum that make an object or lay a link): the erflijn over 103 Wachters ended without a fixpoint,
+ * "expected: &lt;gespeeld&gt; but was: &lt;case: geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of
+ * link — …&gt;", and so did E to rang 101 ("tot rang 101 ==&gt; expected: &lt;gespeeld&gt;"); G at 101 mints ended with
+ * that sentence instead of the budget's, and the forged mark of the invariant could not be written ("wrong number of
+ * arguments: 6 expected: 4"). Mutants of the change, each caught: a depth that runs on over the strata (D), the budget
+ * one lower (G, E and L here, F and the corpus in {@code TmsCreatieWitnessTest}), and without the test of the invariant
+ * (the forged mark).
  */
 class TmsCreatiestratumWitnessTest {
 
@@ -387,11 +406,12 @@ class TmsCreatiestratumWitnessTest {
                 List.of(waarde("W1", "rang", "1")));
     }
 
-    /** Two chains of 51 generations each, 102 in all, in two strata. The reference interpreter counts at most 100
-     *  generations per stratum and plays the document; a budget over the whole run would end it at generation 101.
-     *  The Boeien wait for the Wachters, so the first Boei is made after the 51 generations of stratum 0 and the one
-     *  that closes it, one phase each: in phase 52 + 1. */
-    @Test void het_generatiebudget_geldt_per_stratum() throws Exception {
+    /** Two chains of 51 mints each, 102 in all, in two strata. The reference interpreter counts the depth of a mint in the
+     *  stratum of its creation, where neither chain comes near 100, and plays the document; a depth that ran on over
+     *  the strata, or a count over the whole run, would end it at its 101st mint. The Boeien wait for the Wachters, so
+     *  the first Boei is made after the 51 generations of stratum 0 and the one that closes it, one phase each: in phase
+     *  52 + 1. */
+    @Test void het_creatiebudget_geldt_per_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(), (creaties, regels) -> documentB(creaties), zaakB());
         DroolsBackend.Build b = DroolsBackend.build(documentB(List.of(WERF, LEG)), DroolsBackend.Branch.TRUTH_MAINTENANCE);
         for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 10)) {
@@ -453,9 +473,9 @@ class TmsCreatiestratumWitnessTest {
                 v);
     }
 
-    /** The scenario of the lens on the budget: the chain of Boeien runs to B101, 100 generations of stratum 1, and
-     *  "kopie van een boei" writes the kopie of B101 after the hundredth generation, while the rule layer comes to rest.
-     *  The budget counts generations that make an object or lay a link (RUNTIME-SEMANTICS ch. 5.5), so the document
+    /** The scenario of the lens on the budget: the chain of Boeien runs to B101, 100 mints of stratum 1, and "kopie van
+     *  een boei" writes the kopie of B101 after the hundredth generation, while the rule layer comes to rest. The budget
+     *  counts the depth of a chain of mints (RUNTIME-SEMANTICS ch. 5.5), B101 stands at depth 100, and the document
      *  plays, as in the reference interpreter and the ASP backend. Until 2026-10-09 the driver counted the passes of
      *  the reference interpreter of then, among them a pass in which only the rule layer changed, and this document
      *  ended without a fixpoint: "geen fixpunt binnen 100 generaties: generatie 101 maakt niets meer, maar de regellaag
@@ -466,14 +486,14 @@ class TmsCreatiestratumWitnessTest {
         speeltDoorDeDriver(documentL(101, List.of(WERF, LEG), List.of(KOPIE)), 51 + 100);
     }
 
-    /** The same chain one shorter, to B100, 99 generations of stratum 1. */
+    /** The same chain one shorter, to B100, 99 mints of stratum 1. */
     @Test void een_keten_die_een_pas_korter_is_speelt() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(KOPIE), (c, r) -> documentL(100, c, r),
                 zaakL(List.of(waarde("B1", "kopie", "1"))));
         speeltDoorDeDriver(documentL(100, List.of(WERF, LEG), List.of(KOPIE)), 51 + 99);
     }
 
-    /** The chain to B101 without "kopie van een boei", 100 generations of stratum 1. Until 2026-10-09 it already
+    /** The chain to B101 without "kopie van een boei", 100 mints of stratum 1. Until 2026-10-09 it already
      *  played: the reference interpreter's 101st pass changed nothing, since a new object without a written value was no
      *  change for it, and the driver did not count the standings and contributions the rule layer inserts for B101. */
     @Test void dezelfde_keten_zonder_de_berekende_eigenschap_speelt() throws Exception {
@@ -482,7 +502,7 @@ class TmsCreatiestratumWitnessTest {
     }
 
     /** The chain to B101 with "genummerd", which the rule layer attributes to B101 after the hundredth generation, from a
-     *  stratum above the chain. It counts in no stratum, as no change of the rule layer counts. Until 2026-10-09 it
+     *  stratum above the chain. No change of the rule layer counts toward the budget. Until 2026-10-09 it
      *  already played: the driver counted a change of the rule layer only in the stratum of its writer and below, and
      *  the reference interpreter evaluated the rule only after the chain's fixpoint. */
     @Test void een_reactie_uit_een_hoger_stratum_telt_niet_mee() throws Exception {
@@ -508,13 +528,23 @@ class TmsCreatiestratumWitnessTest {
                 List.of(), List.of(regelgroep("lange estafette", List.of("werf de lange keten"))));
     }
 
-    private static final String BUDGET = "geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of link —"
-            + " een creatie die niet stopt is een fout (RUNTIME-SEMANTICS ch. 5.5 en 5.7)";
+    /** The sentence of a mint at depth 101 by the object creation {@code creatie} of stratum {@code stratum}, on a subject
+     *  of type {@code type} (RUNTIME-SEMANTICS ch. 5.5). */
+    static String budget(String creatie, int stratum, String type) {
+        return "creation budget exhausted: objectcreatie \"" + creatie + "\" van stratum " + stratum + " zou een object"
+                + " maken op aanmaakdiepte 101, voor een " + type + " op diepte 100 — een keten van aanmaken die niet"
+                + " stopt is een fout, nooit een stille afkapping (RUNTIME-SEMANTICS ch. 5.5)";
+    }
 
-    /** The bound of the generation budget (RUNTIME-SEMANTICS ch. 5.5), where the reference interpreter and the ASP backend
-     *  put it: chains of 99 and 100 generations play, one generation per phase, and a 101st generation that still makes
-     *  an object ends the run without a fixpoint, the 101st object made. */
-    @Test void de_honderdste_generatie_speelt_en_een_101e_is_een_fout() throws Exception {
+    private static final String BUDGET = budget("werf de lange keten", 0, "Wachter");
+
+    /** The bound of the creation budget (RUNTIME-SEMANTICS ch. 5.5), where the reference interpreter and the ASP backend
+     *  put it: chains of 99 and 100 mints play, one generation per phase, and the mint at depth 101 is the fault, at the
+     *  making, so the 101st object is not made. On this chain every generation mints one object on the last, so its
+     *  depth is the generation that made it. Until 2026-10-09 the driver counted generations: the 101st generation still
+     *  made its object, and the run ended after it without a fixpoint, "geen fixpunt binnen 100 generaties: generatie
+     *  101 maakt nog 1 object of link", with 101 objects made. */
+    @Test void een_aanmaak_op_diepte_100_speelt_en_een_op_diepte_101_is_een_fout() throws Exception {
         JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
                 Map.of())), List.of(waarde("W1", "rang", "1")));
         for (int grens : List.of(100, 101, 102)) {
@@ -528,7 +558,7 @@ class TmsCreatiestratumWitnessTest {
                 List<Object[]> objecten = new ArrayList<>();
                 assertEquals(generaties <= 100 ? null : BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { },
                         sessie -> objecten.addAll(gemaakt(sessie))), () -> generaties + " generaties in volgorde " + namen);
-                assertEquals(Math.min(generaties, 101), objecten.size(),
+                assertEquals(Math.min(generaties, 100), objecten.size(),
                         () -> "objecten na " + generaties + " generaties in volgorde " + namen);
                 for (int i = 0; i < objecten.size(); i++)
                     assertEquals("Wachter in fase " + (i + 1), soort(objecten.get(i)), "volgorde " + namen);
@@ -588,6 +618,109 @@ class TmsCreatiestratumWitnessTest {
             assertGetal("51", TmsDocumenten.lees(objecten.get(49)[1], "rang"), "rang van W51 in volgorde " + namen);
             assertGetal("51", TmsDocumenten.lees(objecten.get(100)[1], "nummer"), "nummer van B51 in volgorde " + namen);
         }
+    }
+
+    // ---------------- the depth, not the generations ----------------
+
+    /** The anchor {@code jutterswet-erflijn} over a chain of {@code n} Wachters W1 → … → Wn of the input. */
+    private static JsonNode erflijnzaak(int n) throws Exception {
+        List<String> wachters = new ArrayList<>();
+        for (int i = 1; i <= n; i++)
+            wachters.add(instantieMetRollen("W" + i, "Wachter", Map.of(), List.of(),
+                    i < n ? Map.of("opvolger", List.of("W" + (i + 1))) : Map.of()));
+        return TmsDocumenten.zaak(wachters, List.of(waarde("W1", "erfvolgeraantal", String.valueOf(n - 1))));
+    }
+
+    /** A fact creation mints nothing and carries no creation budget (RUNTIME-SEMANTICS ch. 5.5): over the finite universe
+     *  the mints of a stratum leave, its links are finite. The anchor {@code jutterswet-erflijn} over 103 Wachters: "erf de
+     *  lijn door" lays W1 → W103, 102 hops, in the 101st generation of its stratum, and the document plays, erfvolgeraantal
+     *  of W1 102. Until 2026-10-09 the driver counted the generations that make an object or lay a link and ended this
+     *  run without a fixpoint at the 101st, as the reference interpreter did; the ASP backend played it. */
+    @Test void een_feitcreatie_heeft_geen_budget() throws Exception {
+        Path d = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-erflijn");
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(d.resolve("ir.json"), erflijnzaak(103),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+    }
+
+    /** "werf de opvolger" gives a Wachter whose rang is below {@code grens} and who has a maatgever an opvolger with rang
+     *  plus 1, and "maak maten" makes every Wachter a maatgever of its opvolger; both are members of the recursive group
+     *  "estafette", so they share one stratum. "Eén maat heeft meerdere maatgevers": a Wachter has one maat, so the case
+     *  can give W0 its maat W1 in a reference field of the bean model, which a relation of two to-many roles lacks. */
+    static Path documentE(int grens) throws Exception {
+        String model = TmsDocumenten.model(List.of(objecttype("Wachter", List.of(attribuut("rang", GEHEEL)), List.of())),
+                List.of(feittype("opvolging", "voorganger", "Wachter", "opvolger", "Wachter"),
+                        feittypeEenNaarVeel("maatschap", "maat", "Wachter", "maatgever", "Wachter", "maatgevers")));
+        String werf = objectcreatie("werf de opvolger", "Wachter", "Wachter",
+                List.of(init("rang", binair("plus", lezing("rang", "Wachter"), getal("1")))),
+                TmsDocumenten.samengesteld("all", 0, List.of(
+                        vergelijking("less", lezing("rang", "Wachter"), getal(String.valueOf(grens))),
+                        vergelijking("greater", aggregatie("count", MAATGEVERS, "Wachter", bronrol("maatschap", "maatgever"),
+                                "null", "null", TELLING, "het aantal maatgevers van de Wachter"), getal("0")))),
+                "opvolging", "opvolger");
+        String maten = feitcreatie("maak maten", "maatschap", "maatgever", "maat", "Wachter",
+                List.of(rolbinding("opvolging", "opvolger")), "null");
+        return document(model, List.of(), List.of(), List.of(werf), List.of(maten),
+                List.of(regelgroep("estafette", List.of("werf de opvolger", "maak maten"))));
+    }
+
+    /**
+     * The budget counts the depth of a chain of mints, not the generations it takes (RUNTIME-SEMANTICS ch. 5.5): a mint
+     * whose condition waits for a link keeps its subject's depth. W1 has the maatgever W0 in the input and makes W2 in
+     * generation 1; W2 becomes a maat of W1 in generation 2 and makes W3 in generation 3, so W(k + 1) is made in
+     * generation 2k - 1 at depth k. To rang 101 the chain makes W101 at depth 100, in generation 199, and plays, 100
+     * objects made; to rang 102 the mint of W102 at depth 101 is the fault, and W102 is not made. The reference
+     * interpreter and the ASP backend give the same on this shape ({@code ref/test} {@code WV-5.5-budget-wacht-op-link},
+     * the clingo suite's {@code ch5.5 creation budget} frames). Until 2026-10-09 the driver counted generations and ended
+     * the chain without a fixpoint from rang 52 on, where W52 is made in generation 101.
+     */
+    @Test void een_aanmaak_die_op_een_link_wacht_houdt_de_diepte_van_haar_onderwerp() throws Exception {
+        JsonNode zaak = TmsDocumenten.zaak(List.of(
+                instantieMetRollen("W0", "Wachter", Map.of("rang", "0"), List.of(), Map.of("maat", List.of("W1"))),
+                instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(), Map.of())),
+                List.of(waarde("W1", "rang", "1")));
+        String fout = budget("werf de opvolger", 0, "Wachter");
+        for (int grens : List.of(101, 102)) {
+            assertEquals(grens <= 101 ? "gespeeld" : "case: " + fout, TmsFoutWitnessTest.speel(documentE(grens), zaak,
+                    DroolsBackend.Branch.TRUTH_MAINTENANCE), "tot rang " + grens);
+            DroolsBackend.Build b = DroolsBackend.build(documentE(grens), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+                List<String> namen = volgorde.stream().map(Rule::getName).toList();
+                Object w0 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
+                Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+                zetRol(w0, "maat", w1);
+                List<Object[]> objecten = new ArrayList<>();
+                assertEquals(grens <= 101 ? null : fout, vuur(b, volgorde, List.of(w0, w1), sessie -> { },
+                        sessie -> objecten.addAll(gemaakt(sessie))), () -> "tot rang " + grens + " in volgorde " + namen);
+                assertEquals(100, objecten.size(), () -> "objecten tot rang " + grens + " in volgorde " + namen);
+                for (int i = 0; i < objecten.size(); i++)
+                    assertEquals("Wachter in fase " + (2 * i + 1), soort(objecten.get(i)), "volgorde " + namen);
+                // a run that ends at the budget writes nothing back onto the beans
+                if (grens <= 101)
+                    assertGetal("101", TmsDocumenten.lees(objecten.get(99)[1], "rang"),
+                            "rang van de laatste Wachter in volgorde " + namen);
+            }
+        }
+    }
+
+    /** A creation never meets a subject that a higher stratum made: a creation reads its subject's population strictly
+     *  (RUNTIME-SEMANTICS ch. 6.1), so it sits at or above every creation that makes its subjects, and no verifier-clean
+     *  document gives it such a subject. The creation rule tests it where it computes the depth of what it makes, and
+     *  fails loudly rather than count from a stratum that has not run: here a forged mark, put in before the fire, says
+     *  that a creation of stratum 1 made W1, the subject of "werf de lange keten" of stratum 0. */
+    @Test void een_onderwerp_uit_een_hoger_stratum_faalt_luid() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(documentG(5), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
+        Object maker = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
+        Object vervalst = Class.forName("dev.uchar.regelspraak.transpiler.tms.Gemaakt").getConstructors()[0]
+                .newInstance("vervalst", maker, w1, 1000, 1, 1);
+        RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                () -> vuur(b, b.tmsTranspiler().model().getRules(), List.of(w1, vervalst), sessie -> { }, sessie -> { }));
+        // Drools hands what a consequence throws on inside its own ConsequenceException
+        StringBuilder keten = new StringBuilder();
+        for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
+            keten.append(t.getClass().getSimpleName()).append(": ").append(t.getMessage()).append(" | ");
+        assertTrue(keten.toString().contains("IllegalStateException: tms: objectcreatie \"werf de lange keten\" van"
+                + " stratum 0 ontmoet een onderwerp dat een creatie van stratum 1 maakte"), keten::toString);
     }
 
     // ---------------- document V: the creations of one generation read one world ----------------

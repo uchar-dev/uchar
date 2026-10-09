@@ -567,7 +567,8 @@ public final class CaseRunner {
      *  or the evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
      *  other branches); without a fixpoint nothing is written back, since the replay reports the cap and reads no bean.
      *  The fire is {@link DroolsBackend#vuur}, which fires a truth-maintenance model with a creation in generations; a
-     *  creation that does not stop within its generation budget has no fixpoint either, and returns that sentence. */
+     *  creation that does not stop meets the creation budget, and the run has no fixpoint either and returns that
+     *  sentence. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);

@@ -15,6 +15,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
@@ -292,16 +293,10 @@ public final class DroolsBackend {
         if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie);
     }
 
-    /** The generation budget of a run with creations, per evaluation stratum (RUNTIME-SEMANTICS ch. 5.5): at most this
-     *  many generations of one stratum make an object or lay a link, and a 101st that still does ends the run without a
-     *  fixpoint ({@link #vuur}). The reference interpreter counts its generations so, and the ASP backend the depth of a
-     *  chain of mints in one stratum by an equal {@code oc_budget}; {@code corpus/rood} {@code finite-chain-over-budget}
-     *  and {@code synth2-budgetgrens-onder} pin the two sides of the bound. */
-    static final int GENERATIES = 100;
-
     /** What {@link #vuur} did: the firings of all its fires together, and the sentence of a run that ends without a
-     *  fixpoint at the generation budget, null otherwise. A run that reaches the fire cap has no fixpoint either; the
-     *  caller reads that off {@code vuringen}. */
+     *  fixpoint at the creation budget ({@link Creatiebudget}), null otherwise. A run that reaches the fire cap has no
+     *  fixpoint either; the caller reads that off {@code vuringen}. A run that ends at the budget counts the firings of
+     *  its fires before the one in which the creation rule threw. */
     record Vuring(int vuringen, String geenFixpunt) {}
 
     /**
@@ -337,14 +332,15 @@ public final class DroolsBackend {
      * value. The strata order only the creations, which are stated: the rule layer stays under truth maintenance and
      * reaches its fixpoint after every phase.
      *
-     * <p>The budget counts generations per stratum, as the reference interpreter counts them (RUNTIME-SEMANTICS ch. 5.5):
-     * a generation in which a creation makes an object or lays a link. A stratum ends at its first generation that
-     * makes nothing; a generation past {@link #GENERATIES} that still makes something ends the run without a fixpoint.
-     * The rule layer has no budget of its own here: truth maintenance takes it to rest within the fire, and
-     * {@code plafond} bounds that. Until 2026-10-09 a generation counted as a pass of the reference interpreter of then,
-     * which also counted a pass in which only the rule layer changed, so a chain of 100 generations whose last object a
-     * rule of its stratum still gave a value ended without a fixpoint; the reference interpreter counts generations
-     * since.
+     * <p>A stratum ends at its first generation that makes nothing. The creation budget (RUNTIME-SEMANTICS ch. 5.5) is
+     * the depth of a chain of mints, not a count of generations: the creation rule computes the depth of what it makes
+     * from the mark of its subject and throws {@link Creatiebudget} at a mint past {@code TmsTranspiler.CREATIEBUDGET},
+     * and this ends the run there, with its sentence, as a run without a fixpoint. The generations need no bound of
+     * their own: every generation but the last makes an object or lays a link, and under the budget a stratum makes
+     * finitely many of both. The rule layer has no budget here either: truth maintenance takes it to rest within the
+     * fire, and {@code plafond} bounds that. Until 2026-10-09 this counted the generations of a stratum that make
+     * something, at most 100, as the reference interpreter did that day: a chain whose every mint waits a generation for
+     * a link, and a fact creation that lays a closure of 102 hops, ended without a fixpoint at their 101st generation.
      */
     static Vuring vuur(Build build, KieSession sessie, int plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
@@ -369,27 +365,36 @@ public final class DroolsBackend {
             FactHandle fase = null;
             int nummer = 0;
             for (int stratum : tms.creatiestrata()) {
-                for (int generatie = 1; gevuurd < plafond; generatie++) {
+                while (gevuurd < plafond) {
                     gemaakt[0] = 0;
                     if (fase != null) sessie.delete(fase);
                     fase = sessie.insert(new Creatiefase(++nummer, stratum));
                     // the focus is a stack: the group given the focus last fires first
                     agenda.getAgendaGroup(TmsTranspiler.OBJECTCREATIE).setFocus();
                     agenda.getAgendaGroup(TmsTranspiler.FEITCREATIE).setFocus();
-                    gevuurd += sessie.fireAllRules(plafond - gevuurd);
+                    try {
+                        gevuurd += sessie.fireAllRules(plafond - gevuurd);
+                    } catch (ConsequenceException e) {
+                        Creatiebudget budget = creatiebudget(e);
+                        if (budget == null) throw e;
+                        return new Vuring(gevuurd, budget.getMessage());
+                    }
                     if (gevuurd >= plafond) return new Vuring(gevuurd, null);
                     if (gemaakt[0] == 0) break;
-                    if (generatie > GENERATIES)
-                        return new Vuring(gevuurd, "geen fixpunt binnen " + GENERATIES + " generaties: generatie "
-                                + generatie + " maakt nog " + gemaakt[0] + (gemaakt[0] == 1 ? " object of link"
-                                : " objecten of links") + " — een creatie die niet stopt is een fout (RUNTIME-SEMANTICS"
-                                + " ch. 5.5 en 5.7)");
                 }
             }
             return new Vuring(gevuurd, null);
         } finally {
             sessie.removeEventListener(teller);
         }
+    }
+
+    /** The {@link Creatiebudget} a creation rule threw, which Drools' default handler hands on inside {@code e}, or null
+     *  where {@code e} carries another fault. */
+    private static Creatiebudget creatiebudget(ConsequenceException e) {
+        for (Throwable t = e.getCause(); t != null; t = t.getCause() == t ? null : t.getCause())
+            if (t instanceof Creatiebudget budget) return budget;
+        return null;
     }
 
     /** The DRL-TEXT branch: {@link DrlTranspiler} emits DRL, which is compiled to a {@link KieBase} by the classic

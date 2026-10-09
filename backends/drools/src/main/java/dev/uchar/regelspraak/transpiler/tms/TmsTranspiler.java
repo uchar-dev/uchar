@@ -141,8 +141,10 @@ import java.util.function.UnaryOperator;
  * made it had passed, and its initialisations would follow later changes, where ch. 5.5 evaluates them when the object
  * is made. Its rules sit in agenda groups of their own ({@link #FEITCREATIE}, {@link #OBJECTCREATIE}) and the driver
  * fires them in generations ({@code DroolsBackend.vuur}): the rule layer to rest, then the fact creations once and the
- * object creations once, both on that one fixpoint, then the rule layer to rest again, and so on, at most 100
- * generations of one stratum that make something. It does so per evaluation stratum of the reference interpreter, in
+ * object creations once, both on that one fixpoint, then the rule layer to rest again, and so on, until a generation
+ * makes nothing; an object creation records the creation depth of what it makes ({@link Gemaakt}), and a mint at depth
+ * {@link #CREATIEBUDGET} + 1 is the fault ({@link Creatiebudget}). The driver runs the generations per evaluation
+ * stratum of the reference interpreter, in
  * ascending order ({@link #creatiestrata}): a creation reads strictly, so it fires only once the creations whose output
  * it reads have reached their fixpoint, as the reference interpreter evaluates stratum k to its fixpoint before a form
  * of stratum k+1 fires (RUNTIME-SEMANTICS ch. 6.1, 6.3); an initialisation evaluated earlier would be fixed on a value
@@ -174,6 +176,13 @@ public final class TmsTranspiler {
      *  object creation does not read what a fact creation of its generation links (RUNTIME-SEMANTICS ch. 5.5,
      *  Generations). */
     public static final String OBJECTCREATIE = "uchar-objectcreatie";
+
+    /** The creation budget (RUNTIME-SEMANTICS ch. 5.5): the deepest an object creation makes an object in its stratum.
+     *  A mint at one depth more is the fault, at the making, as in the reference interpreter and the ASP backend
+     *  ({@code oc_budget}); a fact creation makes no object and has no budget. The depth follows the chain of makings,
+     *  so a creation whose condition waits generations for a link or a value keeps its subject's depth, and the driver
+     *  needs no bound on the generations: under this budget a stratum makes finitely many objects and links. */
+    public static final int CREATIEBUDGET = 100;
 
     /** The most values one condition of this branch reads at once: the DSL's standalone test takes at most thirteen
      *  bound variables. A consequence has no such ceiling ({@link Gevolg}). */
@@ -970,6 +979,8 @@ public final class TmsTranspiler {
         int stratum = stratum(oc, naam);
         int fase = lez.creatiefase(stratum);
         gebruik.add(fase);
+        int herkomst = lez.herkomst();
+        gebruik.add(herkomst);
         List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, oc.voorwaarde(),
                 creatiebewaking(naam, lez, fase));
         if (k.eenOpEen()) {
@@ -978,13 +989,16 @@ public final class TmsTranspiler {
             lez.onderwerp.expr(id("geen-gekoppelde-instantie"), o -> voorwaarts.apply(o) == null);
         }
         Class<?> klasse = bonenklasse(nieuw);
+        String subjecttype = subject.naam;
         items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
+            // the budget first: a mint past it is the fault at the making, before anything is made
+            int diepte = diepte(naam, stratum, subjecttype, (List<?>) w[herkomst]);
             Object[] waarden = new Object[inits.size()];
             for (int i = 0; i < inits.size(); i++) waarden[i] = collapse(inits.get(i).waarde().van(w));
             int f = (Integer) w[fase];
             Object object = nieuweBoon(klasse);
             drools.insert(object);
-            drools.insert(new Gemaakt(naam, onderwerp, object, f));
+            drools.insert(new Gemaakt(naam, onderwerp, object, f, stratum, diepte));
             drools.insert(nieuwIsEerste ? new Koppeling(relatie, object, onderwerp, f)
                     : new Koppeling(relatie, onderwerp, object, f));
             for (int i = 0; i < inits.size(); i++) {
@@ -1022,6 +1036,36 @@ public final class TmsTranspiler {
                         .expr(id("gemaakt-onderwerp"), lez.s, (g, o) -> g.onderwerp() == o)),
                 DSL.not(PatternDSL.pattern(nieuw).expr(id("nieuw-object"), lez.s, (g, o) -> g.object() == o)
                         .expr(id("nieuw-in-deze-fase"), f, (g, n) -> g.fase() == (Integer) n)));
+    }
+
+    /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
+     *  subject of declared type {@code type}, whose own marks are {@code herkomst}, the {@link Gemaakt} facts whose object
+     *  is the subject ({@link Lezingen#herkomst}): none for an object of the input, one for an object a creation made.
+     *  It is one more than the subject's depth in this stratum, where an object of the input and one a lower stratum made
+     *  stand at 0, since a lower stratum is complete before this one fires (RUNTIME-SEMANTICS ch. 5.5, 6.3). Past
+     *  {@link #CREATIEBUDGET} it throws {@link Creatiebudget}. A subject that a higher stratum made cannot occur: a
+     *  creation reads its subject's population strictly (ch. 6.1), so it sits at or above every creation that makes its
+     *  subjects; such a subject, or an object with two marks, is a fault of this transpiler and throws as one. */
+    static int diepte(String naam, int stratum, String type, List<?> herkomst) {
+        if (herkomst.size() > 1)
+            throw new IllegalStateException("tms: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
+                    + herkomst.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + herkomst);
+        int diepte = 1;
+        if (!herkomst.isEmpty()) {
+            Gemaakt g = (Gemaakt) herkomst.get(0);
+            if (g.stratum() > stratum)
+                throw new IllegalStateException("tms: objectcreatie \"" + naam + "\" van stratum " + stratum
+                        + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
+                        + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
+                        + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
+            if (g.stratum() == stratum) diepte = g.diepte() + 1;
+        }
+        if (diepte > CREATIEBUDGET)
+            throw new Creatiebudget("creation budget exhausted: objectcreatie \"" + naam + "\" van stratum " + stratum
+                    + " zou een object maken op aanmaakdiepte " + diepte + ", voor een " + type + " op diepte "
+                    + (diepte - 1) + " — een keten van aanmaken die niet stopt is een fout, nooit een stille afkapping"
+                    + " (RUNTIME-SEMANTICS ch. 5.5)");
+        return diepte;
     }
 
     /** The evaluation stratum of the creation {@code vorm}, named {@code naam}: every creation is a form of the
@@ -2721,6 +2765,20 @@ public final class TmsTranspiler {
             parameters.add(PatternDSL.pattern(f).expr(id("creatiestratum"), c -> c.stratum() >= stratum)
                     .bind(n, Creatiefase::nummer));
             return nieuw("creatiefase", n);
+        }
+
+        /** The marks of the creation that made this rule's subject, the {@link Gemaakt} facts whose object is the
+         *  subject, bound as a list off an accumulate: empty for an object of the input, one mark for an object a
+         *  creation made. An accumulate over no fact still binds a row, so the rule reads an object of the input as
+         *  well. An object creation reads the depth of its subject off it ({@link TmsTranspiler#diepte}). */
+        int herkomst() {
+            int bekend = bestaand("herkomst");
+            if (bekend >= 0) return bekend;
+            Variable<Gemaakt> g = DSL.declarationOf(Gemaakt.class, "$herkomst_" + id("creatie"));
+            Variable<Object> lijst = DSL.declarationOf(Object.class, "$herkomsten_" + id("creatie"));
+            standen.add(DSL.accumulate(PatternDSL.pattern(g).expr(id("herkomst"), s, (x, o) -> x.object() == o),
+                    DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), g).as(lijst)));
+            return nieuw("herkomst", lijst);
         }
 
         /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:

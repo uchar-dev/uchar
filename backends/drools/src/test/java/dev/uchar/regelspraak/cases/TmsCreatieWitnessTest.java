@@ -73,10 +73,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       ({@link #een_feitcreatie_legt_elke_link_een_keer}), and a second distinct filler of a to-one role is a fault at
  *       the fixpoint ({@link #een_tweede_vulling_van_een_naar_een_rol_is_een_fout}).</li>
  *   <li>An object made in a phase is the subject of a creation only in a later phase, after the rule layer has reached
- *       a fixpoint over it, and a chain that does not stop meets the budget of 100 generations
+ *       a fixpoint over it, and a chain that does not stop meets the creation budget at its mint at depth 101
  *       ({@link #een_object_is_pas_in_de_volgende_generatie_onderwerp}); a fact creation walks a link only in a later
  *       phase than the one that made it ({@link #een_link_is_pas_in_de_volgende_generatie_pad}); the corpus pins the
- *       two sides of the budget ({@link #het_generatiebudget_ligt_waar_het_corpus_het_pint}).</li>
+ *       two sides of the budget ({@link #het_creatiebudget_ligt_waar_het_corpus_het_pint}).</li>
  *   <li>The three wrakboeking documents play ({@link #de_wrakboekingen_spelen}).</li>
  * </ul>
  *
@@ -89,9 +89,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * evaluates the initialisation of the beginstand against the final stand of W1, where ch. 5.5 and the reference
  * interpreter evaluate it when the object is made, at stand 0; a split of the class RUNTIME-SEMANTICS ch. 6.1 records as
  * "a value that grows", on which this branch follows the reference interpreter. Measured again on 2026-10-09 (cards
- * creatie-initialisatie-leest-groeiende-waarde and creatiebudget-ref-en-clingo): the reference interpreter counts
- * generations and says on F "no fixpoint within 100 generations — generation 101 still mints or links (object creation
- * "werf"), and divergence is a fault (ch. 5.5, 5.7)", the ASP backend as before; on C the ASP backend now refuses by
+ * creatie-initialisatie-leest-groeiende-waarde and creatiebudget-ref-en-clingo): the reference interpreter counts the
+ * creation depth and says on F "creation budget exhausted: object creation "werf" of stratum 0 would mint at creation
+ * depth 101, on oc0::…::W1 — …" (before the third step of the second card "no fixpoint within 100 generations —
+ * generation 101 still mints or links (object creation "werf")"), the ASP backend as before; on C the ASP backend now refuses by
  * name ("the initialisation of beginstand reads attr:wachter:stand, which rule "stand van een wachter" writes on a
  * dependency cycle through the creation …").
  *
@@ -342,7 +343,7 @@ class TmsCreatieWitnessTest {
      * The answer it does change is the phase: an object creation that holds when a generation opens fires in the phase
      * of the fact creations, on which {@link #een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt},
      * {@link #een_object_is_pas_in_de_volgende_generatie_onderwerp} and
-     * {@link #het_generatiebudget_ligt_waar_het_corpus_het_pint} fail.
+     * {@link #het_creatiebudget_ligt_waar_het_corpus_het_pint} fail.
      *
      * <p>Measured again on 2026-10-09. Since the creations fire per stratum (2026-10-08), "waarschuw" sits a stratum above
      * "meld" and binds no {@code Creatiefase} of meld's stratum, so it gets no match on the state above under the mutant
@@ -577,9 +578,9 @@ class TmsCreatieWitnessTest {
 
     /** A chain that does not stop: every Wachter without an opvolger makes one. The condition reads only the count,
      *  which an accumulate over no contribution answers at once, so a new Wachter would match it in the phase that made
-     *  it if the phase did not hold it back. Each generation makes one Wachter, so the 101st generation of the stratum
-     *  still makes one, and there the budget ends the run: a stratum admits at most 100 generations that make an object
-     *  or lay a link (RUNTIME-SEMANTICS ch. 5.5). */
+     *  it if the phase did not hold it back. Each generation makes one Wachter on the last, at one depth more, so the
+     *  101st generation would make one at depth 101, and there the creation budget ends the run, at the making
+     *  (RUNTIME-SEMANTICS ch. 5.5). */
     static Path documentF() throws Exception {
         String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Wachter", List.of(
                 attribuut("opvolgeraantal", GEHEEL)), List.of())),
@@ -596,9 +597,11 @@ class TmsCreatieWitnessTest {
                 List.of(waarde("W1", "opvolgeraantal", "1")));
     }
 
-    private static final String BUDGET = "geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of link —"
-            + " een creatie die niet stopt is een fout (RUNTIME-SEMANTICS ch. 5.5 en 5.7)";
+    private static final String BUDGET = TmsCreatiestratumWitnessTest.budget("werf", 0, "Wachter");
 
+    /** Until 2026-10-09 the driver counted generations, and the 101st still made its Wachter before the run ended
+     *  without a fixpoint, "geen fixpunt binnen 100 generaties: generatie 101 maakt nog 1 object of link", 101 objects
+     *  made; the mint at depth 101 is now the fault at the making, and 100 objects are made. */
     @Test void een_object_is_pas_in_de_volgende_generatie_onderwerp() throws Exception {
         Path ir = documentF();
         assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speel(ir, zaakF(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
@@ -610,7 +613,7 @@ class TmsCreatieWitnessTest {
             assertEquals(BUDGET, vuur(b, volgorde, List.of(w1), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
                     () -> "volgorde " + namen);
             // one object in each phase, the subject of each the object of the one before
-            assertEquals(101, gemaakt.size(), () -> "objecten in volgorde " + namen);
+            assertEquals(100, gemaakt.size(), () -> "objecten in volgorde " + namen);
             Object onderwerp = w1;
             for (int i = 0; i < gemaakt.size(); i++) {
                 Object[] g = gemaakt.get(i);
@@ -660,20 +663,25 @@ class TmsCreatieWitnessTest {
         }
     }
 
-    /** The two sides of the budget the reference interpreter and the ASP backend pin: a chain of 97 generations plays
-     *  ({@code synth2-budgetgrens-onder}), one of 104 and one that does not stop end without a fixpoint
-     *  ({@code corpus/rood} {@code finite-chain-over-budget} and {@code runaway-recursion}). A red case pins no
-     *  expectation, so it plays here with none. */
-    @Test void het_generatiebudget_ligt_waar_het_corpus_het_pint() throws Exception {
+    /** The two sides of the budget the reference interpreter and the ASP backend pin: a chain of 97 mints plays
+     *  ({@code synth2-budgetgrens-onder}), one of 104 and one that does not stop fault at the mint at depth 101
+     *  ({@code corpus/rood} {@code finite-chain-over-budget} and {@code runaway-recursion}), with the fragment the red
+     *  cases pin for the other two. A red case pins no expectation, so it plays here with none. */
+    @Test void het_creatiebudget_ligt_waar_het_corpus_het_pint() throws Exception {
         Path onder = CORPUS.resolve("golden").resolve("synth2-budgetgrens-onder");
         assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(onder.resolve("ir.json"),
                 List.of(onder.resolve("case1.json"))).status());
-        for (String rood : List.of("finite-chain-over-budget", "runaway-recursion")) {
-            Path d = CORPUS.resolve("rood").resolve(rood);
+        for (Map.Entry<String, String> rood : Map.of("finite-chain-over-budget", "werf de lange keten",
+                "runaway-recursion", "werf eeuwig").entrySet()) {
+            Path d = CORPUS.resolve("rood").resolve(rood.getKey());
             JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(d.resolve("case1.json")));
             ((com.fasterxml.jackson.databind.node.ObjectNode) zaak).putArray("expected");
-            assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), rood);
+            String zin = TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            assertEquals("case: " + TmsCreatiestratumWitnessTest.budget(rood.getValue(), 0, "Wachter"), zin,
+                    rood.getKey());
+            for (String executor : List.of("ref", "clingo"))
+                assertTrue(zin.contains(zaak.get("expectedFault").get(executor).asText()),
+                        () -> rood.getKey() + ": het fragment van " + executor);
         }
     }
 
