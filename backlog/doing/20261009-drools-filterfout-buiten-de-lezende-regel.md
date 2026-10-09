@@ -114,3 +114,146 @@ goede antwoord), de spec, en de tak met truth maintenance.
   kaart over een fout waar geen evaluatie is. Ze raken elkaar niet, behalve dat
   beide een fout als iets van de evaluatie zien en niet van de verlaging.
 - Serieel met andere kaarten in `backends/drools` (de pins van gate 12).
+
+## Result (2026-10-09)
+
+*Geschreven door de hoofdsessie. De eigenaar was offline; elke kaart van deze ronde stopt vóór de merge.*
+
+| Commit | Wat |
+|---|---|
+| `abc71db2` | claim |
+| `6ac1ff52` | een delend vouwfilter rekent pas waar een vorm de vouw bereikt; golden `jutterswet-filterwacht`, rood geval `vouwfilter-deelt-door-nul`, getuige `FilterfoutWitnessTest`, README |
+| `9482ec1d` | VOORSTEL gate 12: `EXPECTED_PLAYED` 240 → 241, `EXPECTED_DRL_PLAYED` 194 → 195 |
+| `4ada319d` | lensfix: de volgorde van de leden rond een vouw, de lijst `Faalbaar`, de weigering van een defaults-groep met een vouw die kan falen, de reactiviteit van een opnieuw gebonden element in de DRL-teksttak |
+| `9c6adc07` | eindlensfix: een vouw die kan falen onder een andere kwantor dan "alle", en de getuige met onderscheidbare vouwen |
+| `ae6ac6ed` | herkeuringsfix: de weigering geldt alleen voor een lid dat ref kan overslaan |
+
+### Wat er staat
+
+Ref rekent het filter van een vouw alleen uit waar een vorm de vouw bereikt. De exec-modeltak en de DRL-teksttak deden
+dat nu ook:
+- **Herbinding.** Een filter dat in de runtime hard kan falen, bindt opnieuw op het element in de bron van de
+  accumulate. Welke operaties dat zijn, staat in de gesloten lijst `transpiler/kern/Faalbaar.java`, gedeeld door beide
+  takken: deling, macht, datumrekening met de dagsoortstap, datum uit delen, Rekenjaar. Drools toetst zo'n filter alleen
+  voor tupels die de accumulate bereiken, en alleen voor de elementen van dat onderwerp. Andere filters blijven op het
+  elementpatroon, zodat het regelnetwerk van de andere goldens niet verandert.
+- **Volgorde van de leden.** In een samenstelling staan de leden ná het eerste lid met eigen items (een accumulate, een
+  exists) op een opnieuw gebonden onderwerp, ná die items. Zo houdt de tak de volgorde van ch. 5.10 aan.
+  - In de exec-modeltak geldt dat voor alle condities.
+  - In de DRL-teksttak geldt het voor de voorwaarde van een regel, van een objectcreatie en voor het anker van een
+    feitcreatie. Daar komt de voorwaarde nu ook vóór de waarde.
+- **Reactiviteit in de DRL-teksttak.** Het opnieuw gebonden element krijgt `java.util.Objects.nonNull(this)`. Zonder die
+  aanroep zag een opnieuw gebonden filter een deler niet die een regel later schrijft. Dat was een regressie van de
+  eerste commit, gevonden en gefixt in de fixronde.
+- **Wat de exec-modeltak luid weigert**, per vorm met reden:
+  - een defaults-groep met een vouw waarvan het filter kan falen: de tak verzamelt de accumulates van alle
+    rechtvaardigingen vóór de prioriteitsbeslissing, en kan die evaluatie daarom niet uitstellen;
+  - een samenstelling onder een andere kwantor dan "alle" met een datumvouw, waarvan een filter kan falen, als die vouw
+    in een lid staat dat ref kan overslaan (een lid waarvóór een stoptrigger van de samenstelling kan vuren, ook genest;
+    ch. 5.10): de tak bouwt alle accumulates van zo'n samenstelling vóór de toets die de leden kortsluit.
+
+  Geen golden raakt een van die weigeringen.
+
+### Acceptatie
+
+- (a) Golden `jutterswet-filterwacht`, Jutterswet-casus, met `bron.rgs`, `scenario.rgs`, `ir.json`, `NOTE.md` en twee
+  cases:
+  - case 1: J1 niet actief, met V2 met deelnemers 0;
+  - case 2: J2 en J3 actief, zonder nuldeler.
+
+  Twee losse cases, omdat clingo één case met J1 en J2 samen UNSAT maakt. Dat is een clingo-fout; de kaart
+  `20261009-vouwfilter-resterende-vormen` houdt hem.
+
+  Rood geval `vouwfilter-deelt-door-nul`: J1 actief, met `expectedFault` ref/clingo "division by numeric zero" en Drools
+  "9 gedeeld door 0 — een numerieke nul als deler is een fout". Welke regel de Drools-zin noemt, hangt van de
+  evaluatievolgorde af.
+- (b) Exec en DRL gerepareerd, rood eerst.
+  - Vóór de fix gaf de golden in exec `ERROR DelingDoorNul … "zware vondsten": 9 gedeeld door 0` en in DRL `ERROR
+    ConstraintEvaluationException … [Rule "drukte", "zware vondsten" …]`.
+  - Na de fix speelt de golden in alle drie de takken (`PLAYED 2`).
+  - `FilterfoutWitnessTest` loopt door beide takken: 22 tests, onder meer alle 24 volgordes van vier leden (actief, een
+    delende vouw, een delend lid, een kwantorvouw met een eigen deler) op vier cases (192 cellen, tegen ref nagerekend via
+    de frontend), de vormen van (c), en de weigeringen en hun tegenhangers die moeten spelen. Op de code van vóór elke
+    fix gemeten rood; mutanten (de volgorde van twee vouwen, het element zonder `nonNull`, de waarde vóór de voorwaarde)
+    worden gevangen.
+- (c) De andere plaatsen, gemeten en in de getuige:
+  - vouw in de waarde onder een voorwaarde;
+  - voorwaarde en initialisatie van een objectcreatie;
+  - filter en matrix van een kwantorvouw;
+  - element buiten elk bereik, ook via een pad;
+  - leden ná de vouw in een samenstelling, in alle 24 volgordes van vier leden;
+  - het anker van een feitcreatie;
+  - een overschreven deler;
+  - de andere operaties van de lijst.
+
+  Wat niet met dezelfde maatregel kon, staat bij de open punten.
+- (d) Gates: zie onder. In `scripts/check-drools.sh` gaan `EXPECTED_PLAYED` 240 → 241 en `EXPECTED_DRL_PLAYED`
+  194 → 195. Dat is een voorstel in een eigen commit (`9482ec1d`); het beschermde pad is verder niet geraakt.
+
+Corpusdoorloop van de hoofdsessie: elke golden door de drie takken, met een jar uit een bevroren kopie van de tip,
+tegen dezelfde doorloop op main `54ba99f7`. Alleen de nieuwe golden verschijnt, en die speelt in alle drie. Geen
+bestaande statusregel veranderde: exec 241, DRL 195 plus de 2 bekende FAIL, truth maintenance 121.
+
+Volledige gateset van de hoofdsessie op `ae6ac6ed`: alle 16 groen. Gate 12: `check-drools: PASS` (played 241, DRL
+195, JUnit 1253); gate 8: `43 red cases …`; gate 5 en 6: `803 cases replay exactly` (ref = clingo); gate 7: `759 cases
+refute a do-nothing executor`; gate 10: `123 rgs golden(s) re-emit byte-identically`; gate 16: `30 scenario golden(s)`.
+
+### Lensvondsten
+
+Copilot (sol6, effort xhigh) draaide vier runs (lens na de bouw, eindlens na de fixronde, twee herkeuringen), elk één
+premium request. De eindlens met Opus 5.5 is niet gedraaid;
+die stemt de hoofdsessie eerst met de eigenaar af.
+
+Aanvaard en gefixt:
+- **Lens 1, BLOKKEREND:** in een "alle"-samenstelling met de vouw vóór een lid dat niet geldt, gaf de eerste fix een
+  antwoord waar ref een fout geeft. Dat was een nieuwe afwijking; vóór de fix kwam de fout er toevallig wel. Andersom
+  faalde een lid ná een vouw die al besliste. Opgelost met de volgorde van de leden (`4ada319d`).
+- **Lens 1, BLOKKEREND:** een lagere default rekende in de exec-modeltak een vouw uit die ref niet leest. Opgelost met
+  een luide weigering (`4ada319d`).
+- **Lens 1, BLOKKEREND:** de herbinding gold alleen voor een deling. Opgelost met de lijst `Faalbaar` (`4ada319d`).
+- **Eindlens, BLOKKEREND:** een tellende kwantor met een datumvouw las in de exec-modeltak te vroeg. Opgelost met een luide weigering (`9c6adc07`), die de herkeuring te ruim vond (een
+  datumvouw als enig lid onder "geen" speelde vóór de fix goed). Versmald in `ae6ac6ed` tot een lid dat ref kan overslaan.
+  De hoofdsessie vroeg "alleen na het eerste lid"; de bouwer liet met een mutant zien dat dat niet klopt (de drempel kan al
+  vóór het eerste lid beslissen, ch. 5.10) en bouwde de preciezere regel.
+- **Eindlens, BLOKKEREND:** de getuige met 24 volgordes onderscheidde zijn twee vouwen niet. Opgelost: de twee vouwen delen nu door verschillende operanden, een vierde case laat de
+  volgorde van de twee vouwen beslissen, en een mutant die die volgorde omdraait, valt (`9c6adc07`).
+
+Afgewezen:
+- **Eindlens, ADVIES "de DRL-fout verliest zijn regelnaam":** de uitkomst (een fout) blijft gelijk en gepind op haar
+  fragment. De regelnaam is diagnostiek; ze staat beschreven in de README, de javadoc en de getuige. De DRL-teksttak
+  wordt bovendien door `20261008-drl-teksttak-op-truth-maintenance` op truth maintenance herbouwd.
+- **Lens 1, ADVIES (de twee losse cases door een clingo-fout):** geen fout in deze kaart. De clingo-fout staat op de kaart
+  `20261009-vouwfilter-resterende-vormen`.
+
+Herkeuring van `ae6ac6ed` (sol6), afgewezen met reden, omdat de kaart hier ophoudt:
+- **BLOKKEREND "de foutvolgorde":** onder "precies 1" met eerst een delend lid (5/0) en dan een datumvouw (9/0) geven ref
+  en de exec-modeltak allebei een fout. Ref noemt de eerste deling (ch. 5.11), de tak de tweede. De uitkomst is gelijk;
+  welke deling genoemd wordt, is diagnostiek. De tak met truth maintenance houdt ch. 5.11 aan, en de exec-modeltak
+  vervalt met de omschakeling.
+- **BLOKKEREND "een altijd gelezen vouw blijft geweigerd":** "precies 1" over (actief; niet actief; datumvouw) wordt luid
+  geweigerd, hoewel ref de vouw daar altijd leest. Het is een weigering met reden van een vorm met elkaar uitsluitende
+  leden, geen fout antwoord. De README noemt deze ruimte.
+- **ADVIES "pin ook precies 2 over één vouw":** die vorm wordt correct geweigerd door dezelfde regel als de gepinde
+  vormen "ten hoogste 1" en "ten minste 2".
+
+### Open punten
+
+1. **Kaart `20261009-vouwfilter-resterende-vormen`** (main `84932950`, aangevuld in `e0d67d6a`) houdt wat deze kaart
+   niet repareert:
+   - de foutguard van clingo zonder join van het lid, die de golden in twee cases splitst;
+   - clingo onder een lagere default;
+   - de "unsafe variables" van clingo bij een creatie onder een vouwvoorwaarde;
+   - de kwantorvouw met stoptrigger in de matrix (ref PASS, exec en DRL een fout, al vóór deze kaart);
+   - de begeleider in de DRL-teksttak die de vouw in de voorwaarde negeert;
+   - de negatieve wortel in een filter (een deponering).
+2. **Kaart `20261009-ref-macht-van-nul`** (main `e0d67d6a`): ref crasht op nul tot een negatieve macht met een ongevangen
+   exceptie.
+3. **Bijvangst die al een plaats heeft:**
+   - ref deponeert een deling door leeg op een tussenstand: de restpost van ch. 6.1 en de kaart
+     `20261008-fout-op-tussenstand`;
+   - een datum voorbij de jaren van `java.time`: de kaart `20261009-datumrekening-slaat-stil-om`.
+4. **De weigeringen in de exec-modeltak** (defaults-groep, een samenstelling onder een andere kwantor) zijn breder dan strikt nodig: ze vallen ook op
+   een vouw die ref altijd leest. De omschakeling naar truth maintenance laat ze vervallen.
+5. **Landing:** de branch staat op main `9b9a42ad`. Vóór de ff-merge eerst `git rebase main` en de gates opnieuw.
+   `20261009-drools-datumstap-buiten-bereik` raakt `ExecModelTranspiler` en `TmsTranspiler` op andere plaatsen.
+6. Geen registertekst voor `spec/CONSTRUCTS.md`; voor PLAN §9 niets.
