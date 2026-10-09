@@ -2243,11 +2243,10 @@ counts whole units:
 Empty rules are ch. 1.2 unchanged: a leeg datetime propagates; a leeg
 duration counts as 0 (the datetime unchanged); a leeg tijdsduur
 operand propagates, never 0. A fractional duration count truncates
-toward zero before the step, as at day precision. A step whose result
-leaves the representable millisecond range is a fault, never a silent
-wrap-around (v0's `LocalDateTime.plus` raises `DateTimeException` past
-its range). Worked examples (absolute, pinned; each becomes a `ref/`
-test verbatim):
+toward zero before the step, as at day precision. A step that leaves
+the representable millisecond range is a fault, never a silent
+wrap-around (the range and the order of the checks below). Worked
+examples (absolute, pinned; each becomes a `ref/` test verbatim):
 
 - **Sub-day linearity:** 2024-02-28T23:30:00 + 26 uur =
   **2024-03-01T01:30:00** (across the leap day); 2024-03-01T00:15:00
@@ -2276,6 +2275,34 @@ test verbatim):
 - **Out of range:** 2024-01-01T00:00:00 ± 2 000 000 000 000 uur =
   **fault**, and + 60 000 000 000 dagen = **fault** — the step leaves
   the ms range; a wrap-around never masquerades as a datetime.
+
+**The representable millisecond range (normative; 2026-10-09, card
+`drools-datumstap-buiten-bereik`).** A datum-tijd value is a whole
+number of milliseconds since 1970-01-01T00:00:00 in the closed interval
+[−2⁶², 2⁶² − 1], that is −4 611 686 018 427 387 904 to
+4 611 686 018 427 387 903 ms: from −146136543-09-09T08:23:32.096 to
+146140482-04-24T15:36:27.903 in the proleptic Gregorian calendar, about
+146 million years either side of the epoch. The bound belongs to the
+language, not to an engine: an executor with wider integers still
+faults outside it, and one with narrower integers refuses loudly where
+it cannot follow (the ASP backend refuses a count beyond its 32-bit
+integers at translation, `spec/ASP-TRANSLATION.md` S6a). A datum-tijd
+step is checked before it is taken and faults, never wraps around, when
+the duration's whole count (after truncation toward zero) lies outside
+the interval; in a sub-day unit, when the step itself (the count times
+the unit's length in milliseconds) or the instant it reaches lies
+outside it; in a calendar unit, when the instant it reaches lies above
+the interval or the midnight of the civil day it lands on lies below
+it. Until 2026-10-09 this chapter gave no number and said that v0's
+`LocalDateTime.plus` raises `DateTimeException` past the range; it does
+not, since `java.time` reaches years ±999 999 999.
+
+Worked example (absolute; `ref/` tests `WV-3.8-dt-bereik-grens`,
+`WV-3.8-dt-bereik-grens-plus-een` and `WV-3.8-dt-bereik-telling`):
+2024-01-01T00:00:00 + 1 281 023 420 655 uur =
+**146140482-04-24T15:00:00**, and one hour more = **fault**; the same
+instant + 18 446 744 073 709 551 617 dagen (2⁶⁴ + 1) = **fault**: the
+count itself is out of range and never wraps to 1.
 
 **Executed in both executors (ref 2026-08-25, WF-035/WF-038; ASP
 2026-08-28):** the datum-tijd layer runs in `ref/`, pinned by the
