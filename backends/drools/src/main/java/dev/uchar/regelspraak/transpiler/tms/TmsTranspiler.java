@@ -473,7 +473,7 @@ public final class TmsTranspiler {
         for (ResolvedConsistentie c : model.consistenties)
             regels.addAll(meet("consistentie", naamOf(c.naam()), () -> consistentieRegels(c)));
         for (ResolvedUniciteit u : model.uniciteiten)
-            weiger("uniciteit", naamOf(u.naam()), "een Uniqueness: " + BUITEN);
+            regels.addAll(meet("uniciteit", naamOf(u.naam()), () -> uniciteitRegels(u)));
         for (ResolvedVerdeling v : model.verdelingen)
             weiger("verdeling", naamOf(v.naam()), "een Allocation: " + BUITEN);
         for (ResolvedObjectCreatie o : model.objectCreaties)
@@ -481,7 +481,7 @@ public final class TmsTranspiler {
         for (ResolvedFeitCreatie f : model.feitCreaties)
             regels.addAll(meet("feitcreatie", naamOf(f.naam()), () -> feitCreatie(f)));
         for (ResolvedUniciteitUnie u : model.uniciteitUnies)
-            weiger("uniciteit-unie", naamOf(u.naam()), "een Uniqueness over meer bronnen: " + BUITEN);
+            regels.addAll(meet("uniciteit-unie", naamOf(u.naam()), () -> uniciteitUnieRegels(u)));
         if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
         for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
         for (ResolvedStartpunt sp : model.resolvedStartpunten)
@@ -958,6 +958,110 @@ public final class TmsTranspiler {
         return uit;
     }
 
+    /** A uniqueness over one source (RUNTIME-SEMANTICS ch. 5.9), unscoped or scoped by a parent ({@link #uniciteitsregels}). */
+    private List<Rule> uniciteitRegels(ResolvedUniciteit u) {
+        if (u.subject() == null || u.sleutels().isEmpty()) throw new Weigering("een Uniqueness zonder bron of sleutel");
+        return uniciteitsregels(u.naam(), List.of(new ResolvedUniciteitUnie.Bron(u.subject(), u.sleutels())),
+                u.scopeRol(), u.geldigheid());
+    }
+
+    /** A uniqueness over two or more sources, the union of ch. 5.9, rule 1: one key domain, compared position by
+     *  position, so every source carries as many keys (WF-030); a union has no scope (rule 3). */
+    private List<Rule> uniciteitUnieRegels(ResolvedUniciteitUnie u) {
+        if (u.bronnen().size() < 2)
+            throw new Weigering("een Uniqueness over meer bronnen met " + u.bronnen().size() + " bron: een unie draagt er"
+                    + " ten minste twee (WF-030)");
+        int ariteit = u.bronnen().get(0).sleutels().size();
+        for (ResolvedUniciteitUnie.Bron b : u.bronnen())
+            if (b.type() == null || b.sleutels().size() != ariteit)
+                throw new Weigering("een Uniqueness over meer bronnen met sleutels van ongelijke ariteit of een bron zonder"
+                        + " type: de sleutels worden positie voor positie vergeleken (WF-030)");
+        return uniciteitsregels(u.naam(), u.bronnen(), null, u.geldigheid());
+    }
+
+    /**
+     * A uniqueness (RUNTIME-SEMANTICS ch. 5.6, 5.9): a key that more than one row carries marks every instance that
+     * carries it on the §9.5 channel, under the form's name. A key rule per source, over the instances of the source's
+     * type, binds the key components (a derived one through its standing) and, for a scoped form, the parent, and
+     * inserts the instance's {@link Uniciteitssleutel} logically where every component is gevuld and the parent is
+     * there: an empty component never collides, and an instance without a parent takes no part (rule 2). The violation
+     * rule binds each key and counts the keys that collide with it, itself included, with an accumulate; where more
+     * than one does it inserts the instance's {@link Uniciteitsschending}, which the channel rule turns into the §9.5
+     * inconsistency, one per instance, also where two sources of a union reach it. A key belongs to its source, so an
+     * instance that two sources reach with an equal key duplicates against itself (rule 1). Every fact is logical, so a
+     * duplicate that arises on an intermediate state goes when the keys move on, and the channel holds what stands at
+     * the fixpoint, where the reference interpreter evaluates the form (ch. 5.9). A key on a timeline, which reads
+     * ever-uniqueness, is refused with the member ({@link #lid}), and so is a scope over a relation a form creates.
+     */
+    private List<Rule> uniciteitsregels(String naam, List<ResolvedUniciteitUnie.Bron> bronnen, RolBindingRef scopeRol,
+                                        Geldigheid geldigheid) {
+        // the rules are named by the form, and the channel test reads the error facts by that name
+        if (naam == null) throw new Weigering("een Uniqueness zonder naam (WF-107)");
+        String regelnaam = model.geëmitteerdeRegelNaam(naam);
+        List<Rule> uit = new ArrayList<>();
+        for (int b = 0; b < bronnen.size(); b++) uit.add(sleutelregel(naam, regelnaam, b, bronnen.get(b), scopeRol,
+                geldigheid));
+        Variable<Uniciteitssleutel> k = DSL.declarationOf(Uniciteitssleutel.class, "$sleutel");
+        Variable<Object> element = DSL.declarationOf(Object.class, "$element");
+        Variable<Uniciteitssleutel> ander = DSL.declarationOf(Uniciteitssleutel.class, "$ander");
+        Variable<Object> botsingen = DSL.declarationOf(Object.class, "$botsingen");
+        uit.add(PatternDSL.rule(PKG, regelnaam).build(
+                PatternDSL.pattern(k).expr(id("uniciteit"), x -> x.uniciteit().equals(naam))
+                        .bind(element, Uniciteitssleutel::element),
+                DSL.accumulate(PatternDSL.pattern(ander).expr(id("uniciteit"), x -> x.uniciteit().equals(naam))
+                                .expr(id("botsing"), k, Uniciteitssleutel::botstMet),
+                        DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), ander).as(botsingen)),
+                DSL.expr(id("dubbel"), botsingen, n -> ((Number) n).longValue() > 1),
+                DSL.on(element).execute((Block2<org.drools.model.Drools, Object>) (drools, e) ->
+                        drools.logicalInsert(new Uniciteitsschending(naam, e)))));
+        Variable<Uniciteitsschending> s = DSL.declarationOf(Uniciteitsschending.class, "$schending");
+        Variable<Object> subject = DSL.declarationOf(Object.class, "$subject");
+        uit.add(PatternDSL.rule(PKG, regelnaam + ": kanaal").build(
+                PatternDSL.pattern(s).expr(id("schending"), x -> x.uniciteit().equals(naam))
+                        .bind(subject, Uniciteitsschending::element),
+                DSL.on(subject).execute((Block2<org.drools.model.Drools, Object>) (drools, e) ->
+                        drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, e)))));
+        Rule zonderDatum = geldigheidsfout(regelnaam, naam, geldigheid);
+        if (zonderDatum != null) uit.add(zonderDatum);
+        return uit;
+    }
+
+    /** The key rule of source {@code b} of the uniqueness {@code naam}: over the instances of the source's type, gated
+     *  on the evaluation date by the form's validity, the key components and the parent bound, and the instance's
+     *  {@link Uniciteitssleutel} inserted logically where it takes part ({@link #uniciteitsregels}). An enumeration
+     *  component is compared as the declared name it is, up to normalisation (ch. 5.6). */
+    private Rule sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron, RolBindingRef scopeRol,
+                              Geldigheid geldigheid) {
+        Objecttype type = bron.type();
+        Lezingen lez = new Lezingen(type).geldig(geldigheid);
+        Set<Integer> gelezen = lez.volg();
+        List<Integer> sleutels = new ArrayList<>();
+        List<Boolean> enumeratie = new ArrayList<>();
+        for (String sleutel : bron.sleutels()) {
+            Lid lid = lid(type, sleutel, false);
+            sleutels.add(lez.eigen(lid));
+            enumeratie.add(lid.datatype() instanceof Datatype.Enumeratie);
+        }
+        int scope = scopeRol == null ? -1 : lez.scopelezing(scopeRol);
+        lez.stop();
+        Toets doetMee = w -> {
+            for (int i : sleutels) if (w[i] == null) return false;
+            return scope < 0 || w[scope] != null;
+        };
+        List<RuleItemBuilder<?>> items = lez.linkerkant(doetMee, gelezen, null);
+        items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> {
+            List<Object> waarden = new ArrayList<>(sleutels.size());
+            for (int i = 0; i < sleutels.size(); i++) {
+                Object v = w[sleutels.get(i)];
+                waarden.add(enumeratie.get(i) ? RegelSpraakRuntime.rsEnumNaam(v) : v);
+            }
+            drools.logicalInsert(new Uniciteitssleutel(naam, b, o, scope < 0 ? null : w[scope], waarden));
+        }, lez.variabelen.size()));
+        lez.vastleggen();
+        return PatternDSL.rule(PKG, regelnaam + ": sleutel van " + type.naam + " " + (b + 1))
+                .build(items.toArray(new RuleItemBuilder[0]));
+    }
+
     /**
      * A test of the §9.5 channel, "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6): an existential over the
      * error facts of the form X, with no subject of its own, read through X's {@link KanaalStand}. The producers this
@@ -972,8 +1076,8 @@ public final class TmsTranspiler {
         if (!kanaalproducent(producent))
             throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
                     + snippet(rv) + "'): de truth-maintenance-tak draagt als producent van het §9.5-kanaal alleen een"
-                    + " Consistency en een regel met een deling of een wortel in haar voorwaarde of haar waarde (§6.5,"
-                    + " §6.6)");
+                    + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
+                    + " waarde (§6.5, §6.6)");
         int i = lez.kanaal(producent);
         return w -> Boolean.TRUE.equals(w[i]);
     }
@@ -982,6 +1086,8 @@ public final class TmsTranspiler {
     private boolean kanaalproducent(String naam) {
         if (naam == null) return false;
         for (ResolvedConsistentie c : model.consistenties) if (naam.equals(c.naam())) return true;
+        for (ResolvedUniciteit u : model.uniciteiten) if (naam.equals(u.naam())) return true;
+        for (ResolvedUniciteitUnie u : model.uniciteitUnies) if (naam.equals(u.naam())) return true;
         for (ResolvedRegel r : model.resolvedRegels)
             if (naam.equals(r.naam()) && (deponeert(r.voorwaarde())
                     || r.soort() != ResolvedRegel.Soort.KENMERKTOEKENNING && deponeert(r.waarde())))
@@ -4081,6 +4187,31 @@ public final class TmsTranspiler {
                             && (klasse == null || klasse.isInstance(onderwerpIsEerste ? x.tweede() : x.eerste()))),
                     DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), k).as(aantal)));
             return nieuw(sleutel, aantal);
+        }
+
+        /** The parent of this rule's subject in the scope of a uniqueness ({@link TmsTranspiler#sleutelregel}): the
+         *  reference field on the subject that the scope's binding names, the role the parent plays, read off the
+         *  subject's bean, since the relation is input; null where the subject has no parent. A scope over a relation a
+         *  form creates, whose links are in no field, is refused. */
+        int scopelezing(RolBindingRef scopeRol) {
+            String sleutel = "scope " + scopeRol.feittype() + " " + scopeRol.rol();
+            int bekend = bestaand(sleutel);
+            if (bekend >= 0) return bekend;
+            RegelSpraakModel.Rol[] paar = FactModelGenerator.gebondenRolpaar(model, scopeRol);
+            if (paar == null)
+                throw new Weigering("de scope van een Uniqueness noemt geen gedeclareerde rol (" + scopeRol.feittype() + ", "
+                        + scopeRol.rol() + ")");
+            if (scopeRol.feittype() != null && gecreeerdeRelaties.contains(Namen.norm(scopeRol.feittype())))
+                throw new Weigering("de scope van een Uniqueness over de gecreëerde relatie '" + scopeRol.feittype()
+                        + "': " + NOG_NIET);
+            Objecttype ouder = model.objecttypeOpNaam(paar[0].objecttypeNaam());
+            if (!FactModelGenerator.heeftReferentieVeld(model, subject, paar[0].naam(), ouder))
+                throw new Weigering("de scope van een Uniqueness: " + FactModelGenerator.geenReferentieveldReden(model,
+                        subject, paar[0].naam(), ouder) + " (§13.3.9 opslagrichting)");
+            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            Function<Object, Object> getter = Accessors.getter(bonenklasse(subject), paar[0].naam());
+            onderwerp.bind(w, o -> getter.apply(o));
+            return nieuw(sleutel, w);
         }
 
         private int bestaand(String sleutel) {
