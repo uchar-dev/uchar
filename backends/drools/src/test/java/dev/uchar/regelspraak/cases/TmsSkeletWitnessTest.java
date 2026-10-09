@@ -98,7 +98,7 @@ class TmsSkeletWitnessTest {
     }
 
     /** "Een Vuurtoren is helder indien regelversie verlichting is gevuurd": a Regelversie 'is gevuurd', which the branch
-     *  does not carry. Until the condition forms were carried (card tms-expressievormen-en-rekendatum, 2026-10-09) this
+     *  does not carry, since it is no construct of the core. Until the condition forms were carried (card tms-expressievormen-en-rekendatum, 2026-10-09) this
      *  row pinned the refusal of "de sterkte van ten minste 2 van de lampen van de Vuurtoren groter is dan 5", a
      *  QuantifierFold, which the branch now lowers. */
     @Test void een_voorwaarde_buiten_de_proef_wordt_geweigerd_met_de_knoop() throws Exception {
@@ -112,7 +112,9 @@ class TmsSkeletWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
         assertEquals("tms-transpiler SKIP: regel: helder — een Regelversie 'is gevuurd' in de voorwaarde ('" + snippet
-                + "'): buiten de proef van de truth-maintenance-tak", e.getMessage());
+                + "'): geen vorm van de kern maar een predicaat van het"
+                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
+                + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage());
     }
 
     /** A Vuurtoren with its lampen over a role to many, as the jutterswet-vuurtoren golden declares them. */

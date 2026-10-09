@@ -1065,13 +1065,18 @@ public final class TmsTranspiler {
     /**
      * A test of the §9.5 channel, "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6): an existential over the
      * error facts of the form X, with no subject of its own, read through X's {@link KanaalStand}. The producers this
-     * branch carries are a consistency and a computing rule or initialisation whose value deposits a §6.5
-     * inconsistency ({@link #schrijfregel}); any other name is refused, as the exec-model branch refuses a name that
-     * produces nothing it lowers, since a test of a channel nothing fills would never hold and say nothing. "is
-     * gevuurd" reads no channel and is refused as well.
+     * branch carries are a consistency, a uniqueness, and a rule whose condition or value can deposit a §6.5 or §6.6
+     * inconsistency ({@link #schrijfregel}, {@link #deponeerregel}); any other name is refused, as the exec-model branch
+     * refuses a name that produces nothing it lowers, since a test of a channel nothing fills would never hold and say
+     * nothing. "is gevuurd" reads no channel; it is no construct of the core, and is refused with that reason.
      */
     private Toets kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
-        if (!rv.inconsistent()) throw nietGelezen("Regelversie 'is gevuurd'", rv, BUITEN);
+        // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
+        // interpreter faults on it ("not implemented") and the ASP backend does not translate it
+        if (!rv.inconsistent())
+            throw nietGelezen("Regelversie 'is gevuurd'", rv, "geen vorm van de kern maar een predicaat van het"
+                    + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
+                    + " referentie-interpreter en de ASP-backend niet evalueren");
         String producent = rv.regel();
         if (!kanaalproducent(producent))
             throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
@@ -2075,7 +2080,11 @@ public final class TmsTranspiler {
             case Expr.Binair b -> binair(b, lez);
             case Expr.TekstReeks t -> tekstreeks(t, lez);
             case Expr.Functie f -> functie(f, lez);
-            case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), BUITEN);
+            // IR-SPEC ch. 4.3: a union denotes instances and stands only as the argument of a count, which reads it in
+            // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)), the reference
+            // interpreter faults on and the other two branches refuse in this sentence
+            case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), "zij duidt de instanties van"
+                    + " een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))");
             case Expr.Afgerond a -> afronding(a, lez);
             case Expr.Begrensd b -> begrenzing(b, lez);
             case Expr.DimensieCel c -> dimensiecel(c, lez);

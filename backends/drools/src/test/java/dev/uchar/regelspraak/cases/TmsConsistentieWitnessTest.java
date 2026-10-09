@@ -338,7 +338,9 @@ class TmsConsistentieWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(metGevuurd, DroolsBackend.Branch.TRUTH_MAINTENANCE));
         assertEquals("tms-transpiler SKIP: regel: nakijken — een Regelversie 'is gevuurd' in de voorwaarde ('regelversie"
-                + " registratie is gevuurd'): buiten de proef van de truth-maintenance-tak", e.getMessage());
+                + " registratie is gevuurd'): geen vorm van de kern maar een predicaat van het"
+                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
+                + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage());
         Path zonderProducent = TmsDocumenten.document(model,
                 List.of(registratie, kenmerkregel("nakijken", "Vondst", "nagekeken", kanaaltoets("registratie"))));
         CaseRunner.Excluded f = assertThrows(CaseRunner.Excluded.class,
