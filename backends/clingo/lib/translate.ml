@@ -11260,6 +11260,152 @@ let writer_conflicts ctx =
       writers
   end
 
+(* RUNTIME-SEMANTICS ch. 5.5, Generations (card
+   creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
+   initialisation of an object creation takes the value at the moment of
+   making: it is read on the settled world of the generation before the one
+   that makes the object, and a later generation may still change the value
+   read; the initialised member does not follow it. This encoding has no
+   moment of making. An initialisation is a val/heeft head on the minted
+   term ([translate_object_creatie]), so it reads the stable model, which
+   holds the end value. The two differ where the value read can still
+   change after the making. On a verifier-clean document that happens only
+   where a form on a dependency cycle through the creation writes the node
+   the initialisation reads; WF-045 admits such a cycle because it passes
+   through a member of a recursive group. A rule, an allocation or a
+   defaults group on the cycle recomputes its target while the chain grows,
+   and a creation on the cycle grows a population (the objects it makes) or
+   a relation (its back-link, or the links of a fact creation). An
+   attribute or characteristic that a creation writes is set once per
+   object, when the object is made, so its end value is the value at the
+   making: the anchor jutterswet-wachtersketen reads its rang that way and
+   stays carried. A writer off the cycle reads nothing the cycle produces,
+   and its value is complete before the creation reads it (ch. 6.3).
+
+   Measured 2026-10-09 on the card's document (beginstand = zijn stand, the
+   stand counting the opvolgers): ref answers opvolgerbegin(W1) = 0 and this
+   backend answered 1. With a rule that copies the stand in between, with
+   the initialisation counting the opvolgers itself, and with it counting a
+   relation that a fact creation in the same group lays, the split was the
+   same. Carrying these forms would need a copy of the rule layer per
+   generation, so such an initialisation is refused by name, the second
+   posture of IR-SPEC ch. 5.5. The test follows the graph and not the
+   values, so it also refuses a rule on the cycle whose value on an object
+   is fixed at the object's making (basis = zijn rang plus 10), where the
+   end value would be right. The graph is the verifier's
+   ([Ir_v0.Checks.dep_forms]), built over the document as loaded, which is
+   the graph ref stratifies. A creation version that the case's date
+   excludes makes nothing, as [translate_object_creatie] skips it, and is
+   not refused. *)
+let refuse_initialisation_reads_on_a_cycle (doc : document) ~as_of =
+  let cctx = { Ir_v0.Checks.doc } in
+  let forms = Array.of_list (Ir_v0.Checks.dep_forms cctx) in
+  (* without a recursive creation WF-045 admits no cycle *)
+  if Array.exists (fun (f : Ir_v0.Checks.dep_form) -> f.df_recursive_creation) forms then begin
+    let n = Array.length forms in
+    let succ = Array.make n [] in
+    List.iter
+      (fun (pi, ci, _, _) -> if not (List.mem ci succ.(pi)) then succ.(pi) <- ci :: succ.(pi))
+      (Ir_v0.Checks.dep_edges forms);
+    (* the forms reached from [c] over one edge or more: a writer of what [c]
+       reads lies on a cycle with [c] exactly when [c] reaches it *)
+    let reached c =
+      let seen = Array.make n false in
+      let rec go i =
+        if not seen.(i) then begin
+          seen.(i) <- true;
+          List.iter go succ.(i)
+        end
+      in
+      List.iter go succ.(c);
+      seen
+    in
+    let at_of i = forms.(i).Ir_v0.Checks.df_at and name_of i = forms.(i).Ir_v0.Checks.df_name in
+    let kinds =
+      List.map (fun (r : resolved_regel) -> (r.rr_pointer, ("rule", false))) doc.resolved_regels
+      @ List.map (fun (v : resolved_verdeling) -> (v.vd_pointer, ("allocation", false))) doc.verdelingen
+      @ List.mapi
+          (fun i _ -> (Printf.sprintf "/prioritizedDefaults/%d" i, ("defaults group", false)))
+          doc.prioritized_defaults
+      @ List.map (fun (c : resolved_consistentie) -> (c.cons_pointer, ("consistency", false))) doc.consistenties
+      @ List.map (fun (u : resolved_uniciteit) -> (u.uni_pointer, ("uniqueness", false))) doc.uniciteiten
+      @ List.map
+          (fun (u : resolved_uniciteit_unie) -> (u.uu_pointer, ("uniqueness", false)))
+          doc.uniciteit_unies
+      @ List.map (fun (f : resolved_feit_creatie) -> (f.fc_pointer, ("fact creation", true))) doc.feit_creaties
+      @ List.map
+          (fun (o : resolved_object_creatie) -> (o.oc_pointer, ("object creation", true)))
+          doc.object_creaties
+    in
+    let kind_of i =
+      match List.assoc_opt (at_of i) kinds with
+      | Some k -> k
+      | None ->
+          failwith
+            (Printf.sprintf
+               "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
+                verifier's dep_forms record form %S at %S, a path no form of the document carries"
+               (name_of i) (at_of i))
+    in
+    let index_of at =
+      let rec find i =
+        if i >= n then
+          failwith
+            (Printf.sprintf
+               "backends/clingo/lib/translate.ml, refuse_initialisation_reads_on_a_cycle: the \
+                object creation at %S is not in the verifier's dep_forms"
+               at)
+        else if at_of i = at then i
+        else find (i + 1)
+      in
+      find 0
+    in
+    (* the nodes a creation makes grow: its population and its relations *)
+    let grows node =
+      let prefix p = String.length node >= String.length p && String.sub node 0 (String.length p) = p in
+      prefix "pop:" || prefix "rel:"
+    in
+    List.iter
+      (fun (o : resolved_object_creatie) ->
+        let c = index_of o.oc_pointer in
+        let on_cycle = reached c in
+        let offence (t : toekenning) =
+          let nodes =
+            List.fold_left
+              (fun acc (node, _) -> if List.mem node acc then acc else acc @ [ node ])
+              []
+              (Ir_v0.Checks.dep_opt cctx ~subject:o.oc_subject [] t.toe_waarde)
+          in
+          List.find_map
+            (fun node ->
+              List.find_map
+                (fun p ->
+                  if on_cycle.(p) && List.mem node forms.(p).Ir_v0.Checks.df_writes then
+                    let kind, creation = kind_of p in
+                    if creation && not (grows node) then None
+                    else
+                      Some
+                        ( req "MemberInit.member" t.toe_attribuut,
+                          node,
+                          if p = c then "the creation itself"
+                          else Printf.sprintf "%s \"%s\"" kind (name_of p) )
+                  else None)
+                (List.init n Fun.id))
+            nodes
+        in
+        match List.find_map offence o.toekenningen with
+        | Some (member, node, writer) when Eval.window_admits ~as_of o.oc_geldigheid ->
+            fault
+              "object creation \"%s\": the initialisation of %s reads %s, which %s writes on a \
+               dependency cycle through the creation (admitted by WF-045 through a recursive group) \
+               — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
+               ch. 5.5, Generations), and this backend reads the value of the stable model, which a \
+               later generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
+              (name_of c) member node writer
+        | _ -> ())
+      doc.object_creaties
+  end
+
 let translate (doc : document) (case : Case.t) : string =
   (* WF-007: a presentation tag inside a type annotation, listed by the
      loader, is refused in the verifier's sentence — the same refusal ref
@@ -11271,6 +11417,7 @@ let translate (doc : document) (case : Case.t) : string =
         "%s: the presentation tag \"percentage\" on a type annotation: the tag is written only \
          where a datatype is declared"
         at);
+  refuse_initialisation_reads_on_a_cycle doc ~as_of:case.as_of;
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
      read off the case's dates), so the store starts empty at every call —
      a suite that translates twice must not inherit the first window *)

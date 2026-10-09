@@ -14894,6 +14894,162 @@ let () =
       "result of dubbele sleepafstand is not a whole number, and this encoding holds a number \
        declared without decimals (the unbounded form) as a whole number"
 
+(* RUNTIME-SEMANTICS ch. 5.5, Generations (card
+   creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
+   initialisation takes the value at the moment of making; this encoding
+   reads the value of the stable model. The two differ where a form on a
+   dependency cycle through the creation writes what the initialisation
+   reads, and there the creation is refused by name (IR-SPEC ch. 5.5). An
+   attribute that only creations write is set once per object, at its
+   making, and stays carried.
+
+   The documents: "werf de opvolger" (recursive group "estafette") gives a
+   Wachter of rang below 4 an opvolger with rang plus 1 and a beginstand;
+   "stand van een wachter" counts its opvolgers; "opvolgerbegin" reads the
+   beginstand of its opvolger, "verder" the opvolgerbegin of its opvolger.
+   W1 (rang 1) makes W2, W2 makes W3, W3 makes W4. Refused, each in every
+   order of its rules: the card's document (beginstand = zijn stand; ref
+   answers opvolgerbegin(W1) = 0, this backend answered 1), the copy variant
+   (beginstand = zijn standkopie, a rule that copies the stand), V1
+   (beginstand = het aantal opvolgers, over the relation the creation's
+   back-link lays) and V2 (beginstand = het aantal maatgevers, over the
+   relation the fact creation "maak maten" in the same group lays; ref
+   answers verder(W1) = 0, this backend answered 1). Carried, by ref and
+   here: beginstand = zijn rang, which only the creation writes
+   (opvolgerbegin(W1) = 1), and beginstand = zijn basis with basis = 7, a
+   rule off the cycle (opvolgerbegin(W1) = 7). And one refusal in the
+   conservative direction, because the test follows the graph and not the
+   values: basis = zijn rang plus 10 is a rule on the cycle, although its
+   value on an object is fixed at the object's making. *)
+let () =
+  let getal = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let eigen naam =
+    Printf.sprintf
+      {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "zijn %s"}}|}
+      naam naam
+  in
+  let via_opvolger lidwoord naam =
+    Printf.sprintf
+      {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "%s %s van zijn opvolger"}, "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}]}|}
+      naam lidwoord naam
+  in
+  let telling ~wat ~feittype ~rol =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "%s van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal %s van de Wachter"}}|}
+      wat wat feittype rol wat
+  in
+  let regel ?(lidwoord = "De") naam doel presentatie waarde =
+    ( naam,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "Wachter", "source": {"snippet": "%s %s van een Wachter"}}, "value": %s, "initialisation": false, "presentation": "%s"}]}|}
+        naam doel lidwoord doel waarde presentatie )
+  in
+  let stand =
+    regel "stand van een wachter" "stand" "calculation"
+      (telling ~wat:"opvolgers" ~feittype:"opvolging" ~rol:"opvolger")
+  and opvolgerbegin = regel "opvolgerbegin" "opvolgerbegin" "equation" (via_opvolger "de" "beginstand")
+  and standkopie = regel "standkopie van een wachter" "standkopie" "equation" (eigen "stand")
+  and verder = regel ~lidwoord:"Het" "verder" "verder" "equation" (via_opvolger "het" "opvolgerbegin")
+  and basis_vast =
+    regel "basis van een wachter" "basis" "equation"
+      (Printf.sprintf {|{"node": "Literal", "value": {"number": "7"}, "type": %s, "source": {"snippet": "7"}}|} getal)
+  and basis_uit_rang =
+    regel "basis van een wachter" "basis" "calculation"
+      (Printf.sprintf
+         {|{"node": "Binary", "op": "plus", "left": %s, "right": {"node": "Literal", "value": {"number": "10"}, "type": %s, "source": {"snippet": "10"}}, "type": %s, "source": {"snippet": "zijn rang plus 10"}}|}
+         (eigen "rang") getal getal)
+  in
+  (* [maten] adds the fact type maatschap and the fact creation "maak maten"
+     (a Wachter becomes maatgever of its opvolger) to the recursive group *)
+  let doc ?(maten = false) ~attributen ~beginwaarde regels =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [%s], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}%s], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": {"node": "Literal", "value": {"number": "1"}, "type": %s, "source": {"snippet": "1"}}, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}, {"node": "MemberInit", "member": "beginstand", "value": %s, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": %s, "right": {"node": "Literal", "value": {"number": "4"}, "type": %s, "source": {"snippet": "4"}}, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": [%s], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      (String.concat ", "
+         (List.map
+            (fun lid -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} lid getal)
+            attributen))
+      (if maten then
+         {|, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "maat", "objectType": "Wachter", "plural": "maten", "many": true}]}|}
+       else "")
+      (String.concat ", " (List.map snd regels))
+      (eigen "rang") getal getal beginwaarde (eigen "rang") getal
+      (if maten then
+         {|{"node": "FactCreation", "name": "maak maten", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "maat", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}|}
+       else "")
+      (if maten then {|"werf de opvolger", "maak maten"|} else {|"werf de opvolger"|})
+  in
+  let zaak verwacht =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [%s]}|}
+      (String.concat ", "
+         (List.map
+            (fun (attr, w) ->
+              Printf.sprintf
+                {|{"kind": "attributeValue", "label": "W1", "attribute": "%s", "value": {"number": "%s"}}|}
+                attr w)
+            verwacht))
+  in
+  let rec volgordes = function
+    | [] -> [ [] ]
+    | regels ->
+        List.concat_map
+          (fun (naam, regel) ->
+            List.map
+              (fun rest -> (naam, regel) :: rest)
+              (volgordes (List.filter (fun (n, _) -> n <> naam) regels)))
+          regels
+  in
+  let in_elke_volgorde regels f =
+    List.iter
+      (fun volgorde -> f (String.concat "; " (List.map fst volgorde)) volgorde)
+      (volgordes regels)
+  in
+  let weigering ~knoop ~schrijver =
+    Printf.sprintf
+      "object creation \"werf de opvolger\": the initialisation of beginstand reads %s, which %s \
+       writes on a dependency cycle through the creation (admitted by WF-045 through a recursive \
+       group) — an initialisation takes the value at the moment of making (RUNTIME-SEMANTICS \
+       ch. 5.5, Generations), and this backend reads the value of the stable model, which a later \
+       generation can still change, so it refuses the creation (IR-SPEC ch. 5.5)"
+      knoop schrijver
+  in
+  let keten = [ "rang"; "stand"; "beginstand"; "opvolgerbegin" ] in
+  List.iter
+    (fun (variant, maten, attributen, beginwaarde, regels, verwacht, knoop, schrijver) ->
+      in_elke_volgorde regels (fun volgorde regels ->
+          let name = Printf.sprintf "ch5.5 generations, %s [%s]" variant volgorde in
+          let ir = doc ~maten ~attributen ~beginwaarde regels in
+          verifier_clean ~name ~ir;
+          faults_with ~name ~ir ~case_text:(zaak verwacht) ~needle:(weigering ~knoop ~schrijver)))
+    [ ( "the card's document", false, keten, eigen "stand", [ stand; opvolgerbegin ],
+        [ ("stand", "1"); ("opvolgerbegin", "0") ], "attr:wachter:stand",
+        {|rule "stand van een wachter"|} );
+      ( "the copy variant", false, keten @ [ "standkopie" ], eigen "standkopie",
+        [ standkopie; stand; opvolgerbegin ], [ ("stand", "1"); ("opvolgerbegin", "0") ],
+        "attr:wachter:standkopie", {|rule "standkopie van een wachter"|} );
+      ( "V1, the initialisation counts the opvolgers", false, keten @ [ "verder" ],
+        telling ~wat:"opvolgers" ~feittype:"opvolging" ~rol:"opvolger", [ opvolgerbegin; verder ],
+        [ ("opvolgerbegin", "0"); ("verder", "0") ], "rel:opvolging", "the creation itself" );
+      ( "V2, the initialisation counts the maatgevers", true, keten @ [ "verder" ],
+        telling ~wat:"maatgevers" ~feittype:"maatschap" ~rol:"maatgever", [ opvolgerbegin; verder ],
+        [ ("opvolgerbegin", "0"); ("verder", "0") ], "rel:maatschap", {|fact creation "maak maten"|} );
+      ( "basis = zijn rang plus 10, on the cycle (the conservative direction)", false,
+        keten @ [ "basis" ], eigen "basis", [ basis_uit_rang; stand; opvolgerbegin ],
+        [ ("stand", "1"); ("opvolgerbegin", "11") ], "attr:wachter:basis",
+        {|rule "basis van een wachter"|} ) ];
+  List.iter
+    (fun (variant, attributen, beginwaarde, regels, verwacht) ->
+      in_elke_volgorde regels (fun volgorde regels ->
+          let name = Printf.sprintf "ch5.5 generations, %s [%s]" variant volgorde in
+          let ir = doc ~attributen ~beginwaarde regels and case_text = zaak verwacht in
+          verifier_clean ~name ~ir;
+          ref_matches ~name ~ir ~case_text;
+          clingo_matches ~name ~ir ~case_text))
+    [ ( "beginstand = zijn rang, which only the creation writes", keten, eigen "rang",
+        [ stand; opvolgerbegin ], [ ("stand", "1"); ("opvolgerbegin", "1") ] );
+      ( "beginstand = zijn basis, basis = 7 off the cycle", keten @ [ "basis" ], eigen "basis",
+        [ basis_vast; stand; opvolgerbegin ], [ ("stand", "1"); ("opvolgerbegin", "7") ] ) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

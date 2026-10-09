@@ -178,6 +178,26 @@ spec bug.
   the named witness `viol("generation budget exhausted", _)` → UNSAT
   where the reference interpreter's pass budget faults. Ch. 5.5's
   bounded budget, never a silent truncation.
+- A member initialisation takes the value at the moment of making
+  (ch. 5.5, Generations): ref reads it on the settled world of the
+  generation before, and a later generation may change the value read
+  without the initialised member following it. This encoding has no
+  moment of making; the initialisation's head reads the stable model,
+  which holds the end value. So a creation on a dependency cycle (WF-045
+  admits it through a recursive group) whose initialisation reads a node
+  that a form on that cycle writes is refused by name (IR-SPEC ch. 5.5):
+  a value a rule, an allocation or a defaults group on the cycle
+  computes, or a population or relation a creation on the cycle grows
+  (the creation's own back-link included). An attribute or characteristic
+  a creation writes is set once per object, at its making, so a read of
+  it stays carried: the anchor `jutterswet-wachtersketen` reads its rang
+  so. The test reads the dependency graph of `Ir_v0.Checks` (the graph
+  ref stratifies), not the values, so a rule on the cycle whose value on
+  an object is fixed at the object's making is refused as well. On the
+  worked example of ch. 5.5 (beginstand = zijn stand, the stand counting
+  the opvolgers) ref answers opvolgerbegin(W1) = 0, and this backend
+  answered 1 before the refusal; the suite's `ch5.5 generations` frames
+  pin the refusals and the carried forms.
 - Fact creation (IR-SPEC ch. 3.4; ch. 5.5) derives `rol/3`: the join
   chain (anchor → tussenstappen → joinRol → target) becomes a body
   join over `rol/3`, and the head lands the created relation's links —
