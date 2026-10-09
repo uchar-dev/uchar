@@ -302,8 +302,9 @@ records beside the exact fractions. The edge rows of ch. 4.4 are the reference i
 pot of the ordered method and eligible proportional weights that sum to 0 write nothing, the last still with the
 deposit of an empty weight beside them, and an empty pot of the equal-shares or the proportional method with
 recipients is that executor's fault, a `Fout` on the source ("empty source amount in equal-shares allocation (v0
-mirror hole, ch. 4.4)"), which like every fault counts at the fixpoint only, so a pot derived later leaves none. Three readings differ from the exec-model branch, each as the spec has it: a negative weight
-of the proportional method counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter and
+mirror hole, ch. 4.4)"), which like every fault counts at the fixpoint only, so a pot derived later leaves none. Three
+readings differ from the exec-model branch, each as the spec has it: a negative weight of the proportional method
+counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter and
 the exec-model branch keep the unclamped v0 hole and the ASP backend faults; an empty tie-break weight counts as 0 also
 where every weight of its group is empty, as the reference interpreter and the ASP backend read it, where
 `rsVerdeelOpVolgorde` splits such a group in equal parts; and two ordering keys of one value in two scales, 2019 and
