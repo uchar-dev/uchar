@@ -3652,7 +3652,10 @@ public final class TmsTranspiler {
      * ch. 8.4). Without a clause the total takes the asOfDate-bucket scalar, the session's date being the horizon: it is
      * {@code rsTijdTotaal} of the one period of X's grid that holds the evaluation date ({@link Emmerscalair}), the
      * segment's value times the whole units it spans, and leeg where X has no input; a full timeline faults, in the
-     * reference interpreter's words. With a clause the total reads the full timeline: it is clipped to the clause's true
+     * reference interpreter's words, and so does a session without an evaluation date, where the total has no bucket to
+     * take, X filled or not: this route reads the date ({@link Lezingen#rekendatum}), and the reference interpreter tests
+     * the full timeline first, then the date, then the value. With a clause the total reads the full timeline: it is
+     * clipped to the clause's true
      * periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
      * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
      * reference interpreter. The runtime's helpers compute this as the exec-model branch computes it, with
@@ -3681,16 +3684,24 @@ public final class TmsTranspiler {
         lez.markeerFalen();
         String gran = lid.tijd().name();
         String naam = lid.naam();
-        if (f.filter() == null) return w -> {
-            Object invoer = w[tijdlijn];
-            if (invoer instanceof Emmerscalair e) return RegelSpraakRuntime.rsTijdTotaal(e.tijdlijn(), gran);
-            // a timeline a form writes is refused above, so a full timeline here is the case's
-            if (invoer != null)
-                throw new Invoervormfout("the temporal total of \"" + naam + "\" over a case-supplied full timeline is"
-                        + " not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
-                        w[onderwerp], " supplies a full timeline");
-            return RegelSpraakRuntime.rsTijdTotaal(null, gran);
-        };
+        if (f.filter() == null) {
+            int datum = lez.rekendatum();
+            return w -> {
+                Object invoer = w[tijdlijn];
+                if (invoer instanceof Emmerscalair e) return RegelSpraakRuntime.rsTijdTotaal(e.tijdlijn(), gran);
+                // a timeline a form writes is refused above, so a full timeline here is the case's
+                if (invoer != null)
+                    throw new Invoervormfout("the temporal total of \"" + naam + "\" over a case-supplied full timeline"
+                            + " is not exercised by any corpus case; the asOfDate-bucket convention carries the total, and ",
+                            w[onderwerp], " supplies a full timeline");
+                // the case runner places a bucket scalar only where the case carries a date, so a session without one
+                // reaches this with no input at all
+                if (w[datum] == null)
+                    throw new Rekenfout("the temporal total of \"" + naam + "\" needs the evaluation date: the case"
+                            + " carries the asOfDate bucket's value");
+                return RegelSpraakRuntime.rsTijdTotaal(null, gran);
+            };
+        }
         Knip knip = knip(f.filter(), lez, wat, naam);
         return w -> RegelSpraakRuntime.rsTijdTotaal(knip.van(w, volledig(w[tijdlijn], () -> new Invoervormfout(
                 "the gedurende clip of \"" + naam + "\" needs the full timeline; ", w[onderwerp],
