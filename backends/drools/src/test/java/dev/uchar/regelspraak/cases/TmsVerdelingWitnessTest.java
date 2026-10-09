@@ -82,6 +82,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li><b>G, a pot derived later.</b> "De opbrengst van een berging is zijn bruto"; 90 in gelijke delen over J1, J2
  *       and J3: 30 each, rest 0. Before the opbrengst is derived the pot is leeg, the fault of an empty pot of the
  *       equal-shares method, which must be gone at the fixpoint like every fault (PLAN §9, 2026-10-09).</li>
+ *   <li><b>H, a second writer of a target</b>: a computing rule or an initialisation beside an allocation on its
+ *       target, and two allocations on one target, each refused by name.</li>
  * </ul>
  *
  * <p>Every part runs in every order of its rules and its allocations in the document, and in a seeded sample of orders
@@ -114,7 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * setBergingsaandeel", the fault of {@code 20260923-drl-verdeling-dubbelbezet}), deposits on J1 and J2 in E's 2026 and
  * does not fault E's time-free session; it plays G.
  *
- * <p><b>Red before the change</b> (2026-10-09, this class on the branch at the card's claim): all twelve tests, each on
+ * <p><b>Red before the change</b> (2026-10-09, this class on the branch at the card's claim): all thirteen tests, each on
  * "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een Allocation: buiten de proef van de
  * truth-maintenance-tak" or the same refusal of the allocation of its part. <b>Red by mutation</b> (the same day, not
  * committed): the {@link dev.uchar.regelspraak.transpiler.tms.Ontvanger} stated instead of logical fails A's and C's
@@ -631,6 +633,47 @@ class TmsVerdelingWitnessTest {
         assertTrue(onderweg > 0, "geen volgorde liet de verdeling op de lege pot vallen voordat de opbrengst afgeleid was");
     }
 
+    // ---------------- H: a second writer of a target ----------------
+
+    /**
+     * An allocation whose target another form writes is refused by name, never computed beside it: a computing rule and
+     * an initialisation on the share target are well-formed, and this branch does not carry them beside an allocation
+     * yet; two allocations on one target are ill-formed (WF-026). Measured 2026-10-09: the verifier passes the first
+     * two documents and refuses the third, "WF-026 FAIL /rules/allocations/0/versions/0: two allocations write target
+     * (Berger, bergingsaandeel)". The reference interpreter computes the initialisation pair (the share replaces the 5)
+     * and faults the rule pair, "two writers of one target disagree: rule "bergingsaandeel van een berger" writes 5 and
+     * allocation "verdeel de opbrengst naar rato" writes 100"; the ASP runner passes all three, whose case asks no more
+     * than a consistent channel. Red before the change: all three on the refusal of the allocation as such.
+     */
+    static final String H_REGEL = rekenregel("bergingsaandeel van een berger", "BEREKENING", "Berger",
+            "bergingsaandeel", getal("5"), "null");
+    static final String H_INITIALISATIE = rekenregel("bergingsaandeel van een berger", "INITIALISATIE", "Berger",
+            "bergingsaandeel", getal("5"), "null");
+
+    static JsonNode hZaak() throws Exception {
+        return TmsDocumenten.zaak(List.of(instantie("B1", "Berging", Map.of("opbrengst", "100"), List.of("J1")),
+                instantie("J1", "Berger", Map.of("gewicht", "1"), List.of())), List.of(consistent()));
+    }
+
+    @Test void h_een_tweede_schrijver_van_een_doel_wordt_luid_geweigerd() throws Exception {
+        JsonNode zaak = hZaak();
+        Map<String, String> uitkomsten = new LinkedHashMap<>();
+        uitkomsten.put("regel", speel(document(List.of(H_REGEL), List.of(D_NAAR_RATO), List.of()), zaak));
+        uitkomsten.put("initialisatie", speel(document(List.of(H_INITIALISATIE), List.of(D_NAAR_RATO), List.of()), zaak));
+        uitkomsten.put("twee verdelingen", speel(document(List.of(), List.of(D_NAAR_RATO, D_GELIJK), List.of()), zaak));
+        String naast = "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een verdeling naast de"
+                + " regel \"bergingsaandeel van een berger\" op het attribuut 'bergingsaandeel' van Berger: een verdeling"
+                + " naast een rekenende regel of een initialisatie op één doel; de truth-maintenance-tak draagt deze vorm"
+                + " nog niet";
+        Map<String, String> verwacht = new LinkedHashMap<>();
+        verwacht.put("regel", naast);
+        verwacht.put("initialisatie", naast);
+        verwacht.put("twee verdelingen", "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
+                + " verdelingen schrijven het attribuut 'bergingsaandeel' van Berger (ook \"verdeel de opbrengst gelijk\"):"
+                + " een doel heeft hoogstens één verdeling (WF-026)");
+        assertEquals(verwacht, uitkomsten);
+    }
+
     // ---------------- D, E and F in orders of the generated rules ----------------
 
     /** Parts D, E and F hold one allocation each, so the order of the document varies nothing; here every case of them
@@ -770,6 +813,11 @@ class TmsVerdelingWitnessTest {
         schrijf(uit.resolve("e-geldigheid"), ir(List.of(), List.of(E_VERDELING), List.of()), eZaken());
         schrijf(uit.resolve("f-creatie"), ir(List.of(), List.of(F_GELIJK), List.of(HULPBERGER)), Map.of("f", fZaak()));
         schrijf(uit.resolve("g-pot-later"), ir(List.of(POT), List.of(F_GELIJK), List.of()), Map.of("g", gZaak()));
+        schrijf(uit.resolve("h-regel"), ir(List.of(H_REGEL), List.of(D_NAAR_RATO), List.of()), Map.of("h", hZaak()));
+        schrijf(uit.resolve("h-initialisatie"), ir(List.of(H_INITIALISATIE), List.of(D_NAAR_RATO), List.of()),
+                Map.of("h", hZaak()));
+        schrijf(uit.resolve("h-twee-verdelingen"), ir(List.of(), List.of(D_NAAR_RATO, D_GELIJK), List.of()),
+                Map.of("h", hZaak()));
     }
 
     private static void schrijf(Path map, String ir, Map<String, JsonNode> zaken) throws Exception {
