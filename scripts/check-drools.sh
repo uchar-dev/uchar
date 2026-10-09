@@ -1261,7 +1261,14 @@ EXPECTED_CHANNEL=(
 # plays the two cases, PLAYED 2, with ref's and clingo's values. Measured before and after over ALL goldens in both
 # branches: no report line moves but this golden's. The DRL-text branch plays it too, PLAYED 2, so EXPECTED_DRL_PLAYED
 # moves by one as well.
-EXPECTED_PLAYED=241
+# 241 -> 242 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new, from bron.rgs and
+# hand-computed: a recursive creation makes a chain of 100 Wachters in one stratum, exactly the ch. 5.5 creation budget,
+# read back through a rule in the chain's stratum and a consistency that flags the Wachter of rang 101; a second case
+# runs two such chains side by side. ref, clingo and the branch with truth maintenance faulted on it before the card
+# chain of 2026-10-09; the exec branch, which has no creation budget, played it all along and needed no change: it plays
+# the two cases, PLAYED 2, with ref's and clingo's values. The DRL-text branch plays them too, PLAYED 2, so
+# EXPECTED_DRL_PLAYED moves by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-rood.sh.
+EXPECTED_PLAYED=242
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1703,7 +1710,9 @@ DRL_CHANNEL=(
 # fold is not reached ("ConstraintEvaluationException: Error evaluating constraint '(rsAggVergelijk(rsGedeeld(gewicht,
 # deelnemers), …"); it now tests a subselection that divides on the element bound again in the source of the
 # accumulate and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=195
+# 195 -> 196 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new. This branch plays its two
+# cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=196
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
