@@ -101,10 +101,11 @@ replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The 
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
 `tms-expressievormen-en-rekendatum`, adds the value forms, the evaluation date, the faults of date arithmetic as
 facts, the condition forms and the writers of one target (below). The third, `tms-verdeling-en-tijdlijnen`, adds
-allocations (below) and, in its later steps, timelines and day kinds. It is no gate path yet: gate 12
+allocations and timelines (below) and, in its last step, the whole-period qualifier and day kinds. It is no gate path
+yet: gate 12
 plays the exec-model and the DRL-text branch, and the toolchain builds with `EXEC_MODEL`. The suite runs its
 witnesses (`Tms*WitnessTest`), among them `TmsCorpusWitnessTest`, which demands that every golden with cases either
-plays or is refused, that none plays a wrong value, and that at least 216 play (`EXPECTED_MIN_PLAYED`).
+plays or is refused, that none plays a wrong value, and that at least 235 play (`EXPECTED_MIN_PLAYED`).
 
 **Derivations are logical facts.** A derived characteristic is a `HeeftKenmerk`, a derived attribute value a `Waarde`
 with its writer, both inserted with `insertLogical`. Case input stays on the beans, and while the session fires the
@@ -314,6 +315,27 @@ that helper groups by `equals`. A version with a bounded validity gates on the e
 without one; a condition faults and deposits through rules of its own, on the source. A share or a rest replaces the
 input on its target, and a recipient that receives nothing keeps its input. Witness `TmsVerdelingWitnessTest`.
 
+**Timelines.** A timeline (RUNTIME-SEMANTICS ch. 3) is a value in a fact: an immutable `List<Tijdvak>`, where the
+record `Tijdvak` is one segment `[van, tot)` with its value. Its equality is the segment-wise equality of ch. 3.1, as
+the reference interpreter compares two timelines (`write_timeline`): 7 and 7.00 are one value, the same values on
+another cut are another; its `hashCode` agrees with it, since the KieBase in EQUALITY merges equal logical facts. The
+generated bean `Segment` has no value equality and is mutable, so the branch converts at two boundaries only: where it
+binds a timeline off a bean, an input member or the true periods of a characteristic, and where `zetAfgeleideWaarden`
+puts a derived timeline on the bean as its `Segment`s. `Tijdvak` has the getters and the constructor the runtime's
+helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`, `rsTijdKnip`,
+`rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side like any
+read, a derived one through its standing, and read whole: by the temporal total of the subject's own timeline, with
+the clip of ch. 3.6 by a characteristic, negated or not, by an `alle` of characteristics or by an ordering of an own
+timeline against a value; by a sum or a total per member of a set (ch. 3.6, the per-element fold), where each
+member's timeline collapses over time in its contribution rule and a member without one contributes nothing; and as
+a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline ever carries. It is written
+whole, only by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or from a fixed start point
+(ch. 3.2). On a standing temporal target (ch. 7.8) an empty result writes nothing and leaves the input whole;
+elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty list, while a
+target never written stays null. A characteristic on a timeline is input only, read as its true periods. Witnesses
+`TijdvakTest`, `TmsTijdlijnWitnessTest`, `TmsTijdlijnVouwWitnessTest`, `TmsOoitUniciteitWitnessTest`, and for the
+refusals below `TmsTijdlijnWeigeringWitnessTest`.
+
 **Creation is stated, and fires in generations.** An object creation and a fact creation (RUNTIME-SEMANTICS ch. 5.5)
 fire only at a fixpoint of the rule layer, and what they make is stated and never lapses, as in the reference
 interpreter, which keeps a minted instance under a fixed label. A logical object could keep itself standing through
@@ -409,9 +431,21 @@ through `DroolsBackend.vuur`, which is not public; a consumer call is for the ca
 built, never as a silent fall:
 
 - the forms outside the trial, among them day kinds (a duration counted in a day kind and the dayKind
-  predicate among them), timelines (a total over the subject's own timeline or over a time-dependent member, the
-  bucketing builtins timeProportionalPart and dayCount, wholePeriod, and a uniqueness key on a timeline, which reads
-  ever-uniqueness, among them), and a dimensioned attribute over a path or one a form writes;
+  predicate among them), the whole-period qualifier wholePeriod, and a dimensioned attribute over a path or one a
+  form writes;
+- of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
+  7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
+  which clips the timeline (ch. 3.10), as the other two branches refuse it (golden `jutterswet-pachtvenster`); a
+  characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part or a day count,
+  among them a sum of timelines over a set (ch. 3.5); the comparisons "gelijk aan" and "ongelijk aan" in a clip, where
+  `rsTijdConditie` reads an empty side as no period and ch. 3.6 applies the comparison of ch. 1.2 per period; a rate
+  whose denominator is not the unit of the grid, which `rsTijdTotaal` would weigh unit-blind; the total without a clip
+  over a timeline a form writes, which the reference interpreter refuses as well; a timeline on a variable start point
+  and its `StartPointDetermination`; a time-dependent parameter, which the goldens with cases read in a `TemporalRead`
+  that the loader refuses for every branch; and what the reference interpreter refuses as well: a member on a grid of
+  more than one period, a fold over a member on a timeline other than a sum or a total, a uniqueness key with two
+  components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
+  fixed start point. Witness `TmsTijdlijnWeigeringWitnessTest`;
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
   either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the other two branches;

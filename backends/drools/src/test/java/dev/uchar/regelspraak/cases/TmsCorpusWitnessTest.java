@@ -62,8 +62,13 @@ class TmsCorpusWitnessTest {
      *
      *  <p>Raised from 201 to 216 on purpose (card tms-verdeling-en-tijdlijnen, step 1, acceptance (b)), measured
      *  2026-10-09 over the corpus with the jar of this step after the branch took on allocations: 216 of the 294 goldens
-     *  with cases play, none FAILs; the fifteen that rose are the goldens with an allocation. */
-    private static final int EXPECTED_MIN_PLAYED = 216;
+     *  with cases play, none FAILs; the fifteen that rose are the goldens with an allocation.
+     *
+     *  <p>Raised from 216 to 235 on purpose (card tms-verdeling-en-tijdlijnen, step 2, acceptance (b)), measured
+     *  2026-10-09 over the corpus with the jar of this step after the branch took on timelines as values, read by a
+     *  total, written by a pro-rata part or a day count, and as a uniqueness key: 235 of the 294 goldens with cases
+     *  play, none FAILs; the nineteen that rose are the eighteen goldens of the step and jutterswet-klipwacht. */
+    private static final int EXPECTED_MIN_PLAYED = 235;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
