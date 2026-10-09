@@ -192,3 +192,148 @@ en de getuige in `TmsCreatiestratumWitnessTest`, `corpus/golden/<nieuw>/`,
   generaties in ref); serieel, daarna, op diens branch.
 - `20261008-tms-omschakeling`: haar schaalproef (punt 9) heeft een recursieve
   keten van diepte 3, ver onder het budget.
+
+## Result (2026-10-09)
+
+*Geschreven door de hoofdsessie. De eigenaar was offline en vroeg bij twijfel een Fable-adviseur te raadplegen. Het
+besluit is twee keer op advies genomen: eerst generaties per stratum, na de lens op stap 1 aanmaakdiepte per stratum.
+Het blijft VOORLOPIG tot de eigenaar het bevestigt. De kaart staat bovenop
+`20261009-creatie-initialisatie-leest-groeiende-waarde`, landt samen met die kaart en stopt vóór de merge.*
+
+| Commit | Wat |
+|---|---|
+| `e15baf01` | claim |
+| `7a6414af` | clingo: de diepte per stratum (`depth(X,K,D)`), de honderdste aanmaak toegelaten, een nestgrens van 190 (stap 1) |
+| `fe795294` | tms: één fase per generatie (V2 uit de kaart eronder: elke creatie van een generatie leest dezelfde wereld) (stap 1) |
+| `465b3519` | corpus: golden `jutterswet-budgetgrens-op` (100 aanmaken) en rood `jutterswet-budgetgrens-over` (101) (stap 2) |
+| `df1539cb` | tms: een getuige die een objectcreatie met auto-focus weer vangt (document R) (stap 2) |
+| `03aac501` | VOORSTEL gate 12: `EXPECTED_PLAYED` 240 → 241, `EXPECTED_DRL_PLAYED` 194 → 195 |
+| `1756c3f8` | VOORSTEL gate 8: het nieuwe rode geval is NOFAULT in de exec-modeltak (geen budget daar) |
+| `7b86bd55` | kaart: het besluit herzien naar aanmaakdiepte per stratum (hoofdsessie) |
+| `fe857c73` | ref: het creatiebudget telt de aanmaakdiepte per stratum (stap 3) |
+| `64302b1b` | clingo: één foutzin "creation budget exhausted", en een klem op een ontbrekende diepte (stap 3) |
+| `fa7ede26` | corpus: de rode gevallen van het budget pinnen die zin (stap 3) |
+| `8e06d163` | tms: het creatiebudget telt de aanmaakdiepte per stratum (stap 3) |
+| `f534b387` | VOORSTEL gate 8: de noot bij `finite-chain-over-budget` |
+| `8862edc1` | VOORSTEL spec ch. 5.5: het creatiebudget telt de aanmaakdiepte |
+| `4a2dd490` | VOORSTEL IR-SPEC ch. 3.9: een sluiting valt niet onder het budget |
+| `d6fbe084` | clingo: de nestgrens rust op een verkeerd gelezen meting (README en commentaar; eindlens) |
+| `a84b7426` | corpus: de golden met twee ketens pint dat beide ketens volledig zijn (eindlens) |
+| `b78a8b9e` | rood: de budgetgevallen pinnen de plaats van de fout (eindlens) |
+| `f741b4bd` | VOORSTEL spec ch. 5.5 en IR-SPEC ch. 3.9: resourcegrens naast budget (eindlens) |
+
+### Wat er staat
+
+Elk gemaakt object heeft een aanmaakdiepte in het stratum van zijn creatie. Die diepte is één meer dan die van zijn
+onderwerp in dat stratum. Een invoerobject en een object van een lager stratum hebben diepte 0. Een aanmaak op diepte 101
+is in ref, clingo en de tak met truth maintenance een fout, met de woorden "creation budget exhausted". Feitcreaties en
+de vormen die niets maken hebben geen budget. Het leesmoment blijft de generatie van de kaart eronder; alleen de teller
+is anders.
+
+- **Ref** legt stratum en diepte vast bij het maken. Het generatiebudget van de kaart eronder vervalt. De lus over de
+  generaties heeft geen grens nodig: elke generatie behalve de laatste maakt of linkt iets, en onder het budget zijn
+  objecten en links eindig. Een onderwerp dat een hoger stratum maakte, faalt luid als invariant.
+- **Clingo** telde in stap 1 al per stratum. Stap 3 voegde de gedeelde zin toe en een klem: een creatie waarvan het
+  onderwerp geen diepte heeft, faalt nu luid in plaats van stil niet te vuren.
+- **De tak met truth maintenance** draagt stratum en diepte op het merkteken `Gemaakt`. Bij diepte 101 gooit de
+  creatieregel `Creatiebudget`, vóór er iets gemaakt is, en de driver eindigt daarmee. Eén fase per generatie houdt het
+  leesmoment van de kaart eronder (V2).
+- **De exec-modeltak en de DRL-teksttak** hebben geen budget, alleen een vuurplafond. Ze draaien een eindige keten
+  voorbij het budget uit; gate 8 noemt dat NOFAULT met reden.
+
+### Acceptatie
+
+- (a) Ref: gedaan in de kaart eronder (generaties) en hier herzien naar diepte.
+- (b) Clingo: diepte per stratum, de honderdste toegelaten, de 101e de fout. Stap 1 voegde ook een nestgrens van 190
+  toe, op de lezing dat clingo 5.8.2 een term dieper dan ongeveer 200 niveaus niet afdrukt. De fixronde na de eindlens
+  mat dat dat niet klopt: clingo breekt zijn JSON-uitvoer af op een string van bepaalde lengtes, niet op een diepte.
+  Een keten van niet-recursieve creaties breekt zo af bij 187, en speelt bij 200 en 201; dat gebeurt ook al op main.
+  De code van de nestgrens is ongewijzigd gebleven, met README en commentaar rechtgezet. De echte oorzaak staat op de
+  kaart `20261009-clingo-uitvoer-breekt-af-op-lengte` (main `8aa05068`), die ook de nestgrens herziet.
+- (c) Tak met truth maintenance: diepte, één fase per generatie (V2 gerepareerd, niet geweigerd), en een getuige die
+  de auto-focusmutant weer vangt.
+- (d) Corpus:
+  - de golden `jutterswet-budgetgrens-op`: 100 aanmaken, met een regel in hetzelfde stratum; case 2 heeft twee ketens
+    naast elkaar;
+  - het rode geval `jutterswet-budgetgrens-over`: 101 aanmaken;
+  - de NOTE's van `finite-chain-over-budget` en `runaway-recursion`, en de fragmenten van de rode gevallen.
+
+  Na de eindlens pint case 2 dat beide ketens volledig zijn: een `ketennummer` en per keten een consistentie aan het
+  plafond, met elk een eigen kanaalfeit. De rode gevallen pinnen de plaats van de fout: ref met creatie, stratum en
+  "would mint at creation depth 101", clingo met `viol("creation budget exhausted",oc0(` en in de suite de exacte term
+  op diepte 101.
+
+  Geen golden over drie strata: clingo grondt 50 + 1 + 50 in ongeveer 23 s en 1,7 GB. Die vorm staat in de clingo-suite
+  en de getuigen van de tak, telkens met ref ernaast.
+- (e) Spec: voorstellen op de branch (ch. 5.5, IR-SPEC ch. 3.9); de tekst staat in de diff. Ch. 5.5 heeft na de
+  eindlens een alinea "Resource bounds". Die scheidt het creatiebudget (de norm) van de resourcegrens van een executor:
+  het vuurplafond van 100 000 in Drools, en de nestgrens van clingo. Gemeten op de erflijn over 450 Wachters (101 025
+  links): ref en clingo geven erfvolgeraantal(W1) = 449, de tak met truth maintenance eindigt aan het plafond, en de
+  andere twee takken dragen het document niet.
+- (f) Pins: voorstel, 241 en 195. De golden speelt in de exec-modeltak en de DRL-teksttak.
+
+Gemeten op de zes proefdocumenten van het tweede advies: een sluiting van 102 hops, en ketens die op een link wachten
+tot diepte 100, 101 en daarboven. Ref en clingo geven nu dezelfde uitkomst: alles speelt, behalve diepte 101, dat in
+beide faalt. Geen bestaande golden of rood geval veranderde van uitkomst. Alleen de foutzin van de rode budgetgevallen is
+nieuw; hun pins zijn mee aangepast.
+
+Corpusdoorloop van de hoofdsessie: elke golden door de drie Drools-takken, met een jar uit een bevroren kopie van
+`4a2dd490`, tegen main `54ba99f7`. Alleen de nieuwe golden verschijnt, en die speelt in alle drie. Geen bestaande
+statusregel veranderde.
+
+Volledige gateset van de hoofdsessie op `f741b4bd` (lokaal): alle 16 groen. Gate 5: `ref suite 1277 worked examples; 803
+cases replayed exactly`; gate 6: `backend suite 2138 checks; 803 cases replay exactly through clingo — ref = clingo`;
+gate 8: `43 red cases …; 86 pinned fragments`; gate 12: `check-drools: PASS` (played 241, DRL 195). Beschermde paden
+alleen als VOORSTEL in eigen commits: `scripts/check-drools.sh` (pins), `scripts/check-rood.sh` (een NOFAULT-regel en
+de noot bij `finite-chain-over-budget`), `spec/RUNTIME-SEMANTICS.md` en `spec/IR-SPEC.md`.
+
+### Lensvondsten
+
+Copilot (sol6, effort xhigh), drie runs (lens op stap 1, eindlens, herkeuring van de fixronde), elk één premium
+request. Daarnaast twee Fable-adviezen (Claude, alleen lezend). De eindlens met Opus 5.5 is niet gedraaid,
+omdat de hoofdsessie die eerst met de eigenaar afstemt.
+
+- **Lens op stap 1, BLOKKEREND (twee keer).** Clingo had geen budget voor feitcreaties: een erflijn van 103 Wachters
+  speelt in clingo en faalt in ref. Een keten waarin aanmaken en links elkaar afwisselen faalt in ref en speelt in
+  clingo. Aanvaard. De hoofdsessie twijfelde, vroeg een tweede Fable-advies, en het besluit werd aanmaakdiepte per
+  stratum; zie stap 3. Onder dat besluit spelen beide vormen in alle executors zolang de diepte ≤ 100 blijft.
+- **Lens op stap 1, ADVIES (twee keer).** De nestgrens en de grondkosten staan nu in de spectekst en de README. De
+  auto-focusgetuige is document R.
+
+Eindlens (sol6, de hele diff op `4a2dd490`), vier keer BLOKKEREND:
+- Aanvaard en gefixt:
+  - de spectekst beloofde dat een sluiting van elke lengte in elke executor afloopt, maar het vuurplafond van Drools
+    eindigt haar (`f741b4bd`);
+  - de rode gevallen pinden niet waar de fout valt (`b78a8b9e`, rood op mutanten);
+  - de golden met twee ketens bewees haar 200 aanmaken niet (`a84b7426`, rood op een variant).
+- Aanvaard, opgelost buiten de code: de nestgrens van clingo ontbrak zonder recursieve objectcreatie. De bouwer mat dat
+  de aanname eronder niet klopt; het bestond al op main. README en commentaar zijn rechtgezet (`d6fbe084`); de rest gaat
+  naar de eigen kaart `20261009-clingo-uitvoer-breekt-af-op-lengte`.
+
+Herkeuring van de fixronde (sol6): vondst 2 tot en met 4 zijn hersteld. Vondst 1 blijft als fout op geldige invoer
+staan: de keten van 187 niet-recursieve creaties breekt in clingo af waar ref speelt. Afgewezen voor deze kaart, met
+reden: het is een bestaande fout op main, die niet van deze kaart afhangt, en ze heeft een eigen kaart
+(`20261009-clingo-uitvoer-breekt-af-op-lengte`, main `8aa05068`). De README is er eerlijk over, en de spectekst beschrijft
+de benoemde weigering alleen voor documenten met een recursieve objectcreatie.
+
+### Open punten (voor de eigenaar)
+
+1. **Het besluit zelf** (advies 2 in `/tmp/lens-bugs/advies2-fable.md`).
+   - Voorgestelde CONSTRUCTS-rij: "**Creation budget (2026-10-09, card `creatiebudget-ref-en-clingo`):** every minted
+     instance has a creation depth in its creation's stratum; a mint at depth 101 is a fault ("creation budget
+     exhausted") in `ref/`, the ASP backend and the Drools truth-maintenance branch; fact creations carry no budget; the
+     ASP nesting bound (190) stays a named backend limit."
+   - Voorgestelde zin voor PLAN §9: "The creation budget counts the creation depth per stratum (provisional decision
+     2026-10-09 on a second Fable advice, confirmed by the owner on …)."
+2. **De nestgrens van clingo** (190) rust op een verkeerd gelezen meting. De afbraak hangt van de lengte van een string
+   in de JSON-uitvoer af. Herzien op de kaart `20261009-clingo-uitvoer-breekt-af-op-lengte`. Ref faalt niet op een lange
+   keten van niet-recursieve creaties: de diepte begint per stratum opnieuw (gemeten: 200 en 201 spelen).
+3. **Clingo-README.** "A single chain of 100 takes well under a second" geldt niet met een som met terugval: synth2 duurt
+   ongeveer 20 s, de wachtersketen 16 tot 18 s per case. Dat was al zo op main.
+4. **Gate 10** controleert alleen `corpus/golden`. De `bron.rgs` van een rood geval houdt dus geen gate bij zijn
+   `ir.json`.
+5. **Landing.** Deze kaart en de kaart eronder landen samen. Op een proefstapel (main plus W3, W2, W1 en deze kaart,
+   cherry-picks; het enige conflict waren de pins in `scripts/check-drools.sh`, opgelost naar 242 en 196 met beide
+   commentaarblokken) zijn alle 16 gates groen (`bf1d3dec` in `wt/proefstapel`: 805 cases, 49 rode gevallen). Bij de
+   landing van deze kaart na `20261009-drools-filterfout-buiten-de-lezende-regel` dus hetzelfde conflict, met dezelfde
+   oplossing.
