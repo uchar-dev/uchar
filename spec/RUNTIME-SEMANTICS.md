@@ -3537,7 +3537,12 @@ none reads what another creation of its own generation mints or links,
 whatever their order in the document. After it the forms that make
 nothing settle again, stratum by stratum (ch. 6.3), those of the lower
 strata included, since they compute on the minted instances as well.
-The stratum is done when a generation mints and links nothing. A
+The consistency and uniqueness forms of each stratum fire once that
+stratum has come to rest, in generation 0 and after every generation,
+so they also check the instances a creation mints (`ref/` tests
+`WV-6.3-consistentie-na-een-creatie` and
+`WV-6.3-uniciteit-na-een-creatie`). The stratum is done when a
+generation mints and links nothing. A
 creation's condition and member initialisations are evaluated on the
 settled world it reads, which is the moment of making; this is the
 reading of "values evaluated on the subject" above and of "exactly one
