@@ -21,7 +21,13 @@ gebeurt dat toch:
      `@-4611684314360187904ms`: het omkeren van het teken slaat om;
    - op een datum (dagprecisie, waar ref geen bereik heeft): plus
      4 611 686 018 427 387 903 dagen geeft −12626367463881254-09-18, plus
-     7·10¹⁷ weken geeft −11836990593520844-11-04.
+     7·10¹⁷ weken geeft −11836990593520844-11-04;
+   - `floor_div` in `split_ms` loopt over voor een datum-tijd binnen ongeveer
+     een dag van −2⁶² (onder −4 611 686 018 340 987 904 ms): vanaf
+     −146136543-09-09T00:00 min 1 springtijdag geeft ref
+     `@4611686017705975808ms` in plaats van de bereikfout (gemeten in de
+     fixronde van `20261009-drools-datumstap-buiten-bereik`, `6ac5665d`); het
+     raakt elke bewerking die `split_ms` gebruikt.
 2. **Clingo** slaat om bij 2024-01-01 plus 2 000 000 000 maanden op een datum:
    epochdag `744227579` (2039595-11-27), waar ref en Drools 166668690-09-01
    geven. En het geeft bij een vooruitstap een misleidende zin, "date arithmetic
