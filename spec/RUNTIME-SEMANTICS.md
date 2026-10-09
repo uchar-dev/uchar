@@ -3601,10 +3601,14 @@ none reads what another creation of its own generation mints or links,
 whatever their order in the document. After it the forms that make
 nothing settle again, stratum by stratum (ch. 6.3), those of the lower
 strata included, since they compute on the minted instances as well.
-The consistency and uniqueness forms of each stratum fire once that
-stratum has come to rest, in generation 0 and after every generation,
-so they also check the instances a creation mints. In the `ref/` tests
-`WV-6.3-consistentie-na-een-creatie` and
+The stratum is done when a generation mints and links nothing. Its
+consistency and uniqueness forms fire then, on the world it ends with.
+Those of every lower stratum fire again in each of its generations,
+generation 0 included, once their own stratum has come to rest, so they
+also check the instances a higher creation mints: what they read is
+written by their own stratum or a lower one, which no longer changes it
+on an instance that exists and has computed it on a minted one by then.
+In the `ref/` tests `WV-6.3-consistentie-na-een-creatie` and
 `WV-6.3-uniciteit-na-een-creatie` (absolute, each in two rule orders) a
 creation of stratum 2 gives every open Haven a Post, and a rule of
 stratum 0 sets the a of every Post to 5. With one open Haven the
@@ -3613,8 +3617,26 @@ deposits **one** fact, on that Post; with two open Havens the
 uniqueness "eenmalige a" of stratum 1 (the a of every Post is unique)
 deposits a fact on **both** Posts. Until 2026-10-09 these forms fired
 once, at the fixpoint of their own stratum, and both channels stayed
-**empty**. The stratum is done when a generation mints and links
-nothing. A creation's condition and member initialisations are
+**empty**. Within their own stratum they wait for its last generation:
+a consistency reads a positive characteristic non-strictly (ch. 6.1),
+so it can share a stratum with a cycle that still makes that
+characteristic grow, and a channel fact is never withdrawn (ch. 5.6). In
+the `ref/` test `WV-5.5-consistentie-op-een-groeiend-kenmerk`
+(absolute), "ervaren wachter" marks a Wachter that has a maatgever, the
+fact creation "geef door", the member of the recursive group
+"doorgeven", makes an ervaren Wachter the maatgever of its opvolger, and
+the consistency "elke wachter ervaren" asserts that a Wachter is
+ervaren; all three are in stratum 0. With W1 → W2 → W3 over opvolging
+and W1 ervaren in the input, W2 is ervaren after generation 1 and W3
+after generation 2, and the channel stays **empty**. Fired on generation
+0's world, where only W1 is ervaren, the consistency would deposit a
+fact on W2 and one on W3. A uniqueness reads its keys strictly and sits
+a stratum above every writer of a key, so it never sees such a world:
+in `WV-5.5-uniciteit-op-een-groeiende-sleutel` (absolute, in both orders
+of its two rules) the key volgnummer, the number of maatgevers plus the
+basis, is 5 for both W1 and W2 on generation 0's world and 5, 6 and 1
+at the end, and the uniqueness "uniek volgnummer" deposits **nothing**.
+A creation's condition and member initialisations are
 evaluated on the settled world it reads, which is the moment of
 making; this is the
 reading of "values evaluated on the subject" above and of "exactly one
