@@ -1,0 +1,22 @@
+Objecttype de Wachter (mv: Wachters) (bezield)
+    de rang Numeriek (geheel getal);
+    de opvolgerrang Numeriek (geheel getal);
+
+Feittype opvolging
+    de voorganger Wachter
+    de opvolger (mv: opvolgers) Wachter
+Eén voorganger heeft één opvolger
+
+Regel opvolgerrang van een wachter
+    geldig altijd
+        De opvolgerrang van een Wachter moet berekend worden als de rang van de opvolger van de Wachter.
+
+Regel rangplafond
+    geldig altijd
+        De rang van een Wachter moet kleiner zijn dan 101.
+
+Regelgroep lange estafette is recursief
+Regel werf de lange keten
+    geldig altijd
+        Een Wachter heeft een opvolger met rang gelijk aan de rang van de Wachter plus 1
+        indien de rang van de Wachter kleiner is dan 102.

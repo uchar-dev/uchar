@@ -1,0 +1,265 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opvolgerrang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "voorganger",
+            "objectType": "Wachter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opvolger",
+            "objectType": "Wachter",
+            "plural": "opvolgers",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "opvolgerrang van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opvolgerrang",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De opvolgerrang van een Wachter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "rang",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "de rang van de opvolger van de Wachter"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "opvolging",
+                  "role": "opvolger"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "werf de lange keten",
+        "versions": [
+          {
+            "createdType": "Wachter",
+            "subject": "Wachter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "rang",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rang",
+                "subjectType": "Wachter",
+                "source": {
+                  "snippet": "de rang van de Wachter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "101"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "101"
+                }
+              },
+              "source": {
+                "snippet": "de rang van de Wachter kleiner is dan 101"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "opvolging",
+              "role": "opvolger"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "rangplafond",
+        "versions": [
+          {
+            "subject": "Wachter",
+            "assertion": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rang",
+                "subjectType": "Wachter",
+                "source": {
+                  "snippet": "De rang van een Wachter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "101"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "101"
+                }
+              },
+              "source": {
+                "snippet": "De rang van een Wachter moet kleiner zijn dan 101"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "De rang van een Wachter moet kleiner zijn dan 101",
+              "line": 16
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
+      {
+        "node": "RuleGroup",
+        "name": "lange estafette",
+        "recursive": true,
+        "members": [
+          "werf de lange keten"
+        ],
+        "source": {
+          "snippet": "lange estafette",
+          "line": 18
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}
