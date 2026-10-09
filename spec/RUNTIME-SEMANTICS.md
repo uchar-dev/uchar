@@ -3549,17 +3549,29 @@ the two parted near the bound: on a chain of exactly 100 mints, on a
 chain whose mints wait for links, and on a closure of more than 100
 hops.
 
-Two named limits sit beside the budget. The ASP backend writes a minted
-instance as a term that nests one level per creation over all strata,
-and clingo cannot print a term nested much past 200 levels, so the
-backend refuses by name (`viol("term nesting bound reached …")`, the
-second posture of `IR-SPEC.md` ch. 5.5) a chain of 190 nested creations
-over all strata, which the reference interpreter plays
-(`backends/clingo/README.md`, Recorded limitations). The Drools
-backend's exec-model and DRL-text branches carry no creation budget,
-only a cap of 100 000 firings, and run a finite chain past the budget
-to its end; gate 8, whose red run drives the exec-model branch, lists
-each such case with that reason (`scripts/check-rood.sh`).
+**Resource bounds** (card `creatiebudget-ref-en-clingo`, 2026-10-09).
+The creation budget is the norm's only bound on recursive creation: fact
+creations and the forms that make nothing have none, and a closure of
+any length is a result. An executor may carry a named resource bound
+of its own beside it. Such a bound is no norm: a run that meets it ends
+loudly in that executor, never with a truncated result, where an
+executor without that bound completes the same run. Two are recorded.
+The Drools backend fires a case at most 100 000 times, in each of its
+three branches. Its exec-model and DRL-text branches carry no creation
+budget at all and run a finite chain past the budget to its end (gate
+8, whose red run drives the exec-model branch, lists each such case with
+that reason, `scripts/check-rood.sh`); a run that needs more firings, a
+closure of more than 100 000 links among them, ends at the cap without a
+fixpoint and is reported as such ("geen fixpunt"). Measured 2026-10-09
+on the anchor `jutterswet-erflijn` over a chain of 450 input Wachters,
+whose closure has 101 025 links: the reference interpreter and the ASP
+backend give erfvolgeraantal(W1) = **449**, the truth-maintenance branch
+ends at the cap, and the other two branches do not carry the document.
+The ASP backend refuses by name (`viol("term nesting bound reached …")`,
+the second posture of `IR-SPEC.md` ch. 5.5) a chain of 190 nested
+creations over all strata in a document with a recursive object
+creation, which the reference interpreter plays
+(`backends/clingo/README.md`, Recorded limitations).
 
 Worked example (absolute; `ref/` tests `WV-5.5-budget-wacht-op-link`
 and `WV-5.5-budget-erflijn`): "werf de opvolger" gives a Wachter whose

@@ -3027,10 +3027,15 @@ budget turning divergence into a fault in every executor.
   are idempotent links over the fixed universe, so its fixpoint is the
   transitive closure and termination is structural
   (`RUNTIME-SEMANTICS.md` ch. 5.5). The creation budget of
-  `RUNTIME-SEMANTICS.md` ch. 5.5 does not bound it: a closure of any
-  length completes in every executor (since 2026-10-09; until then the
+  `RUNTIME-SEMANTICS.md` ch. 5.5 does not bound it: the norm sets no
+  bound on the length of a closure (since 2026-10-09; until then the
   reference interpreter's pass budget cut a closure of 100+ hops where
-  the ASP grounding completed it). *v0 mirror note:* containment is a
+  the ASP grounding completed it). An executor's own named resource
+  bound, which is no norm, can still end one: the Drools backend fires a
+  case at most 100 000 times, so a closure that needs more firings ends
+  there without a fixpoint, reported as such, where the reference
+  interpreter and the ASP backend complete it (`RUNTIME-SEMANTICS.md`
+  ch. 5.5, Resource bounds). *v0 mirror note:* containment is a
   v0 error; the unguarded case only warns. **Delta (promotion)** for the
   guard.
 
