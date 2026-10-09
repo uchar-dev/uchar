@@ -1606,8 +1606,9 @@ let () =
 
 (* The document and the case as files, loaded the way the runner loads them.
    [f] gets the verifier's findings, the case and the evaluation, deferred so
-   that a fault can be caught where it is pinned. *)
-let met_bestanden ~ir ~zaak f =
+   that a fault can be caught where it is pinned. [wereld] changes the input
+   world before the evaluation, for a state no case can write. *)
+let met_bestanden ?(wereld = Fun.id) ~ir ~zaak f =
   let schrijf suffix tekst =
     let bestand = Filename.temp_file "ref-wv55" suffix in
     let oc = open_out bestand in
@@ -1626,7 +1627,7 @@ let met_bestanden ~ir ~zaak f =
           Eval.evaluate
             { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
               locals = World.SMap.empty; btypes = World.SMap.empty; subj = None }
-            c.world))
+            (wereld c.world)))
 
 (* verifier-clean, evaluated without a fault, every expectation of the case
    met, then [verder] on the end state. A fault or a mismatch is carried in
@@ -1784,23 +1785,26 @@ let () =
             [ "oc0::W1"; "oc0::oc0::W1"; "oc0::oc0::oc0::W1" ]))
     (volgordes regels)
 
-(* WV-5.5-budget-grens (ch. 5.5, since 2026-10-09): the generation budget —
-   a stratum admits at most 100 generations that mint or link, and the 101st
-   that still does is the fault — counts generations, not passes, so the
-   boundary does not depend on the order of the rules that make nothing.
-   "werf de opvolger" (group "estafette") gives Wachters of rang below 52 an
-   opvolger with rang plus 1; "leg de volgende boei" (group "boeienlijn")
-   gives a Boei whose nummer is below the bound a volgende boei with nummer
-   plus 1 and a wachterrang read from the rang of its wachter, which puts that
-   chain a stratum higher. "kopie van een boei" copies the nummer, "kopie2 van
-   een boei" the kopie. W1 (rang 1) guards B1 (nummer 1). Bound 100: 99
-   generations of Boeien; bound 101: 100, the last the budget admits; bound
-   102: 101, the fault. In both orders of the two copy rules: 100 and 101
-   Boeien, kopie2 of the last Boei equal to its nummer, and the fault "no
-   fixpoint within 100 generations". Until that date the budget was 100
-   passes of the whole stratum, and the copy rules settle in one pass more
-   when the reader of kopie is written first: with that order bound 100
-   faulted (no fixpoint within 100 passes) and the other order played. *)
+(* WV-5.5-budget-grens (ch. 5.5, since 2026-10-09): the creation budget —
+   a mint at creation depth 101 in its stratum is the fault — counts the
+   chain of mints, not passes, so the boundary does not depend on the order
+   of the rules that make nothing. "werf de opvolger" (group "estafette")
+   gives Wachters of rang below 52 an opvolger with rang plus 1; "leg de
+   volgende boei" (group "boeienlijn") gives a Boei whose nummer is below the
+   bound a volgende boei with nummer plus 1 and a wachterrang read from the
+   rang of its wachter, which puts that chain a stratum higher. "kopie van
+   een boei" copies the nummer, "kopie2 van een boei" the kopie. W1 (rang 1)
+   guards B1 (nummer 1). Bound 100: B100 at depth 99; bound 101: B101 at
+   depth 100, the last the budget admits; bound 102: B102 would be the mint
+   at depth 101, the fault. Every generation of the Boeien mints one Boei on
+   the last, so a Boei's depth is the generation that minted it, and the
+   bound sits where the generation budget of the same day put it. In both
+   orders of the two copy rules: 100 and 101 Boeien, kopie2 of the last Boei
+   equal to its nummer, and the fault "creation budget exhausted". Until
+   that date the budget was 100 passes of the whole stratum, and the copy
+   rules settle in one pass more when the reader of kopie is written first:
+   with that order bound 100 faulted (no fixpoint within 100 passes) and the
+   other order played. *)
 let () =
   let boei naam =
     Printf.sprintf
@@ -1859,10 +1863,116 @@ let () =
             met_bestanden ~ir ~zaak (fun bevindingen _ evalueer ->
                 check (naam ^ ": verifier-clean") (bevindingen = []);
                 expect_fault_msg naam evalueer
-                  "no fixpoint within 100 generations — generation 101 still mints or links (object \
-                   creation \"leg de volgende boei\")"))
+                  "creation budget exhausted: object creation \"leg de volgende boei\" of stratum 1 \
+                   would mint at creation depth 101"))
         (volgordes [ kopie2; kopie ]))
     [ 100; 101; 102 ]
+
+(* WV-5.5-budget-erflijn (ch. 5.5, since 2026-10-09): a fact creation
+   carries no creation budget. It mints nothing, and over the finite
+   universe a stratum's mints leave the links are finite, so a closure of
+   any length completes. "erf de directe opvolger" links every Wachter as
+   erflater to its opvolger; "erf de lijn door" (recursive group
+   "erfestafette") links an erflater to the opvolger of each of its
+   erfvolgers, a stratum higher, since a creation reads the erflijn
+   strictly. Over a chain of 103 Wachters W1 → … → W103 the link W1 → W103
+   is 102 hops long and comes in the 101st generation of that stratum:
+   erfvolgeraantal(W1) = 102 and the channel stays empty. Until that date a
+   stratum admitted 100 generations that mint or link, and this document
+   faulted ("no fixpoint within 100 generations — generation 101 still
+   mints or links (fact creation "erf de lijn door")"), where the ASP
+   backend played it. The anchor jutterswet-erflijn is the same document
+   over four Wachters. *)
+let () =
+  let ir =
+    {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [{"node": "Attribute", "name": "erfvolgeraantal", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "plural": "voorgangers", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "erflijn", "reciprocal": false, "roles": [{"node": "Role", "name": "erflater", "objectType": "Wachter", "plural": "erflaters", "many": true}, {"node": "Role", "name": "erfvolger", "objectType": "Wachter", "plural": "erfvolgers", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [{"node": "Rule", "name": "erfvolgeraantal van een wachter", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "erfvolgeraantal", "subjectType": "Wachter", "source": {"snippet": "Het erfvolgeraantal van een Wachter"}}, "value": {"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "erfvolgers", "subjectType": "Wachter", "source": {"snippet": "alle erfvolgers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "erflijn", "role": "erfvolger"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "het aantal erfvolgers van de Wachter"}}, "initialisation": false, "presentation": "equation"}]}], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "erf de directe opvolger", "versions": [{"factType": "erflijn", "anchorRole": "erflater", "targetRole": "erfvolger", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}, {"node": "FactCreation", "name": "erf de lijn door", "versions": [{"factType": "erflijn", "anchorRole": "erflater", "targetRole": "erfvolger", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "erflijn", "role": "erfvolger"}, {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "erfestafette", "recursive": true, "members": ["erf de lijn door"]}]}, "diagnostics": []}|}
+  in
+  let n = 103 in
+  let wachter i =
+    Printf.sprintf
+      {|{"label": "W%d", "objectType": "Wachter", "attributes": {}, "roles": {%s}, "characteristics": []}|}
+      i
+      (if i < n then Printf.sprintf {|"opvolger": ["W%d"]|} (i + 1) else "")
+  in
+  let zaak =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "erfvolgeraantal", "value": {"number": "%d"}}, {"kind": "consistent"}]}|}
+      (String.concat ", " (List.init n (fun i -> wachter (i + 1))))
+      (n - 1)
+  in
+  speelt ~naam:"WV-5.5-budget-erflijn-102-hops" ~ir ~zaak (fun _ -> ())
+
+(* WV-5.5-budget-wacht-op-link (ch. 5.5, since 2026-10-09): the budget
+   counts the depth of a chain of mints, not the generations it takes; a
+   creation whose condition waits for a link keeps its subject's depth.
+   "werf de opvolger" gives a Wachter whose rang is below N and who has a
+   maatgever an opvolger with rang plus 1; "maak maten" links every Wachter
+   as maatgever to its opvolger; both are members of the recursive group
+   "estafette", so they share one stratum. The consistency "rangdetector"
+   holds a rang below N. W1 (rang 1) has the maatgever W0 (rang 0) in the
+   input and mints W2 in generation 1; W2 gets its maatgever W1 in
+   generation 2 and mints W3 in generation 3, so W(k + 1) comes in
+   generation 2k - 1 at creation depth k. N = 101: W101 at depth 100, in
+   generation 199 — the chain plays, 102 Wachters, the last of rang 101, and
+   the rangdetector meets W101 alone. N = 102: W102 would be the mint at
+   depth 101, the fault. Until that date the budget counted 100 generations
+   per stratum, and this chain faulted from N = 52 on (W52 in generation
+   101, at depth 51), where the ASP backend, which counted the depth,
+   played it to N = 101. *)
+let () =
+  let getal n =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
+      getal_json n
+  in
+  let rang = {|{"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}|} in
+  let doc grens =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [{"node": "Attribute", "name": "rang", "datatype": %s}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "plural": "opvolgers", "many": false}]}, {"node": "FactType", "name": "maatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "maatgever", "objectType": "Wachter", "plural": "maatgevers", "many": true}, {"node": "Role", "name": "maat", "objectType": "Wachter", "plural": "maten", "many": true}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de opvolger", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": %s, "source": {"snippet": "plus"}}, "characteristic": false}], "condition": {"node": "Compound", "quantifier": "all", "threshold": 0, "parts": [{"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "less"}}, {"node": "Comparison", "op": "greater", "left": {"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "maatgevers", "subjectType": "Wachter", "source": {"snippet": "maatgevers van de Wachter"}}], "elementType": "Wachter", "sourceRole": {"node": "RoleBinding", "factType": "maatschap", "role": "maatgever"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, "source": {"snippet": "het aantal maatgevers van de Wachter"}}, "right": %s, "source": {"snippet": "greater"}}], "source": {"snippet": "aan alle volgende voorwaarden"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [{"node": "Consistency", "name": "rangdetector", "versions": [{"subject": "Wachter", "assertion": {"node": "Comparison", "op": "less", "left": %s, "right": %s, "source": {"snippet": "de rang van de Wachter is kleiner dan %d"}}, "validity": {"node": "Validity"}, "source": {"snippet": "rangdetector"}}]}], "uniquenesses": [], "factCreations": [{"node": "FactCreation", "name": "maak maten", "versions": [{"factType": "maatschap", "anchorRole": "maatgever", "targetRole": "maat", "anchor": "Wachter", "path": [{"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}], "validity": {"node": "Validity"}}]}], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "estafette", "recursive": true, "members": ["werf de opvolger", "maak maten"], "source": {"snippet": "estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+      getal_json rang (getal 1) getal_json rang (getal grens) (getal 0) rang (getal grens) grens
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W0", "objectType": "Wachter", "attributes": {"rang": {"number": "0"}}, "roles": {}, "characteristics": []}, {"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {"maatgever": ["W0"]}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "rang", "value": {"number": "1"}}, {"kind": "inconsistent", "rule": "rangdetector"}]}|}
+  in
+  speelt ~naam:"WV-5.5-budget-wacht-op-link-101" ~ir:(doc 101) ~zaak (fun final ->
+      check "WV-5.5-budget-wacht-op-link-101: 102 Wachters" (World.SMap.cardinal final.instances = 102);
+      let laatste = String.concat "" (List.init 100 (fun _ -> "oc0::")) ^ "W1" in
+      expect_num "WV-5.5-budget-wacht-op-link-101: the rang of the Wachter at depth 100"
+        (attr_van final laatste "rang") "101";
+      check "WV-5.5-budget-wacht-op-link-101: the rangdetector meets the last Wachter alone"
+        (List.map (fun (f : World.error_fact) -> (f.rule, f.subject)) final.channel = [ ("rangdetector", laatste) ]));
+  met_bestanden ~ir:(doc 102) ~zaak (fun bevindingen _ evalueer ->
+      check "WV-5.5-budget-wacht-op-link-102: verifier-clean" (bevindingen = []);
+      expect_fault_msg "WV-5.5-budget-wacht-op-link-102" evalueer
+        "creation budget exhausted: object creation \"werf de opvolger\" of stratum 0 would mint at \
+         creation depth 101")
+
+(* The invariant beside the creation budget (since 2026-10-09): a creation
+   never meets a subject that a higher stratum minted. A creation reads its
+   subject's population strictly (ch. 6.1), so it sits at or above every
+   creation that makes its subjects, and a stratum is complete before a
+   higher one starts (ch. 6.3). ref/ checks it on every subject a creation
+   ranges over and fails loudly with the file's name, rather than count a
+   depth from a stratum that has not run. The world below gives W1 a forged
+   mint of stratum 1 and meets "werf de lange keten", the only creation, of
+   stratum 0. *)
+let () =
+  let ir =
+    {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Wachter", "animate": true, "plural": "Wachters", "attributes": [{"node": "Attribute", "name": "rang", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}], "characteristics": []}], "factTypes": [{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "voorganger", "objectType": "Wachter", "many": false}, {"node": "Role", "name": "opvolger", "objectType": "Wachter", "many": false}]}], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [{"node": "ObjectCreation", "name": "werf de lange keten", "versions": [{"createdType": "Wachter", "subject": "Wachter", "initialisations": [{"node": "MemberInit", "member": "rang", "value": {"node": "Binary", "op": "plus", "left": {"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}, "right": {"node": "Literal", "value": {"number": "1"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "1"}}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "plus"}}, "characteristic": false}], "condition": {"node": "Comparison", "op": "less", "left": {"node": "AttributeReference", "attribute": "rang", "subjectType": "Wachter", "source": {"snippet": "zijn rang"}}, "right": {"node": "Literal", "value": {"number": "5"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "5"}}, "source": {"snippet": "less"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "opvolging", "role": "opvolger"}}]}], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [{"node": "RuleGroup", "name": "lange estafette", "recursive": true, "members": ["werf de lange keten"], "source": {"snippet": "lange estafette"}}], "prioritizedDefaults": []}, "diagnostics": []}|}
+  in
+  let zaak =
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "W1", "objectType": "Wachter", "attributes": {"rang": {"number": "1"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "W1", "attribute": "rang", "value": {"number": "1"}}]}|}
+  in
+  let naam = "creation budget invariant: a subject a higher stratum minted" in
+  met_bestanden
+    ~wereld:(fun w -> { w with World.mints = World.SMap.add "W1" (1, 1) w.World.mints })
+    ~ir ~zaak
+    (fun bevindingen _ evalueer ->
+      check (naam ^ ": verifier-clean") (bevindingen = []);
+      match evalueer () with
+      | exception Failure m ->
+          check (naam ^ " (" ^ m ^ ")") (substring m "ref/lib/eval.ml, run_object_creatie")
+      | exception Value.Fault m -> check (naam ^ " (an evaluation fault: " ^ m ^ ")") false
+      | _ -> check (naam ^ " (no failure)") false)
 
 (* WV-5.5-budget-regelketen (since 2026-10-09): the forms that make nothing
    carry no budget of their own. Without creations their graph is acyclic, so

@@ -1,10 +1,11 @@
 (* The evaluation session of RUNTIME-SEMANTICS ch. 5: forward chaining to
    the least fixpoint, with freshness realised as naive re-evaluation
    passes and idempotence at the write boundary (World.write_attr), and
-   creation in generations (ch. 5.5). A bounded generation budget turns a
-   chain of creations without end into a fault, and a bound on the passes
-   between two generations does the same for two writers that keep
-   overwriting each other.
+   creation in generations (ch. 5.5). The creation budget, a bound on the
+   depth of a chain of mints within a stratum, turns a chain of creations
+   without end into a fault, and a bound on the passes between two
+   generations does the same for two writers that keep overwriting each
+   other.
 
    Negation and channel reads are staged as v0's single boundary
    (ch. 5.3): the positive part quiesces first, then negation consumers
@@ -3033,8 +3034,24 @@ let run_feit_creatie env ~read world (fc : resolved_feit_creatie) =
    a recursive creation whose initialisation reads a copy of a count the
    rules derive from its own links, the copy rule written before the
    count left the initialisation leeg and written after it gave 0. The
-   instance, its initialisations and the back-link land on [world]. *)
-let run_object_creatie env ~world0 ~idx ~read world (oc : resolved_object_creatie) =
+   instance, its initialisations and the back-link land on [world].
+
+   The creation budget (ch. 5.5): the minted instance gets a creation depth
+   in [stratum], the creation's own stratum, recorded beside its label in
+   World.mints: one more than the subject's depth there, where an input
+   instance and an instance a lower stratum minted stand at 0, since a
+   lower stratum is complete before this one starts (ch. 6.3). A mint at
+   depth [creation_budget] + 1 is the fault, at the making. The depth
+   follows the chain of makings and not the generation in which a mint
+   happens, so a creation whose condition waits for a link or a value
+   keeps its subject's depth. Until 2026-10-09 the budget was 100
+   generations per stratum that mint or link: a chain whose every mint
+   waited one generation for a link a fact creation lays faulted from its
+   51st mint on, and a recursive fact creation faulted on a closure of 102
+   hops. *)
+let creation_budget = 100
+
+let run_object_creatie env ~world0 ~idx ~stratum ~read world (oc : resolved_object_creatie) =
   if not (applies env oc.oc_geldigheid) then (world, false)
   else begin
     let name = Option.value oc.oc_naam ~default:"<objectcreatie>" in
@@ -3053,6 +3070,23 @@ let run_object_creatie env ~world0 ~idx ~read world (oc : resolved_object_creati
       | None -> connecting_pair env ~from_type:subject ~to_type:nieuw
     in
     over_subjects ~read env world ~otype:subject ~rule:name (fun w self err ->
+        (* A subject that a higher stratum minted cannot occur: a creation
+           reads its subject's population strictly (ch. 6.1), so it sits at
+           or above every creation that makes its subjects. Counting a depth
+           from a stratum that has not run would be meaningless, so a
+           violation is a fault of this interpreter, not of the document. *)
+        let subject_depth =
+          match SMap.find_opt self.label read.World.mints with
+          | None -> 0
+          | Some (k, d) when k = stratum -> d
+          | Some (k, _) when k < stratum -> 0
+          | Some (k, _) ->
+              failwith
+                (Printf.sprintf
+                   "ref/lib/eval.ml, run_object_creatie: object creation \"%s\" of stratum %d meets \
+                    the subject %s, which a creation of stratum %d minted"
+                   name stratum self.label k)
+        in
         let fire =
           match oc.oc_voorwaarde with Some c -> eval_cond env read self ~err c | None -> true
         in
@@ -3073,11 +3107,19 @@ let run_object_creatie env ~world0 ~idx ~read world (oc : resolved_object_creati
           in
           if blocked || SMap.mem label w.World.instances then (w, false)
           else begin
+            let depth = subject_depth + 1 in
+            if depth > creation_budget then
+              Value.fault
+                "creation budget exhausted: object creation \"%s\" of stratum %d would mint at \
+                 creation depth %d, on %s — a stratum mints to depth %d, and a chain of creations \
+                 without end is a fault, never a silent truncation (ch. 5.5)"
+                name stratum depth self.label creation_budget;
             let w =
               World.add_instance w
                 { World.label; otype = nieuw; attrs = SMap.empty; chars = [];
                   links = SMap.empty; tls = SMap.empty; ctls = SMap.empty }
             in
+            let w = { w with World.mints = SMap.add label (stratum, depth) w.World.mints } in
             let w =
               List.fold_left
                 (fun w (t : toekenning) ->
@@ -3939,7 +3981,7 @@ let evaluate env world =
           else
             Some
               ( named "object creation" oc.oc_naam,
-                fun read w -> run_object_creatie env ~world0 ~idx:i ~read w oc ))
+                fun read w -> run_object_creatie env ~world0 ~idx:i ~stratum:(oc_stratum oc) ~read w oc ))
         (indexed env.doc.object_creaties)
   in
   (* one pass: every form that makes nothing once, each on the world the
@@ -4031,18 +4073,6 @@ let evaluate env world =
           (Printf.sprintf "%s writers of one target disagree: %s to the attribute %s of %s, a %s" count
              listed declared label otype)
   in
-  (* The ch. 5.5 generation budget: a stratum admits at most 100
-     generations that mint an object or lay a link, and a 101st that still
-     does is the fault, never a silent truncation. It counts generations,
-     not passes, so where a chain stops does not depend on how many passes
-     the forms that make nothing need between two generations, nor on the
-     order in which the document writes them. The same number as the ASP
-     backend's oc_budget. Until 2026-10-09 the budget was 100 passes of
-     every form of the stratum together, and a pass that only computed
-     counted as well: measured on a chain of 99 mints with "kopie = nummer"
-     and "kopie2 = kopie" in one stratum, the reader of kopie written first
-     faulted and written last played. *)
-  let generation_budget = 100 in
   (* The forms that make nothing come to rest stratum by stratum: for j = 0,
      1, …, k those of stratum <= j reach their fixpoint before a form of
      stratum j + 1 runs (ch. 6.3). A creation of stratum k makes instances on
@@ -4115,22 +4145,31 @@ let evaluate env world =
      fixpoint ([settle]); the stratum is done when a generation makes and
      links nothing. Such a generation changes no instance, attribute,
      characteristic or link, so the last settle has already checked the
-     world the stratum ends with. *)
+     world the stratum ends with.
+
+     The number of generations needs no bound of its own. Every generation
+     but the last mints an instance or lays a link; a (creation, subject)
+     mints at most once, and the creation budget ([run_object_creatie])
+     bounds the depth of a stratum's mints, so a stratum mints finitely many
+     instances and the links between them are finite too. Until 2026-10-09
+     a stratum admitted 100 generations that mint or link, and that count
+     stood in for the depth: it also counted the generations a mint waits
+     for a link or a value, and the hops of a closure that a fact creation
+     lays. Before the generations the budget was 100 passes of every form of
+     the stratum together, and where a chain stopped depended on the order
+     of the rules: on a chain of 99 mints with "kopie = nummer" and "kopie2 =
+     kopie" in one stratum, the reader of kopie written first faulted and
+     written last played. *)
   let world = ref world in
   for k = 0 to kmax do
     let creations = creations ~k in
     let settle = settle ~k in
-    (* [settled] is generation [g]'s settled world *)
-    let rec next g settled =
+    (* [settled] is the settled world of the generation before *)
+    let rec next settled =
       match generation creations settled with
       | w, [] -> w
-      | _, makers when g >= generation_budget ->
-          Value.fault
-            "no fixpoint within %d generations — generation %d still mints or links (%s), and \
-             divergence is a fault (ch. 5.5, 5.7)"
-            generation_budget (g + 1) (String.concat ", " makers)
-      | w, _ -> next (g + 1) (settle w)
+      | w, _ -> next (settle w)
     in
-    world := next 0 (settle !world)
+    world := next (settle !world)
   done;
   !world

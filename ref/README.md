@@ -78,14 +78,24 @@ faults with file/position context — never a silent fallback.
   are idempotent (ch. 5.6), so firing again adds a fact only for a
   new instance or a key a new instance duplicates. The stratum is
   done when a generation makes and links nothing.
-- **The generation budget** (ch. 5.5): a stratum admits 100
-  generations that mint an object or lay a link, and a 101st that
-  still does is the fault, never a truncation: "no fixpoint within
-  100 generations — generation 101 still mints or links (object
-  creation "werf eeuwig"), and divergence is a fault (ch. 5.5, 5.7)"
+- **The creation budget** (ch. 5.5): every minted instance gets, at
+  the making, a creation depth in the stratum of the creation that
+  minted it (`World.mints`): one more than its subject's depth there,
+  where an input instance and an instance a lower stratum minted
+  stand at 0. A mint at depth 101 is the fault, never a truncation:
+  "creation budget exhausted: object creation "werf eeuwig" of
+  stratum 0 would mint at creation depth 101, on oc0::…::W1 — …"
   (`corpus/rood/runaway-recursion`,
-  `corpus/rood/finite-chain-over-budget`). The passes the forms that
-  make nothing need between two generations do not count.
+  `corpus/rood/finite-chain-over-budget`,
+  `corpus/rood/jutterswet-budgetgrens-over`). The depth follows the
+  chain of makings, so neither the passes between two generations nor
+  the generations a mint waits for a link or a value count, and a fact
+  creation, which mints nothing, has no budget. The generations of a
+  stratum need no bound of their own: every generation but the last
+  mints or links, and the instances and links of a stratum are finite
+  under the budget. A subject that a higher stratum minted cannot occur
+  (a creation reads its subject's population strictly); ref/ checks
+  that on every subject and fails with the file's name.
 - **Divergence of the forms that make nothing is a fault, named where
   the state shows its cause** (ch. 5.7). These forms carry no budget
   of their own: without creations their graph is acyclic (WF-045), so

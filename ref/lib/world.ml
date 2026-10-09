@@ -40,9 +40,14 @@ type t = {
          the initialisation's own write does not switch its guard off, so
          its value is re-evaluated under freshness like any attribute write,
          while a value the case supplied or another writer placed does *)
+  mints : (int * int) SMap.t;
+      (* by label, for every minted instance: the stratum of the creation
+         that minted it and its creation depth in that stratum, recorded at
+         the making (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
+         input instance has no entry; its depth is 0 in every stratum *)
 }
 
-let empty = { instances = SMap.empty; order = []; channel = []; init_written = [] }
+let empty = { instances = SMap.empty; order = []; channel = []; init_written = []; mints = SMap.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
