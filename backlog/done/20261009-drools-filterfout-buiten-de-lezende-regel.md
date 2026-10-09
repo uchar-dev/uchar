@@ -257,3 +257,8 @@ Herkeuring van `ae6ac6ed` (sol6), afgewezen met reden, omdat de kaart hier ophou
 5. **Landing:** de branch staat op main `9b9a42ad`. Vóór de ff-merge eerst `git rebase main` en de gates opnieuw.
    `20261009-drools-datumstap-buiten-bereik` raakt `ExecModelTranspiler` en `TmsTranspiler` op andere plaatsen.
 6. Geen registertekst voor `spec/CONSTRUCTS.md`; voor PLAN §9 niets.
+
+### Landing (2026-10-09)
+
+Na `git rebase` op de gelande `20261009-drools-datumstap-buiten-bereik`, zonder conflict; alle 16 gates groen op die tip
+(gate 12: played 241, DRL 195), ff-merge naar main.

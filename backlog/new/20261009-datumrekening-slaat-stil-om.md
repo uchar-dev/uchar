@@ -49,8 +49,16 @@ een eigen fout. De bouwer van die kaart raadt aan: hetzelfde interval als voor
 een datum-tijd, gelezen op de middernacht van de datum (epochdagen
 −53 375 995 583 … 53 375 995 583); dan veranderen ref en Drools (nu geven beide
 164276444-06-02 voor 2024-01-01 + 6·10¹⁰ dagen). Het alternatief: op dagprecisie
-geen bereik, maar wel "never a silent wrap-around". Dit is een vraag voor de
-eigenaar; de kaart wacht op zijn antwoord voor het deel over dagprecisie.
+geen bereik, maar wel "never a silent wrap-around".
+
+**Besluit van de eigenaar (2026-10-09):** het advies van de bouwer. Een datum
+op dagprecisie heeft hetzelfde bereik als een datum-tijd, gelezen op zijn
+middernacht: epochdagen −53 375 995 583 tot en met 53 375 995 583, de dagen
+waarvan de middernacht in [−2⁶², 2⁶² − 1] ms ligt. Een stap die daarbuiten
+uitkomt, is een fout, nooit een omslag; een executor die zo ver niet kan
+rekenen, weigert luid. Het bereik van een datum-tijd staat sinds de landing van
+`20261009-drools-datumstap-buiten-bereik` normatief in ch. 3.8; de zin voor de
+datum komt met deze kaart.
 
 ## Acceptatie (bij oppakken aanscherpen)
 
@@ -61,8 +69,8 @@ eigenaar; de kaart wacht op zijn antwoord voor het deel over dagprecisie.
   vóór de stap; clingo controleert zijn epochdag en noemt bij een vooruitstap
   de goede grens; de Drools-runtime neemt jaar, maand, dag en de delen van
   `rsDatumMet`/`rsDatumtijdMet` exact (geen `intValue()` dat omslaat).
-- (c) Na het besluit van de eigenaar over dagprecisie: dat besluit in ref en
-  Drools, met rode gevallen of goldens, en de spectekst (voorstel).
+- (c) Het besluit over dagprecisie in ref, clingo en Drools, met rode
+  gevallen, en de zin in ch. 3.8 (voorstel).
 - (d) Gates 5, 6, 8 en 12 groen; alle gates van `CLAUDE.md` groen.
 
 ## Omvang
@@ -76,5 +84,5 @@ getuigen in de drie, `corpus/rood/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.m
 
 ## Raakvlakken
 
-Bouwt op `20261009-drools-datumstap-buiten-bereik` (de grens van ref in de
-runtime en het voorstel voor een getal in ch. 3.8); daarna.
+Bouwt op `20261009-drools-datumstap-buiten-bereik` (geland 2026-10-09: de
+grens van ref in de runtime en het getal in ch. 3.8).

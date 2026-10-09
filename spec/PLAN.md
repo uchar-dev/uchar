@@ -1066,6 +1066,30 @@ the cap at 10 000 objects; otherwise the joins are indexed first), because the
 standing facts, the unindexed joins and a fixed fire cap of 100 000 meet large
 cases there.
 
+**The range of a date is normative (2026-10-09, cards
+`drools-datumstap-buiten-bereik` and `datumrekening-slaat-stil-om`):** a
+datum-tijd lies in [−2⁶², 2⁶² − 1] ms, checked in the reference interpreter's
+order before the step is taken (RUNTIME-SEMANTICS ch. 3.8, landed with the
+first card; the Drools runtime holds the same bound since that card, and the
+ASP backend refuses a count beyond its 32-bit integers at translation).
+Maintainer decision the same day: a day-precision date has the same range,
+read at its midnight (epoch days −53 375 995 583 to 53 375 995 583); its
+sentence in ch. 3.8 and the executors follow with the second card, which also
+repairs the silent wrap-arounds it records.
+
+**Faults and deposits count at the fixpoint (2026-10-09, card
+`fout-op-tussenstand`, to be built):** maintainer decision on Fable advice: an
+evaluation fault and a §9.5 deposit are outcomes of one form's evaluation on
+one subject; re-evaluation under freshness replaces them, a form that does not
+decide is not evaluated, and the session reports what stands at the fixpoint
+of the form's stratum (ch. 5.2: an intermediate state is not observable). The
+card's documents answer bergloon 30, aandeel 3 and toeslag 7 in every rule
+order. The spec text, the reference interpreter and the ASP backend follow
+with the card; the truth-maintenance branch already reads so, and its two
+refusals that wait on this decision (a division in a default, a division in
+an initialisation beside another writer) can go. The decision does not depend
+on whether numeric-zero division becomes a channel fact (decision (7)).
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3

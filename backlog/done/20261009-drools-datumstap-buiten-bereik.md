@@ -227,3 +227,12 @@ Afgewezen: geen.
    `20261009-drools-filterfout-buiten-de-lezende-regel` raakt `ExecModelTranspiler` op een andere plaats. Vóór de
    ff-merge dus `git rebase main` in de worktree en de gates opnieuw (zie het overzicht van de hoofdsessie).
 6. Geen registertekst voor `spec/CONSTRUCTS.md`; voor PLAN §9 niets.
+
+### Landing (2026-10-09)
+
+De eigenaar nam het voorstel van open punt 1 over ("tekst als voorgesteld"). Na `git rebase main` kwam er bovenop het
+Result een commit met de alinea "The representable millisecond range (normative)" in ch. 3.8 en een met het uitgewerkte
+voorbeeld als drie ref-tests (`WV-3.8-dt-bereik-grens`, `-grens-plus-een`, `-telling`; suite 1154 → 1157); de foutzin
+van ref verloor daarbij "(v0 raises DateTimeException)", die niet klopte, zodat ref en Drools nu dezelfde zin geven. Alle
+16 gates groen op die tip, ff-merge naar main. Over open punt 2 besloot de eigenaar dezelfde dag: een datum op
+dagprecisie krijgt hetzelfde bereik, gelezen op zijn middernacht (kaart `20261009-datumrekening-slaat-stil-om`).

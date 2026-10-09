@@ -123,6 +123,32 @@ ref (beide), clingo (A) en de Drools-takken (beide) af. Het alternatief is een
 voorgeschreven evaluatievolgorde waarin een lezer pas na al zijn schrijvers
 rekent; dat lost B op, maar A niet.
 
+**Besluit van de eigenaar (2026-10-09), op advies van een Fable-adviseur
+(`/tmp/lens-bugs/advies-fable.md`, vraag 3):** nee. Een evaluatiefout en een
+§9.5-deponering zijn uitkomsten van de evaluatie van één vorm op één onderwerp.
+Een her-evaluatie onder versheid (ch. 5.1) vervangt de eerdere uitkomst, een vorm
+die niet beslist wordt niet uitgerekend (ch. 7.1, 7.3), en de sessie meldt de
+uitkomsten die aan het fixpunt van het stratum van de vorm staan. Uitkomsten, in
+elke volgorde: A bergloon 30; B bergloon 30 en aandeel 3; C toeslag 7; alle
+consistent. Voor een deponering op een tussenstand geldt hetzelfde, dus de zinnen
+van ch. 6.1 en 7.1 dat een tijdelijke deponering blijft staan, vervallen. Het
+besluit staat los van de vraag of de numerieke nul een harde fout blijft of het
+besloten v1-kanaalfeit wordt (PLAN §9 (7)).
+
+Gevolgen volgens het advies: ref toetst bij een initialisatie de blokkade op het
+doel vóór de voorwaarde (lost C) en houdt fout en deponering per (vorm,
+onderwerp) bij, vervangt ze bij her-evaluatie en meldt ze pas aan het fixpunt
+(lost A en B); clingo krijgt op de `viol` van de nuldeling en op de deponering
+onder een initialisatie de guards die de `val`-kop al heeft (lost A en C); de tak
+met truth maintenance doet het al, en zijn twee weigeringen die op dit besluit
+wachten (een deling in een default, een deling in een initialisatie naast een
+andere schrijver) kunnen weg. Voorgestelde spectekst (ch. 5.7, na "Divergence by
+two writers"): "**Faults and deposits are read at the fixpoint.** An evaluation
+fault (ch. 1.4) and a §9.5 deposit are outcomes of one form's evaluation on one
+subject. Re-evaluation under freshness (ch. 5.1) replaces the earlier outcome,
+and a form that does not decide (ch. 7.1, 7.3) is not evaluated; the session
+reports the outcomes standing at the fixpoint of the form's stratum."
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Het besluit staat in de spec (beschermd pad: voorstel aan de
