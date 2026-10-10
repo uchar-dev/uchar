@@ -1831,9 +1831,10 @@ public final class TmsTranspiler {
      * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creatiekoppeling}). Refused by
      * name besides: an ambiguous back-link, which the exec-model branch faults at fire; a creation without a
      * {@code connectingRole} binding, whose relation this branch does not derive from the type pair; a connecting
-     * relation that is not one of two roles; and a division in a member value, whose §6.5 deposit this branch does not
-     * make. Where the condition can fault, its fault rule is an ordinary rule of the rule layer, without the marks and
-     * without the 1:1 guard: the reference interpreter evaluates the condition first, in every pass.
+     * relation that is not one of two roles; a characteristic initialisation whose value is no truth value (WF-027); and
+     * a division in a member value, whose §6.5 deposit this branch does not make. Where the condition can fault, its
+     * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
+     * interpreter evaluates the condition first, in every pass.
      */
     private List<Rule> objectCreatie(ResolvedObjectCreatie oc) {
         if (oc.naam() == null) throw new Weigering("een objectcreatie zonder naam (WF-107)");
@@ -1866,6 +1867,13 @@ public final class TmsTranspiler {
         for (ResolvedObjectCreatie.Toekenning t : oc.toekenningen()) {
             if (t.attribuut() == null || t.waarde() == null)
                 throw new Weigering("een ledeninitialisatie zonder lid of waarde");
+            // a characteristic is true or false (WF-027): the reference interpreter faults on a value of another type,
+            // and the consequence below would read it as not true and leave the characteristic unset
+            Datatype kenmerkwaarde = t.kenmerk() ? eff.typeVan(t.waarde()) : null;
+            if (kenmerkwaarde != null && !kenmerkwaarde.isBoolean() && !kenmerkwaarde.isOnbekend())
+                throw new Weigering("een kenmerkinitialisatie van '" + t.attribuut() + "' met een waarde van type "
+                        + kenmerkwaarde.naam() + " ('" + snippet(t.waarde().bron()) + "'): een kenmerk is waar of onwaar"
+                        + " (WF-027), en de referentie-interpreter faalt op zo'n waarde");
             String deling = deling(t.waarde());
             if (deling != null)
                 throw new Weigering("een deling in een ledeninitialisatie ('" + deling + "'), waarvan deze tak de §6.5-"
