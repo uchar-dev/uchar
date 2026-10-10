@@ -50,8 +50,8 @@ import java.util.Map;
  * The maintainer architecture anchor (2026-08-27): the Drools backend CONSUMES the uchar IR off the
  * wire, exactly as ref/ and backends/clingo do. This loader parses the {@code uchar-ir-v1} JSON (every node in its
  * L5 shape but the rule-status check {@code Regelversie}, which keeps its v0 shape) into the SAME frontend record
- * types the transpiler consumes — the member nodes back into the model's side-maps — so the ported
- * {@code ExecModelTranspiler} fires the IR — never the RegelSpraak source.
+ * types the transpilers consume — the member nodes back into the model's side-maps — so the exec-model branch
+ * ({@code TmsTranspiler}) and the DRL-text branch fire the IR — never the RegelSpraak source.
  *
  * <p><b>Refusal discipline.</b> Every wire form the v0 Drools backend does not carry is a LOUD, per-form
  * {@link Refusal} — never a silent skip. That covers a {@code format} other than {@code uchar-ir-v1}, the

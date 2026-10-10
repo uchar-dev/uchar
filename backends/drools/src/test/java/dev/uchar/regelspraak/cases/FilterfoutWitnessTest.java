@@ -387,7 +387,8 @@ class FilterfoutWitnessTest {
 
     /** A matrix that divides, "het gewicht van ten minste één van de vondsten van de Jutter is groter dan 100 gedeeld
      *  door zijn deelnemers", after "hij is actief": the DRL-text branch wrote the matrix on the element pattern of its
-     *  accumulate as well, the exec-model branch asks it after the accumulate. J4's V6 (60 above 100 by 2) holds; the
+     *  accumulate as well, the destructive exec-model branch asked it after the accumulate (until card
+     *  tms-omschakeling, 2026-10-10). J4's V6 (60 above 100 by 2) holds; the
      *  members of J2 and J3 do not, and divide by no 0. Where J1 is actief, V1 (10 above 50) does not hold, so the fold
      *  goes on to V2, 100 by 0. */
     @Test void een_deling_in_de_matrix_van_een_kwantorvouw() throws Exception {

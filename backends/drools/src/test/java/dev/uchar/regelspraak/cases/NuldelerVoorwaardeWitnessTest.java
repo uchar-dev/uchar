@@ -18,13 +18,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A division by a numeric zero in a CONDITION: "Een Vondst is zwaar indien zijn gewogen gewicht gedeeld door zijn
  * geschatte gewicht groter is dan 1", over V3, whose geschatte gewicht is 0,00 under a gewogen gewicht of 60,00. ref
  * faults with "division by numeric zero" and clingo with its fail-fast guard on V3 (RUNTIME-SEMANTICS ch. 1.4, point
- * 4), in every form below. A condition is tested in a constraint and not in a consequence, so the fault leaves the
- * fire as Drools' {@code ConstraintEvaluationException} and not as the {@code ConsequenceException} that
- * {@code NuldelerWitnessTest} pins. The predicates of the exec-model branch carry their rule: Drools' message names the
- * rule and the condition, and the replay, the red path and the scenario report read the sentence a division in a
- * rule's value gives, with the rule and the operands. The truth-maintenance branch tests the condition in a rule of its
- * own and keeps the fault as a fact, which its write-back throws at the fixpoint in that same sentence; the row of a
- * consumer that fires itself pins that branch since card tms-omschakeling (2026-10-10). Every document is written here
+ * 4), in every form below. On the destructive lowering a condition is tested in a constraint and not in a
+ * consequence, so the fault leaves the fire as Drools' {@code ConstraintEvaluationException} and not as the
+ * {@code ConsequenceException} that {@code NuldelerWitnessTest} pins. Until card tms-omschakeling (2026-10-10) the
+ * predicates of the destructive exec-model branch carried their rule: Drools' message named the rule and the
+ * condition, and the replay, the red path and the scenario report read the sentence a division in a rule's value
+ * gives, with the rule and the operands. The exec-model branch with truth maintenance tests the condition in a rule of
+ * its own and keeps the fault as a fact, which its write-back throws at the fixpoint in that same sentence; the row of
+ * a consumer that fires itself pins that branch since that card. Every document is written here
  * on Jutterswet material, with the outcome ref and clingo give it.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code 70a60dc3}): the exec-model branch left

@@ -44,10 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Both BRANCHES, every row too</b> (since the DRL-text branch gained this lowering). Each of
  * those two plays is made through the exec-model branch AND through the DRL-text branch, and the two
  * verdicts must agree — so every row below is a differential cell, not a single executor's reading.
- * The two reach it by different roads: the exec branch builds the {@code collectList} accumulate and
- * the result-var eval in the executable model, the DRL-text branch emits them as text a Drools compiler
- * then parses. They share only the ch. 3.9 runtime helpers, which is the point: if one branch restated
- * the whole-period table in its own terms, these rows would part company.
+ * The two reach it by different roads: the DRL-text branch emits a {@code collectList} accumulate and a
+ * result-var eval as text a Drools compiler then parses, and the exec-model branch derives the verdict with
+ * truth maintenance; until card tms-omschakeling (2026-10-10) the destructive exec branch built that
+ * accumulate and eval in the executable model, and the two shared only the ch. 3.9 runtime helpers. That is
+ * the point: if one branch restated the whole-period table in its own terms, these rows would part company.
  */
 class HeelperiodeKwantorvouwWitnessTest {
 

@@ -29,8 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>A pass here is the square closing on this form: the same five cells that {@code ref} and the
  * clingo backend replay (gates 5 and 6) are replayed by the two Drools lowerings, each of which
- * reaches them by a different road — the exec branch collects the contributors and asks a leaf
- * predicate of each, the DRL branch denies the failure witness with a {@code not} pattern.
+ * reaches them by a different road — the exec-model branch derives the verdict with truth maintenance
+ * (until card tms-omschakeling, 2026-10-10, the destructive exec branch collected the contributors and
+ * asked a leaf predicate of each), the DRL branch denies the failure witness with a {@code not} pattern.
  *
  * <p>The corpus files are READ and never written; the mutation row below copies a case into a
  * {@link TempDir} first.
@@ -117,9 +118,10 @@ class NietTemporeleKwantorvouwWitnessTest {
      * counting quantifiers over an ordinary comparison, each at its threshold from both sides. It is the
      * ONLY corpus document that reaches the DRL-text branch's counting lowering at all — the whole-period
      * counting golden ({@code jutterswet-reddingsvloot}) is markered there, exactly as its ALLE/GEEN sibling
-     * is — and it is the only one that reaches the exec branch's NON-temporal counting route, since gate 12
-     * would otherwise only ever see the timeline route. The two lowerings are different roads again: the
-     * exec branch counts over a {@code collectList} accumulate of the contributors, the DRL branch writes a
+     * is — and until card tms-omschakeling (2026-10-10) it was the only one that reached the destructive exec
+     * branch's NON-temporal counting route, since gate 12 would otherwise only ever have seen the timeline
+     * route. The two lowerings were different roads again: that exec branch counted over a {@code collectList}
+     * accumulate of the contributors; the DRL branch writes a
      * {@code Number( intValue <op> N ) from accumulate( … count(…) )} over the element pattern.
      */
     @Test void beide_takken_tellen_dezelfde_cellen() throws Exception {

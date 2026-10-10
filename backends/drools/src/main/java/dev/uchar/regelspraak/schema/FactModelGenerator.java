@@ -571,9 +571,10 @@ public final class FactModelGenerator {
 
     /**
      * THE back-link decision of an object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), one derivation for
-     * every transpiler branch, which each carry out in their own way: a skip or a rule that faults at fire on the
-     * exec-model branch, a marker on the DRL-text branch, a refusal or a fault fact on the truth-maintenance branch.
-     * Until 2026-10-08 the exec-model and the DRL-text branch each carried this block privately
+     * every transpiler branch, which each carry out in their own way: a refusal or a fault fact on the exec-model
+     * branch, which derives with truth maintenance, and a marker on the DRL-text branch. Until the card
+     * tms-omschakeling (2026-10-10) the destructive exec-model branch carried it as a skip or a rule that faults at
+     * fire. Until 2026-10-08 the exec-model and the DRL-text branch each carried this block privately
      * ({@code backlog/new/20260923-drools-rolpaar-ontdubbeling.md}).
      *
      * <p>The two link roles come from ONE of two routes. The creation's own {@code connectingRole} binding names the

@@ -116,8 +116,9 @@ class DrlCreatieKoppelingWitnessTest {
     }
 
     @Test void een_ambigu_paar_zonder_binding_wordt_in_de_drl_tak_bij_naam_geweigerd() throws Exception {
-        // The exec branch lowers this to a rule that faults at fire (ObjectCreatieWitnessTest); the DRL-text
-        // branch has no fault-rule idiom and refuses it with the same sentence instead of minting unlinked.
+        // Until card tms-omschakeling (2026-10-10) the destructive exec branch lowered this to a rule that faulted
+        // at fire; the DRL-text branch has no fault-rule idiom and refuses it with the same sentence instead of
+        // minting unlinked.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(AMBIGU, jutterZonderLezing(), true));
         assertTrue(e.getMessage().contains("the created object's back-link is ambiguous"), e.getMessage());
