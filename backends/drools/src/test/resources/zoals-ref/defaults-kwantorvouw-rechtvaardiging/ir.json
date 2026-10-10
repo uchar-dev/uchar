@@ -1,0 +1,214 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "premie",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "drempel",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "ruwe premie",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "ijverig",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : false,
+      "plural" : "Vondsten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "ruwgewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "bonus",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "zwaar",
+        "kind" : "adjectival"
+      } ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "JutterHeeftVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "jutter",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vondst",
+        "objectType" : "Vondst",
+        "plural" : "vondsten",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ],
+    "prioritizedDefaults" : [ {
+      "node" : "PrioritizedDefaults",
+      "name" : "premie",
+      "subject" : "Jutter",
+      "attribute" : "premie",
+      "defaults" : [ {
+        "node" : "Default",
+        "justification" : {
+          "node" : "QuantifierFold",
+          "quantifier" : "atLeast",
+          "threshold" : 2,
+          "elementType" : "Vondst",
+          "test" : {
+            "node" : "Comparison",
+            "op" : "greater",
+            "left" : {
+              "node" : "AttributeReference",
+              "attribute" : "gewicht",
+              "subjectType" : "Vondst",
+              "source" : {
+                "snippet" : "de gewicht van de Vondst"
+              }
+            },
+            "right" : {
+              "node" : "Literal",
+              "value" : {
+                "number" : "5"
+              },
+              "type" : {
+                "node" : "Number",
+                "whole" : true,
+                "decimals" : 0,
+                "sign" : "unspecified"
+              },
+              "source" : {
+                "snippet" : "5"
+              }
+            },
+            "source" : {
+              "snippet" : "vergelijking"
+            }
+          },
+          "source" : {
+            "snippet" : "het gewicht van ten minste 2 van de vondsten van de Jutter groter is dan 5"
+          },
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "JutterHeeftVondst",
+            "role" : "vondst"
+          }
+        },
+        "consequence" : {
+          "node" : "Literal",
+          "value" : {
+            "number" : "20"
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "20"
+          }
+        }
+      }, {
+        "node" : "Default",
+        "justification" : {
+          "node" : "Compound",
+          "quantifier" : "all",
+          "threshold" : 0,
+          "parts" : [ ],
+          "source" : {
+            "snippet" : "altijd"
+          }
+        },
+        "consequence" : {
+          "node" : "Literal",
+          "value" : {
+            "number" : "10"
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "10"
+          }
+        }
+      } ],
+      "validity" : {
+        "node" : "Validity"
+      }
+    } ]
+  },
+  "diagnostics" : [ ]
+}

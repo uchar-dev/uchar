@@ -1,0 +1,530 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Ploeg",
+      "animate" : false,
+      "plural" : "Ploegen",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "startdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "sluitdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "startdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "opgegeven sluitdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "sluitdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "eerste late vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "laatste late vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "aantal late vondsten",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "late gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "zwaarste late gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "laatklasse",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "actief",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : false,
+      "plural" : "Vondsten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "gedateerd",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "laat",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Haven",
+      "animate" : false,
+      "plural" : "Havens",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "openingsdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "afgeleide openingsdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Melding",
+      "animate" : false,
+      "plural" : "Meldingen",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "meldingsdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Berging",
+      "animate" : false,
+      "plural" : "Bergingen",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "opbrengst",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "onverdeelde rest",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Berger",
+      "animate" : true,
+      "plural" : "Bergers",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "bergingsaandeel",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "JutterHeeftVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "jutter",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vondst",
+        "objectType" : "Vondst",
+        "plural" : "vondsten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "PloegHeeftJutter",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "thuisploeg",
+        "objectType" : "Ploeg",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "lid",
+        "objectType" : "Jutter",
+        "plural" : "leden",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "PloegWerftJutter",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "wervende ploeg",
+        "objectType" : "Ploeg",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "geworven jutter",
+        "objectType" : "Jutter",
+        "plural" : "geworven jutters",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "HavenVanVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "haven",
+        "objectType" : "Haven",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "havenvondst",
+        "objectType" : "Vondst",
+        "plural" : "havenvondsten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "VondstHeeftMelding",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "gemelde vondst",
+        "objectType" : "Vondst",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "melding",
+        "objectType" : "Melding",
+        "many" : false
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "bergingsdeelname",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "berging",
+        "objectType" : "Berging",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "berger",
+        "objectType" : "Berger",
+        "plural" : "bergers",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "BergerVanVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "vondstberger",
+        "objectType" : "Berger",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "geborgen vondst",
+        "objectType" : "Vondst",
+        "plural" : "geborgen vondsten",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ {
+      "node" : "UnitSystem",
+      "name" : "Tijd",
+      "units" : [ {
+        "node" : "Unit",
+        "abbreviation" : "dg",
+        "system" : "Tijd",
+        "canonical" : "dg",
+        "factorToCanonical" : {
+          "num" : 1,
+          "den" : 1
+        },
+        "spellings" : [ "dag" ]
+      } ]
+    } ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "aantal late vondsten",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "aantal late vondsten",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "De aantal late vondsten"
+          }
+        },
+        "value" : {
+          "node" : "Aggregation",
+          "kind" : "count",
+          "arguments" : [ {
+            "node" : "InstanceSetUnion",
+            "branches" : [ {
+              "node" : "InstanceSetBranch",
+              "elementType" : "Vondst",
+              "sourceRole" : {
+                "node" : "RoleBinding",
+                "factType" : "JutterHeeftVondst",
+                "role" : "vondst"
+              },
+              "filter" : {
+                "node" : "Compound",
+                "quantifier" : "the",
+                "threshold" : 0,
+                "parts" : [ {
+                  "node" : "CharacteristicCheck",
+                  "characteristic" : "gedateerd",
+                  "negated" : false,
+                  "source" : {
+                    "snippet" : "gedateerd"
+                  }
+                } ],
+                "source" : {
+                  "snippet" : "aan de volgende voorwaarde voldoen"
+                }
+              },
+              "source" : {
+                "snippet" : "vondsten van de Jutter die …"
+              }
+            }, {
+              "node" : "InstanceSetBranch",
+              "elementType" : "Vondst",
+              "sourceRole" : {
+                "node" : "RoleBinding",
+                "factType" : "JutterHeeftVondst",
+                "role" : "vondst"
+              },
+              "filter" : {
+                "node" : "Compound",
+                "quantifier" : "the",
+                "threshold" : 0,
+                "parts" : [ {
+                  "node" : "CharacteristicCheck",
+                  "characteristic" : "actief",
+                  "negated" : false,
+                  "source" : {
+                    "snippet" : "actief"
+                  },
+                  "navigation" : {
+                    "node" : "RoleBinding",
+                    "factType" : "JutterHeeftVondst",
+                    "role" : "jutter"
+                  }
+                } ],
+                "source" : {
+                  "snippet" : "aan de volgende voorwaarde voldoen"
+                }
+              },
+              "source" : {
+                "snippet" : "vondsten van de Jutter die …"
+              }
+            } ],
+            "source" : {
+              "snippet" : "vondsten die gedateerd zijn en vondsten wier jutter actief is"
+            }
+          } ],
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "nonNegative"
+          },
+          "source" : {
+            "snippet" : "het aantal vondsten die gedateerd zijn en vondsten wier jutter actief is"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "equation"
+      } ]
+    }, {
+      "node" : "Rule",
+      "name" : "actief",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "actief",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "Een Jutter is actief"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "condition" : {
+          "node" : "Predicate",
+          "kind" : "filled",
+          "operand" : {
+            "node" : "AttributeReference",
+            "attribute" : "sluitdag",
+            "subjectType" : "Jutter",
+            "source" : {
+              "snippet" : "zijn sluitdag"
+            }
+          },
+          "negated" : false,
+          "digits" : 0,
+          "source" : {
+            "snippet" : "filled"
+          }
+        },
+        "initialisation" : false
+      } ]
+    }, {
+      "node" : "Rule",
+      "name" : "sluitdag",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "sluitdag",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "De sluitdag"
+          }
+        },
+        "value" : {
+          "node" : "AttributeReference",
+          "attribute" : "startdag",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "zijn startdag"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "equation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ],
+    "prioritizedDefaults" : [ ]
+  },
+  "diagnostics" : [ ]
+}

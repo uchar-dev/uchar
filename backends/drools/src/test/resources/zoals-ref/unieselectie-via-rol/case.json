@@ -1,0 +1,71 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "J",
+      "objectType" : "Jutter",
+      "attributes" : {
+        "startdag" : {
+          "date" : "2026-03-01"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    }, {
+      "label" : "V1",
+      "objectType" : "Vondst",
+      "attributes" : {
+        "vinddag" : {
+          "date" : "2026-02-15"
+        },
+        "gewicht" : {
+          "number" : "5"
+        }
+      },
+      "roles" : {
+        "jutter" : [ "J" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "V2",
+      "objectType" : "Vondst",
+      "attributes" : {
+        "vinddag" : {
+          "date" : "2026-03-10"
+        },
+        "gewicht" : {
+          "number" : "7"
+        }
+      },
+      "roles" : {
+        "jutter" : [ "J" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "V3",
+      "objectType" : "Vondst",
+      "attributes" : {
+        "vinddag" : {
+          "date" : "2026-03-20"
+        },
+        "gewicht" : {
+          "number" : "11"
+        }
+      },
+      "roles" : {
+        "jutter" : [ "J" ]
+      },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "J",
+    "attribute" : "aantal late vondsten",
+    "value" : {
+      "number" : "3"
+    }
+  } ]
+}

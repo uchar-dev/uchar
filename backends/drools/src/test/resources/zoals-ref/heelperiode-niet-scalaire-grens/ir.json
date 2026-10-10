@@ -1,0 +1,164 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Vloot",
+      "animate" : false,
+      "plural" : "Vloten",
+      "attributes" : [ ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "zeewaardig",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Schuit",
+      "animate" : false,
+      "plural" : "Schuiten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "wachtwaarde",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "positive"
+        },
+        "timeline" : {
+          "node" : "TimelineFacet",
+          "granularity" : "month",
+          "count" : 1
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "grenswaarde",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "positive"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "zeegaand",
+        "kind" : "adjectival"
+      } ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "vlootindeling",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "vloot",
+        "objectType" : "Vloot",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "schip",
+        "objectType" : "Schuit",
+        "plural" : "schepen",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "Kenmerktoekenning zeewaardig",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "zeewaardig",
+          "subjectType" : "Vloot",
+          "source" : {
+            "snippet" : "Een Vloot is zeewaardig"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "condition" : {
+          "node" : "QuantifierFold",
+          "quantifier" : "all",
+          "elementType" : "Schuit",
+          "filter" : {
+            "node" : "CharacteristicCheck",
+            "characteristic" : "zeegaand",
+            "negated" : false,
+            "source" : {
+              "snippet" : "zeegaand"
+            }
+          },
+          "test" : {
+            "node" : "Comparison",
+            "op" : "greater",
+            "left" : {
+              "node" : "AttributeReference",
+              "attribute" : "wachtwaarde",
+              "subjectType" : "Schuit",
+              "source" : {
+                "snippet" : "zijn wachtwaarde"
+              }
+            },
+            "right" : {
+              "node" : "AttributeReference",
+              "attribute" : "grenswaarde",
+              "subjectType" : "Schuit",
+              "source" : {
+                "snippet" : "zijn grenswaarde"
+              }
+            },
+            "wholePeriod" : {
+              "node" : "WholePeriod",
+              "granularity" : "year",
+              "negated" : false
+            },
+            "source" : {
+              "snippet" : "zijn wachtwaarde gedurende het gehele jaar groter is dan 10"
+            }
+          },
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "vlootindeling",
+            "role" : "schip"
+          },
+          "source" : {
+            "snippet" : "de wachtwaarde van alle schepen van de Vloot gedurende het gehele jaar groter is dan 10"
+          }
+        },
+        "initialisation" : false
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

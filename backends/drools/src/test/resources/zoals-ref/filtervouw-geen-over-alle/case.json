@@ -1,0 +1,59 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "J1",
+      "objectType" : "Jutter",
+      "attributes" : {
+        "peildatum" : {
+          "date" : "2020-01-01"
+        }
+      },
+      "roles" : {
+        "vondsten" : [ "V1", "V2" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "V1",
+      "objectType" : "Vondst",
+      "attributes" : {
+        "vinddatum" : {
+          "date" : "2026-01-05"
+        },
+        "deelnemers" : {
+          "number" : "2"
+        },
+        "gewicht" : {
+          "number" : "10"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    }, {
+      "label" : "V2",
+      "objectType" : "Vondst",
+      "attributes" : {
+        "vinddatum" : {
+          "date" : "2026-01-06"
+        },
+        "deelnemers" : {
+          "number" : "0"
+        },
+        "gewicht" : {
+          "number" : "9"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "characteristicPresent",
+    "label" : "J1",
+    "characteristic" : "druk"
+  }, {
+    "kind" : "consistent"
+  } ]
+}

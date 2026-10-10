@@ -1,0 +1,28 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "B1",
+      "objectType" : "Baan",
+      "attributes" : {
+        "aanloop" : {
+          "number" : "500"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "B1",
+    "attribute" : "uit",
+    "value" : {
+      "number" : "2.00"
+    }
+  }, {
+    "kind" : "consistent"
+  } ]
+}

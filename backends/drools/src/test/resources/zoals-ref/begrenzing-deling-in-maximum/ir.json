@@ -1,0 +1,234 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "a",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "inkomen",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deler",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "tweede",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "leegding",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "saldo",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "nul",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kindertal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uit",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "uit van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uit",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "het uit van de Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "binder": "d",
+              "value": {
+                "node": "AttributeReference",
+                "attribute": "deler",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "het deler van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Clamp",
+                "base": {
+                  "node": "AttributeReference",
+                  "attribute": "inkomen",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "het inkomen van de Jutter"
+                  }
+                },
+                "minimum": {
+                  "node": "BinderRef",
+                  "name": "d",
+                  "source": {
+                    "snippet": "d"
+                  }
+                },
+                "maximum": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "inkomen",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "het inkomen van de Jutter"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "tweede",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "het tweede van de Jutter"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 4,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "dividedby"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "begrensd"
+                }
+              },
+              "source": {
+                "snippet": "d is \u2026"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,37 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "W1",
+      "objectType" : "Wachter",
+      "attributes" : { },
+      "roles" : {
+        "opvolger" : [ "W2" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "W2",
+      "objectType" : "Wachter",
+      "attributes" : { },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "W1",
+    "attribute" : "erfvolgeraantal",
+    "value" : {
+      "number" : "1"
+    }
+  }, {
+    "kind" : "attributeValue",
+    "label" : "W2",
+    "attribute" : "erfvolgeraantal",
+    "value" : {
+      "number" : "0"
+    }
+  } ]
+}

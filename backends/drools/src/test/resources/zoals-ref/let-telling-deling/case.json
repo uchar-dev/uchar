@@ -1,0 +1,253 @@
+{
+ "format": "uchar-case-v0",
+ "asOfDate": null,
+ "input": {
+  "instances": [
+   {
+    "label": "S1",
+    "objectType": "Strandvoogd",
+    "attributes": {
+     "bonus": {
+      "number": "100"
+     }
+    },
+    "roles": {
+     "beheerde jutters": [
+      "J1",
+      "J3"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "S2",
+    "objectType": "Strandvoogd",
+    "attributes": {},
+    "roles": {
+     "beheerde jutters": [
+      "J2"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "S3",
+    "objectType": "Strandvoogd",
+    "attributes": {},
+    "roles": {
+     "beheerde jutters": [
+      "J4"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "S4",
+    "objectType": "Strandvoogd",
+    "attributes": {},
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "J1",
+    "objectType": "Jutter",
+    "attributes": {
+     "startdag": {
+      "date": "2026-03-01"
+     },
+     "gewicht": {
+      "number": "2"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "J2",
+    "objectType": "Jutter",
+    "attributes": {
+     "startdag": {
+      "date": "2026-03-01"
+     },
+     "gewicht": {
+      "number": "1"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "J3",
+    "objectType": "Jutter",
+    "attributes": {},
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "J4",
+    "objectType": "Jutter",
+    "attributes": {
+     "startdag": {
+      "date": "2026-01-01"
+     },
+     "gewicht": {
+      "number": "4"
+     }
+    },
+    "roles": {},
+    "characteristics": []
+   },
+   {
+    "label": "V1",
+    "objectType": "Vondst",
+    "attributes": {
+     "vinddag": {
+      "date": "2026-03-12"
+     },
+     "gewicht": {
+      "number": "4"
+     },
+     "zoekduur": {
+      "number": "10"
+     }
+    },
+    "roles": {
+     "jutter": [
+      "J1"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "V2",
+    "objectType": "Vondst",
+    "attributes": {
+     "vinddag": {
+      "date": "2026-03-20"
+     },
+     "gewicht": {
+      "number": "7"
+     },
+     "zoekduur": {
+      "number": "3"
+     }
+    },
+    "roles": {
+     "jutter": [
+      "J1"
+     ]
+    },
+    "characteristics": [
+     "zwaar"
+    ]
+   },
+   {
+    "label": "V3",
+    "objectType": "Vondst",
+    "attributes": {
+     "gewicht": {
+      "number": "6"
+     },
+     "zoekduur": {
+      "number": "20"
+     }
+    },
+    "roles": {
+     "jutter": [
+      "J1"
+     ]
+    },
+    "characteristics": [
+     "zwaar"
+    ]
+   },
+   {
+    "label": "V4",
+    "objectType": "Vondst",
+    "attributes": {
+     "vinddag": {
+      "date": "2026-03-05"
+     },
+     "gewicht": {
+      "number": "2"
+     }
+    },
+    "roles": {
+     "jutter": [
+      "J1"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "V5",
+    "objectType": "Vondst",
+    "attributes": {},
+    "roles": {
+     "jutter": [
+      "J3"
+     ]
+    },
+    "characteristics": []
+   },
+   {
+    "label": "V6",
+    "objectType": "Vondst",
+    "attributes": {
+     "vinddag": {
+      "date": "2025-12-31"
+     },
+     "gewicht": {
+      "number": "9"
+     },
+     "zoekduur": {
+      "number": "5"
+     }
+    },
+    "roles": {
+     "jutter": [
+      "J4"
+     ]
+    },
+    "characteristics": [
+     "zwaar"
+    ]
+   }
+  ],
+  "parameters": {}
+ },
+ "expected": [
+  {
+   "kind": "attributeValue",
+   "label": "J1",
+   "attribute": "uitkomst",
+   "value": {
+    "number": "2.00"
+   }
+  },
+  {
+   "kind": "attributeValue",
+   "label": "J2",
+   "attribute": "uitkomst",
+   "value": {
+    "number": "0.00"
+   }
+  },
+  {
+   "kind": "attributeValue",
+   "label": "J4",
+   "attribute": "uitkomst",
+   "value": {
+    "number": "0.25"
+   }
+  },
+  {
+   "kind": "attributeEmpty",
+   "label": "J3",
+   "attribute": "uitkomst"
+  },
+  {
+   "kind": "inconsistent"
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "S1",
+      "objectType" : "Schouwploeg",
+      "attributes" : { },
+      "roles" : {
+        "wachten" : [ "W1", "W2" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "W1",
+      "objectType" : "Strandwacht",
+      "attributes" : { },
+      "roles" : {
+        "stukken" : [ "U1" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "W2",
+      "objectType" : "Strandwacht",
+      "attributes" : { },
+      "roles" : {
+        "stukken" : [ "U2" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "U1",
+      "objectType" : "Uitrusting",
+      "attributes" : { },
+      "roles" : { },
+      "characteristics" : [ "gekeurd" ]
+    }, {
+      "label" : "U2",
+      "objectType" : "Uitrusting",
+      "attributes" : { },
+      "roles" : { },
+      "characteristics" : [ "gekeurd" ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "characteristicPresent",
+    "label" : "S1",
+    "characteristic" : "uitgerust"
+  }, {
+    "kind" : "consistent"
+  } ]
+}

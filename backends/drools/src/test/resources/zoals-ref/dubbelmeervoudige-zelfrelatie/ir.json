@@ -1,0 +1,163 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Wachter",
+      "animate" : true,
+      "plural" : "Wachters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "erfvolgeraantal",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "opvolging",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "voorganger",
+        "objectType" : "Wachter",
+        "plural" : "voorgangers",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "opvolger",
+        "objectType" : "Wachter",
+        "plural" : "opvolgers",
+        "many" : false
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "erflijn",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "erflater",
+        "objectType" : "Wachter",
+        "plural" : "erflaters",
+        "many" : true
+      }, {
+        "node" : "Role",
+        "name" : "erfvolger",
+        "objectType" : "Wachter",
+        "plural" : "erfvolgers",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "erfvolgeraantal van een wachter",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "erfvolgeraantal",
+          "subjectType" : "Wachter",
+          "source" : {
+            "snippet" : "Het erfvolgeraantal van een Wachter"
+          }
+        },
+        "value" : {
+          "node" : "Aggregation",
+          "kind" : "count",
+          "arguments" : [ {
+            "node" : "AttributeReference",
+            "attribute" : "erfvolgers",
+            "subjectType" : "Wachter",
+            "source" : {
+              "snippet" : "alle erfvolgers van de Wachter"
+            }
+          } ],
+          "elementType" : "Wachter",
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "erflijn",
+            "role" : "erfvolger"
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "het aantal erfvolgers van de Wachter"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "equation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ {
+      "node" : "FactCreation",
+      "name" : "erf de directe opvolger",
+      "versions" : [ {
+        "factType" : "erflijn",
+        "anchorRole" : "erflater",
+        "targetRole" : "erfvolger",
+        "anchor" : "Wachter",
+        "path" : [ {
+          "node" : "RoleBinding",
+          "factType" : "opvolging",
+          "role" : "opvolger"
+        } ],
+        "validity" : {
+          "node" : "Validity"
+        }
+      } ]
+    }, {
+      "node" : "FactCreation",
+      "name" : "erf de lijn door",
+      "versions" : [ {
+        "factType" : "erflijn",
+        "anchorRole" : "erflater",
+        "targetRole" : "erfvolger",
+        "anchor" : "Wachter",
+        "path" : [ {
+          "node" : "RoleBinding",
+          "factType" : "erflijn",
+          "role" : "erfvolger"
+        }, {
+          "node" : "RoleBinding",
+          "factType" : "opvolging",
+          "role" : "opvolger"
+        } ],
+        "validity" : {
+          "node" : "Validity"
+        }
+      } ]
+    } ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ {
+      "node" : "RuleGroup",
+      "name" : "erfestafette",
+      "recursive" : true,
+      "members" : [ "erf de lijn door" ]
+    } ]
+  },
+  "diagnostics" : [ ]
+}

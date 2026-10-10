@@ -1,0 +1,309 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Strandvoogd",
+      "animate" : true,
+      "plural" : "Strandvoogden",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "eerste vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "laatste vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "bonus",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "eerste vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "laatste vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "laatste bergdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "meldgrens",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "startdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "telling",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "uitkomst",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "spanne",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified",
+          "unit" : {
+            "node" : "Unit",
+            "abbreviation" : "dag",
+            "canonical" : "dag",
+            "factorToCanonical" : {
+              "num" : 1,
+              "den" : 1
+            }
+          }
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "eerste vindtijdstip",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "millisecond"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "vroeg",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : false,
+      "plural" : "Vondsten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "bergdag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "vindtijdstip",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "millisecond"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "zoekduur",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified",
+          "unit" : {
+            "node" : "Unit",
+            "abbreviation" : "dag",
+            "canonical" : "dag",
+            "factorToCanonical" : {
+              "num" : 1,
+              "den" : 1
+            }
+          }
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "zwaar",
+        "kind" : "adjectival"
+      } ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "JutterHeeftVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "jutter",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vondst",
+        "objectType" : "Vondst",
+        "plural" : "vondsten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "StrandvoogdBeheertJutter",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "strandvoogd",
+        "objectType" : "Strandvoogd",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "beheerde jutter",
+        "objectType" : "Jutter",
+        "plural" : "beheerde jutters",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "uitkomst",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "uitkomst",
+          "subjectType" : "Jutter"
+        },
+        "value" : {
+          "node" : "Let",
+          "type" : {
+            "node" : "Number",
+            "whole" : false,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "binder" : "vangst",
+          "value" : {
+            "node" : "Aggregation",
+            "kind" : "count",
+            "arguments" : [ {
+              "node" : "AttributeReference",
+              "attribute" : "vondsten",
+              "subjectType" : "Jutter"
+            } ],
+            "elementType" : "Vondst",
+            "sourceRole" : {
+              "node" : "RoleBinding",
+              "factType" : "JutterHeeftVondst",
+              "role" : "vondst"
+            },
+            "type" : {
+              "node" : "Number",
+              "whole" : true,
+              "decimals" : 0,
+              "sign" : "nonNegative"
+            }
+          },
+          "body" : {
+            "node" : "Binary",
+            "op" : "dividedBy",
+            "left" : {
+              "node" : "BinderRef",
+              "name" : "vangst"
+            },
+            "right" : {
+              "node" : "AttributeReference",
+              "attribute" : "gewicht",
+              "subjectType" : "Jutter"
+            },
+            "type" : {
+              "node" : "Number",
+              "whole" : false,
+              "decimals" : 0,
+              "sign" : "unspecified"
+            }
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

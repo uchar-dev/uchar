@@ -1,0 +1,57 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "L1",
+      "objectType" : "Loodspost",
+      "attributes" : { },
+      "roles" : {
+        "loodsen" : [ "A", "B" ]
+      },
+      "characteristics" : [ ]
+    }, {
+      "label" : "A",
+      "objectType" : "Loods",
+      "attributes" : {
+        "ervaring" : {
+          "number" : "8"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    }, {
+      "label" : "B",
+      "objectType" : "Loods",
+      "attributes" : {
+        "ervaring" : {
+          "number" : "6"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : {
+      "keurgrens" : {
+        "number" : "4"
+      },
+      "bovengrens" : {
+        "number" : "9"
+      }
+    }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "L1",
+    "attribute" : "loodstal",
+    "value" : {
+      "number" : "2"
+    }
+  }, {
+    "kind" : "characteristicPresent",
+    "label" : "L1",
+    "characteristic" : "bekwaam"
+  }, {
+    "kind" : "consistent"
+  } ]
+}

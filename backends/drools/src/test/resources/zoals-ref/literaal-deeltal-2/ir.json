@@ -1,0 +1,122 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "inkomen",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "nonNegative"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "restpost",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "nonNegative"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "saldo",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "uit",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 4,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "uit van een jutter",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "uit",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "het uit van de Jutter"
+          }
+        },
+        "value" : {
+          "node" : "Binary",
+          "op" : "dividedBy",
+          "left" : {
+            "node" : "Literal",
+            "value" : {
+              "number" : "100.00"
+            },
+            "type" : {
+              "node" : "Number",
+              "whole" : false,
+              "decimals" : 2,
+              "sign" : "nonNegative"
+            },
+            "source" : {
+              "snippet" : "100.00"
+            }
+          },
+          "right" : {
+            "node" : "AttributeReference",
+            "attribute" : "restpost",
+            "subjectType" : "Jutter",
+            "source" : {
+              "snippet" : "het restpost van de Jutter"
+            }
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : false,
+            "decimals" : 4,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "dividedby"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

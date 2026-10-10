@@ -1,0 +1,207 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "heffing",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "basis",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "deler",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "drempel",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : false,
+      "plural" : "Vondsten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "vinddag",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "JutterHeeftVondst",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "jutter",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vondst",
+        "objectType" : "Vondst",
+        "plural" : "vondsten",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "heffing",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "heffing",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "De heffing van een Jutter"
+          }
+        },
+        "value" : {
+          "node" : "Let",
+          "type" : {
+            "node" : "Number",
+            "whole" : false,
+            "decimals" : 2,
+            "sign" : "unspecified"
+          },
+          "binder" : "vangst",
+          "value" : {
+            "node" : "Aggregation",
+            "kind" : "sum",
+            "arguments" : [ {
+              "node" : "AttributeReference",
+              "attribute" : "gewicht",
+              "subjectType" : "Vondst",
+              "source" : {
+                "snippet" : "het gewicht van alle vondsten van de Jutter"
+              }
+            } ],
+            "elementType" : "Vondst",
+            "sourceRole" : {
+              "node" : "RoleBinding",
+              "factType" : "JutterHeeftVondst",
+              "role" : "vondst"
+            },
+            "type" : {
+              "node" : "Number",
+              "whole" : true,
+              "decimals" : 0,
+              "sign" : "unspecified"
+            },
+            "source" : {
+              "snippet" : "de som van het gewicht van alle vondsten van de Jutter"
+            }
+          },
+          "body" : {
+            "node" : "Rounding",
+            "base" : {
+              "node" : "Binary",
+              "op" : "dividedBy",
+              "left" : {
+                "node" : "BinderRef",
+                "name" : "vangst",
+                "source" : {
+                  "snippet" : "de vangst"
+                }
+              },
+              "right" : {
+                "node" : "AttributeReference",
+                "attribute" : "deler",
+                "subjectType" : "Jutter",
+                "source" : {
+                  "snippet" : "zijn deler"
+                }
+              },
+              "type" : {
+                "node" : "Number",
+                "whole" : false,
+                "decimals" : 0,
+                "sign" : "unspecified"
+              },
+              "source" : {
+                "snippet" : "dividedBy"
+              }
+            },
+            "mode" : "halfAwayFromZero",
+            "decimals" : 2,
+            "type" : {
+              "node" : "Number",
+              "whole" : false,
+              "decimals" : 2,
+              "sign" : "unspecified"
+            },
+            "source" : {
+              "snippet" : "… rekenkundig afgerond op 2 decimalen"
+            }
+          },
+          "source" : {
+            "snippet" : "de vangst is de som …"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

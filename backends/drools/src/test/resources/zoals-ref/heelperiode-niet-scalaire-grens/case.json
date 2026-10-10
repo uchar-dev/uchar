@@ -1,0 +1,48 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vloot",
+        "attributes": {},
+        "roles": {
+          "schepen": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "wachtwaarde": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "zeegaand"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zeewaardig"
+    }
+  ]
+}

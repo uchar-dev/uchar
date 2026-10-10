@@ -1,0 +1,245 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Loodspost",
+      "animate" : false,
+      "plural" : "Loodsposten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "loodstal",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "bekwaam",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "onbekwaam",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "merendeels",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "gangbaar",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Loods",
+      "animate" : true,
+      "plural" : "Loodsen",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "ervaring",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "loodsindeling",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "post",
+        "objectType" : "Loodspost",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "loods",
+        "objectType" : "Loods",
+        "plural" : "loodsen",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ {
+      "node" : "Parameter",
+      "name" : "keurgrens",
+      "datatype" : {
+        "node" : "Number",
+        "whole" : true,
+        "decimals" : 0,
+        "sign" : "nonNegative"
+      }
+    }, {
+      "node" : "Parameter",
+      "name" : "bovengrens",
+      "datatype" : {
+        "node" : "Number",
+        "whole" : true,
+        "decimals" : 0,
+        "sign" : "nonNegative"
+      }
+    } ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "bekwaam bij keurgrens",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "bekwaam",
+          "subjectType" : "Loodspost",
+          "source" : {
+            "snippet" : "Een Loodspost is bekwaam"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "condition" : {
+          "node" : "QuantifierFold",
+          "quantifier" : "all",
+          "elementType" : "Loods",
+          "test" : {
+            "node" : "Compound",
+            "quantifier" : "all",
+            "threshold" : 0,
+            "parts" : [ {
+              "node" : "Comparison",
+              "op" : "greater",
+              "left" : {
+                "node" : "AttributeReference",
+                "attribute" : "ervaring",
+                "subjectType" : "Loods",
+                "source" : {
+                  "snippet" : "zijn ervaring"
+                }
+              },
+              "right" : {
+                "node" : "ParameterReference",
+                "parameter" : "keurgrens",
+                "source" : {
+                  "snippet" : "de keurgrens"
+                }
+              },
+              "source" : {
+                "snippet" : "zijn ervaring groter is dan de keurgrens"
+              }
+            }, {
+              "node" : "Comparison",
+              "op" : "less",
+              "left" : {
+                "node" : "AttributeReference",
+                "attribute" : "ervaring",
+                "subjectType" : "Loods",
+                "source" : {
+                  "snippet" : "zijn ervaring"
+                }
+              },
+              "right" : {
+                "node" : "ParameterReference",
+                "parameter" : "bovengrens",
+                "source" : {
+                  "snippet" : "de bovengrens"
+                }
+              },
+              "source" : {
+                "snippet" : "zijn ervaring kleiner is dan de bovengrens"
+              }
+            } ],
+            "source" : {
+              "snippet" : "hij aan alle volgende voorwaarden voldoet"
+            }
+          },
+          "source" : {
+            "snippet" : "de ervaring van alle loodsen van de Loodspost groter is dan de keurgrens"
+          },
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "loodsindeling",
+            "role" : "loods"
+          }
+        },
+        "initialisation" : false
+      } ]
+    }, {
+      "node" : "Rule",
+      "name" : "loodstal van een loodspost",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "loodstal",
+          "subjectType" : "Loodspost",
+          "source" : {
+            "snippet" : "Het loodstal van een Loodspost"
+          }
+        },
+        "value" : {
+          "node" : "Aggregation",
+          "kind" : "count",
+          "arguments" : [ {
+            "node" : "AttributeReference",
+            "attribute" : "loodsen",
+            "subjectType" : "Loodspost",
+            "source" : {
+              "snippet" : "loodsen van de Loodspost"
+            }
+          } ],
+          "elementType" : "Loods",
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "loodsindeling",
+            "role" : "loods"
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "nonNegative"
+          },
+          "source" : {
+            "snippet" : "het aantal loodsen van de Loodspost"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

@@ -1,0 +1,236 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Wachter",
+      "animate" : true,
+      "plural" : "Wachters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "wachtnummer",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "uitkijkbonus",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "gevarenrang",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "seingerechtigd",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Post",
+      "animate" : false,
+      "plural" : "Posten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "hoogte",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "seinaantal",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "seingewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "risicopost",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Kustvak",
+      "animate" : false,
+      "plural" : "Kustvakken",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "gevarenklasse",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "vakseinaantal",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Sein",
+      "animate" : false,
+      "plural" : "Seinen",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "seinvak",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "postbezetting",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "wachter",
+        "objectType" : "Wachter",
+        "plural" : "wachters",
+        "many" : true
+      }, {
+        "node" : "Role",
+        "name" : "post",
+        "objectType" : "Post",
+        "many" : false
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "kustligging",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "kustvak",
+        "objectType" : "Kustvak",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "post",
+        "objectType" : "Post",
+        "plural" : "posten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "seinvoering",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "post",
+        "objectType" : "Post",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "sein",
+        "objectType" : "Sein",
+        "plural" : "seinen",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "vakbeseining",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "seinvak",
+        "objectType" : "Kustvak",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vaksein",
+        "objectType" : "Sein",
+        "plural" : "vakseinen",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ {
+      "node" : "FactCreation",
+      "name" : "vakbeseining door het kustvak",
+      "versions" : [ {
+        "factType" : "vakbeseining",
+        "anchorRole" : "seinvak",
+        "targetRole" : "vaksein",
+        "anchor" : "Kustvak",
+        "path" : [ {
+          "node" : "RoleBinding",
+          "factType" : "kustligging",
+          "role" : "post"
+        }, {
+          "node" : "RoleBinding",
+          "factType" : "seinvoering",
+          "role" : "sein"
+        } ],
+        "validity" : {
+          "node" : "Validity"
+        }
+      } ]
+    } ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

@@ -1,0 +1,162 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Schouwploeg",
+      "animate" : false,
+      "plural" : "Schouwploegen",
+      "attributes" : [ ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "uitgerust",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Strandwacht",
+      "animate" : true,
+      "plural" : "Strandwachten",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "dienstjaren",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "gediplomeerd",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Uitrusting",
+      "animate" : false,
+      "plural" : "Uitrustingen",
+      "attributes" : [ ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "gekeurd",
+        "kind" : "adjectival"
+      } ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "schouwindeling",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "ploeg",
+        "objectType" : "Schouwploeg",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "wacht",
+        "objectType" : "Strandwacht",
+        "plural" : "wachten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "wachtuitrusting",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "drager",
+        "objectType" : "Strandwacht",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "stuk",
+        "objectType" : "Uitrusting",
+        "plural" : "stukken",
+        "many" : true
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "uitgerust bij keuring",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "uitgerust",
+          "subjectType" : "Schouwploeg",
+          "source" : {
+            "snippet" : "Een Schouwploeg is uitgerust"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "condition" : {
+          "node" : "QuantifierFold",
+          "quantifier" : "all",
+          "elementType" : "Strandwacht",
+          "test" : {
+            "node" : "QuantifierFold",
+            "quantifier" : "all",
+            "elementType" : "Uitrusting",
+            "test" : {
+              "node" : "CharacteristicCheck",
+              "characteristic" : "gekeurd",
+              "negated" : false,
+              "source" : {
+                "snippet" : "het stuk gekeurd is"
+              }
+            },
+            "source" : {
+              "snippet" : "alle stukken van de Strandwacht gekeurd zijn"
+            },
+            "sourceRole" : {
+              "node" : "RoleBinding",
+              "factType" : "wachtuitrusting",
+              "role" : "stuk"
+            }
+          },
+          "source" : {
+            "snippet" : "alle wachten van de Schouwploeg alle stukken gekeurd hebben"
+          },
+          "sourceRole" : {
+            "node" : "RoleBinding",
+            "factType" : "schouwindeling",
+            "role" : "wacht"
+          }
+        },
+        "initialisation" : false
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}

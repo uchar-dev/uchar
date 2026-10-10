@@ -1,0 +1,322 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "zwaarte",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "meldtelling",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "saldo",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "noemer",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "peildatum",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "actief",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "druk",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "beladen",
+        "kind" : "adjectival"
+      }, {
+        "node" : "Characteristic",
+        "name" : "ontlast",
+        "kind" : "adjectival"
+      } ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : true,
+      "plural" : "Vondsts",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "gewicht",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "deelnemers",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "vinddatum",
+        "datatype" : {
+          "node" : "Date",
+          "precision" : "day"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "ploeg",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    }, {
+      "node" : "ObjectType",
+      "name" : "Melding",
+      "animate" : true,
+      "plural" : "Meldings",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "telling",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ {
+      "node" : "FactType",
+      "name" : "aanmelding",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "aanmelder",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "vondst",
+        "objectType" : "Vondst",
+        "plural" : "vondsten",
+        "many" : true
+      } ]
+    }, {
+      "node" : "FactType",
+      "name" : "JutterHeeftMelding",
+      "reciprocal" : false,
+      "roles" : [ {
+        "node" : "Role",
+        "name" : "melder",
+        "objectType" : "Jutter",
+        "many" : false
+      }, {
+        "node" : "Role",
+        "name" : "melding",
+        "objectType" : "Melding",
+        "many" : false
+      } ]
+    } ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "drukte",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "druk",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "Een Jutter is druk"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "condition" : {
+          "node" : "Compound",
+          "quantifier" : "none",
+          "threshold" : 0,
+          "parts" : [ {
+            "node" : "CharacteristicCheck",
+            "characteristic" : "actief",
+            "negated" : false,
+            "source" : {
+              "snippet" : "hij actief is"
+            }
+          }, {
+            "node" : "CharacteristicCheck",
+            "characteristic" : "beladen",
+            "negated" : false,
+            "source" : {
+              "snippet" : "hij beladen is"
+            }
+          }, {
+            "node" : "Comparison",
+            "op" : "later",
+            "left" : {
+              "node" : "Aggregation",
+              "kind" : "first",
+              "arguments" : [ {
+                "node" : "AttributeReference",
+                "attribute" : "vinddatum",
+                "subjectType" : "Vondst",
+                "source" : {
+                  "snippet" : "zijn vinddatum"
+                }
+              } ],
+              "elementType" : "Vondst",
+              "filter" : {
+                "node" : "Comparison",
+                "op" : "greater",
+                "left" : {
+                  "node" : "Binary",
+                  "op" : "dividedBy",
+                  "left" : {
+                    "node" : "AttributeReference",
+                    "attribute" : "gewicht",
+                    "subjectType" : "Vondst",
+                    "source" : {
+                      "snippet" : "zijn gewicht"
+                    }
+                  },
+                  "right" : {
+                    "node" : "AttributeReference",
+                    "attribute" : "deelnemers",
+                    "subjectType" : "Vondst",
+                    "source" : {
+                      "snippet" : "zijn deelnemers"
+                    }
+                  },
+                  "type" : {
+                    "node" : "Number",
+                    "whole" : false,
+                    "decimals" : 0,
+                    "sign" : "unspecified"
+                  },
+                  "source" : {
+                    "snippet" : "zijn gewicht gedeeld door zijn deelnemers"
+                  }
+                },
+                "right" : {
+                  "node" : "Literal",
+                  "value" : {
+                    "number" : "2"
+                  },
+                  "type" : {
+                    "node" : "Number",
+                    "whole" : true,
+                    "decimals" : 0,
+                    "sign" : "unspecified"
+                  },
+                  "source" : {
+                    "snippet" : "2"
+                  }
+                },
+                "source" : {
+                  "snippet" : "greater"
+                }
+              },
+              "sourceRole" : {
+                "node" : "RoleBinding",
+                "factType" : "aanmelding",
+                "role" : "vondst"
+              },
+              "type" : {
+                "node" : "Date",
+                "precision" : "day"
+              },
+              "source" : {
+                "snippet" : "de eerste van de vinddatum van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen"
+              }
+            },
+            "right" : {
+              "node" : "AttributeReference",
+              "attribute" : "peildatum",
+              "subjectType" : "Jutter",
+              "source" : {
+                "snippet" : "zijn peildatum"
+              }
+            },
+            "source" : {
+              "snippet" : "later"
+            }
+          } ],
+          "source" : {
+            "snippet" : "none 0"
+          }
+        },
+        "initialisation" : false
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ],
+    "prioritizedDefaults" : [ ]
+  },
+  "diagnostics" : [ ]
+}

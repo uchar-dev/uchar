@@ -1,0 +1,202 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Baan",
+      "animate" : true,
+      "plural" : "Baans",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "aanloop",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "nonNegative",
+          "unit" : {
+            "node" : "Unit",
+            "abbreviation" : "m",
+            "system" : "Afstand",
+            "canonical" : "m",
+            "factorToCanonical" : {
+              "num" : 1,
+              "den" : 1
+            }
+          }
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "uit",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : false,
+          "decimals" : 2,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ ]
+    } ],
+    "factTypes" : [ ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ {
+      "node" : "UnitSystem",
+      "name" : "Afstand",
+      "units" : [ {
+        "node" : "Unit",
+        "abbreviation" : "m",
+        "system" : "Afstand",
+        "canonical" : "m",
+        "factorToCanonical" : {
+          "num" : 1,
+          "den" : 1
+        }
+      }, {
+        "node" : "Unit",
+        "abbreviation" : "km",
+        "system" : "Afstand",
+        "canonical" : "m",
+        "factorToCanonical" : {
+          "num" : 1000,
+          "den" : 1
+        }
+      } ]
+    } ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "uit van een baan",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "uit",
+          "subjectType" : "Baan",
+          "source" : {
+            "snippet" : "het uit van de Baan"
+          }
+        },
+        "value" : {
+          "node" : "Let",
+          "type" : {
+            "node" : "Number",
+            "whole" : false,
+            "decimals" : 2,
+            "sign" : "unspecified"
+          },
+          "binder" : "a",
+          "value" : {
+            "node" : "AttributeReference",
+            "attribute" : "aanloop",
+            "subjectType" : "Baan",
+            "source" : {
+              "snippet" : "het aanloop van de Baan"
+            }
+          },
+          "body" : {
+            "node" : "IfThenElse",
+            "type" : {
+              "node" : "Number",
+              "whole" : false,
+              "decimals" : 2,
+              "sign" : "unspecified"
+            },
+            "condition" : {
+              "node" : "Comparison",
+              "op" : "greater",
+              "left" : {
+                "node" : "BinderRef",
+                "name" : "a",
+                "source" : {
+                  "snippet" : "a"
+                }
+              },
+              "right" : {
+                "node" : "Literal",
+                "value" : {
+                  "number" : "1"
+                },
+                "type" : {
+                  "node" : "Number",
+                  "whole" : true,
+                  "decimals" : 0,
+                  "sign" : "nonNegative",
+                  "unit" : {
+                    "node" : "Unit",
+                    "abbreviation" : "km",
+                    "system" : "Afstand",
+                    "canonical" : "m",
+                    "factorToCanonical" : {
+                      "num" : 1000,
+                      "den" : 1
+                    }
+                  }
+                },
+                "source" : {
+                  "snippet" : "1"
+                }
+              },
+              "source" : {
+                "snippet" : "greater"
+              }
+            },
+            "then" : {
+              "node" : "Literal",
+              "value" : {
+                "number" : "1.00"
+              },
+              "type" : {
+                "node" : "Number",
+                "whole" : false,
+                "decimals" : 2,
+                "sign" : "unspecified"
+              },
+              "source" : {
+                "snippet" : "1.00"
+              }
+            },
+            "else" : {
+              "node" : "Literal",
+              "value" : {
+                "number" : "2.00"
+              },
+              "type" : {
+                "node" : "Number",
+                "whole" : false,
+                "decimals" : 2,
+                "sign" : "unspecified"
+              },
+              "source" : {
+                "snippet" : "2.00"
+              }
+            },
+            "source" : {
+              "snippet" : "als … dan … anders …"
+            }
+          },
+          "source" : {
+            "snippet" : "a is …"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ]
+  },
+  "diagnostics" : [ ]
+}
