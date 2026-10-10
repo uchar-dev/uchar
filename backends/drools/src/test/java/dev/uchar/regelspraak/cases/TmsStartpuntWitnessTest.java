@@ -42,8 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p><b>Not pinned</b>: a leeg anchor. Ch. 3.2 says that the anchor rule's own §6.8 error surfaces on the §9.5 channel
  * then; the reference interpreter and the ASP runner answer consistent, as this branch does, and the exec-model and the
- * DRL-text branch deposit an inconsistency through a companion of the anchor rule. Which answer holds is a question of
- * the norm.
+ * DRL-text branch deposit an inconsistency through a companion of the anchor rule. This branch keeps the answer of the
+ * two: where no form reads or writes a timeline on the grid, nothing evaluates the anchor (call-by-need, ch. 10.6), and
+ * every form that does is refused by name, so a leeg anchor has nothing here to surface through.
  *
  * <p><b>Red</b> on the claim of the card, 331b1179: both playing documents were refused, "tms-transpiler SKIP:
  * startpuntbepaling: boekjaar — een StartPointDetermination: een variabel startpunt draagt de truth-maintenance-tak
@@ -97,7 +98,7 @@ class TmsStartpuntWitnessTest {
             "startdatum", lezing("aanmelddatum", "Jutter"), "null");
 
     /** Two Jutters, each with an aanmelddatum, which the anchor rule writes into the startdatum. Every anchor is
-     *  filled: what a leeg anchor deposits is a question of the norm this witness does not pin (see the class). */
+     *  filled: a leeg anchor is not pinned here (see the class). */
     static JsonNode zaak() throws Exception {
         return TmsTijdlijnDocumenten.zaak("2024-06-01", List.of(jutter("J1", "2024-04-01"), jutter("J2", "2024-11-15")),
                 List.of(startdatum("J1", "2024-04-01"), startdatum("J2", "2024-11-15"), TmsDocumenten.consistent()));
