@@ -149,16 +149,6 @@ public final class RegelSpraakRuntime {
         throw new IllegalStateException("enumeratiewaarde is geen String maar " + waarde.getClass().getName());
     }
 
-    /** §13.4.6 construct a new instance of a runtime objecttype reflectively (its class is unknown at
-     *  transpiler-compile time) via the no-arg constructor — the model analog of the DRL {@code new <Type>()} an
-     *  objectcreatie inserts. */
-    public static Object newInstance(Class<?> cls) {
-        try { return cls.getDeclaredConstructor().newInstance(); }
-        catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("kan geen instantie van " + cls.getName() + " maken", e);
-        }
-    }
-
     /** §9.5 build an Inconsistentie fact reflectively (the fact class is a runtime objecttype, unknown at
      *  transpiler-compile time) — {@code new <fqcn>(regel, subject)} — for a consistentie/uniciteit companion
      *  rule to insert. The model back-end's analog of the DRL {@code insert(new ….Inconsistentie(...))}. */

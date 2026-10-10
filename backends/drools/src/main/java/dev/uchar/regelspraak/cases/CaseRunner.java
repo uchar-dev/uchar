@@ -561,8 +561,8 @@ public final class CaseRunner {
      *  different values in the last firings (RUNTIME-SEMANTICS ch. 5.7, {@link Schrijfconflict}), and where those
      *  show none only that the cap was reached; on the exec-model branch, which writes no bean while it fires,
      *  the sentence of {@code vuur}, which names the cap and what it was computed from, or that of the creation budget. A
-     *  consequence that throws, and on the exec-model branch a condition, leaves the fire as
-     *  {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any branch.
+     *  consequence that throws leaves the fire as {@link DroolsBackend#benoem} names it; every replay, red path and
+     *  report of this class fires here, on any branch.
      *  At a fixpoint the exec-model branch's derivations go onto the beans before anything reads them, or the
      *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
      *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean. */
@@ -573,8 +573,6 @@ public final class CaseRunner {
         try {
             vuring = DroolsBackend.vuur(bouw, sessie);
         } catch (ConsequenceException e) {
-            throw DroolsBackend.benoem(e);
-        } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
         if (vuring.geenFixpunt() == null) {
