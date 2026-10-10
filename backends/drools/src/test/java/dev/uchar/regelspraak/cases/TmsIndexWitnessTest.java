@@ -1,5 +1,9 @@
 package dev.uchar.regelspraak.cases;
 
+import dev.uchar.regelspraak.model.RegelSpraakModel;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+
 import org.drools.model.BetaIndexN;
 import org.drools.model.Condition;
 import org.drools.model.Constraint;
@@ -21,6 +25,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The joins of the truth-maintenance branch carry an index (card tms-omschakeling, the scale test of point 9). An
@@ -56,6 +61,9 @@ class TmsIndexWitnessTest {
     /** Every constraint of every document, read once. */
     private static List<Beperking> beperkingen;
 
+    /** The build of every document, by name. */
+    private static final Map<String, DroolsBackend.Build> BOUW = new LinkedHashMap<>();
+
     /** One constraint of a pattern: the document, the rule, the class of the pattern's fact, its kind, whether it
      *  reads another variable than the pattern's own (a join), and the index it carries, null where none. */
     record Beperking(String document, String regel, Class<?> klasse, String soort, boolean join, Index<?, ?> index) {}
@@ -66,6 +74,7 @@ class TmsIndexWitnessTest {
         for (String d : DOCUMENTEN) {
             Path ir = d.equals("schaal") ? Schaalproef.model() : GOLDEN.resolve(d).resolve("ir.json");
             DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            BOUW.put(d, b);
             beperkingen.addAll(beperkingen(d, b.tmsTranspiler().model()));
         }
     }
@@ -132,6 +141,28 @@ class TmsIndexWitnessTest {
         Set<String> verouderd = new TreeSet<>(ONGEINDEXEERD.keySet());
         verouderd.removeAll(gezien);
         assertEquals(Set.of(), verouderd, "soorten in de lijst zonder index die geen document hier verlaagt");
+    }
+
+    /** Step 6: the beans of the fact model override neither {@code equals} nor {@code hashCode}. An indexed join hashes
+     *  the object on each side and compares the two with {@code equals}, where its predicate compares with {@code ==},
+     *  and Drools trusts the hash; the KieBase in EQUALITY merges equal facts as well. Both hold only while a bean is
+     *  equal to itself alone: a bean that compared its values would join a standing to every subject with equal values,
+     *  and merge two subjects into one. */
+    @Test
+    void bonenZonderEqualsOfHashCode() throws Exception {
+        List<String> eigen = new ArrayList<>();
+        int bonen = 0;
+        for (DroolsBackend.Build b : BOUW.values())
+            for (RegelSpraakModel.Objecttype ot : b.model().objecttypen.values()) {
+                Class<?> k = Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), true,
+                        b.beanLoader());
+                bonen++;
+                if (k.getMethod("equals", Object.class).getDeclaringClass() != Object.class)
+                    eigen.add(k.getSimpleName() + ".equals");
+                if (k.getMethod("hashCode").getDeclaringClass() != Object.class) eigen.add(k.getSimpleName() + ".hashCode");
+            }
+        assertTrue(bonen > 0, "geen bonen gelezen");
+        assertEquals(List.of(), eigen, "bonen die equals of hashCode overschrijven");
     }
 
     /** Asserts that every kind of {@code soorten} occurs in the documents, and that every constraint of those kinds and
