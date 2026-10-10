@@ -2,8 +2,10 @@
 # Gate 12 — the Drools differential leg of the square (maintainer decision 2026-08-27).
 #
 # The Drools backend CONSUMES the uchar IR: backends/drools loads every golden's ir.json off
-# the wire (never the RegelSpraak source), builds a Drools KieBase through the ported exec-model
-# back-end, and replays every case*.json. A golden whose forms the loader+transpiler carry MUST
+# the wire (never the RegelSpraak source), builds a Drools KieBase through the exec-model branch
+# (since card tms-omschakeling the lowering with truth maintenance, transpiler/tms; until then the
+# destructive exec-model back-end ported from the production toolchain), and replays every
+# case*.json. A golden whose forms the loader+transpiler carry MUST
 # replay through Drools with EXACTLY the pinned expectations gates 5 (ref) and 6 (clingo) verify
 # — so a played pass IS the differential square (ref ≡ clingo ≡ Drools over the corpus, anchored
 # to hand-written values).
@@ -17,8 +19,8 @@
 #      self-document per form. A form that lowers but
 #      faults / yields the wrong value at fire is not carried and lands HERE, not in channel 2.
 #   2. VALUE-DIVERGENCE exclusions — a golden that loads, lowers, fires WITHOUT faulting, and
-#      produces a WRONG VALUE (a FAIL: verwacht X, werkelijk Y). The exec-model (the production
-#      RegelSpraak semantics) genuinely differs from ref/clingo here; each such golden is listed
+#      produces a WRONG VALUE (a FAIL: verwacht X, werkelijk Y). The exec-model branch genuinely
+#      differs from ref/clingo here; each such golden is listed
 #      below WITH a reason. This channel is FAIL-ONLY: a crash at fire (ERROR) is never a value-
 #      divergence — it is a not-carried form and MUST be a channel-1 auto-exclusion, so an ERROR
 #      always fails the gate. The list is the check-noop survivor pattern: it FAILS WHEN STALE — a
@@ -112,6 +114,11 @@ JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | 
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it
 # plays+passes the list is stale. Grouped by the divergence class the differential exposed.
 EXCLUDE_KNOWN=(
+  # NB 2026-10-10 (card tms-omschakeling): where the history below names ExecModelTranspiler, its
+  # methods or the exec-model branch's write boundary, it means the destructive lowering that card
+  # removed. The exec-model branch is since then the lowering with truth maintenance
+  # (transpiler/tms), which plays every golden named below with the pinned values. The list stays
+  # empty.
   # Triaged 2026-08-28 (card leeg-divergentie-triage) by REPLAY through the original regelspraak-java
   # toolchain (its DrlTranspiler oracle AND ExecModelTranspiler, fired over the equivalent minimal
   # .rgs): in every case the original toolchain agrees with OUR PORT and NOT with ref/clingo — so each
@@ -224,36 +231,32 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE|loader Refusal: functionDefs — no function section in the v0 backend"
   "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
-  "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: the WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad) and this golden's refusal moved one layer deeper, exactly as bergingstoezicht's did. Its middle relation 'berging' declares BOTH roles to-many, so §13.3.9 — which stores a relation in one scalar reference field, on whichever end is the ONE side — derives no field at either end and the hop Boot -> Vondst has nothing to read. That is the erflijn shape, and lifting it is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own, which the card that built the walk put out of scope"
-  "anchor/jutterswet-erflijn|EXCLUDE|transpiler SKIP: aggregation join with BOTH sides plural — neither side stores a bean field (§13.3.9)"
-  "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: one bean field necessarily carries BOTH directions; the arm keeps refusing CONSERVATIVELY since 2026-09-10 — its old ground (the directed reading) is withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
-  "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: AANTAL over a to-one element role whose sister role is plural — one shared bean field; a CONSERVATIVE refusal since 2026-09-10, its old ground withdrawn by RUNTIME-SEMANTICS ch. 5.7a (§13.3.9)"
+  "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
+  "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
+  "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: an Aggregation (AANTAL) over the to-one element role 'houder' whose sister role 'penning' is to-many: that fact type has one bean field for both directions, and the branch refuses the form CONSERVATIVELY until a card of its own measures it (§13.3.9). The refusal stands since 2026-09-10, its old ground (the directed count of the case input) withdrawn by RUNTIME-SEMANTICS ch. 5.7a; since card tms-omschakeling (2026-10-10) the lowering with truth maintenance gives it in its own words"
   "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
-  "anchor/jutterswet-vindersloon|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "anchor/jutterswet-vondstdossier|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-aanspraakherziening|EXCLUDE|loader Refusal: functionDefs"
-  "jutterswet-afdrachtstapel|EXCLUDE|transpiler SKIP: regel 'overbelast bij gezamenlijke afdracht' — voorwaarde buiten Phase-B scope. The exec-model branch's numeric comparison arms admit an operand typed as a NUMBER only (getalachtigVergelijkbaar, and the literal arm's isNumeriek), and both sides here are percentages: the sum or difference of two percentage attributes, which the loader reads as a percentage since L3, compared with a percentage literal. The literal alone already kept the arms shut on the L2 base (the L3 lens measured the same EXCLUDE there on a document of this shape). The DRL-text branch plays the golden with ref's and clingo's values (PLAYED 1). Measured 2026-09-24 (card l3-typesysteem, fix round): a gap of this branch and not a semantic difference, so the golden's pins are a ref = clingo = DRL-text triple"
   "jutterswet-dossierrecht-catala|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
-  "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: the day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand — it compiles a voorwaarde ONCE into the KieBase while parameter values arrive per case as session globals, so a parameter-bound day kind has no compiled predicate and the reaching rule is skipped (waarde buiten scope). Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
+  "jutterswet-havenrooster|EXCLUDE|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.Dagsoorten) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
   "jutterswet-kamerheffing-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE|loader Refusal: functionDefs"
   "jutterswet-ketenkwantor|EXCLUDE|loader Refusal: Kwantorvouw.bronPad — the multi-step range of a COUNTING quantifier (WF-108 (c)); the accumulate source carries one join role. Measured 2026-09-22 (card kwantortelling-pad-golden) in both branches, same sentence. What stands behind it is INFERRED, not measured, since nothing past the loader runs while it refuses: the golden's middle relation 'berging' is many-to-many — the shared element it exists for needs a to-many reverse role on the last step — and that is the relation anchor/jutterswet-bootberging and jutterswet-muntketen are refused on one layer deeper, so lifting the loader alone would most likely move this refusal rather than make the golden play. Its flat-count pins are a ref = clingo pair"
   "jutterswet-kinderdeler|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderfoldheffing|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-klipwacht|EXCLUDE|transpiler SKIP: regel 'klipteken van een kustwacht' — the gedurende-CLIP as a composite MEMBER is outside the Phase-B condition scope (the exec-model branch lowers a clipped total in a rule VALUE, not inside a voorwaarde). Its ch. 5.10 content — the clip fences carrying the prefix — is a clingo-side property that gates 5+6 pin; the Drools square carries the same golden as a refusal, not a wrong answer."
   "jutterswet-kinderkap|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderkwart|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderlet|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: the same many-to-many 'berging' as bootberging above, and the same deeper refusal since 2026-09-18 — NOT the subtype landing it was written for, which the walk does carry (BronpadKetenWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
+  "jutterswet-muntketen|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (BronpadKetenWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE|loader Refusal: Datatype:ListType"
-  "jutterswet-pachtvenster|EXCLUDE|transpiler SKIP: regel 'jaarpacht van een strandpachter' — periodevergelijking op tijdsafhankelijk doel (§8.4.3 clip). The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren, RUNTIME-SEMANTICS ch. 3.10); this branch refuses the form by name, one phase before fire"
+  "jutterswet-pachtvenster|EXCLUDE|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
   "jutterswet-penningbeschikking-catala|EXCLUDE|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE|loader Refusal: Datatype:ListType"
@@ -263,10 +266,8 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE|loader Refusal: Datatype:StructType"
-  "jutterswet-vondsttarief|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "jutterswet-vormenkabinet|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-waarderingsinvoer|EXCLUDE|loader Refusal: Datatype:StructType"
-  "synth2-afrondingscombinaties|EXCLUDE|transpiler SKIP: regel — waarde buiten scope"
   "synth3-armlichaam|EXCLUDE|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE|loader Refusal: Datatype:SumType"
   "synth3-keuringtal|EXCLUDE|loader Refusal: Datatype:ListType"
@@ -1268,7 +1269,15 @@ EXPECTED_CHANNEL=(
 # chain of 2026-10-09; the exec branch, which has no creation budget, played it all along and needed no change: it plays
 # the two cases, PLAYED 2, with ref's and clingo's values. The DRL-text branch plays them too, PLAYED 2, so
 # EXPECTED_DRL_PLAYED moves by one as well. Its red twin jutterswet-budgetgrens-over is listed in check-rood.sh.
-EXPECTED_PLAYED=242
+# 242 -> 248 (2026-10-10, card tms-omschakeling): the exec-model branch is the lowering with truth maintenance
+# (transpiler/tms); the destructive lowering is gone. The corpus did not change. Measured over every golden with cases
+# before the switch, the new branch plays all 242 the destructive lowering played, with the same pinned values, and six
+# more that the destructive lowering refused with a transpiler SKIP: anchor/jutterswet-erflijn (an aggregation join
+# with both sides to-many), anchor/jutterswet-vindersloon, jutterswet-vondsttarief and synth2-afrondingscombinaties
+# (a value outside its scope), jutterswet-afdrachtstapel (a comparison of percentages) and jutterswet-klipwacht (the
+# gedurende clip as a member of a composite). They leave EXPECTED_CHANNEL. The six refusals that stay keep their
+# channel; their reasons follow the new branch's sentence. The DRL-text branch does not move.
+EXPECTED_PLAYED=248
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1287,20 +1296,24 @@ EXPECTED_PLAYED=242
 # comment that opens it; each golden still stands there BY NAME, which is what the stale guard needs.
 DRL_CHANNEL=(
   # (A) ch. 7 prioritizedDefaults — 41 lines, and since the objectcreatie repair below the ONLY
-  # remaining reason of size for this count sitting 46 below the exec one: the exec branch grew a
+  # remaining reason of size for this count sitting 52 below the exec one: the exec branch grew a
   # spec-ch.-7 defaults lowering at the defaults-service card (2026-08-29) that the production
-  # toolchain does not have, and DrlTranspiler never did. 40 of the 41 lines refuse on that one
+  # toolchain does not have, the lowering with truth maintenance carries one of its own since card
+  # tms-omschakeling, and DrlTranspiler never did. 40 of the 41 lines refuse on that one
   # sentence; the 40th, jutterswet-havenrooster, is a MARKER that stands here in name order and that
   # the header counts since 2026-09-22. All 40 ARE that asymmetry — the exec branch plays them.
   # anchor/jutterswet-toelagegronden stood here until 2026-09-28 as the one line the exec branch
   # refused too; both branches now refuse it on the bean name collision of class (F).
-  # The 46 is 50 exec-only players — those 40, jutterswet-afrekening, jutterswet-havenketen,
-  # jutterswet-late-vondst, jutterswet-vouwrand, jutterswet-vondstbereik, jutterswet-vondstvenster,
-  # jutterswet-vroegste-vondst and jutterswet-zwaarste-weging of class (C), and
-  # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D) — minus 4 goldens
-  # this branch plays and the exec one does not (anchor/jutterswet-vindersloon,
-  # jutterswet-vondsttarief, synth2-afrondingscombinaties, all three a transpiler SKIP over there, and
-  # jutterswet-afdrachtstapel, whose percentage comparison the exec arms refuse). Recounted 2026-09-25
+  # The 52 is 52 exec-only players — those 40, the ten of class (C) that the exec branch plays
+  # (jutterswet-afrekening, jutterswet-havenketen, jutterswet-late-vondst, jutterswet-vouwrand,
+  # jutterswet-vondstbereik, jutterswet-vondstvenster, jutterswet-vroegste-vondst,
+  # jutterswet-zwaarste-weging, anchor/jutterswet-erflijn and jutterswet-klipwacht), and
+  # jutterswet-initialisatievolgorde and anchor/jutterswet-kustwacht of class (D); since card
+  # tms-omschakeling no golden plays in this branch and not in the exec one. Until that card the
+  # number was 46: 50 exec-only players minus 4 goldens this branch played and the destructive exec
+  # branch did not (anchor/jutterswet-vindersloon, jutterswet-vondsttarief, synth2-afrondingscombinaties,
+  # all three a transpiler SKIP over there, and jutterswet-afdrachtstapel, whose percentage comparison
+  # the exec arms refused); the history of the count follows. Recounted 2026-09-25
   # (card dialect-uitzondering-op-uitzondering): until then the header said 22 and 3, which stopped
   # holding when jutterswet-afdrachtstapel arrived (166 -> 167 at EXPECTED_DRL_PLAYED). Recounted
   # again the same day (card verifier-supertype-dubbele-schrijver, fix round): jutterswet-diepwrakbasis
@@ -1371,7 +1384,10 @@ DRL_CHANNEL=(
   # (238 - 193); the six class heads (A 40, B 37, C 15, D 2, E 3, F 3 = 100 lines) were counted against the list.
   # Recounted again the same day (the opgave marker on a number with a unit): jutterswet-opgave-bedrag joins the class,
   # 40 -> 41 lines, and plays in the exec branch only, so the gap is 46 (239 - 193); the six class heads (A 41, B 37,
-  # C 15, D 2, E 3, F 3 = 101 lines) were counted against the list.
+  # C 15, D 2, E 3, F 3 = 101 lines) were counted against the list. Recounted 2026-10-10 (card tms-omschakeling, the
+  # switch): the exec branch plays 248, the six it played on top of the 242 among them; four of the six played here
+  # already, and anchor/jutterswet-erflijn and jutterswet-klipwacht of class (C) did not, so the gap is 52
+  # (248 - 196); this list does not move, and the six class heads hold at 101 lines.
   "anchor/jutterswet-hardheid|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestdiepte|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
   "anchor/jutterswet-nestkenmerk|EXCLUDE|ch. 7 prioritizedDefaults: no defaults lowering in this branch"
@@ -1491,10 +1507,12 @@ DRL_CHANNEL=(
   # 14 -> 15 (2026-10-02, a fold over a set followed by to-one steps): jutterswet-zwaarste-weging, a NEW golden this
   # branch markers by name ('TODO aggregatie EERSTE', the earliest vinddag over a set source) and the exec branch
   # plays; EXPECTED_DRL_PLAYED does not move (reason block at EXPECTED_PLAYED).
-  # SEVEN of the fifteen are goldens the exec branch refuses too, on its own wording of the
-  # same limit (the many-to-many bean field, the consistency rule, the §8.4.3 clip on a temporal
-  # target, and the out-of-scope condition — jutterswet-klipwacht, shared, not split).
-  # EIGHT are this branch alone, and the exec branch PLAYS them:
+  # FIVE of the fifteen are goldens the exec branch refuses too, on its own wording of the
+  # same limit (the many-to-many bean field, the bean field a consistency's count shares with its
+  # sister role, and the §8.4.3 clip on a temporal target). Until card tms-omschakeling (2026-10-10)
+  # they were SEVEN: the destructive exec branch refused anchor/jutterswet-erflijn and
+  # jutterswet-klipwacht as well, and the branch with truth maintenance plays both (exec PLAYED 1 each).
+  # TEN are this branch alone, and the exec branch PLAYS them — those two and the eight that follow:
   #   jutterswet-afrekening (exec PLAYED 2) — the ordering fold over a date set source, in the rule that reads
   #   the zeebrieven back, and behind it in the toekenningen of both creations;
   #   jutterswet-havenketen (exec PLAYED 2) — a TODO voorwaarde on a read over two roles;
