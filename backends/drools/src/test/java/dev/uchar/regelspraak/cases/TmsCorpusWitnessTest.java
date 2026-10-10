@@ -20,13 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The count of played goldens is held to a floor, so that a step that makes the branch drop goldens it played fails
  * here by number. Gate 12 pins the same count ({@code EXPECTED_PLAYED}) and is the authority. This witness stays in the
  * suite beside it, by decision of card tms-omschakeling: it runs in-process at every {@code mvn package}, between two
- * runs of the gate, and reports the refusals per family and form, which the gate does not give, since it reads one
- * status line per golden from the jar.
+ * runs of the gate, so a golden computed wrong or a drop below the floor fails the build before the gate runs at all.
  *
- * <p>The refusals are counted per family and reported, not pinned: the kind of form the manifest refuses first
- * ({@code transpiler SKIP: <family>: …}), a cycle refused before the build and two rules of one name, which carry
- * the label of the branch ({@code exec-model}), the loader's refusal ({@code loader}), or two names on one bean member
- * ({@code beannaambotsing}). The reasons themselves name forms and snippets.
+ * <p>The refusals are counted per family, not pinned, and the count shows only in the message of a missed floor: the
+ * kind of form the manifest refuses first ({@code transpiler SKIP: <family>: …}), a cycle refused before the build and
+ * two rules of one name, which carry the label of the branch ({@code exec-model}), the loader's refusal
+ * ({@code loader}), or two names on one bean member ({@code beannaambotsing}). The reasons themselves name forms and
+ * snippets.
  *
  * <p><b>Red before the fix of the parameters</b> (measured 2026-10-08 on the branch's fourth step): two goldens
  * played with wrong values, "jutterswet-aanvoergeld: Result[status=FAIL, reason=, caseFailures=[case.json: attribuut
