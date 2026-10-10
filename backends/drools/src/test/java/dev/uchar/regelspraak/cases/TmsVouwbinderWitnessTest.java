@@ -102,7 +102,7 @@ class TmsVouwbinderWitnessTest {
     private static final String NOG_NIET = "transpiler SKIP: regel: zware vondsten van een jutter — een"
             + " BinderRef 'grens' van een Let om een vouw, in het filter of de matrix van die vouw ('grens'): de"
             + " bijdrageregels van de vouw rekenen het filter en de matrix per lid uit en binden de waarde van de Let"
-            + " niet: de truth-maintenance-tak draagt deze vorm nog niet";
+            + " niet: deze tak draagt deze vorm nog niet";
 
     @Test void een_binder_in_het_filter_of_de_matrix_van_een_vouw_wacht_op_een_latere_kaart() throws Exception {
         List<String> werkelijk = new ArrayList<>();

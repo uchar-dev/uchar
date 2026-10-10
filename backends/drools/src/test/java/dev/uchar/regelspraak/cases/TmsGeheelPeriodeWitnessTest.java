@@ -543,7 +543,7 @@ class TmsGeheelPeriodeWitnessTest {
                 heel(true, false), "zijn wachtdagen gedurende het gehele jaar groter is dan zijn vaardagen");
         assertEquals(List.of(
                 "transpiler SKIP: regel: trouw — een CharacteristicCheck met wholePeriod ('hij gedurende het gehele"
-                        + " jaar niet wachtplichtig is') met de ontkenning binnen de kwalificatie: de truth-maintenance-tak"
+                        + " jaar niet wachtplichtig is') met de ontkenning binnen de kwalificatie: deze tak"
                         + " draagt deze vorm nog niet, zoals de andere twee takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen"
                         + " golden met cases heeft haar",
                 "transpiler SKIP: regel: werftoeslag — een Comparison met wholePeriod ('de havendagen van de werf van"

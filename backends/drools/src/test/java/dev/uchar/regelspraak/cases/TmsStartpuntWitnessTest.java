@@ -119,7 +119,7 @@ class TmsStartpuntWitnessTest {
 
     private static String geweigerd(String regel, String wat) {
         return "transpiler SKIP: regel: " + regel + " — " + wat + " over het attribuut 'vergoeding' van Jutter op een"
-                + " tijdlijn met een variabel startpunt: de truth-maintenance-tak draagt deze vorm nog niet; geen golden"
+                + " tijdlijn met een variabel startpunt: deze tak draagt deze vorm nog niet; geen golden"
                 + " met cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster";
     }
 

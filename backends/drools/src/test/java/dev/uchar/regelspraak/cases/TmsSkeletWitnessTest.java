@@ -95,7 +95,7 @@ class TmsSkeletWitnessTest {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: lampental — een BuiltinCall dayCount in een waarde ('het aantal dagen in"
-                + " het jaar dat hij helder is'): de truth-maintenance-tak rekent een tijdsevenredig deel en een"
+                + " het jaar dat hij helder is'): deze tak rekent een tijdsevenredig deel en een"
                 + " dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS ch. 3.7, 3.8,"
                 + " 3.11)", e.getMessage());
     }

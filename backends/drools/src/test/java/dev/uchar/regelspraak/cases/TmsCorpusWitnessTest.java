@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the refusals per family and form, where the gate reads one status line per golden.
  *
  * <p>The refusals are counted per family and reported, not pinned: the kind of form the manifest refuses first
- * ({@code transpiler SKIP: <family>: …}), a cycle refused before the build ({@code tms}), two rules of one name
- * ({@code exec-model}), the loader's refusal ({@code loader}), or two names on one bean member
+ * ({@code transpiler SKIP: <family>: …}), a cycle refused before the build and two rules of one name, which carry
+ * the label of the branch ({@code exec-model}), the loader's refusal ({@code loader}), or two names on one bean member
  * ({@code beannaambotsing}). The reasons themselves name forms and snippets.
  *
  * <p><b>Red before the fix of the parameters</b> (measured 2026-10-08 on the branch's fourth step): two goldens
@@ -105,15 +105,14 @@ class TmsCorpusWitnessTest {
                 + EXPECTED_MIN_PLAYED + "; per familie " + telling + ", zonder cases " + zonder);
     }
 
-    /** The family of a refusal: the kind of form the manifest refuses first, a cycle, two rules of one name, or the
-     *  loader. */
+    /** The family of a refusal: the kind of form the manifest refuses first, the label of the branch (a cycle, two
+     *  rules of one name), or the loader. */
     private static String familie(String reden) {
         if (reden.startsWith("transpiler SKIP: ")) {
             String rest = reden.substring("transpiler SKIP: ".length());
             int dubbelepunt = rest.indexOf(':');
             return dubbelepunt < 0 ? "transpiler" : rest.substring(0, dubbelepunt);
         }
-        if (reden.startsWith("tms: ")) return "tms";
         if (reden.startsWith("exec-model: ")) return "exec-model";
         if (reden.startsWith("loader: ")) return "loader";
         if (reden.startsWith("beannaambotsing: ")) return "beannaambotsing";

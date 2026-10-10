@@ -54,27 +54,27 @@ class TmsKringWitnessTest {
     @Test void een_even_ontkenningskring_wordt_in_elke_volgorde_geweigerd() throws Exception {
         geweigerd(List.of(kenmerkregel("wachtdoend tenzij vrijgesteld", "wachtdoend", check("vrijgesteld", true)),
                         kenmerkregel("vrijgesteld tenzij wachtdoend", "vrijgesteld", check("wachtdoend", true))),
-                "tms: kring in de afhankelijkheden over de leden Jutter.vrijgesteld en Jutter.wachtdoend via de regel"
+                "exec-model: kring in de afhankelijkheden over de leden Jutter.vrijgesteld en Jutter.wachtdoend via de regel"
                         + " \"vrijgesteld tenzij wachtdoend\" en de regel \"wachtdoend tenzij vrijgesteld\"" + REDEN);
     }
 
     @Test void een_oneven_ontkenningskring_van_lengte_een_wordt_geweigerd() throws Exception {
         geweigerd(List.of(kenmerkregel("dwarsligger tenzij dwarsligger", "dwarsligger", check("dwarsligger", true))),
-                "tms: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
+                "exec-model: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
                         + " \"dwarsligger tenzij dwarsligger\"" + REDEN);
     }
 
     @Test void een_oneven_ontkenningskring_van_lengte_twee_wordt_in_elke_volgorde_geweigerd() throws Exception {
         geweigerd(List.of(kenmerkregel("wachtdoend tenzij afgelost", "wachtdoend", check("afgelost", true)),
                         kenmerkregel("afgelost indien wachtdoend", "afgelost", check("wachtdoend", false))),
-                "tms: kring in de afhankelijkheden over de leden Jutter.afgelost en Jutter.wachtdoend via de regel"
+                "exec-model: kring in de afhankelijkheden over de leden Jutter.afgelost en Jutter.wachtdoend via de regel"
                         + " \"afgelost indien wachtdoend\" en de regel \"wachtdoend tenzij afgelost\"" + REDEN);
     }
 
     @Test void een_positieve_kring_wordt_in_elke_volgorde_geweigerd() throws Exception {
         geweigerd(List.of(kenmerkregel("wachtdoend indien paraat", "wachtdoend", check("paraat", false)),
                         kenmerkregel("paraat indien wachtdoend", "paraat", check("wachtdoend", false))),
-                "tms: kring in de afhankelijkheden over de leden Jutter.paraat en Jutter.wachtdoend via de regel"
+                "exec-model: kring in de afhankelijkheden over de leden Jutter.paraat en Jutter.wachtdoend via de regel"
                         + " \"paraat indien wachtdoend\" en de regel \"wachtdoend indien paraat\"" + REDEN);
     }
 
@@ -87,7 +87,7 @@ class TmsKringWitnessTest {
         Files.writeString(zaak, TmsDocumenten.JSON.writeValueAsString(zaak()));
         CaseRunner.Result r = CaseRunner.viaExecModel(ir, List.of(zaak));
         assertEquals("EXCLUDE", r.status(), r::toString);
-        assertEquals("tms: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
+        assertEquals("exec-model: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
                 + " \"dwarsligger tenzij dwarsligger\"" + REDEN, r.reason());
     }
 
@@ -100,7 +100,7 @@ class TmsKringWitnessTest {
         String ophogen = IrPad.regel("bergloon ophogen", "BEREKENING", bergloon(), plus(eigen("bergloon"), getal("1")), "null");
         assertNull(kring(List.of(init)));
         assertNull(kring(List.of(initOpGewicht)));
-        assertEquals("tms: kring in de afhankelijkheden over het lid Vondst.bergloon via de regel \"bergloon ophogen\""
+        assertEquals("exec-model: kring in de afhankelijkheden over het lid Vondst.bergloon via de regel \"bergloon ophogen\""
                 + REDEN, kring(List.of(ophogen)));
     }
 

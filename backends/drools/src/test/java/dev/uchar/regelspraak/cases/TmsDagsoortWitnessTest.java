@@ -450,7 +450,7 @@ class TmsDagsoortWitnessTest {
                 weigering(document(MODEL_C, List.of(SCHOUWTERMIJN, HOOGTERMIJN), definities)));
         assertEquals("transpiler SKIP: regel: streefdatum — een duur in dagsoorten ('zijn vinddatum plus zijn"
                         + " doorlooptijd'): de definitie van de dagsoort 'havendag' leest de parameter 'openingsdatum',"
-                        + " die de truth-maintenance-tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)",
+                        + " die deze tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)",
                 weigering(document(MODEL_C, List.of(SCHOUWTERMIJN, STREEFDATUM), definities)));
     }
 

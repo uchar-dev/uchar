@@ -218,7 +218,7 @@ public final class TmsTranspiler {
      *  bound variables. A consequence has no such ceiling ({@link Gevolg}). */
     static final int MAX_LEZINGEN = 13;
 
-    private static final String NOG_NIET = "de truth-maintenance-tak draagt deze vorm nog niet";
+    private static final String NOG_NIET = "deze tak draagt deze vorm nog niet";
     private static final String INCONSISTENTIE = FactModelGenerator.PAKKET + ".Inconsistentie";
 
     private final RegelSpraakModel model;
@@ -1633,7 +1633,7 @@ public final class TmsTranspiler {
         String producent = rv.regel();
         if (!kanaalproducent(producent))
             throw new Weigering("een Regelversie 'is inconsistent' over \"" + producent + "\" in de voorwaarde ('"
-                    + snippet(rv) + "'): de truth-maintenance-tak draagt als producent van het §9.5-kanaal alleen een"
+                    + snippet(rv) + "'): deze tak draagt als producent van het §9.5-kanaal alleen een"
                     + " Consistency, een Uniqueness en een regel met een deling of een wortel in haar voorwaarde of haar"
                     + " waarde (§6.5, §6.6)");
         int i = lez.kanaal(producent);
@@ -2121,13 +2121,13 @@ public final class TmsTranspiler {
      *  subjects; such a subject, or an object with two marks, is a fault of this transpiler and throws as one. */
     static int diepte(String naam, int stratum, String type, List<?> herkomst) {
         if (herkomst.size() > 1)
-            throw new IllegalStateException("tms: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
+            throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
                     + herkomst.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + herkomst);
         int diepte = 1;
         if (!herkomst.isEmpty()) {
             Gemaakt g = (Gemaakt) herkomst.get(0);
             if (g.stratum() > stratum)
-                throw new IllegalStateException("tms: objectcreatie \"" + naam + "\" van stratum " + stratum
+                throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" van stratum " + stratum
                         + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
                         + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
                         + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
@@ -2146,7 +2146,7 @@ public final class TmsTranspiler {
     private int stratum(Object vorm, String naam) {
         Integer s = strata.get(vorm);
         if (s == null)
-            throw new IllegalStateException("tms: de creatie \"" + naam + "\" heeft geen stratum in de"
+            throw new IllegalStateException("exec-model: de creatie \"" + naam + "\" heeft geen stratum in de"
                     + " afhankelijkheidsgraaf");
         return s;
     }
@@ -3112,8 +3112,8 @@ public final class TmsTranspiler {
         Conditie.bevatOperand(def.voorwaarde(), e -> e instanceof Expr.ParameterRef pr
                 && (parameter[0] = pr.parameter() == null ? "(onopgelost)" : pr.parameter().naam()) != null);
         if (parameter[0] != null)
-            return "de definitie van de dagsoort '" + naam + "' leest de parameter '" + parameter[0] + "', die de"
-                    + " truth-maintenance-tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)";
+            return "de definitie van de dagsoort '" + naam + "' leest de parameter '" + parameter[0] + "', die deze"
+                    + " tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)";
         List<Conditie.Predicaat> toetsen = new ArrayList<>();
         dagsoorttoetsen(def.voorwaarde(), toetsen);
         for (Conditie.Predicaat t : toetsen) {
@@ -3570,7 +3570,7 @@ public final class TmsTranspiler {
         Expr.FunctieKind kind = f.kind();
         String spelling = Spelling.BUILTIN_KIND.spelling(kind);
         if (kind == Expr.FunctieKind.TIJDSEVENREDIG_DEEL || kind == Expr.FunctieKind.AANTAL_DAGEN_IN)
-            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "de truth-maintenance-tak rekent een tijdsevenredig"
+            throw nietBerekend("BuiltinCall " + spelling, f.bron(), "deze tak rekent een tijdsevenredig"
                     + " deel en een dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS"
                     + " ch. 3.7, 3.8, 3.11)");
         if (f.filter() != null)
@@ -6273,8 +6273,8 @@ public final class TmsTranspiler {
         Lid lid = gedeclareerd(houder, naam, kenmerk);
         if (lid.tijd() != null)
             throw new Weigering("het tijdsafhankelijke " + (kenmerk ? "kenmerk" : "attribuut") + " '" + lid.naam()
-                    + "' van " + lid.declarant().naam + " op een plek die één waarde leest of schrijft: de"
-                    + " truth-maintenance-tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig"
+                    + "' van " + lid.declarant().naam + " op een plek die één waarde leest of schrijft: deze"
+                    + " tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig"
                     + " deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig"
                     + " deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)");
         return lid;

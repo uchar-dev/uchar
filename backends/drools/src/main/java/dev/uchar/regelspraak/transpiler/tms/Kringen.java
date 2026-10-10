@@ -96,7 +96,7 @@ public final class Kringen {
         List<Rand> randen = randen(vormen);
         List<String> kringen = kringen45(g, vormen, randen);
         if (!kringen.isEmpty())
-            return "tms: " + (kringen.size() == 1 ? "kring in de afhankelijkheden " + kringen.get(0)
+            return "exec-model: " + (kringen.size() == 1 ? "kring in de afhankelijkheden " + kringen.get(0)
                     : kringen.size() + " kringen in de afhankelijkheden: " + String.join("; ", kringen))
                     + " — een kring die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd"
                     + " (WF-045), en truth maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt"
@@ -104,7 +104,7 @@ public final class Kringen {
                     + " de regels in het model, en een oneven ontkenningskring wisselt tot het vuurplafond";
         List<String> ontkenningen = ontkenningen46(g, vormen, randen);
         if (ontkenningen.isEmpty()) return null;
-        return "tms: " + (ontkenningen.size() == 1 ? "een ontkennende afhankelijkheid op een kring: " + ontkenningen.get(0)
+        return "exec-model: " + (ontkenningen.size() == 1 ? "een ontkennende afhankelijkheid op een kring: " + ontkenningen.get(0)
                 : ontkenningen.size() + " ontkennende afhankelijkheden op een kring: " + String.join("; ", ontkenningen))
                 + " — geen kring mag een ontkenning dragen, ook niet een kring door een creatielid van een recursieve"
                 + " regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult";
@@ -141,7 +141,7 @@ public final class Kringen {
         for (int ronde = 1; veranderd; ronde++) {
             // only an edge between two strongly connected components climbs, so the strata settle within n rounds;
             // the reference interpreter faults past n + 2, and so does this
-            if (ronde > n + 2) throw new IllegalStateException("tms: geen evaluatiestrata na " + (n + 2) + " rondes");
+            if (ronde > n + 2) throw new IllegalStateException("exec-model: geen evaluatiestrata na " + (n + 2) + " rondes");
             veranderd = false;
             for (int i = 0; i < randen.size(); i++) {
                 Rand r = randen.get(i);

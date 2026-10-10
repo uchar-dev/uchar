@@ -564,7 +564,7 @@ public final class TmsMeting {
                 int i = rest.indexOf(':');
                 return i < 0 ? rest : rest.substring(0, i);
             }
-        if (reden.startsWith("tms: ")) return "kring";
+        if (kring(reden)) return "kring";
         int i = reden.indexOf(':');
         return i < 0 ? reden : reden.substring(0, i);
     }
@@ -579,7 +579,7 @@ public final class TmsMeting {
                 int streep = reden.indexOf(" — ");
                 return afgekapt(streep < 0 ? reden.substring(p.length()) : reden.substring(streep + 3));
             }
-        if (reden.startsWith("tms: ")) return "kring in de afhankelijkheden";
+        if (kring(reden)) return "kring in de afhankelijkheden";
         if (reden.startsWith("loader: ")) {
             String rest = reden.substring(reden.lastIndexOf(": ") + 2);
             int haakje = rest.indexOf(" (");
@@ -587,6 +587,12 @@ public final class TmsMeting {
         }
         int i = reden.indexOf(':');
         return afgekapt(i < 0 ? reden : reden.substring(i + 1).trim());
+    }
+
+    /** Whether {@code reden} is the refusal of a cycle: the label of the branch, which two rules of one name carry as
+     *  well. */
+    private static boolean kring(String reden) {
+        return reden.startsWith("exec-model: ") && !reden.startsWith("exec-model: Duplicate rule name");
     }
 
     private static String afgekapt(String s) {

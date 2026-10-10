@@ -310,7 +310,7 @@ class TmsConsistentieWitnessTest {
                 List.of(consistentie("controle verdenking", "Vondst", check("verdacht", false))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("tms: kring in de afhankelijkheden over de knopen Vondst.verdacht en het kanaal van \"controle"
+        assertEquals("exec-model: kring in de afhankelijkheden over de knopen Vondst.verdacht en het kanaal van \"controle"
                 + " verdenking\" via de regel \"verdenking\" en de consistentieregel \"controle verdenking\" — een kring"
                 + " die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd (WF-045), en truth"
                 + " maintenance geeft er geen eenduidig fixpunt voor: een positieve kring houdt zichzelf in stand nadat haar"
@@ -337,7 +337,7 @@ class TmsConsistentieWitnessTest {
         CaseRunner.Excluded f = assertThrows(CaseRunner.Excluded.class,
                 () -> DroolsBackend.build(zonderProducent, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("transpiler SKIP: regel: nakijken — een Regelversie 'is inconsistent' over \"registratie\" in de"
-                + " voorwaarde ('regelversie registratie is inconsistent'): de truth-maintenance-tak draagt als producent"
+                + " voorwaarde ('regelversie registratie is inconsistent'): deze tak draagt als producent"
                 + " van het §9.5-kanaal alleen een Consistency, een Uniqueness en een regel met een deling of een wortel"
                 + " in haar voorwaarde of haar waarde (§6.5, §6.6)", f.getMessage());
     }

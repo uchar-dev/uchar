@@ -145,7 +145,7 @@ class TmsTijdlijnWeigeringWitnessTest {
     /** The sentence of a comparison clip with {@code op} ("gelijk aan", "ongelijk aan") spelled {@code snippet}. */
     static String knipzin(String regel, String op, String snippet) {
         return "transpiler SKIP: regel: " + regel + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
-                + " vergoeding') met '" + op + "' in de knip ('" + snippet + "'): de truth-maintenance-tak draagt deze"
+                + " vergoeding') met '" + op + "' in de knip ('" + snippet + "'): deze tak draagt deze"
                 + " vorm nog niet; de rekenhulp rsTijdConditie leest een lege kant, een gat in de vergeleken tijdlijn of"
                 + " een lege grens, als geen periode, waar RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de"
                 + " vergelijking van ch. 1.2 per periode toepassen: twee lege kanten zijn gelijk, en precies één lege"
@@ -188,7 +188,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(verwachteTijdlijn("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01",
                                 "306"))))),
                 List.of("transpiler SKIP: regel: jaardeel init — een initialisatie van het tijdsafhankelijke"
-                        + " attribuut 'jaardeel' van Jutter: de truth-maintenance-tak draagt deze vorm nog niet; geen"
+                        + " attribuut 'jaardeel' van Jutter: deze tak draagt deze vorm nog niet; geen"
                         + " golden met cases heeft er een")));
         // a time window in the condition of a rule with a timeline target
         uit.add(new Rij("periodevenster", TmsTijdlijnDocumenten.ir(MODEL_JAARDEEL, List.of(
@@ -203,7 +203,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 "59"))))),
                 List.of("transpiler SKIP: regel: jaardeel vanaf 2025 — een periodevenster in de voorwaarde van een"
                         + " regel met het tijdsafhankelijke doel 'jaardeel' van Jutter: daar knipt het venster de tijdlijn"
-                        + " (RUNTIME-SEMANTICS ch. 3.10), en de truth-maintenance-tak draagt deze vorm nog niet, zoals de"
+                        + " (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet, zoals de"
                         + " DRL-teksttak haar niet draagt")));
         // a characteristic on a timeline as the target
         uit.add(new Rij("kenmerk-als-doel", TmsTijdlijnDocumenten.ir(MODEL_JAARDEEL, List.of(
@@ -212,7 +212,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                 TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of("score", getalwaarde("10")),
                         List.of(), Map.of(), Map.of())), List.of(TmsDocumenten.consistent())),
                 List.of("transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
-                        + " Jutter als doel: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met cases"
+                        + " Jutter als doel: deze tak draagt deze vorm nog niet; geen golden met cases"
                         + " schrijft er een (RUNTIME-SEMANTICS ch. 3.11)")));
         // a sum of timelines over a set as the value of a timeline target, the staggered contributors of ch. 3.5
         uit.add(new Rij("som-over-tijdlijnen", TmsTijdlijnDocumenten.ir(TmsDocumenten.model(List.of(
@@ -236,7 +236,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                         "10"))))),
                 List.of("transpiler SKIP: regel: tariefsom — een waarde van het tijdsafhankelijke doel 'tariefsom'"
                         + " van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van de tarieven van"
-                        + " zijn vondsten'): de truth-maintenance-tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
+                        + " zijn vondsten'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
                         + " 3.4, 3.5, 3.11); geen golden met cases schrijft er een")));
         // the comparison clip, "gelijk aan" and "ongelijk aan"
         String tienTotJuli = tijdlijn(List.of(segment("2024-01-01", "2024-07-01", "10")));
@@ -297,8 +297,8 @@ class TmsTijdlijnWeigeringWitnessTest {
                 List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " maanddeel') zonder knip over de tijdlijn van 'maanddeel', die een vorm schrijft: de"
                         + " referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
-                        + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); de"
-                        + " truth-maintenance-tak draagt deze vorm nog niet, en geen golden met cases heeft het")));
+                        + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); deze"
+                        + " tak draagt deze vorm nog niet, en geen golden met cases heeft het")));
         // a timeline on a variable start point, which a StartPointDetermination lays per object
         uit.add(new Rij("variabel-startpunt", TmsTijdlijnDocumenten.ir(MODEL_STARTPUNT, List.of(rekenregel("peilsom",
                         "BEREKENING", "Schouwveld", "peilsom", eigenTotaal("waterstand", "Schouwveld",
@@ -312,7 +312,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(waarde("S1", "peilsom", "0"))),
                 List.of("transpiler SKIP: regel: peilsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                                 + " waterstand') over het attribuut 'waterstand' van Schouwveld op een tijdlijn met een"
-                                + " variabel startpunt: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met"
+                                + " variabel startpunt: deze tak draagt deze vorm nog niet; geen golden met"
                                 + " cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster")));
         // a parameter on a timeline, read as one value
         JsonNode parameterzaak = TmsTijdlijnDocumenten.zaak("2024-06-01", List.of(instantie("J1", "Jutter", Map.of(),
@@ -327,8 +327,8 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(rekenregel("opbrengst", "BEREKENING", "Jutter", "opbrengst",
                                 TmsDocumenten.parameterlezing("penningbedrag"), "null")), List.of()),
                 parameterzaak,
-                List.of("transpiler SKIP: regel: opbrengst — de tijdsafhankelijke parameter 'penningbedrag': de"
-                        + " truth-maintenance-tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen"
+                List.of("transpiler SKIP: regel: opbrengst — de tijdsafhankelijke parameter 'penningbedrag': deze"
+                        + " tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen"
                         + " dat in een TemporalRead, die de lader voor alle takken weigert")));
         // a dimensioned attribute on a timeline, read by a dimension cell and by the total of its timeline; the case
         // gives no omzet, since no case reader carries dimensioned input
@@ -339,7 +339,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                 TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of(), List.of(), Map.of(),
                         Map.of())), List.of(waarde("J1", "tweede kwartaal", null))),
                 List.of("transpiler SKIP: regel: tweede kwartaal — het gedimensioneerde attribuut 'omzet' van"
-                        + " Jutter op een tijdlijn: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met"
+                        + " Jutter op een tijdlijn: deze tak draagt deze vorm nog niet; geen golden met"
                         + " cases heeft er een")));
         uit.add(new Rij("totaal-over-dimensies", TmsTijdlijnDocumenten.ir(MODEL_DIMENSIE, List.of(rekenregel(
                         "omzetsom", "BEREKENING", "Jutter", "omzetsom", eigenTotaal("omzet", "Jutter", "null"), "null")),
@@ -348,13 +348,13 @@ class TmsTijdlijnWeigeringWitnessTest {
                         Map.of(), Map.of())), List.of(waarde("J1", "omzetsom", null))),
                 List.of("transpiler SKIP: regel: omzetsom — het gedimensioneerde attribuut 'omzet' van Jutter,"
                         + " gelezen of geschreven buiten een DimensionCellRead of een vouw over een dimensieselectie:"
-                        + " de truth-maintenance-tak draagt deze vorm nog niet; geen golden met cases heeft het")));
+                        + " deze tak draagt deze vorm nog niet; geen golden met cases heeft het")));
         return uit;
     }
 
     static String tweedeSchrijver(String regel, String ander) {
         return "transpiler SKIP: regel: " + regel + " — een tijdsafhankelijk doel met een tweede schrijver"
-                + " ('jaardeel' van Jutter wordt ook geschreven door \"" + ander + "\"): de truth-maintenance-tak draagt"
+                + " ('jaardeel' van Jutter wordt ook geschreven door \"" + ander + "\"): deze tak draagt"
                 + " deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen"
                 + " golden met cases heeft er een";
     }

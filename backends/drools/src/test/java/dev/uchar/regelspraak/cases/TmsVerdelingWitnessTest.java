@@ -705,7 +705,7 @@ class TmsVerdelingWitnessTest {
         uitkomsten.put("twee verdelingen", speel(document(List.of(), List.of(D_NAAR_RATO, D_GELIJK), List.of()), zaak));
         String naast = "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een verdeling naast de"
                 + " regel \"bergingsaandeel van een berger\" op het attribuut 'bergingsaandeel' van Berger: een verdeling"
-                + " naast een rekenende regel of een initialisatie op één doel; de truth-maintenance-tak draagt deze vorm"
+                + " naast een rekenende regel of een initialisatie op één doel; deze tak draagt deze vorm"
                 + " nog niet";
         Map<String, String> verwacht = new LinkedHashMap<>();
         verwacht.put("regel", naast);

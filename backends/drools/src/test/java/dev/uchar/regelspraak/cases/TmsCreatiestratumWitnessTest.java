@@ -719,7 +719,7 @@ class TmsCreatiestratumWitnessTest {
         StringBuilder keten = new StringBuilder();
         for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
             keten.append(t.getClass().getSimpleName()).append(": ").append(t.getMessage()).append(" | ");
-        assertTrue(keten.toString().contains("IllegalStateException: tms: objectcreatie \"werf de lange keten\" van"
+        assertTrue(keten.toString().contains("IllegalStateException: exec-model: objectcreatie \"werf de lange keten\" van"
                 + " stratum 0 ontmoet een onderwerp dat een creatie van stratum 1 maakte"), keten::toString);
     }
 
