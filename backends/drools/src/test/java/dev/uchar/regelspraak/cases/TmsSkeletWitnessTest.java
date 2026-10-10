@@ -64,15 +64,15 @@ class TmsSkeletWitnessTest {
                 List.of(kenmerkregel("vergund indien erkend", "vergund", check("erkend", false))));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
         assertEquals(DroolsBackend.Branch.TRUTH_MAINTENANCE, b.branch());
-        assertNull(b.execModelTranspiler());
         assertNull(b.drlTranspiler());
         assertEquals(List.of("regel: vergund indien erkend"), b.dekking().stream().map(Dekking::sleutel).toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), b.dekking()::toString);
         assertEquals(RuleBaseConfiguration.AssertBehaviour.EQUALITY, gelijkheid(b.kieBase()));
         // the rule of a form carries the form's name; vergund is read by nothing, so it has no standing rules
         assertEquals(List.of(TmsTranspiler.PKG + ":vergund indien erkend"), regels(b.kieBase()));
-        DroolsBackend.Build exec = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(RuleBaseConfiguration.AssertBehaviour.IDENTITY, gelijkheid(exec.kieBase()));
+        DroolsBackend.Build drl = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
+        assertEquals(RuleBaseConfiguration.AssertBehaviour.IDENTITY, gelijkheid(drl.kieBase()),
+                "the DRL-text branch keeps the default of Drools");
     }
 
     /** "Het lampental van een Vuurtoren moet berekend worden als het aantal dagen in het jaar dat hij helder is": a

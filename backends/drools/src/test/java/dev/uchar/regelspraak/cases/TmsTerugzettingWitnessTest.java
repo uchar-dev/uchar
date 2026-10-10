@@ -131,10 +131,10 @@ class TmsTerugzettingWitnessTest {
         }
     }
 
-    /** On the exec-model and the DRL-text branch the rule writes J1 vergund while it fires; the witness takes the value
-     *  off the bean again and the write-back leaves it so. */
-    @Test void op_de_andere_takken_zet_de_terugzetting_niets() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
+    /** On the DRL-text branch the rule writes J1 vergund while it fires; the witness takes the value off the bean again
+     *  and the write-back leaves it so. The destructive exec-model branch did the same until card tms-omschakeling. */
+    @Test void op_de_drl_teksttak_zet_de_terugzetting_niets() throws Exception {
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
             DroolsBackend.Build b = DroolsBackend.build(document(), tak);
             ClassLoader vorige = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(b.beanLoader());

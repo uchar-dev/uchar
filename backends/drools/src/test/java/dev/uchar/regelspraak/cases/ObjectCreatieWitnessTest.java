@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,8 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * creation is indirect: a fold or a navigated read on an input. That leaves the parts a wrong creation gets
  * wrong while the total still lands: a mint linked in ONE direction only (the defect this card fixed — the
  * fold found it, the navigation read leeg), a member written on the subject instead of the mint, a second
- * mint where the fact base already answered the question. Those are asserted directly here, off
- * {@link CaseRunner.NaFire}'s post-fire facts.
+ * mint where the fact base already answered the question. Those are asserted directly here, on the
+ * truth-maintenance branch, through the entry a consumer uses: one {@link DroolsBackend#vuur} to the fixpoint, the
+ * objects and links the creations made as {@link DroolsBackend#lees} gives them, and the beans after
+ * {@link DroolsBackend#zetAfgeleideWaarden}, which puts the derived values and the links on them (the branch writes no
+ * bean while it fires).
  *
  * <p>What the backend must reproduce is {@code RUNTIME-SEMANTICS.md} ch. 5.5, NOT the ported production
  * lowering: production writes only the created object's back-reference and unboxes a kenmerk value straight
@@ -60,7 +66,7 @@ class ObjectCreatieWitnessTest {
     // ---------------- 1. the mint itself: a fact, its members, both link ends ----------------
 
     @Test void de_creatie_levert_een_fact_met_ingevulde_leden_op() throws Exception {
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), jutter("240", "90"));
+        Na na = naVuur(ir(REKENKAMER), jutter("240", "90"));
 
         Object mint = enigeMint(na);
         assertEquals("Rekenkamer", mint.getClass().getSimpleName(),
@@ -78,7 +84,7 @@ class ObjectCreatieWitnessTest {
         // ch. 5.5: "new object and subject are linked over the back-link relation — BOTH ends". The ported
         // production lowering writes only the first of these two; without the second the navigated read below
         // reads leeg, which is exactly how this card's defect showed up.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), jutter("240", "90"));
+        Na na = naVuur(ir(REKENKAMER), jutter("240", "90"));
         Object jutter = na.invoer().get("J1");
         Object mint = enigeMint(na);
 
@@ -91,23 +97,21 @@ class ObjectCreatieWitnessTest {
     @Test void de_genavigeerde_lezing_bereikt_het_gecreeerde_object() throws Exception {
         // the observable consequence of the second leg, through the FULL replay: "de heffing van haar
         // rekenkamer" resolves over the forward field. ref agrees on this model+case (240 - 90 = 150).
-        assertNull(CaseRunner.speelCase(ir(REKENKAMER), jutter("240", "90")),
+        assertNull(speel(ir(REKENKAMER), jutter("240", "90")),
                 "a to-one navigation from the subject must reach the mint");
 
         // and the assertion is not vacuous: the comparator does reject the wrong value on this very case.
-        String fout = CaseRunner.speelCase(ir(REKENKAMER), jutterMetVerwachting("240", "90", "149"));
+        String fout = speel(ir(REKENKAMER), jutterMetVerwachting("240", "90", "149"));
         assertNotNull(fout, "the navigated read must be observably 150, not merely unasserted");
         assertTrue(fout.contains("heffing"), fout);
     }
 
     @Test void een_subject_munt_precies_een_object() throws Exception {
-        // §9 idempotence: the creation is a function of the fact base, not of the fire count. The rule that
-        // writes the jutter's heffing MODIFIES a matched subject, which re-activates an unguarded creation.
-        // On the GUARDED model (metVoorwaarde) that re-activation is real and this assertion is live: with the
-        // §9 guard removed the model never reaches a fixpoint. On the plain REKENKAMER model the same
-        // assertion is VACUOUS — it survives the guard's removal — so the witness lives here, on the model
-        // where the property it claims is the one doing the work.
-        CaseRunner.NaFire na = CaseRunner.naFire(metVoorwaarde(), jutter("240", "90"));
+        // §9 idempotence: the creation is a function of the fact base, not of the fire count. The driver fires the
+        // creations at every fixpoint of the rule layer, one generation per phase, and the condition of the guarded
+        // model (metVoorwaarde) still holds for J1 in the phase after the mint; one object per creation per subject is
+        // what the creation's own mark for its subject keeps (TmsTranspiler.objectCreatie).
+        Na na = naVuur(metVoorwaarde(), jutter("240", "90"));
         assertEquals(1, mints(na).size(), "one creation per rule per subject: " + mints(na));
     }
 
@@ -133,11 +137,11 @@ class ObjectCreatieWitnessTest {
         // Subject end: an existing Rekenkamer already fills the jutter's `rekenkamer` field, so nothing is
         // minted and the navigated read reaches the SUPPLIED kamer. ref: J1.heffing = 6 (10 - 4, the supplied
         // kamer's own rule).
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpSubject("6"));
+        Na na = naVuur(ir(REKENKAMER), koppelingOpSubject("6"));
         assertTrue(mints(na).isEmpty(), "an already-linked 1:1 subject mints nothing: " + mints(na));
         assertSame(na.invoer().get("R1"), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
                 "and the supplied link is left as delivered");
-        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpSubject("6")));
+        assertNull(speel(ir(REKENKAMER), koppelingOpSubject("6")));
     }
 
     @Test void een_koppeling_op_de_gemunte_zijde_blokkeert_de_creatie_ook() throws Exception {
@@ -145,12 +149,12 @@ class ObjectCreatieWitnessTest {
         // the Rekenkamer bean now reaches the subject too (the ch. 5.7a mirror write), so the jutter FILLS the
         // to-one role and ch. 5.5 mints nothing. The navigated read lands on the SUPPLIED kamer, exactly as in
         // the arm above — one relation, one outcome, two spellings.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(REKENKAMER), koppelingOpGemunteZijde("6"));
+        Na na = naVuur(ir(REKENKAMER), koppelingOpGemunteZijde("6"));
         assertTrue(mints(na).isEmpty(), "the relation reaches the subject through its far leg too: " + mints(na));
         assertSame(na.invoer().get("R1"), RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
                 "and the forward field points at the SUPPLIED kamer, not at a mint");
-        assertNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("6")));
-        assertNotNull(CaseRunner.speelCase(ir(REKENKAMER), koppelingOpGemunteZijde("150")),
+        assertNull(speel(ir(REKENKAMER), koppelingOpGemunteZijde("6")));
+        assertNotNull(speel(ir(REKENKAMER), koppelingOpGemunteZijde("150")),
                 "and the minting reading — a guard that read the created side — is a named mismatch, not a "
                         + "silent pass");
     }
@@ -158,11 +162,11 @@ class ObjectCreatieWitnessTest {
     // ---------------- 2. the §13.4.6.4 kenmerkwaardetoekenning ----------------
 
     @Test void een_ware_kenmerktoekenning_zet_de_markering_op_het_gemunte_object() throws Exception {
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(OVERZEE), overzee("800", Boolean.TRUE));
+        Na na = naVuur(ir(OVERZEE), overzee("800", Boolean.TRUE));
         assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(enigeMint(na), "overzees"),
                 "a true kenmerk value sets the mark on the mint");
         // observable through the branch the mark selects: the overzeese arm adds 1000 (ref: 1800).
-        assertNull(CaseRunner.speelCase(ir(OVERZEE), overzeeMetVerwachting("800", Boolean.TRUE, "1800")));
+        assertNull(speel(ir(OVERZEE), overzeeMetVerwachting("800", Boolean.TRUE, "1800")));
     }
 
     @Test void een_lege_kenmerktoekenning_laat_de_markering_ongezet() throws Exception {
@@ -170,18 +174,18 @@ class ObjectCreatieWitnessTest {
         // equivalent to an absent initialisation. The subject's `overzees` is a NULLABLE Booleaan attribute,
         // so an unsupplied one reads leeg; writing that leeg through to the mint's primitive boolean field
         // was the intValue() NPE that kept this whole form out of the backend.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(OVERZEE), overzee("800", null));
+        Na na = naVuur(ir(OVERZEE), overzee("800", null));
         assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(na), "overzees"),
                 "an empty kenmerk value leaves the mark unset — never a fault, never true");
-        assertNull(CaseRunner.speelCase(ir(OVERZEE), overzeeMetVerwachting("800", null, "800")),
+        assertNull(speel(ir(OVERZEE), overzeeMetVerwachting("800", null, "800")),
                 "so the gewone arm decides: 800");
     }
 
     @Test void een_onware_kenmerktoekenning_laat_de_markering_ook_ongezet() throws Exception {
         // the third value the flank must separate from true: explicit false, same outcome as empty.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(OVERZEE), overzee("800", Boolean.FALSE));
+        Na na = naVuur(ir(OVERZEE), overzee("800", Boolean.FALSE));
         assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(na), "overzees"));
-        assertNull(CaseRunner.speelCase(ir(OVERZEE), overzeeMetVerwachting("800", Boolean.FALSE, "800")));
+        assertNull(speel(ir(OVERZEE), overzeeMetVerwachting("800", Boolean.FALSE, "800")));
     }
 
     @Test void een_ware_literal_kenmerktoekenning_zet_de_markering_ook() throws Exception {
@@ -190,8 +194,8 @@ class ObjectCreatieWitnessTest {
         // mutated model: 1800 (800 + the overzeese arm's 1000).
         Path ir = kenmerkWaarde("""
                 { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" }, "source": { "snippet": "waar" } }""", "lit-waar");
-        assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "1800"))), "overzees"));
-        assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "1800")));
+        assertEquals(Boolean.TRUE, RegelSpraakRuntime.get(enigeMint(naVuur(ir, overzeeMetVerwachting("800", null, "1800"))), "overzees"));
+        assertNull(speel(ir, overzeeMetVerwachting("800", null, "1800")));
     }
 
     @Test void een_onware_literal_kenmerktoekenning_laat_de_markering_ongezet() throws Exception {
@@ -199,20 +203,23 @@ class ObjectCreatieWitnessTest {
         // field would then hold false anyway, so ONLY the branch value separates the two). ref: 800.
         Path ir = kenmerkWaarde("""
                 { "node": "Literal", "value": { "boolean": false }, "type": { "node": "Boolean" }, "source": { "snippet": "onwaar" } }""", "lit-onwaar");
-        assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800"))), "overzees"));
-        assertNull(CaseRunner.speelCase(ir, overzeeMetVerwachting("800", null, "800")));
+        assertEquals(Boolean.FALSE, RegelSpraakRuntime.get(enigeMint(naVuur(ir, overzeeMetVerwachting("800", null, "800"))), "overzees"));
+        assertNull(speel(ir, overzeeMetVerwachting("800", null, "800")));
     }
 
-    @Test void een_niet_booleaanse_kenmerktoekenning_faalt_met_wf027() throws Exception {
+    @Test void een_niet_booleaanse_kenmerktoekenning_weigert_met_wf027() throws Exception {
         // The fourth value, and the one the empty arm must stay SEPARABLE from: a non-boolean initialisation is
-        // a FAULT, never a silently unset mark. ref on this mutated model faults too, with the same rule:
-        // "EVALUATION FAULT: characteristic initialisation of "overzees" is not boolean: 5".
+        // never a silently unset mark. ref on this mutated model faults, with the same rule: "EVALUATION FAULT:
+        // characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects the document (WF-027).
+        // The branch refuses the form by name when it lowers the creation, on the effective type of the value, so no
+        // case reaches a fire.
         Path ir = kenmerkWaarde("""
                 { "node": "Literal", "value": { "number": "5" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }, "source": { "snippet": "5" } }""", "lit-getal");
-        RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> CaseRunner.naFire(ir, overzeeMetVerwachting("800", null, "800")));
-        String keten = oorzaken(e);
-        assertTrue(keten.contains("niet booleaans") && keten.contains("(WF-027)"), keten);
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> speel(ir, overzeeMetVerwachting("800", null, "800")));
+        assertTrue(e.getMessage().contains("objectcreatie: richt de rekenkamer op — een kenmerkinitialisatie van "
+                + "'overzees' met een waarde van type Numeriek ('5'): een kenmerk is waar of onwaar (WF-027)"),
+                e.getMessage());
     }
 
     // ---------------- 3. a creation with NO toekenningen ----------------
@@ -223,33 +230,33 @@ class ObjectCreatieWitnessTest {
         // the rekenkamer model with its toekenningen removed. The mint must still EXIST and be linked both
         // ways — a "nothing to write, so write nothing" reading would skip the whole consequence.
         Path ir = zonderToekenningen();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutter("240", "90"));
+        Na na = naVuur(ir, jutter("240", "90"));
         Object mint = enigeMint(na);
 
         assertSame(na.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"));
         assertSame(mint, RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"));
         assertNull(RegelSpraakRuntime.get(mint, "grondslag"), "no toekenning wrote a member");
         // and the empty mint propagates as leeg, not as a fault — ref pins the same on this model+case.
-        assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("240", "90")));
+        assertNull(speel(ir, jutterMetLegeVerwachting("240", "90")));
     }
 
     // ---------------- 4. the voorwaarde arm ----------------
 
     @Test void een_vervulde_voorwaarde_munt_wel() throws Exception {
         Path ir = metVoorwaarde();                       // "de grondslag van de Jutter is groter dan 100"
-        assertEquals(1, mints(CaseRunner.naFire(ir, jutter("240", "90"))).size());
-        assertNull(CaseRunner.speelCase(ir, jutter("240", "90")), "ref agrees: 150");
+        assertEquals(1, mints(naVuur(ir, jutter("240", "90"))).size());
+        assertNull(speel(ir, jutter("240", "90")), "ref agrees: 150");
     }
 
     @Test void een_onvervulde_voorwaarde_munt_niet() throws Exception {
         // the other side, which a condition dropped on the floor would fail: below the threshold NOTHING is
         // created, and the navigated read finds nothing to read. ref pins the same emptiness.
         Path ir = metVoorwaarde();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutter("50", "20"));
+        Na na = naVuur(ir, jutter("50", "20"));
         assertTrue(mints(na).isEmpty(), "an unmet condition creates nothing: " + mints(na));
         assertNull(RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
                 "and no forward link is written either");
-        assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("50", "20")));
+        assertNull(speel(ir, jutterMetLegeVerwachting("50", "20")));
     }
 
     // ---------------- 5. the shapes the bean model cannot hold: refused per creation, by name ----------------
@@ -265,7 +272,7 @@ class ObjectCreatieWitnessTest {
         // pair — and the corpus totals would still land, because the chain is symmetric in rank. Only the two
         // assertSames below separate them. ref on this model+case: W1.opvolgerrang = 5, rangdetector violated
         // (by the mint, rank 5).
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(WACHTERSKETEN), wachter("4"));
+        Na na = naVuur(ir(WACHTERSKETEN), wachter("4"));
         Object w1 = na.invoer().get("W1");
         Object mint = enigeMint(na);
 
@@ -275,31 +282,28 @@ class ObjectCreatieWitnessTest {
                 "the subject references the mint over the BOUND role (the one the created object plays)");
         assertSame(w1, RegelSpraakRuntime.get(mint, "voorganger"),
                 "and the mint references the subject over that role's SIBLING — not over the bound role again");
-        assertNull(CaseRunner.speelCase(ir(WACHTERSKETEN), wachter("4")), "ref agrees: opvolgerrang 5");
+        assertNull(speel(ir(WACHTERSKETEN), wachter("4")), "ref agrees: opvolgerrang 5");
     }
 
-    @Test void een_niet_uniek_verbindend_feittype_faalt_bij_fire() throws Exception {
-        // WAS an Excluded witness until 2026-08-30. The card's lowering-vs-fire question, pinned: two feittypen
-        // relate the pair, so ch. 5.5 refuses to guess — but that is a property of the PROGRAM, not a gap in this
-        // backend (the §13.4.6 form is carried; every other creation lowers and fires). So it must NOT be reported
-        // as a not-carried form; it lowers to a rule that FAULTS at fire, worded as ref words it, so the red fence
-        // pins ONE fragment across all three executors.
-        RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> CaseRunner.naFire(AMBIGU, jutterZonderVerwachting()));
-        assertTrue(!(e instanceof CaseRunner.Excluded),
-                "an ambiguous back-link is a faulty program, not an unsupported form: " + e);
-        assertTrue(oorzaken(e).contains("the created object's back-link is ambiguous"), oorzaken(e));
+    @Test void een_niet_uniek_verbindend_feittype_weigert_bij_de_bouw() throws Exception {
+        // Two feittypen relate the pair, so ch. 5.5 refuses to guess: a property of the PROGRAM, on which ref faults in
+        // every world. The branch refuses the creation by name when it lowers it, in the words ref faults with, so no
+        // case reaches a fire and the red fence still finds ONE fragment.
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> speel(AMBIGU, jutterZonderVerwachting()));
+        assertTrue(e.getMessage().contains("objectcreatie: insigne voor een jutter — more than one fact type relates "
+                + "\"Jutter\" to \"Insigne\"; the created object's back-link is ambiguous (ch. 5.5)"), e.getMessage());
     }
 
-    @Test void diezelfde_ambiguiteit_zonder_subject_bereikt_de_fout_niet() throws Exception {
-        // The NARROWING that choice records, stated rather than left to be discovered: a Drools rule needs a
-        // matching fact, so an empty world never reaches the fault — where ref, which resolves the pair before it
-        // walks the subjects, faults on an empty world too. Nothing in the corpus depends on it; it is pinned so
-        // the difference is a decision on the record, not a silent gap.
-        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> CaseRunner.naFire(AMBIGU, JSON.readTree("""
-                { "format": "uchar-case-v0", "asOfDate": null,
-                  "input": { "instances": [], "parameters": {} }, "expected": [] }
-                """)));
+    @Test void diezelfde_ambiguiteit_zonder_subject_weigert_ook() throws Exception {
+        // The same refusal on an empty world, where ref, which resolves the pair before it walks the subjects, faults
+        // too: the refusal belongs to the build and not to a subject that reaches it.
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> speel(AMBIGU, JSON.readTree("""
+                        { "format": "uchar-case-v0", "asOfDate": null,
+                          "input": { "instances": [], "parameters": {} }, "expected": [] }
+                        """)));
+        assertTrue(e.getMessage().contains("the created object's back-link is ambiguous (ch. 5.5)"), e.getMessage());
     }
 
     @Test void twee_meervoudige_rollen_worden_luid_geweigerd() throws Exception {
@@ -310,7 +314,7 @@ class ObjectCreatieWitnessTest {
         // rule removed; WITH that rule the verifier rejects it, WF-053) and ref replays it without a fault,
         // leaving J1.heffing leeg — with no navigating rule no case expectation reaches the mint at all.
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.naFire(beideRollenMeervoudig(), jutterMetLegeVerwachting("240", "90")));
+                () -> speel(beideRollenMeervoudig(), jutterMetLegeVerwachting("240", "90")));
         assertTrue(e.getMessage().contains("beide rollen zijn meervoudig"), e.getMessage());
         assertTrue(e.getMessage().contains("onbereikbaar"), e.getMessage());
     }
@@ -325,7 +329,7 @@ class ObjectCreatieWitnessTest {
         // creation here (which this backend did until the asymmetry was found) withheld a value it can
         // produce. The model is verifier-clean (checked); ref on this exact model + case: J1.heffing = 150.
         Path ir = meervoudigeSubjectrol();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutter("240", "90"));
+        Na na = naVuur(ir, jutter("240", "90"));
         Object mint = enigeMint(na);
         assertSame(mint, RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"),
                 "the writable end still links subject and mint");
@@ -334,40 +338,34 @@ class ObjectCreatieWitnessTest {
         assertTrue(java.util.Arrays.stream(mint.getClass().getMethods())
                         .noneMatch(m -> m.getName().equals("getOpdrachtgever")),
                 "the created type carries no back-reference field for the to-many role");
-        assertNull(CaseRunner.speelCase(ir, jutter("240", "90")), "ref agrees: 150");
+        assertNull(speel(ir, jutter("240", "90")), "ref agrees: 150");
         // not vacuous: the comparator does reject the wrong value on this very model and case.
-        assertNotNull(CaseRunner.speelCase(ir, jutterMetVerwachting("240", "90", "149")));
+        assertNotNull(speel(ir, jutterMetVerwachting("240", "90", "149")));
     }
 
     @Test void de_gedegradeerde_vorm_houdt_de_een_op_een_wacht() throws Exception {
-        // The invariant the degradation rests on: the 1:1 wait is decided by the CREATED-side role
-        // (subjectNaarVeelCreatie reads that one), and that is exactly the end still writable here — so the
-        // guard keeps a field to read and the wait survives. ref on this model with the link already supplied
-        // on the subject: J1.heffing = 6 (the supplied kamer's own rule), NOT 150. Live, not decorative: gate
-        // the wait on the back-reference (as the pre-degradation formula did) and this arm falls to the marker
-        // path and mints a second Rekenkamer beside the supplied one — measured.
+        // The invariant the degradation rests on: the 1:1 wait is decided by the CREATED-side role, and that is
+        // exactly the end still writable here, the subject's own reference field — so the guard keeps a field to read
+        // and the wait survives. ref on this model with the link already supplied on the subject: J1.heffing = 6 (the
+        // supplied kamer's own rule), NOT 150.
         Path ir = meervoudigeSubjectrol();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, koppelingOpSubject("6"));
+        Na na = naVuur(ir, koppelingOpSubject("6"));
         assertTrue(mints(na).isEmpty(), "an already-linked subject mints nothing: " + mints(na));
-        assertNull(CaseRunner.speelCase(ir, koppelingOpSubject("6")));
+        assertNull(speel(ir, koppelingOpSubject("6")));
     }
 
     @Test void een_meervoudige_gecreeerde_rol_degradeert_naar_het_markerpad() throws Exception {
-        // The MIRROR degradation, and the §9 guard it selects: a to-many CREATED-side role gives the subject
-        // no forward field, so the 1:1 wait has nothing to read and idempotence keys on the per-(rule,subject)
-        // {@link CreationMarker} instead. That marker is a fact like any other — a mint census that merely
-        // excludes the case's own input beans counts it as a mint, so {@link #enigeMint} would fail on every
-        // marker-path model; it is excluded by TYPE. Model: created-side role meervoudig, the navigating rule
-        // removed (with it the verifier rejects the model, WF-053). Verifier-clean; ref: J1.heffing leeg.
+        // The MIRROR degradation: a to-many CREATED-side role gives the subject no forward field, so the 1:1 wait has
+        // nothing to read, and one object per subject is what the creation's own mark for its subject keeps. Model:
+        // created-side role meervoudig, the navigating rule removed (with it the verifier rejects the model, WF-053).
+        // Verifier-clean; ref: J1.heffing leeg.
         Path ir = markerPad();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutterMetLegeVerwachting("240", "90"));
+        Na na = naVuur(ir, jutterMetLegeVerwachting("240", "90"));
         Object mint = enigeMint(na);
         assertEquals("Rekenkamer", mint.getClass().getSimpleName());
         assertSame(na.invoer().get("J1"), RegelSpraakRuntime.get(mint, "opdrachtgever"),
                 "the writable end (the back-reference) links mint and subject");
-        assertTrue(na.feiten().stream().anyMatch(f -> f instanceof dev.uchar.regelspraak.runtime.CreationMarker),
-                "and the guard's marker IS in the fact base — the census must exclude it by type, not by luck");
-        assertNull(CaseRunner.speelCase(ir, jutterMetLegeVerwachting("240", "90")));
+        assertNull(speel(ir, jutterMetLegeVerwachting("240", "90")));
     }
 
     // ---------------- 5c. the §9.5 / §13.4.8 Phase-D consistentie assertions ----------------
@@ -379,14 +377,18 @@ class ObjectCreatieWitnessTest {
         // penninguitgifte golden with the OTHER consistentie removed, so this arm is what decides. ref on this
         // model+case: the supplied P1 (never uitgereikt) is inconsistent under `penningcontrole`; the MINTED
         // penning, whose kenmerkinitialisatie sets the mark, is not.
-        Path ir = zonderHouderscontrole();
-        assertNull(CaseRunner.speelCase(ir, penningCase(false)), "ref agrees: penningcontrole @ P1");
+        // NOT CARRIED on this branch: its creations have no connectingRole binding, and the branch does not derive the
+        // back-link from the type pair; it refuses the document by name. Coverage lost against the destructive
+        // lowering, accepted by the owner (2026-10-10); card 20261010-objectcreatie-zonder-connectingrole-binding
+        // carries the form, and then this row plays the ref answer above again.
+        geenBinding(zonderHouderscontrole(), penningCase(false));
     }
 
     @Test void dezelfde_kenmerkassertie_vlagt_de_vervulde_lezing_niet() throws Exception {
         // The flank that keeps the arm from being a rule that always fires: the SAME model and instances with the
-        // mark supplied on P1 leaves every Penning consistent. ref pins the same.
-        assertNull(CaseRunner.speelCase(zonderHouderscontrole(), penningCase(true)), "ref agrees: consistent");
+        // mark supplied on P1 leaves every Penning consistent. ref pins the same. Refused by name on this branch, as
+        // the row above (card 20261010-objectcreatie-zonder-connectingrole-binding).
+        geenBinding(zonderHouderscontrole(), penningCase(true));
     }
 
     @Test void een_aantalassertie_over_een_enkelvoudige_rol_vlagt_de_lege_telling() throws Exception {
@@ -396,22 +398,16 @@ class ObjectCreatieWitnessTest {
         // rewritten onto `dossiervoering`, the 1:1 relation where each direction owns a field (see the refusal
         // witness below for why the penningbezit form cannot be carried). A jutter who is not penninggerechtigd
         // gets no dossier minted, so the count is 0 and the assertion is violated. ref agrees: inconsistent @ J1.
-        Path ir = dossierAantalAssertie();
-        assertNull(CaseRunner.speelCase(ir, jutterMetDossierVerwachting(false, "0")), "ref agrees: houderscontrole @ J1");
+        // Refused by name on this branch, as the kenmerk assertion above: the creations of the penninguitgifte model
+        // have no connectingRole binding (card 20261010-objectcreatie-zonder-connectingrole-binding).
+        geenBinding(dossierAantalAssertie(), jutterMetDossierVerwachting(false, "0"));
     }
 
     @Test void dezelfde_aantalassertie_vlagt_een_gevulde_telling_niet() throws Exception {
         // and its flank: a jutter whose dossier the CASE supplies counts 1 and is not flagged. Without this arm a
-        // lowering that always counted 0 would pass the one above.
-        // Deliberately an INPUT dossier, not a minted one. A consistentie rule in this back-end carries no
-        // salience, so on a MINTED dossier the flag is order-dependent: fire the consistentie before the creation
-        // and the (insert-only, idempotence-guarded) Inconsistentie is never retracted, where ref evaluates every
-        // consistentie at the computed fixpoint. That exposure is PRE-EXISTING and orthogonal to this card — it
-        // applies to any consistentie over a rule-computed value, and no corpus golden has one (checked: no
-        // golden asserts over an attribute that is also a rule target) — so it is recorded here rather than
-        // smuggled into a witness whose subject is the assertion form.
-        assertNull(CaseRunner.speelCase(dossierAantalAssertie(), jutterMetIngevoerdDossier()),
-                "ref agrees: consistent");
+        // lowering that always counted 0 would pass the one above. ref agrees: consistent. Refused by name on this
+        // branch (card 20261010-objectcreatie-zonder-connectingrole-binding).
+        geenBinding(dossierAantalAssertie(), jutterMetIngevoerdDossier());
     }
 
     @Test void een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd() throws Exception {
@@ -435,18 +431,18 @@ class ObjectCreatieWitnessTest {
         // case pins that (and rejects 150 on it). Without an asOfDate ref faults outright ("a validity-bounded
         // form needs an evaluation date"), so both arms carry one.
         Path ir = vanaf2030();
-        CaseRunner.NaFire na = CaseRunner.naFire(ir, jutterOp("2026-01-01", null));
+        Na na = naVuur(ir, jutterOp("2026-01-01", null));
         assertTrue(mints(na).isEmpty(), "outside its window the creation mints nothing: " + mints(na));
         assertNull(RegelSpraakRuntime.get(na.invoer().get("J1"), "rekenkamer"), "and links nothing");
-        assertNull(CaseRunner.speelCase(ir, jutterOp("2026-01-01", null)));
+        assertNull(speel(ir, jutterOp("2026-01-01", null)));
     }
 
     @Test void dezelfde_creatie_binnen_haar_venster_munt_wel() throws Exception {
         // the other side of the same window — without it the arm above would also pass on a creation that
         // never fires at all. ref as of 2031 on the same model: J1.heffing = 150.
         Path ir = vanaf2030();
-        assertEquals(1, mints(CaseRunner.naFire(ir, jutterOp("2031-06-01", "150"))).size());
-        assertNull(CaseRunner.speelCase(ir, jutterOp("2031-06-01", "150")), "ref agrees: 150");
+        assertEquals(1, mints(naVuur(ir, jutterOp("2031-06-01", "150"))).size());
+        assertNull(speel(ir, jutterOp("2031-06-01", "150")), "ref agrees: 150");
     }
 
     // ---------------- fixtures ----------------
@@ -454,36 +450,51 @@ class ObjectCreatieWitnessTest {
     /** The refusal building {@code irPath} raises — an assertion failure if it builds at all. */
     private static CaseRunner.Excluded weigering(Path irPath) {
         return org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.naFire(irPath, JSON.readTree("""
+                () -> speel(irPath, JSON.readTree("""
                         { "format": "uchar-case-v0", "asOfDate": null,
                           "input": { "instances": [], "parameters": {} }, "expected": [] }
                         """)));
     }
 
-    /** The full cause chain of a throwable as one string — a Drools rule fault wraps the runtime's own
-     *  exception, so the pinned fragment sits at the deepest level. */
-    private static String oorzaken(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; ) {
-            sb.append(c).append(" <- ");
-            Throwable volgende = c.getCause();
-            c = volgende == c ? null : volgende;
-        }
-        return sb.toString();
+    /** One case of {@code irPath} on the truth-maintenance branch, as a consumer plays it through the entry: the input
+     *  through {@link DroolsBackend#voegIn} (the replay's set-up), one {@link DroolsBackend#vuur} to the fixpoint, the
+     *  fixpoint {@link DroolsBackend#lees} gives, and then {@link DroolsBackend#zetAfgeleideWaarden}, so that the beans
+     *  of the input and of the made objects carry the derived values and the links. */
+    private static Na naVuur(Path irPath, JsonNode c) throws Exception {
+        return CaseRunner.voorMeting(irPath, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c,
+                (bouw, sessie, labels) -> {
+            DroolsBackend.Vuring vuring = DroolsBackend.vuur(bouw, sessie);
+            if (vuring.geenFixpunt() != null) throw new IllegalStateException(vuring.geenFixpunt());
+            Fixpunt fixpunt = DroolsBackend.lees(bouw, sessie);
+            DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+            return new Na(new LinkedHashMap<>(labels), fixpunt);
+        });
     }
 
-    /** Every post-fire fact that is NOT one of the case's own input beans — the mints. Two other fact kinds are
-     *  equally not input beans and equally not created objects, so both are excluded by TYPE: the §9 idempotence
-     *  {@link dev.uchar.regelspraak.runtime.CreationMarker} the guard inserts, and the §9.5
-     *  {@code Inconsistentie} a consistentie rule inserts (a generated class, so it is matched by name). */
-    private static List<Object> mints(CaseRunner.NaFire na) {
-        return na.feiten().stream()
-                .filter(f -> !(f instanceof dev.uchar.regelspraak.runtime.CreationMarker))
-                .filter(f -> !"Inconsistentie".equals(f.getClass().getSimpleName()))
-                .filter(f -> na.invoer().values().stream().noneMatch(b -> b == f)).toList();
+    /** The input beans of a case by label, and the fixpoint of its session. */
+    private record Na(Map<String, Object> invoer, Fixpunt fixpunt) {}
+
+    /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
+    private static String speel(Path irPath, JsonNode c) throws Exception {
+        return CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 
-    private static Object enigeMint(CaseRunner.NaFire na) {
+    /** The branch refuses {@code irPath} by name: its creations have no connectingRole binding, and the branch does not
+     *  derive the back-link from the type pair (card 20261010-objectcreatie-zonder-connectingrole-binding). The
+     *  sentence after the prefix of the manifest. */
+    private static void geenBinding(Path irPath, JsonNode c) {
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> speel(irPath, c));
+        assertTrue(e.getMessage().contains("objectcreatie: penning voor een gerechtigde jutter — een objectcreatie "
+                + "zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), e.getMessage());
+    }
+
+    /** The objects the creations made, as the fixpoint gives them. */
+    private static List<Object> mints(Na na) {
+        return na.fixpunt().objecten().stream().map(Fixpunt.GemaaktObject::object).toList();
+    }
+
+    private static Object enigeMint(Na na) {
         List<Object> mints = mints(na);
         assertEquals(1, mints.size(), "expected exactly one created object, got: " + mints);
         return mints.get(0);

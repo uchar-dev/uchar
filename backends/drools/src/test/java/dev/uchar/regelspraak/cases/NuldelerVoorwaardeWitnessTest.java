@@ -5,16 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.uchar.regelspraak.engine.ScenarioResultaat;
 
 import org.junit.jupiter.api.Test;
-import org.kie.api.runtime.KieSession;
 
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,8 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fire as Drools' {@code ConstraintEvaluationException} and not as the {@code ConsequenceException} that
  * {@code NuldelerWitnessTest} pins. The predicates of the exec-model branch carry their rule: Drools' message names the
  * rule and the condition, and the replay, the red path and the scenario report read the sentence a division in a
- * rule's value gives, with the rule and the operands. Every document is written here on Jutterswet material, with the
- * outcome ref and clingo give it.
+ * rule's value gives, with the rule and the operands. The truth-maintenance branch tests the condition in a rule of its
+ * own and keeps the fault as a fact, which its write-back throws at the fixpoint in that same sentence; the row of a
+ * consumer that fires itself pins that branch since card tms-omschakeling (2026-10-10). Every document is written here
+ * on Jutterswet material, with the outcome ref and clingo give it.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code 70a60dc3}): the exec-model branch left
  * every form with "ConstraintEvaluationException: Error evaluating constraint '' in  and in more rules", naming
@@ -136,18 +134,21 @@ class NuldelerVoorwaardeWitnessTest {
     }
 
     @Test void een_afnemer_die_zelf_vuurt_leest_de_regel_en_de_voorwaarde() throws Exception {
-        // the distribution's service fires the KieBase itself: Drools' exception names the rule and the condition, and
-        // DroolsBackend.benoem gives the sentence of the replay, with the division as it was thrown in its cause chain
-        Path ir = document(zwaar(DELING_GROTER_DAN_EEN));
-        RuntimeException e = vuurZelf(ir, NUL_EN_GEWOON);
-        assertNotNull(e, "de deling door nul vuurt niet");
-        assertEquals("ConstraintEvaluationException", e.getClass().getSimpleName(), e::toString);
-        assertTrue(e.getMessage().contains("'zijn gewogen gewicht gedeeld door zijn geschatte gewicht groter is dan 1'"),
-                e.getMessage());
-        assertTrue(e.getMessage().contains("[Rule \"zwaar\""), e.getMessage());
-        RuntimeException n = benoem(e);
-        benoemd(zin("zwaar", "60"), n);
-        assertEquals("Breuk deling door 0", n.getCause().getMessage());
+        // the distribution's service fires the KieBase itself, on the truth-maintenance branch through the entry: the
+        // fire reaches its fixpoint with the fault of the condition standing as a fact, DroolsBackend.lees gives it as
+        // data, and DroolsBackend.zetAfgeleideWaarden throws it in the sentence of the replay, which names the rule.
+        // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
+        // DroolsBackend.benoem named.
+        CaseRunner.voorMeting(document(zwaar(DELING_GROTER_DAN_EEN)), DroolsBackend.Branch.TRUTH_MAINTENANCE)
+                .metSessie(JSON.readTree(NUL_EN_GEWOON), (bouw, sessie, labels) -> {
+                    assertEquals(null, DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fire reaches its fixpoint");
+                    List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
+                    assertEquals(1, fouten.size(), fouten::toString);
+                    assertEquals(zin("zwaar", "60"), fouten.get(0).melding(), "the fault as data");
+                    benoemd(zin("zwaar", "60"), assertThrows(RuntimeException.class,
+                            () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)));
+                    return null;
+                });
     }
 
     @Test void de_drl_teksttak_noemt_regel_en_voorwaarde_zoals_voorheen() throws Exception {
@@ -155,38 +156,6 @@ class NuldelerVoorwaardeWitnessTest {
         RuntimeException e = assertThrows(RuntimeException.class, () -> speel(ir, true, NUL_EN_GEWOON));
         assertEquals("ConstraintEvaluationException", e.getClass().getSimpleName(), e::toString);
         assertTrue(e.getMessage().contains("[Rule \"zwaar\""), e.getMessage());
-    }
-
-    // ---------------- the fire of a consumer ----------------
-
-    /** One fire on a KieBase of {@link DroolsBackend}, the exec-model branch, opened the way the distribution's service
-     *  opens it; what left the fire, null if nothing did. */
-    private static RuntimeException vuurZelf(Path ir, String zaak) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
-        Map<String, Object> beans = CaseRunner.invoerBeans(ir, JSON.readTree(zaak));
-        ClassLoader vorige = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = b.kieBase().newKieSession();
-        try {
-            for (Object bean : beans.values()) sessie.insert(bean);
-            sessie.fireAllRules(100_000);
-            return null;
-        } catch (RuntimeException e) {
-            return e;
-        } finally {
-            sessie.dispose();
-            Thread.currentThread().setContextClassLoader(vorige);
-        }
-    }
-
-    /** {@code DroolsBackend.benoem} for the exception class Drools throws out of a condition, by name, so this witness
-     *  compiled against the backend before that method existed. */
-    private static RuntimeException benoem(RuntimeException e) throws Exception {
-        try {
-            return (RuntimeException) DroolsBackend.class.getMethod("benoem", e.getClass()).invoke(null, e);
-        } catch (InvocationTargetException fout) {
-            throw (Exception) fout.getCause();
-        }
     }
 
     // ---------------- documents ----------------

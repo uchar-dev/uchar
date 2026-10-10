@@ -214,14 +214,20 @@ class HerhaaldTypepaarWitnessTest {
     @Test void de_aangemaakte_koppeling_staat_op_het_veld_van_haar_eigen_feittype() throws Exception {
         // The creation path, at bean level after the fire: the new relation lands on `winterhaven` and the
         // relation it JOINED over (`thuishaven`) is untouched. The two are different fields over the same
-        // type pair, which is the whole construct.
-        CaseRunner.NaFire na = CaseRunner.naFire(ir(DUBBELVERBINDING), JSON.readTree(golden("case1-binnen-venster.json")));
-        assertSame(na.invoer().get("H1"), RegelSpraakRuntime.get(na.invoer().get("S1"), "winterhaven"),
-                "the creation wrote the winterberging leg");
-        assertSame(na.invoer().get("H1"), RegelSpraakRuntime.get(na.invoer().get("S1"), "thuishaven"),
-                "and the joined-over thuisligging leg still says what the case said");
-        assertNull(RegelSpraakRuntime.get(na.invoer().get("S4"), "winterhaven"),
-                "H3 is not veilig, so its ligger got nothing");
+        // type pair, which is the whole construct. On the truth-maintenance branch, through the entry a consumer
+        // uses: one vuur to the fixpoint, then the write-back, which puts the link the creation laid on the field.
+        CaseRunner.voorMeting(ir(DUBBELVERBINDING), DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(
+                JSON.readTree(golden("case1-binnen-venster.json")), (bouw, sessie, labels) -> {
+                    assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
+                    DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+                    assertSame(labels.get("H1"), RegelSpraakRuntime.get(labels.get("S1"), "winterhaven"),
+                            "the creation wrote the winterberging leg");
+                    assertSame(labels.get("H1"), RegelSpraakRuntime.get(labels.get("S1"), "thuishaven"),
+                            "and the joined-over thuisligging leg still says what the case said");
+                    assertNull(RegelSpraakRuntime.get(labels.get("S4"), "winterhaven"),
+                            "H3 is not veilig, so its ligger got nothing");
+                    return null;
+                });
     }
 
     @Test void de_aangemaakte_koppeling_wordt_aan_beide_kanten_gelezen() throws Exception {
@@ -288,12 +294,15 @@ class HerhaaldTypepaarWitnessTest {
         assertTrue(drl.getMessage().contains("is meervoudig, dus haar opslag is het veld aan de overzijde"), drl.getMessage());
         assertTrue(!drl.getMessage().contains("beide zijden meervoudig"),
                 "the far end DOES derive a field, so the sentence stops there: " + drl.getMessage());
-        // The exec branch refuses the same document EARLIER, on its own conservative arm (a to-one element role
-        // whose sister is to-many), which this card deliberately leaves standing. Pinned so the asymmetry is a
-        // recorded decision rather than an unnoticed drift.
-        CaseRunner.Excluded exec = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(elementrolToOne(), JSON.readTree(tweeRollenCase("2", "0", "0", "1")), false));
-        assertTrue(exec.getMessage().contains("Deze weigering staat CONSERVATIEF"), exec.getMessage());
+        // The truth-maintenance branch refuses the same document EARLIER, on its own conservative arm (a to-one
+        // element role whose sister is to-many: the fact type has one bean field for both directions), as the
+        // destructive exec-model branch did. Pinned so the asymmetry is a recorded decision rather than an unnoticed
+        // drift.
+        CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(elementrolToOne(),
+                JSON.readTree(tweeRollenCase("2", "0", "0", "1")), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(tms.getMessage().contains("regel: liggertal van een haven — een Aggregation over de enkelvoudige"
+                + " elementrol 'ligger' wiens zusterrol 'thuishaven' meervoudig is ('het aantal liggers van de Haven'):"
+                + " dat feittype heeft één beanveld voor beide richtingen"), tms.getMessage());
     }
 
     @Test void een_consument_zonder_bereik_laadt_niet() throws Exception {

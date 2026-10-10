@@ -17,6 +17,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
@@ -34,9 +36,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  * {@code DroolsBackend.Nuldelingmelder}): the direct fire threw the named {@code DelingDoorNul} out of that handler
  * instead of Drools' exception, on both branches, and {@code benoem} did not exist.
  *
- * <p>The truth-maintenance branch is not asked here since 2026-10-08: its fire does not throw an evaluation fault but
- * inserts it as a fact, and {@code DroolsBackend.zetAfgeleideWaarden} throws the named {@code DelingDoorNul} at the
- * fixpoint, the sentence the replay gives ({@code TmsFoutWitnessTest}).
+ * <p>The truth-maintenance branch does not throw out of its fire: it inserts an evaluation fault as a fact, so its
+ * consumer fires through {@code DroolsBackend.vuur} to the fixpoint, reads the fault as data with
+ * {@code DroolsBackend.lees}, and {@code DroolsBackend.zetAfgeleideWaarden} throws the named {@code DelingDoorNul} there,
+ * the sentence the replay gives (the last row; {@code TmsFoutWitnessTest}). The rows of Drools' exception ask the
+ * DRL-text branch alone since card tms-omschakeling (2026-10-10); the destructive exec-model branch threw it too.
  */
 class NuldelerAfnemerWitnessTest {
 
@@ -46,8 +50,7 @@ class NuldelerAfnemerWitnessTest {
             + "deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     /** The branches whose fire throws a fault out of a consequence. */
-    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
-            DroolsBackend.Branch.DRL_TEXT);
+    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.DRL_TEXT);
 
     @Test void zelf_vuren_geeft_de_uitzondering_van_drools_met_de_regel() throws Exception {
         for (DroolsBackend.Branch tak : TAKKEN) {
@@ -68,6 +71,19 @@ class NuldelerAfnemerWitnessTest {
             // what the consequence threw stays the cause, so the red path's chain reads as the replay's
             assertSame(e.getCause(), benoemd.getCause(), tak::name);
         }
+    }
+
+    @Test void de_tak_met_truth_maintenance_geeft_de_zin_bij_het_terugzetten() throws Exception {
+        CaseRunner.voorMeting(document(), DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(JSON.readTree(NUL_EN_GEWOON),
+                (bouw, sessie, labels) -> {
+                    assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fire reaches its fixpoint");
+                    List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();
+                    assertEquals(1, fouten.size(), fouten::toString);
+                    assertEquals(ZIN, fouten.get(0).melding(), "the fault as data");
+                    assertEquals(ZIN, assertThrows(Breuk.DelingDoorNul.class,
+                            () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the fault thrown");
+                    return null;
+                });
     }
 
     @Test void benoem_laat_een_andere_fout_zoals_drools_haar_gaf() throws Exception {
