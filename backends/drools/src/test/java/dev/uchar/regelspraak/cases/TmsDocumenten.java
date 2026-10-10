@@ -424,8 +424,7 @@ final class TmsDocumenten {
         try {
             voor.accept(sessie);
             for (Object boon : bonen) sessie.insert(boon);
-            int vuringen = sessie.fireAllRules(100_000);
-            if (vuringen >= 100_000)
+            if (DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt() != null)
                 throw new AssertionError("geen fixpunt in volgorde "
                         + volgorde.stream().map(org.drools.model.Rule::getName).toList());
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
@@ -633,13 +632,13 @@ final class TmsDocumenten {
         try {
             voor.accept(sessie);
             for (Object boon : bonen) sessie.insert(boon);
-            int vuringen;
+            DroolsBackend.Vuring vuring;
             try {
-                vuringen = sessie.fireAllRules(100_000);
+                vuring = DroolsBackend.vuur(b, sessie, 100_000);
             } catch (RuntimeException e) {
                 throw new AssertionError("de fire wierp in volgorde " + namen + ": " + e, e);
             }
-            if (vuringen >= 100_000) throw new AssertionError("geen fixpunt in volgorde " + namen);
+            if (vuring.geenFixpunt() != null) throw new AssertionError("geen fixpunt in volgorde " + namen);
             try {
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
                 return null;

@@ -14,10 +14,12 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,7 +42,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       S4, whose H3 is not veilig, has none: the row {@code HerhaaldTypepaarWitnessTest} plays on the exec-model
  *       branch, "the creation wrote the winterberging leg".</li>
  *   <li>A session of that model fired with a plain {@code fireAllRules} holds no creation: {@code lees} and
- *       {@code zetAfgeleideWaarden} refuse it.</li>
+ *       {@code zetAfgeleideWaarden} refuse it, and the sentence names the creations.</li>
+ *   <li>So on every model of the branch (the fix round of step 3, point 4): on the values document of
+ *       {@link TmsHerhaaldVurenWitnessTest} both refuse a session that did not fire, or fired with a plain
+ *       {@code fireAllRules}, and write nothing; both refuse a session whose last {@code vuur} stopped at the cap, with
+ *       the sentence of that {@code vuur}, and read the next {@code vuur} that reaches the fixpoint; and {@code lees}
+ *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
+ *       {@link TmsFilterfoutWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
+ *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
  *   <li>On the exec-model and the DRL-text branch {@code lees} refuses: their rules write the beans as they fire.</li>
  *   <li>The entry is public, the seams of the scale harness and the witnesses are not.</li>
  * </ul>
@@ -49,7 +58,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * consumer fired through the package-private driver and wrote back): "J1's field rekenkamer holds the made Rekenkamer
  * ==&gt; expected: not &lt;null&gt;" and "the creation wrote the winterberging leg ==&gt; expected:
  * &lt;dev.uchar.regelspraak.facts.Haven@35267fd4&gt; but was: &lt;null&gt;". The witness itself does not compile
- * there.
+ * there. The rows of point 4 (measured 2026-10-10 on {@code f4b83d7b}, where only a model with a creation was refused,
+ * by the {@code Creatiefase} the driver leaves): each of the three new rows failed on "Expected
+ * java.lang.IllegalStateException to be thrown, but nothing was thrown.", the reading handing out what stood, and the
+ * row of the plain fire on "expected: &lt;geen fixpunt om te lezen of terug te zetten: deze sessie is niet via
+ * DroolsBackend.vuur gevuurd, …&gt; but was: &lt;dit model heeft creatieregels en vuurt in generaties
+ * (DroolsBackend.vuur); de sessie is zonder creatiefase gevuurd, dus zonder de creaties&gt;".
  */
 class TmsAfnemerWitnessTest {
 
@@ -100,13 +114,85 @@ class TmsAfnemerWitnessTest {
     @Test void een_model_met_creatie_vuurt_via_vuur_en_niet_met_een_kale_fire() throws Exception {
         speel("jutterswet-dubbelverbinding", "case1-binnen-venster.json", (bouw, sessie, labels) -> {
             sessie.fireAllRules();
-            String zin = "dit model heeft creatieregels en vuurt in generaties (DroolsBackend.vuur); de sessie is zonder"
-                    + " creatiefase gevuurd, dus zonder de creaties";
+            String zin = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur gevuurd,"
+                    + " dat tot het fixpunt vuurt en de creaties van dit model in generaties laat vuren";
             assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
                     .getMessage());
             assertEquals(zin, assertThrows(IllegalStateException.class,
                     () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage());
             return null;
+        });
+    }
+
+    @Test void lees_en_terugzetten_weigeren_een_sessie_die_niet_via_vuur_vuurde() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                String zin = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur"
+                        + " gevuurd, dat tot het fixpunt vuurt";
+                assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        .getMessage(), "a session that did not fire");
+                sessie.fireAllRules();
+                assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        .getMessage(), "a session fired with a plain fireAllRules");
+                assertEquals(zin, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
+                assertNull(TmsDocumenten.lees(bonen.get("V1"), "uitkering"), "the write-back wrote nothing");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    @Test void lees_en_terugzetten_weigeren_een_sessie_waarvan_de_laatste_vuur_geen_fixpunt_bereikte() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.Vuring afgekapt = DroolsBackend.vuur(b, sessie, 0.01, 1);
+                assertNotNull(afgekapt.geenFixpunt(), "the run stops at a cap of a few firings");
+                String zin = "geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van deze sessie"
+                        + " bereikte er geen — " + afgekapt.geenFixpunt();
+                assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        .getMessage(), "the reading");
+                assertEquals(zin, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "a further fire under the public cap");
+                assertEquals(TmsHerhaaldVurenWitnessTest.EERSTE_WAARDEN,
+                        TmsHerhaaldVurenWitnessTest.beschrijf(DroolsBackend.lees(b, sessie), bonen),
+                        "the reading of the last fire, which reached the fixpoint");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    @Test void lees_weigert_een_sessie_waarvan_de_laatste_vuur_afbrak() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
+            Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
+            TmsHerhaaldVurenWitnessTest.zetRol(v1, "aanmelder", j1);
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                // inserted without voegIn, so the member has no place, and the filter fault rule stops the fire
+                sessie.insert(j1);
+                sessie.insert(v1);
+                RuntimeException e = assertThrows(RuntimeException.class, () -> DroolsBackend.vuur(b, sessie));
+                String zin = assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage();
+                assertTrue(zin.startsWith("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van"
+                        + " deze sessie bereikte er geen — de fire brak af met " + e.getClass().getSimpleName() + ": "), zin);
+            } finally {
+                sessie.dispose();
+            }
         });
     }
 

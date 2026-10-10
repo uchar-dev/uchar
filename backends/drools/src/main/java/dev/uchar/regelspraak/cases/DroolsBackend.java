@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
+import dev.uchar.regelspraak.transpiler.tms.Gevuurd;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
 import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
 import dev.uchar.regelspraak.transpiler.tms.Teruggezet;
@@ -464,9 +465,15 @@ public final class DroolsBackend {
      * here: the beans hold the input alone until {@link #zetAfgeleideWaarden}, which writes exactly this, and after which
      * the session does not fire again. A fault names its object by type and identity.
      *
+     * <p>It reads only a session whose last {@link #vuur} reached its fixpoint, so what it gives is always a fixpoint:
+     * that of the input as it stood at that {@code vuur}; an {@code update} after it shows at the next one.
+     *
      * @throws UnsupportedOperationException on the exec-model and the DRL-text branch, whose rules write the derived
      *                                       values on the beans as they fire
-     * @throws IllegalStateException         a session of a model with a creation that was fired without {@link #vuur}
+     * @throws IllegalStateException         a session that was not fired through {@link #vuur}, among them one fired
+     *                                       with a plain {@code fireAllRules}, or whose last {@code vuur} ended without
+     *                                       a fixpoint ({@link Vuring#geenFixpunt}) or with an exception; the sentence
+     *                                       says which
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
@@ -492,6 +499,9 @@ public final class DroolsBackend {
      * RUNTIME-SEMANTICS ch. 5.7) and an {@code Invoervormfout} for a timeline input in the other convention (ch. 8.4);
      * two or more as {@code Evaluatiefouten}, ordered by the name of the form and then by the sentence, with the faults
      * as {@code fouten()}. {@link #lees} gives the same faults as data.
+     *
+     * <p>It refuses the sessions {@link #lees} refuses, with the same {@code IllegalStateException}, before anything is
+     * written: one not fired through {@link #vuur}, and one whose last {@code vuur} ended without a fixpoint.
      *
      * <p>The write-back tells the engine nothing, and a bean then holds derived values beside its input, which a further
      * fire would read as input: an initialisation of a member that holds a value written back would not fire again. So
@@ -545,7 +555,9 @@ public final class DroolsBackend {
      * {@code N0} the facts the session holds just before it fires ({@link #FACTOR}): the cap is a safeguard against a
      * fault of the lowering, not a norm, so it grows with the input. The sentence at the cap names {@code R}, {@code N0}
      * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Vuring#geenFixpunt}
-     * says so; nothing should be read of it then.
+     * says so. On the truth-maintenance branch every run leaves a stated mark of how it ended, at its fixpoint, without
+     * one, or with an exception out of the fire ({@code Gevuurd}), and {@link #lees} and {@link #zetAfgeleideWaarden}
+     * read a session only where the last run reached its fixpoint.
      *
      * <p>On the truth-maintenance branch it refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
@@ -669,15 +681,39 @@ public final class DroolsBackend {
         }
     }
 
-    /** The driver of every {@code vuur}: refuses a session that was written back, and fires as
-     *  {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}. */
+    /** The driver of every {@code vuur}. On the truth-maintenance branch it refuses a session that was written back, and
+     *  marks how the run ended ({@link Gevuurd}), which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
+     *  of the previous run goes before the fire, so none stands while the session fires, and a fire that throws leaves
+     *  a mark with its exception, so that no reading follows a run that broke off. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
-        if (tms != null && !sessie.getObjects(o -> o instanceof Teruggezet).isEmpty())
+        if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
+        if (!sessie.getObjects(o -> o instanceof Teruggezet).isEmpty())
             throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
                     + " alleen invoer dragen");
+        for (FactHandle merk : List.copyOf(sessie.<FactHandle>getFactHandles(o -> o instanceof Gevuurd)))
+            sessie.delete(merk);
+        Vuring vuring;
+        try {
+            vuring = vuurOnderPlafond(build, sessie, plafond);
+        } catch (RuntimeException e) {
+            try {
+                sessie.insert(new Gevuurd("de fire brak af met " + e.getClass().getSimpleName() + ": " + e.getMessage()));
+            } catch (RuntimeException merkfout) {
+                e.addSuppressed(merkfout);
+            }
+            throw e;
+        }
+        sessie.insert(new Gevuurd(vuring.geenFixpunt()));
+        return vuring;
+    }
+
+    /** Fires {@code sessie} as {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}: in one go, or for
+     *  a model with a creation on the truth-maintenance branch in generations per stratum. */
+    private static Vuring vuurOnderPlafond(Build build, KieSession sessie, Plafond plafond) {
+        TmsTranspiler tms = build.tmsTranspiler();
         Set<String> creaties = tms == null ? Set.of() : tms.creatieregels();
         plafond.herreken(sessie);
         if (creaties.isEmpty()) {

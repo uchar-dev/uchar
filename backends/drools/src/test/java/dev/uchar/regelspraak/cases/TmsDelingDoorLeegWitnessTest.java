@@ -122,7 +122,7 @@ class TmsDelingDoorLeegWitnessTest {
             sessie.insert(v2);
             sessie.insert(v3);
             sessie.insert(v4);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             String waar = " in volgorde " + namen;
             String inconsistentie = FactModelGenerator.PAKKET + ".Inconsistentie";
             assertEquals(List.of(), List.copyOf(sessie.getObjects(o -> o.getClass().getName().equals(inconsistentie))),

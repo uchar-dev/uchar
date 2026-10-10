@@ -448,13 +448,13 @@ class TmsFoutWitnessTest {
             sessie.addEventListener(agenda);
             sessie.addEventListener(feiten);
             for (Object boon : bonen) sessie.insert(boon);
-            int vuringen;
+            DroolsBackend.Vuring vuring;
             try {
-                vuringen = sessie.fireAllRules(100_000);
+                vuring = DroolsBackend.vuur(b, sessie, 100_000);
             } catch (RuntimeException e) {
                 return fail("de fire wierp in volgorde " + namen + ": " + e);
             }
-            assertTrue(vuringen < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(vuring.geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             try {
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
                 return null;

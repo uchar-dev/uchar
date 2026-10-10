@@ -136,7 +136,7 @@ class TmsRechtvaardigingWitnessTest {
                 }
             });
             for (Object j : jutters) sessie.insert(j);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in " + waar);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in " + waar);
             for (int i = 0; i < jutters.size(); i++) {
                 Object j = jutters.get(i);
                 List<Object> feiten = new ArrayList<>(sessie.getObjects(o -> o instanceof HeeftKenmerk h

@@ -113,7 +113,7 @@ class TmsTerugzettingWitnessTest {
             Object j2 = jutterBoon(b.beanLoader(), List.of("vergund"));
             Object j3 = jutterBoon(b.beanLoader(), List.of());
             for (Object j : List.of(j1, j2, j3)) sessie.insert(j);
-            sessie.fireAllRules(100_000);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), "the fixpoint");
             // the derivation is a fact of the session, and the bean does not carry it yet
             List<Object> afgeleid = new ArrayList<>(sessie.getObjects(o -> o instanceof HeeftKenmerk));
             assertEquals(List.of(new HeeftKenmerk(j1, ElementSleutel.van("Jutter", "vergund", true))), afgeleid);
@@ -218,7 +218,7 @@ class TmsTerugzettingWitnessTest {
             for (int i = 0; i < GETALLEN.size(); i++)
                 v.add(boon(b.beanLoader(), "Vondst", GETALLEN.get(i), INGEVOERDE_KENMERKEN.get(i)));
             for (Object boon : v) sessie.insert(boon);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, "geen fixpunt" + waar);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), "geen fixpunt" + waar);
             // the session holds the derivations, and each bean still holds its input only
             assertGetal("40", sessiewaarde(sessie, v.get(0), "heffing"), "V1 heffing in the session" + waar);
             assertGetal("15", sessiewaarde(sessie, v.get(0), "vindloon"), "V1 vindloon in the session" + waar);
@@ -287,6 +287,8 @@ class TmsTerugzettingWitnessTest {
                 KieSession sessie = b.kieBase().newKieSession();
                 try {
                     volgorde.forEach(sessie::insert);
+                    // no rule reads a Waarde without its Vondst in the session, so the fire leaves the two as they are
+                    assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fixpoint");
                     try {
                         DroolsBackend.zetAfgeleideWaarden(b, sessie);
                     } catch (IllegalStateException e) {

@@ -137,7 +137,7 @@ class TmsAttribuutketenWitnessTest {
             });
             sessie.insert(v1);
             sessie.insert(v2);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
             String waar = " in volgorde " + namen;
             assertNull(TmsDocumenten.lees(v1, "bergloon"), "V1 bergloon" + waar);

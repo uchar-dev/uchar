@@ -141,9 +141,9 @@ class TmsOntkenningsketenWitnessTest {
                 Object j2 = TmsDocumenten.jutterBoon(b.beanLoader(), List.of());
                 sessie.insert(j1);
                 sessie.insert(j2);
-                int vuringen = sessie.fireAllRules(100_000);
+                DroolsBackend.Vuring vuring = DroolsBackend.vuur(b, sessie, 100_000);
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
-                assertTrue(vuringen < 100_000, () -> "geen fixpunt in volgorde " + namen);
+                assertNull(vuring.geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
                 Map<String, Boolean> eind1 = Map.of("erkend", true, "vergund", true, "onvergund", false, "bevoegd", true);
                 Map<String, Boolean> eind2 = Map.of("erkend", false, "vergund", false, "onvergund", true, "bevoegd", false);

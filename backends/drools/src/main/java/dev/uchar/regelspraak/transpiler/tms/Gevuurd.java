@@ -1,0 +1,14 @@
+package dev.uchar.regelspraak.transpiler.tms;
+
+/**
+ * The stated mark the driver leaves in a session of the truth-maintenance branch after each run
+ * ({@code DroolsBackend.vuur}): that the session was fired through the driver, and how its last run ended.
+ * {@code geenFixpunt} is null where the run reached its fixpoint, and otherwise the sentence of a run that ended without
+ * one: at the fire cap, at the creation budget, or with an exception out of the fire. Only the driver fires to the
+ * fixpoint, and on a model with a creation only the driver fires the creations, in generations; a plain
+ * {@code fireAllRules} leaves no mark. So {@link TmsTranspiler#lees} and {@link TmsTranspiler#zetAfgeleideWaarden} read
+ * a session only under a mark whose {@code geenFixpunt} is null, and what they give is then always a fixpoint. The
+ * driver replaces the mark at every run and holds none in the session while it fires, so the facts that compute the
+ * fire cap are the consumer's and the branch's own. No rule reads it.
+ */
+public record Gevuurd(String geenFixpunt) {}

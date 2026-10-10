@@ -152,7 +152,7 @@ class TmsConsistentieWitnessTest {
                 }
             });
             for (Object v : List.of(v1, v2, v3)) sessie.insert(v);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             String waar = " in volgorde " + namen;
             assertEquals(List.of("controle eindgewicht @ V2", "controle eindgewicht @ V3"),
                     foutfeiten(sessie, Map.of(v1, "V1", v2, "V2", v3, "V3")), "foutfeiten" + waar);
@@ -228,7 +228,7 @@ class TmsConsistentieWitnessTest {
             Object d1 = TmsDocumenten.boon(b.beanLoader(), "Dossier", Map.of(), List.of());
             Object d2 = TmsDocumenten.boon(b.beanLoader(), "Dossier", Map.of(), List.of());
             for (Object o : List.of(h1, h2, d1, d2)) sessie.insert(o);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             String waar = " bij saldo " + saldo + " in volgorde " + namen;
             boolean geschonden = saldo.startsWith("-");
             assertEquals(geschonden ? List.of("controle saldo @ h1") : List.of(),

@@ -219,14 +219,14 @@ class TmsVerdrongenUitzonderingWitnessTest {
         try {
             sessie.addEventListener(fouten);
             sessie.insert(boon);
-            int vuringen;
+            DroolsBackend.Vuring vuring;
             try {
-                vuringen = sessie.fireAllRules(100_000);
+                vuring = DroolsBackend.vuur(b, sessie, 100_000);
             } catch (RuntimeException e) {
                 fail(wat + ": de fire wierp " + e);
                 return;
             }
-            assertTrue(vuringen < 100_000, () -> wat + ": geen fixpunt");
+            assertTrue(vuring.geenFixpunt() == null, () -> wat + ": geen fixpunt");
             try {
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
             } catch (RuntimeException e) {

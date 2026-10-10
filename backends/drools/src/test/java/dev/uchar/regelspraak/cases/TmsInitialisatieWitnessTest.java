@@ -169,7 +169,7 @@ class TmsInitialisatieWitnessTest {
                 }
             });
             for (Object v : List.of(v1, v2, v3, v4)) sessie.insert(v);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
             String waar = " in volgorde " + namen;
             eindigtOp(v1, "berekend gewicht", "13", "V1" + waar);
@@ -255,7 +255,7 @@ class TmsInitialisatieWitnessTest {
                 }
             });
             for (Object v : List.of(v1, v2, v3, v4, v5)) sessie.insert(v);
-            assertTrue(sessie.fireAllRules(100_000) < 100_000, () -> "geen fixpunt in volgorde " + namen);
+            assertNull(DroolsBackend.vuur(b, sessie, 100_000).geenFixpunt(), () -> "geen fixpunt in volgorde " + namen);
             DroolsBackend.zetAfgeleideWaarden(b, sessie);
             String waar = " in volgorde " + namen;
             eindigtOp(v1, "bergloon", "7", "V1" + waar);

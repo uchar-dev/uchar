@@ -190,7 +190,7 @@ class TmsHerhaaldVurenWitnessTest {
     // ---------------- helpers ----------------
 
     /** J1, and V1 of {@code gewichtV1} and V2 of 4, each found by J1. */
-    private static Map<String, Object> waardebonen(DroolsBackend.Build b, String gewichtV1) throws Exception {
+    static Map<String, Object> waardebonen(DroolsBackend.Build b, String gewichtV1) throws Exception {
         Map<String, Object> bonen = new LinkedHashMap<>();
         Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
         bonen.put("J1", j1);

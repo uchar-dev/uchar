@@ -395,9 +395,12 @@ public final class TmsTranspiler {
      * such rule stood, as in a session filled by hand, this reads the same {@link Schrijversconflict} as a fault and gives
      * the attribute no value: it does not choose. Equal values are no conflict.
      *
-     * <p>A model with a creation is fired in generations ({@code DroolsBackend.vuur}), which leaves a
-     * {@link Creatiefase} in the session. Without one the creation rules never had the focus and the session holds no
-     * created object or link, so this refuses such a session rather than hand out an answer without the creations.
+     * <p>It reads only a session whose last run through the driver ({@code DroolsBackend.vuur}) reached its fixpoint,
+     * as the driver's mark says ({@link Gevuurd}), and refuses any other with a sentence that says what is missing: a
+     * session fired with a plain {@code fireAllRules} or not at all holds no fixpoint it can tell, and on a model with a
+     * creation the creation rules never had the focus, so it holds no created object or link; a run that ended at the
+     * cap, at the creation budget or with an exception holds a state on the way to the fixpoint. What this gives is
+     * thus always a fixpoint, that of the input as it stood at the last run.
      */
     public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
         return lezing(sessie, label).fixpunt();
@@ -415,7 +418,8 @@ public final class TmsTranspiler {
      * writes anything this throws the faults that stand: one as the exception it is, named after its rule as the
      * exec-model branch names it out of its fire, two or more as {@link Evaluatiefouten}, ordered by the name of the
      * form and then by the sentence, so that the report does not depend on the order of the rules or of the firings.
-     * Then it writes nothing, and the session stays as it was.
+     * Then it writes nothing, and the session stays as it was. It refuses the sessions {@link #lees} refuses, those
+     * without a fixpoint of the driver, likewise before it writes anything.
      *
      * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
      * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
@@ -445,9 +449,18 @@ public final class TmsTranspiler {
     private record Lezing(Fixpunt fixpunt, List<Runnable> schrijfdaden) {}
 
     private Lezing lezing(KieSession sessie, Function<Object, String> label) {
-        if (!creatieregels.isEmpty() && sessie.getObjects(o -> o instanceof Creatiefase).isEmpty())
-            throw new IllegalStateException("dit model heeft creatieregels en vuurt in generaties (DroolsBackend.vuur);"
-                    + " de sessie is zonder creatiefase gevuurd, dus zonder de creaties");
+        List<Object> merken = new ArrayList<>(sessie.getObjects(o -> o instanceof Gevuurd));
+        if (merken.isEmpty())
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: deze sessie is niet via"
+                    + " DroolsBackend.vuur gevuurd, dat tot het fixpunt vuurt"
+                    + (creatieregels.isEmpty() ? "" : " en de creaties van dit model in generaties laat vuren"));
+        if (merken.size() > 1)
+            throw new IllegalStateException("de sessie houdt " + merken.size() + " merken van DroolsBackend.vuur, waar"
+                    + " de driver er na elke run één laat: " + merken);
+        String geenFixpunt = ((Gevuurd) merken.get(0)).geenFixpunt();
+        if (geenFixpunt != null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur"
+                    + " van deze sessie bereikte er geen — " + geenFixpunt);
         List<Runnable> daden = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
