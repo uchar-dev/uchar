@@ -27,10 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * model+case before it was pinned here — ref is the arbiter, this backend the third executor.
  *
  * <ul>
- *   <li><b>the two fences that must REFUSE.</b> A refusal is the honest outcome: the cross-unit guard in the
- *       ch. 10.2 branch condition (whose absence picks the WRONG branch — 500 m &gt; 1 km read as 500 &gt; 1),
- *       and the ch. 7 defaults division fence (which must keep firing through a Let). Both are asserted as a
- *       reason-carrying exclusion, not as a value;</li>
+ *   <li><b>the two fences.</b> The cross-unit guard in the ch. 10.2 branch condition (whose absence picks the
+ *       WRONG branch — 500 m &gt; 1 km read as 500 &gt; 1) was a refusal of the destructive exec-model branch; the
+ *       truth-maintenance branch restates the comparison and answers as ref, which that row pins since card
+ *       tms-omschakeling. The ch. 7 defaults division fence (which must keep firing through a Let) is asserted as
+ *       a reason-carrying exclusion, not as a value;</li>
  *   <li><b>the walks that must SEE.</b> The far-side reactivity ({@code navRefs}) and the defaults salience
  *       ({@code exprLeesnamen}) each over a producer FORCED by §9.2 stratification to fire after its consumer,
  *       so the witness is deterministic rather than agenda luck;</li>
@@ -56,17 +57,17 @@ class LetDragerWandelingWitnessTest {
 
     // ---------------- 1. the fences: a loud refusal, never a quiet answer ----------------
 
-    @Test void het_cross_unit_hek_weigert_luid_in_plaats_van_de_verkeerde_tak_te_kiezen() throws Exception {
+    @Test void het_cross_unit_hek_herrekent_en_kiest_de_tak_van_ref() throws Exception {
         // "uit := Let a = aanloop in (als a groter dan 1 km dan 1,00 anders 2,00)", aanloop = 500 m.
         // ref on this exact model+case: uit = 2.00 (the §5.1 Tabel 32 restatement makes it 500 m > 1000 m,
-        // which is FALSE). rsAggVergelijk applies NO restatement, so lowering this guard would compare the
-        // raw numbers 500 > 1 and take the DAN branch: 1.00, silently wrong. letConditie's restatement guard
-        // refuses instead — and the whole rule then falls out of scope, loudly, with its name in the reason.
-        CaseRunner.Excluded weigering = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(kruisEenheidModel(), geval(inst("B1", "Baan", "\"aanloop\": { \"number\": \"500\" }", ""),
-                        waarde("B1", "uit", "2.00") + ", " + consistent())));
-        assertTrue(weigering.getMessage().contains("uit van een baan"),
-                "de weigering noemt de regel die zij laat vallen: " + weigering.getMessage());
+        // which is FALSE). The destructive exec-model branch applied NO restatement there, so it refused the
+        // rule rather than compare the raw numbers 500 > 1 and take the DAN branch (1.00, silently wrong). The
+        // truth-maintenance branch restates the comparison (RUNTIME-SEMANTICS ch. 2.6) and answers 2.00, consistent,
+        // as ref; clingo answers 1.00, an existing fault of the ASP backend (card
+        // 20261010-clingo-let-binder-vergelijking-over-eenheden). The document and case are those of
+        // TmsZoalsRefWitnessTest's let-kruiseenheid.
+        assertNull(speelTms(kruisEenheidModel(), geval(inst("B1", "Baan", "\"aanloop\": { \"number\": \"500\" }", ""),
+                waarde("B1", "uit", "2.00") + ", " + consistent())), "de herrekende vergelijking kiest de ANDERS-tak");
     }
 
     @Test void het_defaults_delingshek_vuurt_door_een_let_heen() throws Exception {
@@ -214,6 +215,16 @@ class LetDragerWandelingWitnessTest {
 
     /** One authored model + case through the FULL replay; the per-case failure line, null on a match. A form
      *  the backend refuses propagates as {@link CaseRunner.Excluded} — the loud channel two witnesses assert. */
+    private static String speelTms(String ir, String caseJson) throws Exception {
+        Path tmp = Files.createTempFile("let-drager-witness", ".json");
+        try {
+            Files.writeString(tmp, ir);
+            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
     private static String speel(String ir, String caseJson) throws Exception {
         Path tmp = Files.createTempFile("let-drager-witness", ".json");
         try {

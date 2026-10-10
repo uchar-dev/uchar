@@ -115,21 +115,14 @@ class OpslagrichtingWitnessTest {
                 "counting the sister role instead would be a named mismatch, not a silent pass");
     }
 
-    @Test void de_dubbelmeervoudige_zelfrelatie_heeft_geen_veld_en_wordt_overgeslagen() throws Exception {
-        // Why the erflijn golden STILL does not play, now that its case input IS carried. `erflijn` relates
-        // Wachter to Wachter through TWO TO-MANY roles, so the bean model derives no field at EITHER end — a
-        // to-many role's storage is the far end's field, and here both ends are to-many. The aggregation over
-        // `erfvolgers` therefore has no join field: before the guard it lowered anyway and died at first fire
-        // ("geen getter voor 'erflater'"), an unclassified ERROR. It must be a lowering SKIP, i.e. a
-        // reason-carrying per-form exclusion of the whole golden — and the REASON must name the §13.3.9
-        // storage-direction limit it is, not the generic "aggregatie buiten Phase-C scope" bucket that reads as
-        // an arm nobody has built yet (the schendingReden distinction, on the fold side).
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir(ERFLIJN), JSON.readTree(ketenMetVerwachting("1", "0"))));
-        assertTrue(e.getMessage().contains("erfvolgeraantal van een wachter"), e.getMessage());
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'erflater' op Wachter is meervoudig"), e.getMessage());
-        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+    @Test void de_dubbelmeervoudige_zelfrelatie_speelt_met_truth_maintenance() throws Exception {
+        // `erflijn` relates Wachter to Wachter through TWO TO-MANY roles, so the bean model derives no field at
+        // EITHER end — a to-many role's storage is the far end's field, and here both ends are to-many. The
+        // destructive exec-model branch joined the aggregation over `erfvolgers` on such a field and refused it by
+        // name (§13.3.9 storage direction). The truth-maintenance branch joins over the links of the relation, which
+        // need no field, and answers as ref on the erflijn golden with this case: W1 1, W2 0
+        // (TmsZoalsRefWitnessTest, dubbelmeervoudige-zelfrelatie).
+        assertNull(speelTms(ir(ERFLIJN), JSON.readTree(ketenMetVerwachting("1", "0"))), "ref agrees: W1 1, W2 0");
     }
 
     @Test void een_meervoudige_zelfpaarrol_wordt_luid_geweigerd_met_de_ware_reden() throws Exception {
@@ -233,11 +226,12 @@ class OpslagrichtingWitnessTest {
     @Test void de_foldjoin_weigert_hetzelfde_veld_met_dezelfde_reden() throws Exception {
         // The third reader of that field — the §5.8 fold's join (`het aantal opvolgers`) — asked for the name
         // only, so it lowered a join reading a BigDecimal. On the FULL model this is the first refusal reached,
-        // which is why the creation witness above strips the rules. ref: `oracle: PASS (2 expectations)`.
+        // which is why the creation witness above strips the rules. ref: `oracle: PASS (2 expectations)`. The
+        // truth-maintenance branch reaches the creation first, whose link to the mint has no field.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeWachter(true), JSON.readTree(ketenZonderRollen(true))));
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
-        assertTrue(e.getMessage().contains("deelt haar naam met een gedeclareerd lid"), e.getMessage());
+                () -> speelTms(naamdelendeWachter(true), JSON.readTree(ketenZonderRollen(true))));
+        assertTrue(e.getMessage().contains("objectcreatie: werf de opvolger — de rol 'opvolger' op Wachter deelt haar naam"
+                + " met een gedeclareerd lid"), e.getMessage());
     }
 
     // The FOURTH reader of that same field — the ordinary navigated VALUE read — asked for the name only until
@@ -257,11 +251,9 @@ class OpslagrichtingWitnessTest {
     @Test void de_genavigeerde_waardelezing_weigert_het_verdrongen_veld() throws Exception {
         // navReader — the read as the wire carries it: one binding, ligplaats/werf.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeSchuit(), JSON.readTree(schuitZonderRol("premie", "0"))));
-        assertTrue(e.getMessage().contains("premie van een schuit"), e.getMessage());
-        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
-        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+                () -> speelTms(naamdelendeSchuit(), JSON.readTree(schuitZonderRol("premie", "0"))));
+        assertTrue(e.getMessage().contains("regel: premie van een schuit — de lezing 'het tarief van de werf van de Schuit':"
+                + " Schuit heeft geen referentieveld 'werf' naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
     }
 
     @Test void de_ketenlezing_weigert_het_verdrongen_veld_op_elke_stap() throws Exception {
@@ -273,7 +265,11 @@ class OpslagrichtingWitnessTest {
         // chain reader's per-hop question leaves the row green).
         for (int stap : new int[] { 1, 2 }) {
             String rol = stap == 1 ? "de rol 'werf' op Schuit" : "de rol 'thuishaven' op Werf";
-            BeideTakken.geweigerd(naamdelendeKeten(stap), JSON.readTree(schuitZonderRol("premie", "0")),
+            String veld = stap == 1 ? "Schuit heeft geen referentieveld 'werf' naar Werf"
+                    : "Werf heeft geen referentieveld 'thuishaven' naar Haven";
+            BeideTakken.geweigerdApart(naamdelendeKeten(stap), JSON.readTree(schuitZonderRol("premie", "0")),
+                    "regel: premie van een schuit — de lezing 'het havengeld van de thuishaven van de werf van de Schuit': "
+                            + veld + " (§13.3.9 opslagrichting)",
                     "genavigeerde lezing: " + rol + " deelt haar naam met een gedeclareerd lid",
                     "the displaced field at hop " + stap + " of a two-binding chain");
         }
@@ -286,10 +282,9 @@ class OpslagrichtingWitnessTest {
         // ERROR ConstraintEvaluationException, which gate 12 refuses to excuse. ref on exactly this model and
         // case: toeslag stays leeg (leeg > 5 is onwaar, Tabel 33-44), `oracle: PASS (1 expectations)`.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(navigerendeVergelijking(), JSON.readTree(schuitZonderRol(null, null))));
-        assertTrue(e.getMessage().contains("toeslag van een schuit"), e.getMessage());
-        assertTrue(e.getMessage().contains("genavigeerde lezing"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+                () -> speelTms(navigerendeVergelijking(), JSON.readTree(schuitZonderRol(null, null))));
+        assertTrue(e.getMessage().contains("regel: toeslag van een schuit — de lezing 'het tarief van de werf van de"
+                + " Schuit': Schuit heeft geen referentieveld 'werf' naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
     }
 
     @Test void de_rollidmaatschapscheck_weigert_hetzelfde_veld() throws Exception {
@@ -304,10 +299,9 @@ class OpslagrichtingWitnessTest {
         // Not a navigation bug and not fixed by gating the navigated readers: it needs the SAME shared question,
         // asked at the null-test.
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(naamdelendeRolcheck(), JSON.readTree(schuitZonderRol(null, null))));
-        assertTrue(e.getMessage().contains("toeslag van een schuit"), e.getMessage());
-        assertTrue(e.getMessage().contains("rollidmaatschapscheck"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
+                () -> speelTms(naamdelendeRolcheck(), JSON.readTree(schuitZonderRol(null, null))));
+        assertTrue(e.getMessage().contains("regel: toeslag van een schuit — een RoleMembership in de voorwaarde ('de"
+                + " Schuit een schuit is'): de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"), e.getMessage());
         assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
     }
 
@@ -319,6 +313,11 @@ class OpslagrichtingWitnessTest {
     // to prevent. It refuses the construct rather than continuing past the hop.
 
     // ---------------- fixtures ----------------
+
+    /** The replay of one case on the truth-maintenance branch: null on a match. */
+    private static String speelTms(Path ir, com.fasterxml.jackson.databind.JsonNode c) throws Exception {
+        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+    }
 
     private static Path ir(String golden) {
         Path p = CORPUS.resolve(golden).resolve("ir.json");

@@ -109,19 +109,24 @@ class VouwBegeleiderWitnessTest {
         assertNull(speelDrl(ir, consistent), "DRL-teksttak, J3 zonder drempel");
     }
 
-    @Test void een_vouw_onder_een_let_naast_een_deling_weigert_in_beide_takken() throws Exception {
+    @Test void een_vouw_onder_een_let_naast_een_deling_speelt_met_truth_maintenance() throws Exception {
         // "(de vangst gedeeld door zijn deler) rekenkundig afgerond op 2 decimalen. Daarbij geldt: de vangst is de som
         // …": J1's vangst is 11 over no deler and deposits; a leeg vangst ends the Let before the division (ch. 10.6), so
         // J2 and J3 deposit nothing. ref and clingo: leeg, leeg, leeg and 4,50, inconsistent. A companion re-reads the
-        // site's need and the need is a fold, which neither branch can read there; both refuse the rule by name.
+        // site's need and the need is a fold, which the DRL-text branch cannot read there, as the destructive
+        // exec-model branch could not; it refuses the rule by name. The truth-maintenance branch has no companions: it
+        // deposits where the division reads leeg, and answers as ref (TmsZoalsRefWitnessTest,
+        // vouw-onder-let-naast-deling).
         String let = "{\"node\":\"Let\",\"type\":" + TWEE_DECIMALEN + ",\"binder\":\"vangst\",\"value\":" + SOM + ",\"body\":"
                 + afgerond(binair("dividedBy", "{\"node\":\"BinderRef\",\"name\":\"vangst\",\"source\":{\"snippet\":\"de vangst\"}}",
                         eigen("deler"), ONBEGRENSD)) + ",\"source\":{\"snippet\":\"de vangst is de som …\"}}";
         String ir = document(regel(let, null));
         String zaak = zaak(situatie(), heffing(null, null, null, "4.50"), INCONSISTENT);
         String zin = "een vouw over een setbron en een deling of wortel onder één Let of IfThenElse";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak));
-        assertTrue(e.getMessage().contains(zin), e.getMessage());
+        Path tmp = Files.createTempFile("vouw-begeleider", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        assertNull(CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms");
         CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak));
         assertTrue(d.getMessage().contains(zin), d.getMessage());
     }

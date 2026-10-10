@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.cases;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
@@ -11,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A fold over the members of a set source inside a rule's value, in the exec-model branch: the earliest and the
@@ -230,21 +227,6 @@ class DatumvouwOverRolWitnessTest {
                 binair("plus", binder("vangst"), getalLiteraal("1"), GEHEEL), GEHEEL)));
         assertNull(speel(ir, zaak(situatie(true, false, null), perJutter("telling", getal("5"), getal("1"), getal("2"), getal("2")))),
                 "een vouw als gebonden waarde van een Let");
-    }
-
-    @Test void een_vouw_en_een_deling_onder_een_let_weigeren_met_de_vorm() throws Exception {
-        // "… als de vangst gedeeld door zijn gewicht. Daarbij geldt: de vangst is het aantal vondsten van de Jutter".
-        // The §6.5 companion of that division evaluates the Let again in a rule of its own, without this rule's
-        // accumulate, so the fold would not lower there and the build would fail; ref and clingo answer, the DRL-text
-        // branch plays it. The refusal names the form.
-        String decimaal = "{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}";
-        String ir = document(regel("uitkomst", "Jutter", "uitkomst", let("vangst", telling(),
-                binair("dividedBy", binder("vangst"), eigen("gewicht", "Jutter"), decimaal), decimaal)));
-        Path p = tijdelijk(ir);
-        JsonNode c = JSON.readTree(zaak(situatie(true, false, null), List.of()));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, false));
-        assertTrue(e.getMessage().contains("een vouw over een setbron en een deling of wortel onder één Let of IfThenElse"),
-                e.getMessage());
     }
 
     // ---------------- documents ----------------

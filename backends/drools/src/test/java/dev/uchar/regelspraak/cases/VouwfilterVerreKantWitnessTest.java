@@ -292,20 +292,19 @@ class VouwfilterVerreKantWitnessTest {
 
     // ---------------- forms that refuse by name ----------------
 
-    @Test void een_unieselectie_via_een_rol_weigert_benoemd() throws Exception {
+    @Test void een_unieselectie_via_een_rol_speelt_met_truth_maintenance() throws Exception {
         // "het aantal vondsten van de Jutter die gedateerd zijn en vondsten van de Jutter wier jutter actief is": a union
         // selection whose subselection reads through a role of the element. The selections share one element pattern
-        // and its test, so the exec-model branch has no join for it and refuses the form; before, it counted with the
-        // characteristic as it stood at insertion.
+        // and its test, so the destructive exec-model branch had no join for it and refused the form; before, it
+        // counted with the characteristic as it stood at insertion. The truth-maintenance branch plays it as ref
+        // answers, 3, on this case (TmsZoalsRefWitnessTest, unieselectie-via-rol).
         String unie = "{\"node\":\"Aggregation\",\"kind\":\"count\",\"arguments\":[{\"node\":\"InstanceSetUnion\",\"branches\":["
                 + tak(de(kenmerkcheck("gedateerd", false, null))) + "," + tak(de(kenmerkcheck("actief", false, JUTTER_VAN_DE_VONDST)))
                 + "],\"source\":{\"snippet\":\"vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}],\"type\":" + TELGETAL
                 + ",\"source\":{\"snippet\":\"het aantal vondsten die gedateerd zijn en vondsten wier jutter actief is\"}}";
         String actief = kenmerkRegel("actief", "Jutter", predicaat("filled", eigen("sluitdag", "Jutter")));
         String ir = document(List.of(regel("aantal late vondsten", "Jutter", "aantal late vondsten", unie, null), actief, SLUITDAG));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(ir, zaak(DRIE_VONDSTEN, getal("J", "aantal late vondsten", 3))));
-        assertTrue(e.getMessage().contains("leest via een rol van het element"), e.getMessage());
+        assertNull(speelTms(ir, zaak(DRIE_VONDSTEN, getal("J", "aantal late vondsten", 3))), "ref agrees: 3");
     }
 
     @Test void de_teksttak_weigert_een_toets_via_de_rol_van_het_element() throws Exception {
@@ -630,6 +629,14 @@ class VouwfilterVerreKantWitnessTest {
     /** The DRL-text branch's verdict on one case. */
     private static String speelDrl(String ir, String zaak) throws Exception {
         return speel(ir, zaak, true);
+    }
+
+    /** The truth-maintenance branch's verdict on one case. */
+    private static String speelTms(String ir, String zaak) throws Exception {
+        Path tmp = Files.createTempFile("vouwfilter-verre-kant", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 
     private static String speel(String ir, String zaak, boolean viaDrl) throws Exception {

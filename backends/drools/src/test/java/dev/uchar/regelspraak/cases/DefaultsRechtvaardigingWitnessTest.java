@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The justification of a default that COUNTS (an aggregation over linked instances) or that reads further than one
@@ -30,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * group reads what a later group writes answers {@code kenmerk zwaar: verwacht afwezig, werkelijk aanwezig} in its
  * first case, and its second case, run on its own, {@code kenmerk ijverig: verwacht afwezig, werkelijk aanwezig}; the
  * row over a quantifier fold is refused in that same lumped sentence, which names neither the form nor the condition.
+ * That row pinned the exec-model branch's refusal by name until 2026-10-10; the truth-maintenance branch plays its
+ * document as the reference interpreter answers it ({@code TmsZoalsRefWitnessTest},
+ * {@code defaults-kwantorvouw-rechtvaardiging}), so the row is gone.
  *
  * <p>Three rows came after the first fix (2026-09-30), and hold the band a group takes (groepVolgorde). The row where
  * the reached value is written after a group in band 0 could decide: on the transpiler of the claim refused in the
@@ -357,22 +358,6 @@ class DefaultsRechtvaardigingWitnessTest {
                         vondst("V8", "J5", "\"gewicht\":{\"number\":\"12\"}", false)),
                         "{\"kind\":\"attributeEmpty\",\"label\":\"J5\",\"attribute\":\"premie\"},{\"kind\":\"inconsistent\"}", "")),
                 "met conflict");
-    }
-
-    // ---------------- what the branch still refuses, by name ----------------
-
-    @Test void een_kwantorvouw_in_de_rechtvaardiging_weigert_met_naam() throws Exception {
-        // "… als 20 indien het gewicht van ten minste 2 van de vondsten van de Jutter groter is dan 5". ref and
-        // clingo: J1 and J4 20. Not lowered in a justification; the refusal names the form and the condition.
-        String snippet = "het gewicht van ten minste 2 van de vondsten van de Jutter groter is dan 5";
-        String vouw = "{\"node\":\"QuantifierFold\",\"quantifier\":\"atLeast\",\"threshold\":2,\"elementType\":\"Vondst\","
-                + "\"test\":" + groter(eigen("gewicht", "Vondst"), getal(5)) + ",\"source\":{\"snippet\":\"" + snippet + "\"},"
-                + "\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}}";
-        String ir = document(VONDSTMODEL, List.of(), List.of(premiegroep(vouw)));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(ir, zaak(vondstbeeld(true), premies("J1", "J4"), "")));
-        assertTrue(e.getMessage().contains("kwantorvouw"), e.getMessage());
-        assertTrue(e.getMessage().contains(snippet), e.getMessage());
     }
 
     // ---------------- documents ----------------

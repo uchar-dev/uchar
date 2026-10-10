@@ -467,8 +467,10 @@ class HeelperiodeKwantorvouwWitnessTest {
      * <p>De assertie die telt is de LAATSTE: de geëmitteerde DRL bevat geen {@code accumulate(}. Een
      * markering die haar accumulate al geschreven had laat een weesclausule achter die tegen een
      * {@code $subject} van het verkeerde type joint, en het pakket sterft dan op een parsefout in plaats
-     * van bij naam te weigeren — de modus die op 2026-09-16 gemeten is. Beide takken weigeren hier op
-     * DEZELFDE as, met dezelfde reden, zodat een poort-12-rapport de twee naast elkaar kan lezen.
+     * van bij naam te weigeren — de modus die op 2026-09-16 gemeten is. De destructieve exec-modeltak
+     * weigerde hier op DEZELFDE as, met dezelfde reden. De tak met truth maintenance speelt de vorm zoals
+     * {@code ref} antwoordt: zeewaardig afwezig, waar de case van de DRL-rij aanwezig zegt
+     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-niet-scalaire-grens}).
      */
     @Test void een_weigeringsas_schrijft_geen_clausule_voor_hij_afketst() throws Exception {
         Path ir = schrijf("ir-grens.json", nietScalaireGrens());
@@ -482,10 +484,10 @@ class HeelperiodeKwantorvouwWitnessTest {
         assertTrue(drl.reason().contains("niet-scalaire matrixgrens"),
                 "de reden noemt de AS waarop hij afketst: " + drl.reason());
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("EXCLUDE", exec.status(), "de exec-tak weigert dezelfde vorm");
-        assertTrue(exec.reason().contains("niet-scalaire matrixgrens"),
-                "en op dezelfde as, met dezelfde reden: " + exec.reason());
+        Path afwezig = schrijf("case-grens-afwezig.json", caseDoc(schepen(
+                schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicAbsent"));
+        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(afwezig));
+        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         assertFalse(drlTekst(ir).contains("accumulate("),
                 "de arm hoort niets te hebben geschreven voordat hij de grens afkeurde:\n" + drlTekst(ir));
@@ -499,7 +501,9 @@ class HeelperiodeKwantorvouwWitnessTest {
      * staan op een regel die verder een markering is.
      *
      * <p>Mutatieproef uitgevoerd: {@code kvTerug} kortgesloten tot een kale markering (geen
-     * {@code aggTerug}) laat de weesclausule staan en deze rij wordt rood.
+     * {@code aggTerug}) laat de weesclausule staan en deze rij wordt rood. De destructieve exec-modeltak
+     * weigerde de vorm op dezelfde as; de tak met truth maintenance speelt haar zoals {@code ref} antwoordt
+     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-filter-dat-hijst}).
      */
     @Test void een_filter_dat_hijst_wordt_teruggedraaid_en_bij_naam_geweigerd() throws Exception {
         Path ir = schrijf("ir-filterhijs.json", filterDatHijst());
@@ -513,9 +517,8 @@ class HeelperiodeKwantorvouwWitnessTest {
         assertTrue(drl.reason().contains("die/dat-subselectie"),
                 "de reden noemt de AS waarop hij afketst: " + drl.reason());
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("EXCLUDE", exec.status(), "de exec-tak weigert dezelfde vorm op dezelfde as");
-        assertTrue(exec.reason().contains("die/dat-subselectie"), "met dezelfde reden: " + exec.reason());
+        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         String tekst = drlTekst(ir);
         assertFalse(tekst.contains("accumulate("), "geen accumulate op een gemarkeerde regel:\n" + tekst);
@@ -534,10 +537,12 @@ class HeelperiodeKwantorvouwWitnessTest {
      *   verifier : PASS
      *   ref      : oracle: PASS (2 expectations)
      * </pre>
-     * Beide Drools-takken weigeren hem, en de eis is dat die weigering BENOEMD is:
+     * De DRL-teksttak weigert hem, en de eis is dat die weigering BENOEMD is:
      * tot 2026-09-18 schreef de tak haar clausule toch en stierf het pakket op
      * {@code [ERR 101] … no viable alternative at input ')'}. De niet-temporele route had datzelfde defect
-     * al vóór deze kaart; beide zijn met dezelfde vangst dicht.
+     * al vóór deze kaart; beide zijn met dezelfde vangst dicht. De destructieve exec-modeltak weigerde hem
+     * ook; de tak met truth maintenance speelt beide documenten zoals {@code ref} antwoordt
+     * ({@code TmsZoalsRefWitnessTest}, {@code heelperiode-niet-conjunctieve-kwantor}).
      */
     @Test void een_vouw_onder_een_niet_conjunctieve_kwantor_weigert_bij_naam() throws Exception {
         Path c = schrijf("case-disjunctie.json", caseDoc(schepen(
@@ -554,8 +559,8 @@ class HeelperiodeKwantorvouwWitnessTest {
                             && drl.reason().contains("niet-conjunctieve kwantor"),
                     wat + ": de reden noemt de KNOOP en de positie: " + drl.reason());
 
-            CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-            assertEquals("EXCLUDE", exec.status(), wat + ": de exec-tak weigert dezelfde vorm");
+            CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+            assertEquals("PLAYED", tms.status(), wat + ": de tak met truth maintenance antwoordt zoals ref: " + tms);
         }
     }
 
@@ -583,18 +588,18 @@ class HeelperiodeKwantorvouwWitnessTest {
      * vergelijking die WEL niet-temporeel bedoeld is maar een TIJDSAFHANKELIJK operand leest
      * ({@code wachtwaarde} is MAAND-granulair): die draagt de bladvertaling niet, dus de weigering
      * blijft — met een andere, even benoemde reden. De bewering van de rij is onveranderd: buiten de
-     * scope is de vorm zichtbaar, nooit stil.
+     * scope is de vorm zichtbaar, nooit stil. Op de tak met truth maintenance (sinds kaart tms-omschakeling)
+     * noemt de reden het tijdsafhankelijke attribuut op een plek die één waarde leest.
      */
     @Test void een_matrix_buiten_de_scope_wordt_met_de_vorm_in_de_reden_overgeslagen() throws Exception {
         Path irPad = schrijf("ir-scope.json", ir(vouwZonderPeriode()));
         Path casePad = schrijf("case-scope.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
-        CaseRunner.Result r = CaseRunner.viaExecModel(irPad, List.of(casePad));
+        CaseRunner.Result r = CaseRunner.viaTruthMaintenance(irPad, List.of(casePad));
         assertEquals("EXCLUDE", r.status(), "een niet-gelowerde kwantorvouw mag nooit meespelen");
-        assertTrue(r.reason().contains("kwantorvouw"),
-                "de reden noemt de VORM, zodat gate 12 haar met reden in de kanaalvloer zet: " + r.reason());
-        assertTrue(r.reason().contains("bladvertaling niet draagt"),
-                "en zegt WELKE grens geraakt is, niet alleen dat er een grens is: " + r.reason());
+        assertTrue(r.reason().contains("regel: Kenmerktoekenning zeewaardig — het tijdsafhankelijke attribuut"
+                        + " 'wachtwaarde' van Schuit op een plek die één waarde leest of schrijft"),
+                "de reden noemt de VORM en WELKE grens geraakt is: " + r.reason());
     }
 
     // ================= the authored documents =================

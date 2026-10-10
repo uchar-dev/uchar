@@ -173,8 +173,10 @@ class NietTemporeleKwantorvouwWitnessTest {
      *   ref      : oracle: PASS (2 expectations)
      *   clingo   : clingo: PASS (2 expectations)
      * </pre>
-     * Beide Drools-takken dragen hem niet, en dat is de bewering van deze rij: allebei moeten zij hem BIJ
-     * NAAM weigeren, met de matrixvorm in de reden.
+     * De DRL-teksttak draagt hem niet, en dat is de bewering van deze rij: zij moet hem BIJ NAAM weigeren,
+     * met de matrixvorm in de reden; de destructieve exec-modeltak deed dat ook. De tak met truth maintenance
+     * speelt hem zoals {@code ref} antwoordt, met de case van deze rij ({@code TmsZoalsRefWitnessTest},
+     * {@code geneste-vouw-als-matrix}).
      *
      * <p><b>Waarom juist deze vorm.</b> Zij is de eerste conditie die haar clausule RECHTSTREEKS in de Acc
      * hijst en een LEGE inline teruggeeft — de lowering van deze kaart doet dat zelf, dus zij kan zichzelf
@@ -184,15 +186,13 @@ class NietTemporeleKwantorvouwWitnessTest {
      * {@code [ERR 101] no viable alternative at input ')'} — luid, maar een parsefout is niet de benoemde
      * weigering die ch. 3.12 belooft. Deze rij faalt zodra die vangst wegvalt.
      */
-    @Test void een_geneste_vouw_als_matrix_wordt_door_beide_takken_bij_naam_geweigerd() throws Exception {
+    @Test void een_geneste_vouw_als_matrix_weigert_de_drl_teksttak_bij_naam() throws Exception {
         Path ir = genesteVouw();
         Path c = tmp.resolve("genest-case.json");
         Files.writeString(c, GENEST_CASE);
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("EXCLUDE", exec.status(), "een niet-gelowerde vouw mag nooit meespelen");
-        assertTrue(exec.reason().contains("Kwantorvouw"),
-                "de exec-reden noemt de MATRIXVORM, niet alleen dat er een grens is: " + exec.reason());
+        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
         assertEquals("EXCLUDE", drl.status(), "de DRL-tekst-tak mag dit document niet stil draaien");

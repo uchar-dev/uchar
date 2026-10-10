@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code Begrensd} basis, then MAXIMUM, then minimum — so a read evaluated before a division ends the Let
  * before the division, and a read evaluated after it does not. This backend mirrors each measured order
  * (fix round 1 of the companion-onder-drager card: the Begrensd arm evaluated minimum first and fabricated
- * on one Begrensd flank while missing its mirror).
+ * on one Begrensd flank while missing its mirror). Since then ref evaluates a {@code Begrensd} basis, minimum,
+ * maximum (RUNTIME-SEMANTICS ch. 2.7); the rows of (i) pin that order on the truth-maintenance branch.
  *
  * <p><b>"Drager" / "carrier" below means the probe's HOST</b> — the OUTERMOST ch. 4.10 node on the path from
  * the value root down to the site, which the companion's condition re-evaluates
@@ -289,34 +290,37 @@ class CompanionPadWitnessTest {
         assertNull(speel(wortelModel(true), jutter(invoer, verwacht)), "dezelfde wortel in een Let-body");
     }
 
-    // ---------------- (i) evaluation ORDER inside a non-carrier form: Begrensd, maximum before minimum ----------------
+    // ---------------- (i) evaluation ORDER inside a non-carrier form: Begrensd, minimum before maximum ----------------
 
-    @Test void de_grenzen_van_een_begrenzing_evalueren_maximum_voor_minimum() throws Exception {
-        // ref evaluates a Begrensd as basis, then MAXIMUM, then minimum (ref/lib/eval.ml, Begrensd arm —
-        // measured 2026-09-02). With a barrier read in one bound and a division in the other, that order decides
-        // whether the division runs. "Let d = deler in begrensd(inkomen, minimum d, maximum inkomen ÷ tweede)",
-        // deler and tweede absent: the maximum's division runs and faults, THEN the minimum's read ends the
-        // Let -> ref uit leeg, INCONSISTENT. Mirror (minimum the division, maximum the read): the read ends the
-        // Let first and the division never runs -> ref uit leeg, CONSISTENT.
-        assertNull(speel(begrensdModel(true), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
-                "lezing in het minimum, deling in het maximum: de deling draait eerst");
-        assertNull(speel(begrensdModel(false), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
-                "deling in het minimum, lezing in het maximum: de barriere komt eerst");
+    @Test void de_grenzen_van_een_begrenzing_evalueren_minimum_voor_maximum() throws Exception {
+        // ref evaluates a Begrensd as basis, then minimum, then maximum (RUNTIME-SEMANTICS ch. 2.7). With a barrier
+        // read in one bound and a division in the other, that order decides whether the division runs. "Let d = deler
+        // in begrensd(inkomen, minimum d, maximum inkomen ÷ tweede)", deler and tweede absent: the minimum's read ends
+        // the Let before the maximum divides -> ref uit leeg, CONSISTENT. Mirror (minimum the division, maximum the
+        // read): the division runs first and deposits (§6.5) -> ref uit leeg, INCONSISTENT. On the truth-maintenance
+        // branch; until 2026-10-10 this row pinned the order maximum, minimum of the destructive exec-model branch,
+        // which ref no longer gives. Measured 2026-10-10: both documents verifier-clean (the clamp and the Let typed
+        // with the 2 decimals of the base), ref passes both answers, clingo declines a clamp bound that is no literal.
+        assertNull(speelTms(begrensdModel(true), jutter(INKOMEN, leeg("uit") + ", " + consistent())),
+                "lezing in het minimum, deling in het maximum: de barriere komt eerst");
+        assertNull(speelTms(begrensdModel(false), jutter(INKOMEN, leeg("uit") + ", " + inconsistent())),
+                "deling in het minimum, lezing in het maximum: de deling draait eerst");
     }
 
     @Test void dezelfde_grensvolgorde_beslist_tussen_harde_fout_en_barriere() throws Exception {
         // the value-side twin: a division by NUMERIC zero (a hard fault, not a channel deposit) in one bound,
-        // the barrier read in the other, nul = 0,00. "… minimum d, maximum inkomen ÷ nul": ref evaluates the
-        // maximum first and dies — EVALUATION FAULT "division by numeric zero" — mirrored here by the runtime's
-        // own ArithmeticException out of fire. Mirror "… minimum inkomen ÷ nul, maximum d": the maximum's read
-        // ends the Let first and the zero division never runs -> ref uit leeg, CONSISTENT.
+        // the barrier read in the other, nul = 0,00. "… minimum d, maximum inkomen ÷ nul": the minimum's read ends
+        // the Let first and the zero division never runs -> ref uit leeg, CONSISTENT. Mirror "… minimum inkomen ÷
+        // nul, maximum d": ref evaluates the minimum first and dies, EVALUATION FAULT "division by numeric zero",
+        // which the branch gives as the runtime's own ArithmeticException at the fixpoint. On the truth-maintenance
+        // branch, measured as the row above.
         String invoer = INKOMEN + ", " + n("nul", "0.00");
+        assertNull(speelTms(begrensdNulModel(true), jutter(invoer, leeg("uit") + ", " + consistent())),
+                "de lezing in het minimum kapt af voordat het maximum door nul deelt");
         RuntimeException fout = assertThrows(RuntimeException.class,
-                () -> speel(begrensdNulModel(true), jutter(invoer, leeg("uit") + ", " + consistent())));
-        assertTrue(oorzaakTekst(fout).contains("deling door 0"),
-                "het maximum deelt door nul voordat het minimum de barriere opwerpt: " + oorzaakTekst(fout));
-        assertNull(speel(begrensdNulModel(false), jutter(invoer, leeg("uit") + ", " + consistent())),
-                "de lezing in het maximum kapt af voordat het minimum door nul deelt");
+                () -> speelTms(begrensdNulModel(false), jutter(invoer, leeg("uit") + ", " + consistent())));
+        assertTrue(oorzaakTekst(fout).contains("10 gedeeld door 0"),
+                "het minimum deelt door nul voordat het maximum de barriere opwerpt: " + oorzaakTekst(fout));
     }
 
     @Test void de_basis_van_een_begrenzing_evalueert_voor_het_maximum() throws Exception {
@@ -432,6 +436,17 @@ class CompanionPadWitnessTest {
         }
     }
 
+    /** As {@link #speel}, on the truth-maintenance branch. */
+    private static String speelTms(String ir, String caseJson) throws Exception {
+        Path tmp = Files.createTempFile("companion-pad-witness", ".json");
+        try {
+            Files.writeString(tmp, ir);
+            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
     /** Every message down the cause chain (Drools wraps a consequence's exception). */
     private static String oorzaakTekst(Throwable t) {
         StringBuilder sb = new StringBuilder();
@@ -527,8 +542,12 @@ class CompanionPadWitnessTest {
     }
 
     private static String begrensd(String basis, String minimum, String maximum) {
+        return begrensd(basis, minimum, maximum, num(4));
+    }
+
+    private static String begrensd(String basis, String minimum, String maximum, String type) {
         return "{\"node\":\"Clamp\",\"base\":%s,\"minimum\":%s,\"maximum\":%s,\"type\":%s,\"source\":{\"snippet\":\"begrensd\"}}"
-                .formatted(basis, minimum, maximum, num(4));
+                .formatted(basis, minimum, maximum, type);
     }
 
     private static String verg(String op, String links, String rechts) {
@@ -652,11 +671,13 @@ class CompanionPadWitnessTest {
     private static String leegDividendModel() { return uitModel(let("d", attr("deler"), DELING_LEEGDING, num(4))); }
 
     /** (i) "Let d = deler in begrensd(inkomen, …)" with the read of d in one bound and the §6.5 division in the
-     *  other — {@code lezingInMinimum} puts the read in the minimum and the division in the maximum. */
+     *  other — {@code lezingInMinimum} puts the read in the minimum and the division in the maximum. The clamp and the
+     *  Let carry the type of the base, 2 decimals, which the verifier demands (WF-091). */
     private static String begrensdModel(boolean lezingInMinimum) {
         String lezing = bref("d", pos(2));
-        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING) : begrensd(attr("inkomen"), DELING, lezing);
-        return uitModel(let("d", attr("deler"), body, num(4)));
+        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING, num(2))
+                : begrensd(attr("inkomen"), DELING, lezing, num(2));
+        return uitModel(let("d", attr("deler"), body, num(2)));
     }
 
     /** (i') the same carrier with the read and the §6.5 division in the BASIS / MAXIMUM pair instead. */
@@ -691,8 +712,9 @@ class CompanionPadWitnessTest {
     /** (i) the same, with the division by NUMERIC zero ("inkomen gedeeld door nul") as the other bound. */
     private static String begrensdNulModel(boolean lezingInMinimum) {
         String lezing = bref("d", pos(2));
-        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING_NUL) : begrensd(attr("inkomen"), DELING_NUL, lezing);
-        return uitModel(let("d", attr("deler"), body, num(4)));
+        String body = lezingInMinimum ? begrensd(attr("inkomen"), lezing, DELING_NUL, num(2))
+                : begrensd(attr("inkomen"), DELING_NUL, lezing, num(2));
+        return uitModel(let("d", attr("deler"), body, num(2)));
     }
 
     /** (i) a ch. 10.2 guard "d groter dan (inkomen ÷ tweede)" ({@code lezingLinks}) or its mirror, in a Let on d. */

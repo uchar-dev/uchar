@@ -168,7 +168,7 @@ class VouwMatrixVormWitnessTest {
         beideTakkenVerwerpen(ir, omgeklapt(PARAMETER.resolve("case1-grens-vier.json"), "L1", "bekwaam"));
     }
 
-    // ---------------- what the exec branch still refuses, and names ----------------
+    // ---------------- what the destructive exec-model branch refused, and the truth-maintenance branch plays ----
 
     /**
      * The eval that asks a non-temporal matrix rides AFTER the {@code collectList} accumulate and binds
@@ -178,20 +178,16 @@ class VouwMatrixVormWitnessTest {
      * {@code ref} PASS, clingo PASS), and the DRL-text branch plays it, because there a global is a free
      * name in the constraint text and needs no variable at all.
      *
-     * <p>The assertion is that the refusal is BY NAME and on the right axis — the two parameters — never
-     * the node class and never silence.
+     * <p>That refusal was the destructive exec-model branch's. The truth-maintenance branch plays the form as
+     * {@code ref} answers, on this row's case ({@code TmsZoalsRefWitnessTest}, {@code matrix-twee-parameters}).
      */
-    @Test void twee_parameters_in_een_matrix_weigert_de_exec_tak_bij_naam() throws Exception {
+    @Test void twee_parameters_in_een_matrix_speelt_met_truth_maintenance() throws Exception {
         Path ir = tweeParameters();
         Path c = tmp.resolve("twee-param-case.json");
         Files.writeString(c, TWEE_PARAM_CASE);
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("EXCLUDE", exec.status(), "een niet-gelowerde vouw mag nooit meespelen");
-        assertTrue(exec.reason().contains("twee verschillende parameters"),
-                "de exec-reden noemt de as waarop zij afketst, niet de knoopklasse: " + exec.reason());
-        assertFalse(exec.reason().contains("soort Samengesteld"),
-                "de samenstelling zelf wordt wél gedragen — dat mag de reden niet suggereren: " + exec.reason());
+        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
         assertEquals("PLAYED", drl.status(),
@@ -204,16 +200,16 @@ class VouwMatrixVormWitnessTest {
      * here, naming the operand rather than the node: measured, the DRL-text branch plays it (a global is a
      * free name there) and so does {@code ref}, while the clingo backend refuses it on its own axis, so
      * this form has no corpus witness to be had and stays a named refusal on both sides of the register.
+     * That refusal was the destructive exec-model branch's; the truth-maintenance branch plays the form as
+     * {@code ref} answers, on this row's case ({@code TmsZoalsRefWitnessTest}, {@code matrix-tekstparameter}).
      */
-    @Test void een_tekstparameter_als_grens_weigert_de_exec_tak_bij_naam() throws Exception {
+    @Test void een_tekstparameter_als_grens_speelt_met_truth_maintenance() throws Exception {
         Path ir = tekstParameter();
         Path c = tmp.resolve("tekst-param-case.json");
         Files.writeString(c, TEKST_PARAM_CASE);
 
-        CaseRunner.Result exec = CaseRunner.viaExecModel(ir, List.of(c));
-        assertEquals("EXCLUDE", exec.status(), "een niet-gelowerde vouw mag nooit meespelen");
-        assertTrue(exec.reason().contains("de parameter 'keurrang'") && exec.reason().contains("'rang'"),
-                "de exec-reden noemt beide operanden van de vergelijking: " + exec.reason());
+        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
         assertEquals("PLAYED", drl.status(),

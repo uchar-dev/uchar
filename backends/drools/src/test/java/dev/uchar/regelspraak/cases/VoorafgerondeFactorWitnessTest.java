@@ -68,16 +68,22 @@ class VoorafgerondeFactorWitnessTest {
      * restate the 216.00 sl as 216 · 0.04166666666666667 = 9.00000000000000072, rounded once to 16 digits:
      * 9.000000000000001, and rounded up that is 10. (At 24.00 sl the one rounding hides the excess — 1.00000000000000008
      * rounds to 1 — which is why the row stands at a value whose restatement lands just above an integer near the top
-     * of its decade.)
+     * of its decade.) That is the DRL-text branch, as the destructive exec-model branch was. The truth-maintenance
+     * branch multiplies by the same decimal factor without that rounding: 9.00000000000000072, and rounded up 10 as
+     * well. Both are the registered deviation of CONSTRUCTS row 26; {@code ref} answers 9.00 and 9.
      */
     @Test void de_factor_een_vierentwintigste_rekent_voorafgerond_in_beide_takken() throws Exception {
         Path ir = document("Getijrooster", "tj", "tij", "sl", "slag", 24, "tijduur", "slagduur", "looptijd",
                 "afgeronde looptijd", "ceiling", "naar boven");
         JsonNode zaak = zaak("tijduur", "0.00", "slagduur", "216.00", "looptijd", "9.00", "afgeronde looptijd", "9");
-        String exec = BeideTakken.rood(ir, zaak, "attribuut looptijd: verwacht 9.00, werkelijk 9.000000000000001",
-                "de voorafgeronde factor 1/24 komt boven de 9 uit");
-        assertTrue(exec.contains("attribuut afgeronde looptijd: verwacht 9, werkelijk 10"), exec);
-        BeideTakken.rood(ir, zaak, "attribuut afgeronde looptijd: verwacht 9, werkelijk 10",
+        String drl = CaseRunner.speelCase(ir, zaak, true);
+        assertTrue(drl != null && drl.contains("attribuut looptijd: verwacht 9.00, werkelijk 9.000000000000001"),
+                "drl-tekst: de voorafgeronde factor 1/24 komt boven de 9 uit: " + drl);
+        assertTrue(drl.contains("attribuut afgeronde looptijd: verwacht 9, werkelijk 10"), drl);
+        String tms = CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertTrue(tms != null && tms.contains("attribuut looptijd: verwacht 9.00, werkelijk 9.00000000000000072"),
+                "tms: de decimale factor 1/24 komt boven de 9 uit, zonder afronding op 16 cijfers: " + tms);
+        assertTrue(tms.contains("attribuut afgeronde looptijd: verwacht 9, werkelijk 10"),
                 "naar boven afgerond valt de voorafgeronde som op 10");
     }
 
