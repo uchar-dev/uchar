@@ -12,8 +12,9 @@
 #
 #   1. every corpus/golden/**/ir.json is copied into a temporary directory with a systematic
 #      LIE grafted onto every twistable type annotation (below);
-#   2. ref, clingo and BOTH Drools transpiler branches — the exec-model back-end and the DRL text
-#      compiled to a KieBase — replay the golden's ORIGINAL case files against the LYING copy;
+#   2. ref, clingo and BOTH Drools transpiler branches — the exec-model branch (since card
+#      tms-omschakeling the lowering with truth maintenance) and the DRL text compiled to a
+#      KieBase — replay the golden's ORIGINAL case files against the LYING copy;
 #   3. each executor must produce EXACTLY the outcome it produces on the untouched ir.json —
 #      the same pinned values, or the same per-form refusal. A twist that changes an answer is
 #      an executor reading the repetition instead of the declaration, and the gate goes red
@@ -75,7 +76,8 @@
 # call sites (measured 2026-09-04 over the 11 twistable replayable goldens, BEFORE L2: the reference
 # classes were still in the twist table then, and the two comparison sites below were reached only
 # through a twisted reference annotation, which no twist reaches since L2). The list has not been
-# re-probed since, so read it as that dated measurement:
+# re-probed since, so read it as that dated measurement (its exec-model sites are those of the destructive
+# lowering, which card tms-omschakeling removed; the lowering with truth maintenance was not probed):
 #   exec-model branch — 5 sites
 #     - the WRITE boundary (a consequence value restated into its doel's declared unit) — 20 hits;
 #     - the ADDITIVE OPERAND boundary (the rhs of a +/- restated into the lhs unit) — 14 hits;
@@ -110,12 +112,13 @@
 # overriding site, or a reached-but-non-overriding one — was not re-probed. Read them as that dated
 # measurement, with this correction on top, and re-probe before quoting them as current.
 #
-# The DRL leg is NOT a repetition of the exec one. It reaches a golden the exec branch cannot play
-# at all (jutterswet-vondsttarief, which the exec transpiler SKIPs as "waarde buiten scope" while the
-# text branch lowers and plays it), and its three live sites are different code. Measured by mutation
-# on 2026-09-04 — EffectieveEenheid.van() put back on the node's own annotation, the state before the
-# derivation existed — the DRL leg alone goes red on NINE of the eleven twistable goldens, including
-# that one. The two that stay green under the mutant are the two the text branch markers (the ch. 4.10
+# The DRL leg is NOT a repetition of the exec one: its three live sites are different code. Until card
+# tms-omschakeling it also reached a golden the exec branch could not play at all
+# (jutterswet-vondsttarief, which the destructive exec transpiler SKIPped as "waarde buiten scope" while
+# the text branch lowers and plays it); the exec branch with truth maintenance plays it too. Measured
+# by mutation on 2026-09-04 — EffectieveEenheid.van() put back on the node's own annotation, the state
+# before the derivation existed — the DRL leg alone goes red on NINE of the eleven twistable goldens,
+# including that one. The two that stay green under the mutant are the two the text branch markers (the ch. 4.10
 # Let: lichterloon, vondstrecht), which is the honest reading of a branch that does not lower them.
 #
 # The verifier does NOT run here. This harness asks an EXECUTION question — is the outcome a
