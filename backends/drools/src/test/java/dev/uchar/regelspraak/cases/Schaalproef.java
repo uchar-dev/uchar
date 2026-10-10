@@ -77,7 +77,10 @@ import java.util.Map;
  * {@code System.gc()} with the session open. The kusttotaal and the number of inconsistencies go with every point, so
  * that the points can be seen to give the same answer. The table gives the median per column, the load of the machine
  * at the start of the point ({@code uptime}), the firings against the cap, and per branch the slope of fire plus
- * write-back in log-log from N = 1 000 to N = 10 000. Until the switch the harness measured the destructive exec-model
+ * write-back in log-log from N = 1 000 to N = 10 000, and per branch the floor of point 9 of the card: firings under half
+ * the cap at N = 10 000 and a slope of at most 1.2. Run without arguments or with branch names, the harness ends with
+ * exit code 1 where a point failed and 2 where every point was measured but a branch misses the floor, so a script that
+ * runs it cannot take a missed floor for a pass. Until the switch the harness measured the destructive exec-model
  * branch beside the one with truth maintenance: under its fixed cap of 100 000 firings it did not reach its fixpoint at
  * N = 10 000, and its measurement without a cap is in the report of step 1 of the card.
  *
@@ -546,7 +549,7 @@ public final class Schaalproef {
     }
 
     /** Measures every point of {@code takken}, each in a child JVM of its own, and prints the table. Returns 1 where a
-     *  point was refused or failed, which the table shows. */
+     *  point was refused or failed, which the table shows, and 2 where a branch misses the floor ({@link Vloer}). */
     private static int alles(List<DroolsBackend.Branch> takken) throws Exception {
         Map<DroolsBackend.Branch, Map<Integer, Uitslag>> uitslagen = new LinkedHashMap<>();
         boolean volledig = true;
@@ -557,7 +560,25 @@ public final class Schaalproef {
                 uitslagen.computeIfAbsent(tak, t -> new LinkedHashMap<>()).put(n, u);
             }
         System.out.print(tabel(uitslagen));
-        return volledig ? 0 : 1;
+        if (!volledig) return 1;
+        return uitslagen.values().stream().allMatch(perN -> Vloer.van(perN).gehaald()) ? 0 : 2;
+    }
+
+    /** The floor of point 9 of the card on one branch: the firings against the cap at N = 10 000, under half, and the
+     *  slope of fire plus write-back from N = 1 000 to N = 10 000 in log-log, at most 1.2; NaN where a point is missing
+     *  or failed, which misses the floor. */
+    private record Vloer(double deel, double helling) {
+        static Vloer van(Map<Integer, Uitslag> perN) {
+            Uitslag a = perN.get(1_000), z = perN.get(10_000);
+            boolean zGemeten = z != null && z.anders() == null;
+            boolean beide = zGemeten && a != null && a.anders() == null;
+            return new Vloer(zGemeten ? eerste(z.veld(3)) / Double.parseDouble(z.veld(14)) : Double.NaN,
+                    beide ? Math.log10(z.ms(6) / a.ms(6)) : Double.NaN);
+        }
+
+        boolean gehaald() {
+            return deel < 0.5 && helling <= 1.2;
+        }
     }
 
     private static String tabel(Map<DroolsBackend.Branch, Map<Integer, Uitslag>> uitslagen) {
@@ -592,19 +613,16 @@ public final class Schaalproef {
             }
         uit.append('\n');
         for (Map.Entry<DroolsBackend.Branch, Map<Integer, Uitslag>> e : uitslagen.entrySet()) {
-            Uitslag a = e.getValue().get(1_000), z = e.getValue().get(10_000);
-            boolean beide = a != null && z != null && a.anders() == null && z.anders() == null;
-            double helling = beide ? Math.log10(z.ms(6) / a.ms(6)) : Double.NaN;
+            Vloer v = Vloer.van(e.getValue());
+            boolean beide = !Double.isNaN(v.helling());
             uit.append("- Helling ").append(e.getKey()).append(" (vuren+terugzetten, log-log, N = 1 000 → 10 000): ")
-                    .append(beide ? String.format(Locale.ROOT, "%.2f", helling) : "–").append('\n');
-            if (z != null && z.anders() == null) {
-                double deel = eerste(z.veld(3)) / Double.parseDouble(z.veld(14));
+                    .append(beide ? String.format(Locale.ROOT, "%.2f", v.helling()) : "–").append('\n');
+            if (!Double.isNaN(v.deel()))
                 uit.append("- Vloer ").append(e.getKey()).append(" (vuringen onder de helft van het plafond bij N = 10 000,")
                         .append(" helling ten hoogste 1,2): vuringen/plafond ")
-                        .append(String.format(Locale.ROOT, "%.3f", deel)).append(", helling ")
-                        .append(beide ? String.format(Locale.ROOT, "%.2f", helling) : "–").append(": ")
-                        .append(deel < 0.5 && beide && helling <= 1.2 ? "gehaald" : "NIET gehaald").append('\n');
-            }
+                        .append(String.format(Locale.ROOT, "%.3f", v.deel())).append(", helling ")
+                        .append(beide ? String.format(Locale.ROOT, "%.2f", v.helling()) : "–").append(": ")
+                        .append(v.gehaald() ? "gehaald" : "NIET gehaald").append('\n');
         }
         return uit.toString();
     }
