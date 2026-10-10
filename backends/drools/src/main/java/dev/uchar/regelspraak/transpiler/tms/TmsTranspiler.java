@@ -416,8 +416,8 @@ public final class TmsTranspiler {
      * session in which something happened outside the driver after its last run, a fact inserted, updated or deleted or
      * a rule that fired ({@link Bewaking}), naming what happened and what to do: fire again through the driver, or open
      * a fresh session where the driver refuses a further fire; and one in which a global or, without an update, a
-     * relation changed, which the driver refuses. What this gives is thus always a fixpoint, that of the input as it
-     * stands.
+     * relation changed, which the driver refuses. What this gives is thus always a fixpoint, that of the input as the
+     * session knows it: an attribute or a characteristic set without an update is not seen.
      */
     public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
         return lezing(sessie, label).fixpunt();

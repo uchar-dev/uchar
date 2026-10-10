@@ -89,7 +89,8 @@ consumer does.
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
    session whose last `vuur` reached its fixpoint and in which nothing happened outside `vuur` since (below), so what
-   `lees` gives is always a fixpoint, that of the input as it stands.
+   `lees` gives is always a fixpoint, that of the input as the session knows it: an attribute or a characteristic set
+   without `session.update` is not seen (below).
 
 **One write-back per session.** On the exec-model branch the beans hold the input alone until the write-back.
 `lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the
@@ -173,7 +174,17 @@ subject, and after the write-back the reference fields reach it.
   the subject's own total without a clip, faults with an `Invoervormfout`.
 - A list: its members keep the order of the beans, which decides only which member a fault names.
 - A member in a list it gives: `voegIn` refuses by name, before it inserts anything; so it refuses every statement that
-  does not fit the beans or the model, a bean of another bean model, a bean twice, and a session that is not fresh.
+  does not fit the beans or the model, but for the shape of a bucket scalar's timeline (next), a bean of another bean
+  model, a bean twice, and a session that is not fresh.
+- The one segment of a bucket scalar: `voegIn` checks that the attribute lies on a timeline, not that the bean holds it
+  as one segment, the period of the evaluation date (RUNTIME-SEMANTICS ch. 8.4). A bucket scalar on an empty or a longer
+  timeline, given so or set so by an update between two fires, stops the next `vuur` with an `IllegalStateException`
+  in Drools' `ConsequenceException` ("een emmerscalair staat op de bean als het ene segment van de periode van de
+  rekendatum, niet als …").
+- `session.update` after a change of an attribute or a characteristic: Drools does not see a field set without an
+  update, and neither does the entry, which compares only the reference fields with what `voegIn` put in. `vuur` then
+  reaches the fixpoint of the old value, and `lees` and `zetAfgeleideWaarden` give it without a refusal; step 4 of card
+  tms-omschakeling measured it with the second fire of `Schaalproef` and a mutant without the update.
 - An object a bean refers to: `voegIn` refuses a reference field that holds an object outside the input, naming the
   bean, the field and the object's type, before it inserts anything. The branch derives nothing for an object outside
   the session, so every value read through the field would stay empty, and the link the field gives would still block

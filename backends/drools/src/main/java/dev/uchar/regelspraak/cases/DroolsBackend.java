@@ -541,7 +541,9 @@ public final class DroolsBackend {
      *
      * <p>It reads only a session whose last {@link #vuur} reached its fixpoint and in which nothing happened since outside
      * {@code vuur}: no fact inserted, updated or deleted, and no rule fired, by a plain {@code fireAllRules} among others.
-     * What it gives is thus always a fixpoint, that of the input as it stands. After an {@code update}, a consumer fires
+     * What it gives is thus always a fixpoint, that of the input as the session knows it: Drools does not see an
+     * attribute or a characteristic set without an {@code update}, and neither does this entry, which compares only
+     * the reference fields with what {@link #voegIn} put in. After an {@code update}, a consumer fires
      * with {@code vuur} before it reads again; where {@code vuur} refuses the session, the sentence says to open a fresh
      * one.
      *
