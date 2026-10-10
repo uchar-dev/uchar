@@ -3736,6 +3736,11 @@ public final class TmsTranspiler {
         // a member on a timeline the case gives as the asOfDate-bucket scalar faults, naming the first such member in
         // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
         boolean tijdlijnlid = lid != null && gedeclareerd(elem, lid.attribuut(), false).tijd() != null;
+        // a member on a timeline is asked by the per-element fold, which refuses one that is no number (integreerbaar)
+        if (lid != null && !tijdlijnlid) {
+            String setbron = setbronweigering(kind, elem, lid);
+            if (setbron != null) throw new Weigering(setbron);
+        }
         RolBindingRef bron = rolBindingen.get(f);
         if (tijdlijnlid && bron != null && bron.feittype() != null
                 && gecreeerdeRelaties.contains(Namen.norm(bron.feittype())))
@@ -3772,6 +3777,30 @@ public final class TmsTranspiler {
             default -> w -> leeg(w[i[0]]) ? null : w[i[1]];
         };
         return gelezenVouw(v, i, lez, uitkomst);
+    }
+
+    /**
+     * Why a value fold of {@code kind} over the members {@code arg} of {@code elem} has no reading, or null where it has
+     * one: an additive fold over members that are no number (WF-091), and an ordering fold over members that are neither
+     * a number nor a date (WF-038). The reference interpreter faults on the addition or the comparison itself and the
+     * ASP runner declines the form, while this branch would hand the members to a BigDecimal sum, which fails at fire,
+     * or to the Java order of their values, which answers. The sentence opens as the other two branches open theirs
+     * ({@code Vouwwaarde}), so a gate report names the same form in each.
+     */
+    private String setbronweigering(Expr.FunctieKind kind, Objecttype elem, Expr.AttribuutRef arg) {
+        boolean optellend = kind == Expr.FunctieKind.SOM || kind == Expr.FunctieKind.TOTAAL;
+        boolean ordenend = kind == Expr.FunctieKind.MINIMUM || kind == Expr.FunctieKind.MAXIMUM
+                || kind == Expr.FunctieKind.EERSTE || kind == Expr.FunctieKind.LAATSTE;
+        Datatype t = gedeclareerd(elem, arg.attribuut(), false).datatype();
+        String kop = "vouw " + kind + " over de setbron '" + arg.attribuut() + "' van " + elem.naam
+                + ": die leden zijn van type " + t.naam();
+        if (optellend && !t.isGetalachtig())
+            return kop + " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de"
+                    + " referentie-interpreter faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm";
+        if (ordenend && !t.isOrdenbaar())
+            return kop + " en kennen geen ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de"
+                    + " referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm";
+        return null;
     }
 
     /**
