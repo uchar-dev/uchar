@@ -21,7 +21,7 @@ public record Emmerscalair(Tijdvak emmer) {
     static Emmerscalair van(List<?> segmenten) {
         List<Tijdvak> tijdlijn = Tijdvak.lijst(segmenten);
         if (tijdlijn == null || tijdlijn.size() != 1)
-            throw new IllegalStateException("een emmerscalair staat op de boon als het ene segment van de periode van de"
+            throw new IllegalStateException("een emmerscalair staat op de bean als het ene segment van de periode van de"
                     + " rekendatum, niet als " + tijdlijn);
         return new Emmerscalair(tijdlijn.get(0));
     }

@@ -298,7 +298,7 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(invoer, "invoer");
-        List<Object> bonen = invoer.bonen();
+        List<Object> bonen = invoer.beans();
         if (build.branch() == Branch.DRL_TEXT) {
             for (Object boon : bonen) sessie.insert(boon);
             return;
@@ -306,15 +306,15 @@ public final class DroolsBackend {
         TmsTranspiler tms = build.execModelTranspiler();
         if (sessie.getFactCount() != 0)
             throw new IllegalStateException("voegIn vult een verse sessie, maar deze houdt al " + sessie.getFactCount()
-                    + " feiten: de plaatsen van een lijst worden over de bonen van één invoer geteld, en een boon die"
-                    + " zonder voegIn in de sessie kwam, heeft er geen; geef alle bonen in één Invoer aan een verse"
+                    + " feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die"
+                    + " zonder voegIn in de sessie kwam, heeft er geen; geef alle beans in één Invoer aan een verse"
                     + " sessie, en verander tussen twee fires hun waarden met update");
         Map<Object, Objecttype> typen = new IdentityHashMap<>();
         // a case of ten thousand objects has a handful of bean classes
         Map<Class<?>, Objecttype> perKlasse = new HashMap<>();
         for (Object boon : bonen)
             if (typen.put(boon, perKlasse.computeIfAbsent(boon.getClass(), k -> objecttype(build, boon))) != null)
-                throw new IllegalArgumentException("voegIn: de boon " + naam(boon) + " staat twee keer in de invoer");
+                throw new IllegalArgumentException("voegIn: de bean " + naam(boon) + " staat twee keer in de invoer");
         String buiten = doelBuitenDeInvoer("voegIn", build, bonen, typen, perKlasse);
         if (buiten != null) throw new IllegalArgumentException(buiten);
         List<Object> feiten = new ArrayList<>(bonen);
@@ -338,8 +338,8 @@ public final class DroolsBackend {
                 if (doel != null && !typen.containsKey(doel))
                     return wie + ": het veld '" + veld + "' van " + naam(boon) + " wijst naar een "
                             + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
-                            + naam(doel) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de"
-                            + " objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op";
+                            + naam(doel) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de"
+                            + " objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op";
             }
         return null;
     }
@@ -366,7 +366,7 @@ public final class DroolsBackend {
                 uit.put(Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
                         build.beanLoader()), ot);
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen bonenklasse voor objecttype " + ot.naam, e);
+                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
             }
         return uit;
     }
@@ -402,28 +402,28 @@ public final class DroolsBackend {
                 if (Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
                         build.beanLoader()) == boon.getClass()) return ot;
             } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("geen bonenklasse voor objecttype " + ot.naam, e);
+                throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
             }
         }
-        throw new IllegalArgumentException("voegIn: " + naam(boon) + " is geen boon van dit model: een boon is een"
+        throw new IllegalArgumentException("voegIn: " + naam(boon) + " is geen bean van dit model: een bean is een"
                 + " instantie van een klasse die Build.beanLoader() laadt");
     }
 
     /** The {@code Emmerinvoer} of bucket scalar {@code e}, keyed as {@code ProducentConsument.elementVan} keys the
      *  attribute, on the type that declares it. */
     private static Emmerinvoer emmerinvoer(Map<Object, Objecttype> typen, Invoer.Emmer e) {
-        Objecttype ot = typen.get(e.boon());
+        Objecttype ot = typen.get(e.bean());
         if (ot == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
-                    + ", een boon die niet in de invoer staat");
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
+                    + ", een bean die niet in de invoer staat");
         if (ot.attribuut(e.attribuut()) == null)
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar " + ot.naam + " heeft geen attribuut van die naam");
         if (!Namen.bevatNaam(ot.granulariteitLeden(), e.attribuut()))
-            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.bean())
                     + ", maar dat attribuut van " + ot.naam + " ligt niet op een tijdlijn; alleen de invoer van een"
                     + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
-        return new Emmerinvoer(e.boon(), ProducentConsument.elementVan(ot, e.attribuut(), false));
+        return new Emmerinvoer(e.bean(), ProducentConsument.elementVan(ot, e.attribuut(), false));
     }
 
     /** One to-many list: the reference field {@code veld} its members hold toward {@code houder}, and the relation that
@@ -469,7 +469,7 @@ public final class DroolsBackend {
             Set<Object> genoemd = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
             for (Object lid : l.leden()) {
                 Objecttype ot = typen.get(lid);
-                if (ot == null) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", dat geen boon van de invoer is");
+                if (ot == null) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", dat geen bean van de invoer is");
                 if (!referentievelden.computeIfAbsent(ot, t -> referentievelden(model, t)).contains(veld))
                     throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar een " + ot.naam
                             + " heeft geen referentieveld '" + veld + "'; de rol is die van de houder, de naam van het"
@@ -564,7 +564,7 @@ public final class DroolsBackend {
         Objects.requireNonNull(sessie, "sessie");
         if (build.branch() != Branch.EXEC_MODEL)
             throw new UnsupportedOperationException("lees leest wat de tak met truth maintenance afleidde; op de "
-                    + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de bonen");
+                    + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de beans");
         return build.execModelTranspiler().lees(sessie, label);
     }
 
@@ -819,29 +819,29 @@ public final class DroolsBackend {
                     + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
                     + " verse sessie");
         if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
-            throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide"
+            throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
-                    + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
+                    + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                     + " alleen invoer dragen");
         Bewaking gezet = Bewaking.van(sessie);
         // voegIn puts the watch on, or the first run where there was no voegIn, and every run puts it back, so only a
         // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
         if (gezet == null && !merken.isEmpty())
             throw new IllegalStateException("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer"
-                    + " op, dus wat er na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle bonen"
+                    + " op, dus wat er na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle beans"
                     + " in één Invoer");
         if (gezet != null && gezet.erbijOfEraf() != null)
             throw new IllegalStateException("sinds " + gezet.sinds() + " kwam er buiten voegIn om invoer bij of ging er"
-                    + " invoer weg (" + gezet.erbijOfEraf() + "): een afnemer geeft alle bonen in één Invoer aan"
+                    + " invoer weg (" + gezet.erbijOfEraf() + "): een afnemer geeft alle beans in één Invoer aan"
                     + " voegIn en verandert daarna alleen hun attributen en kenmerken, met update, want voegIn legt de"
-                    + " plaatsen van een lijst en de emmerscalairen vast over de bonen van één invoer; een nieuw of"
+                    + " plaatsen van een lijst en de emmerscalairen vast over de beans van één invoer; een nieuw of"
                     + " verwijderd object vraagt een verse sessie");
         String agenda = Bewaking.agenda(sessie);
         String meer = gezet == null ? agenda : gezet.meerDanEenUpdate() != null ? gezet.meerDanEenUpdate() : agenda;
         if (meer != null)
             throw new IllegalStateException("sinds " + (gezet == null ? "het begin van deze sessie" : gezet.sinds())
-                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een boon (" + meer
-                    + "), en meer laat de ingang niet toe: open een verse sessie met alle bonen in één Invoer");
+                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een bean (" + meer
+                    + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één Invoer");
         String global = gezet == null ? null : gezet.veranderdeGlobal(sessie);
         if (global != null)
             throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"

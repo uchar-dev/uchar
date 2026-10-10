@@ -75,15 +75,15 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
                 throw new IllegalArgumentException(namen.size() + " namen bij " + lezers.size() + " lezers");
         }
 
-        Object[] lees(Object boon) {
+        Object[] lees(Object bean) {
             Object[] uit = new Object[lezers.size()];
-            for (int i = 0; i < uit.length; i++) uit[i] = lezers.get(i).apply(boon);
+            for (int i = 0; i < uit.length; i++) uit[i] = lezers.get(i).apply(bean);
             return uit;
         }
     }
 
     /** The bean classes of the model, each with its relations. */
-    private final Map<Class<?>, Relatievelden> bonen;
+    private final Map<Class<?>, Relatievelden> beans;
     /** The kinds of fact {@code voegIn} puts in: the bean classes, and what it states beside them. */
     private final Set<Class<?>> invoer;
     /** The beans of the input, each with the objects its reference fields held when it came in. */
@@ -105,9 +105,9 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
      *  a bean of the input, as a clause, or null. */
     private String anders;
 
-    private Bewaking(Map<Class<?>, Relatievelden> bonen) {
-        this.bonen = Map.copyOf(bonen);
-        Set<Class<?>> soorten = new HashSet<>(bonen.keySet());
+    private Bewaking(Map<Class<?>, Relatievelden> beans) {
+        this.beans = Map.copyOf(beans);
+        Set<Class<?>> soorten = new HashSet<>(beans.keySet());
         soorten.add(Emmerinvoer.class);
         soorten.add(Lijstplaats.class);
         this.invoer = Set.copyOf(soorten);
@@ -120,21 +120,21 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
         return null;
     }
 
-    /** The watch on {@code sessie}, put there where there is none, with {@code bonen} the bean classes of the model and
-     *  their relations; it takes {@code invoerbonen} as beans of the input, with the relations they hold now, forgets
+    /** The watch on {@code sessie}, put there where there is none, with {@code beans} the bean classes of the model and
+     *  their relations; it takes {@code invoerbeans} as beans of the input, with the relations they hold now, forgets
      *  what happened and keeps from now on, {@code sinds} naming the call of the entry it keeps from. */
-    public static Bewaking op(KieSession sessie, Map<Class<?>, Relatievelden> bonen, Iterable<?> invoerbonen,
+    public static Bewaking op(KieSession sessie, Map<Class<?>, Relatievelden> beans, Iterable<?> invoerbeans,
                               String sinds) {
         Bewaking b = van(sessie);
         if (b == null) {
-            b = new Bewaking(bonen);
+            b = new Bewaking(beans);
             sessie.addEventListener((RuleRuntimeEventListener) b);
             sessie.addEventListener((AgendaEventListener) b);
         }
-        for (Object boon : invoerbonen) {
-            Relatievelden r = b.bonen.get(boon.getClass());
-            if (r == null) throw new IllegalArgumentException(Feitnamen.object(boon) + " is geen boon van het model");
-            b.relaties.putIfAbsent(boon, r.lees(boon));
+        for (Object bean : invoerbeans) {
+            Relatievelden r = b.beans.get(bean.getClass());
+            if (r == null) throw new IllegalArgumentException(Feitnamen.object(bean) + " is geen bean van het model");
+            b.relaties.putIfAbsent(bean, r.lees(bean));
         }
         b.vergeet(sinds);
         return b;
@@ -269,7 +269,7 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
             anders = zin;
             return;
         }
-        Relatievelden r = bonen.get(o.getClass());
+        Relatievelden r = beans.get(o.getClass());
         Object[] na = r.lees(o);
         for (int i = 0; i < na.length; i++)
             if (na[i] != voor[i]) {

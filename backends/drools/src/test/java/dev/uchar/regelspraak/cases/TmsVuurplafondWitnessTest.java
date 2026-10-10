@@ -125,7 +125,7 @@ class TmsVuurplafondWitnessTest {
             TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
                 KieSession sessie = b.kieBase().newKieSession();
                 try {
-                    DroolsBackend.voegIn(b, sessie, new Invoer().boon(TmsDocumenten.jutterBoon(b.beanLoader(),
+                    DroolsBackend.voegIn(b, sessie, new Invoer().bean(TmsDocumenten.jutterBoon(b.beanLoader(),
                             List.of("erkend"))));
                     DroolsBackend.Vuring vuring = DroolsBackend.vuur(b, sessie);
                     assertEquals(100_000, vuring.plafond(), tak + ": the fixed cap");
@@ -156,7 +156,7 @@ class TmsVuurplafondWitnessTest {
             bonen.add(v);
         }
         KieSession sessie = b.kieBase().newKieSession();
-        DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen));
+        DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen));
         return sessie;
     }
 

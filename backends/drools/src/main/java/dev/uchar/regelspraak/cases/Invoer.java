@@ -11,7 +11,7 @@ import java.util.Objects;
  * never states a fact class of that branch itself.
  *
  * <ul>
- *   <li>{@link #boon}: a bean of the build's bean model, its attributes, characteristics and reference fields set. The
+ *   <li>{@link #bean}: a bean of the build's bean model, its attributes, characteristics and reference fields set. The
  *       order of the beans is the default order of every to-many list (below).</li>
  *   <li>{@link #emmerscalair}: an attribute on a timeline whose input the bean holds as the one segment of the period of
  *       the attribute's grid that holds the evaluation date, the asOfDate-bucket convention of RUNTIME-SEMANTICS ch.
@@ -28,33 +28,33 @@ import java.util.Objects;
  */
 public final class Invoer {
 
-    private final List<Object> bonen = new ArrayList<>();
+    private final List<Object> beans = new ArrayList<>();
     private final List<Emmer> emmers = new ArrayList<>();
     private final List<Lijst> lijsten = new ArrayList<>();
 
-    /** A bucket scalar: attribute {@code attribuut} of {@code boon}, named as the model declares it. */
-    record Emmer(Object boon, String attribuut) {}
+    /** A bucket scalar: attribute {@code attribuut} of {@code bean}, named as the model declares it. */
+    record Emmer(Object bean, String attribuut) {}
 
     /** The members of a to-many list in their order: {@code leden}, each holding {@code houder} in its reference field
      *  {@code rol}. */
     record Lijst(Object houder, String rol, List<Object> leden) {}
 
-    /** Adds {@code boon}. */
-    public Invoer boon(Object boon) {
-        bonen.add(Objects.requireNonNull(boon, "boon"));
+    /** Adds {@code bean}. */
+    public Invoer bean(Object bean) {
+        beans.add(Objects.requireNonNull(bean, "bean"));
         return this;
     }
 
-    /** Adds every bean of {@code bonen}, in the collection's order. */
-    public Invoer bonen(Collection<?> bonen) {
-        for (Object b : Objects.requireNonNull(bonen, "bonen")) boon(b);
+    /** Adds every bean of {@code beans}, in the collection's order. */
+    public Invoer beans(Collection<?> beans) {
+        for (Object b : Objects.requireNonNull(beans, "beans")) bean(b);
         return this;
     }
 
-    /** States that the bean {@code boon} holds the input of attribute {@code attribuut}, an attribute on a timeline
+    /** States that the bean {@code bean} holds the input of attribute {@code attribuut}, an attribute on a timeline
      *  named as the model declares it, as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4). */
-    public Invoer emmerscalair(Object boon, String attribuut) {
-        emmers.add(new Emmer(Objects.requireNonNull(boon, "boon"), Objects.requireNonNull(attribuut, "attribuut")));
+    public Invoer emmerscalair(Object bean, String attribuut) {
+        emmers.add(new Emmer(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribuut, "attribuut")));
         return this;
     }
 
@@ -69,8 +69,8 @@ public final class Invoer {
         return this;
     }
 
-    List<Object> bonen() {
-        return List.copyOf(bonen);
+    List<Object> beans() {
+        return List.copyOf(beans);
     }
 
     List<Emmer> emmers() {

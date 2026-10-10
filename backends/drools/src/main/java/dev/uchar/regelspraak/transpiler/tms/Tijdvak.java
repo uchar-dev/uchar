@@ -17,7 +17,7 @@ import java.util.Objects;
  * <p>Why not the bean model's {@code Segment}: the KieBase runs in {@code EQUALITY}, where two equal logical facts are
  * one fact, so a value in a fact needs value equality, and the generated {@code Segment} is mutable and declares no
  * {@code equals} or {@code hashCode}. A timeline is turned into this form where the branch binds it off a bean
- * ({@link #lijst}) and back where the write-back puts it on one ({@link #bonen}); nothing in between sees a
+ * ({@link #lijst}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
  * <p>Two segments are equal where they have the same {@code van}, the same {@code tot}, and values that are equal as
@@ -75,7 +75,7 @@ public record Tijdvak(LocalDate van, LocalDate tot, BigDecimal waarde) {
 
     /** The timeline {@code tijdlijn} as beans of the bean model's {@code segmentklasse}, for the write-back: a new,
      *  mutable list of new segments, so no bean shares a segment with another. */
-    public static List<Object> bonen(List<Tijdvak> tijdlijn, Class<?> segmentklasse) {
+    public static List<Object> beans(List<Tijdvak> tijdlijn, Class<?> segmentklasse) {
         List<Object> uit = new ArrayList<>(tijdlijn.size());
         for (Tijdvak t : tijdlijn) uit.add(RegelSpraakRuntime.newSegment(segmentklasse, t.van, t.tot, t.waarde));
         return uit;

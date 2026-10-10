@@ -192,7 +192,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 assertEquals(EERSTE_WAARDEN, beschrijf(DroolsBackend.lees(b, sessie), bonen), "first reading");
                 Object v1 = bonen.get("V1");
@@ -222,7 +222,7 @@ class TmsHerhaaldVurenWitnessTest {
             bonen.put("V2", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("noemer", "5"), List.of()));
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 assertEquals(List.of("V1: deling door nul in de regel \"aandeel\": 100 " + NUL, "V2.aandeel = 20"),
                         beschrijf(DroolsBackend.lees(b, sessie), bonen), "first reading");
@@ -246,14 +246,14 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
                 assertGetal("15", TmsDocumenten.lees(bonen.get("V1"), "vindloon"), "V1 vindloon written back");
                 IllegalStateException e = assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie));
-                assertEquals("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide waarden naast"
+                assertEquals("deze sessie is teruggezet (zetAfgeleideWaarden): haar beans dragen afgeleide waarden naast"
                         + " de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
-                        + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
+                        + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met beans die"
                         + " alleen invoer dragen", e.getMessage());
                 assertEquals(EERSTE_WAARDEN, beschrijf(DroolsBackend.lees(b, sessie), bonen),
                         "the reading after the write-back is the one it wrote");
@@ -308,7 +308,7 @@ class TmsHerhaaldVurenWitnessTest {
             Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 zetRol(v1, "vinder", j2);
                 sessie.update(sessie.getFactHandle(v1), v1);
@@ -325,12 +325,12 @@ class TmsHerhaaldVurenWitnessTest {
             zetRol(v1, "vinder", bonen.get("J1"));
             KieSession zonderUpdate = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, zonderUpdate, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, zonderUpdate, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, zonderUpdate).geenFixpunt(), "first fire");
                 zetRol(v1, "vinder", j2);
                 assertEquals("vuur: het veld 'vinder' van " + TmsAfnemerWitnessTest.naam(v1) + " wijst naar een Jutter ("
-                        + TmsAfnemerWitnessTest.naam(j2) + ") die niet als boon in de invoer staat: de tak leidt alleen af"
-                        + " voor de objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
+                        + TmsAfnemerWitnessTest.naam(j2) + ") die niet als bean in de invoer staat: de tak leidt alleen af"
+                        + " voor de objecten in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op",
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, zonderUpdate)).getMessage(),
                         "the second fire: the reference check");
             } finally {
@@ -345,9 +345,9 @@ class TmsHerhaaldVurenWitnessTest {
     @Test void invoer_die_buiten_voegIn_om_bijkomt_of_weggaat_weigert_vuur() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
-            String nieuwOfWeg = "): een afnemer geeft alle bonen in één Invoer aan voegIn en verandert daarna alleen hun"
+            String nieuwOfWeg = "): een afnemer geeft alle beans in één Invoer aan voegIn en verandert daarna alleen hun"
                     + " attributen en kenmerken, met update, want voegIn legt de plaatsen van een lijst en de"
-                    + " emmerscalairen vast over de bonen van één invoer; een nieuw of verwijderd object vraagt een verse"
+                    + " emmerscalairen vast over de beans van één invoer; een nieuw of verwijderd object vraagt een verse"
                     + " sessie";
             String naVuur = "sinds de laatste DroolsBackend.vuur van deze sessie kwam er buiten voegIn om invoer bij of"
                     + " ging er invoer weg (";
@@ -357,7 +357,7 @@ class TmsHerhaaldVurenWitnessTest {
             Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 sessie.insert(j2);
                 zetRol(v1, "vinder", j2);
@@ -376,7 +376,7 @@ class TmsHerhaaldVurenWitnessTest {
             Object v2 = tweede.get("V2");
             KieSession weg = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, weg, new Invoer().bonen(tweede.values()));
+                DroolsBackend.voegIn(b, weg, new Invoer().beans(tweede.values()));
                 assertNull(DroolsBackend.vuur(b, weg).geenFixpunt(), "first fire");
                 weg.delete(weg.getFactHandle(v2));
                 assertEquals(naVuur + TmsAfnemerWitnessTest.naam(v2) + " werd verwijderd" + nieuwOfWeg,
@@ -390,7 +390,7 @@ class TmsHerhaaldVurenWitnessTest {
             Object j3 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             KieSession vooraf = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, vooraf, new Invoer().bonen(derde.values()));
+                DroolsBackend.voegIn(b, vooraf, new Invoer().beans(derde.values()));
                 vooraf.insert(j3);
                 assertEquals("sinds DroolsBackend.voegIn kwam er buiten voegIn om invoer bij of ging er invoer weg ("
                         + TmsAfnemerWitnessTest.naam(j3) + " werd ingevoegd" + nieuwOfWeg,
@@ -404,7 +404,7 @@ class TmsHerhaaldVurenWitnessTest {
 
     /** The way on of the two readings where input came or went outside {@code voegIn}. */
     static final String NIEUW_OF_WEG = "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse"
-            + " sessie, dus DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
+            + " sessie, dus DroolsBackend.vuur weigert haar: open een verse sessie met alle beans in één Invoer";
 
     /** The call of the entry the watch keeps from after a fire. */
     static final String NA_VUUR = "de laatste DroolsBackend.vuur van deze sessie";
@@ -413,13 +413,13 @@ class TmsHerhaaldVurenWitnessTest {
      *  or a characteristic of a bean, {@code wat} naming it. */
     static String meerDanEenUpdate(String sinds, String wat) {
         return "sinds " + sinds + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een"
-                + " boon (" + wat + "), en meer laat de ingang niet toe: open een verse sessie met alle bonen in één"
+                + " bean (" + wat + "), en meer laat de ingang niet toe: open een verse sessie met alle beans in één"
                 + " Invoer";
     }
 
     /** The way on of the two readings where {@code vuur} refuses for that reason. */
     static final String VERS_BUITEN_VUUR_OM = "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde"
-            + " dan een update van een attribuut of kenmerk van een boon: open een verse sessie met alle bonen in één"
+            + " dan een update van een attribuut of kenmerk van een bean: open een verse sessie met alle beans in één"
             + " Invoer";
 
     /** The clause of a relation that an update changed: field {@code veld} of {@code boon}. */
@@ -470,7 +470,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 org.kie.api.runtime.rule.FactHandle h = uitkering(sessie, bonen.get("V1"));
                 Object waarde = sessie.getObject(h);
@@ -493,7 +493,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 String vreemd = "geen invoer";
                 sessie.insert(vreemd);
@@ -507,7 +507,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> tweede = waardebonen(b, "10");
             KieSession andere = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, andere, new Invoer().bonen(tweede.values()));
+                DroolsBackend.voegIn(b, andere, new Invoer().beans(tweede.values()));
                 assertNull(DroolsBackend.vuur(b, andere).geenFixpunt(), "first fire");
                 org.kie.api.runtime.rule.FactHandle h = uitkering(andere, tweede.get("V1"));
                 andere.update(h, andere.getObject(h));
@@ -526,7 +526,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 Object v1 = bonen.get("V1");
                 zet(v1, "gewicht", "3");
@@ -560,7 +560,7 @@ class TmsHerhaaldVurenWitnessTest {
             zetRol(bonen.get("V1"), "aanmelder", j1);
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 assertEquals(List.of("J1.zware vondsten = 1"), beschrijf(DroolsBackend.lees(b, sessie), bonen),
                         "first reading: V2 is no member");
@@ -598,7 +598,7 @@ class TmsHerhaaldVurenWitnessTest {
             zetRol(bonen.get("V2"), "aanmelder", j2);
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 assertEquals(List.of("J1: " + ZWARE_FOUT.formatted("9"), "J2: " + ZWARE_FOUT.formatted("4")),
                         beschrijf(DroolsBackend.lees(b, sessie), bonen), "first reading");
@@ -625,7 +625,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 sessie.getAgenda().clear();
                 assertEquals(meerDanEenUpdate("DroolsBackend.voegIn", main), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the fire after the agenda was cleared");
@@ -636,7 +636,7 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> tweede = waardebonen(b, "10");
             KieSession andere = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, andere, new Invoer().bonen(tweede.values()));
+                DroolsBackend.voegIn(b, andere, new Invoer().beans(tweede.values()));
                 assertNull(DroolsBackend.vuur(b, andere).geenFixpunt(), "first fire");
                 andere.getAgenda().getAgendaGroup("MAIN").clear();
                 // Drools queues the clear of a group for the next fire, which ran it with an
@@ -676,17 +676,17 @@ class TmsHerhaaldVurenWitnessTest {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 for (org.kie.api.event.rule.RuleRuntimeEventListener l : List.copyOf(sessie.getRuleRuntimeEventListeners()))
                     sessie.removeEventListener(l);
                 assertEquals("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer op, dus wat er"
-                        + " na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle bonen in één"
+                        + " na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle beans in één"
                         + " Invoer", assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie))
                         .getMessage(), "the second fire");
                 assertEquals("geen fixpunt om te lezen of terug te zetten: de bewaking die DroolsBackend.vuur op deze"
                         + " sessie zet, staat er niet meer op, dus wat er na de laatste vuur gebeurde, is niet te zien;"
-                        + " DroolsBackend.vuur weigert haar ook: open een verse sessie met alle bonen in één Invoer",
+                        + " DroolsBackend.vuur weigert haar ook: open een verse sessie met alle beans in één Invoer",
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
                         "the reading");
             } finally {
@@ -745,7 +745,7 @@ class TmsHerhaaldVurenWitnessTest {
     private static List<String> verseLezing(DroolsBackend.Build b, Map<String, Object> bonen) {
         KieSession vers = b.kieBase().newKieSession();
         try {
-            DroolsBackend.voegIn(b, vers, new Invoer().bonen(bonen.values()));
+            DroolsBackend.voegIn(b, vers, new Invoer().beans(bonen.values()));
             assertNull(DroolsBackend.vuur(b, vers).geenFixpunt(), "fresh fire");
             return beschrijf(DroolsBackend.lees(b, vers), bonen);
         } finally {

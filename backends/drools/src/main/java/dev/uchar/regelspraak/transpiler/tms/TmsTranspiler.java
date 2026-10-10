@@ -460,14 +460,14 @@ public final class TmsTranspiler {
         if (!creatieregels.isEmpty())
             return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
         if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
-            return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met bonen die"
+            return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met beans die"
                     + " alleen invoer dragen";
         if (bewaking.erbijOfEraf() != null)
             return "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse sessie, dus"
-                    + " DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
+                    + " DroolsBackend.vuur weigert haar: open een verse sessie met alle beans in één Invoer";
         if (bewaking.meerDanEenUpdate() != null || agenda != null)
             return "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde dan een update van een"
-                    + " attribuut of kenmerk van een boon: open een verse sessie met alle bonen in één Invoer";
+                    + " attribuut of kenmerk van een bean: open een verse sessie met alle beans in één Invoer";
         if (bewaking.veranderdeGlobal(sessie) != null)
             return "DroolsBackend.vuur weigert een sessie waarvan een global na de eerste vuur veranderde: open een verse"
                     + " sessie";
@@ -495,7 +495,7 @@ public final class TmsTranspiler {
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
                     + " DroolsBackend.vuur op deze sessie zet, staat er niet meer op, dus wat er na de laatste vuur"
                     + " gebeurde, is niet te zien; DroolsBackend.vuur weigert haar ook: open een verse sessie met alle"
-                    + " bonen in één Invoer");
+                    + " beans in één Invoer");
         String agenda = Bewaking.agenda(sessie);
         String buitenom = bewaking.buitenom();
         String wat = buitenom == null ? agenda : agenda == null ? buitenom : buitenom + " en " + agenda;
@@ -546,7 +546,7 @@ public final class TmsTranspiler {
                 // a timeline goes onto the bean as the bean model's segments, which carry no value equality
                 @SuppressWarnings("unchecked")
                 Object v = lid.tijd() == null ? eerste.waarde()
-                        : Tijdvak.bonen((List<Tijdvak>) eerste.waarde(), segmentklasse());
+                        : Tijdvak.beans((List<Tijdvak>) eerste.waarde(), segmentklasse());
                 waarden.add(new Fixpunt.AfgeleideWaarde(eerste.onderwerp(), lid.naam(), v));
                 BiConsumer<Object, Object> zetter = Accessors.setter(lid.klasse(), lid.naam());
                 daden.add(() -> zetter.accept(eerste.onderwerp(), v));
@@ -594,7 +594,7 @@ public final class TmsTranspiler {
         try {
             return Class.forName(FactModelGenerator.PAKKET + ".Segment", true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen bonenklasse Segment voor een tijdlijn", e);
+            throw new IllegalStateException("geen beanklasse Segment voor een tijdlijn", e);
         }
     }
 
@@ -1707,7 +1707,7 @@ public final class TmsTranspiler {
         try {
             klasse = Class.forName(INCONSISTENTIE, true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen bonenklasse " + INCONSISTENTIE + " voor het kanaal van " + producent, e);
+            throw new IllegalStateException("geen beanklasse " + INCONSISTENTIE + " voor het kanaal van " + producent, e);
         }
         String naam = "kanaalstand " + producent + ": ";
         Variable i1 = DSL.declarationOf(klasse, "$inconsistentie");
@@ -2417,7 +2417,7 @@ public final class TmsTranspiler {
         String doel = l0.doel();
         if (kenmerk && eigenaar.attribuut(doel) != null)
             throw new Weigering("een kenmerkdoel met de naam van een attribuut ('" + doel + "' van " + eigenaar.naam
-                    + "): de boon draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
+                    + "): de bean draagt één veld per naam en het attribuut gaat voor, zodat het kenmerk niet te schrijven"
                     + " en niet te onderscheiden is");
         Lid lid = lid(eigenaar, doel, kenmerk);
         Objecttype declarant = eigenaar.declarantVan(doel);
@@ -6447,7 +6447,7 @@ public final class TmsTranspiler {
         try {
             return Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), true, beanLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("geen bonenklasse voor objecttype " + ot.naam, e);
+            throw new IllegalStateException("geen beanklasse voor objecttype " + ot.naam, e);
         }
     }
 

@@ -800,8 +800,8 @@ public final class CaseRunner {
      * The DRL-text branch reads the beans alone.
      */
     private void voegInvoerIn(KieSession sessie) {
-        Invoer invoer = new Invoer().bonen(labelNaarBean.values());
-        for (Invoer.Emmer e : emmers) invoer.emmerscalair(e.boon(), e.attribuut());
+        Invoer invoer = new Invoer().beans(labelNaarBean.values());
+        for (Invoer.Emmer e : emmers) invoer.emmerscalair(e.bean(), e.attribuut());
         for (Map.Entry<Object, Map<String, Lijst>> perHouder : lijsten.entrySet())
             for (Lijst l : perHouder.getValue().values()) {
                 List<Object> leden = new ArrayList<>(l.geschreven);

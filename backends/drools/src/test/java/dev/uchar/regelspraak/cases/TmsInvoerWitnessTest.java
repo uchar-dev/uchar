@@ -78,9 +78,9 @@ class TmsInvoerWitnessTest {
             List<Object> jv = jutterMetVondsten(b);
             Object j1 = jv.get(0), v1 = jv.get(1), v2 = jv.get(2);
             assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 9" + NUL),
-                    fouten(b, new Invoer().bonen(List.of(j1, v1, v2))), "V1 before V2");
+                    fouten(b, new Invoer().beans(List.of(j1, v1, v2))), "V1 before V2");
             assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 4" + NUL),
-                    fouten(b, new Invoer().bonen(List.of(j1, v2, v1))), "V2 before V1");
+                    fouten(b, new Invoer().beans(List.of(j1, v2, v1))), "V2 before V1");
         });
     }
 
@@ -90,7 +90,7 @@ class TmsInvoerWitnessTest {
             List<Object> jv = jutterMetVondsten(b);
             Object j1 = jv.get(0), v1 = jv.get(1), v2 = jv.get(2);
             assertEquals(List.of("deling door nul in de regel \"zware vondsten\": 4" + NUL),
-                    fouten(b, new Invoer().bonen(List.of(j1, v1, v2)).lijst(j1, "aanmelder", List.of(v2, v1))),
+                    fouten(b, new Invoer().beans(List.of(j1, v1, v2)).lijst(j1, "aanmelder", List.of(v2, v1))),
                     "the list V2, V1 with the beans in the order V1, V2");
         });
     }
@@ -103,7 +103,7 @@ class TmsInvoerWitnessTest {
             KieSession sessie = b.kieBase().newKieSession();
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> DroolsBackend.voegIn(b,
-                        sessie, new Invoer().bonen(List.of(j1, v1, v2)).lijst(j1, "aanmelder", List.of(v1))));
+                        sessie, new Invoer().beans(List.of(j1, v1, v2)).lijst(j1, "aanmelder", List.of(v1))));
                 assertEquals("voegIn: de lijst van " + naam(j1) + " onder de rol 'aanmelder' mist " + naam(v2) + ", dat"
                         + " met zijn veld 'aanmelder' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen"
                         + " plaats", e.getMessage());
@@ -125,25 +125,25 @@ class TmsInvoerWitnessTest {
             List<Object> bonen = List.of(j1, v1, v2);
             String lijst = "voegIn: de lijst van " + naam(j1) + " onder de rol 'aanmelder'";
             List<String> zinnen = new ArrayList<>();
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).lijst(j1, "aanmelder", List.of(v1, v2, v3))));
-            zinnen.add(weigering(b, new Invoer().bonen(List.of(j1, v1, v2, j2, v3))
+            zinnen.add(weigering(b, new Invoer().beans(bonen).lijst(j1, "aanmelder", List.of(v1, v2, v3))));
+            zinnen.add(weigering(b, new Invoer().beans(List.of(j1, v1, v2, j2, v3))
                     .lijst(j1, "aanmelder", List.of(v1, v2, v3))));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).lijst(j1, "aanmelder", List.of(v1, v2, v1))));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).lijst(j1, "vondst", List.of(v1, v2))));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).lijst(j1, "aanmelder", List.of(v1, v2))
+            zinnen.add(weigering(b, new Invoer().beans(bonen).lijst(j1, "aanmelder", List.of(v1, v2, v1))));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).lijst(j1, "vondst", List.of(v1, v2))));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).lijst(j1, "aanmelder", List.of(v1, v2))
                     .lijst(j1, "aanmelder", List.of(v1, v2))));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).lijst(j1, "aanmelder", List.of())));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).emmerscalair(v3, "gewicht")));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).emmerscalair(v1, "gewicht")));
-            zinnen.add(weigering(b, new Invoer().bonen(bonen).emmerscalair(v1, "lengte")));
-            zinnen.add(weigering(b, new Invoer().bonen(List.of(j1, v1, v1))));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).lijst(j1, "aanmelder", List.of())));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).emmerscalair(v3, "gewicht")));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).emmerscalair(v1, "gewicht")));
+            zinnen.add(weigering(b, new Invoer().beans(bonen).emmerscalair(v1, "lengte")));
+            zinnen.add(weigering(b, new Invoer().beans(List.of(j1, v1, v1))));
             // a bean model of another document: the bean compiler shares the classes of identical models only
             DroolsBackend.Build ander = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
                     DroolsBackend.Branch.EXEC_MODEL);
             Object vreemd = TmsDocumenten.boon(ander.beanLoader(), "Vondst", Map.of(), List.of());
-            zinnen.add(weigering(b, new Invoer().bonen(List.of(j1, vreemd))));
+            zinnen.add(weigering(b, new Invoer().beans(List.of(j1, vreemd))));
             assertEquals(List.of(
-                    lijst + " noemt " + naam(v3) + ", dat geen boon van de invoer is",
+                    lijst + " noemt " + naam(v3) + ", dat geen bean van de invoer is",
                     lijst + " noemt " + naam(v3) + ", maar diens veld 'aanmelder' wijst naar " + naam(j2),
                     lijst + " noemt " + naam(v1) + " twee keer",
                     "voegIn: de lijst van " + naam(j1) + " onder de rol 'vondst' noemt " + naam(v1) + ", maar een Vondst"
@@ -151,22 +151,22 @@ class TmsInvoerWitnessTest {
                             + " waarmee een lid naar de houder wijst",
                     lijst + " is twee keer gegeven",
                     lijst + " is leeg gegeven, maar " + naam(v1) + " wijst met zijn veld 'aanmelder' naar de houder",
-                    "voegIn: emmerscalair 'gewicht' op " + naam(v3) + ", een boon die niet in de invoer staat",
+                    "voegIn: emmerscalair 'gewicht' op " + naam(v3) + ", een bean die niet in de invoer staat",
                     "voegIn: emmerscalair 'gewicht' op " + naam(v1) + ", maar dat attribuut van Vondst ligt niet op een"
                             + " tijdlijn; alleen de invoer van een tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch."
                             + " 8.4)",
                     "voegIn: emmerscalair 'lengte' op " + naam(v1) + ", maar Vondst heeft geen attribuut van die naam",
-                    "voegIn: de boon " + naam(v1) + " staat twee keer in de invoer",
-                    "voegIn: " + naam(vreemd) + " is geen boon van dit model: een boon is een instantie van een klasse die"
+                    "voegIn: de bean " + naam(v1) + " staat twee keer in de invoer",
+                    "voegIn: " + naam(vreemd) + " is geen bean van dit model: een bean is een instantie van een klasse die"
                             + " Build.beanLoader() laadt"), zinnen);
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen));
                 IllegalStateException e = assertThrows(IllegalStateException.class,
-                        () -> DroolsBackend.voegIn(b, sessie, new Invoer().boon(j2)));
+                        () -> DroolsBackend.voegIn(b, sessie, new Invoer().bean(j2)));
                 assertEquals("voegIn vult een verse sessie, maar deze houdt al " + sessie.getFactCount() + " feiten: de"
-                        + " plaatsen van een lijst worden over de bonen van één invoer geteld, en een boon die zonder"
-                        + " voegIn in de sessie kwam, heeft er geen; geef alle bonen in één Invoer aan een verse sessie,"
+                        + " plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die zonder"
+                        + " voegIn in de sessie kwam, heeft er geen; geef alle beans in één Invoer aan een verse sessie,"
                         + " en verander tussen twee fires hun waarden met update", e.getMessage());
             } finally {
                 sessie.dispose();
@@ -186,16 +186,16 @@ class TmsInvoerWitnessTest {
             KieSession sessie = b.kieBase().newKieSession();
             try {
                 IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                        () -> DroolsBackend.voegIn(b, sessie, new Invoer().boon(j1)));
+                        () -> DroolsBackend.voegIn(b, sessie, new Invoer().bean(j1)));
                 assertEquals("voegIn: het veld 'rekenkamer' van " + naam(j1) + " wijst naar een Rekenkamer ("
-                        + naam(r1) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de objecten"
-                        + " in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
+                        + naam(r1) + ") die niet als bean in de invoer staat: de tak leidt alleen af voor de objecten"
+                        + " in de sessie, dus geef elk object waarnaar een bean wijst ook zelf als bean op",
                         e.getMessage());
                 assertEquals(0, sessie.getFactCount(), "nothing was inserted");
             } finally {
                 sessie.dispose();
             }
-            Fixpunt beide = lees(b, new Invoer().bonen(List.of(j1, r1)));
+            Fixpunt beide = lees(b, new Invoer().beans(List.of(j1, r1)));
             assertTrue(beide.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribuut().equals("heffing")
                     && w.waarde() instanceof BigDecimal d && d.compareTo(new BigDecimal("6")) == 0),
                     () -> "with R1 given, J1 heffing 6 as the case pins: " + beide.waarden());
@@ -209,12 +209,12 @@ class TmsInvoerWitnessTest {
             Object j3 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("score", "10"), List.of());
             TmsTijdlijnDocumenten.zet(j3, "bedrag", List.of(
                     TmsTijdlijnDocumenten.boonsegment(b.beanLoader(), "2024-06-01", "2024-07-01", "7")));
-            Fixpunt emmer = lees(b, new Invoer().boon(j3).emmerscalair(j3, "bedrag"));
+            Fixpunt emmer = lees(b, new Invoer().bean(j3).emmerscalair(j3, "bedrag"));
             assertEquals(List.of(), emmer.fouten(), "no fault over the bucket scalar");
             assertTrue(emmer.waarden().stream().anyMatch(w -> w.object() == j3 && w.attribuut().equals("topsom")
                     && w.waarde() instanceof BigDecimal d && d.compareTo(new BigDecimal("7")) == 0),
                     () -> "J3 topsom 7: " + emmer.waarden());
-            Fixpunt volledig = lees(b, new Invoer().boon(j3));
+            Fixpunt volledig = lees(b, new Invoer().bean(j3));
             assertEquals(1, volledig.fouten().size(), () -> "one fault over a full timeline: " + volledig.fouten());
             assertTrue(volledig.fouten().get(0).melding().startsWith("fout in de regel \"topsom\": the temporal total of"
                     + " \"bedrag\" over a case-supplied full timeline is not exercised by any corpus case"),
@@ -231,7 +231,7 @@ class TmsInvoerWitnessTest {
                 List<Object> jv = jutterMetVondsten(b);
                 KieSession sessie = b.kieBase().newKieSession();
                 try {
-                    DroolsBackend.voegIn(b, sessie, new Invoer().bonen(jv).lijst(jv.get(0), "aanmelder",
+                    DroolsBackend.voegIn(b, sessie, new Invoer().beans(jv).lijst(jv.get(0), "aanmelder",
                             List.of(jv.get(2), jv.get(1))).emmerscalair(jv.get(1), "gewicht"));
                     assertEquals(jv.size(), sessie.getFactCount(), tak + ": the beans alone");
                 } finally {

@@ -165,7 +165,7 @@ class TmsAfnemerWitnessTest {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 String zin = "geen fixpunt om te lezen of terug te zetten: deze sessie is niet via DroolsBackend.vuur"
                         + " gevuurd, dat tot het fixpunt vuurt";
                 assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
@@ -189,7 +189,7 @@ class TmsAfnemerWitnessTest {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 DroolsBackend.Vuring afgekapt = DroolsBackend.vuur(b, sessie, 0.01, 1);
                 assertNotNull(afgekapt.geenFixpunt(), "the run stops at a cap of a few firings");
                 String zin = "geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur van deze sessie"
@@ -257,7 +257,7 @@ class TmsAfnemerWitnessTest {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the first fire");
                 Object v1 = bonen.get("V1");
                 TmsHerhaaldVurenWitnessTest.zet(v1, "gewicht", "3");
@@ -285,7 +285,7 @@ class TmsAfnemerWitnessTest {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
             try {
-                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire");
                 DroolsBackend.zetAfgeleideWaarden(b, sessie);
                 assertEquals(TmsHerhaaldVurenWitnessTest.EERSTE_WAARDEN,
@@ -336,7 +336,7 @@ class TmsAfnemerWitnessTest {
             KieSession sessie = b.kieBase().newKieSession();
             try {
                 assertEquals("lees leest wat de tak met truth maintenance afleidde; op de " + tak + "-tak schrijven de"
-                        + " regels de afgeleide waarden al tijdens het vuren op de bonen",
+                        + " regels de afgeleide waarden al tijdens het vuren op de beans",
                         assertThrows(UnsupportedOperationException.class, () -> DroolsBackend.lees(b, sessie))
                                 .getMessage());
             } finally {
@@ -379,7 +379,7 @@ class TmsAfnemerWitnessTest {
     static final String VERS_BIJ_CREATIE = "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede"
             + " fire: open een verse sessie";
     static final String VERS_NA_TERUGZETTEN = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
-            + " verse sessie met bonen die alleen invoer dragen";
+            + " verse sessie met beans die alleen invoer dragen";
 
     /** The sentence of {@code lees} and {@code zetAfgeleideWaarden} where {@code wat} happened outside {@code vuur}
      *  after the last one, with {@code weg} the way on. */
