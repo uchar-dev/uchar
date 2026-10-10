@@ -43,9 +43,9 @@ final class BeideTakken {
         }
     }
 
-    /** Both branches REFUSE the document where they name the form in their own words: the truth-maintenance branch
+    /** Both branches REFUSE the document where they name the form in their own words: the exec-model branch
      *  {@code tms}, after the prefix of its manifest, and the DRL-text branch {@code drl}. The row of {@link #geweigerd}
-     *  for a form whose refusal the truth-maintenance branch words apart from the branch it replaces. */
+     *  for a form whose refusal the exec-model branch words apart from the DRL-text branch. */
     static void geweigerdApart(Path ir, JsonNode c, String tms, String drl, String boodschap) throws Exception {
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms — " + boodschap);

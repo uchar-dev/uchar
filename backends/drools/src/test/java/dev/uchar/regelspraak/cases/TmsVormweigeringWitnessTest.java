@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * An instance-set union where a value is read, which the truth-maintenance branch refuses for good, in the sentence of
- * the other two branches rather than as a form outside the trial. A union denotes the instances of a §5.7
+ * An instance-set union where a value is read, which the exec-model branch refuses for good, in the sentence of the
+ * DRL-text branch rather than as a form it does not carry yet. A union denotes the instances of a §5.7
  * concatenation and stands only as the single argument of a count (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS ch. 3.4d),
  * where the branch reads it; "Het unieaantal van een Jutter moet berekend worden als de vondsten van de Jutter en de
  * vondsten van de Jutter die zwaarder zijn dan 8", the union as the rule's value, has no reading.

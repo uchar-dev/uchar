@@ -74,16 +74,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (kringverwijzing?)&gt;", and in the first generated order, "geen fixpunt in volgorde [standaardbergloon,
  * standaardvindloon, berekend gewicht van een vondst, stand Vondst.berekend gewicht: uit een afleiding, stand
  * Vondst.berekend gewicht: uit de invoer]"; on the single Vondst of the golden's first case both targets ended leeg
- * without a message, as the trial's A5 measured, "case1-beide-geschreven.json: attribuut bergloon: verwacht 26.00,
- * werkelijk leeg; attribuut vindloon: verwacht 18.00, werkelijk leeg" ({@link TmsProefsetWitnessTest}). (2) Without
- * the guard's read of the input on the bean: "volgorde [standaardbergloon, standaardvindloon, berekend gewicht van een
- * vondst] ==&gt; expected: &lt;null&gt; but was: &lt;case: attribuut bergloon: verwacht 40, werkelijk 26; attribuut
- * vindloon: verwacht 3, werkelijk 18; attribuut vindloon: verwacht 7, werkelijk 36&gt;", and the deposit row, "V2
- * ==&gt; expected: &lt;null&gt; but was: &lt;case: verwacht consistent, werkelijk inconsistent (standaardaandeel @
- * V2)&gt;". (3) Without the other writers' {@code Waarde} in the guard, only the displacement rows failed, at the
- * write-back: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel "bergloon" schrijft 30
- * en de regel "standaardbergloon" schrijft 7 in het attribuut bergloon van een Vondst (Vondst@…); divergentie is een
- * fout (RUNTIME-SEMANTICS ch. 5.7)".
+ * without a message, as A5 of the trial of card drools-logische-afleiding measured, "case1-beide-geschreven.json:
+ * attribuut bergloon: verwacht 26.00, werkelijk leeg; attribuut vindloon: verwacht 18.00, werkelijk leeg"
+ * ({@link TmsProefsetWitnessTest}). (2) Without the guard's read of the input on the bean: "volgorde
+ * [standaardbergloon, standaardvindloon, berekend gewicht van een vondst] ==&gt; expected: &lt;null&gt; but was:
+ * &lt;case: attribuut bergloon: verwacht 40, werkelijk 26; attribuut vindloon: verwacht 3, werkelijk 18; attribuut
+ * vindloon: verwacht 7, werkelijk 36&gt;", and the deposit row, "V2 ==&gt; expected: &lt;null&gt; but was: &lt;case:
+ * verwacht consistent, werkelijk inconsistent (standaardaandeel @ V2)&gt;". (3) Without the other writers'
+ * {@code Waarde} in the guard, only the displacement rows failed, at the write-back: "geen fixpunt: twee schrijvers van
+ * één doel geven verschillende waarden — de regel "bergloon" schrijft 30 en de regel "standaardbergloon" schrijft 7 in
+ * het attribuut bergloon van een Vondst (Vondst@…); divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)".
  */
 class TmsInitialisatieWitnessTest {
 

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p>The exact quotient is a {@code Breuk}, and the step's count has to accept one. On the truth-maintenance branch the
  * day-kind rows pinned the refusal of day kinds until the card tms-verdeling-en-tijdlijnen (2026-10-09), which carries
- * them; since then they expect that branch's values, the same as the other two branches'.
+ * them; since then they expect that branch's values, the same as the DRL-text branch's.
  *
  * <p>RED FIRST, measured on this branch's first commit (cf54b8b9), where the runtime took the count as a
  * {@code BigDecimal}: the exec-model and truth-maintenance branches cast the quotient to one and threw

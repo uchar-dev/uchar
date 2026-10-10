@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The red case {@code corpus/rood/datumtijdstap-buiten-bereik} through all three branches. Gate 8's Drools leg replays
- * a red case on the exec-model branch alone; the date step is one runtime function that all three branches call
+ * The red case {@code corpus/rood/datumtijdstap-buiten-bereik} through both branches. Gate 8's Drools leg replays
+ * a red case on the exec-model branch alone; the date step is one runtime function that both branches call
  * ({@code RegelSpraakRuntime.rsDatumReken}), and this witness holds that each branch reaches it with the case's count
  * and faults in the sentence the case pins for the backend: the two ch. 3.8 examples in hours, plus and min, the one in
  * days, and a count of 2^64 + 1 days.
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The red case {@code corpus/rood/dagsoortstap-buiten-bereik} goes through the same replay: a step to the last day
  * of the range in one rule, and one day of a kind further in the next. The day kind's step is its own runtime function
- * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by all three branches. RED FIRST, measured on this
+ * ({@code RegelSpraakRuntime.rsDatumTijdPlusDagsoort}), called by both branches. RED FIRST, measured on this
  * branch at 16905a6d: the exec-model and the DRL-text branch answered +146140482-05-01T00:00 without a fault. The
  * truth-maintenance branch refused day kinds by name, and the row pinned that refusal, until the card
  * tms-verdeling-en-tijdlijnen (2026-10-09), which carries them: since then its row faults as the other two do.

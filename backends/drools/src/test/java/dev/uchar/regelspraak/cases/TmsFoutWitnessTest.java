@@ -68,11 +68,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>The standing document: "Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn
  * deelnemers, indien hij erkend is" beside the erkenning; V1 (gemeld, opbrengst 100, deelnemers 0 in the input) faults
- * at the fixpoint, with the sentence the exec-model branch gives out of its fire. The document with two faults:
- * "Het aandeel … als zijn opbrengst gedeeld door zijn deelnemers", "De verhouding … als zijn taxatie gedeeld door zijn
- * deelnemers, indien hij erkend is" and the erkenning; V1 (gemeld, opbrengst 100, taxatie 30, deelnemers 0) reports
- * both, ordered by the name of the rule, in every order. Both runners faulted on these two documents in every order,
- * "division by numeric zero" (measured 2026-10-08).
+ * at the fixpoint, with the sentence the destructive exec-model branch gave out of its fire. The document with two
+ * faults: "Het aandeel … als zijn opbrengst gedeeld door zijn deelnemers", "De verhouding … als zijn taxatie gedeeld
+ * door zijn deelnemers, indien hij erkend is" and the erkenning; V1 (gemeld, opbrengst 100, taxatie 30, deelnemers 0)
+ * reports both, ordered by the name of the rule, in every order. Both runners faulted on these two documents in every
+ * order, "division by numeric zero" (measured 2026-10-08).
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch at its claim, where a consequence threw the
  * fault): the transient document played into the fault in both orders, "[erkenning, aandeel] DelingDoorNul: deling door
@@ -290,10 +290,11 @@ class TmsFoutWitnessTest {
         assertEquals(720, volgordes);
     }
 
-    /** The fault a consumer meets at the fixpoint is the exception the exec-model branch's fire gives through
-     *  {@code DroolsBackend.benoem}: the named division, with the division as {@code Breuk.delen} threw it as its cause,
-     *  so the red path's cause chain reads as on that branch. Two faults are one exception whose cause is the first
-     *  fault of its message and whose suppressed exception is the second. */
+    /** The fault a consumer meets at the fixpoint is the exception the fire of the destructive exec-model branch gave
+     *  through {@code DroolsBackend.benoem}, which the DRL-text branch's fire gives still: the named division, with the
+     *  division as {@code Breuk.delen} threw it as its cause, so the red path's cause chain reads as on that branch.
+     *  Two faults are one exception whose cause is the first fault of its message and whose suppressed exception is the
+     *  second. */
     @Test void de_fouten_aan_het_fixpunt_dragen_de_deling_als_oorzaak() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(blijvend(BLIJVEND), DroolsBackend.Branch.EXEC_MODEL);
         RuntimeException een = fixpuntfout(b, b.execModelTranspiler().model().getRules(), List.of(TmsDocumenten.boon(

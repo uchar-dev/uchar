@@ -189,7 +189,7 @@ class TmsStartpuntWitnessTest {
     }
 
     /** Writes the two playing documents and the document of every refused form, each with the case of {@link #zaak},
-     *  under {@code args[0]}, for the verifier, ref, clingo and the other two branches. */
+     *  under {@code args[0]}, for the verifier, ref, clingo and the DRL-text branch. */
     public static void main(String[] args) throws Exception {
         Path uit = Path.of(args[0]);
         TmsTijdlijnWitnessTest.schrijf(uit.resolve("zonder-lid"), document(model(false), List.of()), zaak());

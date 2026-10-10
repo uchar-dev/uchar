@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * only, after the fire. "Een Jutter is vergund indien hij erkend is" over J1 (erkend in the input), J2 (vergund in the
  * input, not erkend) and J3 (neither): before the call J1's bean is not vergund, though the session holds the
  * derivation; after it J1 is vergund and still erkend, J2 stays vergund, since input on a characteristic stands and
- * nothing writes false, and J3 carries neither. On the other two branches the call writes nothing: their rules write the
+ * nothing writes false, and J3 carries neither. On the DRL-text branch the call writes nothing: its rules write the
  * beans while they fire.
  *
  * <p>The same holds for every other writer the branch carries, which a second document puts on one Vondst type: "De

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The date step of RUNTIME-SEMANTICS ch. 3.8 at the edge of what a date holds: "A step whose result leaves the
  * representable millisecond range is a fault, never a silent wrap-around", with the worked example
- * "2024-01-01T00:00:00 ± 2 000 000 000 000 uur = fault, and + 60 000 000 000 dagen = fault". All three branches of
+ * "2024-01-01T00:00:00 ± 2 000 000 000 000 uur = fault, and + 60 000 000 000 dagen = fault". Both branches of
  * this backend step through {@code RegelSpraakRuntime.rsDatumReken}, so these rows hold that one function to the
  * reference interpreter, row for row. Every expectation is what {@code ref} answered on a RegelSpraak document with one
  * rule per unit and direction ("Het uurinstant vooruit van een Getijpost moet berekend worden als zijn meldtijdstip

@@ -48,8 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The standing documents: one form whose condition or assertion reads "zijn opbrengst gedeeld door zijn deelnemers"
  * beside the erkenning, per kind of form that carries a condition here: a characteristic attribution, an assignment,
  * an initialisation and a consistency. V1 (gemeld, opbrengst 100, deelnemers 0 in the input) faults at the fixpoint in
- * every order, with the sentence the exec-model branch names the same fault with out of its fire, where it lowers the
- * form. Both runners faulted on each of them, "division by numeric zero" (measured 2026-10-08).
+ * every order, with the sentence the destructive exec-model branch named the same fault with out of its fire, where it
+ * lowered the form. Both runners faulted on each of them, "division by numeric zero" (measured 2026-10-08).
  *
  * <p><b>Red before the change</b> (measured 2026-10-08 on the branch at its claim): every row of this branch left the
  * fire with the engine's exception, "[erkenning, zwaarte] RuntimeException:

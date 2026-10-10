@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * granularity-bucketed builtin call is executed only as the whole value of a rule on a temporal target (ch. 3.7,
  * 3.8)".
  * <li><b>A time window in the condition of a rule with a timeline target</b>, "… vanaf 1 januari 2025", which clips
- * the timeline (ch. 3.10), as golden jutterswet-pachtvenster has it, which the other two branches refuse as well. The
+ * the timeline (ch. 3.10), as golden jutterswet-pachtvenster has it, which the DRL-text branch refuses as well. The
  * reference interpreter and the ASP runner answer 59 in 2025.
  * <li><b>A characteristic on a timeline as the target</b>: both refuse it, "temporal characteristic "borgplichtig":
  * temporal writes are not implemented".
@@ -78,15 +78,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * 50, werkelijk 0" and "… verwacht 500, werkelijk 0".
  * <li><b>A rate whose denominator is not the unit of the grid</b>: 10 EUR/jr per month through 2024, in a document
  * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand); the reference interpreter
- * answers 10, the ASP runner refuses the factor 12, and the other two branches, which weigh the helper's whole months
- * unit-blind, answer "verwacht 10, werkelijk 120", the divergence the executor note of ch. 3.6 records.
+ * answers 10, the ASP runner refuses the factor 12, and the DRL-text branch, which weighs the helper's whole months
+ * unit-blind, answers "verwacht 10, werkelijk 120", the divergence the executor note of ch. 3.6 records.
  * <li><b>A rate over a grid whose unit the document does not declare as one unit</b>: the same 10 EUR/mnd through 2024
  * in a document whose only unit system is Munt, the denominator written by its abbreviation alone, and in one where the
  * systems Tijd and Kalender both declare an mnd, the one canonical, the other thirty dg. The reference interpreter
  * refuses both, "the temporal total of a EUR/mnd value: the document declares no mnd unit, so this timeline's grid has
  * no unit to integrate against (ch. 3.6)" and "… the document declares 2 different mnd units, so this timeline's grid
  * has no single unit to integrate against (ch. 3.6)", the ASP runner with the same reason after a head of its own,
- * and the other two branches play 120. The case holds 120, the total where the system Tijd alone declares mnd: the
+ * and the DRL-text branch plays 120. The case holds 120, the total where the system Tijd alone declares mnd: the
  * control {@link #een_tarief_over_een_gedeclareerde_rastereenheid_speelt}, which the reference interpreter and the ASP
  * runner answer as well.
  * <li><b>The total without a clip over a timeline a rule derives</b>: the reference interpreter refuses it, "the
@@ -488,7 +488,7 @@ class TmsTijdlijnWeigeringWitnessTest {
     }
 
     /** Writes the document of every row, with its case, under {@code args[0]}: a map per row holding {@code ir.json} and
-     *  {@code case.json}, for the verifier, ref, clingo and the other two branches. */
+     *  {@code case.json}, for the verifier, ref, clingo and the DRL-text branch. */
     public static void main(String[] args) throws Exception {
         Path uit = Path.of(args[0]);
         for (Rij r : rijen()) TmsTijdlijnWitnessTest.schrijf(uit.resolve(r.naam()), r.ir(), r.zaak());

@@ -33,16 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fall-through at an empty default where the higher default decides after all (the card's acceptance (b); the trial's
- * A10): two defaults on the {@code doel} of a Vondst. The higher one, justified where the Vondst is {@code c} and not
- * {@code afgewezen}, takes {@code bron1}, which a chain of two rules fills only where the Vondst is {@code b}; the lower
- * one, justified where it is {@code d}, takes {@code bron2}, which one rule fills. RUNTIME-SEMANTICS ch. 7.1: the
- * highest default that decides supplies the value, and a justified default whose consequence is leeg falls through.
- * Truth maintenance has to get there from either side: where the lower default decides before {@code bron1} arrives,
- * its write must go when the higher one decides (the takeover); where the higher one decides before {@code afgewezen}
- * is derived, its decision must go again and the lower one decide (the give-back). Every combination of the four input
- * characteristics is an object of one case, played in every order of the document's rules, and fired in a seeded
- * sample of orders of the rules the branch generates, which must take both transient paths somewhere.
+ * Fall-through at an empty default where the higher default decides after all (acceptance (b) and A10 of the trial of
+ * card drools-logische-afleiding): two defaults on the {@code doel} of a Vondst. The higher one, justified where the
+ * Vondst is {@code c} and not {@code afgewezen}, takes {@code bron1}, which a chain of two rules fills only where the
+ * Vondst is {@code b}; the lower one, justified where it is {@code d}, takes {@code bron2}, which one rule fills.
+ * RUNTIME-SEMANTICS ch. 7.1: the highest default that decides supplies the value, and a justified default whose
+ * consequence is leeg falls through. Truth maintenance has to get there from either side: where the lower default
+ * decides before {@code bron1} arrives, its write must go when the higher one decides (the takeover); where the higher
+ * one decides before {@code afgewezen} is derived, its decision must go again and the lower one decide (the give-back).
+ * Every combination of the four input characteristics is an object of one case, played in every order of the document's
+ * rules, and fired in a seeded sample of orders of the rules the branch generates, which must take both transient paths
+ * somewhere.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08, the branch refusing every defaults group): the replay and the
  * sample failed on the build, "elke_volgorde_van_de_regels_in_het_document:108 » Excluded tms-transpiler SKIP: defaults:

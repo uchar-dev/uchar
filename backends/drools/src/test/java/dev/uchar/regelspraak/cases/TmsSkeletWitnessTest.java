@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * gebouwd&gt;"). The side-table row was green from the start: the frame it pins was written before it.
  *
  * <p>Two rows of the first step pinned the refusal of an attribute target and of a leeg or gevuld test; the second
- * step lowers both, and their rows now pin a value and a condition outside the trial, a BuiltinCall over a timeline
+ * step lowers both, and their rows now pin a value and a condition the branch refuses, a BuiltinCall over a timeline
  * (an Aggregation until the aggregations were carried, the absolute value until the value forms were) and a test of
  * whether a rule fired (a QuantifierFold until the condition forms were carried). <b>Red on the first step</b> (measured 2026-10-08), which refused both rules for another reason:
  * "but was: &lt;tms-transpiler SKIP: regel: lampental — een attribuutdoel (berekening van 'lampental' van Vuurtoren): de
