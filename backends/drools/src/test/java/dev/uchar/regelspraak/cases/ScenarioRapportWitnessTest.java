@@ -24,13 +24,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * Until card tms-omschakeling the second fixture was {@code anchor/jutterswet-erflijn}, which the exec-model branch
  * with truth maintenance plays.
  *
- * <p>The trace of the first case is pinned whole. The report names a firing by the base name of its rule, the part
- * after the name of its form ({@code ProducentConsument.basisNaam}), so "default 1" is the default of the document's
- * one defaults group, that of uitgesloten, which decides for M; "eens wortel" its agreement over the root; and "waar
- * uit een afleiding" the standing of the characteristic that follows. Until the switch-over the trace was pinned by
- * the name of the destructive branch's rule, "defaults K:Jutter.uitgesloten"; while both branches stood it was pinned
- * by its labels and counts alone, which a report without a firing of the group passed as well (the lens on step 5a1
- * of card tms-omschakeling, 2026-10-10).
+ * <p>The trace of the first case is pinned whole. The report counts a firing under the form of the document its rule
+ * belongs to ({@code TmsTranspiler.vormVan}), so "defaults K:Jutter.uitgesloten" is the document's one defaults group,
+ * which decides for M, its default and its agreement over the root in one row; a rule of no form keeps its full name,
+ * here the standing of the characteristic that follows. Until the switch-over the trace was pinned by the name of the
+ * destructive branch's rule, "defaults K:Jutter.uitgesloten"; while both branches stood it was pinned by its labels and
+ * counts alone, which a report without a firing of the group passed as well (the lens on step 5a1 of card
+ * tms-omschakeling, 2026-10-10); after the switch-over it was pinned by the part of each rule's name after its form,
+ * "default 1" and "eens wortel", until a second fixture showed that the part puts rules of different forms in one row.
+ *
+ * <p>That fixture is {@code jutterswet-premiestaffel}, with five defaults groups on three object types, each one row
+ * with the labels of its own type and of the members its folds read, and in the coverage each fired. <b>Red before the
+ * repair</b> (measured 2026-10-10 on {@code 9906feb7}): one row "default 0" with the labels of three types (J2, J5, M1,
+ * C1, M2, J1), likewise "default 1", "default 2", "bijdrage aan vouw 0" to "3", "onwaar" and "uit een afleiding", and
+ * every defaults group NIET_GERAAKT in the coverage, since no row carried its name.
  */
 class ScenarioRapportWitnessTest {
 
@@ -61,15 +68,46 @@ class ScenarioRapportWitnessTest {
                 new VerwachtingResultaat("consistent", "consistent", "consistent", true, 3)),
                 geweigerd.verwachtingen());
         assertEquals("", geweigerd.diagnose());
-        // a firing names the case's objects it matched: M, or none where a rule matches facts of the branch alone, as
-        // the agreement of the defaults group over the root does
+        // a row names the case's objects its rules matched: M, by the default; the agreement of the group over the root
+        // matches facts of the branch alone and adds none
         List<String> spoor = geweigerd.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " "
                 + v.aantal()).sorted().toList();
-        assertEquals(List.of("default 1 [M] 1", "eens wortel [] 1", "waar uit een afleiding [M] 1"), spoor,
-                "de defaultsgroep vuurt haar default op M, en het kenmerk volgt");
+        assertEquals(List.of("defaults K:Jutter.uitgesloten [M] 2",
+                        "kenmerkstand Jutter.uitgesloten: waar uit een afleiding [M] 1"), spoor,
+                "de defaultsgroep vuurt haar default en haar overeenstemming op M, en het kenmerk volgt");
+        assertEquals(DekkingSoort.GEVUURD, dekking(geweigerd, "defaults K:Jutter.uitgesloten"));
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
         assertEquals(DekkingSoort.NIET_GERAAKT, dekking(geweigerd, "penninggerechtigd tenzij uitgesloten"));
         assertEquals(DekkingSoort.GEVUURD, dekking(van(rapport, "case4-kaal.json"), "penninggerechtigd tenzij uitgesloten"));
+    }
+
+    @Test void een_vuring_telt_onder_de_vorm_van_haar_regel() throws Exception {
+        Path premiestaffel = GOLDEN.resolve("jutterswet-premiestaffel");
+        ScenarioResultaat r = CaseRunner.rapport(premiestaffel.resolve("ir.json"),
+                List.of(premiestaffel.resolve("case1-staffel.json"))).get(0);
+        assertEquals(Status.PASS, r.status(), r::toString);
+        // the labels sorted: a row is pinned by what its rules bound, not by the order of the agenda
+        List<String> spoor = r.trace().vuringen().stream()
+                .map(v -> v.regel() + " " + v.labels().stream().sorted().toList() + " " + v.aantal()).sorted().toList();
+        assertEquals(List.of(
+                "defaults A:Controle.controlepremie [C1, C2, C3, C4] 6",
+                "defaults A:Jutter.premie [J1, J2, J3, J4, J5, V1, V2, V3, V4, V5, V6, V7, V8, V9] 20",
+                "defaults A:Melding.gemelde premie [M1, M2, M3, M4] 7",
+                "defaults K:Jutter.ijverig [J1, J2, J3, J4, J5, V1, V2, V3, V4, V5, V6, V7, V8, V9] 29",
+                "defaults K:Melding.dringend [M1, M2, M3, M4] 5",
+                "kenmerkstand Vondst.zwaar: onwaar [V2, V4, V5, V6, V8, V9] 6",
+                "kenmerkstand Vondst.zwaar: waar uit een afleiding [V1, V3, V7] 3",
+                "padstand Controle.melding.vondst.jutter naar Jutter.premie: link aanwezig [C1, C2] 3",
+                "padstand Controle.melding.vondst.jutter naar Jutter.premie: link afwezig [C3, C4] 2",
+                "padstand Melding.vondst.jutter naar Jutter.premie: link aanwezig [M1, M2, M3] 4",
+                "padstand Melding.vondst.jutter naar Jutter.premie: link afwezig [M4] 1",
+                "parameterstand zwaartegrens [] 1",
+                "stand Jutter.premie: uit een afleiding [J1, J2, J3, J4, J5] 6",
+                "zwaarte [V1, V3, V7] 3"), spoor, "één rij per vorm, en per regel zonder vorm haar eigen naam");
+        assertEquals(96, r.trace().totaal(), "het rapport telt elke vuring, onder welke rij ook");
+        for (ScenarioResultaat.DekkingRegel d : r.dekking())
+            assertEquals(DekkingSoort.GEVUURD, d.soort(), () -> d.regel() + " vuurde: " + spoor);
+        assertEquals(6, r.dekking().size(), () -> r.dekking().toString());
     }
 
     private static DekkingSoort dekking(ScenarioResultaat r, String regel) {

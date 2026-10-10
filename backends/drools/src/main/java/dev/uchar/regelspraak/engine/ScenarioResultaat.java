@@ -18,7 +18,7 @@ import java.util.List;
  *                      so accepted-but-inert never reads as a pass)
  * @param verwachtingen the per-expectation verdicts, in the case's order; empty for MARKER and for a case that could not
  *                      be played
- * @param trace         the fired rules with the labels of the input instances they bound
+ * @param trace         the firings per form with the labels of the input instances they bound
  * @param dekking       per lowered construct whether it fired in this case
  * @param diagnose      why it is not a PASS: the replay's verdict line for FAIL (for a case that could not be played,
  *                      the case's name and the replay's ERROR line), the reason for MARKER; empty for PASS
@@ -34,12 +34,12 @@ public record ScenarioResultaat(String naam, Status status, List<VerwachtingResu
      *  actual value rendered alike, whether it held, and its 1-based position in the case's {@code expected}. */
     public record VerwachtingResultaat(String bron, String verwacht, String werkelijk, boolean ok, int positie) {}
 
-    /** The fired rules, in the order they first fired. */
+    /** The firings per form, in the order a rule of the form first fired. */
     public record Trace(List<Vuring> vuringen) {
         public int totaal() { return vuringen.stream().mapToInt(Vuring::aantal).sum(); }
     }
-    /** One fired rule: its base name (no group prefix, no version suffix), the labels of the input instances its
-     *  matches bound, and how often it fired. */
+    /** The firings of one form of the document: its name (no version suffix), or the full name of a rule that belongs
+     *  to no form, the labels of the input instances its matches bound, and how often its rules fired. */
     public record Vuring(String regel, List<String> labels, int aantal) {}
 
     /** One lowered construct's coverage in this case. */

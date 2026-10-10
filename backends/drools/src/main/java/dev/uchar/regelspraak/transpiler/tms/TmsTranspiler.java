@@ -263,6 +263,10 @@ public final class TmsTranspiler {
      *  names an object by its own type. Keyed by name, so that building it loads no class. */
     private final Map<String, String> typeNamen = new HashMap<>();
     private final List<Dekking> dekking = new ArrayList<>();
+    /** The form each rule of the model belongs to, by the rule's name ({@link #vormVan}). */
+    private final Map<String, String> vormVanRegel = new HashMap<>();
+    /** The rules of the model that belong to no form of the document ({@link #vormVan}). */
+    private final Set<String> regelsZonderVorm = new LinkedHashSet<>();
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
@@ -343,6 +347,22 @@ public final class TmsTranspiler {
 
     /** The coverage manifest: one verdict per form, the rules in document order, then every other family. */
     public List<Dekking> dekking() { return dekking; }
+
+    /**
+     * The form of the document that rule {@code regelnaam} of the model belongs to, by the name the manifest gives it
+     * ({@link #dekking}): the form whose lowering built the rule, with every rule that lowering adds beside the form's
+     * own (its fault and deposit rules, the keys of a uniqueness, the recipients of an allocation, the chains and
+     * agreements of an effective defaults stack), and for the contribution rules of a fold the form that first
+     * registered the fold, also where a later form reads the same fold. Null for a rule of no form, one the lowering
+     * keeps for every form alike: a standing, a path or channel standing, the standing of a parameter or of the
+     * evaluation date, a link of the input over a created relation and its second filler, and the comparison of the
+     * writers of one target. A name of no rule of the model is refused.
+     */
+    public String vormVan(String regelnaam) {
+        String vorm = vormVanRegel.get(regelnaam);
+        if (vorm != null || regelsZonderVorm.contains(regelnaam)) return vorm;
+        throw new IllegalArgumentException("geen regel van dit model: '" + regelnaam + "'");
+    }
 
     /** The names of the creation rules of the model, in the agenda groups {@link #FEITCREATIE} and
      *  {@link #OBJECTCREATIE}; empty for a document without a lowered creation, which the driver fires in one go. */
@@ -732,6 +752,8 @@ public final class TmsTranspiler {
         globals.values().forEach(m::addGlobal);
         regels.forEach(m::addRule);
         standen.forEach(m::addRule);
+        for (Rule r : regels) if (!vormVanRegel.containsKey(r.getName())) regelsZonderVorm.add(r.getName());
+        for (Rule r : standen) regelsZonderVorm.add(r.getName());
         return m;
     }
 
@@ -746,6 +768,7 @@ public final class TmsTranspiler {
         try {
             List<Rule> rules = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
+            for (Rule r : rules) vormVanRegel.put(r.getName(), naam);
             return rules;
         } catch (Weigering w) {
             weiger(soort, naam, w.getMessage());
@@ -5489,7 +5512,8 @@ public final class TmsTranspiler {
             }
             kanalen.addAll(kanaalnamen);
             for (Vouw v : vouwen) {
-                bijdrageregels.putIfAbsent(v.sleutel(), v.regels());
+                if (bijdrageregels.putIfAbsent(v.sleutel(), v.regels()) == null)
+                    for (Rule r : v.regels()) vormVanRegel.put(r.getName(), vorm);
                 for (Lezingen l : v.lezingen()) l.vastleggen();
             }
         }

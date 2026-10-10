@@ -20,6 +20,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.kie.api.KieBase;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
@@ -235,15 +236,10 @@ public final class CaseRunner {
                 naam + ": ERROR " + e.getClass().getSimpleName() + ": " + melding);
     }
 
-    /** Whether construct {@code construct} fired: a fired rule carries its base name, or a rule the transpiler derived
-     *  from it — its name with a parenthesised qualifier ({@code (onverdeelde rest)}, {@code (gevuurd)}). */
+    /** Whether construct {@code construct} fired: the report counts every firing of a rule of a form under the name of
+     *  that form as this method names a construct ({@link #luisteraar}), so a row of that name is the construct's. */
     private static boolean gevuurd(String construct, java.util.Set<String> gevuurdeRegels) {
-        String basis = Namen.norm(ProducentConsument.basisNaam(construct));
-        for (String g : gevuurdeRegels) {
-            String n = Namen.norm(g);
-            if (n.equals(basis) || n.startsWith(basis + " (")) return true;
-        }
-        return false;
+        return gevuurdeRegels.contains(ProducentConsument.basisNaam(construct));
     }
 
     /** What one case's replay reports beside its verdict: the firings per rule with the labels of the input beans they
@@ -1333,11 +1329,23 @@ public final class CaseRunner {
 
     // ---------------- the report's renderings ----------------
 
-    /** Every firing, under its base name, with the labels of the input beans the match bound. */
+    /** Every firing, with the labels of the input beans the match bound, under the form of the document its rule
+     *  belongs to ({@link TmsTranspiler#vormVan}), named as {@link #gevuurd} names a construct of the coverage: one row
+     *  per form, as before card tms-omschakeling, when every rule of the destructive lowering carried the name of its
+     *  form. The rules of the exec-model branch are named "&lt;form&gt;: &lt;part&gt;", so the part alone, which the
+     *  report gave until the repair, put rules of different forms in one row: on golden jutterswet-premiestaffel the
+     *  defaults of three object types under "default 0". A rule of no form, a standing or another rule the lowering
+     *  keeps for every form alike, counts under its own full name ("kenmerkstand Jutter.uitgesloten: waar uit een
+     *  afleiding"): there is no form to name it after, and that name says which member it keeps, where its part alone
+     *  would put the standings of different members in one row. */
     private DefaultAgendaEventListener luisteraar(Waarneming w) {
+        TmsTranspiler tms = bouw.execModelTranspiler();
+        if (tms == null) throw new IllegalStateException("het scenariorapport speelt alleen de exec-model-tak");
         return new DefaultAgendaEventListener() {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) {
-                String regel = ProducentConsument.basisNaam(e.getMatch().getRule().getName());
+                String naam = e.getMatch().getRule().getName();
+                String vorm = tms.vormVan(naam);
+                String regel = vorm != null ? ProducentConsument.basisNaam(vorm) : naam;
                 w.telling.merge(regel, 1, Integer::sum);
                 List<String> ls = w.labels.computeIfAbsent(regel, k -> new ArrayList<>());
                 for (Object o : e.getMatch().getObjects()) {
