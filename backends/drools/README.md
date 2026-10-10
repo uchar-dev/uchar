@@ -82,7 +82,8 @@ consumer does.
    `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the
    label of an input bean, and null for a made object, by which a fault then names its object as the reference
    interpreter does ("V, een Vondst"), where without labels it names the type and the identity. Both read only a
-   session whose last `vuur` reached its fixpoint (below), so what `lees` gives is always a fixpoint.
+   session whose last `vuur` reached its fixpoint and in which nothing happened outside `vuur` since (below), so what
+   `lees` gives is always a fixpoint, that of the input as it stands.
 
 **One write-back per session.** On the truth-maintenance branch the beans hold the input alone until the write-back.
 `lees` reads what stands at the fixpoint without writing anything, as a `Fixpunt` (`transpiler/tms`): per object the
@@ -94,24 +95,40 @@ link a creation laid on the reference fields that hold it, so that a consumer th
 object as it reaches one of the input. Then it closes the session with a stated mark, and `vuur` refuses it from then
 on with a sentence that says what to do instead. `vuur` leaves a stated mark of its own after every run, of how the run
 ended, and `lees` and `zetAfgeleideWaarden` refuse a session without one, fired with a plain `fireAllRules` or not at
-all, and a session whose last `vuur` ended at the cap, at the creation budget or with an exception, each with a
-sentence that says what is missing. On the other two branches the rules write the beans as they fire:
-`zetAfgeleideWaarden` does nothing there and `lees` refuses.
+all, a session whose last `vuur` ended at the cap, at the creation budget or with an exception, and a session in which
+something happened outside `vuur` after its last run (below), each with a sentence that says what is missing. On the
+other two branches the rules write the beans as they fire: `zetAfgeleideWaarden` does nothing there and `lees`
+refuses.
 
 **Firing again.** A consumer that fires one session more than once changes input between the fires with
-`session.update(handle, bean)` on a bean `voegIn` put in, and reads every answer with `lees`; the write-back comes once,
-after the last fire. A derivation whose reads changed lapses, a fault arises or lapses, and an initialisation fires
-again, since its target stayed empty on the bean (witness `TmsHerhaaldVurenWitnessTest`). `lees` reads the fixpoint of
-the last `vuur`: an update after it shows at the next one. A session of a model with a creation fires once, and `vuur`
-refuses it at every later call: an object or a fact creation is stated and never lapses, and so are its
-initialisations, its links and the fault of a failed initialisation (RUNTIME-SEMANTICS ch. 5.5), so after an input
-change a second fire would keep them beside an input they no longer follow from, a state no fresh evaluation gives. A
-consumer of such a model opens a fresh session per input. Written back between the
-fires, a derived value would be read as input by the next fire and keep an initialisation from firing; that is why
-the write-back closes the session. What an update may change: the values of attributes and characteristics. A changed
-relation keeps the places `voegIn` numbered, which decide only which member a fault names; another convention of a
-timeline input, and a new bean, ask a fresh session. After the write-back the beans hold derived values beside their
-input, so a fresh session takes beans that hold the input alone.
+`session.update(handle, bean)` on a bean `voegIn` put in, fires with `vuur`, and reads every answer with `lees`; the
+write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or lapses, and an
+initialisation fires again, since its target stayed empty on the bean (witness `TmsHerhaaldVurenWitnessTest`). Two
+rules hold a session to that order. The entry keeps both with a watch on the session (`Bewaking`), a listener that
+`vuur` takes off while it fires itself, so that Drools makes no event for it and it costs a fire nothing per firing.
+
+- `lees` and `zetAfgeleideWaarden` refuse a session in which something happened outside `vuur` after the last
+  `vuur`: a fact inserted, updated or deleted, or a rule that fired, by a plain `fireAllRules` among others. Their
+  sentence names what happened and the way on: fire again with `vuur`, or open a fresh session where `vuur` refuses
+  this one (a model with a creation, a session written back, input that came or went). So an update shows only after
+  the next `vuur`, and a plain fire never takes the place of one (witness `TmsAfnemerWitnessTest`).
+- `vuur` refuses a session into which input came, or from which input went, outside `voegIn` since `voegIn` or the
+  last `vuur`: a bean inserted or deleted, or a bucket input or a list place, since `voegIn` states the places of a
+  list and the bucket scalars over the beans of one input, and a bean inserted later has neither. Between two fires a
+  consumer changes the values and the relations of the beans `voegIn` put in, with `update`; to add or remove an
+  object it opens a fresh session with all beans in one `Invoer`. `vuur` also repeats the reference check of `voegIn`
+  over the beans of the session, since an update can set a reference field to an object outside it, and refuses in
+  the sentence of `voegIn` (witness `TmsHerhaaldVurenWitnessTest`).
+
+A session of a model with a creation fires once, and `vuur` refuses it at every later call: an object or a fact
+creation is stated and never lapses, and so are its initialisations, its links and the fault of a failed
+initialisation (RUNTIME-SEMANTICS ch. 5.5), so after an input change a second fire would keep them beside an input they
+no longer follow from, a state no fresh evaluation gives. A consumer of such a model opens a fresh session per input.
+Written back between the fires, a derived value would be read as input by the next fire and keep an initialisation
+from firing; that is why the write-back closes the session. A changed relation keeps the places `voegIn` numbered,
+which decide only which member a fault names; another convention of a timeline input asks a fresh session too. After
+the write-back the beans hold derived values beside their input, so a fresh session takes beans that hold the input
+alone.
 
 **Faults.** On the truth-maintenance branch an evaluation fault is a fact of the fixpoint, not an exception out of the
 fire: `lees` gives it as data (`Fixpunt.fouten`, the subject, the rule and the exception), and `zetAfgeleideWaarden`
@@ -141,12 +158,18 @@ creation and subject, and after the write-back the reference fields reach it.
 - An object a bean refers to: `voegIn` refuses a reference field that holds an object outside the input, naming the
   bean, the field and the object's type, before it inserts anything. The branch derives nothing for an object outside
   the session, so every value read through the field would stay empty, and the link the field gives would still block
-  a creation.
+  a creation. `vuur` repeats the check over the beans of the session, so a relation that an update set to an object
+  outside the session is refused there, in the same sentence.
 - `voegIn` itself, with the beans inserted by `session.insert`: no bucket scalars, so every timeline input reads as a
   full timeline, and no places, so a rule that needs one stops the fire with an `IllegalStateException` ("… heeft geen
   Lijstplaats …").
+- A fresh session for a new or a removed object: `vuur` refuses a session into which a bean, a bucket input or a list
+  place came, or from which one went, outside `voegIn`, naming it, after `voegIn` as between two fires.
 - `vuur`, with a plain `fireAllRules`: `lees` and `zetAfgeleideWaarden` refuse the session, on every model, with a
   sentence that names `vuur`; on a model with a creation the creations never fired.
+- `vuur` after an update, or after a plain fire that follows a `vuur`: `lees` and `zetAfgeleideWaarden` refuse the
+  session, naming the first fact that changed and the first rule that fired since the last `vuur`, and write nothing;
+  the next `vuur` makes the session readable again, where `vuur` does not refuse it.
 - The write-back: the beans hold the input alone, and `lees` holds the answer.
 - `geenFixpunt`: a run at the cap or at the creation budget has no answer, and `lees` and `zetAfgeleideWaarden`
   refuse the session with the sentence of that run, as they refuse one whose `vuur` threw. Without a creation a further
@@ -588,7 +611,8 @@ a to-one role of such a relation is a `Fout` at the fixpoint ("een tweede vullin
 5.5). A condition of a creation that can fault has an ordinary fault rule in the rule layer, without the mark and
 without the 1:1 guard, as the reference interpreter evaluates the condition first, in every pass. The replay and a
 consumer fire through `DroolsBackend.vuur`; `lees` and `zetAfgeleideWaarden` refuse a session that `vuur` did not fire
-to its fixpoint, and on a build with a creation `vuur` fires a session once, since what a creation made is stated. The
+to its fixpoint, or in which something happened outside `vuur` since, and on a build with a creation `vuur` fires a
+session once, since what a creation made is stated. The
 write-back puts each link a creation laid on the reference fields that hold it, so a consumer that reads the beans
 reaches a made object. Witnesses `TmsCreatieWitnessTest`, `TmsAfnemerWitnessTest` and `TmsHerhaaldVurenWitnessTest`.
 
