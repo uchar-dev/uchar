@@ -166,8 +166,10 @@ class DatumSetvouwWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    /** The bereik golden with both rules' fold kind replaced. Verifier-clean either way: the target,
-     *  the member and the fold all stay `Datum in dagen`. */
+    /** The bereik golden with both rules' fold kind replaced. The rows replace it with an additive kind,
+     *  and then the document is not verifier-clean: WF-091 rejects a sum or a total over Date values
+     *  ("a total, sum or pro-rata part is arithmetic over a Number, and Date values are calendar
+     *  positions"), measured 2026-10-10 on both kinds. */
     private static ObjectNode metKind(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         for (JsonNode r : ir.get("rules").get("rules")) ((ObjectNode) r.get("versions").get(0).get("value")).put("kind", kind);
@@ -175,10 +177,9 @@ class DatumSetvouwWitnessTest {
     }
 
     /** The bereik golden retyped to Tekst end to end — the member declaration, the fold's own type
-     *  and both targets — which is what carries it past WF-091 (a fold's type must follow its
-     *  operand). WF-038 is the one that then decides: with {@code kind} an additive one the document
-     *  is verifier-CLEAN, with the golden's own MINIMUM/MAXIMUM left standing ({@code kind} null) it
-     *  is verifier-REJECTED, and the two rows above say which they are. */
+     *  and both targets. The verifier rejects it either way (measured 2026-10-10): with {@code kind}
+     *  an additive one on WF-091 ("Text values are not amounts"), with the golden's own
+     *  MINIMUM/MAXIMUM left standing ({@code kind} null) on WF-038 (an ordering fold over text). */
     private static ObjectNode alsTekst(String golden, String kind) throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(ir(golden)));
         if (kind != null)

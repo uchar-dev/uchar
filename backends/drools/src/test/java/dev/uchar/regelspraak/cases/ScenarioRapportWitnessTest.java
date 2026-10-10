@@ -4,7 +4,6 @@ import dev.uchar.regelspraak.engine.ScenarioResultaat;
 import dev.uchar.regelspraak.engine.ScenarioResultaat.DekkingSoort;
 import dev.uchar.regelspraak.engine.ScenarioResultaat.Status;
 import dev.uchar.regelspraak.engine.ScenarioResultaat.VerwachtingResultaat;
-import dev.uchar.regelspraak.engine.ScenarioResultaat.Vuring;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,10 +21,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * by the same exec-model replay the gate plays. The fixtures are corpus goldens: {@code jutterswet-uitsluiting-rgs},
  * whose four cases its scenario document regenerates, and {@code anchor/jutterswet-bootberging}, which no exec-model
  * branch carries (a source path over a relation whose roles are both to-many, for which the bean model has no field).
- * Until card tms-omschakeling the second fixture was {@code anchor/jutterswet-erflijn}, which the truth-maintenance
- * branch plays; the rows hold what both the destructive and the truth-maintenance exec-model branch report, since the
- * report replays on the exec-model branch and the switch-over changes which of the two that is: the trace is pinned by
- * its labels and counts, not by the names of the rules a branch fires.
+ * Until card tms-omschakeling the second fixture was {@code anchor/jutterswet-erflijn}, which the exec-model branch
+ * with truth maintenance plays.
+ *
+ * <p>The trace of the first case is pinned whole. The report names a firing by the base name of its rule, the part
+ * after the name of its form ({@code ProducentConsument.basisNaam}), so "default 1" is the default of the document's
+ * one defaults group, that of uitgesloten, which decides for M; "eens wortel" its agreement over the root; and "waar
+ * uit een afleiding" the standing of the characteristic that follows. Until the switch-over the trace was pinned by
+ * the name of the destructive branch's rule, "defaults K:Jutter.uitgesloten"; while both branches stood it was pinned
+ * by its labels and counts alone, which a report without a firing of the group passed as well (the lens on step 5a1
+ * of card tms-omschakeling, 2026-10-10).
  */
 class ScenarioRapportWitnessTest {
 
@@ -56,14 +61,12 @@ class ScenarioRapportWitnessTest {
                 new VerwachtingResultaat("consistent", "consistent", "consistent", true, 3)),
                 geweigerd.verwachtingen());
         assertEquals("", geweigerd.diagnose());
-        List<String> gevuurd = geweigerd.trace().vuringen().stream().map(Vuring::regel).toList();
-        assertFalse(gevuurd.isEmpty(), "de defaultsgroep vuurt");
-        // a firing names the case's objects it matched: M, or none where a rule of the defaults family matches facts of
-        // the branch with truth maintenance alone, as its agreement over the root does
-        assertTrue(geweigerd.trace().vuringen().stream().allMatch(v -> (v.labels().equals(List.of("M"))
-                || v.labels().isEmpty()) && v.aantal() > 0), () -> geweigerd.trace().toString());
-        assertTrue(geweigerd.trace().vuringen().stream().anyMatch(v -> v.labels().equals(List.of("M"))),
-                () -> geweigerd.trace().toString());
+        // a firing names the case's objects it matched: M, or none where a rule matches facts of the branch alone, as
+        // the agreement of the defaults group over the root does
+        List<String> spoor = geweigerd.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " "
+                + v.aantal()).sorted().toList();
+        assertEquals(List.of("default 1 [M] 1", "eens wortel [] 1", "waar uit een afleiding [M] 1"), spoor,
+                "de defaultsgroep vuurt haar default op M, en het kenmerk volgt");
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
         assertEquals(DekkingSoort.NIET_GERAAKT, dekking(geweigerd, "penninggerechtigd tenzij uitgesloten"));
         assertEquals(DekkingSoort.GEVUURD, dekking(van(rapport, "case4-kaal.json"), "penninggerechtigd tenzij uitgesloten"));

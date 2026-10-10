@@ -238,9 +238,11 @@ class ObjectcreatieVouwWitnessTest {
         // J2: ref and clingo write 1,00, leeg, 1,00 and 1,00 and turn the case inconsistent (ch. 1.2, ch. 5.6). The
         // destructive exec-model branch evaluated the toekenningen once, when it minted, and reported the Fout of that
         // evaluation itself; until 2026-10-01 it answered consistent here, and then refused the form by the site's kind.
-        // The truth-maintenance branch refuses a division or a root in a member initialisation by name: it makes no
-        // §6.5 or §6.6 deposit there. Coverage lost against the destructive branch, accepted (card tms-omschakeling);
-        // each case below keeps the values ref answers, for the card that carries the form.
+        // The exec-model branch refuses a division or a root in a member initialisation by name: it makes no §6.5 or
+        // §6.6 deposit there. Coverage lost against the destructive branch, accepted (card tms-omschakeling); each case
+        // below keeps the values ref answers, for the card that carries the form. The rows pin the whole sentence, the
+        // deposit the branch does not make among it; until the lens on step 5a1 of that card they pinned the form
+        // alone, which a refusal with another reason passed as well.
         String eigen = binair("dividedBy", eigen("basis"), eigen("deler"), ONBEGRENSD, "zijn basis gedeeld door zijn deler");
         List<String> metDeler = new ArrayList<>();
         for (String j : situatie()) metDeler.add(j.replace("\"objectType\":\"Jutter\",\"attributes\":{}",
@@ -248,24 +250,24 @@ class ObjectcreatieVouwWitnessTest {
                         + (j.contains("\"J2\"") ? "" : ",\"deler\":{\"number\":\"2\"}") + "}"));
         geweigerd(document(false, creatie(null, toekenning("heffing", eigen)), leesTerug("heffing")), zaak(metDeler,
                 perJutter("heffing", getal("1.00"), null, getal("1.00"), getal("1.00")), INCONSISTENT),
-                "een deling in een ledeninitialisatie ('zijn basis gedeeld door zijn deler')");
+                DELING.formatted("zijn basis gedeeld door zijn deler"));
         // "(100 gedeeld door (de som …)) rekenkundig afgerond op 2 decimalen": ref and clingo 9,09, leeg, leeg and 11,11,
         // inconsistent; over J1 and J4 alone, whose sums are filled, consistent.
         String doorSom = afgerondOp2(binair("dividedBy", getalLiteraal(100), SOM, ONBEGRENSD, "100 gedeeld door (de som …)"));
         String somIr = document(false, creatie(null, toekenning("heffing", doorSom)), leesTerug("heffing"));
         geweigerd(somIr, zaak(situatie(), perJutter("heffing", getal("9.09"), null, null, getal("11.11")), INCONSISTENT),
-                "een deling in een ledeninitialisatie ('100 gedeeld door (de som …)')");
+                DELING.formatted("100 gedeeld door (de som …)"));
         List<String> gevuld = new ArrayList<>();
         for (String i : situatie()) if (!i.contains("\"J2\"") && !i.contains("\"J3\"")) gevuld.add(i);
         geweigerd(somIr, zaak(gevuld, "{\"kind\":\"attributeValue\",\"label\":\"J1\",\"attribute\":\"heffing\",\"value\":"
                 + getal("9.09") + "},{\"kind\":\"attributeValue\",\"label\":\"J4\",\"attribute\":\"heffing\",\"value\":"
-                + getal("11.11") + "}", CONSISTENT), "een deling in een ledeninitialisatie ('100 gedeeld door (de som …)')");
+                + getal("11.11") + "}", CONSISTENT), DELING.formatted("100 gedeeld door (de som …)"));
         // "(de som …) gedeeld door 4": a literal divisor never deposits. ref and clingo: 2,75, 0,00, 0,00 and 2,25,
         // consistent.
         geweigerd(document(false, creatie(null, toekenning("heffing", binair("dividedBy", SOM, getalLiteraal(4),
                 ONBEGRENSD, "(de som …) gedeeld door 4"))), leesTerug("heffing")), zaak(situatie(),
                 perJutter("heffing", getal("2.75"), getal("0.00"), getal("0.00"), getal("2.25")), CONSISTENT),
-                "een deling in een ledeninitialisatie ('(de som …) gedeeld door 4')");
+                DELING.formatted("(de som …) gedeeld door 4"));
         // "de wortel van ((de som …) min 10) rekenkundig afgerond op 2 decimalen": J1 1, the others negative. ref: 1,00,
         // leeg, leeg and leeg, inconsistent; clingo does not translate the rounded root.
         String wortel = afgerondOp2("{\"node\":\"BuiltinCall\",\"kind\":\"squareRoot\",\"arguments\":["
@@ -273,18 +275,26 @@ class ObjectcreatieVouwWitnessTest {
                 + "\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":{\"snippet\":\"de wortel van …\"}}");
         geweigerd(document(false, creatie(null, toekenning("heffing", wortel)), leesTerug("heffing")), zaak(situatie(),
                 perJutter("heffing", getal("1.00"), null, null, null), INCONSISTENT),
-                "een wortel in een ledeninitialisatie ('de wortel van …')");
+                WORTEL.formatted("de wortel van …"));
     }
 
-    /** The truth-maintenance branch refuses the creation "maak een afrekening" of {@code ir} by name, on the form
-     *  {@code vorm}, before {@code zaak} is replayed. */
-    private static void geweigerd(String ir, String zaak, String vorm) throws Exception {
+    /** The refusal of a division in a member initialisation, whose §6.5 deposit the branch does not make, with the
+     *  snippet of the division to fill in. */
+    private static final String DELING = "een deling in een ledeninitialisatie ('%s'), waarvan deze tak de"
+            + " §6.5-deponering niet maakt: deze tak draagt deze vorm nog niet";
+    /** The refusal of a root in a member initialisation, whose §6.6 deposit the branch does not make. */
+    private static final String WORTEL = "een wortel in een ledeninitialisatie ('%s'), waarvan deze tak de"
+            + " §6.6-deponering niet maakt: deze tak draagt deze vorm nog niet";
+
+    /** The exec-model branch refuses the creation "maak een afrekening" of {@code ir} by name, in the sentence that
+     *  ends in {@code reden}, before {@code zaak} is replayed. */
+    private static void geweigerd(String ir, String zaak, String reden) throws Exception {
         Path tmp = Files.createTempFile("objectcreatie-vouw", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL));
-        org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("objectcreatie: maak een afrekening — " + vorm),
+        org.junit.jupiter.api.Assertions.assertEquals("transpiler SKIP: objectcreatie: maak een afrekening — " + reden,
                 e.getMessage());
     }
 
