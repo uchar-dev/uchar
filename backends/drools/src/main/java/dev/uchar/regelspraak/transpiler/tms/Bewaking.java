@@ -17,6 +17,7 @@ import org.kie.api.event.rule.ObjectUpdatedEvent;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.runtime.KieSession;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -38,12 +39,15 @@ import java.util.function.Supplier;
  * that fired outside it, the first change of the agenda, the first insert or delete of a fact of a kind {@code voegIn}
  * puts in, and the first change beyond such an update: any insert or delete, an update of a fact that is no bean of the
  * input, and an update that changed a relation, a reference field, of a bean of the input. From the first {@code vuur}
- * on it keeps the globals as they stood then. Two readings rest on it.
+ * on it keeps the globals as they stood then. It records the relations of the beans of the input when it takes them,
+ * and tells a relation changed without an update from the beans themselves ({@link #veranderdeRelatie}), since such a
+ * change makes no event and Drools keeps reading the old relation. Two readings rest on it.
  *
  * <ul>
  *   <li>{@link TmsTranspiler#lees} and {@link TmsTranspiler#zetAfgeleideWaarden} read a session only where it kept
  *       nothing after the last {@code vuur}, the agenda holds no change ({@link #agenda}) and no global changed: after
- *       an update the facts of the last fixpoint belong to an input that no longer stands, and a plain
+ *       an update, or after a relation changed without one, the facts of the last fixpoint belong to an input that
+ *       no longer stands, and a plain
  *       {@code fireAllRules} fires the rule layer without the cap and, on a model with a creation, without the
  *       creations, which fire only in the generations of {@code vuur}. A mark in the session ({@link Gevuurd}) cannot
  *       see either, since it is itself a fact that no event touches.</li>
@@ -86,8 +90,14 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
     private final Map<Class<?>, Relatievelden> beans;
     /** The kinds of fact {@code voegIn} puts in: the bean classes, and what it states beside them. */
     private final Set<Class<?>> invoer;
-    /** The beans of the input, each with the objects its reference fields held when it came in. */
+    /** The beans of the input, each with the objects its reference fields held when it came in, or after the
+     *  write-back ({@link #legRelatiesVast}). */
     private final Map<Object, Object[]> relaties = new IdentityHashMap<>();
+    /** The beans of {@link #relaties} in the order they came in, so that a sentence names the first changed relation of
+     *  the input and not one of an order of identities. */
+    private final List<Object> invoerbeans = new ArrayList<>();
+    /** The call of the entry at which the watch took the beans of the input, as a sentence names it. */
+    private String vastgelegd;
     /** The globals at the first {@code vuur}, by name; null before it. */
     private Map<String, Object> globalen;
     /** The call of the entry the watch keeps from, as a sentence names it. */
@@ -122,19 +132,21 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
 
     /** The watch on {@code sessie}, put there where there is none, with {@code beans} the bean classes of the model and
      *  their relations; it takes {@code invoerbeans} as beans of the input, with the relations they hold now, forgets
-     *  what happened and keeps from now on, {@code sinds} naming the call of the entry it keeps from. */
+     *  what happened and keeps from now on, {@code sinds} naming the call of the entry it keeps from and, where it puts
+     *  the watch there, the call at which it took the beans. */
     public static Bewaking op(KieSession sessie, Map<Class<?>, Relatievelden> beans, Iterable<?> invoerbeans,
                               String sinds) {
         Bewaking b = van(sessie);
         if (b == null) {
             b = new Bewaking(beans);
+            b.vastgelegd = Objects.requireNonNull(sinds, "sinds");
             sessie.addEventListener((RuleRuntimeEventListener) b);
             sessie.addEventListener((AgendaEventListener) b);
         }
         for (Object bean : invoerbeans) {
             Relatievelden r = b.beans.get(bean.getClass());
             if (r == null) throw new IllegalArgumentException(Feitnamen.object(bean) + " is geen bean van het model");
-            b.relaties.putIfAbsent(bean, r.lees(bean));
+            if (b.relaties.putIfAbsent(bean, r.lees(bean)) == null) b.invoerbeans.add(bean);
         }
         b.vergeet(sinds);
         return b;
@@ -187,6 +199,35 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
         return w == null ? "geen waarde" : w.toString();
     }
 
+    /** The first relation of a bean of the input, in the order the beans came in, whose reference field holds another
+     *  object than the watch recorded, as a clause, or null. An update that changes a relation the watch keeps as more
+     *  than an update ({@link #meerDanEenUpdate}); this reads the beans themselves, since a field set without an update
+     *  makes no event, and the network keeps matching the object the field held when the bean came in. */
+    public String veranderdeRelatie() {
+        for (Object bean : invoerbeans) {
+            Relatievelden r = beans.get(bean.getClass());
+            Object[] voor = relaties.get(bean);
+            Object[] nu = r.lees(bean);
+            for (int i = 0; i < nu.length; i++)
+                if (nu[i] != voor[i])
+                    return "het veld '" + r.namen().get(i) + "' van " + Feitnamen.object(bean) + ", een relatie,"
+                            + " veranderde zonder update: het hield bij " + vastgelegd + " " + doel(voor[i])
+                            + " en houdt nu " + doel(nu[i]);
+        }
+        return null;
+    }
+
+    private static String doel(Object o) {
+        return o == null ? "geen object" : Feitnamen.object(o);
+    }
+
+    /** Records the relations of the beans of the input as they stand now: the write-back puts the links the creations
+     *  laid on the reference fields of those beans, the entry's own work, which a reading after it must not count as a
+     *  changed relation. */
+    public void legRelatiesVast() {
+        for (Object bean : invoerbeans) relaties.put(bean, beans.get(bean.getClass()).lees(bean));
+    }
+
     /** Runs {@code werk}, the entry's own work, with this watch off {@code sessie}, and puts it back after, also where
      *  {@code werk} throws. */
     public <T> T zonder(KieSession sessie, Supplier<T> werk) {
@@ -234,7 +275,11 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
      * propagation list for the next fire. The entry never clears a group, so a group that holds a recency of a clear
      * was cleared by a consumer, at any moment of the session. Read from Drools' own agenda, since no listener sees
      * these: {@code Agenda.clear} resets the groups and the propagation list without an event, and the two calls on a
-     * group only queue an action.
+     * group only queue an action. A fact inserted, updated or deleted waits on that list for the next fire as well, the
+     * inserts of {@code voegIn} among them, and the watch sees each such call through its event. An action of another
+     * kind, which this version of Drools does not queue between two calls of the entry and another version could, it
+     * refuses with an {@code IllegalStateException} that names its class, since it cannot tell what that action does to
+     * the agenda.
      */
     public static String agenda(KieSession sessie) {
         if (!(sessie.getAgenda() instanceof InternalAgenda agenda))
@@ -247,6 +292,12 @@ public final class Bewaking extends DefaultAgendaEventListener implements RuleRu
                 wat.add("een agendagroep werd geleegd met AgendaGroup.clear");
             else if (e instanceof AgendaGroupQueueImpl.SetFocusAction)
                 wat.add("een agendagroep kreeg de focus met AgendaGroup.setFocus");
+            else if (!(e instanceof PropagationEntry.Insert || e instanceof PropagationEntry.Update
+                    || e instanceof PropagationEntry.Delete))
+                throw new IllegalStateException("op de propagatielijst van deze sessie wacht een " + e.getClass().getName()
+                        + ", een actie die de bewaking niet kent: zij kent naast een insert, update of delete van een"
+                        + " feit alleen die van AgendaGroup.clear en AgendaGroup.setFocus, dus ze kan niet zeggen of een"
+                        + " afnemer de agenda veranderde");
         }
         Set<String> geleegd = new TreeSet<>();
         for (InternalAgendaGroup g : agenda.getAgendaGroupsManager().getAgendaGroups())

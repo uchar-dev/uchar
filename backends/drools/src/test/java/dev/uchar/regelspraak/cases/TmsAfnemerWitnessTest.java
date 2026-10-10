@@ -124,6 +124,10 @@ class TmsAfnemerWitnessTest {
             assertSame(r.object(), RegelSpraakRuntime.get(j1, "rekenkamer"), "J1's field rekenkamer holds the made Rekenkamer");
             assertSame(j1, RegelSpraakRuntime.get(r.object(), "opdrachtgever"), "R's field opdrachtgever holds J1");
             assertEquals(0, new BigDecimal("70").compareTo((BigDecimal) RegelSpraakRuntime.get(j1, "heffing")), "J1 heffing");
+            // the write-back set a reference field of a bean of the input, its own work, which the watch does not count
+            // as a changed relation
+            assertEquals(f.koppelingen(), DroolsBackend.lees(bouw, sessie).koppelingen(),
+                    "the reading after the write-back");
             return null;
         });
     }
@@ -141,6 +145,8 @@ class TmsAfnemerWitnessTest {
             assertSame(h1, RegelSpraakRuntime.get(s1, "thuishaven"),
                     "and the joined-over thuisligging leg still says what the case said");
             assertNull(RegelSpraakRuntime.get(s4, "winterhaven"), "H3 is not veilig, so its ligger got nothing");
+            assertEquals(f.koppelingen(), DroolsBackend.lees(bouw, sessie).koppelingen(),
+                    "the reading after the write-back");
             return null;
         });
     }

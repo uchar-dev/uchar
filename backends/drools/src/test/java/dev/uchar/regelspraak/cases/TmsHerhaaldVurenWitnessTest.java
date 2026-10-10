@@ -118,8 +118,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       "division by numeric zero", a sentence without the operands, and gives J1's 0 where J2 is not actief (measured
  *       2026-10-10). The ASP runner faults on all of these inputs, also where the fold is not evaluated: it divides in
  *       the filter of every Vondst ("viol("division by numeric zero","V2")" with V2 in no list), a divergence of its own
- *       that these rows do not pin. The reference check of {@code vuur} stays behind it: a reference field set without
- *       an update, which the watch does not see, to an object outside the session is refused in its own sentence;</li>
+ *       that these rows do not pin. A reference field set without an update makes no event: set to an object outside
+ *       the session it is refused in the sentence of the reference check of {@code vuur}, and set to an object of the
+ *       input in the sentence of the comparison of the relations (below);</li>
  *   <li>the agenda changed: {@code Agenda.clear} after {@code voegIn}, before the first fire, of which Drools makes no
  *       event; {@code AgendaGroup.clear} after a fire, which Drools queues for the next fire; and
  *       {@code AgendaGroup.setFocus} on a creation group after a fire on {@code anchor/jutterswet-rekenkamer};</li>
@@ -135,6 +136,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fault "4 gedeeld door 0"; after {@code Agenda.clear} the fire derived nothing at all, no uitkering 20 for V1 and no
  * totaalgewicht 14 for J1; and after {@code AgendaGroup.clear} the next fire stopped on an
  * {@code UnsupportedOperationException} out of Drools, while {@code lees} read without a word before it.
+ *
+ * <p>A relation changed without an update, and an action of an unknown kind on the propagation list (the lens on step
+ * 5a1, 2026-10-10). On the values document with a second Jutter J2 in the input, V1's vinder becomes J2 after the
+ * first fire without an update, which makes no event: {@code lees}, {@code zetAfgeleideWaarden} and {@code vuur}
+ * refuse, naming the field and the two Jutters, since the watch compares the reference fields of the beans of the
+ * input with what they held at {@code voegIn}; a fresh session gives J1 4 and J2 10 ({@link #MET_J2}). The reference
+ * interpreter and the ASP runner give J1 14 and J2 leeg on the first input and J1 4 and J2 10 on the changed one, and
+ * the verifier passes the document (measured 2026-10-10). The write-back sets reference fields itself, the links of a
+ * creation, and those do not count as a changed relation ({@link TmsAfnemerWitnessTest}). An action of a kind the
+ * watch does not know, queued with {@code InternalAgenda.addPropagation} as another version of Drools could queue
+ * one, makes the three refuse in the sentence that names its class, and the refused fire runs nothing. <b>Red before
+ * the change</b> (measured 2026-10-10 on {@code fad6a24c}): both rows failed on "Expected
+ * java.lang.IllegalStateException to be thrown, but nothing was thrown."; the old form (not committed) fired a second
+ * time with 0 firings and read J1 totaalgewicht 14 and no value for J2, and with the action queued it read the
+ * fixpoint without a word and the second fire ran the action.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}, the old form of the witness, in which a
  * consumer could only fire, write back and read the beans): after the second fire and write-back V1 still carried
@@ -616,6 +632,50 @@ class TmsHerhaaldVurenWitnessTest {
         });
     }
 
+    /** The clause of a relation that changed without an update: field {@code veld} of {@code bean}, which held
+     *  {@code voor} at {@code voegIn} and holds {@code na}. */
+    static String zonderUpdate(String veld, Object bean, Object voor, Object na) {
+        return "het veld '" + veld + "' van " + TmsAfnemerWitnessTest.naam(bean) + ", een relatie, veranderde zonder"
+                + " update: het hield bij DroolsBackend.voegIn " + TmsAfnemerWitnessTest.naam(voor) + " en houdt nu "
+                + TmsAfnemerWitnessTest.naam(na);
+    }
+
+    /** J1 and J2 in the input, V1 (10) and V2 (4) found by J1; after the first fire V1's vinder becomes J2 without an
+     *  update, which Drools does not see. */
+    @Test void een_relatie_die_zonder_update_verandert_weigert_vuur_lees_en_terugzetten() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            Object j1 = bonen.get("J1"), v1 = bonen.get("V1");
+            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+            bonen.put("J2", j2);
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                assertEquals(EERSTE_WAARDEN, beschrijf(DroolsBackend.lees(b, sessie), bonen), "first reading");
+                zetRol(v1, "vinder", j2);
+                String veranderd = zonderUpdate("vinder", v1, j1, j2);
+                String lezing = "geen fixpunt om te lezen of terug te zetten: " + veranderd + ", en het fixpunt hoort bij"
+                        + " de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met alle"
+                        + " beans in één Invoer";
+                assertEquals(lezing, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        .getMessage(), "the reading");
+                assertEquals(lezing, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
+                assertEquals(veranderd + ": Drools ziet een veld pas na een update, dus een fire zou de oude relatie"
+                        + " blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
+                        + " voegIn legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse"
+                        + " sessie met alle beans in één Invoer", assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the second fire");
+            } finally {
+                sessie.dispose();
+            }
+            // the way the sentences name: a fresh session of the changed input
+            assertEquals(MET_J2, verseLezing(b, bonen), "a fresh session");
+        });
+    }
+
     @Test void een_geleegde_agenda_of_een_focuswissel_buiten_vuur_om_weigert_vuur_lees_en_terugzetten()
             throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
@@ -667,6 +727,43 @@ class TmsHerhaaldVurenWitnessTest {
             assertEquals(lezing, assertThrows(IllegalStateException.class,
                     () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
             return null;
+        });
+    }
+
+    /** An action on the propagation list of a kind the watch does not know, as another version of Drools could queue
+     *  for the next fire; it records whether a fire ran it. */
+    private static final class OnbekendeActie extends org.drools.core.phreak.PropagationEntry.AbstractPropagationEntry {
+        boolean uitgevoerd;
+
+        @Override public void internalExecute(org.drools.core.common.ReteEvaluator evaluator) {
+            uitgevoerd = true;
+        }
+    }
+
+    @Test void een_onbekende_actie_op_de_propagatielijst_weigert_vuur_lees_en_terugzetten() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().beans(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                OnbekendeActie actie = new OnbekendeActie();
+                ((org.drools.core.common.InternalAgenda) sessie.getAgenda()).addPropagation(actie);
+                String zin = "op de propagatielijst van deze sessie wacht een " + OnbekendeActie.class.getName()
+                        + ", een actie die de bewaking niet kent: zij kent naast een insert, update of delete van een"
+                        + " feit alleen die van AgendaGroup.clear en AgendaGroup.setFocus, dus ze kan niet zeggen of een"
+                        + " afnemer de agenda veranderde";
+                assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie))
+                        .getMessage(), "the reading");
+                assertEquals(zin, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back");
+                assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie))
+                        .getMessage(), "the second fire");
+                assertFalse(actie.uitgevoerd, "the refused fire ran no action");
+            } finally {
+                sessie.dispose();
+            }
         });
     }
 

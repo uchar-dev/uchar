@@ -403,8 +403,9 @@ public final class TmsTranspiler {
      * cap, at the creation budget or with an exception holds a state on the way to the fixpoint. It refuses as well a
      * session in which something happened outside the driver after its last run, a fact inserted, updated or deleted or
      * a rule that fired ({@link Bewaking}), naming what happened and what to do: fire again through the driver, or open
-     * a fresh session where the driver refuses a further fire. What this gives is thus always a fixpoint, that of the
-     * input as it stands.
+     * a fresh session where the driver refuses a further fire; and one in which a global or, without an update, a
+     * relation changed, which the driver refuses. What this gives is thus always a fixpoint, that of the input as it
+     * stands.
      */
     public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
         return lezing(sessie, label).fixpunt();
@@ -427,8 +428,9 @@ public final class TmsTranspiler {
      *
      * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
      * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
-     * the session again ({@code DroolsBackend.vuur}). It states the mark with the {@link Bewaking} off, as its own work:
-     * {@link #lees} reads the session after the write-back as before it.
+     * the session again ({@code DroolsBackend.vuur}). It states the mark with the {@link Bewaking} off, as its own work,
+     * and has the watch record the relations after the links it wrote: {@link #lees} reads the session after the
+     * write-back as before it.
      */
     public void zetAfgeleideWaarden(KieSession sessie) {
         zetAfgeleideWaarden(sessie, null);
@@ -446,8 +448,10 @@ public final class TmsTranspiler {
         if (fouten.size() == 1) throw fouten.get(0).fout();
         if (!fouten.isEmpty()) throw new Evaluatiefouten(fouten);
         lezing.schrijfdaden().forEach(Runnable::run);
-        // the entry's own insert: the session is read after it as before it
-        Bewaking.van(sessie).zonder(sessie, () -> sessie.insert(new Teruggezet()));
+        // the entry's own insert and links: the session is read after them as before them
+        Bewaking bewaking = Bewaking.van(sessie);
+        bewaking.zonder(sessie, () -> sessie.insert(new Teruggezet()));
+        bewaking.legRelatiesVast();
     }
 
     /** What {@link #lees} reads, with beside it the writes that put it on the beans, made from the same facts in the
@@ -507,6 +511,11 @@ public final class TmsTranspiler {
         if (global != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + global + ", en het fixpunt"
                     + " hoort bij de oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie");
+        String relatie = bewaking.veranderdeRelatie();
+        if (relatie != null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + relatie + ", en het fixpunt"
+                    + " hoort bij de oude relatie; DroolsBackend.vuur weigert de sessie, dus open een verse sessie met"
+                    + " alle beans in één Invoer");
         List<Runnable> daden = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are

@@ -542,7 +542,8 @@ public final class DroolsBackend {
      *                                       with a plain {@code fireAllRules}, whose last {@code vuur} ended without a
      *                                       fixpoint ({@link Vuring#geenFixpunt}) or with an exception, or in which a
      *                                       fact was inserted, updated or deleted, or a rule fired, after the last
-     *                                       {@code vuur} and outside it; the sentence says which, and what to do
+     *                                       {@code vuur} and outside it, or a global or, without an update, a relation
+     *                                       changed; the sentence says which, and what to do
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
         return lezing(build, sessie, null);
@@ -666,7 +667,9 @@ public final class DroolsBackend {
      * fresh session. It refuses as well, after its first run, a session whose globals changed since that run, since the
      * branch states a global as a fact once, at the first fire, and a session from which a consumer took the watch. It
      * repeats the reference check of {@code voegIn} over the beans of the session, which a reference field set without
-     * an update can fail, and refuses in the sentence of {@code voegIn}.
+     * an update can fail, and refuses in the sentence of {@code voegIn}; and it refuses a session in which a reference
+     * field of a bean {@code voegIn} put in holds another object than it held then, set without an update, which no
+     * event shows and after which Drools keeps reading the old relation.
      *
      * <p>On the exec-model branch it fires a session of a model with a creation once, and refuses it at every
      * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
@@ -801,8 +804,9 @@ public final class DroolsBackend {
      *  afterwards with nothing kept: the two readings see what happens after this run. A refusal leaves the watch as it
      *  was, so a reading after it still sees what happened before. It refuses as well what {@link #vuur(Build,
      *  KieSession)} lists: more than an update of an attribute or a characteristic of a bean of the input since
-     *  {@link #voegIn} or the last run, a global changed since the first run, a fired session without its watch, and a
-     *  reference field that holds an object outside the session. At the first run it puts the watch on where
+     *  {@link #voegIn} or the last run, a global changed since the first run, a fired session without its watch, a
+     *  reference field that holds an object outside the session, and a relation changed without an update. At the first
+     *  run it puts the watch on where
      *  {@code voegIn} did not, with the beans the session holds as the input, and keeps the globals. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         if (build.branch() == Branch.DRL_TEXT) return vuurOnderPlafond(build, sessie, plafond);
@@ -850,9 +854,15 @@ public final class DroolsBackend {
         Map<Class<?>, Objecttype> klassen = bonenklassen(build);
         String buiten = doelBuitenDeSessie(build, sessie, klassen);
         if (buiten != null) throw new IllegalStateException(buiten);
+        String relatie = gezet == null ? null : gezet.veranderdeRelatie();
+        if (relatie != null)
+            throw new IllegalStateException(relatie + ": Drools ziet een veld pas na een update, dus een fire zou de oude"
+                    + " relatie blijven lezen, en ook met een update vraagt een gewijzigde relatie een verse sessie, want"
+                    + " voegIn legt de plaatsen van een lijst vast over de relaties van één invoer; open een verse sessie"
+                    + " met alle beans in één Invoer");
         Bewaking bewaking = gezet != null ? gezet
                 : Bewaking.op(sessie, relatievelden(build, klassen), bonenInDeSessie(sessie, klassen),
-                        "de laatste DroolsBackend.vuur van deze sessie");
+                        "de eerste DroolsBackend.vuur van deze sessie");
         bewaking.legGlobalenVast(sessie);
         bewaking.vergeet("de laatste DroolsBackend.vuur van deze sessie");
         return bewaking.zonder(sessie, () -> {
