@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * division row and the marker row stay red with the host rule alone repaired: their companions repeat the host's
  * voorwaarde and need the same test. The row without a relation is a flank: green before and after, it holds the
  * null alternative of the far-side join. The row over a displaced role field pins the refusal the far-side join of
- * a characteristic check gives where the bean carries no reference field.
+ * a characteristic check gives where the bean carries no reference field. Since card tms-omschakeling (2026-10-10) the
+ * marker row and that refusal run on the truth-maintenance branch, which refuses the fired-rule marker by name.
  */
 class GenavigeerdeVoorwaardeWitnessTest {
 
@@ -84,14 +85,13 @@ class GenavigeerdeVoorwaardeWitnessTest {
                 "de deling door 2");
     }
 
-    @Test void de_gevuurd_begeleider_volgt_de_voorwaarde_van_zijn_gastregel() throws Exception {
-        // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. The
-        // marker is inserted by a companion that repeats the host's voorwaarde, so it must see the derivation as
-        // the host does. V's uitkomst is given as the value the host writes, so the host's write changes nothing
-        // and updates no fact: only the join on the jutter can run the companion's test again. No arbiter: ref
-        // faults on 'is gevuurd' and the ASP backend does not translate it, so this row pins the Drools reading,
-        // the host fired. Measured 2026-09-28: red on the jar of the claim and with the host alone repaired
-        // (kenmerk afgehandeld: verwacht aanwezig, werkelijk afwezig), green once the companion takes the test.
+    @Test void een_gevuurd_voorwaarde_weigert_met_naam() throws Exception {
+        // "Een Vondst is afgehandeld indien regelversie uitkomst is gevuurd", over the reproduction's rule. No arbiter:
+        // ref faults on 'is gevuurd' and the ASP backend does not translate it. The destructive exec-model branch
+        // carried it with a companion that repeated the host's voorwaarde, and this row pinned that reading, the host
+        // fired (V afgehandeld). The truth-maintenance branch refuses the predicate by name: it is no form of the
+        // kernel but a predicate of the RegelSpraak dialect over the fixpoint (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS
+        // row 30). Coverage lost against the destructive branch, accepted (card tms-omschakeling).
         String model = "{\"objectTypes\":[" + JUTTER_DATUMS + ",{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,"
                 + "\"plural\":\"Vondsten\",\"attributes\":[" + VONDST_UITKOMST + "],\"characteristics\":[{\"node\":"
                 + "\"Characteristic\",\"name\":\"afgehandeld\",\"kind\":\"adjectival\"}]}],\"factTypes\":[" + JUTTER_VONDST
@@ -104,10 +104,12 @@ class GenavigeerdeVoorwaardeWitnessTest {
                 + "\"initialisation\":false}]}";
         String ir = document(model, regels(AFGELEID, regel("uitkomst", "Vondst", "uitkomst", viaJutter("meldingsdatum"),
                 gevuld(viaJutter("afgeleide datum"))), afgehandeld), "", "");
-        assertNull(speel(ir, zaak(List.of(jutter("J", MELDING_MAART), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")),
-                        waarde("V", "uitkomst", "2026-03-01") + ", {\"kind\":\"characteristicPresent\",\"label\":\"V\","
-                        + "\"characteristic\":\"afgehandeld\"}")),
-                "de gevuurd-markering onder de voorwaarde op de afgeleide datum");
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(ir, zaak(List.of(jutter("J",
+                MELDING_MAART), vondst("V", "J", "\"uitkomst\":{\"date\":\"2026-03-01\"}")), waarde("V", "uitkomst",
+                "2026-03-01") + ", {\"kind\":\"characteristicPresent\",\"label\":\"V\",\"characteristic\":\"afgehandeld\"}")));
+        assertTrue(e.getMessage().contains("regel: afgehandeld — een Regelversie 'is gevuurd' in de voorwaarde"
+                + " ('regelversie uitkomst is gevuurd'): geen vorm van de kern maar een predicaat van het"
+                + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30)"), e.getMessage());
     }
 
     @Test void een_objectcreatie_ziet_de_afgeleide_waarde() throws Exception {
@@ -187,7 +189,8 @@ class GenavigeerdeVoorwaardeWitnessTest {
         // attribute's, so the rule is refused by name, as every other reader of that field is (RolveldlezerWitnessTest,
         // OpslagrichtingWitnessTest). Measured 2026-09-28: ref and clingo answer toeslag leeg; on the jar of the claim
         // the check read the attribute as the relation, an unclassified fault at fire once it is filled
-        // (ERROR ConstraintEvaluationException).
+        // (ERROR ConstraintEvaluationException). On the truth-maintenance branch, whose sentence names the missing
+        // reference field.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
                 Path.of("..", "..", "corpus", "golden", "synth-navigatiepremie", "ir.json")));
         IrPad.objectType(ir, "Werf").putArray("characteristics").addObject()
@@ -206,10 +209,9 @@ class GenavigeerdeVoorwaardeWitnessTest {
                 + "{\"label\":\"S1\",\"objectType\":\"Schuit\",\"attributes\":{" + getal("lengte", "8") + ", "
                 + getal("werf", "5") + "},\"roles\":{},\"characteristics\":[]}],\"parameters\":{}},"
                 + "\"expected\":[" + leegVerwacht("S1", "toeslag") + "]}";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir.toString(), zaak));
-        assertTrue(e.getMessage().contains("genavigeerde kenmerkcheck"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"),
-                e.getMessage());
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(ir.toString(), zaak));
+        assertTrue(e.getMessage().contains("regel: toeslag van een schuit — de kenmerkcheck 'zijn werf bedrijvig is':"
+                + " Schuit heeft geen referentieveld 'werf' naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
     }
 
     @Test void het_anker_kustwacht_speelt() throws Exception {
@@ -347,5 +349,12 @@ class GenavigeerdeVoorwaardeWitnessTest {
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
         return CaseRunner.speelCase(tmp, c, false);
+    }
+
+    private static String speelTms(String ir, String zaak) throws Exception {
+        Path tmp = Files.createTempFile("genavigeerde-voorwaarde", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 }

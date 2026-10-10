@@ -58,7 +58,9 @@ class SleutelconventieWitnessTest {
     private static final Path TWEE_TEMPOREEL = ROOD.resolve("uni-two-temporal-keys/ir.json");
 
     /** The shared ch. 5.9 key-shape wording, byte-equal to ref's ({@code eval.ml, ever_tuples}). */
-    private static final String TE_VEEL = "a uniqueness key list carries at most one temporal key component";
+    /** The truth-maintenance branch's refusal of a key list with two temporal components. */
+    private static final String TE_VEEL = "een uniciteitssleutel 'kavelnummer' van Strandvondst op een tijdlijn naast"
+            + " een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel";
 
     @TempDir static Path tmp;
 
@@ -108,17 +110,20 @@ class SleutelconventieWitnessTest {
         // the guard counts the TEMPORAL components of a key list; counting them with an exact match made a
         // mis-capitalised component invisible, so a two-temporal key list read as one and ran on. ref on this
         // model: "EVALUATION FAULT: a uniqueness key list carries at most one temporal key component (…)";
-        // clingo raises the same wording at translation.
+        // clingo raises the same wording at translation. The truth-maintenance branch refuses the shape by name when
+        // it lowers the uniqueness (UniciteitSleutelvormWitnessTest), so its count shows in the refusal.
         Path ir = metSleutels(TWEE_TEMPOREEL, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
-        Throwable t = assertThrows(RuntimeException.class, () -> vlaggen(ir, tweeTemporeleSleutels()));
-        assertTrue(oorzaakKeten(t).contains(TE_VEEL),
-                "the arity guard must count a mis-capitalised component too, got: " + oorzaakKeten(t));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, tweeTemporeleSleutels(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains(TE_VEEL),
+                "the arity guard must count a mis-capitalised component too, got: " + e.getMessage());
     }
 
     @Test void de_kale_tweeling_van_de_ariteitsguard() throws Exception {
-        Throwable t = assertThrows(RuntimeException.class, () -> vlaggen(TWEE_TEMPOREEL, tweeTemporeleSleutels()));
-        assertTrue(oorzaakKeten(t).contains(TE_VEEL),
-                "the declared spelling faults on the same shape, got: " + oorzaakKeten(t));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(TWEE_TEMPOREEL, tweeTemporeleSleutels(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains(TE_VEEL), "the declared spelling is refused on the same shape, got: "
+                + e.getMessage());
     }
 
     // ---------------- 4. the cross-source mixed union ----------------
@@ -299,13 +304,5 @@ class SleutelconventieWitnessTest {
     /** A no-arg read on a CHILD-loaded bean (the fact classes are not on this test's classpath). */
     private static Object lees(Object bean, String getter) throws Exception {
         return bean.getClass().getMethod(getter).invoke(bean);
-    }
-
-    /** The whole cause chain as one string — Drools wraps a consequence throw. */
-    private static String oorzaakKeten(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause())
-            sb.append(c).append(" | ");
-        return sb.toString();
     }
 }

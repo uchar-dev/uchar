@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,6 +24,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Red before the fix</b> (measured 2026-10-01 on the transpiler of {@code 2a0c6d60}, exec-model branch): every
  * such group was refused, {@code kanaal-deponerende consequentie (deling) op defaults-target}, and the root in the same
  * words. A division under another operator ("(… gedeeld door …) plus 5,00") decides with the deposit and stays refused.
+ *
+ * <p><b>On the truth-maintenance branch every row is a refusal by name</b> (card tms-omschakeling, 2026-10-10). That
+ * branch computes a default as soon as what it reads stands, a default a higher one displaces among them, so a division
+ * by zero there is a fault on an intermediate state, which the branch withdraws once the higher default decides; whether
+ * such a fault counts waits on the norm decision of card {@code 20261008-fout-op-tussenstand}. A root there gets no
+ * §6.6 deposit from it, since a default deposits only where it decides (ch. 7.1). The destructive exec-model branch
+ * carried the five forms above the last row; the loss is accepted, and each row keeps the values {@code ref} answers, so
+ * that the card that carries the form turns the row back into a replay.
  */
 class DefaultsDelingWitnessTest {
 
@@ -35,8 +42,8 @@ class DefaultsDelingWitnessTest {
         // 1,00 ("Uitzondering op" lowers to the same group). ref and clingo: V1 (240 by 320) 0,75, V2 1,00.
         String groep = groep(standaard(alle(gevuld("gewogen gewicht"), groterDanNul("geschatte gewicht")), deling()),
                 standaard(ALTIJD, EEN));
-        assertNull(speel(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
-                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00"))), "de deling in een afwijking");
+        geweigerd(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
+                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00")), DELING);
     }
 
     @Test void een_deling_in_de_basisregel() throws Exception {
@@ -44,28 +51,28 @@ class DefaultsDelingWitnessTest {
         // leeg). ref and clingo: V1 0,75, V2 1,00.
         String groep = groep(standaard(leegToets("gewogen gewicht"), EEN),
                 standaard(alle(gevuld("gewogen gewicht"), groterDanNul("geschatte gewicht")), deling()));
-        assertNull(speel(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
-                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00"))), "de deling in de basisregel");
+        geweigerd(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null),
+                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00")), DELING);
     }
 
-    @Test void een_lege_deler_valt_terug_zonder_depot() throws Exception {
+    @Test void een_deling_met_een_lege_deler() throws Exception {
         // The division under "zijn gewogen gewicht gevuld is" alone: V3 has no geschat gewicht, so its consequence is leeg,
         // the default falls through to 1,00, and nothing persists on the channel (ch. 7.1). ref: V1 0,75, V2 and V3 1,00,
         // consistent.
         String groep = groep(standaard(gevuld("gewogen gewicht"), deling()), standaard(ALTIJD, EEN));
-        assertNull(speel(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null) + ","
+        geweigerd(groep, zaak(vondst("V1", "320.00", "240.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "60.00"),
-                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00") + "," + CONSISTENT)),
-                "de lege deler");
+                verhouding("V1", "0.75") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00") + "," + CONSISTENT),
+                DELING);
     }
 
     @Test void een_afgeronde_deling() throws Exception {
         // "… gedeeld door zijn geschatte gewicht naar beneden afgerond op 2 decimalen". ref and clingo: V1 (200 by 300)
         // 0,66, V2 and V3 1,00.
         String groep = groep(standaard(gevuld("gewogen gewicht"), afgerond(deling())), standaard(ALTIJD, EEN));
-        assertNull(speel(groep, zaak(vondst("V1", "300.00", "200.00") + "," + vondst("V2", "50.00", null) + ","
+        geweigerd(groep, zaak(vondst("V1", "300.00", "200.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "60.00"),
-                verhouding("V1", "0.66") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00"))), "de afgeronde deling");
+                verhouding("V1", "0.66") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00")), DELING);
     }
 
     @Test void een_wortel() throws Exception {
@@ -76,23 +83,22 @@ class DefaultsDelingWitnessTest {
                 + "],\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"nonNegative\"},\"source\":"
                 + "{\"snippet\":\"de wortel van zijn gewogen gewicht\"}}";
         String groep = groep(standaard(gevuld("gewogen gewicht"), afgerond(wortel)), standaard(ALTIJD, EEN));
-        assertNull(speel(groep, zaak(vondst("V1", null, "240.00") + "," + vondst("V2", "50.00", null) + ","
+        geweigerd(groep, zaak(vondst("V1", null, "240.00") + "," + vondst("V2", "50.00", null) + ","
                         + vondst("V3", null, "-16.00"),
-                verhouding("V1", "15.49") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00") + "," + CONSISTENT)),
-                "de wortel");
+                verhouding("V1", "15.49") + "," + verhouding("V2", "1.00") + "," + verhouding("V3", "1.00") + "," + CONSISTENT),
+                "een wortel in een default ('de wortel van zijn gewogen gewicht'), waarvan deze tak de §6.6-deponering "
+                        + "niet maakt: een default deponeert alleen waar hij beslist (RUNTIME-SEMANTICS ch. 7.1)");
     }
 
     @Test void een_deling_onder_een_andere_bewerking_blijft_geweigerd() throws Exception {
         // "(zijn gewogen gewicht gedeeld door zijn geschatte gewicht) plus 5,00": over a leeg divisor the default decides
-        // 5,00 and its deposit persists (ref and clingo report the inconsistency), which needs a companion this branch
-        // does not build for a default.
+        // 5,00 and its deposit persists (ref and clingo report the inconsistency). The truth-maintenance branch refuses
+        // it as every division in a default.
         String plus = "{\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + deling() + ",\"right\":{\"node\":\"Literal\",\"value\":"
                 + "{\"number\":\"5.00\"},\"type\":" + TWEE_DECIMALEN + ",\"source\":{\"snippet\":\"5,00\"}},\"type\":"
                 + TWEE_DECIMALEN + ",\"source\":{\"snippet\":\"(…) plus 5,00\"}}";
         String groep = groep(standaard(gevuld("gewogen gewicht"), plus), standaard(ALTIJD, EEN));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(groep,
-                zaak(vondst("V1", "320.00", "240.00"), verhouding("V1", "5.75"))));
-        assertTrue(e.getMessage().contains("kanaal-deponerende consequentie (deling)"), e.getMessage());
+        geweigerd(groep, zaak(vondst("V1", "320.00", "240.00"), verhouding("V1", "5.75")), DELING);
     }
 
     // ---------------- documents ----------------
@@ -189,12 +195,20 @@ class DefaultsDelingWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + verwacht + "]}";
     }
 
-    /** The exec-model branch's verdict on one case: null when every expectation holds. */
-    private static String speel(String ir, String zaak) throws Exception {
+    /** The refusal of a division in a default on the truth-maintenance branch, after the prefix of its manifest. */
+    private static final String DELING = "een deling in een default ('zijn gewogen gewicht gedeeld door zijn geschatte"
+            + " gewicht'): deze tak rekent een default uit zodra wat hij leest staat, ook een die een hogere default"
+            + " verdringt; een deling door nul daar is een fout op een tussenstand, die deze tak intrekt zodra de hogere"
+            + " default beslist: of zo'n fout telt, wacht op een normbesluit (RUNTIME-SEMANTICS ch. 5.2, 7.1)";
+
+    /** The truth-maintenance branch refuses the group {@code ir} by name, before {@code zaak} is replayed. */
+    private static void geweigerd(String ir, String zaak, String vorm) throws Exception {
         Path tmp = Files.createTempFile("defaults-deling", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
-        return CaseRunner.speelCase(tmp, c, false);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), e.getMessage());
     }
 }

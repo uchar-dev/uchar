@@ -134,8 +134,16 @@ class DatumLexeemWitnessTest {
      *  as 2024-01-20 on the exec-model branch; then each branch refused the rule under its day-kind reason; now the
      *  loader refuses the literal. */
     @Test void een_misvormd_datumlexeem_in_een_gebruikte_dagsoort_wordt_op_beide_takken_geweigerd() throws Exception {
-        assertNull(speel(dagsoortModel("2024-01-20"), DAGSOORT_CASE), "the ISO lexeme plays in a day kind");
-        assertEquals("PLAYED", drl(dagsoortModel("2024-01-20"), DAGSOORT_CASE).status());
+        assertEquals("PLAYED", drl(dagsoortModel("2024-01-20"), DAGSOORT_CASE).status(),
+                "the ISO lexeme plays in a day kind on the DRL-text branch");
+        // The truth-maintenance branch refuses the rule that tests the day kind as its condition, by name, as the
+        // reference interpreter and the ASP backend refuse that form outside a day-kind definition (the document is
+        // verifier-clean, measured 2026-10-10). The destructive exec-model branch played it; the loss is accepted
+        // (card tms-omschakeling). The malformed lexemes below are refused at load, before any branch.
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> speelTms(dagsoortModel("2024-01-20"), DAGSOORT_CASE));
+        assertTrue(e.getMessage().contains("een Predicate dayKind als voorwaarde ('zijn vondstdag is een peildag')"),
+                e.getMessage());
         for (String lexeem : MISVORMD)
             geweigerdBijHetLaden(dagsoortModel(lexeem), DAGSOORT_CASE, "/rules/dayKindDefinitions/0/condition/right/value",
                     lexeem);
@@ -232,6 +240,17 @@ class DatumLexeemWitnessTest {
             assertEquals(plek, e.plek(), e.getMessage());
             assertTrue(e.getMessage().endsWith(": date literal lexeme '" + lexeem + "' is not the ISO form yyyy-mm-dd"
                     + " (fixed field widths, valid ranges — ch. 4.1)"), e.getMessage());
+        }
+    }
+
+    /** As {@link #speel}, on the truth-maintenance branch. */
+    private static String speelTms(String ir, String caseJson) throws Exception {
+        Path tmp = Files.createTempFile("datum-lexeem-witness", ".json");
+        try {
+            Files.writeString(tmp, ir);
+            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        } finally {
+            Files.deleteIfExists(tmp);
         }
     }
 

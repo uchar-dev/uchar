@@ -32,6 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fired each writer once and kept the value of the writer declared last, without a diagnostic ({@code PLAYED} where
  * that was the expected value, {@code verwacht 2026-03-04, werkelijk leeg} where the last writer evaluated leeg). The
  * three flank rows are green before and after.
+ *
+ * <p>Since card tms-omschakeling (2026-10-10) the rows of the exec-model branch run on the truth-maintenance branch. It
+ * holds both writers' values as facts and finds the divergence at the fixpoint, where its write-back throws the fault
+ * ({@code Schrijversconflict}) in the sentence the DRL-text branch gives as its verdict; the destructive exec-model branch
+ * found it at its fire cap.
  */
 class OverlappendeSchrijversWitnessTest {
 
@@ -46,7 +51,7 @@ class OverlappendeSchrijversWitnessTest {
                 meldingOp("melding op aanspoeldag", "Vondst", "aanspoeldatum"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-04", "2026-03-01", null)),
                 datumVerwacht("V", "meldingsdatum", "2026-03-01"));
-        for (boolean drl : TAKKEN)
+        for (DroolsBackend.Branch drl : TAKKEN)
             meldtSchrijvers(speel(ir, zaak, drl), tak(drl), "twee schrijvers van één doel geven verschillende waarden",
                     "de regel \"melding op vinddag\" schrijft 2026-03-04",
                     "de regel \"melding op aanspoeldag\" schrijft 2026-03-01", "in het attribuut meldingsdatum van V, een Vondst");
@@ -61,7 +66,7 @@ class OverlappendeSchrijversWitnessTest {
                 meldingOp("melding op aanspoeldag", "Strandvondst", "aanspoeldatum"));
         String zaak = zaak(List.of(vondst("S", "Strandvondst", "2026-03-04", "2026-03-01", null)),
                 datumVerwacht("S", "meldingsdatum", "2026-03-01"));
-        for (boolean drl : TAKKEN)
+        for (DroolsBackend.Branch drl : TAKKEN)
             meldtSchrijvers(speel(ir, zaak, drl), tak(drl), "twee schrijvers van één doel geven verschillende waarden",
                     "\"melding op vinddag\" schrijft 2026-03-04",
                     "\"melding op aanspoeldag\" schrijft 2026-03-01", "in het attribuut meldingsdatum van S, een Strandvondst");
@@ -99,7 +104,7 @@ class OverlappendeSchrijversWitnessTest {
                 meldingOp("melding op bergdag", "Vondst", "bergdatum"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-04", "2026-03-01", "2026-03-06")),
                 datumVerwacht("V", "meldingsdatum", "2026-03-01"));
-        for (boolean drl : TAKKEN) {
+        for (DroolsBackend.Branch drl : TAKKEN) {
             String uit = speel(ir, zaak, drl);
             meldtSchrijvers(uit, tak(drl), "schrijvers van één doel geven verschillende waarden",
                     "in het attribuut meldingsdatum van V, een Vondst");
@@ -120,7 +125,7 @@ class OverlappendeSchrijversWitnessTest {
                         toets("filled", "Vondst", "vinddatum"), "equation"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-04", null, null)),
                 datumVerwacht("V", "meldingsdatum", "2026-03-04"));
-        for (boolean drl : TAKKEN)
+        for (DroolsBackend.Branch drl : TAKKEN)
             meldtSchrijvers(speel(ir, zaak, drl), tak(drl), "twee schrijvers van één doel geven verschillende waarden",
                     "\"melding op vinddag\" schrijft 2026-03-04",
                     "\"melding op aanspoeldag\" schrijft leeg", "in het attribuut meldingsdatum van V, een Vondst");
@@ -137,7 +142,7 @@ class OverlappendeSchrijversWitnessTest {
                         toets("filled", "Vondst", "waarde"), "calculation"));
         String zaak = zaak(List.of(instantie("V", "Vondst", "\"schatting\":{\"number\":\"20.00\"},\"waarde\":{\"number\":\"50.00\"}")),
                 "{\"kind\":\"attributeValue\",\"label\":\"V\",\"attribute\":\"vindersloon\",\"value\":{\"number\":\"20.00\"}}");
-        for (boolean drl : TAKKEN)
+        for (DroolsBackend.Branch drl : TAKKEN)
             meldtSchrijvers(speel(ir, zaak, drl), tak(drl), "\"vindersloon naar schatting\" schrijft 20.00",
                     "\"vindersloon naar waarde\" schrijft 45.00", "in het attribuut vindersloon van V, een Vondst");
     }
@@ -151,7 +156,7 @@ class OverlappendeSchrijversWitnessTest {
                 meldingOp("melding op aanspoeldag", "Vondst", "aanspoeldatum"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-04", "2026-03-01", null)),
                 datumVerwacht("V", "meldingsdatum", "2026-03-01"));
-        for (boolean drl : TAKKEN) {
+        for (DroolsBackend.Branch drl : TAKKEN) {
             String uit = speel(ir, zaak, drl);
             meldtSchrijvers(uit, tak(drl), "de regel \"melding op vinddag\" schrijft 2026-03-04",
                     "de regel \"melding op aanspoeldag\" schrijft 2026-03-01");
@@ -173,7 +178,7 @@ class OverlappendeSchrijversWitnessTest {
                 datumVerwacht("V1", "meldingsdatum", "2026-03-01"), datumVerwacht("V2", "meldingsdatum", "2026-03-04"),
                 datumVerwacht("V3", "meldingsdatum", "2026-03-01"),
                 "{\"kind\":\"attributeEmpty\",\"label\":\"V4\",\"attribute\":\"meldingsdatum\"}");
-        for (boolean drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
+        for (DroolsBackend.Branch drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
     }
 
     @Test void twee_schrijvers_met_dezelfde_waarde_spelen() throws Exception {
@@ -183,7 +188,7 @@ class OverlappendeSchrijversWitnessTest {
                 meldingOp("melding op aanspoeldag", "Vondst", "aanspoeldatum"));
         String zaak = zaak(List.of(vondst("V", "Vondst", "2026-03-02", "2026-03-02", null)),
                 datumVerwacht("V", "meldingsdatum", "2026-03-02"));
-        for (boolean drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
+        for (DroolsBackend.Branch drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
     }
 
     @Test void twee_kenmerktoekenningen_spelen() throws Exception {
@@ -195,14 +200,19 @@ class OverlappendeSchrijversWitnessTest {
         String zaak = zaak(List.of(vondst("V1", "Vondst", "2026-03-04", "2026-03-01", null), vondst("V2", "Vondst", null, null, null)),
                 "{\"kind\":\"characteristicPresent\",\"label\":\"V1\",\"characteristic\":\"meldplichtig\"}",
                 "{\"kind\":\"characteristicAbsent\",\"label\":\"V2\",\"characteristic\":\"meldplichtig\"}");
-        for (boolean drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
+        for (DroolsBackend.Branch drl : TAKKEN) assertNull(speel(ir, zaak, drl), tak(drl));
     }
 
     // ---------------- assertions ----------------
 
-    private static final boolean[] TAKKEN = { false, true };
+    /** The truth-maintenance branch, which gives the divergence as the fault its write-back throws at the fixpoint,
+     *  and the DRL-text branch, which gives it as the verdict of the case. */
+    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.TRUTH_MAINTENANCE,
+            DroolsBackend.Branch.DRL_TEXT);
 
-    private static String tak(boolean drl) { return drl ? "DRL-teksttak" : "exectak"; }
+    private static String tak(DroolsBackend.Branch tak) {
+        return tak == DroolsBackend.Branch.DRL_TEXT ? "DRL-teksttak" : "tak met truth maintenance";
+    }
 
     /** The verdict names the divergence with each of {@code fragmenten}, and no cycle. */
     private static void meldtSchrijvers(String uit, String wie, String... fragmenten) {
@@ -306,12 +316,17 @@ class OverlappendeSchrijversWitnessTest {
                 + "],\"parameters\":{}},\"expected\":[" + String.join(",", verwacht) + "]}";
     }
 
-    /** One branch's verdict on one case: null when every expectation holds. */
-    private static String speel(String ir, String zaak, boolean drl) throws Exception {
+    /** One branch's verdict on one case: null when every expectation holds, and the message of the fault the replay
+     *  throws, which on the truth-maintenance branch carries a divergence at the fixpoint. */
+    private static String speel(String ir, String zaak, DroolsBackend.Branch tak) throws Exception {
         Path tmp = Files.createTempFile("overlappende-schrijvers", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
-        return CaseRunner.speelCase(tmp, c, drl);
+        try {
+            return CaseRunner.speelCase(tmp, c, tak);
+        } catch (RuntimeException e) {
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
     }
 }

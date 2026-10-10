@@ -43,6 +43,18 @@ final class BeideTakken {
         }
     }
 
+    /** Both branches REFUSE the document where they name the form in their own words: the truth-maintenance branch
+     *  {@code tms}, after the prefix of its manifest, and the DRL-text branch {@code drl}. The row of {@link #geweigerd}
+     *  for a form whose refusal the truth-maintenance branch words apart from the branch it replaces. */
+    static void geweigerdApart(Path ir, JsonNode c, String tms, String drl, String boodschap) throws Exception {
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms — " + boodschap);
+        assertTrue(e.getMessage().contains(tms), "tms names '" + tms + "': " + e.getMessage());
+        e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
+        assertTrue(e.getMessage().contains(drl), "drl-tekst names '" + drl + "': " + e.getMessage());
+    }
+
     /** Both branches MISMATCH, each naming {@code fragment} — the flank form: what the expectation claims is
      *  observably NOT what happened, in both branches. Returns the exec-model verdict line. */
     static String rood(Path ir, JsonNode c, String fragment, String boodschap) throws Exception {

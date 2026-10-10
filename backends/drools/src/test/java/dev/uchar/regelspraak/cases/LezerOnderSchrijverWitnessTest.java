@@ -320,7 +320,8 @@ class LezerOnderSchrijverWitnessTest {
     @Test void een_leegtoets_op_een_kring_met_zijn_schrijver_weigert_met_de_vorm() throws Exception {
         // "De afgeleide registratiedag … op zijn registratiedag indien zijn afgeleide controledag leeg is" and "De
         // afgeleide controledag … op zijn controledag indien zijn afgeleide registratiedag leeg is": a negative edge on a
-        // cycle, which WF-046 refuses; ref refuses the document too.
+        // cycle, which WF-046 refuses; ref refuses the document too. The truth-maintenance branch refuses the cycle
+        // itself before it builds the KieBase, as WF-045 does (Kringen), and names its members and rules.
         String registratie = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", eigen("registratiedag"),
                 predicaat("empty", eigen("afgeleide controledag")));
         String controle = regel("afgeleide controledag", "Vondst", "afgeleide controledag", eigen("controledag"),
@@ -328,18 +329,24 @@ class LezerOnderSchrijverWitnessTest {
         String zaak = zaak(List.of(vondst("V", "2026-09-15", null, "\"registratiedag\":{\"date\":\"2026-06-01\"}")),
                 dag("V", "afgeleide registratiedag", "2026-06-01"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> speel(document(List.of(registratie, controle)), zaak));
-        assertTrue(e.getMessage().contains("leeg- of gevuld-toets") && e.getMessage().contains("WF-046"), e.getMessage());
+                () -> speelTms(document(List.of(registratie, controle)), zaak));
+        assertTrue(e.getMessage().contains("kring in de afhankelijkheden over de leden Vondst.afgeleide controledag en"
+                + " Vondst.afgeleide registratiedag via de regel \"afgeleide controledag\" en de regel \"afgeleide"
+                + " registratiedag\" — een kring die niet door een creatielid van een recursieve regelgroep loopt, is"
+                + " onwelgevormd (WF-045)"), e.getMessage());
     }
 
     @Test void een_leegtoets_op_het_eigen_doel_weigert_met_de_vorm() throws Exception {
         // "De afgeleide registratiedag van een Vondst moet gesteld worden op zijn vinddag indien zijn afgeleide
-        // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses.
+        // registratiedag leeg is": the rule reads its own target negatively, a cycle WF-046 refuses. The
+        // truth-maintenance branch refuses the cycle by name, as the row above.
         String zelf = regel("afgeleide registratiedag", "Vondst", "afgeleide registratiedag", eigen("vinddag"),
                 predicaat("empty", eigen("afgeleide registratiedag")));
         String zaak = zaak(List.of(vondst("V", "2026-09-15", null, "")), dag("V", "afgeleide registratiedag", "2026-09-15"));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(document(List.of(zelf)), zaak));
-        assertTrue(e.getMessage().contains("leeg- of gevuld-toets") && e.getMessage().contains("WF-046"), e.getMessage());
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(document(List.of(zelf)), zaak));
+        assertTrue(e.getMessage().contains("kring in de afhankelijkheden over het lid Vondst.afgeleide registratiedag via"
+                + " de regel \"afgeleide registratiedag\" — een kring die niet door een creatielid van een recursieve"
+                + " regelgroep loopt, is onwelgevormd (WF-045)"), e.getMessage());
     }
 
     // ---------------- documents ----------------
@@ -607,5 +614,13 @@ class LezerOnderSchrijverWitnessTest {
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
         return CaseRunner.speelCase(tmp, c, false);
+    }
+
+    /** The truth-maintenance branch's verdict on one case. */
+    private static String speelTms(String ir, String zaak) throws Exception {
+        Path tmp = Files.createTempFile("lezer-onder-schrijver", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 }

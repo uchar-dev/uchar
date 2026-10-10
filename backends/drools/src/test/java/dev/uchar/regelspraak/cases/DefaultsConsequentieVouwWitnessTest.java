@@ -252,8 +252,8 @@ class DefaultsConsequentieVouwWitnessTest {
     @Test void een_vouw_zonder_beanveld_weigert_met_de_vorm() throws Exception {
         // "de laatste van de meldingsdatum van alle meldingen van de Berging" over "meerdere kennende bergingen kennen
         // meerdere meldingen": both roles plural, so the bean model stores the relation on neither end (§13.3.9), in a
-        // rule's value as in a consequence. ref and clingo answer 08-03-2026; the branch refuses the group and names the
-        // fold and the consequence.
+        // rule's value as in a consequence. ref and clingo answer 08-03-2026; the truth-maintenance branch refuses the
+        // group and names it and the fold.
         String melding = objecttype("Melding", "Meldingen", List.of(attribuut("meldingsdatum", DATUM)), List.of());
         String kent = "{\"node\":\"FactType\",\"name\":\"BergingKentMelding\",\"reciprocal\":false,\"roles\":["
                 + "{\"node\":\"Role\",\"name\":\"kennende berging\",\"objectType\":\"Berging\",\"plural\":\"kennende bergingen\","
@@ -265,10 +265,10 @@ class DefaultsConsequentieVouwWitnessTest {
         String ir = "{\"format\":\"uchar-ir-v1\",\"model\":{\"objectTypes\":[" + berging(false) + "," + melding
                 + "],\"factTypes\":[" + kent + "],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],"
                 + "\"timelines\":[],\"dayKinds\":[]}," + regels(List.of(), List.of(sluitdaggroep("sluitdag", v))) + "}";
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speel(ir, zaak(List.of(), "")));
-        assertTrue(e.getMessage().contains("consequentie niet vertaald"), e.getMessage());
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(ir, zaak(List.of(), "")));
+        assertTrue(e.getMessage().contains("defaults: defaults A:Berging.sluitdag — de aggregatie-join van 'de laatste van"
+                + " de meldingsdatum van alle meldingen van de Berging' heeft geen beanveld"), e.getMessage());
         assertTrue(e.getMessage().contains("beide zijden meervoudig"), e.getMessage());
-        assertTrue(e.getMessage().contains("de laatste van de meldingsdatum van alle meldingen van de Berging"), e.getMessage());
     }
 
     @Test void vijf_vouwen_in_een_consequentie() throws Exception {
@@ -548,6 +548,14 @@ class DefaultsConsequentieVouwWitnessTest {
 
     private static String speelDrl(String ir, String zaak) throws Exception {
         return speel(ir, zaak, true);
+    }
+
+    /** The truth-maintenance branch's verdict on one case. */
+    private static String speelTms(String ir, String zaak) throws Exception {
+        Path tmp = Files.createTempFile("defaults-consequentie", ".json");
+        tmp.toFile().deleteOnExit();
+        Files.writeString(tmp, ir);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 
     private static String speel(String ir, String zaak, boolean drl) throws Exception {

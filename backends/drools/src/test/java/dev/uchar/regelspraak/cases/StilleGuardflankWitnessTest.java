@@ -11,6 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * The §13.4.7 creation guard that lowers to NEITHER side — the one construct where this backend's two branches gave
  * two answers, and the exec one was SILENT. A guard is attached to the anker's pattern when it lowers there and to
@@ -51,7 +55,7 @@ class StilleGuardflankWitnessTest {
 
     // ---------------- 1. the Onopgelost guard: a fault that became a zero ----------------
 
-    @Test void de_onopgeloste_feitcreatie_guard_weigert_in_beide_takken() throws Exception {
+    @Test void de_onopgeloste_feitcreatie_guard_faalt_of_weigert() throws Exception {
         // The RegelSpraak frontend emits this shape itself: on a creation whose doel type EQUALS its anker type the
         // doel-comparison guard has no second subject to rebuild against, so the resolver hands the wire a literal
         // `Onopgelost` condition. Measured RED FIRST on the pre-card jar, with P1 risicopost and both seinen linked:
@@ -63,9 +67,17 @@ class StilleGuardflankWitnessTest {
         //     drl-tekst: EXCLUDE drl-transpiler MARKER: feitcreatie: vakbeseining door het kustvak
         //                — TODO voorwaarde niet naar anker of doel te lowereren — regel inert i.p.v. over-creatie
         // The guard is unreadable in every executor that reads it; this backend is the only one that answered.
+        // Since card tms-omschakeling (2026-10-10) the exec-model row runs on the truth-maintenance branch, which reads
+        // the guard as ref does: the condition faults when it is evaluated, and the write-back throws that fault at
+        // the fixpoint (WF-044). The DRL-text branch refuses the creation by name.
         Path ir = metGuard(onopgelost());
-        BeideTakken.geweigerd(ir, geval("[\"risicopost\"]", "[]", "0"), REDEN,
-                "een Onopgelost-guard is geen nul-creatie maar een onleesbaar document");
+        JsonNode c = geval("[\"risicopost\"]", "[]", "0");
+        RuntimeException tms = assertThrows(RuntimeException.class,
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals("Rekenfout", tms.getClass().getSimpleName(), tms::toString);
+        assertTrue(tms.getMessage().contains("Unresolved condition reached in evaluation"), tms.getMessage());
+        CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));
+        assertTrue(drl.getMessage().contains(REDEN), drl.getMessage());
     }
 
     // ---------------- 2. the third-type owner: a hosting no pattern carries ----------------
@@ -87,8 +99,9 @@ class StilleGuardflankWitnessTest {
         // not lower is a recorded skip there. Only the creation, with its second pattern and its inert fallback,
         // swallowed it.
         Path ir = metGuard(kenmerkGuard("risicopost", "Post", "de post risicopost is"));
-        BeideTakken.geweigerd(ir, geval("[\"risicopost\"]", "[]", "0"), REDEN,
-                "een eigenaar die anker noch doel is, is een weigering en geen nul-creatie");
+        BeideTakken.geweigerdApart(ir, geval("[\"risicopost\"]", "[]", "0"), "feitcreatie: vakbeseining door het"
+                        + " kustvak — een CharacteristicCheck met een host die het onderwerp niet is ('de post risicopost"
+                        + " is')", REDEN, "een eigenaar die anker noch doel is, is een weigering en geen nul-creatie");
     }
 
     // ---------------- 3+4. the flanks: a guard that DOES lower still plays ----------------

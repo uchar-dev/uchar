@@ -84,7 +84,9 @@ class VerdelingsrolWitnessTest {
         // relation is stored on Berging and Berger carries no field to join on
         ObjectNode ir = lees(TOEZICHT);
         verdeling(ir).set("connectingRole", binding("bergingstoezicht", "toezichthouder"));
-        BeideTakken.geweigerd(tijdelijk("toezicht-twist", ir), casus(TOEZICHT),
+        BeideTakken.geweigerdApart(tijdelijk("toezicht-twist", ir), casus(TOEZICHT),
+                "verdeling: verdeel de opbrengst van een berging — een verdeling over de enkelvoudige ontvangerrol"
+                        + " 'toezichthouder' wiens zusterrol 'bewaakte berging' meervoudig is",
                 "rol 'bewaakte berging' op Berger geen referentieveld", "the join follows the bound relation");
     }
 
@@ -110,14 +112,18 @@ class VerdelingsrolWitnessTest {
     @Test void een_binding_op_de_bronrol_wordt_niet_overschreven_door_het_typenpaar() throws Exception {
         ObjectNode ir = lees(BERGING);
         verdeling(ir).set("connectingRole", binding("bergingsdeelname", "berging"));
-        BeideTakken.geweigerd(tijdelijk("bronrol", ir), casus(BERGING),
+        BeideTakken.geweigerdApart(tijdelijk("bronrol", ir), casus(BERGING),
+                "verdeling: verdeel de opbrengst van een berging — de join van de verdeling heeft geen beanveld — het"
+                        + " beanmodel leidt voor de rol 'berging' op Berging geen referentieveld naar Berger af",
                 "rol 'berger' op Berger geen referentieveld", "the bound role, not the pair, names the join");
     }
 
     @Test void een_binding_die_niet_oplost_wordt_geweigerd() throws Exception {
         ObjectNode ir = lees(BERGING);
         verdeling(ir).set("connectingRole", binding("bergingsdeelname", "bewaker"));
-        BeideTakken.geweigerd(tijdelijk("los", ir), casus(BERGING), "verbindende rol onopgelost",
+        BeideTakken.geweigerdApart(tijdelijk("los", ir), casus(BERGING), "verdeling: verdeel de opbrengst van een"
+                        + " berging — de connectingRole van de verdeling noemt geen gedeclareerde rol (bergingsdeelname,"
+                        + " bewaker)", "verbindende rol onopgelost",
                 "a dangling binding is refused, not replaced by the pair");
     }
 

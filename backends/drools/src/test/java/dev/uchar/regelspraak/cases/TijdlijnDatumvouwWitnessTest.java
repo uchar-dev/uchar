@@ -71,16 +71,17 @@ class TijdlijnDatumvouwWitnessTest {
         weigert(TOTAAL, JSON.readTree(TOTAAL_ZAAK),
                 "vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand' van Jutter: de segmentwaarden zijn"
                         + " van type Datum in dagen en niet getalachtig",
-                "vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand' van Jutter: de segmentwaarden zijn"
-                        + " van type Datum in dagen en niet getalachtig");
+                "regel: bewaargeld van een jutter — een totaal over de eigen tijdlijn ('het totaal van zijn bewaarvergoeding per"
+                        + " maand') over 'bewaarvergoeding per maand', dat geen getal is (WF-091)");
     }
 
     @Test void de_gedurende_klip_over_datums_weigert_bij_naam() throws Exception {
         weigert(KLIP, JSON.readTree(KLIP_ZAAK),
                 "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter: de segmentwaarden zijn"
                         + " van type Datum in dagen en niet getalachtig",
-                "vouw TOTAAL over de tijdlijn 'wachtvergoeding per maand' van Klipjutter: de segmentwaarden zijn"
-                        + " van type Datum in dagen en niet getalachtig");
+                "regel: wachtsom van een klipjutter — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                        + " wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is') over 'wachtvergoeding"
+                        + " per maand', dat geen getal is (WF-091)");
     }
 
     @Test void de_drl_marker_hangt_aan_de_declaratie_en_niet_aan_de_casus() throws Exception {
@@ -92,9 +93,11 @@ class TijdlijnDatumvouwWitnessTest {
         leeg.set("expected", JSON.readTree(
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
         Path ir = NEGATIEF.resolve(TOTAAL).resolve("ir.json");
-        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, leeg, false));
-        assertTrue(x.getMessage().contains("vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand'"),
-                "exec-model names the form: " + x.getMessage());
+        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, leeg, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(x.getMessage().contains("een totaal over de eigen tijdlijn ('het totaal van zijn bewaarvergoeding per"
+                + " maand') over 'bewaarvergoeding per maand', dat geen getal is (WF-091)"), "tms names the form: "
+                + x.getMessage());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, leeg, true));
         assertTrue(e.getMessage().contains("vouw TOTAAL over de tijdlijn 'bewaarvergoeding per maand'"),
                 "drl-tekst names the form: " + e.getMessage());
@@ -110,13 +113,16 @@ class TijdlijnDatumvouwWitnessTest {
 
     // ---------------- fixtures ----------------
 
-    private static void weigert(String dir, JsonNode c, String drl, String exec) throws Exception {
+    /** Both branches refuse the negatief document {@code dir}: the DRL-text branch naming {@code drl}, the
+     *  truth-maintenance branch naming {@code tms}. */
+    private static void weigert(String dir, JsonNode c, String drl, String tms) throws Exception {
         Path ir = NEGATIEF.resolve(dir).resolve("ir.json");
         assertTrue(Files.exists(ir), "negatief ir.json present: " + ir.toAbsolutePath());
         CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));
         assertTrue(d.getMessage().contains(drl), "drl-tekst names '" + drl + "': " + d.getMessage());
-        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, false));
-        assertTrue(x.getMessage().contains(exec), "exec-model names '" + exec + "': " + x.getMessage());
+        CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(x.getMessage().contains(tms), "tms names '" + tms + "': " + x.getMessage());
     }
 
     private static JsonNode zaak(Path zone, String dir, String bestand) throws Exception {

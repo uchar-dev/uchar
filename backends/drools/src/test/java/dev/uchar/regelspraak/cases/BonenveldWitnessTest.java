@@ -167,7 +167,9 @@ class BonenveldWitnessTest {
     @Test void een_scopebinding_die_niet_oplost_valt_niet_terug_op_scopeveld() throws Exception {
         ObjectNode ir = lees(KUSTREGISTER);
         kaveletiket(ir).set("scope", binding("wijkindeling", "gemeente"));
-        BeideTakken.geweigerd(tijdelijk("scope-los", ir), casus(KUSTREGISTER, "case3"), "scopebinding onopgelost",
+        BeideTakken.geweigerdApart(tijdelijk("scope-los", ir), casus(KUSTREGISTER, "case3"),
+                "uniciteit: eenmalig kaveletiket — de scope van een Uniqueness noemt geen gedeclareerde rol (wijkindeling,"
+                        + " gemeente)", "scopebinding onopgelost",
                 "a binding naming no declared relation is refused, not read by the written name");
     }
 

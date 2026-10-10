@@ -67,8 +67,9 @@ class TakgelijkheidWitnessTest {
         // exec branch already printed.
         Path ir = aggregatieJoinOnafgeleid(), c = ir(VONDSTTELLING).resolveSibling("case.json");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("regel: aantal aangemelde vondsten — de aggregatie-join van 'het aantal"
+                + " vondsten van de Jutter' heeft geen beanveld — de rol 'aanmelder' op Vondst is meervoudig"), e.getMessage());
         String drl = drlReden(ir, c);
         assertTrue(drl.contains("aggregatie-join"), drl);
         // SHARPENED 2026-09-18 (card drools-rolvelden-herhaalde-typenparen). This row used to demand the GENERIC
@@ -100,8 +101,10 @@ class TakgelijkheidWitnessTest {
         // the BigDecimal's absence as an absent relation, silently.
         Path ir = aggregatieJoinVerdrongen(), c = geval(telCaseZonderRollen());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("de aggregatie-join heeft geen beanveld"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("regel: aantal aangemelde vondsten — de aggregatie-join van 'het aantal"
+                + " vondsten van de Jutter' heeft geen beanveld — de rol 'aanmelder' op Vondst deelt haar naam met een"
+                + " gedeclareerd lid"), e.getMessage());
         String drl = drlReden(ir, c);
         assertTrue(drl.contains("aggregatie-join"), drl);
         assertTrue(drl.contains("de rol 'aanmelder' op Vondst deelt haar naam met een gedeclareerd lid"), drl);
@@ -150,17 +153,20 @@ class TakgelijkheidWitnessTest {
         //     Drools DRL-tekst  : ERROR NullPointerException: Cannot read field "naam" because "anker" is null
         Path ir = feitcreatieZonder("anchor"), c = ir(POSTWACHT).resolveSibling("case.json");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("feitcreatie (onopgelost): vakbeseining door het kustvak"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("feitcreatie: vakbeseining door het kustvak — een feitcreatie zonder opgelost"
+                + " anker, doel, feittype of pad"), e.getMessage());
         String drl = drlReden(ir, c);
         assertTrue(drl.contains("onopgelost feitcreatie (onopgelost): vakbeseining door het kustvak"), drl);
     }
 
     @Test void de_drl_feitcreatie_speelt_een_naamloze_creatie() throws Exception {
-        // `naam` is a wire-nullable position of this construct that no well-formedness rule covers at all: WF-034
-        // gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since, and WF-094
-        // clause (d) gated the five KEYED tables while feitCreaties is a LIST. So a nameless creation is a fully
-        // well-formed document that every other executor runs. Measured on the pre-fix jar:
+        // `naam` is a wire-nullable position of this construct that no well-formedness rule covered when this row was
+        // written: WF-034 gated zetVeld, joinVeld and the tussenstappen until L2 and crosses the symbolic block since,
+        // and WF-094 clause (d) gated the five KEYED tables while feitCreaties is a LIST. Since then WF-107 covers it:
+        // the verifier rejects a nameless form ("form in factCreations carries no name", measured 2026-10-10), so the
+        // document is NOT well-formed, and the truth-maintenance branch refuses it by name. ref and clingo still run
+        // it. Measured on the pre-fix jar:
         //     verifier: PASS
         //     ref     : oracle: PASS (10 expectations)
         //     clingo  : clingo: PASS (10 expectations)
@@ -171,13 +177,10 @@ class TakgelijkheidWitnessTest {
         // the mutation probe below and not by the bare PLAYED — V1.vakseinaantal counts the CREATED vakbeseining
         // relation, so 2 is only reachable through the nameless rule.
         Path ir = naamlozeCreatie(), c = ir(POSTWACHT).resolveSibling("case.json");
-        assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))), "exec speelt de naamloze creatie");
+        naamloosGeweigerd(ir, c);
         assertEquals("PLAYED", CaseRunner.viaDrlTekst(ir, List.of(c)).status());
 
         Path mut = vakseinaantalOp(c, "99");
-        String execFout = CaseRunner.speelCase(ir, JSON.readTree(Files.readString(mut)));
-        assertTrue(execFout != null && execFout.contains("vakseinaantal: verwacht 99, werkelijk 2"),
-                String.valueOf(execFout));
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(mut));
         assertEquals("FAIL", drl.status(), drl.reason());
         assertTrue(drl.caseFailures().toString().contains("vakseinaantal: verwacht 99, werkelijk 2"),
@@ -187,17 +190,26 @@ class TakgelijkheidWitnessTest {
     @Test void twee_naamloze_creaties_botsen_niet_op_hun_terugvalnaam() throws Exception {
         // The flank the nameless fallback itself opens: a DRL package refuses duplicate rule names, so ONE flat
         // fallback string turns two nameless creations into "Duplicate rule name: <unnamed ResolvedFeitCreatie>"
-        // — measured — where the exec branch plays them. That would have replaced the inequality this card closes
-        // with another one, so the fallback carries the construct's WIRE POSITION. Both branches play.
+        // — measured — where the destructive exec-model branch played them. That would have replaced the inequality
+        // this card closes with another one, so the fallback carries the construct's WIRE POSITION, and the DRL-text
+        // branch plays. The verifier rejects a nameless form (WF-107), and the truth-maintenance branch refuses it.
         Path ir = tweeNaamlozeCreaties(), c = ir(POSTWACHT).resolveSibling("case.json");
-        assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))), "exec speelt beide creaties");
+        naamloosGeweigerd(ir, c);
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
         assertEquals("PLAYED", drl.status(), drl.reason());
     }
 
     // ---------------- fixtures ----------------
 
-    private static Path ir(String golden) {
+    /** The truth-maintenance branch refuses a nameless fact creation by name, as the verifier does (WF-107). */
+    private static void naamloosGeweigerd(Path ir, Path c) throws Exception {
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("feitcreatie: (zonder naam) — een feitcreatie zonder naam (WF-107)"),
+                e.getMessage());
+    }
+
+        private static Path ir(String golden) {
         Path p = CORPUS.resolve(golden).resolve("ir.json");
         assertTrue(Files.exists(p), "golden ir.json present: " + p.toAbsolutePath());
         return p;

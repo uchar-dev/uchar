@@ -33,15 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       drl   EXCLUDE drl compile: … Unable to Analyse Expression if (toBd($acc1) != null …
  *   SOM over a TEKST member: the same pair, with java.lang.String.
  * </pre>
- * Every one of those documents is verifier-CLEAN, and none of those outcomes is a refusal: a crash
- * names no form, and a whole-file DRL compile failure names the generated text rather than the
- * construct. Gate 12 sees the first as an ERROR — which it rightly refuses to excuse — and the
- * second as a channel with no diagnosis in it.
+ * None of those outcomes is a refusal: a crash names no form, and a whole-file DRL compile failure
+ * names the generated text rather than the construct. Gate 12 sees the first as an ERROR — which it
+ * rightly refuses to excuse — and the second as a channel with no diagnosis in it.
  *
- * <p>ONE row below rides a document the verifier REJECTS, and it says so in its own comment: an
- * ORDERING fold over text is WF-038 FAIL, so it can witness no carried form. It is here because the
- * reason is chosen on the MEMBER TYPE, and that choice needs a case where the two candidate
- * sentences differ. Every other row is verifier-clean.
+ * <p>The documents of the three refusal rows below are NOT verifier-clean: the verifier rejects an
+ * additive fold over a date or a text (WF-091, "a total, sum or pro-rata part is arithmetic") and an
+ * ordering fold over a text (WF-038), measured 2026-10-10 on the documents as these rows build them.
+ * They pin the refusal of a form no executor carries; they witness no carried form. The truth-maintenance
+ * branch refuses them in a sentence of its own, which names the rule of the verifier
+ * ({@code TmsTranspiler}), so each row pins that branch's sentence beside the DRL-text branch's.
  *
  * <p>The refusals carry TWO different reasons on purpose, and the rows below pin that difference,
  * because it is the whole finding of the card. An ADDITIVE fold over a date has no reading anywhere:
@@ -105,29 +106,33 @@ class DatumSetvouwWitnessTest {
     @Test void de_optellende_vouw_over_een_datumbron_weigert_om_een_andere_reden() throws Exception {
         // Same document, only the kind twisted: now nothing carries the form, and the sentence says so.
         for (String kind : new String[] { "sum", "total" }) {
-            BeideTakken.geweigerd(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
+            String vouw = "vouw " + Spelling.AGGREGATION_KIND.waarde("Aggregation.kind", kind).name()
+                    + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type Datum in dagen en niet "
+                    + "getalachtig";
+            BeideTakken.geweigerdApart(tijdelijk("datumsetbron-" + kind, metKind(BEREIK, kind)),
                     zaak(BEREIK, "case1-bereik.json"),
-                    "vouw " + Spelling.AGGREGATION_KIND.waarde("Aggregation.kind", kind).name()
-                            + " over de setbron 'vondstdatum' van Vondst: die leden zijn van type "
-                            + "Datum in dagen en niet getalachtig, terwijl beide takken elke waardevouw in "
-                            + "BigDecimal accumuleren. Optellen is rekenkunde en alleen bedragen tellen op",
+                    vouw + "; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter faalt op de "
+                            + "optelling zelf: geen enkele uitvoerder draagt deze vorm",
+                    vouw + ", terwijl beide takken elke waardevouw in BigDecimal accumuleren. Optellen is rekenkunde "
+                            + "en alleen bedragen tellen op",
                     "an additive fold over a date set source refuses by name in both branches");
         }
     }
 
     @Test void een_tekstbron_onder_de_optelvouw_valt_in_dezelfde_arm() throws Exception {
-        // The second member type that reaches the BigDecimal accumulate on a VERIFIER-CLEAN document,
-        // and the second crash the one arm closes (java.lang.String instead of java.time.LocalDate).
-        // The kind has to be SOM: an ORDERING fold over text is rejected by the verifier itself
-        // (WF-038 — "operand of the MINIMUM ordering fold is text, must be a number or a date",
-        // measured 2026-09-20), so under min/max there is no clean document for this backend to be
-        // wrong about. Under the additive kinds there is: retyped end to end, the document passes.
-        // Only the case carries text instead of dates, because a date value against a Tekst
-        // declaration is refused by the case reader and never reaches the transpiler at all.
-        BeideTakken.geweigerd(tijdelijk("tekstsetbron", alsTekst(BEREIK, "sum")), JSON.readTree(TEKSTZAAK),
-                "vouw SOM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
-                        + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
-                        + "accumuleren. Optellen is rekenkunde en alleen bedragen tellen op",
+        // The second member type that reaches the BigDecimal accumulate, and the second crash the one arm
+        // closes (java.lang.String instead of java.time.LocalDate). The document passed the verifier on
+        // 2026-09-20; today the verifier rejects an additive fold over text as well (WF-091, measured
+        // 2026-10-10), so the row pins a refusal and witnesses no carried form. Only the case carries text
+        // instead of dates, because a date value against a Tekst declaration is refused by the case reader
+        // and never reaches the transpiler at all.
+        String vouw = "vouw SOM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en niet "
+                + "getalachtig";
+        BeideTakken.geweigerdApart(tijdelijk("tekstsetbron", alsTekst(BEREIK, "sum")), JSON.readTree(TEKSTZAAK),
+                vouw + "; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter faalt op de "
+                        + "optelling zelf: geen enkele uitvoerder draagt deze vorm",
+                vouw + ", terwijl beide takken elke waardevouw in BigDecimal accumuleren. Optellen is rekenkunde en "
+                        + "alleen bedragen tellen op",
                 "a text set source under an additive fold refuses by name in both branches");
     }
 
@@ -140,7 +145,10 @@ class DatumSetvouwWitnessTest {
         // "unordered comparison: \"bb\" vs \"aa\"" and the ASP backend declines. A refusal that
         // misdiagnoses points its reader at the wrong card, which is the whole cost of getting a
         // reason wrong.
-        BeideTakken.geweigerd(tijdelijk("tekstordening", alsTekst(BEREIK, null)), JSON.readTree(TEKSTZAAK),
+        BeideTakken.geweigerdApart(tijdelijk("tekstordening", alsTekst(BEREIK, null)), JSON.readTree(TEKSTZAAK),
+                "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en kennen geen "
+                        + "ordening; een ordenende vouw vraagt een getal of een datum (WF-038), en de "
+                        + "referentie-interpreter faalt op de vergelijking zelf: geen enkele uitvoerder draagt deze vorm",
                 "vouw MINIMUM over de setbron 'vondstdatum' van Vondst: die leden zijn van type Tekst en "
                         + "niet getalachtig, terwijl beide takken elke waardevouw in BigDecimal "
                         + "accumuleren. De ordenende lezing vraagt een ORDENING op de leden en dit type "

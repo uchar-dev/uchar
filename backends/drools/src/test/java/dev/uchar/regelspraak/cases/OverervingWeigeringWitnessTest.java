@@ -131,6 +131,9 @@ class OverervingWeigeringWitnessTest {
     }
 
     // ---------------- 1b. what STAYS refused ----------------
+    //
+    // On the truth-maintenance branch, whose composition of ch. 7.10 is Stapels, in its sentences (card
+    // tms-omschakeling, 2026-10-10); the destructive exec-model branch gave the same three refusals in English.
 
     @Test void een_geerfde_ongeordende_set_weigert_luid() throws Exception {
         // A declared-unordered SET on the supertype and one own group on the subtype. SUBTYPING §4.1
@@ -150,9 +153,11 @@ class OverervingWeigeringWitnessTest {
 
         Path irPad = model("overerving-geerfde-set", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")));
-        assertTrue(e.getMessage().contains("SUBTYPING §4.1 rule 3 defines it"), e.getMessage());
-        assertTrue(e.getMessage().contains("not lowered in this release"), e.getMessage());
+                () -> speelTms(irPad, geval(KETEN, "case1-basis.json")));
+        assertTrue(e.getMessage().contains("defaults: effectieve stapels — het doel attribuut 'uitkering' op Wrakrecht zet"
+                + " één eigen groep op een geërfde ongeordende set van 2 groepen: SUBTYPING §4.1 regel 3 definieert die"
+                + " lezing"), e.getMessage());
+        assertTrue(e.getMessage().contains("maar ze is niet verlaagd"), e.getMessage());
     }
 
     @Test void een_eigen_ongeordende_set_weigert_luid() throws Exception {
@@ -172,8 +177,10 @@ class OverervingWeigeringWitnessTest {
 
         Path irPad = model("overerving-eigen-set", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(irPad, geval(KETEN, "case1-basis.json")));
-        assertTrue(e.getMessage().contains("has no defined reading"), e.getMessage());
+                () -> speelTms(irPad, geval(KETEN, "case1-basis.json")));
+        assertTrue(e.getMessage().contains("defaults: effectieve stapels — het doel attribuut 'uitkering' op Wrakrecht"
+                + " draagt 2 eigen en 1 geërfde groep(en): een vouw van een eigen ongeordende set over een geërfde"
+                + " stapel heeft geen gedefinieerde lezing"), e.getMessage());
     }
 
     @Test void een_venster_in_de_basis_weigert_luid() throws Exception {
@@ -190,10 +197,11 @@ class OverervingWeigeringWitnessTest {
 
         Path irPad = model("overerving-venster", ir);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(irPad, geval(WRAKBASIS, "case1-regel-als-basis.json")));
-        assertTrue(e.getMessage().contains("a rule with a VALIDITY WINDOW beside an inherited defaults"
-                + " stack"), e.getMessage());
-        assertTrue(e.getMessage().contains("ch. 7.4 keeps apart from defeasibility"), e.getMessage());
+                () -> speelTms(irPad, geval(WRAKBASIS, "case1-regel-als-basis.json")));
+        assertTrue(e.getMessage().contains("defaults: effectieve stapels — het doel attribuut 'uitkering' op Wrakrecht"
+                + " wordt naast een geërfde defaultsstapel geschreven door de regel \"uitkering van een wrakrecht\" met een"
+                + " geldigheidsvenster"), e.getMessage());
+        assertTrue(e.getMessage().contains("die ch. 7.4 van verdedigbaarheid scheidt"), e.getMessage());
     }
 
     // ---------------- 2. the loader refusals, and the two that were WITHDRAWN ----------------
@@ -391,6 +399,11 @@ class OverervingWeigeringWitnessTest {
     private static ObjectNode getal() {
         return JSON.createObjectNode().put("node", "Number").put("whole", true).put("decimals", 0)
                 .put("sign", "nonNegative");
+    }
+
+    /** The replay of one case on the truth-maintenance branch: null on a match. */
+    private static String speelTms(Path ir, JsonNode c) throws Exception {
+        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
     }
 
     private static JsonNode geval(String golden, String bestand) throws Exception {

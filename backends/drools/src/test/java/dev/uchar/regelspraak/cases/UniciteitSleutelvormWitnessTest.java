@@ -25,6 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * MOMENT of the fault is invisible to every gate: fire, not build, because that is where ref raises it (per
  * instance, during evaluation) and because a build-time throw would surface as a backend crash — gate 8's
  * ERROR — instead of a fault the red fence can pin. The instance-less arm pins exactly that.
+ *
+ * <p><b>On the truth-maintenance branch</b> (card tms-omschakeling, 2026-10-10) the claims about the malformed shape
+ * are refusals: that branch refuses a key with two temporal components by name when it lowers the uniqueness, in every
+ * world, since the same-moment tuple join has no corpus case (RUNTIME-SEMANTICS ch. 5.9); the red fence still pins
+ * ref's and clingo's fault, and a refusal reaches gate 8 as an exclusion, not as an ERROR. Where ref answers because the
+ * fault is not reached — no instance, or the evaluation date outside the window — the destructive exec-model branch
+ * answered too; the truth-maintenance branch refuses there as well, a narrowing accepted with the card. The valid
+ * one-component shapes (3.) play on every branch.
  */
 class UniciteitSleutelvormWitnessTest {
 
@@ -34,51 +42,41 @@ class UniciteitSleutelvormWitnessTest {
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final Path ROOD = Path.of("..", "..", "corpus", "rood");
 
-    /** The red fence's pinned fragment; {@link #VOLLE_ZIN} pins the complete shared wording, byte-equal to
-     *  ref's (eval.ml, ever_tuples) — lens 2 proved a reworded message survives the fragment alone. */
-    private static final String FRAGMENT = "at most one temporal key component";
-    private static final String VOLLE_ZIN = "a uniqueness key list carries at most one temporal key component "
-            + "(the same-moment tuple join has no corpus case; ch. 5.9)";
+    // ---------------- 1. two temporal components -> refused by name ----------------
 
-    // ---------------- 1. two temporal components -> a fault AT FIRE ----------------
-
-    @Test void twee_temporele_sleutelcomponenten_falen_bij_het_vuren() throws Exception {
+    @Test void twee_temporele_sleutelcomponenten_weigeren_bij_de_bouw() throws Exception {
         // vondstnummer AND kavelnummer are both JAAR-granular: the single form's key list is two ever-values
-        // wide, which would need the same-moment tuple join. One instance suffices — the shape is wrong
-        // regardless of whether anything collides (this very case ran clean to a model before the guard).
-        Throwable t = assertThrows(RuntimeException.class,
-                () -> speel(ROOD, "uni-two-temporal-keys", geval("Strandvondst", "kavelnummer")));
-        assertTrue(oorzaakKeten(t).contains(VOLLE_ZIN),
-                "the single form must fault with the shared ch. 5.9 wording, got: " + oorzaakKeten(t));
+        // wide, which would need the same-moment tuple join. ref faults on it per instance with the shared ch. 5.9
+        // wording, "a uniqueness key list carries at most one temporal key component (the same-moment tuple join has
+        // no corpus case; ch. 5.9)"; the truth-maintenance branch refuses the uniqueness by name.
+        geweigerd(ROOD.resolve("uni-two-temporal-keys").resolve("ir.json"), geval("Strandvondst", "kavelnummer"),
+                "uniciteit: dubbel temporeel enkelvoudig", "kavelnummer");
     }
 
-    @Test void twee_temporele_sleutelcomponenten_in_een_unie_falen_bij_het_vuren() throws Exception {
+    @Test void twee_temporele_sleutelcomponenten_in_een_unie_weigeren_bij_de_bouw() throws Exception {
         // the union arm of the same guard: vondstnummer + volgnummer over Strandvondst ∪ Wrakvondst. NB both
-        // sources are malformed here, so per-source vs per-construct arity is indistinguishable on this case —
-        // the per-source placement mirrors ref (ever_tuples per source) but is pinned nowhere (see the Result);
+        // sources are malformed here, so per-source vs per-construct arity is indistinguishable on this case;
         // WF-030 keeps the asymmetric-arity union out of the corpus.
-        Throwable t = assertThrows(RuntimeException.class,
-                () -> speel(ROOD, "uu-two-temporal-keys", geval("Strandvondst", "volgnummer")));
-        assertTrue(oorzaakKeten(t).contains(VOLLE_ZIN),
-                "the union form must fault with the shared ch. 5.9 wording, got: " + oorzaakKeten(t));
+        geweigerd(ROOD.resolve("uu-two-temporal-keys").resolve("ir.json"), geval("Strandvondst", "volgnummer"),
+                "uniciteit-unie: dubbel temporeel", "volgnummer");
     }
 
-    // ---------------- 2. the fault is at FIRE, so it needs an instance ----------------
+    // ---------------- 2. ref faults only with an instance; the branch refuses without one too ----------------
 
-    @Test void zonder_instanties_bereikt_de_vormfout_niets() throws Exception {
-        // the placement witness: ref raises the shape error per instance during evaluation, so a subject type
-        // with no instances never reaches it. A build-time guard would fault here too — and would reach gate 8
-        // as an ERROR (a backend crash), never as the pinnable FAULT the red fence requires.
-        // NB the moment is NOT shared by all three executors: clingo's uni_key_guards fires at TRANSLATION
-        // time, instance-independent — this backend sides with ref (lens 1, 2026-08-30), and the red fence
-        // only pins cases that carry instances, so the split is unobservable there.
+    @Test void zonder_instanties_weigert_de_vorm_ook() throws Exception {
+        // ref raises the shape error per instance during evaluation, so a subject type with no instances never
+        // reaches it, and clingo's uni_key_guards fires at TRANSLATION time, instance-independent. The
+        // truth-maintenance branch refuses at build, as clingo does, where ref answers consistent: the narrowing of
+        // card tms-omschakeling, recorded here.
         String leeg = """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [], "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }
                 """;
-        assertNull(speel(ROOD, "uni-two-temporal-keys", leeg), "no instance, no fire, no fault");
-        assertNull(speel(ROOD, "uu-two-temporal-keys", leeg), "no instance, no fire, no fault");
+        geweigerd(ROOD.resolve("uni-two-temporal-keys").resolve("ir.json"), leeg, "uniciteit: dubbel temporeel enkelvoudig",
+                "kavelnummer");
+        geweigerd(ROOD.resolve("uu-two-temporal-keys").resolve("ir.json"), leeg, "uniciteit-unie: dubbel temporeel",
+                "volgnummer");
     }
 
     // ---------------- 3. ONE temporal component still lowers the real collision rule ----------------
@@ -139,13 +137,14 @@ class UniciteitSleutelvormWitnessTest {
 
     // ---------------- 4. the validity window rides the guard rule too ----------------
 
-    @Test void buiten_het_geldigheidsvenster_zwijgt_de_vormfout() throws Exception {
+    @Test void buiten_het_geldigheidsvenster_weigert_de_vorm_ook() throws Exception {
         // the guard rule carries the same geldigGuard as the rule it replaces: ref applies the construct's
         // window at document level (applies env u.uni_geldigheid), so a malformed key OUTSIDE its window
         // faults in neither ref nor Drools — clingo faults on it for an UNRELATED reason (uniqueness validity
         // windows are not translated) — verified against ref on this exact model (lens 1, 2026-08-30, who
         // also proved by mutation that no gate covers this arm: dropping the guard leaves gate 8 green).
-        // Authored on an in-memory ir copy; the corpus rood case itself stays unwindowed.
+        // Authored on an in-memory ir copy; the corpus rood case itself stays unwindowed. The truth-maintenance
+        // branch refuses the shape at build, outside the window too: the narrowing of card tms-omschakeling.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(java.nio.file.Files.readString(
                         ROOD.resolve("uni-two-temporal-keys").resolve("ir.json")));
@@ -156,17 +155,15 @@ class UniciteitSleutelvormWitnessTest {
             java.nio.file.Files.writeString(tmp, ir.toString());
             String c = geval("Strandvondst", "kavelnummer")
                     .replace("\"asOfDate\": null", "\"asOfDate\": \"2024-06-01\"");
-            assertNull(CaseRunner.speelCase(tmp, JSON.readTree(c)),
-                    "outside its validity window the malformed key must stay silent, as ref does");
+            geweigerd(tmp, c, "uniciteit: dubbel temporeel enkelvoudig", "kavelnummer");
         } finally {
             java.nio.file.Files.deleteIfExists(tmp);
         }
     }
 
-    @Test void buiten_het_geldigheidsvenster_zwijgt_de_unie_vormfout_ook() throws Exception {
-        // the union arm of the window witness: lens 2 proved that dropping the geldigGuard on the UNION
-        // guard rule alone survived every gate and the single-form window witness — this pins that arm.
-        // Same construction: window from 2030, evaluation date 2024 — ref stays silent, so must Drools.
+    @Test void buiten_het_geldigheidsvenster_weigert_de_unie_vorm_ook() throws Exception {
+        // the union arm of the window witness. Same construction: window from 2030, evaluation date 2024 — ref
+        // stays silent; the truth-maintenance branch refuses the shape at build, as the row above.
         com.fasterxml.jackson.databind.node.ObjectNode ir = (com.fasterxml.jackson.databind.node.ObjectNode)
                 JSON.readTree(java.nio.file.Files.readString(
                         ROOD.resolve("uu-two-temporal-keys").resolve("ir.json")));
@@ -177,14 +174,23 @@ class UniciteitSleutelvormWitnessTest {
             java.nio.file.Files.writeString(tmp, ir.toString());
             String c = geval("Strandvondst", "volgnummer")
                     .replace("\"asOfDate\": null", "\"asOfDate\": \"2024-06-01\"");
-            assertNull(CaseRunner.speelCase(tmp, JSON.readTree(c)),
-                    "outside its validity window the malformed union key must stay silent, as ref does");
+            geweigerd(tmp, c, "uniciteit-unie: dubbel temporeel", "volgnummer");
         } finally {
             java.nio.file.Files.deleteIfExists(tmp);
         }
     }
 
     // ---------------- helpers ----------------
+
+    /** The truth-maintenance branch refuses the uniqueness {@code vorm} of {@code ir} by name: its key {@code sleutel}
+     *  is a second temporal component. */
+    private static void geweigerd(Path ir, String caseJson, String vorm, String sleutel) throws Exception {
+        JsonNode c = JSON.readTree(caseJson);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains(vorm + " — een uniciteitssleutel '" + sleutel + "' van Strandvondst op een"
+                + " tijdlijn naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel"), e.getMessage());
+    }
 
     /** One authored case over a corpus {@code ir.json}; the per-case failure line, null on a match. */
     private static String speel(Path zone, String casus, String caseJson) throws Exception {
@@ -208,14 +214,5 @@ class UniciteitSleutelvormWitnessTest {
                     "parameters": {} },
                   "expected": [ { "kind": "consistent" } ] }
                 """.formatted(type, tweedeSleutel);
-    }
-
-    /** The whole cause chain as one string — Drools wraps a consequence throw, so the message the guard raised
-     *  sits below the wrapper. */
-    private static String oorzaakKeten(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; c = c.getCause() == c ? null : c.getCause())
-            sb.append(c).append(" | ");
-        return sb.toString();
     }
 }

@@ -20,8 +20,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * on top of a comparison — per expectation the expected and the actual value, the fired rules with the labels they
  * bound, the coverage of the lowered constructs, and MARKER where the backend does not carry the document — filled
  * by the same exec-model replay the gate plays. The fixtures are corpus goldens: {@code jutterswet-uitsluiting-rgs},
- * whose four cases its scenario document regenerates, and {@code anchor/jutterswet-erflijn}, which gate 12 lists as
- * not carried (a to-many join on both sides).
+ * whose four cases its scenario document regenerates, and {@code anchor/jutterswet-bootberging}, which no exec-model
+ * branch carries (a source path over a relation whose roles are both to-many, for which the bean model has no field).
+ * Until card tms-omschakeling the second fixture was {@code anchor/jutterswet-erflijn}, which the truth-maintenance
+ * branch plays; the rows hold what both the destructive and the truth-maintenance exec-model branch report, since the
+ * report replays on the exec-model branch and the switch-over changes which of the two that is: the trace is pinned by
+ * its labels and counts, not by the names of the rules a branch fires.
  */
 class ScenarioRapportWitnessTest {
 
@@ -53,7 +57,7 @@ class ScenarioRapportWitnessTest {
                 geweigerd.verwachtingen());
         assertEquals("", geweigerd.diagnose());
         List<String> gevuurd = geweigerd.trace().vuringen().stream().map(Vuring::regel).toList();
-        assertTrue(gevuurd.contains("defaults K:Jutter.uitgesloten"), () -> "de defaultsgroep vuurt: " + gevuurd);
+        assertFalse(gevuurd.isEmpty(), "de defaultsgroep vuurt");
         assertTrue(geweigerd.trace().vuringen().stream().allMatch(v -> v.labels().equals(List.of("M")) && v.aantal() > 0),
                 () -> geweigerd.trace().toString());
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
@@ -106,12 +110,12 @@ class ScenarioRapportWitnessTest {
     }
 
     @Test void een_document_dat_de_backend_niet_draagt_is_marker() throws Exception {
-        Path erflijn = GOLDEN.resolve("anchor").resolve("jutterswet-erflijn");
-        List<ScenarioResultaat> rapport = CaseRunner.rapport(erflijn.resolve("ir.json"), cases(erflijn));
+        Path bootberging = GOLDEN.resolve("anchor").resolve("jutterswet-bootberging");
+        List<ScenarioResultaat> rapport = CaseRunner.rapport(bootberging.resolve("ir.json"), cases(bootberging));
         assertFalse(rapport.isEmpty());
         for (ScenarioResultaat r : rapport) {
             assertEquals(Status.MARKER, r.status(), r::toString);
-            assertTrue(r.diagnose().startsWith("transpiler SKIP: "), r::diagnose);
+            assertTrue(r.diagnose().contains("transpiler SKIP: regel: laagste vondstgewicht van een jutter"), r::diagnose);
             assertTrue(r.verwachtingen().isEmpty() && r.trace().vuringen().isEmpty() && r.dekking().isEmpty());
         }
     }

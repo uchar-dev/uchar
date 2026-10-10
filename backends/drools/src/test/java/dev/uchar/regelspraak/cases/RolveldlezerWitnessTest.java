@@ -100,12 +100,15 @@ class RolveldlezerWitnessTest {
         // Since L2 of the v1 wire migration the fold's join is its binding's, read by the one derivation every
         // fold seam shares (FactModelGenerator.bereikjoin), so the refusal is that derivation's sentence.
         Path ir = temporeleSetSommatie(), c = geval(tempovouwGeval());
+        // the truth-maintenance branch refuses the sum before its join: it writes a timeline target only with a
+        // time-proportional part or a day count
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een waarde van het tijdsafhankelijke doel"
+                + " 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van het"
+                + " bewaartarief van alle vondsten van de Jutter')"), e.getMessage());
         String zin = "aggregatie-bereik: de wire-binding wijst de rol 'vondst' aan, wiens zusterrol 'bewarende jutter'"
                 + " MEERVOUDIG is";
-        assertTrue(e.getMessage().contains(zin), e.getMessage());
-        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
         assertTrue(drlReden(ir, c).contains(zin), drlReden(ir, c));
     }
 
@@ -135,11 +138,10 @@ class RolveldlezerWitnessTest {
         Path ir = kenmerkTijdreeks(), c = geval(werfEnSchuit(true, "{}", "{ \"kind\": \"attributeEmpty\","
                 + " \"label\": \"S1\", \"attribute\": \"toeslag\" }"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("genavigeerde kenmerktijdreeks"), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'werf' op Schuit deelt haar naam met een gedeclareerd lid"),
-                e.getMessage());
-        assertTrue(e.getMessage().contains("§13.3.9 opslagrichting"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("regel: toeslag van een schuit — een CharacteristicCheck met wholePeriod ('de"
+                + " werf van de Schuit gedurende het gehele jaar bedrijvig is'): Schuit heeft geen referentieveld 'werf'"
+                + " naar Werf (§13.3.9 opslagrichting)"), e.getMessage());
         assertTrue(drlReden(ir, c).contains("genavigeerde kenmerktijdreeks"), drlReden(ir, c));
     }
 
@@ -158,16 +160,16 @@ class RolveldlezerWitnessTest {
         // recipients — which is what ref computes for a relation that is not there. Both halves ask one question.
         Path ir = verdelingZonderVeld(), c = geval(bergingGeval());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("verdeling ("), e.getMessage());
-        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'berging' op Berger geen referentieveld"
-                + " naar Berging af"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("verdeling: verdeel de opbrengst van een berging — een verdeling over de"
+                + " enkelvoudige ontvangerrol 'berger' wiens zusterrol 'berging' meervoudig is: dat feittype heeft één"
+                + " beanveld voor beide richtingen"), e.getMessage());
         assertTrue(drlReden(ir, c).contains("verdeling"), drlReden(ir, c));
     }
 
     // ---------------- 5. the §13.4.7 feitcreatie's three field positions ----------------
 
-    @Test void de_feitcreatie_weigert_de_naamdelende_schrijfrol() throws Exception {
+    @Test void de_feitcreatie_met_de_naamdelende_schrijfrol_speelt_met_truth_maintenance() throws Exception {
         // The written field is WRITTEN in the consequence: modify($doel){ set<field>($subject) }. A declared member
         // of that name makes the field a BigDecimal and the write a cast fault — the objectcreatie arm's exact
         // failure, on the arm that was never gated. Measured on the pre-gate jar, on a verifier-clean AND ref-clean
@@ -177,11 +179,11 @@ class RolveldlezerWitnessTest {
         //                         java.math.BigDecimal   (rule "vakbeseining door het kustvak")
         //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression $doel.setSeinvak( $subject )
         Path ir = feitcreatieMetVerdringer("Sein", "seinvak"), c = geval(postwachtGeval());
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("feitcreatie ("), e.getMessage());
-        assertTrue(e.getMessage().contains("de rol 'seinvak' op Sein deelt haar naam met een gedeclareerd lid"),
-                e.getMessage());
+        // The destructive exec-model branch refused the creation by name once it was gated. The truth-maintenance
+        // branch lays the link as a fact while it fires and answers as ref on this case (TmsZoalsRefWitnessTest,
+        // feitcreatie-naamdelende-schrijfrol). The DRL-text branch still refuses.
+        assertNull(CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                "tms — ref agrees");
         assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
     }
 
@@ -198,10 +200,10 @@ class RolveldlezerWitnessTest {
         // hop's own gate keeps a row of its own below (de_feitcreatie_weigert_een_verdrongen_tussenstapveld).
         Path ir = feitcreatieTussenstap(), c = geval(gemeenteGevalZonderRollen());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("feitcreatie ("), e.getMessage());
-        assertTrue(e.getMessage().contains("het beanmodel leidt voor de rol 'aanmelder' op Vondst"
-                + " geen referentieveld naar Jutter af"), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
+                + " 'berging door de kustgemeente': de stap over 'aanmelding' heeft twee rollen naar veel, waarvoor het"
+                + " beanmodel geen veld heeft (§13.3.9 opslagrichting)"), e.getMessage());
         assertTrue(drlReden(ir, c).contains("feitcreatie"), drlReden(ir, c));
     }
 
@@ -217,8 +219,9 @@ class RolveldlezerWitnessTest {
         Path ir = model("feitcreatie-verdrongen-hop", m), c = geval(gemeenteGevalZonderRollen());
         String reden = "de rol 'gemeente van inschrijving' op Jutter deelt haar naam met een gedeclareerd lid";
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c))));
-        assertTrue(e.getMessage().contains("feitcreatie (" + reden), e.getMessage());
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(e.getMessage().contains("feitcreatie: berging door de kustgemeente — het pad van de feitcreatie"
+                + " 'berging door de kustgemeente': " + reden), e.getMessage());
         assertTrue(drlReden(ir, c).contains("feitcreatie: " + reden), drlReden(ir, c));
     }
 

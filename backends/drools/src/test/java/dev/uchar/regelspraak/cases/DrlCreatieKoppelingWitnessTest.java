@@ -126,15 +126,17 @@ class DrlCreatieKoppelingWitnessTest {
     // ---------------- WF-027: a non-boolean characteristic initialisation faults ----------------
 
     @Test void een_niet_booleaanse_kenmerkwaarde_faalt_in_beide_takken() throws Exception {
-        // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5".
+        // ref: EVALUATION FAULT "characteristic initialisation of "overzees" is not boolean: 5"; the verifier rejects
+        // the document (WF-027). The DRL-text branch faults at fire; the truth-maintenance branch refuses the creation
+        // by name when it lowers it, on the effective type of the value, so no case reaches a fire there.
         Path ir = kenmerkGetal();
-        for (boolean viaDrl : new boolean[] { false, true }) {
-            RuntimeException e = assertThrows(RuntimeException.class,
-                    () -> CaseRunner.speelCase(ir, overzeeJutter(), viaDrl));
-            String keten = oorzaken(e);
-            assertTrue(keten.contains("niet booleaans: 5") && keten.contains("(WF-027)"),
-                    (viaDrl ? "drl-tekst" : "exec-model") + ": " + keten);
-        }
+        RuntimeException e = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(ir, overzeeJutter(), true));
+        String keten = oorzaken(e);
+        assertTrue(keten.contains("niet booleaans: 5") && keten.contains("(WF-027)"), "drl-tekst: " + keten);
+        CaseRunner.Excluded w = assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, overzeeJutter(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertTrue(w.getMessage().contains("een kenmerkinitialisatie van 'overzees' met een waarde van type Numeriek"
+                + " ('5'): een kenmerk is waar of onwaar (WF-027)"), "tms: " + w.getMessage());
     }
 
     // ---------------- the authored documents ----------------

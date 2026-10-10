@@ -178,11 +178,15 @@ class StaandeScalaireNormWitnessTest {
         Path tmp = Files.createTempFile("other-writer-witness", ".json");
         try {
             Files.writeString(tmp, ir.toString());
-            String fout = CaseRunner.speelCase(tmp, JSON.readTree(
-                    vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", waarde("12.00"))));
-            assertNotNull(fout, "the target must have LEFT the standing domain: the erase-refill oscillation "
-                    + "must be observable, exactly as ref faults on this model (ch. 5.7)");
-            assertTrue(fout.contains("geen fixpunt"), fout);
+            // The destructive exec-model branch replayed the erase-refill oscillation and reported "geen fixpunt",
+            // as ref faults on this model (ch. 5.7). The truth-maintenance branch refuses the document by name, as
+            // the verifier does (WF-050): a target has one writer, the group or the rule.
+            CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(tmp,
+                    JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"",
+                            waarde("12.00"))), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            assertTrue(tms.getMessage().contains("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel"
+                    + " ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)"),
+                    tms.getMessage());
 
             // THE ONE ROW THAT DOES NOT MIRROR, named rather than dropped: the DRL-text branch has no ch. 7
             // defaults lowering and refuses such a document WHOLE, so it never reaches the outcome above.
