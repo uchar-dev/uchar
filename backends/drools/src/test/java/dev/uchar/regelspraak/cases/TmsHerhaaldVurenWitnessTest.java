@@ -35,6 +35,7 @@ import static dev.uchar.regelspraak.cases.TmsDocumenten.standaard;
 import static dev.uchar.regelspraak.cases.TmsDocumenten.vergelijking;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,8 +78,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Between two fires the input changes through {@code update} on the beans {@code voegIn} put in, and in no other
  * way (the second fix round of step 3, point 2). On the values document, after the first fire, V1's vinder becomes a
- * Jutter J2 that the input did not give ({@code update}): {@code vuur} refuses, repeating the reference check of
- * {@code voegIn} over the beans of the session in its sentence, and {@code lees} still refuses after that refusal, since
+ * Jutter J2 that the input did not give ({@code update}): {@code vuur} refuses, since the update changed a relation
+ * (until the addition to step 5a1 it refused here in the sentence of the reference check of {@code voegIn}, which it
+ * now gives where the field changed without an update), and {@code lees} still refuses after that refusal, since
  * the update stands. A fresh session that gives J2 derives J2's totaalgewicht 10 and J1's 4. Where J2 is inserted with
  * {@code sessie.insert} before V1 is set on it, the reference check would pass, as J2 is in the session; the watch
  * refuses first ({@code Bewaking}): input came in outside {@code voegIn}, which states the places of a list and the
@@ -92,6 +94,47 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * reads, and on the filter document of {@link TmsFilterfoutWitnessTest} a Vondst inserted between two fires stopped
  * the second fire with a {@code ConsequenceException} out of the filter fault rule, "… maar een lid van zijn route
  * heeft geen Lijstplaats onder het veld 'aanmelder' …", since only {@code voegIn} states the places.
+ *
+ * <p>Outside {@code vuur} a consumer changes nothing but an attribute or a characteristic of a bean {@code voegIn} put
+ * in, with {@code update}, from {@code voegIn} on (the addition to step 5a1, 2026-10-10). {@code vuur} refuses, naming
+ * what happened and sending the consumer to a fresh session, and {@code lees} and {@code zetAfgeleideWaarden} refuse
+ * with the way to a fresh session:
+ * <ul>
+ *   <li>a global that changed after the first {@code vuur}: on golden {@code jutterswet-aanvoergeld} the aanvoertarief
+ *       12.50 becomes 22.50 with {@code setGlobal}, which no rule sees, since the branch states a global as a fact once,
+ *       at the first fire; a fresh session at 22.50 gives J1, J2 and J3 the aanvoergeld 332.50, 109.90 and 22.50, as the
+ *       reference interpreter and the ASP runner give it ("oracle: PASS (7 expectations)", "clingo: PASS (7
+ *       expectations)", measured 2026-10-10);</li>
+ *   <li>a fact of the branch deleted ({@code Waarde} of V1's uitkering) or updated, and a fact of no kind {@code voegIn}
+ *       puts in inserted;</li>
+ *   <li>a plain {@code fireAllRules}, named by the first rule it fired;</li>
+ *   <li>a relation changed, a reference field of a bean of the input, since {@code voegIn} numbers the places of a list
+ *       over the relations of one input. On the filter document of {@link TmsFilterfoutWitnessTest} a Vondst V2 (9 by 0)
+ *       without an aanmelder gets J1, whose list holds V1 (10 by 2): at the first fixpoint J1's zware vondsten is 1,
+ *       as the reference interpreter gives it, and a fresh session of the new input faults on V2's 9; and a Vondst V1
+ *       (9 by 0) moves from J1 to J2, whose list holds V2 (4 by 0), each at place 0 of its list: a fresh session gives
+ *       J1's zware vondsten 0 and the fault of J2's first member, V1's 9 (RUNTIME-SEMANTICS ch. 5.11), where the old
+ *       session kept both members at place 0 and named V2's 4. The reference interpreter faults on both fresh inputs,
+ *       "division by numeric zero", a sentence without the operands, and gives J1's 0 where J2 is not actief (measured
+ *       2026-10-10). The ASP runner faults on all of these inputs, also where the fold is not evaluated: it divides in
+ *       the filter of every Vondst ("viol("division by numeric zero","V2")" with V2 in no list), a divergence of its own
+ *       that these rows do not pin. The reference check of {@code vuur} stays behind it: a reference field set without
+ *       an update, which the watch does not see, to an object outside the session is refused in its own sentence;</li>
+ *   <li>the agenda changed: {@code Agenda.clear} after {@code voegIn}, before the first fire, of which Drools makes no
+ *       event; {@code AgendaGroup.clear} after a fire, which Drools queues for the next fire; and
+ *       {@code AgendaGroup.setFocus} on a creation group after a fire on {@code anchor/jutterswet-rekenkamer};</li>
+ *   <li>a fired session from which a consumer took the watch: what happened since is not to be seen.</li>
+ * </ul>
+ * <b>Red before the change</b> (measured 2026-10-10 on {@code 81ac1d6c}): nine rows failed on "Expected
+ * java.lang.IllegalStateException to be thrown, but nothing was thrown.", the relation that comes into being on
+ * "Unexpected exception type thrown, expected: &lt;java.lang.IllegalStateException&gt; but was:
+ * &lt;org.kie.api.runtime.rule.ConsequenceException&gt;", and the two rows whose sentence changed on the sentence. The
+ * old form of each (not committed) fired a second time without a word: at tarief 22.50 it read J1, J2 and J3 at 322.5,
+ * 99.9 and 12.5; with V1's uitkering deleted it read no uitkering for V1, where a fresh session gives 20; the new
+ * relation stopped the fire on "… heeft geen Lijstplaats onder het veld 'aanmelder' …"; the moved Vondst gave J2 the
+ * fault "4 gedeeld door 0"; after {@code Agenda.clear} the fire derived nothing at all, no uitkering 20 for V1 and no
+ * totaalgewicht 14 for J1; and after {@code AgendaGroup.clear} the next fire stopped on an
+ * {@code UnsupportedOperationException} out of Drools, while {@code lees} read without a word before it.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}, the old form of the witness, in which a
  * consumer could only fire, write back and read the beans): after the second fire and write-back V1 still carried
@@ -269,17 +312,29 @@ class TmsHerhaaldVurenWitnessTest {
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
                 zetRol(v1, "vinder", j2);
                 sessie.update(sessie.getFactHandle(v1), v1);
-                assertEquals("vuur: het veld 'vinder' van " + TmsAfnemerWitnessTest.naam(v1) + " wijst naar een Jutter ("
-                        + TmsAfnemerWitnessTest.naam(j2) + ") die niet als boon in de invoer staat: de tak leidt alleen af"
-                        + " voor de objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
-                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(),
-                        "the second fire");
+                assertEquals(meerDanEenUpdate(NA_VUUR, relatie("vinder", v1)), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the second fire: a changed relation");
                 assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(TmsAfnemerWitnessTest.naam(v1)
-                        + " werd gewijzigd met update", TmsAfnemerWitnessTest.VUUR_EERST),
+                        + " werd gewijzigd met update", VERS_BUITEN_VUUR_OM),
                         assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
                         "the reading after the refused fire still sees the update");
             } finally {
                 sessie.dispose();
+            }
+            // the reference set without an update: the watch sees no event, and the reference check refuses
+            zetRol(v1, "vinder", bonen.get("J1"));
+            KieSession zonderUpdate = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, zonderUpdate, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, zonderUpdate).geenFixpunt(), "first fire");
+                zetRol(v1, "vinder", j2);
+                assertEquals("vuur: het veld 'vinder' van " + TmsAfnemerWitnessTest.naam(v1) + " wijst naar een Jutter ("
+                        + TmsAfnemerWitnessTest.naam(j2) + ") die niet als boon in de invoer staat: de tak leidt alleen af"
+                        + " voor de objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, zonderUpdate)).getMessage(),
+                        "the second fire: the reference check");
+            } finally {
+                zonderUpdate.dispose();
             }
             // the way the sentence names: a fresh session that gives J2 as a bean
             bonen.put("J2", j2);
@@ -291,8 +346,9 @@ class TmsHerhaaldVurenWitnessTest {
         DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
         inSessie(b, () -> {
             String nieuwOfWeg = "): een afnemer geeft alle bonen in één Invoer aan voegIn en verandert daarna alleen hun"
-                    + " waarden en relaties, met update, want voegIn legt de plaatsen van een lijst en de emmerscalairen"
-                    + " vast over de bonen van één invoer; een nieuw of verwijderd object vraagt een verse sessie";
+                    + " attributen en kenmerken, met update, want voegIn legt de plaatsen van een lijst en de"
+                    + " emmerscalairen vast over de bonen van één invoer; een nieuw of verwijderd object vraagt een verse"
+                    + " sessie";
             String naVuur = "sinds de laatste DroolsBackend.vuur van deze sessie kwam er buiten voegIn om invoer bij of"
                     + " ging er invoer weg (";
             // J2 inserted between the fires and V1 set on it: J2 is in the session, so the reference check would pass
@@ -349,6 +405,320 @@ class TmsHerhaaldVurenWitnessTest {
     /** The way on of the two readings where input came or went outside {@code voegIn}. */
     static final String NIEUW_OF_WEG = "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse"
             + " sessie, dus DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
+
+    /** The call of the entry the watch keeps from after a fire. */
+    static final String NA_VUUR = "de laatste DroolsBackend.vuur van deze sessie";
+
+    /** The sentence of {@code vuur} where, since {@code sinds}, more happened outside it than an update of an attribute
+     *  or a characteristic of a bean, {@code wat} naming it. */
+    static String meerDanEenUpdate(String sinds, String wat) {
+        return "sinds " + sinds + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een"
+                + " boon (" + wat + "), en meer laat de ingang niet toe: open een verse sessie met alle bonen in één"
+                + " Invoer";
+    }
+
+    /** The way on of the two readings where {@code vuur} refuses for that reason. */
+    static final String VERS_BUITEN_VUUR_OM = "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde"
+            + " dan een update van een attribuut of kenmerk van een boon: open een verse sessie met alle bonen in één"
+            + " Invoer";
+
+    /** The clause of a relation that an update changed: field {@code veld} of {@code boon}. */
+    static String relatie(String veld, Object boon) {
+        return "het veld '" + veld + "' van " + TmsAfnemerWitnessTest.naam(boon) + ", een relatie, werd gewijzigd met"
+                + " update";
+    }
+
+    @Test void een_global_die_na_de_eerste_vuur_verandert_weigert_vuur_lees_en_terugzetten() throws Exception {
+        Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-aanvoergeld", "ir.json");
+        String zaak = Files.readString(ir.resolveSibling("case.json"));
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        String veranderd = "de global 'aanvoertarief' veranderde van 12.50 in 22.50 na de eerste DroolsBackend.vuur van"
+                + " deze sessie";
+        runner.metSessie(TmsDocumenten.JSON.readTree(zaak), (bouw, sessie, labels) -> {
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
+            assertEquals(List.of("J1 322.5", "J2 99.9", "J3 12.5"), aanvoergeld(DroolsBackend.lees(bouw, sessie), labels),
+                    "the golden's aanvoergeld at tarief 12.50");
+            sessie.setGlobal("aanvoertarief", new BigDecimal("22.50"));
+            assertEquals(veranderd + ": de tak leest een global één keer, in een regel die haar bij de eerste fire als"
+                    + " feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals vóór de eerste"
+                    + " vuur, en open voor een andere waarde een verse sessie",
+                    assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(bouw, sessie)).getMessage(),
+                    "the second fire");
+            String lezing = "geen fixpunt om te lezen of terug te zetten: " + veranderd + ", en het fixpunt hoort bij de"
+                    + " oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie";
+            assertEquals(lezing, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+                    .getMessage(), "the reading");
+            assertEquals(lezing, assertThrows(IllegalStateException.class,
+                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
+            return null;
+        });
+        // the way the sentence names: a fresh session with the other value
+        JsonNode ander = TmsDocumenten.JSON.readTree(zaak);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) ander.get("input").get("parameters").get("aanvoertarief"))
+                .put("number", "22.50");
+        runner.metSessie(ander, (bouw, sessie, labels) -> {
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "fresh fire");
+            assertEquals(List.of("J1 332.5", "J2 109.9", "J3 22.5"), aanvoergeld(DroolsBackend.lees(bouw, sessie), labels),
+                    "a fresh session at tarief 22.50");
+            return null;
+        });
+    }
+
+    @Test void een_verwijderd_feit_van_de_tak_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                org.kie.api.runtime.rule.FactHandle h = uitkering(sessie, bonen.get("V1"));
+                Object waarde = sessie.getObject(h);
+                sessie.delete(h);
+                String wat = TmsAfnemerWitnessTest.naam(waarde) + " werd verwijderd";
+                assertEquals(meerDanEenUpdate(NA_VUUR, wat), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the second fire");
+                assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(wat, VERS_BUITEN_VUUR_OM), assertThrows(
+                        IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(), "the reading");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    @Test void een_ingevoegd_of_gewijzigd_feit_dat_geen_boon_van_de_invoer_is_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            // a fact of no kind voegIn puts in
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                String vreemd = "geen invoer";
+                sessie.insert(vreemd);
+                assertEquals(meerDanEenUpdate(NA_VUUR, TmsAfnemerWitnessTest.naam(vreemd) + " werd ingevoegd"),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(),
+                        "a fact inserted between two fires");
+            } finally {
+                sessie.dispose();
+            }
+            // a fact of the branch updated
+            Map<String, Object> tweede = waardebonen(b, "10");
+            KieSession andere = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, andere, new Invoer().bonen(tweede.values()));
+                assertNull(DroolsBackend.vuur(b, andere).geenFixpunt(), "first fire");
+                org.kie.api.runtime.rule.FactHandle h = uitkering(andere, tweede.get("V1"));
+                andere.update(h, andere.getObject(h));
+                assertEquals(meerDanEenUpdate(NA_VUUR, TmsAfnemerWitnessTest.naam(andere.getObject(h))
+                        + " werd gewijzigd met update"), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, andere)).getMessage(), "a fact of the branch updated between two fires");
+            } finally {
+                andere.dispose();
+            }
+        });
+    }
+
+    @Test void een_kale_fire_tussen_twee_fires_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                Object v1 = bonen.get("V1");
+                zet(v1, "gewicht", "3");
+                sessie.update(sessie.getFactHandle(v1), v1);
+                String regel = TmsAfnemerWitnessTest.kaleFire(sessie);
+                assertNotNull(regel, "the plain fire fires a rule: the network has not seen V1's new gewicht");
+                assertEquals(meerDanEenUpdate(NA_VUUR, "de regel \"" + regel + "\" vuurde"), assertThrows(
+                        IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the fire after it");
+                assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(TmsAfnemerWitnessTest.naam(v1) + " werd gewijzigd met"
+                        + " update en de regel \"" + regel + "\" vuurde", VERS_BUITEN_VUUR_OM),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    /** J1 actief with V1 (10 by 2) as its aanmelder's Vondst, and V2 (9 by 0) without an aanmelder; then V2 gets J1. */
+    @Test void een_relatie_die_ontstaat_tussen_twee_fires_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = new LinkedHashMap<>();
+            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
+            bonen.put("J1", j1);
+            bonen.put("V1", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"),
+                    List.of()));
+            bonen.put("V2", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"),
+                    List.of()));
+            zetRol(bonen.get("V1"), "aanmelder", j1);
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                assertEquals(List.of("J1.zware vondsten = 1"), beschrijf(DroolsBackend.lees(b, sessie), bonen),
+                        "first reading: V2 is no member");
+                Object v2 = bonen.get("V2");
+                zetRol(v2, "aanmelder", j1);
+                sessie.update(sessie.getFactHandle(v2), v2);
+                assertEquals(meerDanEenUpdate(NA_VUUR, relatie("aanmelder", v2)), assertThrows(
+                        IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the second fire");
+                assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(TmsAfnemerWitnessTest.naam(v2) + " werd gewijzigd met"
+                        + " update", VERS_BUITEN_VUUR_OM), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.lees(b, sessie)).getMessage(), "the reading");
+            } finally {
+                sessie.dispose();
+            }
+            // the way the sentence names: a fresh session, in which V2 divides 9 by 0 in J1's list
+            assertEquals(List.of("J1: " + ZWARE_FOUT.formatted("9")), verseLezing(b, bonen), "a fresh session");
+        });
+    }
+
+    /** J1 and J2 actief, V1 (9 by 0) J1's, V2 (4 by 0) J2's, each at place 0 of its list; then V1 moves to J2. */
+    @Test void een_relatie_die_tussen_twee_fires_verhuist_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = new LinkedHashMap<>();
+            Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
+            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
+            bonen.put("J1", j1);
+            bonen.put("J2", j2);
+            bonen.put("V1", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"),
+                    List.of()));
+            bonen.put("V2", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "4", "deelnemers", "0"),
+                    List.of()));
+            zetRol(bonen.get("V1"), "aanmelder", j1);
+            zetRol(bonen.get("V2"), "aanmelder", j2);
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                assertEquals(List.of("J1: " + ZWARE_FOUT.formatted("9"), "J2: " + ZWARE_FOUT.formatted("4")),
+                        beschrijf(DroolsBackend.lees(b, sessie), bonen), "first reading");
+                Object v1 = bonen.get("V1");
+                zetRol(v1, "aanmelder", j2);
+                sessie.update(sessie.getFactHandle(v1), v1);
+                assertEquals(meerDanEenUpdate(NA_VUUR, relatie("aanmelder", v1)), assertThrows(
+                        IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the second fire");
+            } finally {
+                sessie.dispose();
+            }
+            // the way the sentence names: a fresh session, in which V1 comes before V2 in J2's list and divides 9
+            assertEquals(List.of("J1.zware vondsten = 0", "J2: " + ZWARE_FOUT.formatted("9")), verseLezing(b, bonen),
+                    "a fresh session");
+        });
+    }
+
+    @Test void een_geleegde_agenda_of_een_focuswissel_buiten_vuur_om_weigert_vuur_lees_en_terugzetten()
+            throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        String main = "de agendagroep \"MAIN\" werd geleegd";
+        inSessie(b, () -> {
+            // the agenda cleared after voegIn, before the first fire
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                sessie.getAgenda().clear();
+                assertEquals(meerDanEenUpdate("DroolsBackend.voegIn", main), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, sessie)).getMessage(), "the fire after the agenda was cleared");
+            } finally {
+                sessie.dispose();
+            }
+            // a group cleared after the fire
+            Map<String, Object> tweede = waardebonen(b, "10");
+            KieSession andere = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, andere, new Invoer().bonen(tweede.values()));
+                assertNull(DroolsBackend.vuur(b, andere).geenFixpunt(), "first fire");
+                andere.getAgenda().getAgendaGroup("MAIN").clear();
+                // Drools queues the clear of a group for the next fire, which ran it with an
+                // UnsupportedOperationException (measured 2026-10-10), so the watch names the call that waits
+                String groep = "een agendagroep werd geleegd met AgendaGroup.clear";
+                String lezing = TmsAfnemerWitnessTest.buitenVuurOm(groep, VERS_BUITEN_VUUR_OM);
+                assertEquals(lezing, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, andere))
+                        .getMessage(), "the reading");
+                assertEquals(lezing, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, andere)).getMessage(), "the write-back");
+                assertEquals(meerDanEenUpdate(NA_VUUR, groep), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, andere)).getMessage(), "the second fire");
+            } finally {
+                andere.dispose();
+            }
+        });
+        // a focus change after the fire, on a model with a creation, the only kind whose KieBase has a group beside MAIN
+        Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
+        CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(TmsDocumenten.JSON.readTree(
+                Files.readString(ir.resolveSibling("case1-berekend.json"))), (bouw, sessie, labels) -> {
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
+            sessie.getAgenda().getAgendaGroup(dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.OBJECTCREATIE)
+                    .setFocus();
+            String lezing = TmsAfnemerWitnessTest.buitenVuurOm("een agendagroep kreeg de focus met"
+                    + " AgendaGroup.setFocus", TmsAfnemerWitnessTest.VERS_BIJ_CREATIE);
+            assertEquals(lezing, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+                    .getMessage(), "the reading");
+            assertEquals(lezing, assertThrows(IllegalStateException.class,
+                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
+            return null;
+        });
+    }
+
+    @Test void een_gevuurde_sessie_zonder_haar_bewaking_weigert_vuur_en_lees() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                for (org.kie.api.event.rule.RuleRuntimeEventListener l : List.copyOf(sessie.getRuleRuntimeEventListeners()))
+                    sessie.removeEventListener(l);
+                assertEquals("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer op, dus wat er"
+                        + " na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle bonen in één"
+                        + " Invoer", assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie))
+                        .getMessage(), "the second fire");
+                assertEquals("geen fixpunt om te lezen of terug te zetten: de bewaking die DroolsBackend.vuur op deze"
+                        + " sessie zet, staat er niet meer op, dus wat er na de laatste vuur gebeurde, is niet te zien;"
+                        + " DroolsBackend.vuur weigert haar ook: open een verse sessie met alle bonen in één Invoer",
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    /** The fault of the rule "zware vondsten" where the filter divides {@code %s} by 0, as {@code Fixpunt} gives it. */
+    static final String ZWARE_FOUT = "deling door nul in de regel \"zware vondsten\": %s gedeeld door 0 — een numerieke"
+            + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
+
+    /** The handle of the {@code Waarde} that gives {@code vondst} its uitkering. */
+    private static org.kie.api.runtime.rule.FactHandle uitkering(KieSession sessie, Object vondst) {
+        List<org.kie.api.runtime.rule.FactHandle> uit = new ArrayList<>(sessie.getFactHandles(o ->
+                o instanceof dev.uchar.regelspraak.transpiler.tms.Waarde w && w.onderwerp() == vondst
+                        && w.attribuut().naam().equals("uitkering")));
+        assertEquals(1, uit.size(), "the Waarde of V1's uitkering");
+        return uit.get(0);
+    }
+
+    /** The aanvoergeld {@code f} derives, per label of {@code labels}, as "J1 322.5". */
+    private static List<String> aanvoergeld(Fixpunt f, Map<String, Object> labels) {
+        List<String> uit = new ArrayList<>();
+        labels.forEach((label, boon) -> {
+            for (Fixpunt.AfgeleideWaarde w : f.waarden())
+                if (w.object() == boon && w.attribuut().equals("aanvoergeld"))
+                    uit.add(label + " " + ((BigDecimal) w.waarde()).stripTrailingZeros().toPlainString());
+        });
+        uit.sort(null);
+        return uit;
+    }
 
     // ---------------- helpers ----------------
 

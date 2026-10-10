@@ -64,8 +64,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       sends the consumer to a fresh session, since {@code vuur} refuses a second fire on a model with a creation; a
  *       fresh session of grondslag 150 gives 120 ({@link TmsHerhaaldVurenWitnessTest}, measured in the reference
  *       interpreter and the ASP runner). On the values document, without a creation, both refuse after an update
- *       alone and after a plain fire that follows it, with the sentence that asks a {@code vuur} first; after that
- *       {@code vuur} the reading is that of a fresh session of the changed input. After the write-back, an update makes
+ *       alone, with the sentence that asks a {@code vuur} first; after that {@code vuur} the reading is that of a fresh
+ *       session of the changed input. A plain fire between two fires makes {@code vuur} refuse as well, so there the
+ *       sentence sends the consumer to a fresh session ({@link TmsHerhaaldVurenWitnessTest}, the row of the plain fire;
+ *       until the addition to step 5a1 of 2026-10-10 this row fired again after the plain fire and read the fresh
+ *       reading). After the write-back, an update makes
  *       both refuse with the way to a fresh session, since {@code vuur} refuses a written-back session. <b>Red before
  *       the change</b> (measured 2026-10-10 on {@code 32a649c4}, the tip of the first fix round): each of the three rows
  *       failed on "Expected java.lang.IllegalStateException to be thrown, but nothing was thrown."; their old form, which
@@ -265,11 +268,6 @@ class TmsAfnemerWitnessTest {
                 assertEquals(buitenVuurOm(gewijzigd, VUUR_EERST), assertThrows(IllegalStateException.class,
                         () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back after the update");
                 assertNull(TmsDocumenten.lees(v1, "uitkering"), "the write-back wrote nothing");
-                String regel = kaleFire(sessie);
-                assertNotNull(regel, "the plain fire fires a rule: the network has not seen V1's new gewicht");
-                assertEquals(buitenVuurOm(gewijzigd + " en de regel \"" + regel + "\" vuurde", VUUR_EERST),
-                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
-                        "the reading after a plain fire");
                 assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire the sentence asks for");
                 assertEquals(TmsHerhaaldVurenWitnessTest.TWEEDE_WAARDEN,
                         TmsHerhaaldVurenWitnessTest.beschrijf(DroolsBackend.lees(b, sessie), bonen),

@@ -306,11 +306,11 @@ public final class DroolsBackend {
      * place the rules need is thus never missing at the fire, where it would stop the run with an
      * {@code IllegalStateException}.
      *
-     * <p>Then it puts the watch of the entry on the session ({@code Bewaking}), and {@link #vuur} refuses a session into
-     * which input came, or from which input went, outside this call: the places of a list and the bucket scalars are
-     * stated over the beans of one input, so a bean inserted later has neither. Between two fires a consumer changes the
-     * values and the relations of the beans this call put in, with {@code update}, and opens a fresh session to add or
-     * remove an object.
+     * <p>Then it puts the watch of the entry on the session ({@code Bewaking}), with the relations the beans hold now,
+     * and {@link #vuur} refuses a session in which more happened outside it than an update of an attribute or a
+     * characteristic of a bean this call put in: the places of a list and the bucket scalars are stated over the beans
+     * and the relations of one input, so a bean inserted later has neither, and a relation changed later keeps the
+     * place it had or has none. A consumer opens a fresh session to add or remove an object or to change a relation.
      *
      * @throws IllegalStateException    {@code sessie} is not fresh, on the truth-maintenance branch
      * @throws IllegalArgumentException a statement of {@code invoer} that does not fit its beans or the model, on the
@@ -343,7 +343,7 @@ public final class DroolsBackend {
         for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
         feiten.addAll(lijstplaatsen(build, tms.lijstvelden(), bonen, typen, invoer.lijsten()));
         for (Object feit : feiten) sessie.insert(feit);
-        Bewaking.op(sessie, invoersoorten(bonenklassen(build)), "DroolsBackend.voegIn");
+        Bewaking.op(sessie, relatievelden(build, bonenklassen(build)), bonen, "DroolsBackend.voegIn");
     }
 
     /** The sentence that refuses a reference field of a bean of {@code bonen} that holds an object outside
@@ -393,12 +393,26 @@ public final class DroolsBackend {
         return uit;
     }
 
-    /** The kinds of fact {@link #voegIn} puts into a session of the truth-maintenance branch: the beans, of the classes
-     *  {@code bonenklassen} gives, and the bucket inputs and list places it states beside them. */
-    private static Set<Class<?>> invoersoorten(Map<Class<?>, Objecttype> bonenklassen) {
-        Set<Class<?>> uit = new HashSet<>(bonenklassen.keySet());
-        uit.add(Emmerinvoer.class);
-        uit.add(Lijstplaats.class);
+    /** The relations of every bean class of {@code klassen}: its reference fields, each with its getter, which the
+     *  watch of the entry reads to tell an update of an attribute or a characteristic from one of a relation. */
+    private static Map<Class<?>, Bewaking.Relatievelden> relatievelden(Build build, Map<Class<?>, Objecttype> klassen) {
+        Map<Class<?>, Bewaking.Relatievelden> uit = new HashMap<>();
+        for (Map.Entry<Class<?>, Objecttype> k : klassen.entrySet()) {
+            List<String> velden = referentievelden(build.model(), k.getValue());
+            List<Function<Object, Object>> lezers = new ArrayList<>();
+            for (String veld : velden) lezers.add(Accessors.getter(k.getKey(), veld));
+            uit.put(k.getKey(), new Bewaking.Relatievelden(velden, lezers));
+        }
+        return uit;
+    }
+
+    /** The beans {@code sessie} holds, of the classes of {@code klassen}, asked per class. */
+    private static List<Object> bonenInDeSessie(KieSession sessie, Map<Class<?>, Objecttype> klassen) {
+        List<Object> uit = new ArrayList<>();
+        for (Class<?> k : klassen.keySet())
+            for (Object o : sessie.getObjects(new ClassObjectFilter(k)))
+                // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
+                if (o.getClass() == k) uit.add(o);
         return uit;
     }
 
@@ -664,13 +678,17 @@ public final class DroolsBackend {
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
      * {@link #lees}, or opens a fresh session with beans that hold input alone.
      *
-     * <p>On the truth-maintenance branch it refuses, before it fires, a session into which input came, or from which input
-     * went, outside {@link #voegIn} since {@code voegIn} or the last {@code vuur}: a bean inserted or deleted, or a
-     * bucket input or a list place. {@code voegIn} states the places of a list and the bucket scalars over the beans of
-     * one input, so a consumer changes input between two fires with {@code update} on the beans {@code voegIn} put in,
-     * and opens a fresh session to add or remove an object. It repeats the reference check of {@code voegIn} over the
-     * beans of the session as well, since an update can set a reference field to an object outside it, and refuses in
-     * the sentence of {@code voegIn}.
+     * <p>On the truth-maintenance branch it refuses, before it fires, a session in which, since {@link #voegIn} or the
+     * last {@code vuur}, more happened outside it than an update of an attribute or a characteristic of a bean
+     * {@code voegIn} put in: a fact inserted or deleted, among them a bean, a bucket input, a list place or a fact of
+     * the branch; an update of a fact that is no such bean, or one that changed a relation, a reference field; a rule
+     * that fired; and a change of the agenda, a cleared group or a focus change, read from Drools' agenda where no event
+     * reports it. {@code voegIn} states the places of a list and the bucket scalars over the beans and relations of one
+     * input, the branch states its own facts, and only this fires under the cap and in generations, so the way is a
+     * fresh session. It refuses as well, after its first run, a session whose globals changed since that run, since the
+     * branch states a global as a fact once, at the first fire, and a session from which a consumer took the watch. It
+     * repeats the reference check of {@code voegIn} over the beans of the session, which a reference field set without
+     * an update can fail, and refuses in the sentence of {@code voegIn}.
      *
      * <p>On the truth-maintenance branch it fires a session of a model with a creation once, and refuses it at every
      * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
@@ -803,10 +821,11 @@ public final class DroolsBackend {
      *  a mark with its exception, so that no reading follows a run that broke off. It runs with the watch of the session
      *  off ({@link Bewaking}), so that its own inserts, deletes and firings count as none, and puts the watch back
      *  afterwards with nothing kept: the two readings see what happens after this run. A refusal leaves the watch as it
-     *  was, so a reading after it still sees what happened before. It refuses as well a session into which input came,
-     *  or from which input went, outside {@link #voegIn} since {@code voegIn} or the last run, as the watch keeps it, and
-     *  then a session in which a reference field of a bean holds an object outside the session, in the sentence of
-     *  {@code voegIn}. */
+     *  was, so a reading after it still sees what happened before. It refuses as well what {@link #vuur(Build,
+     *  KieSession)} lists: more than an update of an attribute or a characteristic of a bean of the input since
+     *  {@link #voegIn} or the last run, a global changed since the first run, a fired session without its watch, and a
+     *  reference field that holds an object outside the session. At the first run it puts the watch on where
+     *  {@code voegIn} did not, with the beans the session holds as the input, and keeps the globals. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
         if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
@@ -824,18 +843,39 @@ public final class DroolsBackend {
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
                     + " alleen invoer dragen");
-        Bewaking bewaking = Bewaking.van(sessie);
-        if (bewaking != null && bewaking.erbijOfEraf() != null)
-            throw new IllegalStateException("sinds " + bewaking.sinds() + " kwam er buiten voegIn om invoer bij of ging er"
-                    + " invoer weg (" + bewaking.erbijOfEraf() + "): een afnemer geeft alle bonen in één Invoer aan"
-                    + " voegIn en verandert daarna alleen hun waarden en relaties, met update, want voegIn legt de plaatsen"
-                    + " van een lijst en de emmerscalairen vast over de bonen van één invoer; een nieuw of verwijderd"
-                    + " object vraagt een verse sessie");
+        Bewaking gezet = Bewaking.van(sessie);
+        // voegIn puts the watch on, or the first run where there was no voegIn, and every run puts it back, so only a
+        // consumer that took it off leaves a fired session without it, and what happened since is then not to be seen
+        if (gezet == null && !merken.isEmpty())
+            throw new IllegalStateException("de bewaking die DroolsBackend.vuur op deze sessie zette, staat er niet meer"
+                    + " op, dus wat er na de laatste vuur gebeurde, is niet te zien; open een verse sessie met alle bonen"
+                    + " in één Invoer");
+        if (gezet != null && gezet.erbijOfEraf() != null)
+            throw new IllegalStateException("sinds " + gezet.sinds() + " kwam er buiten voegIn om invoer bij of ging er"
+                    + " invoer weg (" + gezet.erbijOfEraf() + "): een afnemer geeft alle bonen in één Invoer aan"
+                    + " voegIn en verandert daarna alleen hun attributen en kenmerken, met update, want voegIn legt de"
+                    + " plaatsen van een lijst en de emmerscalairen vast over de bonen van één invoer; een nieuw of"
+                    + " verwijderd object vraagt een verse sessie");
+        String agenda = Bewaking.agenda(sessie);
+        String meer = gezet == null ? agenda : gezet.meerDanEenUpdate() != null ? gezet.meerDanEenUpdate() : agenda;
+        if (meer != null)
+            throw new IllegalStateException("sinds " + (gezet == null ? "het begin van deze sessie" : gezet.sinds())
+                    + " gebeurde er buiten vuur om meer dan een update van een attribuut of kenmerk van een boon (" + meer
+                    + "), en meer laat de ingang niet toe: open een verse sessie met alle bonen in één Invoer");
+        String global = gezet == null ? null : gezet.veranderdeGlobal(sessie);
+        if (global != null)
+            throw new IllegalStateException(global + ": de tak leest een global één keer, in een regel die haar bij de"
+                    + " eerste fire als feit stelt, dus een volgende fire zou met de oude waarde rekenen; zet de globals"
+                    + " vóór de eerste vuur, en open voor een andere waarde een verse sessie");
         Map<Class<?>, Objecttype> klassen = bonenklassen(build);
         String buiten = doelBuitenDeSessie(build, sessie, klassen);
         if (buiten != null) throw new IllegalStateException(buiten);
-        return Bewaking.op(sessie, invoersoorten(klassen), "de laatste DroolsBackend.vuur van deze sessie")
-                .zonder(sessie, () -> {
+        Bewaking bewaking = gezet != null ? gezet
+                : Bewaking.op(sessie, relatievelden(build, klassen), bonenInDeSessie(sessie, klassen),
+                        "de laatste DroolsBackend.vuur van deze sessie");
+        bewaking.legGlobalenVast(sessie);
+        bewaking.vergeet("de laatste DroolsBackend.vuur van deze sessie");
+        return bewaking.zonder(sessie, () -> {
             for (FactHandle merk : merken) sessie.delete(merk);
             Vuring vuring;
             try {

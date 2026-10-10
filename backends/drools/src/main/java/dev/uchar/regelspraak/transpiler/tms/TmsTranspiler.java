@@ -456,7 +456,7 @@ public final class TmsTranspiler {
 
     /** What a consumer does where something happened outside the driver after its last run ({@link Bewaking}): fire
      *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.vuur}). */
-    private String vuurWeg(KieSession sessie, Bewaking bewaking) {
+    private String vuurWeg(KieSession sessie, Bewaking bewaking, String agenda) {
         if (!creatieregels.isEmpty())
             return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
         if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
@@ -465,6 +465,12 @@ public final class TmsTranspiler {
         if (bewaking.erbijOfEraf() != null)
             return "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse sessie, dus"
                     + " DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
+        if (bewaking.meerDanEenUpdate() != null || agenda != null)
+            return "DroolsBackend.vuur weigert een sessie waarin buiten vuur om meer gebeurde dan een update van een"
+                    + " attribuut of kenmerk van een boon: open een verse sessie met alle bonen in één Invoer";
+        if (bewaking.veranderdeGlobal(sessie) != null)
+            return "DroolsBackend.vuur weigert een sessie waarvan een global na de eerste vuur veranderde: open een verse"
+                    + " sessie";
         return "vuur haar eerst opnieuw met DroolsBackend.vuur";
     }
 
@@ -482,16 +488,24 @@ public final class TmsTranspiler {
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur"
                     + " van deze sessie bereikte er geen — " + geenFixpunt);
         Bewaking bewaking = Bewaking.van(sessie);
-        // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it
+        // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it,
+        // and the driver refuses such a session
         if (bewaking == null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
                     + " DroolsBackend.vuur op deze sessie zet, staat er niet meer op, dus wat er na de laatste vuur"
-                    + " gebeurde, is niet te zien; vuur haar opnieuw met DroolsBackend.vuur");
+                    + " gebeurde, is niet te zien; DroolsBackend.vuur weigert haar ook: open een verse sessie met alle"
+                    + " bonen in één Invoer");
+        String agenda = Bewaking.agenda(sessie);
         String buitenom = bewaking.buitenom();
-        if (buitenom != null)
+        String wat = buitenom == null ? agenda : agenda == null ? buitenom : buitenom + " en " + agenda;
+        if (wat != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
                     + " DroolsBackend.vuur van deze sessie gebeurde er iets buiten vuur om, wat het fixpunt van die vuur"
-                    + " kan veranderen (" + buitenom + "); " + vuurWeg(sessie, bewaking));
+                    + " kan veranderen (" + wat + "); " + vuurWeg(sessie, bewaking, agenda));
+        String global = bewaking.veranderdeGlobal(sessie);
+        if (global != null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: " + global + ", en het fixpunt"
+                    + " hoort bij de oude waarde; DroolsBackend.vuur weigert de sessie, dus open een verse sessie");
         List<Runnable> daden = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
