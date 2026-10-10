@@ -75,6 +75,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * &lt;[…, J1.heffing = 70, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 70]&gt;", since the
  * made Rekenkamer kept the grondslag it was initialised with.
  *
+ * <p>Between two fires the input changes through {@code update} on the beans {@code voegIn} put in, and in no other
+ * way (the second fix round of step 3, point 2). On the values document, after the first fire, V1's vinder becomes a
+ * Jutter J2 that the input did not give ({@code update}): {@code vuur} refuses, repeating the reference check of
+ * {@code voegIn} over the beans of the session in its sentence, and {@code lees} still refuses after that refusal, since
+ * the update stands. A fresh session that gives J2 derives J2's totaalgewicht 10 and J1's 4. Where J2 is inserted with
+ * {@code sessie.insert} before V1 is set on it, the reference check would pass, as J2 is in the session; the watch
+ * refuses first ({@code Bewaking}): input came in outside {@code voegIn}, which states the places of a list and the
+ * bucket scalars over the beans of one input, so a new object asks a fresh session. The watch refuses alike a bean
+ * deleted between two fires, and a bean inserted between {@code voegIn} and the first fire. The reference interpreter
+ * and the ASP runner give the reading with J2 given (measured 2026-10-10; the verifier passes the document). <b>Red
+ * before the change</b> (measured 2026-10-10 on {@code 32a649c4}): both rows failed on "Expected
+ * java.lang.IllegalStateException to be thrown, but nothing was thrown."; the old form of the first row fired a second
+ * time without a word and read no derivation for J2, "expected: &lt;[J1.totaalgewicht = 4, J2.totaalgewicht = 10, …]&gt;
+ * but was: &lt;[J1.totaalgewicht = 4, V1 is zwaar, …]&gt;"; with J2 inserted the old form read what a fresh session
+ * reads, and on the filter document of {@link TmsFilterfoutWitnessTest} a Vondst inserted between two fires stopped
+ * the second fire with a {@code ConsequenceException} out of the filter fault rule, "… maar een lid van zijn route
+ * heeft geen Lijstplaats onder het veld 'aanmelder' …", since only {@code voegIn} states the places.
+ *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}, the old form of the witness, in which a
  * consumer could only fire, write back and read the beans): after the second fire and write-back V1 still carried
  * zwaar, bonus 7, heffing 40 and vindloon 15, "second reading ==&gt; expected: &lt;[J1.totaalgewicht = 7, V1.uitkering =
@@ -233,6 +251,104 @@ class TmsHerhaaldVurenWitnessTest {
             return null;
         });
     }
+
+    /** The reading of a fresh session of the values document in which V1's vinder is a second Jutter J2. */
+    static final List<String> MET_J2 = List.of("J1.totaalgewicht = 4", "J2.totaalgewicht = 10", "V1 is zwaar",
+            "V1.bonus = 7", "V1.heffing = 40", "V1.uitkering = 20", "V1.vindloon = 15", "V2.uitkering = 14",
+            "V2.vindloon = 9");
+
+    @Test void een_relatie_naar_een_object_buiten_de_invoer_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            Map<String, Object> bonen = waardebonen(b, "10");
+            Object v1 = bonen.get("V1");
+            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                zetRol(v1, "vinder", j2);
+                sessie.update(sessie.getFactHandle(v1), v1);
+                assertEquals("vuur: het veld 'vinder' van " + TmsAfnemerWitnessTest.naam(v1) + " wijst naar een Jutter ("
+                        + TmsAfnemerWitnessTest.naam(j2) + ") die niet als boon in de invoer staat: de tak leidt alleen af"
+                        + " voor de objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, sessie)).getMessage(),
+                        "the second fire");
+                assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(TmsAfnemerWitnessTest.naam(v1)
+                        + " werd gewijzigd met update", TmsAfnemerWitnessTest.VUUR_EERST),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading after the refused fire still sees the update");
+            } finally {
+                sessie.dispose();
+            }
+            // the way the sentence names: a fresh session that gives J2 as a bean
+            bonen.put("J2", j2);
+            assertEquals(MET_J2, verseLezing(b, bonen), "a fresh session that gives J2");
+        });
+    }
+
+    @Test void invoer_die_buiten_voegIn_om_bijkomt_of_weggaat_weigert_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        inSessie(b, () -> {
+            String nieuwOfWeg = "): een afnemer geeft alle bonen in één Invoer aan voegIn en verandert daarna alleen hun"
+                    + " waarden en relaties, met update, want voegIn legt de plaatsen van een lijst en de emmerscalairen"
+                    + " vast over de bonen van één invoer; een nieuw of verwijderd object vraagt een verse sessie";
+            String naVuur = "sinds de laatste DroolsBackend.vuur van deze sessie kwam er buiten voegIn om invoer bij of"
+                    + " ging er invoer weg (";
+            // J2 inserted between the fires and V1 set on it: J2 is in the session, so the reference check would pass
+            Map<String, Object> bonen = waardebonen(b, "10");
+            Object v1 = bonen.get("V1");
+            Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "first fire");
+                sessie.insert(j2);
+                zetRol(v1, "vinder", j2);
+                sessie.update(sessie.getFactHandle(v1), v1);
+                String ingevoegd = TmsAfnemerWitnessTest.naam(j2) + " werd ingevoegd";
+                assertEquals(naVuur + ingevoegd + nieuwOfWeg, assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.vuur(b, sessie)).getMessage(), "a bean inserted between two fires");
+                assertEquals(TmsAfnemerWitnessTest.buitenVuurOm(ingevoegd, NIEUW_OF_WEG), assertThrows(
+                        IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading sends the consumer to a fresh session");
+            } finally {
+                sessie.dispose();
+            }
+            // V2 deleted between the fires
+            Map<String, Object> tweede = waardebonen(b, "10");
+            Object v2 = tweede.get("V2");
+            KieSession weg = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, weg, new Invoer().bonen(tweede.values()));
+                assertNull(DroolsBackend.vuur(b, weg).geenFixpunt(), "first fire");
+                weg.delete(weg.getFactHandle(v2));
+                assertEquals(naVuur + TmsAfnemerWitnessTest.naam(v2) + " werd verwijderd" + nieuwOfWeg,
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, weg)).getMessage(),
+                        "a bean deleted between two fires");
+            } finally {
+                weg.dispose();
+            }
+            // a Jutter inserted after voegIn, before the first fire
+            Map<String, Object> derde = waardebonen(b, "10");
+            Object j3 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
+            KieSession vooraf = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, vooraf, new Invoer().bonen(derde.values()));
+                vooraf.insert(j3);
+                assertEquals("sinds DroolsBackend.voegIn kwam er buiten voegIn om invoer bij of ging er invoer weg ("
+                        + TmsAfnemerWitnessTest.naam(j3) + " werd ingevoegd" + nieuwOfWeg,
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(b, vooraf)).getMessage(),
+                        "a bean inserted after voegIn, before the first fire");
+            } finally {
+                vooraf.dispose();
+            }
+        });
+    }
+
+    /** The way on of the two readings where input came or went outside {@code voegIn}. */
+    static final String NIEUW_OF_WEG = "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse"
+            + " sessie, dus DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
 
     // ---------------- helpers ----------------
 

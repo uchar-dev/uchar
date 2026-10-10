@@ -37,6 +37,7 @@ import org.kie.api.conf.EqualityBehaviorOption;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
 import org.kie.api.event.rule.AgendaEventListener;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
+import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.ConsequenceException;
 import org.kie.api.runtime.rule.FactHandle;
@@ -305,6 +306,12 @@ public final class DroolsBackend {
      * place the rules need is thus never missing at the fire, where it would stop the run with an
      * {@code IllegalStateException}.
      *
+     * <p>Then it puts the watch of the entry on the session ({@code Bewaking}), and {@link #vuur} refuses a session into
+     * which input came, or from which input went, outside this call: the places of a list and the bucket scalars are
+     * stated over the beans of one input, so a bean inserted later has neither. Between two fires a consumer changes the
+     * values and the relations of the beans this call put in, with {@code update}, and opens a fresh session to add or
+     * remove an object.
+     *
      * @throws IllegalStateException    {@code sessie} is not fresh, on the truth-maintenance branch
      * @throws IllegalArgumentException a statement of {@code invoer} that does not fit its beans or the model, on the
      *                                  truth-maintenance branch
@@ -330,29 +337,69 @@ public final class DroolsBackend {
         for (Object boon : bonen)
             if (typen.put(boon, perKlasse.computeIfAbsent(boon.getClass(), k -> objecttype(build, boon))) != null)
                 throw new IllegalArgumentException("voegIn: de boon " + naam(boon) + " staat twee keer in de invoer");
-        weigerDoelBuitenDeInvoer(build, bonen, typen, perKlasse);
+        String buiten = doelBuitenDeInvoer("voegIn", build, bonen, typen, perKlasse);
+        if (buiten != null) throw new IllegalArgumentException(buiten);
         List<Object> feiten = new ArrayList<>(bonen);
         for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
         feiten.addAll(lijstplaatsen(build, tms.lijstvelden(), bonen, typen, invoer.lijsten()));
         for (Object feit : feiten) sessie.insert(feit);
+        Bewaking.op(sessie, invoersoorten(bonenklassen(build)), "DroolsBackend.voegIn");
     }
 
-    /** Refuses a reference field of a bean of the input that holds an object outside the input. The branch derives only
-     *  for the objects in the session, so every value of such an object, and every value read through the field, would
-     *  stay empty without a word; and the link the field gives still counts, so a creation it blocks makes no object in
-     *  its place. */
-    private static void weigerDoelBuitenDeInvoer(Build build, List<Object> bonen, Map<Object, Objecttype> typen,
-                                                 Map<Class<?>, Objecttype> perKlasse) {
+    /** The sentence that refuses a reference field of a bean of {@code bonen} that holds an object outside
+     *  {@code bonen}, with {@code wie} the call that refuses, or null where every such field holds one of them or none.
+     *  The branch derives only for the objects in the session, so every value of such an object, and every value read
+     *  through the field, would stay empty without a word; and the link the field gives still counts, so a creation it
+     *  blocks makes no object in its place. */
+    private static String doelBuitenDeInvoer(String wie, Build build, List<Object> bonen, Map<Object, Objecttype> typen,
+                                             Map<Class<?>, Objecttype> perKlasse) {
         Map<Objecttype, List<String>> velden = new HashMap<>();
         for (Object boon : bonen)
             for (String veld : velden.computeIfAbsent(typen.get(boon), t -> referentievelden(build.model(), t))) {
                 Object doel = Accessors.getter(boon.getClass(), veld).apply(boon);
                 if (doel != null && !typen.containsKey(doel))
-                    throw new IllegalArgumentException("voegIn: het veld '" + veld + "' van " + naam(boon) + " wijst naar"
-                            + " een " + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam
-                            + " (" + naam(doel) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de"
-                            + " objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op");
+                    return wie + ": het veld '" + veld + "' van " + naam(boon) + " wijst naar een "
+                            + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
+                            + naam(doel) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de"
+                            + " objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op";
             }
+        return null;
+    }
+
+    /** {@link #doelBuitenDeInvoer} over the beans {@code sessie} holds, the check {@link #vuur} repeats before it fires:
+     *  between two fires an update can set a reference field to an object outside the session. It asks the session per
+     *  bean class, since Drools keeps the facts of a class apart and hands out only those for a
+     *  {@link ClassObjectFilter}, where a filter of another kind walks every fact the session holds. */
+    private static String doelBuitenDeSessie(Build build, KieSession sessie, Map<Class<?>, Objecttype> klassen) {
+        List<Object> bonen = new ArrayList<>();
+        Map<Object, Objecttype> typen = new IdentityHashMap<>();
+        for (Map.Entry<Class<?>, Objecttype> k : klassen.entrySet())
+            for (Object o : sessie.getObjects(new ClassObjectFilter(k.getKey())))
+                // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
+                if (o.getClass() == k.getKey() && typen.put(o, k.getValue()) == null) bonen.add(o);
+        return doelBuitenDeInvoer("vuur", build, bonen, typen, new HashMap<>(klassen));
+    }
+
+    /** The bean class of every object type of the model of {@code build}, with that object type. */
+    private static Map<Class<?>, Objecttype> bonenklassen(Build build) {
+        Map<Class<?>, Objecttype> uit = new HashMap<>();
+        for (Objecttype ot : build.model().objecttypen.values())
+            try {
+                uit.put(Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
+                        build.beanLoader()), ot);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("geen bonenklasse voor objecttype " + ot.naam, e);
+            }
+        return uit;
+    }
+
+    /** The kinds of fact {@link #voegIn} puts into a session of the truth-maintenance branch: the beans, of the classes
+     *  {@code bonenklassen} gives, and the bucket inputs and list places it states beside them. */
+    private static Set<Class<?>> invoersoorten(Map<Class<?>, Objecttype> bonenklassen) {
+        Set<Class<?>> uit = new HashSet<>(bonenklassen.keySet());
+        uit.add(Emmerinvoer.class);
+        uit.add(Lijstplaats.class);
+        return uit;
     }
 
     /** The object type whose bean {@code boon} is, a bean of the build's bean model. */
@@ -617,6 +664,14 @@ public final class DroolsBackend {
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
      * {@link #lees}, or opens a fresh session with beans that hold input alone.
      *
+     * <p>On the truth-maintenance branch it refuses, before it fires, a session into which input came, or from which input
+     * went, outside {@link #voegIn} since {@code voegIn} or the last {@code vuur}: a bean inserted or deleted, or a
+     * bucket input or a list place. {@code voegIn} states the places of a list and the bucket scalars over the beans of
+     * one input, so a consumer changes input between two fires with {@code update} on the beans {@code voegIn} put in,
+     * and opens a fresh session to add or remove an object. It repeats the reference check of {@code voegIn} over the
+     * beans of the session as well, since an update can set a reference field to an object outside it, and refuses in
+     * the sentence of {@code voegIn}.
+     *
      * <p>On the truth-maintenance branch it fires a session of a model with a creation once, and refuses it at every
      * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
      * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Gevuurd}): after an input
@@ -748,7 +803,10 @@ public final class DroolsBackend {
      *  a mark with its exception, so that no reading follows a run that broke off. It runs with the watch of the session
      *  off ({@link Bewaking}), so that its own inserts, deletes and firings count as none, and puts the watch back
      *  afterwards with nothing kept: the two readings see what happens after this run. A refusal leaves the watch as it
-     *  was, so a reading after it still sees what happened before. */
+     *  was, so a reading after it still sees what happened before. It refuses as well a session into which input came,
+     *  or from which input went, outside {@link #voegIn} since {@code voegIn} or the last run, as the watch keeps it, and
+     *  then a session in which a reference field of a bean holds an object outside the session, in the sentence of
+     *  {@code voegIn}. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
         if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
@@ -766,7 +824,18 @@ public final class DroolsBackend {
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
                     + " alleen invoer dragen");
-        return Bewaking.op(sessie).zonder(sessie, () -> {
+        Bewaking bewaking = Bewaking.van(sessie);
+        if (bewaking != null && bewaking.erbijOfEraf() != null)
+            throw new IllegalStateException("sinds " + bewaking.sinds() + " kwam er buiten voegIn om invoer bij of ging er"
+                    + " invoer weg (" + bewaking.erbijOfEraf() + "): een afnemer geeft alle bonen in één Invoer aan"
+                    + " voegIn en verandert daarna alleen hun waarden en relaties, met update, want voegIn legt de plaatsen"
+                    + " van een lijst en de emmerscalairen vast over de bonen van één invoer; een nieuw of verwijderd"
+                    + " object vraagt een verse sessie");
+        Map<Class<?>, Objecttype> klassen = bonenklassen(build);
+        String buiten = doelBuitenDeSessie(build, sessie, klassen);
+        if (buiten != null) throw new IllegalStateException(buiten);
+        return Bewaking.op(sessie, invoersoorten(klassen), "de laatste DroolsBackend.vuur van deze sessie")
+                .zonder(sessie, () -> {
             for (FactHandle merk : merken) sessie.delete(merk);
             Vuring vuring;
             try {

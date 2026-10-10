@@ -456,12 +456,15 @@ public final class TmsTranspiler {
 
     /** What a consumer does where something happened outside the driver after its last run ({@link Bewaking}): fire
      *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.vuur}). */
-    private String vuurWeg(KieSession sessie) {
+    private String vuurWeg(KieSession sessie, Bewaking bewaking) {
         if (!creatieregels.isEmpty())
             return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
         if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
             return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met bonen die"
                     + " alleen invoer dragen";
+        if (bewaking.erbijOfEraf() != null)
+            return "invoer die buiten DroolsBackend.voegIn om bijkwam of wegging, vraagt een verse sessie, dus"
+                    + " DroolsBackend.vuur weigert haar: open een verse sessie met alle bonen in één Invoer";
         return "vuur haar eerst opnieuw met DroolsBackend.vuur";
     }
 
@@ -488,7 +491,7 @@ public final class TmsTranspiler {
         if (buitenom != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
                     + " DroolsBackend.vuur van deze sessie gebeurde er iets buiten vuur om, wat het fixpunt van die vuur"
-                    + " kan veranderen (" + buitenom + "); " + vuurWeg(sessie));
+                    + " kan veranderen (" + buitenom + "); " + vuurWeg(sessie, bewaking));
         List<Runnable> daden = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
