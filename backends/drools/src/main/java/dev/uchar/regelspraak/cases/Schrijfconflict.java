@@ -32,7 +32,8 @@ import java.util.function.Function;
  * berekening or initialisatie, written on its subject), the value the attribute holds after the firing when the firing
  * changed it, and at the cap names the writers that kept changing one attribute of one object to different values, in
  * the order of the document, with their values. A run that reaches the cap otherwise, such as a creation that keeps
- * minting, shows no such attribute and keeps the replay's own sentence.
+ * minting, shows no such attribute and keeps the replay's own sentence. The replay hangs it on a session of the
+ * DRL-text branch only, whose rules write the beans as they fire; the exec-model branch writes no bean while it fires.
  */
 final class Schrijfconflict extends DefaultAgendaEventListener {
 

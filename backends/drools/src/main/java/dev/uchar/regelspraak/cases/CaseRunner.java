@@ -567,8 +567,13 @@ public final class CaseRunner {
      *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
      *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean. */
     private String vuurTotFixpunt(KieSession sessie) {
-        Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
-        sessie.addEventListener(schrijvers);
+        // only the DRL-text branch writes the beans as it fires, so only its cap can come from writers that keep
+        // overwriting each other; on the exec-model branch nothing reads the listener, and it cost every firing a call
+        Schrijfconflict schrijvers = null;
+        if (bouw.branch() == DroolsBackend.Branch.DRL_TEXT) {
+            schrijvers = new Schrijfconflict(model, cl);
+            sessie.addEventListener(schrijvers);
+        }
         DroolsBackend.Vuring vuring;
         try {
             vuring = DroolsBackend.vuur(bouw, sessie);
@@ -579,7 +584,7 @@ public final class CaseRunner {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
         }
-        if (bouw.branch() == DroolsBackend.Branch.DRL_TEXT && vuring.vuringen() >= vuring.plafond()) {
+        if (schrijvers != null && vuring.vuringen() >= vuring.plafond()) {
             String conflict = schrijvers.conflict(this::labelVanBean);
             return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
         }
