@@ -345,29 +345,12 @@ public final class CaseRunner {
         return build(irPath, tak).runCase("case", c);
     }
 
-    /** One fire of a case measured by {@link #meet}: the firings {@code fireAllRules} reported, the wall time of the
-     *  fire plus the write-back in nanoseconds, and every fact the session held at the end. */
-    record Meting(int vuringen, long nanos, List<Object> feiten) {}
-
     /** The measuring seam of the truth-maintenance trial (card drools-logische-afleiding, acceptance (e)): a runner of
      *  {@code irPath} on {@code tak} whose KieBase is built once, so that a harness in the test tree can fire one case
      *  many times and time the fire alone. The replay entries cannot serve: they build per call and hand back a
      *  verdict, not the firings or the session. Package-private, no production caller, and no gate runs it. */
     static CaseRunner voorMeting(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
         return build(irPath, tak);
-    }
-
-    /** Sets up case {@code c} as {@link #runCase} does and fires it through {@link #vuurTotFixpunt}, the replay's own
-     *  fire and write-back, timing that call and nothing else; the expectations are left to the replay entries. A run
-     *  that hits the cap fails with the replay's sentence, since its numbers would measure the cap. */
-    Meting meet(JsonNode c) {
-        return metSessie(c, (bouw, sessie, labels) -> {
-            long begin = System.nanoTime();
-            String geenFixpunt = vuurTotFixpunt(sessie);
-            long nanos = System.nanoTime() - begin;
-            if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
-            return new Meting(vuringen, nanos, new ArrayList<>(sessie.getObjects()));
-        });
     }
 
     /** What a measuring harness does with one session that {@link #metSessie} set up: fire it and measure it as it
@@ -379,10 +362,10 @@ public final class CaseRunner {
 
     /** Sets up case {@code c} as {@link #runCase} does, in a fresh session with the bean loader as the thread's context
      *  class loader, and hands that session, not yet fired, to {@code meting}; the session is disposed afterwards. The
-     *  seam of the scale harness of card tms-omschakeling (point 9), which fires through {@link DroolsBackend#vuur} under
-     *  a cap of its own and times the fire and the write-back apart: {@link #meet} fires under the replay's cap, which on
-     *  the exec-model and the DRL-text branch is the fixed 100 000 firings a case of ten thousand objects reaches.
-     *  Package-private, no production caller, and no gate runs it. */
+     *  seam of the measuring harnesses of card tms-omschakeling, the scale test (point 9) and the measurement over the
+     *  corpus (point 7), which fire through {@link DroolsBackend#vuur} as a consumer does and time the fire and the
+     *  write-back apart, where the replay's own fire times neither. Package-private, no production caller, and no gate
+     *  runs it. */
     <T> T metSessie(JsonNode c, Sessiemeting<T> meting) {
         labelNaarBean.clear();
         labelType.clear();
@@ -536,9 +519,6 @@ public final class CaseRunner {
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
      *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
     private LocalDate rekendatum;
-    /** What {@code fireAllRules} returned in the last {@link #vuurTotFixpunt}, for the measuring seam ({@link #meet});
-     *  no verdict reads it. */
-    private int vuringen;
 
     private String runCase(String naam, JsonNode c) {
         return runCase(naam, c, null);
@@ -605,7 +585,6 @@ public final class CaseRunner {
         } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
-        vuringen = vuring.vuringen();
         if (vuring.geenFixpunt() == null) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
