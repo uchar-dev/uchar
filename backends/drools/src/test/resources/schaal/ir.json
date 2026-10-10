@@ -1,0 +1,643 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustwacht",
+        "animate": false,
+        "plural": "Kustwachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "kusttotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtsom",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste beloning",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "beloning",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "kustbewaking",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustwacht",
+            "objectType": "Kustwacht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "wachter",
+            "objectType": "Wachter",
+            "plural": "wachters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vondstbeheer",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "beheerder",
+            "objectType": "Wachter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "voorganger",
+            "objectType": "Wachter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opvolger",
+            "objectType": "Wachter",
+            "plural": "opvolgers",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "vondstfactor",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "waarde van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De waarde van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "het gewicht van de Vondst"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "vondstfactor",
+                "source": {
+                  "snippet": "de vondstfactor"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het gewicht van de Vondst maal de vondstfactor"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtsom van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtsom",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De wachtsom van een Wachter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "beloning",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de beloning van alle vondsten van de Wachter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstbeheer",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de beloning van alle vondsten van de Wachter of 0 als die er niet zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogste beloning van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste beloning",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De hoogste beloning van een Wachter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "beloning",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de beloning van alle vondsten van de Wachter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vondstbeheer",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van de beloning van alle vondsten van de Wachter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kusttotaal van een kustwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kusttotaal",
+              "subjectType": "Kustwacht",
+              "source": {
+                "snippet": "Het kusttotaal van een Kustwacht"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "wachtsom",
+                  "subjectType": "Wachter",
+                  "source": {
+                    "snippet": "de wachtsom van alle wachters van de Kustwacht"
+                  }
+                }
+              ],
+              "elementType": "Wachter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "kustbewaking",
+                "role": "wachter"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de wachtsom van alle wachters van de Kustwacht"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "werf de opvolger",
+        "versions": [
+          {
+            "createdType": "Wachter",
+            "subject": "Wachter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "rang",
+                "value": {
+                  "node": "Binary",
+                  "op": "plus",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Wachter",
+                    "source": {
+                      "snippet": "de rang van de Wachter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de rang van de Wachter plus 1"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "rang",
+                "subjectType": "Wachter",
+                "source": {
+                  "snippet": "de rang van de Wachter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "3"
+                }
+              },
+              "source": {
+                "snippet": "de rang van de Wachter kleiner is dan 3"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "opvolging",
+              "role": "opvolger"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [
+      {
+        "node": "Consistency",
+        "name": "wachtsomgrens",
+        "versions": [
+          {
+            "subject": "Wachter",
+            "assertion": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "wachtsom",
+                "subjectType": "Wachter",
+                "source": {
+                  "snippet": "De wachtsom van een Wachter"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "300"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "300"
+                }
+              },
+              "source": {
+                "snippet": "De wachtsom van een Wachter moet kleiner zijn dan 300"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "De wachtsom van een Wachter moet kleiner zijn dan 300",
+              "line": 58
+            }
+          }
+        ]
+      }
+    ],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [
+      {
+        "node": "RuleGroup",
+        "name": "wachtersketen",
+        "recursive": true,
+        "members": [
+          "werf de opvolger"
+        ],
+        "source": {
+          "snippet": "wachtersketen",
+          "line": 60
+        }
+      }
+    ],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "beloning van een vondst",
+        "subject": "Vondst",
+        "attribute": "beloning",
+        "defaults": [
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "de waarde van de Vondst"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "50"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "50"
+                }
+              },
+              "source": {
+                "snippet": "de waarde van de Vondst groter is dan 50"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "waarde",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "de waarde van de Vondst"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

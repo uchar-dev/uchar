@@ -363,6 +363,29 @@ public final class CaseRunner {
      *  fire and write-back, timing that call and nothing else; the expectations are left to the replay entries. A run
      *  that hits the cap fails with the replay's sentence, since its numbers would measure the cap. */
     Meting meet(JsonNode c) {
+        return metSessie(c, (bouw, sessie, labels) -> {
+            long begin = System.nanoTime();
+            String geenFixpunt = vuurTotFixpunt(sessie);
+            long nanos = System.nanoTime() - begin;
+            if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
+            return new Meting(vuringen, nanos, new ArrayList<>(sessie.getObjects()));
+        });
+    }
+
+    /** What a measuring harness does with one session that {@link #metSessie} set up: fire it and measure it as it
+     *  chooses. {@code labels} maps each case label to its input bean. */
+    @FunctionalInterface
+    interface Sessiemeting<T> {
+        T meet(DroolsBackend.Build bouw, KieSession sessie, Map<String, Object> labels);
+    }
+
+    /** Sets up case {@code c} as {@link #runCase} does, in a fresh session with the bean loader as the thread's context
+     *  class loader, and hands that session, not yet fired, to {@code meting}; the session is disposed afterwards. The
+     *  seam of the scale harness of card tms-omschakeling (point 9), which fires through {@link DroolsBackend#vuur} under
+     *  a cap of its own and times the fire and the write-back apart: {@link #meet} fires under the replay's cap of
+     *  100 000 firings, which a case of ten thousand objects reaches. Package-private, no production caller, and no
+     *  gate runs it. */
+    <T> T metSessie(JsonNode c, Sessiemeting<T> meting) {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
@@ -379,11 +402,7 @@ public final class CaseRunner {
             spiegelWederkerigeRollen();
             zetGlobals(sessie, c);
             voegInvoerIn(sessie);
-            long begin = System.nanoTime();
-            String geenFixpunt = vuurTotFixpunt(sessie);
-            long nanos = System.nanoTime() - begin;
-            if (geenFixpunt != null) throw new IllegalStateException(geenFixpunt);
-            return new Meting(vuringen, nanos, new ArrayList<>(sessie.getObjects()));
+            return meting.meet(bouw, sessie, java.util.Collections.unmodifiableMap(labelNaarBean));
         } finally {
             sessie.dispose();
             Thread.currentThread().setContextClassLoader(vorige);
