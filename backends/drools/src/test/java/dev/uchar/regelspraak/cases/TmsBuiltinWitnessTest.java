@@ -81,6 +81,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * vorm nog niet", "een TextComposition in een waarde ('de reeks van …')", "een Predicate elevenTest ('elevenTest')",
  * "een Let in een waarde ('k is …')" and "een DimensionCellRead in een waarde ('zijn omzet in k2')"; the row of the
  * text of a number expected its own sentence and got the TextComposition's.
+ *
+ * <p>Two rows pin a refusal whose sentence the switch-over rewrote (card tms-omschakeling, step 5a2): a cell over two
+ * dimensions and the eleven test over a path. The verifier passes both documents (measured 2026-10-10). <b>Red</b> on
+ * {@code 3d50652a}, before that rewrite: "… ('zijn omzet in k2 in noord'): de exec-modeltak en deze tak lezen alleen
+ * een cel van één dimensie" and "… ('elevenTest'): de exec-modeltak laat een afwezige link beide polariteiten onwaar
+ * maken, …".
  */
 class TmsBuiltinWitnessTest {
 
@@ -293,6 +299,23 @@ class TmsBuiltinWitnessTest {
         assertElkeVolgorde(PROEFMODEL, List.of(nummer, geldig, postcode, vier), zaak);
     }
 
+    /** "Een Vondst is geldig indien het nummer van zijn vinder aan de elfproef voldoet": the eleven test over a path of
+     *  one role. The branch reads the operand as any value, so it cannot tell an absent link from a leeg nummer, where
+     *  the DRL-text branch makes an absent link fail both polarities; it refuses the form by name. */
+    @Test void de_elfproef_over_een_pad_weigert_met_naam() throws Exception {
+        String model = TmsDocumenten.model(List.of(
+                TmsDocumenten.objecttype("Jutter", List.of(attribuut("nummer", GEHEEL)), List.of()),
+                TmsDocumenten.objecttype("Vondst", List.of(), List.of("geldig"))),
+                List.of(TmsDocumenten.feittypeEenNaarVeel("vinding", "vinder", "Jutter", "vondst", "Vondst", "vondsten")));
+        String geldig = kenmerkregel("geldig bij elfproef", "Vondst", "geldig",
+                proef("elevenTest", TmsDocumenten.padlezing("nummer", "Jutter", "vinding", "vinder"), 0));
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
+                TmsDocumenten.document(model, List.of(geldig)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: geldig bij elfproef — een Predicate elevenTest over een pad"
+                + " ('elevenTest'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, wat een lege"
+                + " lezing hier niet van een lege waarde onderscheidt", e.getMessage());
+    }
+
     // ---------------- the sub-day extractors, dateWith and dateTimeWith ----------------
 
     private static final String GETIJMODEL = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Getij", List.of(
@@ -407,6 +430,22 @@ class TmsBuiltinWitnessTest {
      *  omzet over alle kwartalen plus zijn toeslag", with "De toeslag … als zijn grondtoeslag", in every order of the
      *  generated rules. J1: omzet k1 10, k2 20, k4 5 (no k3), grondtoeslag 1, toeslag 99 in the input: tweede kwartaal
      *  21, jaaromzet 36. */
+    /** "Het tweede kwartaal … als zijn omzet in k2 in noord": a cell over two dimensions, which the branch refuses by
+     *  name, since it reads a cell of one dimension (the row below). */
+    @Test void een_cel_over_twee_dimensies_weigert_met_naam() throws Exception {
+        String model = DIMENSIEMODEL.replace("\"dimensions\":[\"kwartaal\"]", "\"dimensions\":[\"kwartaal\",\"regio\"]")
+                .replace("\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}]", "\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
+                        + "{\"node\":\"Dimension\",\"name\":\"regio\",\"plural\":\"regio's\",\"preposition\":\"in\","
+                        + "\"labels\":[\"noord\",\"zuid\"]}]");
+        String cel = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\",\"noord\"],"
+                + "\"source\":{\"snippet\":\"zijn omzet in k2 in noord\"}}";
+        String tweede = rekenregel("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cel, "null");
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
+                TmsDocumenten.document(model, List.of(tweede)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: tweede kwartaal van een jutter — een DimensionCellRead over 2 dimensies"
+                + " ('zijn omzet in k2 in noord'): deze tak leest alleen een cel van één dimensie", e.getMessage());
+    }
+
     @Test void een_dimensiecel_en_een_dimensievouw_naast_een_later_afgeleide_toeslag() throws Exception {
         String toeslag = rekenregel("toeslag van een jutter", "BEREKENING", "Jutter", "toeslag",
                 lezing("grondtoeslag", "Jutter"), "null");
