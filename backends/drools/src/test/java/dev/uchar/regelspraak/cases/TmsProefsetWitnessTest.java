@@ -10,11 +10,12 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The goldens of the truth-maintenance trial's proefset, replayed through the branch as the CLI's {@code --tms} flag
- * replays them, against the expectations gates 5, 6 and 12 pin. The branch is in no gate, so this witness, which the
- * suite runs, is what holds it against regression: every golden of the proefset must play every case. Until the step
- * that lowered the defaults groups, the goldens the branch did not carry yet were pinned here by their refusal, so that
- * a step that made one play moved it by name; the measurements below are from that time.
+ * The goldens of the truth-maintenance trial's proefset, replayed through the exec-model branch as the CLI replays them
+ * without a flag, against the expectations gates 5, 6 and 12 pin: every golden of the proefset must play every case.
+ * Until the switch the branch was in no gate, and this witness, which the suite runs, was what held it against
+ * regression; since then gate 12 plays these goldens as well. Until the step that lowered the defaults groups, the
+ * goldens the branch did not carry yet were pinned here by their refusal, so that a step that made one play moved it by
+ * name; the measurements below are from that time.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step, which carried characteristic
  * attributions only). The first row failed on "anchor/jutterswet-kustwacht: Result[status=EXCLUDE, reason=tms-transpiler

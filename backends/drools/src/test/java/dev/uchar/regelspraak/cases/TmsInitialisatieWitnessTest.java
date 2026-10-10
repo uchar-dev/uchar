@@ -43,8 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * inputs stand. V4 (gewicht 30, vindloon 7 as input): bergloon 62, vindloon 7. An initialisation that fires before the
  * berekend gewicht is derived reads its input standing, leeg; its own write does not block it, so truth maintenance
  * withdraws that write when the standing changes and the initialisation fires again on the derived value. Every order of
- * the three rules in the document, the exec-model branch on the document, and every order of the five generated rules,
- * at least one of which must fire an initialisation on that input standing.
+ * the three rules in the document, and every order of the five generated rules, at least one of which must fire an
+ * initialisation on that input standing.
  *
  * <p>The second document has a computed value displace an initialisation on the same target: "Een Vondst is
  * geregistreerd indien hij gemeld is", "Een Vondst is onbeheerd indien hij niet geregistreerd is", "Het bergloon van een
@@ -52,8 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * geïnitialiseerd worden op 7". V1 (gemeld, taxatie 30): 7. V2 (taxatie 30): 30, whichever fires first. V3 (nothing):
  * the computation is leeg and writes nothing, so the initialisation fills the target (ch. 7.3), 7. V4 (gemeld, bergloon 5
  * as input): 5. V5 (taxatie 30, bergloon 5 as input): the computation decides and replaces the input (ch. 7.8), 30.
- * Every order of the four rules in the document, the exec-model branch on the document, and a seeded sample of orders
- * of the generated rules, at least one of which must fire the initialisation on V2 before the computation displaces it.
+ * Every order of the four rules in the document, and a seeded sample of orders of the generated rules, at least one of
+ * which must fire the initialisation on V2 before the computation displaces it.
  * A division by leeg in an initialisation's value deposits only where the initialisation applies, and two
  * initialisations on one target are refused by name (IR-SPEC WF-079). The reference interpreter's runner passed the
  * cases of the first two documents as well (measured 2026-10-08).
@@ -123,11 +123,6 @@ class TmsInitialisatieWitnessTest {
             volgordes++;
         }
         assertEquals(6, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(VOLGORDE_MODEL, VOLGORDE), volgordeZaak(),
-                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** Three rules and the two standing rules of the berekend gewicht, which both initialisations read; gewicht is
@@ -215,11 +210,6 @@ class TmsInitialisatieWitnessTest {
         assertEquals(24, volgordes);
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_verdringing() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(VERDRINGING_MODEL, VERDRINGING), verdringingZaak(),
-                DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /** Four rules and the characteristic standings of geregistreerd and onbeheerd (three rules each); taxatie is input
      *  and nothing reads the bergloon, so it has no standing. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels_bij_verdringing() throws Exception {
@@ -287,9 +277,7 @@ class TmsInitialisatieWitnessTest {
      *  (opbrengst 100, no deelnemers): aandeel leeg and the deposit, under the initialisation's name. V2 (the same,
      *  with aandeel 5 as input): the initialisation does not apply, so it evaluates nothing and deposits nothing; the
      *  reference interpreter tests the guard before it evaluates the value, and its runner passed both cases on this
-     *  document (measured 2026-10-08). The exec-model branch passes V1 but deposited on V2 as well, "case: verwacht
-     *  consistent, werkelijk inconsistent (standaardaandeel @ V2)" (measured the same day), so only V1 is asked of it
-     *  here; recorded as an observation, since this card does not touch that branch. */
+     *  document (measured 2026-10-08). */
     @Test void een_deling_door_leeg_deponeert_alleen_waar_de_initialisatie_geldt() throws Exception {
         String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
                 List.of(attribuut("opbrengst", GEHEEL), attribuut("deelnemers", GEHEEL), attribuut("aandeel", GEHEEL)),
@@ -304,7 +292,6 @@ class TmsInitialisatieWitnessTest {
                 List.of(waarde("V2", "aandeel", "5"), consistent()));
         assertNull(CaseRunner.speelCase(ir, geldt, DroolsBackend.Branch.EXEC_MODEL), "V1");
         assertNull(CaseRunner.speelCase(ir, invoer, DroolsBackend.Branch.EXEC_MODEL), "V2");
-        assertNull(CaseRunner.speelCase(ir, geldt, DroolsBackend.Branch.EXEC_MODEL), "V1 in de exec-modeltak");
     }
 
     // ---------------- two initialisations on one target ----------------

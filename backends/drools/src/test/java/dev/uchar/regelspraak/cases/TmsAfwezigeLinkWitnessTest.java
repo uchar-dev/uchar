@@ -39,8 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * verdacht, where V2 is verdacht. A derived member over the role is read through its path standing, which an absent
  * link gives the value null; the input basistarief is read off the Vondst's bean through the reference field.
  *
- * <p>Ten rules have too many orders to try each: the document order, its reverse and a seeded sample. The exec-model
- * branch answers the same on the document.
+ * <p>Ten rules have too many orders to try each: the document order, its reverse and a seeded sample.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step): the sample row was refused,
  * "tms-transpiler SKIP: regel: tarief — een attribuutdoel (berekening van 'tarief' van Jutter): de
@@ -87,10 +86,6 @@ class TmsAfwezigeLinkWitnessTest {
             volgordes++;
         }
         assertEquals(22, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, REGELS), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     private static JsonNode zaak() throws Exception {

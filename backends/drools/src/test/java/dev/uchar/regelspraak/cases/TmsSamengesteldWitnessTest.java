@@ -18,9 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * "Een Jutter is ingedeeld indien hij aan Q van de volgende voorwaarden voldoet: hij is gemeld, hij is niet geschorst, hij
  * is vergund", with gemeld and geschorst case input, read off the bean, and vergund derived ("Een Jutter is vergund
  * indien hij erkend is"), read through its standing. Eight Jutters cover every combination of erkend, gemeld and
- * geschorst, and the expected verdict is computed here from the three members, apart from either branch: ALLE and DE
+ * geschorst, and the expected verdict is computed here from the three members, apart from the branch: ALLE and DE
  * (all three), GEEN (none), TEN MINSTE 2, TEN HOOGSTE 1, PRECIES 2, and a nested composite, GEEN of (ALLE of gemeld and
- * vergund) and geschorst. The exec-model branch answers the same on every document.
+ * vergund) and geschorst.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08). On the branch's skeleton every row was refused, "tms-transpiler
  * SKIP: regel: vergund indien erkend — de verlaging van een kenmerktoekenning is nog niet gebouwd"; with the lowering in
@@ -57,7 +57,7 @@ class TmsSamengesteldWitnessTest {
             jutters.add(jutter(i, erkend, gemeld, geschorst));
             verwacht.add(verwacht("J" + i, "ingedeeld", !(gemeld && erkend) && !geschorst));
         }
-        beideTakken(voorwaarde, jutters, verwacht);
+        speelDocument(voorwaarde, jutters, verwacht);
     }
 
     /** The document with {@code voorwaarde} over the eight Jutters, ingedeeld where {@code oordeel} holds of the number
@@ -71,16 +71,15 @@ class TmsSamengesteldWitnessTest {
             verwacht.add(verwacht("J" + i, "vergund", erkend));
             verwacht.add(verwacht("J" + i, "ingedeeld", oordeel.test(raak)));
         }
-        beideTakken(voorwaarde, jutters, verwacht);
+        speelDocument(voorwaarde, jutters, verwacht);
     }
 
-    private static void beideTakken(String voorwaarde, List<String> jutters, List<String> verwacht) throws Exception {
+    private static void speelDocument(String voorwaarde, List<String> jutters, List<String> verwacht) throws Exception {
         Path ir = TmsDocumenten.document(TmsDocumenten.model(KENMERKEN), List.of(
                 kenmerkregel("vergund indien erkend", "vergund", check("erkend", false)),
                 kenmerkregel("ingedeeld", "ingedeeld", voorwaarde)));
         var zaak = TmsDocumenten.zaak(jutters, verwacht);
-        assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), "truth maintenance");
-        assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), "exec-model");
+        assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
     }
 
     private static String jutter(int i, boolean erkend, boolean gemeld, boolean geschorst) {

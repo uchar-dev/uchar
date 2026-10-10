@@ -184,8 +184,6 @@ class TmsFilterfoutWitnessTest {
         JsonNode zaak = zaak(true, List.of(consistent()));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak,
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak,
-                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), fixpuntfouten(ZWARE, true, fout("zware vondsten")));
     }
 

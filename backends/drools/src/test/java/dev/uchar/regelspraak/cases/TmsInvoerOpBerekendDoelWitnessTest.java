@@ -37,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * neither: bergloon leeg, uitkering 5. The uitkering reads the bergloon through its standing, which carries the
  * derived value where there is one and the input otherwise; when the derived value arrives after the uitkering was
  * computed from the input, truth maintenance retracts the input standing and the uitkering computed from it. Both
- * orders of the two rules in the document, the exec-model branch on the same document, and a seeded sample of orders of
- * the generated rules, at least one of which must compute V1's uitkering from the input first. Off the standing domain
- * the rule writes a computed leeg (ch. 1.2g), which empties the target, input included.
+ * orders of the two rules in the document, and a seeded sample of orders of the generated rules, at least one of which
+ * must compute V1's uitkering from the input first. Off the standing domain the rule writes a computed leeg (ch. 1.2g),
+ * which empties the target, input included.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step): both rows on this branch were
  * refused, "tms-transpiler SKIP: regel: bergloon — een attribuutdoel (gelijkstelling van 'bergloon' van Vondst): de
@@ -74,10 +74,6 @@ class TmsInvoerOpBerekendDoelWitnessTest {
             volgordes++;
         }
         assertEquals(2, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, REGELS), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** "Het bergloon van een Vondst moet geïnitialiseerd worden op 0, indien zijn taxatie gevuld is" beside the bergloon

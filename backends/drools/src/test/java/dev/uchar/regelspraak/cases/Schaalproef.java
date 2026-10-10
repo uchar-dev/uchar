@@ -75,11 +75,11 @@ import java.util.Map;
  * facts just before the fire), the peak of the facts during the fire (a listener that counts insertions and deletions
  * from N0 on and keeps the running maximum; at the end its count must equal the session's), and the heap in use after
  * {@code System.gc()} with the session open. The kusttotaal and the number of inconsistencies go with every point, so
- * that two branches can be seen to give the same answer. The table gives the median per column, the load of the machine
+ * that the points can be seen to give the same answer. The table gives the median per column, the load of the machine
  * at the start of the point ({@code uptime}), the firings against the cap, and per branch the slope of fire plus
- * write-back in log-log from N = 1 000 to N = 10 000. Under the public fire the exec-model branch without truth
- * maintenance keeps its fixed cap of 100 000 firings and does not reach its fixpoint at N = 10 000; its measurement
- * without a cap is in the report of step 1 of the card.
+ * write-back in log-log from N = 1 000 to N = 10 000. Until the switch the harness measured the destructive exec-model
+ * branch beside the one with truth maintenance: under its fixed cap of 100 000 firings it did not reach its fixpoint at
+ * N = 10 000, and its measurement without a cap is in the report of step 1 of the card.
  *
  * <p><b>A point of the second fire</b> is one N on the model without (g), in a JVM of its own with {@code -Xmx16g}, one
  * warm-up and three measured rounds. A round fills a session through the public entry, fires it ({@link
@@ -90,8 +90,8 @@ import java.util.Map;
  * fails loudly. It measures the first fire, the second (the change and the fire together), and the fresh session, its
  * set-up (session, beans from the case, {@code voegIn}) and its fire apart.
  *
- * <p>Run it from the root of the repository; without arguments it measures every point of the branch with truth
- * maintenance, each in a child JVM, and prints Markdown on standard output:
+ * <p>Run it from the root of the repository; without arguments it measures every point of the exec-model branch, each
+ * in a child JVM, and prints Markdown on standard output:
  * <pre>
  *   mvn -o -q -f backends/drools/pom.xml test-compile
  *   CP=$(mktemp -d)/cp.txt
@@ -102,7 +102,7 @@ import java.util.Map;
  * With branch names as arguments it measures those branches; with {@code punt <branch> <N>} it measures one point in
  * its own JVM and prints its line; with {@code tweede} every point of the second fire, and with {@code tweedepunt <N>}
  * one; with {@code controle <N>} it replays a case of N Wachters with its expected values, and the changed case with
- * its own, through both exec-model branches on both models; with {@code case <N> <file> [gewijzigd]} it writes that
+ * its own, through the exec-model branch on both models; with {@code case <N> <file> [gewijzigd]} it writes that
  * case, or the changed one, for the reference interpreter and clingo.
  */
 public final class Schaalproef {
@@ -113,12 +113,9 @@ public final class Schaalproef {
 
     static final List<Integer> NS = List.of(100, 1_000, 10_000);
 
-    static final List<DroolsBackend.Branch> TAKKEN =
-            List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL);
-
-    /** The branch with truth maintenance: the one the points measure by default, and the only one that reads a session
-     *  between two fires ({@link DroolsBackend#lees}). */
-    static final DroolsBackend.Branch NIEUW = DroolsBackend.Branch.EXEC_MODEL;
+    /** The exec-model branch: the one the points measure by default, and the only one that reads a session between two
+     *  fires ({@link DroolsBackend#lees}). */
+    static final DroolsBackend.Branch TAK = DroolsBackend.Branch.EXEC_MODEL;
 
     private static final int OPWARMEN = 1, HERHALINGEN = 3;
 
@@ -134,7 +131,7 @@ public final class Schaalproef {
     public static void main(String[] args) throws Exception {
         List<String> opdrachten = List.of("punt", "tweede", "tweedepunt", "controle", "case");
         if (args.length == 0 || !opdrachten.contains(args[0])) {
-            System.exit(alles(args.length == 0 ? List.of(NIEUW)
+            System.exit(alles(args.length == 0 ? List.of(TAK)
                     : Arrays.stream(args).map(DroolsBackend.Branch::valueOf).toList()));
             return;
         }
@@ -241,20 +238,18 @@ public final class Schaalproef {
         v.putObject("value").put("number", waarde.toPlainString());
     }
 
-    /** Replays the case of {@code n} Wachters and the changed case, each with its expected values, through both
-     *  exec-model branches on the model and on the model without (g), the replay's own comparison: the check that the
-     *  harness measures models both branches answer as the cases say. */
+    /** Replays the case of {@code n} Wachters and the changed case, each with its expected values, through the
+     *  exec-model branch on the model and on the model without (g), the replay's own comparison: the check that the
+     *  harness measures models the branch answers as the cases say. */
     private static int controle(int n) throws Exception {
         int fout = 0;
         for (Path ir : List.of(model(), modelZonderCreatie()))
             for (boolean gewijzigd : List.of(false, true)) {
                 JsonNode c = casus(n, true, gewijzigd);
-                for (DroolsBackend.Branch tak : TAKKEN) {
-                    String verdict = CaseRunner.speelCase(ir, c, tak);
-                    System.out.println(ir.getParent().getFileName() + (gewijzigd ? ", gewijzigd" : "") + ", " + tak
-                            + ": " + (verdict == null ? "gelijk aan de verwachting" : verdict));
-                    if (verdict != null) fout = 1;
-                }
+                String verdict = CaseRunner.speelCase(ir, c, TAK);
+                System.out.println(ir.getParent().getFileName() + (gewijzigd ? ", gewijzigd" : "") + ", " + TAK
+                        + ": " + (verdict == null ? "gelijk aan de verwachting" : verdict));
+                if (verdict != null) fout = 1;
             }
         return fout;
     }
@@ -263,7 +258,7 @@ public final class Schaalproef {
 
     /** One fire of the case: its firings and the cap it fired under, the fire and the write-back in nanoseconds, the
      *  facts just before the fire and their peak during it, the heap in use after a collection with the session open,
-     *  and two outcomes that two branches must give alike. */
+     *  and two outcomes that every point must give alike. */
     record Vuurmeting(int vuringen, int plafond, long vuurNanos, long terugzetNanos, long n0, long piek, long heap,
                       String kusttotaal, int inconsistent) {}
 
@@ -403,8 +398,8 @@ public final class Schaalproef {
      *  tab-separated. */
     private static int tweedepunt(int n) throws Exception {
         Path ir = modelZonderCreatie();
-        int regels = regels(DroolsBackend.build(ir, NIEUW).kieBase());
-        CaseRunner runner = CaseRunner.voorMeting(ir, NIEUW);
+        int regels = regels(DroolsBackend.build(ir, TAK).kieBase());
+        CaseRunner runner = CaseRunner.voorMeting(ir, TAK);
         JsonNode c = casus(n, false, false), gewijzigd = casus(n, false, true);
         List<Tweede> rondes = new ArrayList<>();
         for (int i = -OPWARMEN; i < HERHALINGEN; i++) {
@@ -611,16 +606,6 @@ public final class Schaalproef {
                         .append(deel < 0.5 && beide && helling <= 1.2 ? "gehaald" : "NIET gehaald").append('\n');
             }
         }
-        Map<Integer, Uitslag> oud = uitslagen.get(DroolsBackend.Branch.EXEC_MODEL), nieuw = uitslagen.get(NIEUW);
-        if (oud != null && nieuw != null)
-            for (int n : NS) {
-                Uitslag o = oud.get(n), t = nieuw.get(n);
-                if (o == null || t == null || o.anders() != null || t.anders() != null) continue;
-                uit.append("- N = ").append(n).append(": vuren+terugzetten nieuw/oud ")
-                        .append(String.format(Locale.ROOT, "%.2f", t.ms(6) / o.ms(6))).append("; uitkomst ")
-                        .append(o.veld(12).equals(t.veld(12)) && o.veld(13).equals(t.veld(13)) ? "gelijk" : "VERSCHILLEND")
-                        .append('\n');
-            }
         return uit.toString();
     }
 
@@ -629,7 +614,7 @@ public final class Schaalproef {
     private static int tweede() throws Exception {
         StringBuilder uit = new StringBuilder("# Schaalproef, de tweede fire (kaart tms-omschakeling, punt 9)\n\n");
         jvm(uit);
-        uit.append("- Model zonder (g), de creatieketen (`schaal/zonder-creatie/`); tak ").append(NIEUW).append(". Per punt ")
+        uit.append("- Model zonder (g), de creatieketen (`schaal/zonder-creatie/`); tak ").append(TAK).append(". Per punt ")
                 .append(OPWARMEN).append(" opwarmronde + mediaan van ").append(HERHALINGEN).append(" rondes. Een ronde:")
                 .append(" `voegIn`, `vuur`, `lees`; het gewicht van ").append(GEWIJZIGDE_VONDST).append(" op ")
                 .append(GEWIJZIGD_GEWICHT.toPlainString()).append(" met `update`; `vuur`, `lees`; daarnaast een verse")
@@ -645,7 +630,7 @@ public final class Schaalproef {
         uit.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
         boolean volledig = true;
         for (int n : NS) {
-            Uitslag u = kind(NIEUW, n, "TWEEDE", "tweedepunt", String.valueOf(n));
+            Uitslag u = kind(TAK, n, "TWEEDE", "tweedepunt", String.valueOf(n));
             uit.append("| ").append(n).append(" | ").append(u.belasting()).append(" | ");
             if (u.anders() != null) {
                 volledig = false;

@@ -47,18 +47,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * eindgewicht van een Vondst moet groter zijn dan 10". V1 (gewicht 12): eindgewicht 14, no violation. V2 (gewicht 5):
  * 7, violated. V3 (no gewicht): 2, violated (a leeg operand of plus counts as 0). Before the chain fills, the
  * consistency reads the eindgewicht's input standing, leeg, and an ordering with a leeg operand is violated; that
- * violation must be withdrawn. Both orders of the two rules in the document, the exec-model branch on the document, and
- * a seeded sample of orders of the generated rules, at least one of which must fire the consistency on V1.
+ * violation must be withdrawn. Both orders of the two rules in the document, and a seeded sample of orders of the
+ * generated rules, at least one of which must fire the consistency on V1.
  *
  * <p>The second is the worked example of RUNTIME-SEMANTICS ch. 5.6: "controle saldo" asserts that the saldo of a
  * Rekeninghouder is at least 0, and "Een Dossier is onder verscherpt toezicht indien regelversie controle saldo
  * inconsistent is". Houders h1 (saldo -5) and h2 (saldo 10), dossiers d1 and d2: one error fact, on h1, and both
- * dossiers carry the characteristic; with h1 at saldo 5, no error fact and neither dossier. Both branches, and every
+ * dossiers carry the characteristic; with h1 at saldo 5, no error fact and neither dossier. The document, and every
  * order of the four generated rules. Then the leeg tables of RUNTIME-SEMANTICS ch. 1.2 in an assertion: an equality,
  * an inequality and an ordering of two numbers, and an equality and an inequality of two texts, each over a leeg and a
- * filled operand in every combination, against the outcome the tables give and against the exec-model branch on the
- * same document. Last, what the branch refuses: a cycle through the channel, a read of "is gevuurd", and a channel test
- * that names no producer the branch carries.
+ * filled operand in every combination, against the outcome the tables give. Last, what the branch refuses: a cycle
+ * through the channel, a read of "is gevuurd", and a channel test that names no producer the branch carries.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's third step): the rows of the chain and of
  * the leeg tables were refused on the consistency, "tms-transpiler SKIP: consistentie: controle eindgewicht — een
@@ -112,12 +111,6 @@ class TmsConsistentieWitnessTest {
             volgordes++;
         }
         assertEquals(2, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_schendingen() throws Exception {
-        Path ir = TmsDocumenten.document(KETEN_MODEL, KETEN, List.of(CONTROLE));
-        assertNull(CaseRunner.speelCase(ir, ketenZonderSchending(), DroolsBackend.Branch.EXEC_MODEL), "V1");
-        assertNull(CaseRunner.speelCase(ir, ketenMetSchending(), DroolsBackend.Branch.EXEC_MODEL), "V2 en V3");
     }
 
     /** Two rules, the consistency, and the standings of the tussengewicht and the eindgewicht (two rules each). */
@@ -192,12 +185,11 @@ class TmsConsistentieWitnessTest {
     private static final String TOEZICHT = kenmerkregel("toezicht", "Dossier", "onder verscherpt toezicht",
             kanaaltoets("controle saldo"));
 
-    @Test void het_uitgewerkte_voorbeeld_van_het_kanaal_in_beide_takken() throws Exception {
+    @Test void het_uitgewerkte_voorbeeld_van_het_kanaal() throws Exception {
         Path ir = TmsDocumenten.document(SALDO_MODEL, List.of(TOEZICHT), List.of(CONTROLE_SALDO));
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL)) {
-            assertNull(CaseRunner.speelCase(ir, saldoZaak("-5"), tak), () -> tak + ", h1 met saldo -5");
-            assertNull(CaseRunner.speelCase(ir, saldoZaak("5"), tak), () -> tak + ", h1 met saldo 5");
-        }
+        DroolsBackend.Branch tak = DroolsBackend.Branch.EXEC_MODEL;
+        assertNull(CaseRunner.speelCase(ir, saldoZaak("-5"), tak), "h1 met saldo -5");
+        assertNull(CaseRunner.speelCase(ir, saldoZaak("5"), tak), "h1 met saldo 5");
     }
 
     /** The reading rule, the consistency and the two rules of the channel's standing; the saldo is input and nothing
@@ -263,7 +255,7 @@ class TmsConsistentieWitnessTest {
     /** Every assertion in a document of its own, so that a case of one Vondst pins its whole channel: violated or
      *  consistent. Numbers: two leeg are equal, exactly one leeg is unequal, an ordering with a leeg operand does not
      *  hold. Texts: an equality with a leeg operand does not hold, an inequality holds where exactly one is leeg. */
-    @Test void leeg_onder_gelijkheid_en_ordening_volgens_de_tabellen_en_als_de_exec_modeltak() throws Exception {
+    @Test void leeg_onder_gelijkheid_en_ordening_volgens_de_tabellen() throws Exception {
         String getallen = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
                 List.of(attribuut("a", GEHEEL), attribuut("b", GEHEEL)), List.of())), List.of());
         String teksten = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst",
@@ -294,8 +286,7 @@ class TmsConsistentieWitnessTest {
             JsonNode zaak = TmsDocumenten.zaak(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{"
                     + String.join(",", attributen) + "},\"roles\":{},\"characteristics\":[]}"),
                     List.of(rij.geschonden() ? inconsistent(naam, "V1") : consistent()));
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL))
-                assertNull(CaseRunner.speelCase(ir, zaak, tak), () -> tak + ", " + naam + " over " + rij);
+            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> naam + " over " + rij);
         }
         return rijen.size();
     }

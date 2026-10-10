@@ -42,9 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * opbrengst 100 and 4 deelnemers (aandeel 25). The deposit is a logical fact, so in an order where the aandeel rule
  * fires on V2 before geclaimd is derived, the deposit made on the transient vrij goes when geclaimd arrives; the
  * reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS ch. 6.1, "Recorded residuals"),
- * but a stratified program gives it none here. Every order of the three rules in the document, the exec-model branch
- * on the same document, and a seeded sample of orders of the generated rules, at least one of which must fire the
- * aandeel rule on V2.
+ * but a stratified program gives it none here. Every order of the three rules in the document, and a seeded sample of
+ * orders of the generated rules, at least one of which must fire the aandeel rule on V2.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step): both rows on this branch were
  * refused, "tms-transpiler SKIP: regel: aandeel — een attribuutdoel (berekening van 'aandeel' van Vondst): de
@@ -79,11 +78,6 @@ class TmsDelingDoorLeegWitnessTest {
             volgordes++;
         }
         assertEquals(6, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        for (JsonNode zaak : List.of(metDeposito(), zonderDeposito()))
-            assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, REGELS), zaak, DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** Three rules and the characteristic standings of geclaimd and vrij (three rules each). */

@@ -151,10 +151,6 @@ class TmsFoutWitnessTest {
         assertEquals(2, uitkomsten.size());
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(tijdelijk(TIJDELIJK), tijdelijkeZaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /** The two rules, the two defaults, and the standings of the bergloon and of erkend; a seeded sample of their
      *  orders, at least one of which must let the reader divide by the transient 0 of the lower default. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
@@ -218,7 +214,6 @@ class TmsFoutWitnessTest {
         }
         assertEquals(verwacht, uitkomsten);
         assertEquals(2, uitkomsten.size());
-        assertEquals(AANDEEL_DOOR_NUL, speel(blijvend(BLIJVEND), blijvendeZaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** The fire reaches its fixpoint without throwing, in every order of the two rules and the three standings of

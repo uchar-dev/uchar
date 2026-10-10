@@ -146,10 +146,6 @@ class TmsSchrijversWitnessTest {
         assertEquals(24, volgordes);
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, DRIE), drieZaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /** The rule of the tussen, its two standing rules, the three writers and the rule that compares their values: a
      *  sample of their orders, each over V1 to V5 and then over V6, written back without a case label. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {

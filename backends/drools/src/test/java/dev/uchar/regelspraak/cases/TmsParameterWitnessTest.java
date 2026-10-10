@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * een Vondst moet berekend worden als zijn gewicht plus het tarief", "Een Vondst is goedkoop indien het tarief kleiner
  * is dan de drempel" and "De korting van een Vondst moet berekend worden als het tarief plus de drempel". Drempel 10,
  * tarief 3. V1 (gewicht 12): zwaar, toeslag 15, goedkoop, korting 13. V2 (gewicht 5): not zwaar, toeslag 8, goedkoop,
- * korting 13. Every order of the four rules in the document, and the exec-model branch on the document. The golden
+ * korting 13. Every order of the four rules in the document. The golden
  * {@code jutterswet-aanvoergeld} has this shape with two parameters of which each rule reads one.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-08 on the branch's fourth step, which bound each parameter
@@ -67,14 +67,6 @@ class TmsParameterWitnessTest {
             volgordes++;
         }
         assertEquals(24, volgordes);
-    }
-
-    /** Without the rule that compares the two parameters, which the exec-model branch refuses ("regel (voorwaarde
-     *  buiten Phase-B scope): goedkoop bij tarief"). */
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        List<String> regels = List.of(REGELS.get(0), REGELS.get(1), REGELS.get(3));
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, regels), zaak(false),
-                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** The case; {@code goedkoop} says whether the document carries the rule that compares the two parameters. */

@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -31,14 +30,14 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 /**
- * The measurement of card tms-omschakeling, point 7: every golden that one of the two exec-model branches plays, the
- * destructive lowering ({@code EXEC_MODEL}) against the one with truth maintenance ({@code TRUTH_MAINTENANCE}), for the
- * service of the distribution, which fires one session per request. A harness, not a witness: wall-clock times depend
- * on the machine and its load, so no test may assert them, and the coverage of the corpus is a report, which
- * {@code TmsCorpusWitnessTest} holds to a floor. Its name therefore ends without {@code Test}: surefire does not run it,
+ * The measurement of card tms-omschakeling, point 7: every golden that the exec-model branch plays, for the service of
+ * the distribution, which fires one session per request. Until the switch it set the destructive lowering against the
+ * one with truth maintenance; those numbers are in the card's {@code Result}. A harness, not a witness: wall-clock
+ * times depend on the machine and its load, so no test may assert them, and the coverage of the corpus is a report,
+ * which {@code TmsCorpusWitnessTest} holds to a floor. Its name therefore ends without {@code Test}: surefire does not run it,
  * and no gate does either.
  *
- * <p>Per golden, and per branch that plays it: the firings; the time of the fire and that of the write-back, apart; the
+ * <p>Per golden: the firings; the time of the fire and that of the write-back, apart; the
  * build of the document; R, the rules in the KieBase; N0, the facts in the session just before the fire; and the
  * largest firings / (R × N0) of one case, from which the factor of the fire cap is set ({@code DroolsBackend.FACTOR}):
  * the cap holds per session, so per case. A model with a creation fires in phases, and the driver computes the cap
@@ -50,8 +49,8 @@ import java.util.stream.Stream;
  * through {@link DroolsBackend#voegIn}), and fired and written back through the backend's entry as a consumer does:
  * {@link DroolsBackend#vuur} under the cap a consumer gets, then {@link DroolsBackend#zetAfgeleideWaarden}, each timed
  * on its own. The replay's listener for two writers of one attribute is not on the session, as with a consumer. Then
- * the sums and medians, the ratio new / old, the goldens with the largest ratio, and per defaults group of the branch
- * with truth maintenance its rules and control facts; last, every golden of the corpus with case files through
+ * the sums and medians, the goldens with the largest ratio, and per defaults group its rules and control facts; last,
+ * every golden of the corpus with case files through
  * {@link CaseRunner#viaExecModel}: played, failed, or refused, the refusals grouped by family and by form.
  *
  * <p>Run it from the root of the repository, with the test classpath from the dependency plugin, which resolves
@@ -76,10 +75,7 @@ public final class TmsMeting {
      *  measurement, which warms up the engine the documents share. */
     private static final int OPWARMEN = 20, HERHALINGEN = 31, BOUWRONDES = 5, RONDE = 3;
 
-    private static final DroolsBackend.Branch OUD = DroolsBackend.Branch.EXEC_MODEL,
-            NIEUW = DroolsBackend.Branch.EXEC_MODEL;
-
-    private static final List<DroolsBackend.Branch> TAKKEN = List.of(OUD, NIEUW);
+    private static final DroolsBackend.Branch TAK = DroolsBackend.Branch.EXEC_MODEL;
 
     public static void main(String[] args) throws Exception {
         Path golden = Path.of(args.length > 0 ? args[0] : "corpus/golden");
@@ -96,7 +92,7 @@ public final class TmsMeting {
             if (!paden.isEmpty()) goldens.add(new Golden(golden.relativize(map).toString(), map, paden));
         }
         for (Golden g : goldens) g.oordeel();
-        List<Golden> gemeten = goldens.stream().filter(g -> g.speelt(OUD) || g.speelt(NIEUW)).toList();
+        List<Golden> gemeten = goldens.stream().filter(Golden::speelt).toList();
         rondeVooraf(gemeten);
         int k = 0;
         for (Golden g : gemeten) {
@@ -114,47 +110,45 @@ public final class TmsMeting {
 
     private static void kop(StringBuilder uit) {
         Runtime rt = Runtime.getRuntime();
-        uit.append("# Meting oud tegen nieuw over het corpus (kaart tms-omschakeling, punt 7)\n\n");
+        uit.append("# Meting van de exec-model-tak over het corpus (kaart tms-omschakeling, punt 7)\n\n");
         uit.append("- JVM: ").append(System.getProperty("java.vm.name")).append(' ')
                 .append(System.getProperty("java.runtime.version")).append(" (").append(System.getProperty("java.vm.vendor"))
                 .append("), ").append(System.getProperty("os.arch")).append(", ").append(rt.availableProcessors())
                 .append(" processors, max heap ").append(rt.maxMemory() >> 20).append(" MB.\n");
-        uit.append("- Takken: oud = de destructieve exec-model-tak (`").append(OUD).append("`), nieuw = de exec-model-tak met")
-                .append(" truth maintenance (`").append(NIEUW).append("`). Gemeten: elke golden met cases die een van beide")
-                .append(" speelt (het oordeel van de replay), per tak die hem speelt.\n");
+        uit.append("- Tak: de exec-model-tak met truth maintenance (`").append(TAK).append("`). Gemeten: elke golden met")
+                .append(" cases die hij speelt (het oordeel van de replay).\n");
         uit.append("- Opzet per case: een verse sessie, gevuld zoals de replay dat doet (`CaseRunner.metSessie`, via")
                 .append(" `DroolsBackend.voegIn`); dan `DroolsBackend.vuur` onder het plafond dat een afnemer krijgt en")
-                .append(" `DroolsBackend.zetAfgeleideWaarden`, elk apart getimed (op de oude tak is het terugzetten een")
-                .append(" no-op). Niet getimed: sessie, bonen, invoegen. De schrijfconflictluisteraar van de replay hangt")
-                .append(" niet aan de sessie, zoals bij een afnemer.\n");
+                .append(" `DroolsBackend.zetAfgeleideWaarden`, elk apart getimed. Niet getimed: sessie, bonen, invoegen.")
+                .append(" De schrijfconflictluisteraar van de replay hangt niet aan de sessie, zoals bij een afnemer.\n");
         uit.append("- Herhalingen: eerst een ronde over alle gemeten goldens, ").append(RONDE)
-                .append(" keer per case op elke tak (opwarmen van de gedeelde engine); dan per golden: bouw ")
+                .append(" keer per case (opwarmen van de gedeelde engine); dan per golden: bouw ")
                 .append(BOUWRONDES).append(" keer `DroolsBackend.build` (laden, bonen, verlagen, KieBase; de mediaan; de")
                 .append(" bonen worden per JVM op inhoud gecachet, dus javac telt niet mee), en per case ").append(OPWARMEN)
-                .append(" opwarmers en ").append(HERHALINGEN).append(" herhalingen, de takken om en om; per case de mediaan,")
+                .append(" opwarmers en ").append(HERHALINGEN).append(" herhalingen; per case de mediaan,")
                 .append(" per golden de som van de medianen.\n");
         uit.append("- Vuringen: wat `vuur` teruggeeft, opgeteld over de cases (een bereik als herhalingen verschillen).")
-                .append(" R: de regels van de KieBase. N0: de feiten in de sessie vlak vóór het vuren (op de nieuwe tak ook")
-                .append(" de `Emmerinvoer`- en `Lijstplaats`-feiten van `voegIn`), opgeteld over de cases. max v/(R×N0):")
+                .append(" R: de regels van de KieBase. N0: de feiten in de sessie vlak vóór het vuren (ook de")
+                .append(" `Emmerinvoer`- en `Lijstplaats`-feiten van `voegIn`), opgeteld over de cases. max v/(R×N0):")
                 .append(" het grootste vuringen / (R × N0) van één case, want het plafond geldt per")
                 .append(" sessie; \"–\" waar elke case N0 = 0 heeft. max v/(R×N) per fase: wat een case van de factor")
                 .append(" van het plafond vraagt nu de driver het plafond bij elke creatiefase opnieuw uitrekent over de")
                 .append(" feiten op dat moment (zie de samenvatting); gemeten in één extra run per case, niet getimed.\n");
-        uit.append("- Wandkloktijden hangen af van machine en belasting; de verhouding tussen de takken is het gegeven.\n\n");
+        uit.append("- Wandkloktijden hangen af van machine en belasting.\n\n");
     }
 
     // ---------------- the measurement ----------------
 
-    /** One golden: its document, its cases without the red-path ones, the replay's verdict per branch, and what each
-     *  branch that plays it measured. */
+    /** One golden: its document, its cases without the red-path ones, the replay's verdict, and what the branch
+     *  measured where it plays it. */
     private static final class Golden {
         final String naam;
         final Path ir;
         final List<Path> paden;
         final List<JsonNode> cases = new ArrayList<>();
         final List<String> caseNamen = new ArrayList<>();
-        final Map<DroolsBackend.Branch, CaseRunner.Result> verdict = new EnumMap<>(DroolsBackend.Branch.class);
-        final Map<DroolsBackend.Branch, Tak> takken = new EnumMap<>(DroolsBackend.Branch.class);
+        CaseRunner.Result verdict;
+        Tak tak;
 
         Golden(String naam, Path map, List<Path> paden) throws Exception {
             this.naam = naam;
@@ -168,47 +162,33 @@ public final class TmsMeting {
             }
         }
 
-        /** The replay's verdict on both branches; an exception out of the replay is a FAIL with its sentence. */
+        /** The replay's verdict; an exception out of the replay is a FAIL with its sentence. */
         void oordeel() {
-            for (DroolsBackend.Branch b : TAKKEN) {
-                CaseRunner.Result r;
-                try {
-                    r = b == OUD ? CaseRunner.viaExecModel(ir, paden) : CaseRunner.viaExecModel(ir, paden);
-                } catch (RuntimeException e) {
-                    r = CaseRunner.Result.played(0, List.of(String.valueOf(e)));
-                }
-                verdict.put(b, r);
+            try {
+                verdict = CaseRunner.viaExecModel(ir, paden);
+            } catch (RuntimeException e) {
+                verdict = CaseRunner.Result.played(0, List.of(String.valueOf(e)));
             }
         }
 
-        boolean speelt(DroolsBackend.Branch b) {
-            return verdict.get(b).status().equals("PLAYED");
+        boolean speelt() {
+            return verdict.status().equals("PLAYED");
         }
 
-        /** Builds the document on every branch that plays it, then fires every case on those branches in turn. */
+        /** Builds the document, then fires every case. */
         void meet() throws Exception {
-            for (DroolsBackend.Branch b : TAKKEN) if (speelt(b)) takken.put(b, Tak.gebouwd(ir, b));
+            tak = Tak.gebouwd(ir, TAK);
             for (int c = 0; c < cases.size(); c++) {
-                Map<DroolsBackend.Branch, List<Vuurmeting>> metingen = new EnumMap<>(DroolsBackend.Branch.class);
-                for (int i = -OPWARMEN; i < HERHALINGEN; i++)
-                    for (Map.Entry<DroolsBackend.Branch, Tak> t : takken.entrySet()) {
-                        Vuurmeting m = vuur(this, c, t.getKey(), t.getValue().runner, i == HERHALINGEN - 1);
-                        if (i >= 0) metingen.computeIfAbsent(t.getKey(), x -> new ArrayList<>()).add(m);
-                    }
-                for (Map.Entry<DroolsBackend.Branch, Tak> t : takken.entrySet()) {
-                    List<Vuurmeting> ms = metingen.get(t.getKey());
-                    Fasen f = fasen(this, c, t.getKey(), t.getValue().runner,
-                            ms.stream().mapToInt(Vuurmeting::vuringen).max().orElseThrow());
-                    t.getValue().tel(this, caseNamen.get(c), ms, f);
+                List<Vuurmeting> ms = new ArrayList<>();
+                for (int i = -OPWARMEN; i < HERHALINGEN; i++) {
+                    Vuurmeting m = vuur(this, c, TAK, tak.runner, i == HERHALINGEN - 1);
+                    if (i >= 0) ms.add(m);
                 }
+                Fasen f = fasen(this, c, TAK, tak.runner, ms.stream().mapToInt(Vuurmeting::vuringen).max().orElseThrow());
+                tak.tel(this, caseNamen.get(c), ms, f);
             }
-            // the KieBases go once their golden is measured
-            for (Tak t : takken.values()) t.runner = null;
-        }
-
-        String status(DroolsBackend.Branch b) {
-            CaseRunner.Result r = verdict.get(b);
-            return r.status() + (r.caseFailures().isEmpty() ? "" : " (" + r.caseFailures().size() + ")");
+            // the KieBase goes once its golden is measured
+            tak.runner = null;
         }
     }
 
@@ -307,16 +287,14 @@ public final class TmsMeting {
     /** The round over every measured golden before the first measurement: the engine and the build that all documents
      *  share are warm once the first golden is measured. Nothing of it is kept. */
     private static void rondeVooraf(List<Golden> gemeten) throws Exception {
-        for (Golden g : gemeten)
-            for (DroolsBackend.Branch b : TAKKEN) {
-                if (!g.speelt(b)) continue;
-                CaseRunner runner = CaseRunner.voorMeting(g.ir, b);
-                for (int c = 0; c < g.cases.size(); c++)
-                    for (int i = 0; i < RONDE; i++) vuur(g, c, b, runner, false);
-            }
+        for (Golden g : gemeten) {
+            CaseRunner runner = CaseRunner.voorMeting(g.ir, TAK);
+            for (int c = 0; c < g.cases.size(); c++)
+                for (int i = 0; i < RONDE; i++) vuur(g, c, TAK, runner, false);
+        }
     }
 
-    /** What one branch measured on one golden. */
+    /** What the branch measured on one golden. */
     private static final class Tak {
         CaseRunner runner;
         double bouwMs;
@@ -347,7 +325,7 @@ public final class TmsMeting {
             }
             t.bouwMs = mediaan(tijden) / 1e6;
             t.regels = regels(bouw.kieBase());
-            if (bouw.execModelTranspiler() != null) t.groepen = bouw.execModelTranspiler().defaultsgroepen();
+            t.groepen = bouw.execModelTranspiler().defaultsgroepen();
             for (TmsTranspiler.Defaultsgroep g : t.groepen) t.stuurfeiten.put(g.naam(), new long[2]);
             t.runner = CaseRunner.voorMeting(ir, b);
             return t;
@@ -423,169 +401,98 @@ public final class TmsMeting {
 
     private static void tabel(List<Golden> gemeten, StringBuilder uit) {
         uit.append("## Per golden\n\n");
-        uit.append("| golden | cases | vuringen oud | vuringen nieuw | vuren oud (ms) | vuren nieuw (ms) | terugzetten oud (ms)")
-                .append(" | terugzetten nieuw (ms) | bouw oud (ms) | bouw nieuw (ms) | R oud | R nieuw | N0 oud | N0 nieuw")
-                .append(" | max v/(R×N0) oud | max v/(R×N0) nieuw | max v/(R×N) per fase nieuw |\n");
-        uit.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
+        uit.append("| golden | cases | vuringen | vuren (ms) | terugzetten (ms) | bouw (ms) | R | N0 | max v/(R×N0)")
+                .append(" | max v/(R×N) per fase |\n");
+        uit.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
         for (Golden g : gemeten) {
-            Tak o = g.takken.get(OUD), n = g.takken.get(NIEUW);
-            uit.append("| ").append(g.naam).append(" | ").append(g.cases.size());
-            cel(uit, g, OUD, o, Tak::vuringen);
-            cel(uit, g, NIEUW, n, Tak::vuringen);
-            cel(uit, g, OUD, o, t -> ms(t.vuurMs));
-            cel(uit, g, NIEUW, n, t -> ms(t.vuurMs));
-            cel(uit, g, OUD, o, t -> ms(t.terugzetMs));
-            cel(uit, g, NIEUW, n, t -> ms(t.terugzetMs));
-            cel(uit, g, OUD, o, t -> ms(t.bouwMs));
-            cel(uit, g, NIEUW, n, t -> ms(t.bouwMs));
-            cel(uit, g, OUD, o, t -> String.valueOf(t.regels));
-            cel(uit, g, NIEUW, n, t -> String.valueOf(t.regels));
-            cel(uit, g, OUD, o, t -> String.valueOf(t.n0));
-            cel(uit, g, NIEUW, n, t -> String.valueOf(t.n0));
-            cel(uit, g, OUD, o, t -> t.verhouding < 0 ? "–" : verhouding(t.verhouding));
-            cel(uit, g, NIEUW, n, t -> t.verhouding < 0 ? "–" : verhouding(t.verhouding));
-            cel(uit, g, NIEUW, n, t -> t.fasen < 0 ? "–" : verhouding(t.fasen));
-            uit.append(" |\n");
+            Tak t = g.tak;
+            uit.append("| ").append(g.naam).append(" | ").append(g.cases.size()).append(" | ").append(t.vuringen())
+                    .append(" | ").append(ms(t.vuurMs)).append(" | ").append(ms(t.terugzetMs)).append(" | ")
+                    .append(ms(t.bouwMs)).append(" | ").append(t.regels).append(" | ").append(t.n0).append(" | ")
+                    .append(t.verhouding < 0 ? "–" : verhouding(t.verhouding)).append(" | ")
+                    .append(t.fasen < 0 ? "–" : verhouding(t.fasen)).append(" |\n");
         }
         uit.append('\n');
     }
 
-    private static void cel(StringBuilder uit, Golden g, DroolsBackend.Branch b, Tak t,
-                            java.util.function.Function<Tak, String> waarde) {
-        uit.append(" | ").append(t != null ? waarde.apply(t) : g.status(b));
-    }
-
     private static void samenvatting(List<Golden> gemeten, StringBuilder uit) {
-        List<Golden> beide = gemeten.stream().filter(g -> g.takken.size() == 2).toList();
-        List<Golden> nieuw = gemeten.stream().filter(g -> g.takken.size() == 1 && g.takken.containsKey(NIEUW)).toList();
-        List<Golden> oud = gemeten.stream().filter(g -> g.takken.size() == 1 && g.takken.containsKey(OUD)).toList();
         uit.append("## Samenvatting\n\n");
         uit.append("- Gemeten: ").append(gemeten.size()).append(" goldens met ")
-                .append(gemeten.stream().mapToInt(g -> g.cases.size()).sum()).append(" cases. Beide takken spelen ")
-                .append(beide.size()).append(" (").append(beide.stream().mapToInt(g -> g.cases.size()).sum())
-                .append(" cases); alleen de nieuwe ").append(nieuw.size()).append(namen(nieuw)).append("; alleen de oude ")
-                .append(oud.size()).append(namen(oud)).append(".\n\n");
+                .append(gemeten.stream().mapToInt(g -> g.cases.size()).sum()).append(" cases.\n\n");
+        uit.append("Som en mediaan over de goldens.\n\n");
+        uit.append("| grootheid | som | mediaan |\n|---|---:|---:|\n");
+        rij(uit, "vuringen", gemeten, t -> t.vuringenMin, "%.0f");
+        rij(uit, "vuren (ms)", gemeten, t -> t.vuurMs, "%.3f");
+        rij(uit, "terugzetten (ms)", gemeten, t -> t.terugzetMs, "%.3f");
+        rij(uit, "vuren+terugzetten (ms)", gemeten, t -> t.somMs, "%.3f");
+        rij(uit, "bouw (ms)", gemeten, t -> t.bouwMs, "%.3f");
+        rij(uit, "R", gemeten, t -> t.regels, "%.0f");
+        rij(uit, "N0", gemeten, t -> t.n0, "%.0f");
+        uit.append('\n');
 
-        uit.append("### De goldens die beide takken spelen (").append(beide.size()).append(")\n\n");
-        uit.append("Som en mediaan over de goldens; nieuw/oud van de sommen, en de mediaan van nieuw/oud per golden (over")
-                .append(" de goldens waar beide waarden groter zijn dan 0).\n\n");
-        uit.append("| grootheid | som oud | som nieuw | nieuw/oud | mediaan oud | mediaan nieuw | mediaan van nieuw/oud |\n");
-        uit.append("|---|---:|---:|---:|---:|---:|---:|\n");
-        rij(uit, "vuringen", beide, t -> t.vuringenMin, "%.0f", true);
-        rij(uit, "vuren (ms)", beide, t -> t.vuurMs, "%.3f", true);
-        rij(uit, "terugzetten (ms)", beide, t -> t.terugzetMs, "%.3f", false);
-        rij(uit, "vuren+terugzetten (ms)", beide, t -> t.somMs, "%.3f", true);
-        rij(uit, "bouw (ms)", beide, t -> t.bouwMs, "%.3f", true);
-        rij(uit, "R", beide, t -> t.regels, "%.0f", true);
-        rij(uit, "N0", beide, t -> t.n0, "%.0f", true);
-        uit.append("\nOp de oude tak is het terugzetten een no-op; zijn tijd is die van de aanroep.\n\n");
-
-        if (!nieuw.isEmpty()) {
-            uit.append("### Alleen de nieuwe tak (").append(nieuw.size()).append(")\n\n");
-            uit.append("| grootheid | som | mediaan |\n|---|---:|---:|\n");
-            alleen(uit, "vuringen", nieuw, t -> t.vuringenMin, "%.0f");
-            alleen(uit, "vuren (ms)", nieuw, t -> t.vuurMs, "%.3f");
-            alleen(uit, "terugzetten (ms)", nieuw, t -> t.terugzetMs, "%.3f");
-            alleen(uit, "vuren+terugzetten (ms)", nieuw, t -> t.somMs, "%.3f");
-            alleen(uit, "bouw (ms)", nieuw, t -> t.bouwMs, "%.3f");
-            alleen(uit, "R", nieuw, t -> t.regels, "%.0f");
-            alleen(uit, "N0", nieuw, t -> t.n0, "%.0f");
-            uit.append('\n');
+        List<Golden> perVerhouding = gemeten.stream().filter(g -> g.tak.verhouding >= 0)
+                .sorted((x, y) -> Double.compare(y.tak.verhouding, x.tak.verhouding)).toList();
+        uit.append("### De hoogste vuringen/(R × N0) van één case\n\n");
+        uit.append("| golden | case | vuringen | R | N0 | v/(R×N0) | plafond van `vuur` |\n|---|---|---:|---:|---:|---:|---:|\n");
+        for (Golden g : perVerhouding.subList(0, Math.min(10, perVerhouding.size()))) {
+            Tak t = g.tak;
+            uit.append("| ").append(g.naam).append(" | ").append(t.verhoudingCase).append(" | ")
+                    .append(t.verhoudingVuringen).append(" | ").append(t.regels).append(" | ").append(t.verhoudingN0)
+                    .append(" | ").append(verhouding(t.verhouding)).append(" | ").append(t.verhoudingPlafond)
+                    .append(" |\n");
         }
-
-        for (DroolsBackend.Branch b : TAKKEN) {
-            List<Golden> perVerhouding = gemeten.stream().filter(g -> g.takken.containsKey(b) && g.takken.get(b).verhouding >= 0)
-                    .sorted((x, y) -> Double.compare(y.takken.get(b).verhouding, x.takken.get(b).verhouding)).toList();
-            String tak = b == OUD ? "oude" : "nieuwe";
-            int top = b == NIEUW ? 10 : 5;
-            uit.append("### De hoogste vuringen/(R × N0) van één case, ").append(tak).append(" tak\n\n");
-            uit.append("| golden | case | vuringen | R | N0 | v/(R×N0) | plafond van `vuur` |\n|---|---|---:|---:|---:|---:|---:|\n");
-            for (Golden g : perVerhouding.subList(0, Math.min(top, perVerhouding.size()))) {
-                Tak t = g.takken.get(b);
-                uit.append("| ").append(g.naam).append(" | ").append(t.verhoudingCase).append(" | ")
-                        .append(t.verhoudingVuringen).append(" | ").append(t.regels).append(" | ").append(t.verhoudingN0)
-                        .append(" | ").append(verhouding(t.verhouding)).append(" | ").append(t.verhoudingPlafond)
-                        .append(" |\n");
-            }
-            long zonder = gemeten.stream().filter(g -> g.takken.containsKey(b) && g.takken.get(b).verhouding < 0).count();
-            uit.append('\n');
-            if (zonder > 0)
-                uit.append("Goldens waarvan elke case N0 = 0 heeft (geen verhouding): ").append(zonder).append(".\n\n");
-            if (b == NIEUW && !perVerhouding.isEmpty()) {
-                double hoogste = perVerhouding.get(0).takken.get(b).verhouding;
-                uit.append("De hoogste op de nieuwe tak is ").append(verhouding(hoogste)).append("; tweemaal, naar boven")
-                        .append(" afgerond en ten minste 4: ").append(Math.max(4, (int) Math.ceil(2 * hoogste)))
-                        .append(" (het schaalmodel van `Schaalproef` komt daar nog bij).\n\n");
-            }
+        long zonder = gemeten.stream().filter(g -> g.tak.verhouding < 0).count();
+        uit.append('\n');
+        if (zonder > 0)
+            uit.append("Goldens waarvan elke case N0 = 0 heeft (geen verhouding): ").append(zonder).append(".\n\n");
+        if (!perVerhouding.isEmpty()) {
+            double hoogste = perVerhouding.get(0).tak.verhouding;
+            uit.append("De hoogste is ").append(verhouding(hoogste)).append("; tweemaal, naar boven afgerond en ten minste")
+                    .append(" 4: ").append(Math.max(4, (int) Math.ceil(2 * hoogste)))
+                    .append(" (het schaalmodel van `Schaalproef` komt daar nog bij).\n\n");
         }
-        List<Golden> perFase = gemeten.stream().filter(g -> g.takken.containsKey(NIEUW) && g.takken.get(NIEUW).fasen >= 0)
-                .sorted((x, y) -> Double.compare(y.takken.get(NIEUW).fasen, x.takken.get(NIEUW).fasen)).toList();
-        uit.append("### De hoogste vuringen/(R × N) per fase van één case, nieuwe tak\n\n");
+        List<Golden> perFase = gemeten.stream().filter(g -> g.tak.fasen >= 0)
+                .sorted((x, y) -> Double.compare(y.tak.fasen, x.tak.fasen)).toList();
+        uit.append("### De hoogste vuringen/(R × N) per fase van één case\n\n");
         uit.append("Per stuk van de run, vanaf de start of het begin van een creatiefase tot het volgende: de vuringen aan het")
                 .append(" eind over R maal de grootste N die het plafond tot dan telde; per case het grootste. Zonder")
                 .append(" creatie gelijk aan vuringen/(R × N0).\n\n");
         uit.append("| golden | case | vuringen | R | N | v/(R×N) | v/(R×N0) van de golden |\n|---|---|---:|---:|---:|---:|---:|\n");
         for (Golden g : perFase.subList(0, Math.min(10, perFase.size()))) {
-            Tak t = g.takken.get(NIEUW);
+            Tak t = g.tak;
             uit.append("| ").append(g.naam).append(" | ").append(t.fasenCase).append(" | ").append(t.fasenVuringen)
                     .append(" | ").append(t.regels).append(" | ").append(t.fasenN).append(" | ").append(verhouding(t.fasen))
                     .append(" | ").append(t.verhouding < 0 ? "–" : verhouding(t.verhouding)).append(" |\n");
         }
         if (!perFase.isEmpty()) {
-            double hoogste = perFase.get(0).takken.get(NIEUW).fasen;
-            uit.append("\nDe hoogste per fase op de nieuwe tak is ").append(verhouding(hoogste))
+            double hoogste = perFase.get(0).tak.fasen;
+            uit.append("\nDe hoogste per fase is ").append(verhouding(hoogste))
                     .append("; tweemaal, naar boven afgerond en ten minste 4: ")
                     .append(Math.max(4, (int) Math.ceil(2 * hoogste))).append(".\n\n");
         }
         Golden krapst = null;
         for (Golden g : gemeten)
-            if (g.takken.containsKey(NIEUW)
-                    && (krapst == null || g.takken.get(NIEUW).plafondDeel > krapst.takken.get(NIEUW).plafondDeel))
-                krapst = g;
+            if (krapst == null || g.tak.plafondDeel > krapst.tak.plafondDeel) krapst = g;
         if (krapst != null)
-            uit.append("Het grootste vuringen/plafond van één case op de nieuwe tak, onder het plafond van `vuur`: ")
-                    .append(verhouding(krapst.takken.get(NIEUW).plafondDeel)).append(" (").append(krapst.naam)
-                    .append(", ").append(krapst.takken.get(NIEUW).plafondCase).append(").\n\n");
-    }
-
-    private static String namen(List<Golden> goldens) {
-        return goldens.isEmpty() ? "" : " (" + String.join(", ", goldens.stream().map(g -> g.naam).toList()) + ")";
+            uit.append("Het grootste vuringen/plafond van één case, onder het plafond van `vuur`: ")
+                    .append(verhouding(krapst.tak.plafondDeel)).append(" (").append(krapst.naam)
+                    .append(", ").append(krapst.tak.plafondCase).append(").\n\n");
     }
 
     private static void rij(StringBuilder uit, String naam, List<Golden> goldens, ToDoubleFunction<Tak> waarde,
-                            String vorm, boolean verhouding) {
-        double[] o = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.takken.get(OUD))).toArray();
-        double[] n = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.takken.get(NIEUW))).toArray();
-        double so = Arrays.stream(o).sum(), sn = Arrays.stream(n).sum();
-        List<Double> per = new ArrayList<>();
-        for (int i = 0; i < o.length; i++) if (o[i] > 0 && n[i] > 0) per.add(n[i] / o[i]);
-        uit.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, vorm, so)).append(" | ")
-                .append(String.format(Locale.ROOT, vorm, sn)).append(" | ")
-                .append(verhouding && so > 0 ? String.format(Locale.ROOT, "%.2f", sn / so) : "–").append(" | ")
-                .append(String.format(Locale.ROOT, vorm, mediaan(o))).append(" | ")
-                .append(String.format(Locale.ROOT, vorm, mediaan(n))).append(" | ")
-                .append(verhouding && !per.isEmpty()
-                        ? String.format(Locale.ROOT, "%.2f", mediaan(per.stream().mapToDouble(Double::doubleValue).toArray()))
-                          + (per.size() < o.length ? " (" + per.size() + " goldens)" : "")
-                        : "–")
-                .append(" |\n");
-    }
-
-    private static void alleen(StringBuilder uit, String naam, List<Golden> goldens, ToDoubleFunction<Tak> waarde,
-                               String vorm) {
-        double[] n = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.takken.get(NIEUW))).toArray();
+                            String vorm) {
+        double[] n = goldens.stream().mapToDouble(g -> waarde.applyAsDouble(g.tak)).toArray();
         uit.append("| ").append(naam).append(" | ").append(String.format(Locale.ROOT, vorm, Arrays.stream(n).sum()))
                 .append(" | ").append(String.format(Locale.ROOT, vorm, mediaan(n))).append(" |\n");
     }
 
     private static void defaultsgroepen(List<Golden> gemeten, StringBuilder uit) {
-        uit.append("## Per defaults-groep (nieuwe tak)\n\n");
+        uit.append("## Per defaults-groep\n\n");
         uit.append("| golden | groep | vorm | regels | soorten stuurfeiten | stuurfeiten na het vuren: som | max per case |\n");
         uit.append("|---|---|---|---:|---|---:|---:|\n");
         int zonder = 0;
         for (Golden g : gemeten) {
-            Tak t = g.takken.get(NIEUW);
-            if (t == null) continue;
+            Tak t = g.tak;
             if (t.groepen.isEmpty()) zonder++;
             for (TmsTranspiler.Defaultsgroep d : t.groepen) {
                 long[] n = t.stuurfeiten.get(d.naam());
@@ -606,7 +513,7 @@ public final class TmsMeting {
         Map<String, Map<String, List<String>>> geweigerd = new TreeMap<>();
         int gespeeldeCases = 0;
         for (Golden g : goldens) {
-            CaseRunner.Result r = g.verdict.get(NIEUW);
+            CaseRunner.Result r = g.verdict;
             switch (r.status()) {
                 case "PLAYED" -> {
                     gespeeld.put(g.naam, r.casesPlayed());
@@ -618,7 +525,7 @@ public final class TmsMeting {
             }
         }
         int uitgesloten = geweigerd.values().stream().flatMap(m -> m.values().stream()).mapToInt(List::size).sum();
-        uit.append("## Corpusdekking van de nieuwe tak\n\n");
+        uit.append("## Corpusdekking van de exec-model-tak\n\n");
         uit.append(mappen).append(" goldens onder corpus/golden, waarvan ").append(goldens.size())
                 .append(" met cases: PLAYED ").append(gespeeld.size()).append(" (").append(gespeeldeCases)
                 .append(" cases), FAIL ").append(mislukt.size()).append(", EXCLUDE ").append(uitgesloten)

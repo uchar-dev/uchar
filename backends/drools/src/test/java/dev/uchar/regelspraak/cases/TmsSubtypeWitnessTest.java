@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * hij erkend is", "Een Strandjutter is strandbevoegd indien hij niet vergund is". Then the writer on the subtype and the
  * negated reader on the supertype: "Een Strandjutter is vergund indien hij erkend is", "Een Jutter is onvergund indien
  * hij niet vergund is", where an erkende Jutter that is no Strandjutter is not vergund and so onvergund. Every order of
- * the two rules; the exec-model branch answers the same.
+ * the two rules.
  *
  * <p>Green on its first run (2026-10-08): the keying on the declaring type was in place before this witness was
  * written. <b>Red by mutation</b> (measured the same day), with the key taken from the type the rule or the check names
@@ -60,7 +60,6 @@ class TmsSubtypeWitnessTest {
             List<String> namen = new ArrayList<>();
             for (String r : volgorde) namen.add(TmsDocumenten.JSON.readTree(r).get("name").asText());
             assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
-            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "exec-model, volgorde " + namen);
         }
     }
 

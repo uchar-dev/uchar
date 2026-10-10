@@ -59,9 +59,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * vindloon 3, heffing 7 and nx in the input): uitkering 20, and vindloon 3 and heffing 7 as input, which no writer
  * replaces; vrijgesteld by the lower default. V3 (gewicht 4): uitkering 8, vindloon 9, heffing leeg, not vrijgesteld.
  * Before the call each bean holds its input while the session holds the derivations; every order of the two rules and
- * of the two groups in the document, and the exec-model branch on the same case. Two different values on one attribute
- * of one object are a named failure that writes neither value, the same sentence whichever of the two facts the
- * session took first; equal values, 20 and 20.0, are one value.
+ * of the two groups in the document. Two different values on one attribute of one object are a named failure that
+ * writes neither value, the same sentence whichever of the two facts the session took first; equal values, 20 and
+ * 20.0, are one value.
  *
  * <p><b>Red before the write-back</b> (measured 2026-10-08). On the branch's skeleton the first two rows were refused,
  * "tms-transpiler SKIP: regel: vergund indien erkend — de verlaging van een kenmerktoekenning is nog niet gebouwd". With
@@ -194,8 +194,6 @@ class TmsTerugzettingWitnessTest {
                 volgordes++;
             }
         assertEquals(4, volgordes);
-        assertNull(CaseRunner.speelCase(vondstdocument(REGELS, GROEPEN), vondstzaak(), DroolsBackend.Branch.EXEC_MODEL),
-                "the exec-model branch on the same case");
     }
 
     @Test void pas_na_het_terugzetten_dragen_de_bonen_de_afgeleide_attributen() throws Exception {

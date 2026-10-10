@@ -123,10 +123,6 @@ class TmsDoorvalWitnessTest {
         assertEquals(24, volgordes);
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(document(REGELS), zaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /** The two defaults, the four rules and the standings of tussen, afgewezen, bron1 and bron2: too many for every
      *  order, so a seeded sample, which must take the takeover and the give-back each at least once. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {

@@ -92,12 +92,6 @@ class TmsOntkenningsketenWitnessTest {
         assertEquals(24, volgordes);
     }
 
-    /** The pinned end state is the one the gate's branch answers on the same documents. */
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(document(INVOER), zaak("erkend"), DroolsBackend.Branch.EXEC_MODEL));
-        assertNull(CaseRunner.speelCase(document(AFGELEID), zaak("aangemeld"), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     // ---------------- a seeded sample of orders of the generated rules ----------------
 
     /** Three rules of the document, and the three standing rules of each derived characteristic a condition reads

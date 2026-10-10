@@ -105,10 +105,6 @@ class TmsVoorwaardefoutWitnessTest {
         assertEquals(2, uitkomsten.size());
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(tijdelijk(TIJDELIJK), tijdelijkeZaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /** The generated rules in a seeded sample of orders, at least one of which must test the condition against the
      *  transient 0 of the lower default: there a fault fact is inserted, and it is gone again at the fixpoint. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
@@ -135,20 +131,18 @@ class TmsVoorwaardefoutWitnessTest {
     private static final String DEELNEMERS = binair("dividedBy", lezing("opbrengst", "Vondst"),
             lezing("deelnemers", "Vondst"));
 
-    /** One document per kind of form with a condition: its name, its rules and its consistencies, and whether the
-     *  exec-model branch lowers it. That branch refuses a consistency whose assertion divides ("consistentie (schending
-     *  buiten Phase-D scope)", measured 2026-10-08), so that row compares this branch alone. */
-    record Vorm(String naam, List<String> regels, List<String> consistenties, boolean execModel) {}
+    /** One document per kind of form with a condition: its name, its rules and its consistencies. */
+    record Vorm(String naam, List<String> regels, List<String> consistenties) {}
 
     static final List<Vorm> VORMEN = List.of(
             new Vorm("zwaarte", List.of(ERKENNING, kenmerkregel("zwaarte", "Vondst", "zwaar",
-                    vergelijking("greater", DEELNEMERS, getal("10")))), List.of(), true),
+                    vergelijking("greater", DEELNEMERS, getal("10")))), List.of()),
             new Vorm("toeslag", List.of(ERKENNING, rekenregel("toeslag", "GELIJKSTELLING", "Vondst", "toeslag",
-                    getal("5"), vergelijking("greater", DEELNEMERS, getal("10")))), List.of(), true),
+                    getal("5"), vergelijking("greater", DEELNEMERS, getal("10")))), List.of()),
             new Vorm("standaardtoeslag", List.of(ERKENNING, rekenregel("standaardtoeslag", "INITIALISATIE", "Vondst",
-                    "toeslag", getal("5"), vergelijking("greater", DEELNEMERS, getal("10")))), List.of(), true),
+                    "toeslag", getal("5"), vergelijking("greater", DEELNEMERS, getal("10")))), List.of()),
             new Vorm("controle", List.of(ERKENNING),
-                    List.of(consistentie("controle", "Vondst", vergelijking("greater", DEELNEMERS, getal("0")))), false));
+                    List.of(consistentie("controle", "Vondst", vergelijking("greater", DEELNEMERS, getal("0"))))));
 
     static JsonNode blijvendeZaak() throws Exception {
         return TmsDocumenten.zaak(
@@ -173,14 +167,9 @@ class TmsVoorwaardefoutWitnessTest {
                         DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(v.naam() + " " + namen + " " + melding(v.naam()));
             }
-            if (!v.execModel()) continue;
-            uitkomsten.add(v.naam() + " exec-model " + TmsFoutWitnessTest.speel(
-                    TmsDocumenten.document(MODEL, v.regels(), v.consistenties()), blijvendeZaak(),
-                    DroolsBackend.Branch.EXEC_MODEL));
-            verwacht.add(v.naam() + " exec-model " + melding(v.naam()));
         }
         assertEquals(verwacht, uitkomsten);
-        assertEquals(10, uitkomsten.size());
+        assertEquals(7, uitkomsten.size());
     }
 
     /** The fire reaches its fixpoint without throwing in every order of the generated rules of each document (the form,

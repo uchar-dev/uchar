@@ -154,10 +154,6 @@ class TmsAggregatieWitnessTest {
         assertEquals(120, uitkomsten.size());
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(document(REGELS), zaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     /**
      * A seeded sample of orders of the generated rules. In every order the beans end at the fixpoint and the session
      * holds exactly one {@link Waarde} for the bergsom of J1 and one for its erkendaantal: when the result of an
@@ -246,7 +242,6 @@ class TmsAggregatieWitnessTest {
     @Test void een_vouw_in_rechtvaardiging_en_consequentie_van_een_default() throws Exception {
         assertEquals("gespeeld", TmsFoutWitnessTest.speel(defaultdocument(DEFAULTREGELS), defaultzaak(),
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertNull(CaseRunner.speelCase(defaultdocument(DEFAULTREGELS), defaultzaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** The generated rules in a seeded sample of orders; at least one lets the lower default decide 5 for J1 before
@@ -381,8 +376,6 @@ class TmsAggregatieWitnessTest {
                 + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
         assertEquals(zin, TmsFoutWitnessTest.speel(filterdocument(FILTERREGELS), filterzaak(),
                 DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals(zin, TmsFoutWitnessTest.speel(filterdocument(FILTERREGELS), filterzaak(),
-                DroolsBackend.Branch.EXEC_MODEL));
         DroolsBackend.Build b = DroolsBackend.build(filterdocument(FILTERREGELS), DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
         for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
@@ -429,7 +422,6 @@ class TmsAggregatieWitnessTest {
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
-        assertNull(CaseRunner.speelCase(document(GELIJSTREGELS), gelijstezaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     // ---------------- a two-step range ----------------
@@ -478,7 +470,6 @@ class TmsAggregatieWitnessTest {
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
-        assertNull(CaseRunner.speelCase(paddocument(PADREGELS), padzaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     // ---------------- helpers ----------------

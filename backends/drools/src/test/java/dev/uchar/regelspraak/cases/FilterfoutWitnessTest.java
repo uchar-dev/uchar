@@ -151,7 +151,6 @@ class FilterfoutWitnessTest {
 
     private static final DroolsBackend.Branch EXEC = DroolsBackend.Branch.EXEC_MODEL;
     private static final DroolsBackend.Branch DRL = DroolsBackend.Branch.DRL_TEXT;
-    private static final DroolsBackend.Branch TMS = DroolsBackend.Branch.EXEC_MODEL;
 
     /** Both branches play {@code zaak} on {@code ir} with its expectations. */
     private static void gespeeld(Path ir, JsonNode zaak) throws Exception {
@@ -247,7 +246,7 @@ class FilterfoutWitnessTest {
                 + " punt 4)";
         assertEquals("Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"drukte\", \"zware"
                 + " vondsten\": deling door nul in de regel \"drukte\": " + deling + "; deling door nul in de regel \"zware"
-                + " vondsten\": " + deling, TmsFoutWitnessTest.speel(FILTERWACHT, zaak, TMS), "tms");
+                + " vondsten\": " + deling, TmsFoutWitnessTest.speel(FILTERWACHT, zaak, EXEC), "exec-model");
         RuntimeException drl = assertThrows(RuntimeException.class, () -> CaseRunner.speelCase(FILTERWACHT, zaak, DRL));
         assertTrue(drl.getMessage().startsWith("Error evaluating constraint '(rsAggVergelijk(rsGedeeld(gewicht, deelnemers)")
                 && deling(drl), () -> "drl-tekst: " + drl);
@@ -364,7 +363,7 @@ class FilterfoutWitnessTest {
     /** The truth-maintenance branch refuses a creation whose member initialisation divides, by name: it makes no §6.5
      *  deposit there. Coverage lost against the destructive exec-model branch, accepted (card tms-omschakeling). */
     private static void initialisatieGeweigerd(Path ir) throws Exception {
-        String tms = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false), List.of(consistent())), TMS);
+        String tms = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false), List.of(consistent())), EXEC);
         assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
                 + " ledeninitialisatie ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
                 + " §6.5-deponering niet maakt"), "tms: " + tms);
@@ -681,8 +680,8 @@ class FilterfoutWitnessTest {
      *  composite ({@code bron}) whose fold divides, with the reference interpreter's answer, or the DRL-text branch does
      *  not refuse the rule "drukte". */
     private static void zoalsRef(Path ir, JsonNode zaak, String bron, List<String> afwijkend) throws Exception {
-        String tms = TmsFoutWitnessTest.speel(ir, zaak, TMS);
-        if (!tms.equals("gespeeld")) afwijkend.add(bron + " " + TMS + ": " + tms);
+        String tms = TmsFoutWitnessTest.speel(ir, zaak, EXEC);
+        if (!tms.equals("gespeeld")) afwijkend.add(bron + " " + EXEC + ": " + tms);
         String drl = TmsFoutWitnessTest.speel(ir, zaak, DRL);
         if (!drl.startsWith("Excluded: drl-transpiler MARKER: regel: drukte — "))
             afwijkend.add(bron + " " + DRL + ": " + drl);
@@ -922,7 +921,7 @@ class FilterfoutWitnessTest {
                 TmsDocumenten.standaard(samengesteld("all", 0, List.of(vergelijking("greater", vouw(), getal("0")))),
                         getal("2")),
                 TmsDocumenten.standaard(check("druk", false), vouw()))) {
-            String tms = TmsFoutWitnessTest.speel(defaultsgroep(lager), zaak, TMS);
+            String tms = TmsFoutWitnessTest.speel(defaultsgroep(lager), zaak, EXEC);
             assertTrue(tms.startsWith("Excluded: ") && tms.contains("defaults: defaults A:Jutter.zwaarte — een deling in"
                     + " een default ('zijn gewicht gedeeld door zijn deelnemers'): "), tms);
         }
@@ -1050,7 +1049,7 @@ class FilterfoutWitnessTest {
             Path ir = vondsttal(f.getValue());
             String v1 = metDatums(instantieMetRollen("V1", "Vondst", getallen.get(f.getKey()), List.of(), Map.of()),
                     Map.of("vinddatum", "2026-01-05"));
-            for (DroolsBackend.Branch tak : inExec.contains(f.getKey()) ? List.of(TMS, DRL) : List.of(DRL)) {
+            for (DroolsBackend.Branch tak : inExec.contains(f.getKey()) ? List.of(EXEC, DRL) : List.of(DRL)) {
                 String niet = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(List.of(instantieMetRollen("J1", "Jutter",
                         Map.of(), List.of(), Map.of("vondsten", List.of("V1"))), v1),
                         List.of(waarde("J1", "vondsttal", null), consistent())), tak);
@@ -1068,11 +1067,11 @@ class FilterfoutWitnessTest {
             }
         }
         String macht = TmsFoutWitnessTest.speel(vondsttal(filters.get("macht")), TmsDocumenten.zaak(List.of(),
-                List.of(consistent())), TMS);
+                List.of(consistent())), EXEC);
         if (!(macht.startsWith("Excluded: ") && macht.contains("regel: vondsttal — een macht met een exponent die geen"
                 + " geheel getal van ten minste 0 als literal is ('zijn gewicht tot de macht zijn deelnemers'): de reële"
                 + " macht is OPEN (RUNTIME-SEMANTICS ch. 2.1)")))
-            afwijkend.add("macht " + TMS + ": " + macht);
+            afwijkend.add("macht " + EXEC + ": " + macht);
         assertEquals(List.of(), afwijkend);
     }
 }

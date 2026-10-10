@@ -14,16 +14,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Every golden of the corpus with case files, replayed through the truth-maintenance branch as the CLI's {@code --tms}
- * flag replays it, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused with a
- * reason: a document the branch carries but computes wrong is a silent wrong value, the one outcome the branch may
- * never give, and no gate sweeps this branch. The count of played goldens is held to a floor, so that a step that
- * makes the branch drop goldens it played fails here by number.
+ * Every golden of the corpus with case files, replayed through the exec-model branch as the CLI replays it without a
+ * flag, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused with a reason: a
+ * document the branch carries but computes wrong is a silent wrong value, the one outcome the branch may never give.
+ * The count of played goldens is held to a floor, so that a step that makes the branch drop goldens it played fails
+ * here by number. Gate 12 pins the same count ({@code EXPECTED_PLAYED}) and is the authority; this witness stays as
+ * the suite's own check, which runs in-process at every {@code mvn package}, between two runs of the gate, and reports
+ * the refusals per family and form, where the gate reads one status line per golden.
  *
  * <p>The refusals are counted per family and reported, not pinned: the kind of form the manifest refuses first
- * ({@code tms-transpiler SKIP: <family>: …}), a cycle refused before the build ({@code tms}), the loader's refusal
- * ({@code loader}), or two names on one bean member ({@code beannaambotsing}). The reasons themselves name forms and
- * snippets.
+ * ({@code transpiler SKIP: <family>: …}), a cycle refused before the build ({@code tms}), two rules of one name
+ * ({@code exec-model}), the loader's refusal ({@code loader}), or two names on one bean member
+ * ({@code beannaambotsing}). The reasons themselves name forms and snippets.
  *
  * <p><b>Red before the fix of the parameters</b> (measured 2026-10-08 on the branch's fourth step): two goldens
  * played with wrong values, "jutterswet-aanvoergeld: Result[status=FAIL, reason=, caseFailures=[case.json: attribuut
@@ -103,7 +105,8 @@ class TmsCorpusWitnessTest {
                 + EXPECTED_MIN_PLAYED + "; per familie " + telling + ", zonder cases " + zonder);
     }
 
-    /** The family of a refusal: the kind of form the manifest refuses first, a cycle, or the loader. */
+    /** The family of a refusal: the kind of form the manifest refuses first, a cycle, two rules of one name, or the
+     *  loader. */
     private static String familie(String reden) {
         if (reden.startsWith("transpiler SKIP: ")) {
             String rest = reden.substring("transpiler SKIP: ".length());
@@ -111,6 +114,7 @@ class TmsCorpusWitnessTest {
             return dubbelepunt < 0 ? "transpiler" : rest.substring(0, dubbelepunt);
         }
         if (reden.startsWith("tms: ")) return "tms";
+        if (reden.startsWith("exec-model: ")) return "exec-model";
         if (reden.startsWith("loader: ")) return "loader";
         if (reden.startsWith("beannaambotsing: ")) return "beannaambotsing";
         return "anders: " + reden;

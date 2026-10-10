@@ -112,10 +112,6 @@ class TmsStapelWitnessTest {
         assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
-    }
-
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();

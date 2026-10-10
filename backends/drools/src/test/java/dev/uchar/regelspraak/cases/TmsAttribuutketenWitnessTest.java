@@ -43,9 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (gewicht 10): onbeheerd, bergloon 20, uitkering 25. In an order where the bergloon rule fires on V1 before geregistreerd
  * is derived, V1's bergloon is computed on the transient onbeheerd and the uitkering on that bergloon; when geregistreerd
  * arrives, truth maintenance must withdraw the bergloon and recompute the uitkering, because the uitkering's read of the
- * bergloon is a bound pattern in its left-hand side. Every order of the four rules in the document, the exec-model
- * branch on the same document, and the seeded sample of orders of the generated rule list, at least one of which must
- * take that transient path.
+ * bergloon is a bound pattern in its left-hand side. Every order of the four rules in the document, and the seeded
+ * sample of orders of the generated rule list, at least one of which must take that transient path.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step, whose manifest refused every
  * attribute target): both rows on this branch were refused, "tms-transpiler SKIP: regel: bergloon — een attribuutdoel
@@ -83,10 +82,6 @@ class TmsAttribuutketenWitnessTest {
             volgordes++;
         }
         assertEquals(24, volgordes);
-    }
-
-    @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
-        assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, REGELS), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** Four rules, the characteristic standings of geregistreerd and onbeheerd (three rules each) and the attribute
