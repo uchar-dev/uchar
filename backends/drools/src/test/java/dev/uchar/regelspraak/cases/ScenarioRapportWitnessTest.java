@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>The trace of the first case is pinned whole. The report counts a firing under the form of the document its rule
  * belongs to ({@code TmsTranspiler.vormVan}), so "defaults K:Jutter.uitgesloten" is the document's one defaults group,
- * which decides for M, its default and its agreement over the root in one row; a rule of no form keeps its full name,
- * here the standing of the characteristic that follows. Until the switch-over the trace was pinned by the name of the
+ * which decides for M, its default and its agreement over the root in one row; a rule of no form, here the standing
+ * of the characteristic that follows, has no row. Until the switch-over the trace was pinned by the name of the
  * destructive branch's rule, "defaults K:Jutter.uitgesloten"; while both branches stood it was pinned by its labels and
  * counts alone, which a report without a firing of the group passed as well (the lens on step 5a1 of card
  * tms-omschakeling, 2026-10-10); after the switch-over it was pinned by the part of each rule's name after its form,
@@ -38,6 +38,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * repair</b> (measured 2026-10-10 on {@code 9906feb7}): one row "default 0" with the labels of three types (J2, J5, M1,
  * C1, M2, J1), likewise "default 1", "default 2", "bijdrage aan vouw 0" to "3", "onwaar" and "uit een afleiding", and
  * every defaults group NIET_GERAAKT in the coverage, since no row carried its name.
+ *
+ * <p>A form's name stays whole: the grammar allows ": " in a rule name, and a third fixture renames the two rules of
+ * {@code anchor/jutterswet-borgdeel} to "premie: basis" and "toeslag: basis" (verifier, ref and clingo pass it). <b>Red
+ * before the repair</b> (measured 2026-10-10 on {@code 732009b7}): one row "basis [J1] 2", since the report cut a name
+ * at its first ": ", and the rules of no form, the standings, in rows of their own ("stand Jutter.borgtarief: uit de
+ * invoer"); the lens on steps 5b2 and 5b3 of card tms-omschakeling found the cut. The report before the switch-over
+ * cut the same way.
  */
 class ScenarioRapportWitnessTest {
 
@@ -72,9 +79,8 @@ class ScenarioRapportWitnessTest {
         // matches facts of the branch alone and adds none
         List<String> spoor = geweigerd.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " "
                 + v.aantal()).sorted().toList();
-        assertEquals(List.of("defaults K:Jutter.uitgesloten [M] 2",
-                        "kenmerkstand Jutter.uitgesloten: waar uit een afleiding [M] 1"), spoor,
-                "de defaultsgroep vuurt haar default en haar overeenstemming op M, en het kenmerk volgt");
+        assertEquals(List.of("defaults K:Jutter.uitgesloten [M] 2"), spoor,
+                "de defaultsgroep vuurt haar default en haar overeenstemming op M; de stand van het kenmerk heeft geen rij");
         assertEquals(DekkingSoort.GEVUURD, dekking(geweigerd, "defaults K:Jutter.uitgesloten"));
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
         assertEquals(DekkingSoort.NIET_GERAAKT, dekking(geweigerd, "penninggerechtigd tenzij uitgesloten"));
@@ -95,19 +101,30 @@ class ScenarioRapportWitnessTest {
                 "defaults A:Melding.gemelde premie [M1, M2, M3, M4] 7",
                 "defaults K:Jutter.ijverig [J1, J2, J3, J4, J5, V1, V2, V3, V4, V5, V6, V7, V8, V9] 29",
                 "defaults K:Melding.dringend [M1, M2, M3, M4] 5",
-                "kenmerkstand Vondst.zwaar: onwaar [V2, V4, V5, V6, V8, V9] 6",
-                "kenmerkstand Vondst.zwaar: waar uit een afleiding [V1, V3, V7] 3",
-                "padstand Controle.melding.vondst.jutter naar Jutter.premie: link aanwezig [C1, C2] 3",
-                "padstand Controle.melding.vondst.jutter naar Jutter.premie: link afwezig [C3, C4] 2",
-                "padstand Melding.vondst.jutter naar Jutter.premie: link aanwezig [M1, M2, M3] 4",
-                "padstand Melding.vondst.jutter naar Jutter.premie: link afwezig [M4] 1",
-                "parameterstand zwaartegrens [] 1",
-                "stand Jutter.premie: uit een afleiding [J1, J2, J3, J4, J5] 6",
-                "zwaarte [V1, V3, V7] 3"), spoor, "één rij per vorm, en per regel zonder vorm haar eigen naam");
-        assertEquals(96, r.trace().totaal(), "het rapport telt elke vuring, onder welke rij ook");
+                "zwaarte [V1, V3, V7] 3"), spoor, "één rij per vorm, en geen rij voor een regel zonder vorm");
+        assertEquals(70, r.trace().totaal(), "het rapport telt elke vuring van een regel van een vorm");
         for (ScenarioResultaat.DekkingRegel d : r.dekking())
             assertEquals(DekkingSoort.GEVUURD, d.soort(), () -> d.regel() + " vuurde: " + spoor);
         assertEquals(6, r.dekking().size(), () -> r.dekking().toString());
+    }
+
+    @Test void een_vormnaam_met_een_dubbele_punt_blijft_heel() throws Exception {
+        Path borgdeel = GOLDEN.resolve("anchor").resolve("jutterswet-borgdeel");
+        Path d = Files.createTempDirectory("scenario-rapport");
+        String bron = Files.readString(borgdeel.resolve("ir.json"));
+        String hernoemd = bron.replace("\"name\": \"borgdeel van een jutter\"", "\"name\": \"premie: basis\"")
+                .replace("\"name\": \"jaardeel van een jutter\"", "\"name\": \"toeslag: basis\"");
+        assertTrue(hernoemd.contains("\"premie: basis\"") && hernoemd.contains("\"toeslag: basis\""),
+                "de hernoeming moet beide regels raken");
+        Path ir = Files.writeString(d.resolve("ir.json"), hernoemd);
+        ScenarioResultaat r = CaseRunner.rapport(ir, List.of(borgdeel.resolve("case1.json"))).get(0);
+        assertEquals(Status.PASS, r.status(), r::toString);
+        List<String> spoor = r.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " " + v.aantal())
+                .sorted().toList();
+        assertEquals(List.of("premie: basis [J1] 1", "toeslag: basis [J1] 1"), spoor,
+                "twee vormen, twee rijen, elk met de hele naam");
+        assertEquals(DekkingSoort.GEVUURD, dekking(r, "premie: basis"));
+        assertEquals(DekkingSoort.GEVUURD, dekking(r, "toeslag: basis"));
     }
 
     private static DekkingSoort dekking(ScenarioResultaat r, String regel) {

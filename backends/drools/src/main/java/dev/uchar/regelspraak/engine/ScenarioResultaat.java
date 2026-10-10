@@ -38,8 +38,9 @@ public record ScenarioResultaat(String naam, Status status, List<VerwachtingResu
     public record Trace(List<Vuring> vuringen) {
         public int totaal() { return vuringen.stream().mapToInt(Vuring::aantal).sum(); }
     }
-    /** The firings of one form of the document: its name (no version suffix), or the full name of a rule that belongs
-     *  to no form, the labels of the input instances its matches bound, and how often its rules fired. */
+    /** The firings of one form of the document: its name (no version suffix), the labels of the input instances its
+     *  matches bound, and how often its rules fired. A rule the lowering keeps for every form alike belongs to no form
+     *  and has no row. */
     public record Vuring(String regel, List<String> labels, int aantal) {}
 
     /** One lowered construct's coverage in this case. */

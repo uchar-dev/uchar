@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.uchar.regelspraak.engine.ScenarioResultaat;
-import dev.uchar.regelspraak.graaf.ProducentConsument;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.kern.VastStartpunt;
 import dev.uchar.regelspraak.model.Datatype;
@@ -237,9 +236,11 @@ public final class CaseRunner {
     }
 
     /** Whether construct {@code construct} fired: the report counts every firing of a rule of a form under the name of
-     *  that form as this method names a construct ({@link #luisteraar}), so a row of that name is the construct's. */
+     *  that form as this method names a construct ({@link #luisteraar}), so a row of that name is the construct's. The
+     *  name loses only a version suffix ({@link RegelSpraakModel#vormnaam}), so the versions of one rule share a row;
+     *  a form's name may itself hold ": ", which the grammar allows in a rule name, and stays whole. */
     private static boolean gevuurd(String construct, java.util.Set<String> gevuurdeRegels) {
-        return gevuurdeRegels.contains(ProducentConsument.basisNaam(construct));
+        return gevuurdeRegels.contains(RegelSpraakModel.vormnaam(construct));
     }
 
     /** What one case's replay reports beside its verdict: the firings per rule with the labels of the input beans they
@@ -1339,9 +1340,9 @@ public final class CaseRunner {
      *  form. The rules of the exec-model branch are named "&lt;form&gt;: &lt;part&gt;", so the part alone, which the
      *  report gave until the repair, put rules of different forms in one row: on golden jutterswet-premiestaffel the
      *  defaults of three object types under "default 0". A rule of no form, a standing or another rule the lowering
-     *  keeps for every form alike, counts under its own full name ("kenmerkstand Jutter.uitgesloten: waar uit een
-     *  afleiding"): there is no form to name it after, and that name says which member it keeps, where its part alone
-     *  would put the standings of different members in one row. */
+     *  keeps for every form alike ("kenmerkstand Jutter.uitgesloten: waar uit een afleiding"), is not reported: it is
+     *  no rule of the document, the report before the switch-over had none, and a consumer that names a row after a
+     *  form of the document has none to name it after. */
     private DefaultAgendaEventListener luisteraar(Waarneming w) {
         TmsTranspiler tms = bouw.execModelTranspiler();
         if (tms == null) throw new IllegalStateException("het scenariorapport speelt alleen de exec-model-tak");
@@ -1349,7 +1350,8 @@ public final class CaseRunner {
             @Override public void afterMatchFired(AfterMatchFiredEvent e) {
                 String naam = e.getMatch().getRule().getName();
                 String vorm = tms.vormVan(naam);
-                String regel = vorm != null ? ProducentConsument.basisNaam(vorm) : naam;
+                if (vorm == null) return;
+                String regel = RegelSpraakModel.vormnaam(vorm);
                 w.telling.merge(regel, 1, Integer::sum);
                 List<String> ls = w.labels.computeIfAbsent(regel, k -> new ArrayList<>());
                 for (Object o : e.getMatch().getObjects()) {
