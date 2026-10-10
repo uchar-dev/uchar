@@ -4126,6 +4126,18 @@ public final class TmsTranspiler {
      *  contributions, which merge into one fact, so the count is that of the union. */
     private Vouw unievouw(Expr.Functie f, Expr.InstanceSetUnion u, Lezingen lez) {
         Objecttype subject = lez.subject;
+        // one count answers a number of instances of one declared type: two populations leave whether two selections
+        // share an instance to the subtype lattice, which the reference interpreter faults on (WF-110 (d))
+        Objecttype populatie = null;
+        for (Expr.InstanceSetUnion.Tak t : u.takken()) {
+            if (t.elementType() == null) continue;
+            if (populatie == null) populatie = t.elementType();
+            else if (t.elementType() != populatie)
+                throw new Weigering("een InstanceSetUnion over twee populaties ('" + populatie.naam + "' en '"
+                        + t.elementType().naam + "', '" + snippet(u.bron()) + "'): één telling antwoordt een aantal over"
+                        + " één gedeclareerd type, en of twee selecties dan een instantie delen, is een vraag over de"
+                        + " subtyperelatie (WF-110 (d))");
+        }
         return vouwVoor(f, lez, (sleutel, naam) -> {
             List<Rule> regels = new ArrayList<>();
             List<Lezingen> lezingen = new ArrayList<>();
