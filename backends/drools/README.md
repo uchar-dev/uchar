@@ -74,8 +74,9 @@ consumer does.
    run without a fixpoint, at the cap or at the creation budget, or null. The cap is a fixed 100 000 on the exec-model
    and the DRL-text branch. On the truth-maintenance branch it is `max(10 000, FACTOR × R × N0)`, with R the rules of
    the KieBase and N0 the facts just before the fire, computed again at the start of every creation phase and never
-   lowered; FACTOR is 4 for now (`DroolsBackend.FACTOR`, with its reason). The cap is a safeguard against a fault of
-   the lowering, not a norm: the build refuses a cycle (`Kringen`), and a chain of creations ends at the creation
+   lowered; FACTOR is 4, at least twice the largest number of firings per rule per fact measured over the played
+   goldens and the scale model (`DroolsBackend.FACTOR`, with the measurement). The cap is a safeguard against a fault
+   of the lowering, not a norm: the build refuses a cycle (`Kringen`), and a chain of creations ends at the creation
    budget. Nothing can be read of a run without a fixpoint: `lees` and `zetAfgeleideWaarden` refuse it.
 4. `DroolsBackend.lees(build, session)`, or at the end `DroolsBackend.zetAfgeleideWaarden(build, session)`; or
    `lees(build, session, label)` and `zetAfgeleideWaarden(build, session, label)` with a function that gives the

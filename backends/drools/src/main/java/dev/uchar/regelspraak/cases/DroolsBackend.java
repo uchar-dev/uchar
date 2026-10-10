@@ -569,12 +569,18 @@ public final class DroolsBackend {
     static final int VAST_PLAFOND = 100_000;
 
     /**
-     * The factor of the fire cap of the truth-maintenance branch, {@code FACTOR × R × N0} ({@link #vuur}). Every firing
-     * of that branch makes or renews a logical fact of one rule on one subject, and without a cycle, which the build
-     * refuses ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so
-     * a run fires a number of times that grows with the rules and the facts. The scale models of card
-     * {@code tms-omschakeling} fired 0.56 and 0.74 times per rule per fact before the fire (2026-10-10); 4 is
-     * provisional, until the measurement over the played goldens sets it at twice the largest ratio it finds, at least 4.
+     * The factor of the fire cap of the truth-maintenance branch, {@code FACTOR × R × N0} ({@link #vuur}), with N0 the
+     * facts before the fire and, for a model with a creation, the facts at the start of each phase. Every firing of that
+     * branch makes or renews a logical fact of one rule on one subject, and without a cycle, which the build refuses
+     * ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so a run
+     * fires a number of times that grows with the rules and the facts. It is twice the largest ratio measured, rounded
+     * up, and at least 4. Measured 2026-10-10 (card {@code tms-omschakeling}, step 4): over the 248 goldens the branch
+     * plays ({@code TmsMeting}), a case needs at most 1.167 firings per rule per fact the cap counts
+     * ({@code anchor/jutterswet-maatschap}), counted per stretch of its run up to the start of the next creation phase;
+     * the scale model ({@code Schaalproef}) fires 0.563 times per rule per fact before its fire. Counted against the
+     * facts before the fire alone, a chain of creations from one input object reaches 48.7
+     * ({@code synth2-budgetgrens-onder}) while it uses a fiftieth of its cap, since the cap counts what each phase made;
+     * twice that ratio would loosen the cap of every model 24-fold, so it does not set the factor.
      */
     static final int FACTOR = 4;
 
