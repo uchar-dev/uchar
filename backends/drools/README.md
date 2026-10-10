@@ -195,7 +195,8 @@ A third branch, `DroolsBackend.Branch.TRUTH_MAINTENANCE`, lowered by `transpiler
 the engine's own reactivity — `NO_LOOP` on a rule that writes its own subject, salience from the stratification,
 opaque class reactivity, `update` only on a changed value, the `initEigen` guard of an initialisation — and what does
 that cost in rules, firings and control facts. The measurements are in that card's result; `TmsMeting` in the test
-tree produces them, and its javadoc says how to run it. On them the owner decided to build the branch out into the
+tree produced them, and since card `tms-omschakeling` it measures the two exec-model branches against each other over
+every golden either plays; its javadoc says how to run it. On them the owner decided to build the branch out into the
 replacement of the exec-model branch (PLAN §9, 2026-10-08), in four cards. The first,
 `tms-aggregaties-creatie-en-fouten`, added aggregations, object and fact creation and evaluation faults as logical
 facts; its `Result:` gives the measurements and the count of the corpus per family. The second,
@@ -231,8 +232,8 @@ default settles into an `Uitkomst`, and the member chains are reconciled by the 
 decision displaces a lower one through truth maintenance alone and gives it back when it goes. The rules of a member
 chain also wait on the positions above each default whose exception group the chain is, at any depth, as the
 reference interpreter reaches the exception groups of a default only where that default is reached (ch. 7.9): an
-exception group below a displaced default settles no `Uitkomst` and raises no fault at the fixpoint. The loose control
-facts the measurement (`TmsMeting`) counts apart are therefore none.
+exception group below a displaced default settles no `Uitkomst` and raises no fault at the fixpoint, so no control
+fact stands under a displaced default.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.zetAfgeleideWaarden(build, session)` puts
 the derivations on the beans: `setX(true)` per `HeeftKenmerk`, the attribute's setter per `Waarde`. Input on a
