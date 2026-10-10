@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>"Drager" / "carrier" below means the probe's HOST</b> — the OUTERMOST ch. 4.10 node on the path from
  * the value root down to the site, which the companion's condition re-evaluates
- * ({@code ExecModelTranspiler.Plek.drager}). It does NOT mean the {@code Expr.Onopgelost} carrier the loader
+ * ({@code Plek.drager} of the destructive lowering's {@code ExecModelTranspiler}, until card tms-omschakeling,
+ * 2026-10-10). It does NOT mean the {@code Expr.Onopgelost} carrier the loader
  * once built for an {@code IfThenElse}: since the union card (2026-09-10) all three cluster nodes are
  * ordinary {@code Expr} union nodes and nothing rides beside them.
  */

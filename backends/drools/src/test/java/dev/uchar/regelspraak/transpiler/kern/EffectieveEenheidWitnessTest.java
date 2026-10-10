@@ -179,7 +179,7 @@ class EffectieveEenheidWitnessTest {
     // Let INDEX beside them for one reason only — a BinderRef asked in isolation carries no route up to its own
     // binding (see EffectieveEenheid#lets).
 
-    /** The derivation as {@code ExecModelTranspiler} builds it, over the given Lets. */
+    /** The derivation as the loader and {@code TmsTranspiler} build it, over the given Lets. */
     private static EffectieveEenheid overLets(Expr... lets) {
         return new EffectieveEenheid(List.of(lets));
     }

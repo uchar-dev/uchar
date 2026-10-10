@@ -19,9 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The sibling {@code LetClusterWitnessTest} pins what the Let cluster COMPUTES. This file pins the other
  * half — what a walk that stops at a cluster node MISSES. All three of them ({@code Let},
  * {@code BinderRef}, {@code IfThenElse}) are ordinary {@code Expr} union nodes, so the generic
- * {@code Expr.bevat} descends them by construction; the walks pinned here are the HAND-WRITTEN ones in
- * {@code ExecModelTranspiler}, which match concrete v0 node shapes and therefore reach a cluster node's
- * children only by taking {@code letKinderen}. One that does not under-reports in SILENCE: a missing §9.5
+ * {@code Expr.bevat} descends them by construction; the walks pinned here were the HAND-WRITTEN ones in
+ * {@code ExecModelTranspiler}, the destructive lowering until card tms-omschakeling (2026-10-10), which
+ * matched concrete v0 node shapes and therefore reached a cluster node's children only by taking
+ * {@code letKinderen}. One that does not under-reports in SILENCE: a missing §9.5
  * fout-companion reads as "consistent", a missing read reads as "nothing to watch". Each witness below is a
  * model on which that blindness is OBSERVABLE, and each was measured against {@code ref/} on this exact
  * model+case before it was pinned here — ref is the arbiter, this backend the third executor.
@@ -46,7 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       Let body is always ENTERED (ch. 10.6 clauses 1+3; clause 2 may still cut it short at a read) — so
  *       blindness there would MISS a real fault, and what keeps the companion silent is its path probe, which
  *       re-evaluates the outermost ch. 4.10 node on the path and deposits only when a §6.5/§6.6 site under it
- *       really ran (that node is the probe's HOST — {@code ExecModelTranspiler.Plek.drager}). A companion
+ *       really ran (that node is the probe's HOST — {@code Plek.drager} of the destructive lowering's
+ *       {@code ExecModelTranspiler}, until card tms-omschakeling). A companion
  *       fired for code that never executed is INCONSISTENT where ref says consistent, which is a wrong ANSWER, not an
  *       over-cautious refusal. Each is pinned beside the flank where the fault IS real.</li>
  * </ul>
