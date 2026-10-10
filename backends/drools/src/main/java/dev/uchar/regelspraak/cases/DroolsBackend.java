@@ -318,8 +318,10 @@ public final class DroolsBackend {
                     + " zonder voegIn in de sessie kwam, heeft er geen; geef alle bonen in één Invoer aan een verse"
                     + " sessie, en verander tussen twee fires hun waarden met update");
         Map<Object, Objecttype> typen = new IdentityHashMap<>();
+        // a case of ten thousand objects has a handful of bean classes
+        Map<Class<?>, Objecttype> perKlasse = new HashMap<>();
         for (Object boon : bonen)
-            if (typen.put(boon, objecttype(build, boon)) != null)
+            if (typen.put(boon, perKlasse.computeIfAbsent(boon.getClass(), k -> objecttype(build, boon))) != null)
                 throw new IllegalArgumentException("voegIn: de boon " + naam(boon) + " staat twee keer in de invoer");
         List<Object> feiten = new ArrayList<>(bonen);
         for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
