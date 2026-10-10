@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
+import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.transpiler.tms.Schrijversconflict;
 
 import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
@@ -13,6 +15,7 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -50,6 +53,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
  *       {@link TmsFilterfoutWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
  *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
+ *   <li>{@code lees} with labels (the fix round of step 3, point 5): on the red case
+ *       {@code corpus/rood/jutterswet-dubbele-melding}, case 1, two writers give V's meldingsdatum two dates, and the
+ *       fault of the fixpoint names V as "V, een Vondst", where {@code lees} without labels names it by type and
+ *       identity; the write-back with the same labels throws the fault in the same sentence. The reference interpreter
+ *       names V alike, "V, a Vondst", and the ASP runner gives "V" beside the fault (measured 2026-10-10; gate 8 pins
+ *       both). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}): the row does not compile there,
+ *       "method lees in class dev.uchar.regelspraak.cases.DroolsBackend cannot be applied to given types", since the
+ *       entry read without labels only.</li>
  *   <li>On the exec-model and the DRL-text branch {@code lees} refuses: their rules write the beans as they fire.</li>
  *   <li>The entry is public, the seams of the scale harness and the witnesses are not.</li>
  * </ul>
@@ -196,6 +207,30 @@ class TmsAfnemerWitnessTest {
         });
     }
 
+    @Test void lees_met_labels_noemt_het_object_van_een_fout_bij_zijn_label() throws Exception {
+        Path ir = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding", "ir.json");
+        JsonNode c = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling("case1-beide-schrijvers-gelden.json")));
+        CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c, (bouw, sessie, labels) -> {
+            Map<Object, String> naarLabel = new IdentityHashMap<>();
+            labels.forEach((l, boon) -> naarLabel.put(boon, l));
+            Object v = labels.get("V");
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint, at which the fault stands");
+            String zin = "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \"melding op"
+                    + " vinddag\" schrijft 2026-03-04 en de regel \"melding op aanspoeldag\" schrijft 2026-03-01 in het"
+                    + " attribuut meldingsdatum van %s; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)";
+            List<Fout> gelabeld = DroolsBackend.lees(bouw, sessie, naarLabel::get).fouten();
+            assertEquals(1, gelabeld.size(), () -> "one fault: " + gelabeld);
+            assertEquals(String.format(zin, "V, een Vondst"), gelabeld.get(0).melding(), "named by its label");
+            assertEquals(String.format(zin, "een Vondst (" + v.getClass().getSimpleName() + "@"
+                    + Integer.toHexString(System.identityHashCode(v)) + ")"),
+                    DroolsBackend.lees(bouw, sessie).fouten().get(0).melding(), "without labels, by type and identity");
+            assertEquals(gelabeld.get(0).melding(), assertThrows(Schrijversconflict.class,
+                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie, naarLabel::get)).getMessage(),
+                    "the fault the write-back throws, named alike");
+            return null;
+        });
+    }
+
     @Test void lees_weigert_op_de_andere_takken() throws Exception {
         for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
             DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(TmsDocumenten.model(List.of("erkend",
@@ -219,6 +254,7 @@ class TmsAfnemerWitnessTest {
                 d.getDeclaredMethod("voegIn", DroolsBackend.Build.class, KieSession.class, Invoer.class),
                 d.getDeclaredMethod("vuur", DroolsBackend.Build.class, KieSession.class),
                 d.getDeclaredMethod("lees", DroolsBackend.Build.class, KieSession.class),
+                d.getDeclaredMethod("lees", DroolsBackend.Build.class, KieSession.class, Function.class),
                 d.getDeclaredMethod("zetAfgeleideWaarden", DroolsBackend.Build.class, KieSession.class),
                 d.getDeclaredMethod("zetAfgeleideWaarden", DroolsBackend.Build.class, KieSession.class, Function.class)))
             assertTrue(Modifier.isPublic(m.getModifiers()) && Modifier.isStatic(m.getModifiers()), m.toString());

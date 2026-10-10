@@ -487,7 +487,8 @@ public final class DroolsBackend {
      * creations made; the evaluation faults that stand, as data and not thrown; and the §9.5 deposits, the
      * {@code Inconsistentie} facts. A consumer that fires one session of a model without a creation more than once reads
      * every answer but the last here: the beans hold the input alone until {@link #zetAfgeleideWaarden}, which writes
-     * exactly this, and after which the session does not fire again. A fault names its object by type and identity.
+     * exactly this, and after which the session does not fire again. A fault names its object by type and identity,
+     * and by its label in {@link #lees(Build, KieSession, Function)}.
      *
      * <p>It reads only a session whose last {@link #vuur} reached its fixpoint, so what it gives is always a fixpoint:
      * that of the input as it stood at that {@code vuur}; an {@code update} after it shows at the next one.
@@ -500,12 +501,27 @@ public final class DroolsBackend {
      *                                       says which
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
+        return lezing(build, sessie, null);
+    }
+
+    /** As {@link #lees(Build, KieSession)}, with {@code label} giving the case label of an input bean and null for an
+     *  object a creation made, so that a fault in the {@link Fixpunt} that names its object names it as the reference
+     *  interpreter does: "V, een Vondst" for two writers that disagree (RUNTIME-SEMANTICS ch. 5.7) and for a timeline
+     *  input in the other convention (ch. 8.4), "een aangemaakte Vondst" for a made object, where the variant without
+     *  labels gives the type and the identity. The names are those {@link #zetAfgeleideWaarden(Build, KieSession,
+     *  Function)} gives the faults it throws. */
+    public static Fixpunt lees(Build build, KieSession sessie, Function<Object, String> label) {
+        Objects.requireNonNull(label, "label");
+        return lezing(build, sessie, label);
+    }
+
+    private static Fixpunt lezing(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         if (build.tmsTranspiler() == null)
             throw new UnsupportedOperationException("lees leest wat de tak met truth maintenance afleidde; op de "
                     + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de bonen");
-        return build.tmsTranspiler().lees(sessie, null);
+        return build.tmsTranspiler().lees(sessie, label);
     }
 
     /**
