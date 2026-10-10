@@ -84,6 +84,13 @@ class TmsIndexWitnessTest {
                 "nieuw-object", "herkomst", "ontvanger-bron"), Set.of("lege-schrijver-onderwerp", "doelstand-doel"));
     }
 
+    /** Step 2: the bean-field joins of the one-step range of a fold and of an allocation, where the reference field of
+     *  the member or of the subject is the object on the other side, and of the role filler of a role check. */
+    @Test
+    void beanveldjoins() {
+        geindexeerd(Set.of("bereik", "verdelingsbereik", "rolvuller"), Set.of());
+    }
+
     /** Asserts that every kind of {@code soorten} occurs in the documents, and that every constraint of those kinds and
      *  of {@code zeldzaam}, which need not occur, is a join with an equality index. */
     private static void geindexeerd(Set<String> soorten, Set<String> zeldzaam) {

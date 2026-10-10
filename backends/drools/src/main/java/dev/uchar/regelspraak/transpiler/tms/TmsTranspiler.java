@@ -1799,9 +1799,10 @@ public final class TmsTranspiler {
             throw new Weigering("de join van de verdeling heeft geen beanveld — "
                     + FactModelGenerator.geenJoinveldReden(model, drager, rol, ander) + " (§13.3.9 opslagrichting)");
         Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
-        return lid -> lid.onderwerp.expr(id("verdelingsbereik"), lid.drager, voorwaarts
-                ? (e, s) -> veld.apply(s) == e
-                : (e, s) -> veld.apply(e) == s);
+        return lid -> {
+            if (voorwaarts) zelfde(lid.onderwerp, "verdelingsbereik", lid.drager, e -> e, veld::apply);
+            else zelfde(lid.onderwerp, "verdelingsbereik", lid.drager, veld::apply);
+        };
     }
 
     // ---------------- object and fact creation ----------------
@@ -4377,9 +4378,10 @@ public final class TmsTranspiler {
             throw new Weigering("de aggregatie-join van '" + wat + "' heeft geen beanveld — "
                     + FactModelGenerator.geenJoinveldReden(model, drager, rol, doel) + " (§13.3.9 opslagrichting)");
         Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
-        Consumer<Lezingen> koppel = lid -> lid.onderwerp.expr(id("bereik"), lid.drager, voorwaarts
-                ? (e, s) -> veld.apply(s) == e
-                : (e, s) -> veld.apply(e) == s);
+        Consumer<Lezingen> koppel = lid -> {
+            if (voorwaarts) zelfde(lid.onderwerp, "bereik", lid.drager, e -> e, veld::apply);
+            else zelfde(lid.onderwerp, "bereik", lid.drager, veld::apply);
+        };
         String lijstveld = Namen.ident(rol, false);
         return new Bereik(koppel, lid -> {
             koppel.accept(lid);
@@ -5504,7 +5506,7 @@ public final class TmsTranspiler {
             Variable<Object> vuller = (Variable<Object>) DSL.declarationOf(klasse, "$vuller_" + id("rol"));
             Variable<Object> aantal = DSL.declarationOf(Object.class, "$vullers_" + id("rol"));
             Function<Object, Object> getter = Accessors.getter(klasse, veld);
-            standen.add(DSL.accumulate(PatternDSL.pattern(vuller).expr(id("rolvuller"), s, (x, o) -> getter.apply(x) == o),
+            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(vuller), "rolvuller", s, getter::apply),
                     DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), vuller).as(aantal)));
             return nieuw(sleutel, aantal);
         }
