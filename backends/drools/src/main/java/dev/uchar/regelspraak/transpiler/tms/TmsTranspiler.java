@@ -12,7 +12,6 @@ import dev.uchar.regelspraak.ir.ResolvedDagsoort;
 import dev.uchar.regelspraak.ir.ResolvedFeitCreatie;
 import dev.uchar.regelspraak.ir.ResolvedObjectCreatie;
 import dev.uchar.regelspraak.ir.ResolvedRegel;
-import dev.uchar.regelspraak.ir.ResolvedStartpunt;
 import dev.uchar.regelspraak.ir.ResolvedUniciteit;
 import dev.uchar.regelspraak.ir.ResolvedUniciteitUnie;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
@@ -557,10 +556,11 @@ public final class TmsTranspiler {
         if (samenstelling != null) weiger("defaults", "effectieve stapels", samenstelling);
         for (Stapels.Stapel st : effectief) regels.addAll(meet("defaults", stapelnaam(st), () -> stapelregels(st)));
         regels.addAll(verschilregels());
-        for (ResolvedStartpunt sp : model.resolvedStartpunten)
-            weiger("startpuntbepaling", sp.tijdlijn(), "een StartPointDetermination: een variabel startpunt draagt de"
-                    + " truth-maintenance-tak nog niet; geen golden met cases heeft er een, en de caselezer legt geen"
-                    + " tijdlijn op zo'n raster");
+        // a StartPointDetermination is a declaration that fires nothing: it says which member anchors a grid with a
+        // variable start (RUNTIME-SEMANTICS ch. 3.2), and the reference interpreter faults only where a bucket of such
+        // a grid is laid. Its anchor member is an ordinary date attribute that ordinary rules write, so a document that
+        // declares one and reads or writes no timeline on its grid plays; a form that does read or write one is
+        // refused by name where it asks for the member (tijdlid), and the case reader refuses a case value on it
         // a day-kind definition is no form that fires: the forms that step or count in its day kind compile it where
         // they lower (dagsoortpredikaat), so a definition no form uses is never compiled and refuses nothing
         // the contributions of the folds the lowered forms read; a fold of a refused form left none here

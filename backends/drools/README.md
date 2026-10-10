@@ -504,8 +504,10 @@ built, never as a silent fall:
   reference interpreter refuses to integrate, in its words; a rate whose denominator is not the unit of the grid, which
   `rsTijdTotaal` would weigh unit-blind; a sum or a total per member over a timeline in a fold over a created relation,
   whose made links have no place in the fold order that names the member given as a bucket scalar; the total without a clip
-  over a timeline a form writes, which the reference interpreter refuses as well; a timeline on a variable start point
-  and its `StartPointDetermination`; a time-dependent parameter, which the goldens with cases read in a `TemporalRead`
+  over a timeline a form writes, which the reference interpreter refuses as well; every form that reads or writes a
+  timeline on a variable start point (the `StartPointDetermination` itself is a declaration and refuses nothing, so a
+  document that declares one and uses no timeline on its grid plays; witness `TmsStartpuntWitnessTest`); a
+  time-dependent parameter, which the goldens with cases read in a `TemporalRead`
   that the loader refuses for every branch; and what the reference interpreter refuses as well: a member on a grid of
   more than one period, a fold over a member on a timeline other than a sum or a total, a uniqueness key with two
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a

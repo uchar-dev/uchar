@@ -94,7 +94,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * asOfDate-bucket convention carries the total", and the ASP runner leaves the total leeg.
  * <li><b>A timeline on a variable start point</b>, laid per object by a StartPointDetermination: the case reader
  * lays no timeline on such a grid, so the case carries none, and the reference interpreter and the ASP runner answer
- * the total over no timeline, 0. The rule and the determination are each refused.
+ * the total over no timeline, 0. The rule is refused; the determination itself refuses nothing
+ * ({@code TmsStartpuntWitnessTest}).
  * <li><b>A parameter on a timeline</b>, read as one value: the reference interpreter refuses it, "parameter
  * "penningbedrag" is granular; reading a vintage in a rule is ch. 8 scope", and so does the ASP runner.
  * <li><b>A dimensioned attribute on a timeline</b>, read by a dimension cell, "zijn omzet in k2", and by the total of
@@ -312,10 +313,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                 List.of("tms-transpiler SKIP: regel: peilsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                                 + " waterstand') over het attribuut 'waterstand' van Schouwveld op een tijdlijn met een"
                                 + " variabel startpunt: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met"
-                                + " cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster",
-                        "tms-transpiler SKIP: startpuntbepaling: boekjaar — een StartPointDetermination: een variabel"
-                                + " startpunt draagt de truth-maintenance-tak nog niet; geen golden met cases heeft er een,"
-                                + " en de caselezer legt geen tijdlijn op zo'n raster")));
+                                + " cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster")));
         // a parameter on a timeline, read as one value
         JsonNode parameterzaak = TmsTijdlijnDocumenten.zaak("2024-06-01", List.of(instantie("J1", "Jutter", Map.of(),
                 List.of(), Map.of(), Map.of())), List.of(waarde("J1", "opbrengst", "7")));
