@@ -45,7 +45,13 @@ The two refuse in the SAME WORDS, which is the point: before this card
 implemented in this card` / `not translated`), a message that names no
 defect — measured with WF-098 on 2026-09-10 and recorded there.
 
-The Drools backend does not reach fire: its transpiler SKIPs the rule
-("waarde buiten scope"), because the v0 constant reader carries no `de dag`
-outside `kern.Dagsoorten`, its day-kind predicate compiler. That is listed
-with its reason in gate 8's Drools exclusion list rather than pinned here.
+The Drools red run drives the exec-model branch, which derives with truth
+maintenance since the card `tms-omschakeling` (2026-10-10). It faults in
+the reference interpreter's words: `fout in de regel "jaartal van een
+baken": a BoundDay is the bound day of a day-kind definition (ch. 3.7);
+outside a day-kind evaluation it denotes nothing`, pinned up to `day-kind
+definition`. Until that card the red run drove the destructive lowering,
+whose transpiler SKIPped the rule ("waarde buiten scope") because the v0
+constant reader carried no `de dag` outside `kern.Dagsoorten`, its
+day-kind predicate compiler; gate 8 listed the case with that reason in
+its Drools exclusion list.

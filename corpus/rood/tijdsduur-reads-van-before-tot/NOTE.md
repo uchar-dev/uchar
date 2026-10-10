@@ -49,11 +49,16 @@ prefix, and a tijdsduur's two operands have no such structure.
 
 ## Drools
 
-Not carried, but the rule DOES run: the backend enforces no van/tot
-**order** on a tijdsduur, so the ch. 10.6 barrier this witness plants
-never becomes a fault and the session reaches a model — `NOFAULT`,
-exactly as its `begrensd-reads-bounds-in-order` twin. Listed with that
-reason in `scripts/check-rood.sh`.
+Carried since the card `tms-omschakeling` (2026-10-10): the red run
+drives the exec-model branch, which derives with truth maintenance, and
+it faults as ref and clingo do: `fout in de regel "vaartduur van een
+vaart": the evaluationDate context value needs an evaluation date; the
+case carries asOfDate null`, pinned up to `an evaluation date`. Until
+that card the red run drove the destructive lowering, which enforced no
+van/tot **order** on a tijdsduur, so the ch. 10.6 barrier this witness
+plants never became a fault and the session reached a model — `NOFAULT`,
+exactly as its `begrensd-reads-bounds-in-order` twin then; it was listed
+with that reason in `scripts/check-rood.sh`.
 
 Until 2026-09-09 this paragraph read the other way — "the reaching rule
 does not lower, a transpiler SKIP on an unregistered `rekendatum`

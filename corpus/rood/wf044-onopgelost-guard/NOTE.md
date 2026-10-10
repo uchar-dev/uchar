@@ -24,12 +24,17 @@ creation, and each names the position:
 - ASP backend — `Unresolved condition reached in translation: this rule
   fails observably`.
 
-The Drools backend does not carry the form: both of its transpiler
-branches refuse the creation by construct, because a guard that lowers to
-neither the anker's nor the doel's pattern cannot be dropped without
-firing the rule unconditionally and over-creating the relation. That
-refusal is a not-carried outcome, listed with its reason in gate 8's
-Drools leg rather than pinned as a fault at fire.
+The Drools red run drives the exec-model branch, which derives with truth
+maintenance since the card `tms-omschakeling` (2026-10-10). It carries the
+form and faults where the evaluation reaches the marker, in the reference
+interpreter's words: `fout in de regel "vakbeseining door het kustvak":
+Unresolved condition reached in evaluation`, the fragment pinned for it.
+Until that card the red run drove the destructive lowering; both of its
+transpiler branches refused the creation by construct, because a guard
+that lowers to neither the anker's nor the doel's pattern cannot be
+dropped without firing the rule unconditionally and over-creating the
+relation. That refusal was a not-carried outcome, listed with its reason
+in gate 8's Drools leg.
 
 A harness in which this case stops failing has started guessing where the
 spec says "cannot express" — and, worse than in the value position, it

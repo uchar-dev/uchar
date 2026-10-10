@@ -55,6 +55,13 @@ fault happens, in clingo by which bound is refused first.
 
 ## The Drools divergence this case exposes
 
+Since the card `tms-omschakeling` (2026-10-10) the red run drives the
+exec-model branch, which derives with truth maintenance. It faults on the
+minimum's division as ref does: `deling door nul in de regel
+"begrenswaarde van een jutter": 1 gedeeld door 0 — …`, pinned up to
+`1 gedeeld door 0`, the operands of the minimum. The divergence below is
+that of the destructive lowering, which the red run drove until then.
+
 The Drools backend evaluates a `Clamp`'s **maximum before its
 minimum** — the reverse of ch. 5.11 — and therefore runs this document
 to a model without faulting: the barrier in the maximum fires before the
@@ -67,6 +74,6 @@ minimum's division is reached. Measured both ways on this exact shape:
 
 The two tables are mirror images, which is what makes this an *order*
 divergence rather than a missing check — Drools does evaluate the
-division, just from the other end. It is listed in
-`scripts/check-rood.sh`'s Drools exclusion list with that reason.
-Correcting the backend is a card of its own.
+division, just from the other end. It was listed in
+`scripts/check-rood.sh`'s Drools exclusion list with that reason until
+the card `tms-omschakeling`.
