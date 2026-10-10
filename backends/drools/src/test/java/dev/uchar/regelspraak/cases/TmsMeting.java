@@ -3,11 +3,19 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Stuurfeit;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.kie.api.KieBase;
 import org.kie.api.definition.KiePackage;
+import org.kie.api.event.rule.AfterMatchFiredEvent;
+import org.kie.api.event.rule.AgendaEventListener;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
+import org.kie.api.event.rule.ObjectDeletedEvent;
+import org.kie.api.event.rule.ObjectInsertedEvent;
+import org.kie.api.event.rule.ObjectUpdatedEvent;
+import org.kie.api.event.rule.RuleRuntimeEventListener;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +41,12 @@ import java.util.stream.Stream;
  * <p>Per golden, and per branch that plays it: the firings; the time of the fire and that of the write-back, apart; the
  * build of the document; R, the rules in the KieBase; N0, the facts in the session just before the fire; and the
  * largest firings / (R × N0) of one case, from which the factor of the fire cap is set ({@code DroolsBackend.FACTOR}):
- * the cap holds per session, so per case. Every case is set up as the replay sets it up ({@link CaseRunner#metSessie},
+ * the cap holds per session, so per case. A model with a creation fires in phases, and the driver computes the cap
+ * again over the facts at the start of every phase, so beside it the harness gives the factor a case needs under that
+ * cap: per stretch of the run, from its start or the start of a phase to the next, the firings at its end over R times
+ * the largest N the cap has counted by then, the largest of those; it equals firings / (R × N0) without a creation.
+ * One extra fire per case measures it, with listeners, through the seam with a cap no golden reaches, and holds its
+ * phases to the cap the driver computed. Every case is set up as the replay sets it up ({@link CaseRunner#metSessie},
  * through {@link DroolsBackend#voegIn}), and fired and written back through the backend's entry as a consumer does:
  * {@link DroolsBackend#vuur} under the cap a consumer gets, then {@link DroolsBackend#zetAfgeleideWaarden}, each timed
  * on its own. The replay's listener for two writers of one attribute is not on the session, as with a consumer. Then
@@ -124,7 +137,9 @@ public final class TmsMeting {
                 .append(" R: de regels van de KieBase. N0: de feiten in de sessie vlak vóór het vuren (op de nieuwe tak ook")
                 .append(" de `Emmerinvoer`- en `Lijstplaats`-feiten van `voegIn`), opgeteld over de cases. max v/(R×N0):")
                 .append(" het grootste vuringen / (R × N0) van één case, want het plafond geldt per")
-                .append(" sessie; \"–\" waar elke case N0 = 0 heeft.\n");
+                .append(" sessie; \"–\" waar elke case N0 = 0 heeft. max v/(R×N) per fase: wat een case van de factor")
+                .append(" van het plafond vraagt nu de driver het plafond bij elke creatiefase opnieuw uitrekent over de")
+                .append(" feiten op dat moment (zie de samenvatting); gemeten in één extra run per case, niet getimed.\n");
         uit.append("- Wandkloktijden hangen af van machine en belasting; de verhouding tussen de takken is het gegeven.\n\n");
     }
 
@@ -180,8 +195,12 @@ public final class TmsMeting {
                         Vuurmeting m = vuur(this, c, t.getKey(), t.getValue().runner, i == HERHALINGEN - 1);
                         if (i >= 0) metingen.computeIfAbsent(t.getKey(), x -> new ArrayList<>()).add(m);
                     }
-                for (Map.Entry<DroolsBackend.Branch, Tak> t : takken.entrySet())
-                    t.getValue().tel(this, caseNamen.get(c), metingen.get(t.getKey()));
+                for (Map.Entry<DroolsBackend.Branch, Tak> t : takken.entrySet()) {
+                    List<Vuurmeting> ms = metingen.get(t.getKey());
+                    Fasen f = fasen(this, c, t.getKey(), t.getValue().runner,
+                            ms.stream().mapToInt(Vuurmeting::vuringen).max().orElseThrow());
+                    t.getValue().tel(this, caseNamen.get(c), ms, f);
+                }
             }
             // the KieBases go once their golden is measured
             for (Tak t : takken.values()) t.runner = null;
@@ -219,6 +238,72 @@ public final class TmsMeting {
         }
     }
 
+    /** What the run of one case needs of the factor of the fire cap: {@code verhouding}, the largest over its stretches
+     *  of the firings at the end of a stretch over R times the largest number of facts the cap has counted by then,
+     *  with those firings and that number; -1 where every count is 0. */
+    private record Fasen(double verhouding, long vuringen, long n) {}
+
+    /** Fires case {@code c} of {@code g} on {@code tak} once more, through the seam with the factor 1000 and floor 1, a
+     *  cap no golden reaches that the driver computes like the public one, with a listener on the firings and one on
+     *  the facts that marks every {@code Creatiefase} the driver inserts, with the firings so far and the facts the
+     *  session then holds: the driver computes the cap again right after that insertion, over the same count. The run
+     *  must give the firings of the measured fires, its listener must count what the driver reports, and the cap it
+     *  ends with must be 1000 × R times the largest of the counts; else the measurement fails. */
+    private static Fasen fasen(Golden g, int c, DroolsBackend.Branch tak, CaseRunner runner, int vuringen) {
+        final double factor = 1000;
+        try {
+            return runner.metSessie(g.cases.get(c), (bouw, sessie, labels) -> {
+                long regels = regels(bouw.kieBase());
+                long[] gevuurd = {0};
+                List<long[]> starts = new ArrayList<>();
+                starts.add(new long[] {0, sessie.getFactCount()});
+                AgendaEventListener teller = new DefaultAgendaEventListener() {
+                    @Override public void afterMatchFired(AfterMatchFiredEvent e) {
+                        gevuurd[0]++;
+                    }
+                };
+                RuleRuntimeEventListener fase = new RuleRuntimeEventListener() {
+                    @Override public void objectInserted(ObjectInsertedEvent e) {
+                        if (e.getObject() instanceof Creatiefase) starts.add(new long[] {gevuurd[0], sessie.getFactCount()});
+                    }
+
+                    @Override public void objectUpdated(ObjectUpdatedEvent e) {}
+
+                    @Override public void objectDeleted(ObjectDeletedEvent e) {}
+                };
+                sessie.addEventListener(teller);
+                sessie.addEventListener(fase);
+                DroolsBackend.Vuring vuring = DroolsBackend.vuur(bouw, sessie, factor, 1);
+                sessie.removeEventListener(teller);
+                sessie.removeEventListener(fase);
+                if (vuring.geenFixpunt() != null) throw new IllegalStateException(vuring.geenFixpunt());
+                if (vuring.vuringen() != vuringen || gevuurd[0] != vuringen)
+                    throw new IllegalStateException("de run met luisteraars vuurde " + vuring.vuringen() + " keer, de"
+                            + " luisteraar telde " + gevuurd[0] + ", de gemeten runs " + vuringen);
+                double hoogste = -1;
+                long hoogsteVuringen = 0, hoogsteN = 0, grootste = 0;
+                for (int k = 0; k < starts.size(); k++) {
+                    grootste = Math.max(grootste, starts.get(k)[1]);
+                    long eind = k + 1 < starts.size() ? starts.get(k + 1)[0] : vuring.vuringen();
+                    if (grootste == 0) continue;
+                    double v = eind / ((double) regels * grootste);
+                    if (v > hoogste) {
+                        hoogste = v;
+                        hoogsteVuringen = eind;
+                        hoogsteN = grootste;
+                    }
+                }
+                long plafond = (long) Math.min(Integer.MAX_VALUE, Math.max(1, Math.ceil(factor * regels * grootste)));
+                if (vuring.plafond() != plafond)
+                    throw new IllegalStateException("het plafond van de driver is " + vuring.plafond() + ", de fasen geven "
+                            + factor + " × " + regels + " × " + grootste + " = " + plafond);
+                return new Fasen(hoogste, hoogsteVuringen, hoogsteN);
+            });
+        } catch (RuntimeException e) {
+            throw new IllegalStateException(g.naam + ", " + g.caseNamen.get(c) + " op " + tak + " (fasen): " + e, e);
+        }
+    }
+
     /** The round over every measured golden before the first measurement: the engine and the build that all documents
      *  share are warm once the first golden is measured. Nothing of it is kept. */
     private static void rondeVooraf(List<Golden> gemeten) throws Exception {
@@ -244,6 +329,10 @@ public final class TmsMeting {
         double verhouding = -1, plafondDeel = -1;
         String verhoudingCase, plafondCase;
         long verhoudingVuringen, verhoudingN0, verhoudingPlafond;
+        /** The case that needs the largest factor of the cap counted per phase ({@link Fasen}), -1 while none does. */
+        double fasen = -1;
+        String fasenCase;
+        long fasenVuringen, fasenN;
         /** Per defaults group: the control facts after the fire summed over the cases, and their maximum in one. */
         final Map<String, long[]> stuurfeiten = new LinkedHashMap<>();
 
@@ -264,10 +353,17 @@ public final class TmsMeting {
             return t;
         }
 
-        /** Adds the measured fires of one case: the medians of the times, the firings, N0, the ratios, and the control
-         *  facts of its last fire. The firings and N0 must not differ between the fires but for the range the table
-         *  shows; N0 differing means the set-up is not that of one case. */
-        void tel(Golden g, String zaak, List<Vuurmeting> ms) {
+        /** Adds the measured fires of one case and what its run needs of the factor of the cap: the medians of the
+         *  times, the firings, N0, the ratios, and the control facts of its last fire. The firings and N0 must not
+         *  differ between the fires but for the range the table shows; N0 differing means the set-up is not that of
+         *  one case. */
+        void tel(Golden g, String zaak, List<Vuurmeting> ms, Fasen f) {
+            if (f.verhouding() > fasen) {
+                fasen = f.verhouding();
+                fasenCase = zaak;
+                fasenVuringen = f.vuringen();
+                fasenN = f.n();
+            }
             vuurMs += mediaan(ms.stream().mapToLong(Vuurmeting::vuurNanos).toArray()) / 1e6;
             terugzetMs += mediaan(ms.stream().mapToLong(Vuurmeting::terugzetNanos).toArray()) / 1e6;
             somMs += mediaan(ms.stream().mapToLong(m -> m.vuurNanos() + m.terugzetNanos()).toArray()) / 1e6;
@@ -329,8 +425,8 @@ public final class TmsMeting {
         uit.append("## Per golden\n\n");
         uit.append("| golden | cases | vuringen oud | vuringen nieuw | vuren oud (ms) | vuren nieuw (ms) | terugzetten oud (ms)")
                 .append(" | terugzetten nieuw (ms) | bouw oud (ms) | bouw nieuw (ms) | R oud | R nieuw | N0 oud | N0 nieuw")
-                .append(" | max v/(R×N0) oud | max v/(R×N0) nieuw |\n");
-        uit.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
+                .append(" | max v/(R×N0) oud | max v/(R×N0) nieuw | max v/(R×N) per fase nieuw |\n");
+        uit.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n");
         for (Golden g : gemeten) {
             Tak o = g.takken.get(OUD), n = g.takken.get(NIEUW);
             uit.append("| ").append(g.naam).append(" | ").append(g.cases.size());
@@ -348,6 +444,7 @@ public final class TmsMeting {
             cel(uit, g, NIEUW, n, t -> String.valueOf(t.n0));
             cel(uit, g, OUD, o, t -> t.verhouding < 0 ? "–" : verhouding(t.verhouding));
             cel(uit, g, NIEUW, n, t -> t.verhouding < 0 ? "–" : verhouding(t.verhouding));
+            cel(uit, g, NIEUW, n, t -> t.fasen < 0 ? "–" : verhouding(t.fasen));
             uit.append(" |\n");
         }
         uit.append('\n');
@@ -420,6 +517,25 @@ public final class TmsMeting {
                         .append(" afgerond en ten minste 4: ").append(Math.max(4, (int) Math.ceil(2 * hoogste)))
                         .append(" (het schaalmodel van `Schaalproef` komt daar nog bij).\n\n");
             }
+        }
+        List<Golden> perFase = gemeten.stream().filter(g -> g.takken.containsKey(NIEUW) && g.takken.get(NIEUW).fasen >= 0)
+                .sorted((x, y) -> Double.compare(y.takken.get(NIEUW).fasen, x.takken.get(NIEUW).fasen)).toList();
+        uit.append("### De hoogste vuringen/(R × N) per fase van één case, nieuwe tak\n\n");
+        uit.append("Per stuk van de run, vanaf de start of het begin van een creatiefase tot het volgende: de vuringen aan het")
+                .append(" eind over R maal de grootste N die het plafond tot dan telde; per case het grootste. Zonder")
+                .append(" creatie gelijk aan vuringen/(R × N0).\n\n");
+        uit.append("| golden | case | vuringen | R | N | v/(R×N) | v/(R×N0) van de golden |\n|---|---|---:|---:|---:|---:|---:|\n");
+        for (Golden g : perFase.subList(0, Math.min(10, perFase.size()))) {
+            Tak t = g.takken.get(NIEUW);
+            uit.append("| ").append(g.naam).append(" | ").append(t.fasenCase).append(" | ").append(t.fasenVuringen)
+                    .append(" | ").append(t.regels).append(" | ").append(t.fasenN).append(" | ").append(verhouding(t.fasen))
+                    .append(" | ").append(t.verhouding < 0 ? "–" : verhouding(t.verhouding)).append(" |\n");
+        }
+        if (!perFase.isEmpty()) {
+            double hoogste = perFase.get(0).takken.get(NIEUW).fasen;
+            uit.append("\nDe hoogste per fase op de nieuwe tak is ").append(verhouding(hoogste))
+                    .append("; tweemaal, naar boven afgerond en ten minste 4: ")
+                    .append(Math.max(4, (int) Math.ceil(2 * hoogste))).append(".\n\n");
         }
         Golden krapst = null;
         for (Golden g : gemeten)
