@@ -294,7 +294,10 @@ public final class DroolsBackend {
      *
      * <p>On the truth-maintenance branch it checks all of it before it inserts anything, and refuses by name: a session
      * that already holds a fact, since the places of a list are numbered over the beans of one input and a bean
-     * inserted without this call has none; a bean that is not of the build's bean model or that comes twice; a bucket
+     * inserted without this call has none; a bean that is not of the build's bean model or that comes twice; a reference
+     * field of a bean that holds an object outside the input, named with the bean, the field and the object's type, since
+     * the branch derives nothing for an object outside the session and every value read through the field would stay
+     * empty without a word; a bucket
      * scalar on a bean outside the input or on a member its type does not declare as an attribute on a timeline; and a
      * list that names a bean outside the input, a member whose reference field {@code rol} does not hold the holder, a
      * member twice, or not every bean of the input whose field of that relation holds the holder, or that comes twice. A
@@ -326,10 +329,29 @@ public final class DroolsBackend {
         for (Object boon : bonen)
             if (typen.put(boon, perKlasse.computeIfAbsent(boon.getClass(), k -> objecttype(build, boon))) != null)
                 throw new IllegalArgumentException("voegIn: de boon " + naam(boon) + " staat twee keer in de invoer");
+        weigerDoelBuitenDeInvoer(build, bonen, typen, perKlasse);
         List<Object> feiten = new ArrayList<>(bonen);
         for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
         feiten.addAll(lijstplaatsen(build, tms.lijstvelden(), bonen, typen, invoer.lijsten()));
         for (Object feit : feiten) sessie.insert(feit);
+    }
+
+    /** Refuses a reference field of a bean of the input that holds an object outside the input. The branch derives only
+     *  for the objects in the session, so every value of such an object, and every value read through the field, would
+     *  stay empty without a word; and the link the field gives still counts, so a creation it blocks makes no object in
+     *  its place. */
+    private static void weigerDoelBuitenDeInvoer(Build build, List<Object> bonen, Map<Object, Objecttype> typen,
+                                                 Map<Class<?>, Objecttype> perKlasse) {
+        Map<Objecttype, List<String>> velden = new HashMap<>();
+        for (Object boon : bonen)
+            for (String veld : velden.computeIfAbsent(typen.get(boon), t -> referentievelden(build.model(), t))) {
+                Object doel = Accessors.getter(boon.getClass(), veld).apply(boon);
+                if (doel != null && !typen.containsKey(doel))
+                    throw new IllegalArgumentException("voegIn: het veld '" + veld + "' van " + naam(boon) + " wijst naar"
+                            + " een " + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam
+                            + " (" + naam(doel) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de"
+                            + " objecten in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op");
+            }
     }
 
     /** The object type whose bean {@code boon} is, a bean of the build's bean model. */

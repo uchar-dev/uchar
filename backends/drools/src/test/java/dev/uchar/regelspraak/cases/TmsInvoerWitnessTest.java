@@ -1,5 +1,8 @@
 package dev.uchar.regelspraak.cases;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 import dev.uchar.regelspraak.transpiler.tms.Fout;
 
@@ -7,12 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +37,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code voegIn} refuses it by name, and inserts nothing, where the fire would have stopped with an
  *       {@code IllegalStateException} at the first rule that needs the place. So does every other statement that does
  *       not fit the beans or the model, and a session that is not fresh.</li>
+ *   <li>An object a bean refers to that the input does not give (the fix round of step 3, point 2): the input of golden
+ *       {@code anchor/jutterswet-rekenkamer}, case 4, J1 with its field rekenkamer on R1, with J1 given alone. The
+ *       branch derives nothing for R1 outside the session, and the link the field gives blocks the creation, so J1's
+ *       heffing, which reads R1's, would stay empty; {@code voegIn} refuses it, naming J1, the field and the type
+ *       Rekenkamer, and inserts nothing. With R1 given J1's heffing is the 6 the case pins, which the reference
+ *       interpreter and the ASP runner give (measured 2026-10-10). <b>Red before the change</b> (measured 2026-10-10
+ *       on {@code f4b83d7b}): "Expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown.", and
+ *       fired and read, the input with J1 alone gave J1 no heffing: "expected: &lt;[alleen J1: J1.heffing = 6, J1 en
+ *       R1: J1.heffing = 6]&gt; but was: &lt;[alleen J1: J1.heffing = leeg, J1 en R1: J1.heffing = 6]&gt;".</li>
  *   <li>A bucket scalar ({@link Invoer#emmerscalair}): on the document of {@link TmsInvoervormWitnessTest} part C, the
  *       subject's own total without a clip of J3, whose bedrag the bean holds as the one segment of June 2024, is 7 with
  *       the statement and faults without it, since the branch then reads the segment as a full timeline (ch. 8.4).</li>
@@ -156,6 +171,34 @@ class TmsInvoerWitnessTest {
             } finally {
                 sessie.dispose();
             }
+        });
+    }
+
+    @Test void een_gerefereerd_object_dat_niet_is_opgegeven_weigert_voegIn_luid() throws Exception {
+        Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
+        JsonNode zaak = TmsDocumenten.JSON.readTree(
+                Files.readString(ir.resolveSibling("case4-koppeling-op-de-gemunte-zijde.json")));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Map<String, Object> bonen = CaseRunner.invoerBeans(ir, zaak);
+            Object j1 = bonen.get("J1"), r1 = bonen.get("R1");
+            assertSame(r1, RegelSpraakRuntime.get(j1, "rekenkamer"), "the case links J1 to R1");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                        () -> DroolsBackend.voegIn(b, sessie, new Invoer().boon(j1)));
+                assertEquals("voegIn: het veld 'rekenkamer' van " + naam(j1) + " wijst naar een Rekenkamer ("
+                        + naam(r1) + ") die niet als boon in de invoer staat: de tak leidt alleen af voor de objecten"
+                        + " in de sessie, dus geef elk object waarnaar een boon wijst ook zelf als boon op",
+                        e.getMessage());
+                assertEquals(0, sessie.getFactCount(), "nothing was inserted");
+            } finally {
+                sessie.dispose();
+            }
+            Fixpunt beide = lees(b, new Invoer().bonen(List.of(j1, r1)));
+            assertTrue(beide.waarden().stream().anyMatch(w -> w.object() == j1 && w.attribuut().equals("heffing")
+                    && w.waarde() instanceof BigDecimal d && d.compareTo(new BigDecimal("6")) == 0),
+                    () -> "with R1 given, J1 heffing 6 as the case pins: " + beide.waarden());
         });
     }
 
