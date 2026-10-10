@@ -80,7 +80,7 @@ class VoorafgerondeFactorWitnessTest {
         assertTrue(drl != null && drl.contains("attribuut looptijd: verwacht 9.00, werkelijk 9.000000000000001"),
                 "drl-tekst: de voorafgeronde factor 1/24 komt boven de 9 uit: " + drl);
         assertTrue(drl.contains("attribuut afgeronde looptijd: verwacht 9, werkelijk 10"), drl);
-        String tms = CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        String tms = CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
         assertTrue(tms != null && tms.contains("attribuut looptijd: verwacht 9.00, werkelijk 9.00000000000000072"),
                 "tms: de decimale factor 1/24 komt boven de 9 uit, zonder afronding op 16 cijfers: " + tms);
         assertTrue(tms.contains("attribuut afgeronde looptijd: verwacht 9, werkelijk 10"),

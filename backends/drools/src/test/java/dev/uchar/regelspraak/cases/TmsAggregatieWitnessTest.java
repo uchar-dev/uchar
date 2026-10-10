@@ -147,7 +147,7 @@ class TmsAggregatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(document(volgorde), zaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -166,8 +166,8 @@ class TmsAggregatieWitnessTest {
      * different values on the way, and the count fire on a count below 2.
      */
     @Test void een_opnieuw_vurende_vouw_laat_een_waarde_voor_het_doel() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int opnieuw = 0, onderweg = 0, uitgevallen = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -245,16 +245,16 @@ class TmsAggregatieWitnessTest {
 
     @Test void een_vouw_in_rechtvaardiging_en_consequentie_van_een_default() throws Exception {
         assertEquals("gespeeld", TmsFoutWitnessTest.speel(defaultdocument(DEFAULTREGELS), defaultzaak(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertNull(CaseRunner.speelCase(defaultdocument(DEFAULTREGELS), defaultzaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** The generated rules in a seeded sample of orders; at least one lets the lower default decide 5 for J1 before
      *  the count of its erkende vondsten reaches 2, and the higher default take over. */
     @Test void steekproef_van_de_default_met_vouwen() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(defaultdocument(DEFAULTREGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(defaultdocument(DEFAULTREGELS), DroolsBackend.Branch.EXEC_MODEL);
         int overgenomen = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
@@ -310,10 +310,10 @@ class TmsAggregatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(DELINGREGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(delingdocument(volgorde), tijdelijkeDelingzaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(delingdocument(volgorde), blijvendeDelingzaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " DelingDoorNul: deling door nul in de regel \"gemiddeld bergloon\": 0 gedeeld door 0 —"
                     + " een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
@@ -324,9 +324,9 @@ class TmsAggregatieWitnessTest {
     /** The generated rules in a seeded sample of orders: the fire ends at its fixpoint without throwing, and at least
      *  one order divides by the count while it is still 0, a fault fact that is gone at the fixpoint. */
     @Test void steekproef_van_de_deling_door_een_telling() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(delingdocument(DELINGREGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(delingdocument(DELINGREGELS), DroolsBackend.Branch.EXEC_MODEL);
         int onderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("taxatie", "30"), List.of("gemeld"));
@@ -380,12 +380,12 @@ class TmsAggregatieWitnessTest {
         String zin = "DelingDoorNul: deling door nul in de regel \"zware vondsten\": 9 gedeeld door 0 — een numerieke"
                 + " nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
         assertEquals(zin, TmsFoutWitnessTest.speel(filterdocument(FILTERREGELS), filterzaak(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(zin, TmsFoutWitnessTest.speel(filterdocument(FILTERREGELS), filterzaak(),
                 DroolsBackend.Branch.EXEC_MODEL));
-        DroolsBackend.Build b = DroolsBackend.build(filterdocument(FILTERREGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(filterdocument(FILTERREGELS), DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of());
@@ -425,7 +425,7 @@ class TmsAggregatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(GELIJSTREGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(document(volgorde), gelijstezaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -474,7 +474,7 @@ class TmsAggregatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(PADREGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(paddocument(volgorde), padzaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);

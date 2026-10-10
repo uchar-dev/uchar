@@ -93,7 +93,7 @@ class TmsSetbronWitnessTest {
     private static List<String> weigeringen(String kind, String type, boolean optellend) {
         List<String> uit = new ArrayList<>();
         for (String regel : List.of("vroegste vondstdag van een jutter", "jongste vondstdag van een jutter"))
-            uit.add("tms-transpiler SKIP: regel: " + regel + " — vouw " + kind + " over de setbron 'vondstdatum' van"
+            uit.add("transpiler SKIP: regel: " + regel + " — vouw " + kind + " over de setbron 'vondstdatum' van"
                     + " Vondst: die leden zijn van type " + type + (optellend
                     ? " en niet getalachtig; optellen is rekenkunde over getallen (WF-091), en de referentie-interpreter"
                       + " faalt op de optelling zelf: geen enkele uitvoerder draagt deze vorm"
@@ -123,10 +123,10 @@ class TmsSetbronWitnessTest {
         for (String c : new String[] { "case1-bereik.json", "case2-volgorde.json" })
             assertNull(CaseRunner.speelCase(CORPUS.resolve(BEREIK).resolve("ir.json"),
                     TmsDocumenten.JSON.readTree(Files.readString(CORPUS.resolve(BEREIK).resolve(c))),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), c);
+                    DroolsBackend.Branch.EXEC_MODEL), c);
         assertNull(CaseRunner.speelCase(CORPUS.resolve("jutterswet-muntpiek").resolve("ir.json"),
                 TmsDocumenten.JSON.readTree(Files.readString(CORPUS.resolve("jutterswet-muntpiek").resolve("case.json"))),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** Writes the refused documents, each with the case its row replays, under {@code args[0]}. */

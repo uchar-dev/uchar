@@ -155,7 +155,7 @@ class TmsInvoervormWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(model, volgorde, uniciteiten);
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwachting.add(namen + " " + verwacht);
         }
         assertEquals(verwachting, uitkomsten);
@@ -217,9 +217,9 @@ class TmsInvoervormWitnessTest {
      *  again. */
     @Test void een_fout_op_een_tussenstand_gaat_weer_weg() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(TmsTijdlijnWitnessTest.MODEL_B, REGELS_B, List.of());
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("score", "3"), List.of());
             TmsTijdlijnDocumenten.zet(j1, "jaartarief", List.of(
@@ -474,7 +474,7 @@ class TmsInvoervormWitnessTest {
         List<String> uitkomsten = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(PER_KUST, CODE_EN_NUMMER)))
             uitkomsten.add(TmsFoutWitnessTest.speel(TmsTijdlijnDocumenten.document(MODEL_G, List.of(), volgorde), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
         String verwacht = "Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels \"code en nummer\","
                 + " \"kavel per kust\": fout in de regel \"code en nummer\": the ever-unique key \"vondstnummer\" needs"
                 + " the full timeline; \"S3\" supplies only a scalar (ch. 5.9); fout in de regel \"kavel per kust\": the"
@@ -507,7 +507,7 @@ class TmsInvoervormWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (Map.Entry<String, String> r : new java.util.TreeMap<>(REGELS_H).entrySet()) {
             uitkomsten.add(r.getKey() + " " + TmsFoutWitnessTest.speel(TmsTijdlijnDocumenten.document(MODEL_H,
-                    List.of(r.getValue()), List.of()), zaakH(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    List.of(r.getValue()), List.of()), zaakH(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(r.getKey() + " IllegalArgumentException: scalar characteristic input 'wachtplichtig' on the"
                     + " time-dependent kenmerk of Jutter: deliver it as a characteristicTimelines entry — the static"
                     + " characteristics list asserts a scalar truth no temporal reader consults");

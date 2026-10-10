@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,9 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * such a document, so it reaches this backend only written by hand, and a consumer that builds a document itself can
  * hand it one. ref and clingo play both rules (`PASS (2 expectations)`). The KieBase holds one rule per name in a
  * package, so the exec-model branch must refuse the document by name before it builds one, as the DRL-text branch's
- * compiler does ("Duplicate rule name: actief"). The rows of that branch run on the truth-maintenance branch, which
- * refuses alike, and pin its sentence after the label of the branch. Every document is written here, on Jutterswet
- * material.
+ * compiler does ("Duplicate rule name: actief"). The rows of that branch pin its sentence with the label of the
+ * branch, {@code exec-model}. Every document is written here, on Jutterswet material.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-02 on the backend of {@code 70a60dc3}): the exec-model branch played
  * the document and answered "kenmerk actief: verwacht aanwezig, werkelijk afwezig" — the second rule had replaced the
@@ -29,8 +29,7 @@ class DubbeleRegelnaamWitnessTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** The refusal of the truth-maintenance branch after the label of its branch, which names the package of its
-     *  rules. */
+    /** The refusal of the exec-model branch after the label of its branch, which names the package of its rules. */
     private static String zin(String naam) {
         return ": Duplicate rule name: " + naam + " — twee regels van één naam in pakket "
                 + dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.PKG + "; de KieBase houdt één regel per naam, zodat"
@@ -40,13 +39,13 @@ class DubbeleRegelnaamWitnessTest {
     @Test void twee_regels_van_een_naam_weigert_de_exectak_benoemd() throws Exception {
         Path ir = document(regel("actief", ACTIEF) + "," + regel("actief", GEWICHT), "");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(ir));
-        assertTrue(e.getMessage().endsWith(zin("actief")), e.getMessage());
+        assertEquals("exec-model" + zin("actief"), e.getMessage());
     }
 
     @Test void een_regel_en_een_consistentie_van_een_naam_weigert_de_exectak_benoemd() throws Exception {
         Path ir = document(regel("actief", ACTIEF) + "," + regel("gewicht", GEWICHT), CONSISTENTIE);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> speelTms(ir));
-        assertTrue(e.getMessage().endsWith(zin("gewicht")), e.getMessage());
+        assertEquals("exec-model" + zin("gewicht"), e.getMessage());
     }
 
     @Test void de_drl_teksttak_weigert_hetzelfde_document_benoemd() throws Exception {
@@ -123,6 +122,6 @@ class DubbeleRegelnaamWitnessTest {
     }
 
     private static String speelTms(Path ir) throws Exception {
-        return CaseRunner.speelCase(ir, JSON.readTree(ZAAK), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(ir, JSON.readTree(ZAAK), DroolsBackend.Branch.EXEC_MODEL);
     }
 }

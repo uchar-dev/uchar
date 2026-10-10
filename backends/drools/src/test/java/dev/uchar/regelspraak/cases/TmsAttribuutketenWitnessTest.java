@@ -79,7 +79,7 @@ class TmsAttribuutketenWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(24, volgordes);
@@ -93,8 +93,8 @@ class TmsAttribuutketenWitnessTest {
      *  standing of bergloon (two); gewicht is input and read off the bean. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(12, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         List<List<Rule>> volgordes = new ArrayList<>();
         volgordes.add(gegenereerd);
@@ -109,9 +109,9 @@ class TmsAttribuutketenWitnessTest {
         }
         int doorDeTussenstand = 0;
         for (List<Rule> volgorde : volgordes) {
-            ModelImpl m = new ModelImpl(b.tmsTranspiler().model().getName());
+            ModelImpl m = new ModelImpl(b.execModelTranspiler().model().getName());
             volgorde.forEach(m::addRule);
-            b.tmsTranspiler().model().getGlobals().forEach(m::addGlobal);
+            b.execModelTranspiler().model().getGlobals().forEach(m::addGlobal);
             KieBase kb = KieBaseBuilder.createKieBaseFromModel(m, EqualityBehaviorOption.EQUALITY);
             if (vuur(b, kb, volgorde.stream().map(Rule::getName).toList())) doorDeTussenstand++;
         }

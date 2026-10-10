@@ -75,7 +75,7 @@ class TmsDelingDoorLeegWitnessTest {
             List<String> namen = namen(volgorde);
             for (JsonNode zaak : List.of(metDeposito(), zonderDeposito()))
                 assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                        DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);
@@ -89,8 +89,8 @@ class TmsDelingDoorLeegWitnessTest {
     /** Three rules and the characteristic standings of geclaimd and vrij (three rules each). */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(9, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int doorDeTussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))

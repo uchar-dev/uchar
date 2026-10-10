@@ -176,7 +176,7 @@ class TmsTijdlijnWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS_A)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_A, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -184,9 +184,9 @@ class TmsTijdlijnWitnessTest {
 
     @Test void aan_het_fixpunt_een_stand_en_hoogstens_een_waarde_per_object_en_lid() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL_A, REGELS_A, List.of());
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = jutter(b.beanLoader(), "10", true), j2 = jutter(b.beanLoader(), "3", false);
             Map<Object, String> labels = new IdentityHashMap<>(Map.of(j1, "J1", j2, "J2"));
@@ -279,7 +279,7 @@ class TmsTijdlijnWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(VRIJSTELLING, JAARDEEL_NIET_VRIJ))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_B, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -315,7 +315,7 @@ class TmsTijdlijnWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(TELLER, JAARDEEL_ONDER_VIJF))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_B2, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -346,14 +346,14 @@ class TmsTijdlijnWitnessTest {
 
     @Test void buiten_het_staande_domein_schrijft_een_lege_berekening_de_lege_tijdlijn() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL_C, List.of(JAARDEEL_GEDATEERD), List.of());
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakC(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakC(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
         TmsTijdlijnDocumenten.zet(j1, "jaartarief", List.of(
                 TmsTijdlijnDocumenten.boonsegment(b.beanLoader(), "2024-01-01", "2025-01-01", "366")));
         TmsTijdlijnDocumenten.zet(j1, "jaardeel", List.of(
                 TmsTijdlijnDocumenten.boonsegment(b.beanLoader(), "2024-01-01", "2025-01-01", "4")));
-        TmsDocumenten.vuur(b, b.tmsTranspiler().model().getRules(), List.of(j1),
+        TmsDocumenten.vuur(b, b.execModelTranspiler().model().getRules(), List.of(j1),
                 sessie -> sessie.setGlobal("rekendatum", java.time.LocalDate.parse("2025-06-01")), sessie -> { });
         assertEquals(List.of(), tijdlijnVan(j1, "jaardeel"), "een lege lijst op de boon, niet null en niet de invoer");
     }
@@ -394,7 +394,7 @@ class TmsTijdlijnWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(WACHT, STIL, TOP))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_D, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -426,7 +426,7 @@ class TmsTijdlijnWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(STORMDAGEN, KALENDERDAGEN))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_E, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);

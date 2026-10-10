@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * The input of one session, as {@link DroolsBackend#voegIn} puts it in: the fact beans, and beside them what the bean
- * model does not hold and the truth-maintenance branch reads, so that a consumer names it in the words of the model and
+ * model does not hold and the exec-model branch reads, so that a consumer names it in the words of the model and
  * never states a fact class of that branch itself.
  *
  * <ul>
@@ -24,7 +24,7 @@ import java.util.Objects;
  *       never a value. Without it a list holds its members in the order of the beans.</li>
  * </ul>
  *
- * The exec-model and the DRL-text branch read the beans alone and put in nothing else.
+ * The DRL-text branch reads the beans alone and puts in nothing else.
  */
 public final class Invoer {
 

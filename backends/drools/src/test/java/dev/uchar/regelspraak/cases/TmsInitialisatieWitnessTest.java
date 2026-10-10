@@ -119,7 +119,7 @@ class TmsInitialisatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(VOLGORDE)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(VOLGORDE_MODEL, volgorde), volgordeZaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);
@@ -134,8 +134,8 @@ class TmsInitialisatieWitnessTest {
      *  input and read off the bean. Five rules have 120 orders, so every one is tried. */
     @Test void elke_volgorde_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(VOLGORDE_MODEL, VOLGORDE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(5, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int volgordes = 0, opDeInvoerstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.permutaties(gegenereerd)) {
@@ -209,7 +209,7 @@ class TmsInitialisatieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(VERDRINGING)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(VERDRINGING_MODEL, volgorde), verdringingZaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(24, volgordes);
@@ -224,8 +224,8 @@ class TmsInitialisatieWitnessTest {
      *  and nothing reads the bergloon, so it has no standing. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels_bij_verdringing() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(VERDRINGING_MODEL, VERDRINGING),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(10, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int verdrongen = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
@@ -302,8 +302,8 @@ class TmsInitialisatieWitnessTest {
         JsonNode invoer = TmsDocumenten.zaak(
                 List.of(instantie("V2", "Vondst", Map.of("opbrengst", "100", "aandeel", "5"), List.of(), Map.of())),
                 List.of(waarde("V2", "aandeel", "5"), consistent()));
-        assertNull(CaseRunner.speelCase(ir, geldt, DroolsBackend.Branch.TRUTH_MAINTENANCE), "V1");
-        assertNull(CaseRunner.speelCase(ir, invoer, DroolsBackend.Branch.TRUTH_MAINTENANCE), "V2");
+        assertNull(CaseRunner.speelCase(ir, geldt, DroolsBackend.Branch.EXEC_MODEL), "V1");
+        assertNull(CaseRunner.speelCase(ir, invoer, DroolsBackend.Branch.EXEC_MODEL), "V2");
         assertNull(CaseRunner.speelCase(ir, geldt, DroolsBackend.Branch.EXEC_MODEL), "V1 in de exec-modeltak");
     }
 
@@ -319,8 +319,8 @@ class TmsInitialisatieWitnessTest {
                 rekenregel("zwaar bergloon", "INITIALISATIE", "Vondst", "bergloon", getal("9"),
                         vergelijking("greater", lezing("gewicht", "Vondst"), getal("100")))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: standaardbergloon — twee of meer initialisaties op één doel ('bergloon'"
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: standaardbergloon — twee of meer initialisaties op één doel ('bergloon'"
                 + " van Vondst: \"standaardbergloon\", \"zwaar bergloon\"), voorwaardelijk of niet: waar ze allebei gelden"
                 + " rangschikt niets ze en bepaalt het fixpunt de waarde niet (RUNTIME-SEMANTICS ch. 5.4, WF-079)",
                 e.getMessage());
@@ -340,7 +340,7 @@ class TmsInitialisatieWitnessTest {
             rekenregel("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon",
                     binair("dividedBy", lezing("opbrengst", "Vondst"), lezing("deelnemers", "Vondst")), "null"));
 
-    private static final String DELING_WEIGERING = "tms-transpiler SKIP: regel: standaardbergloon — een deling in een"
+    private static final String DELING_WEIGERING = "transpiler SKIP: regel: standaardbergloon — een deling in een"
             + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'bergloon' van Vondst wordt ook"
             + " geschreven door \"bergloon\"): naast een andere schrijver is een initialisatie de laagste default"
             + " (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak rekent haar uit zodra wat zij leest staat, ook waar de"
@@ -380,7 +380,7 @@ class TmsInitialisatieWitnessTest {
             String uitkomst;
             try {
                 uitkomst = "gespeeld: " + CaseRunner.speelCase(TmsDocumenten.document(DELING_MODEL, volgorde), zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                        DroolsBackend.Branch.EXEC_MODEL);
             } catch (RuntimeException e) {
                 uitkomst = e.getClass().getSimpleName() + ": " + e.getMessage();
             }

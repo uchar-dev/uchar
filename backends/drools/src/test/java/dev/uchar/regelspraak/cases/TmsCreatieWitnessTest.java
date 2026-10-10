@@ -156,10 +156,10 @@ class TmsCreatieWitnessTest {
 
     @Test void een_objectcreatie_maakt_een_object_per_onderwerp_met_de_waarden_van_het_fixpunt() throws Exception {
         Path ir = documentA("null");
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("1", "7"), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("1", "7"), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
             int[] lager = {0};
@@ -177,10 +177,10 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_die_alleen_op_een_lagere_default_geldt_gebeurt_niet() throws Exception {
         Path ir = documentA(LAGE_VANGST);
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("0", "0"), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakA("0", "0"), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("gemeld"));
             int[] lager = {0};
@@ -230,10 +230,10 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_die_haar_eigen_uitvoer_leest_houdt_zichzelf_niet_in_stand() throws Exception {
         Path ir = documentB();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakB(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakB(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of("startwachter"));
             int[] lager = {0};
@@ -291,10 +291,10 @@ class TmsCreatieWitnessTest {
 
     @Test void een_creatie_vuurt_niet_terwijl_de_regellaag_op_een_creatie_reageert() throws Exception {
         Path ir = documentG();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             List<String> volgordeVanWaarden = new ArrayList<>();
@@ -357,11 +357,11 @@ class TmsCreatieWitnessTest {
      */
     @Test void een_objectcreatie_krijgt_na_een_creatiefase_geen_match_op_een_tussenstand() throws Exception {
         Path ir = documentH();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        assertTrue(b.tmsTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
-                + b.tmsTranspiler().creatieregels());
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        assertTrue(b.execModelTranspiler().creatieregels().contains("waarschuw"), () -> "creatieregels "
+                + b.execModelTranspiler().creatieregels());
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Tussenstand stand = new Tussenstand(j1);
@@ -451,9 +451,9 @@ class TmsCreatieWitnessTest {
 
     @Test void een_recursieve_keten_stopt_waar_de_voorwaarde_niet_meer_geldt() throws Exception {
         Path ir = documentC();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakC(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakC(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
             List<Object[]> gemaakt = new ArrayList<>();
@@ -523,9 +523,9 @@ class TmsCreatieWitnessTest {
 
     @Test void een_feitcreatie_legt_elke_link_een_keer() throws Exception {
         Path ir = documentD();
-        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakD1(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaakD1(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
             Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
@@ -553,9 +553,9 @@ class TmsCreatieWitnessTest {
         Path ir = documentD();
         String zin = "IllegalStateException: de naar-één-rol \"haven\" van een Jutter heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
-        assertEquals(zin, TmsFoutWitnessTest.speel(ir, zaakD2(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        assertEquals(zin, TmsFoutWitnessTest.speel(ir, zaakD2(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
             Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
@@ -604,9 +604,9 @@ class TmsCreatieWitnessTest {
      *  made; the mint at depth 101 is now the fault at the making, and 100 objects are made. */
     @Test void een_object_is_pas_in_de_volgende_generatie_onderwerp() throws Exception {
         Path ir = documentF();
-        assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speel(ir, zaakF(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        assertEquals("case: " + BUDGET, TmsFoutWitnessTest.speel(ir, zaakF(), DroolsBackend.Branch.EXEC_MODEL));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of());
             List<Object[]> gemaakt = new ArrayList<>();
@@ -637,10 +637,10 @@ class TmsCreatieWitnessTest {
      *  7. */
     @Test void een_link_is_pas_in_de_volgende_generatie_pad() throws Exception {
         Path d = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-erflijn");
-        assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(d.resolve("ir.json"), List.of(d.resolve("case.json")))
+        assertEquals("PLAYED", CaseRunner.viaExecModel(d.resolve("ir.json"), List.of(d.resolve("case.json")))
                 .status());
-        DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        DroolsBackend.Build b = DroolsBackend.build(d.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             List<Object> w = new ArrayList<>();
             for (int i = 0; i < 4; i++) w.add(TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of(), List.of()));
@@ -675,14 +675,14 @@ class TmsCreatieWitnessTest {
      *  none. */
     @Test void het_creatiebudget_ligt_waar_het_corpus_het_pint() throws Exception {
         Path onder = CORPUS.resolve("golden").resolve("synth2-budgetgrens-onder");
-        assertEquals("PLAYED", CaseRunner.viaTruthMaintenance(onder.resolve("ir.json"),
+        assertEquals("PLAYED", CaseRunner.viaExecModel(onder.resolve("ir.json"),
                 List.of(onder.resolve("case1.json"))).status());
         for (Map.Entry<String, String> rood : Map.of("jutterswet-budgetgrens-over", "werf de lange keten",
                 "finite-chain-over-budget", "werf de lange keten", "runaway-recursion", "werf eeuwig").entrySet()) {
             Path d = CORPUS.resolve("rood").resolve(rood.getKey());
             JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(d.resolve("case1.json")));
             ((com.fasterxml.jackson.databind.node.ObjectNode) zaak).putArray("expected");
-            String zin = TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            String zin = TmsFoutWitnessTest.speel(d.resolve("ir.json"), zaak, DroolsBackend.Branch.EXEC_MODEL);
             assertEquals("case: " + TmsCreatiestratumWitnessTest.budget(rood.getValue(), 0, "Wachter"), zin,
                     rood.getKey());
             JsonNode pin = zaak.get("expectedFault");
@@ -701,7 +701,7 @@ class TmsCreatieWitnessTest {
             try (var s = Files.list(d)) {
                 zaken = s.filter(p -> p.getFileName().toString().matches("case.*\\.json")).sorted().toList();
             }
-            CaseRunner.Result r = CaseRunner.viaTruthMaintenance(d.resolve("ir.json"), zaken);
+            CaseRunner.Result r = CaseRunner.viaExecModel(d.resolve("ir.json"), zaken);
             assertEquals("PLAYED", r.status(), () -> g + ": " + r.reason() + " " + r.caseFailures());
         }
     }

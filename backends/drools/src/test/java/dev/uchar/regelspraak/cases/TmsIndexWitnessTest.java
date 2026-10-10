@@ -76,9 +76,9 @@ class TmsIndexWitnessTest {
         beperkingen = new ArrayList<>();
         for (String d : DOCUMENTEN) {
             Path ir = d.equals("schaal") ? Schaalproef.model() : GOLDEN.resolve(d).resolve("ir.json");
-            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
             BOUW.put(d, b);
-            beperkingen.addAll(beperkingen(d, b.tmsTranspiler().model()));
+            beperkingen.addAll(beperkingen(d, b.execModelTranspiler().model()));
         }
     }
 

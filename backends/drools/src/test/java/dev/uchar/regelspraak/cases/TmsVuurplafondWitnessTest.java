@@ -51,7 +51,7 @@ class TmsVuurplafondWitnessTest {
 
     @Test void het_publieke_plafond_is_het_product_waar_dat_boven_de_vloer_ligt() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             KieSession sessie = gevuld(b, VONDSTEN);
             try {
@@ -70,7 +70,7 @@ class TmsVuurplafondWitnessTest {
 
     @Test void een_kleine_factor_stopt_de_run_op_het_plafond_met_r_en_n0_in_de_zin() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             KieSession sessie = gevuld(b);
             try {
@@ -92,7 +92,7 @@ class TmsVuurplafondWitnessTest {
     @Test void een_latere_creatiefase_met_meer_feiten_zet_het_plafond() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-dubbelverbinding", "ir.json");
         JsonNode zaak = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling("case1-binnen-venster.json")));
-        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL);
         runner.metSessie(zaak, (bouw, sessie, labels) -> {
             long r = regels(bouw.kieBase()), n0 = sessie.getFactCount();
             // the facts at the start of each phase: the driver computes the cap right after it inserts the phase

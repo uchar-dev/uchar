@@ -139,7 +139,7 @@ class TmsInvoerWitnessTest {
             zinnen.add(weigering(b, new Invoer().bonen(List.of(j1, v1, v1))));
             // a bean model of another document: the bean compiler shares the classes of identical models only
             DroolsBackend.Build ander = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                    DroolsBackend.Branch.EXEC_MODEL);
             Object vreemd = TmsDocumenten.boon(ander.beanLoader(), "Vondst", Map.of(), List.of());
             zinnen.add(weigering(b, new Invoer().bonen(List.of(j1, vreemd))));
             assertEquals(List.of(
@@ -178,7 +178,7 @@ class TmsInvoerWitnessTest {
         Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
         JsonNode zaak = TmsDocumenten.JSON.readTree(
                 Files.readString(ir.resolveSibling("case4-koppeling-op-de-gemunte-zijde.json")));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Map<String, Object> bonen = CaseRunner.invoerBeans(ir, zaak);
             Object j1 = bonen.get("J1"), r1 = bonen.get("R1");
@@ -204,7 +204,7 @@ class TmsInvoerWitnessTest {
 
     @Test void een_emmerscalair_leest_de_invoer_als_emmer_en_anders_als_volledige_tijdlijn() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsTijdlijnDocumenten.document(TmsInvoervormWitnessTest.MODEL_C,
-                TmsInvoervormWitnessTest.REGELS_C, List.of()), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                TmsInvoervormWitnessTest.REGELS_C, List.of()), DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Object j3 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("score", "10"), List.of());
             TmsTijdlijnDocumenten.zet(j3, "bedrag", List.of(
@@ -245,7 +245,7 @@ class TmsInvoerWitnessTest {
 
     private static DroolsBackend.Build vondstbouw() throws Exception {
         return DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
     }
 
     /** J1 actief, V1 (gewicht 9, deelnemers 0) and V2 (gewicht 4, deelnemers 0), both reported by J1. */

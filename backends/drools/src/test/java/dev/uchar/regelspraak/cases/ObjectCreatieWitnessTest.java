@@ -461,7 +461,7 @@ class ObjectCreatieWitnessTest {
      *  fixpoint {@link DroolsBackend#lees} gives, and then {@link DroolsBackend#zetAfgeleideWaarden}, so that the beans
      *  of the input and of the made objects carry the derived values and the links. */
     private static Na naVuur(Path irPath, JsonNode c) throws Exception {
-        return CaseRunner.voorMeting(irPath, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c,
+        return CaseRunner.voorMeting(irPath, DroolsBackend.Branch.EXEC_MODEL).metSessie(c,
                 (bouw, sessie, labels) -> {
             DroolsBackend.Vuring vuring = DroolsBackend.vuur(bouw, sessie);
             if (vuring.geenFixpunt() != null) throw new IllegalStateException(vuring.geenFixpunt());
@@ -476,7 +476,7 @@ class ObjectCreatieWitnessTest {
 
     /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
     private static String speel(Path irPath, JsonNode c) throws Exception {
-        return CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     /** The branch refuses {@code irPath} by name: its creations have no connectingRole binding, and the branch does not

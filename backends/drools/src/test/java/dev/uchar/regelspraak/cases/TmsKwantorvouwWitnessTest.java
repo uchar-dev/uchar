@@ -202,7 +202,7 @@ class TmsKwantorvouwWitnessTest {
                 for (JsonNode zaak : List.of(zaak(wereldA(), kenmerk, UITKOMST_A.get(kenmerk)),
                         zaak(wereldB(), kenmerk, UITKOMST_B.get(kenmerk)))) {
                     uitkomsten.add(k.get(2) + " " + namen + " "
-                            + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                            + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                     verwacht.add(k.get(2) + " " + namen + " gespeeld");
                 }
             }
@@ -217,7 +217,7 @@ class TmsKwantorvouwWitnessTest {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (JsonNode zaak : List.of(zaak(wereldA(), "gekwalificeerd", UITKOMST_A.get("gekwalificeerd")),
                     zaak(wereldB(), "gekwalificeerd", UITKOMST_B.get("gekwalificeerd")))) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
         }
@@ -228,9 +228,9 @@ class TmsKwantorvouwWitnessTest {
         for (List<String> k : KWANTOREN) {
             String kenmerk = k.get(0);
             DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL,
-                    List.of(SCHORSING, BEVOEGDHEID, k.get(1))), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                    List.of(SCHORSING, BEVOEGDHEID, k.get(1))), DroolsBackend.Branch.EXEC_MODEL);
             int onderweg = 0;
-            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 30)) {
+            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 30)) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
                 Object p1 = TmsDocumenten.boon(b.beanLoader(), "Ploeg", Map.of(), List.of());
                 Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wacht", Map.of("dienstjaren", "8", "klachten", "0"), List.of());
@@ -285,7 +285,7 @@ class TmsKwantorvouwWitnessTest {
             wereld.addAll(instanties);
             JsonNode zaak = TmsDocumenten.zaak(wereld, verwachtingen);
             uitkomsten.add(namen + " " + leden + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " " + leden + " " + uitkomst);
         }
     }

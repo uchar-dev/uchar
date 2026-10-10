@@ -229,7 +229,7 @@ class TmsVerdelingWitnessTest {
     }
 
     private static String speel(Path ir, JsonNode zaak) throws Exception {
-        return TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     // ---------------- A: a weight and a key derived later ----------------
@@ -279,9 +279,9 @@ class TmsVerdelingWitnessTest {
      */
     @Test void a_steekproef_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(A_REGELS, A_VERDELINGEN, List.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int naarRatoOnderweg = 0, opRangOnderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "900"), List.of());
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "1", "extra", "5",
@@ -359,8 +359,8 @@ class TmsVerdelingWitnessTest {
     /** The deposits of part B are those two and no more, in a seeded sample of orders of the generated rules. */
     @Test void b_alleen_de_lege_gewichten_deponeren() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(List.of(), B_VERDELINGEN, List.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 20)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 20)) {
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1000"), List.of());
             Object d1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("gewicht", "3", "jaar", "2019",
                     "maximum", "600"), List.of());
@@ -417,9 +417,9 @@ class TmsVerdelingWitnessTest {
      */
     @Test void c_een_deponering_van_een_tussenstand_vervalt() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(C_REGELS, List.of(C_NAAR_RATO), List.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int onderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("opbrengst", "1200"), List.of());
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Berger", Map.of("basisgewicht", "3"), List.of());
@@ -622,9 +622,9 @@ class TmsVerdelingWitnessTest {
      *  fires so. */
     @Test void g_een_lege_pot_op_een_tussenstand_laat_niets_achter() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(List.of(POT), List.of(F_GELIJK), List.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int opLegePot = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Berging", Map.of("bruto", "90"), List.of());
             List<Object> bergers = new ArrayList<>();
@@ -703,14 +703,14 @@ class TmsVerdelingWitnessTest {
         uitkomsten.put("regel", speel(document(List.of(H_REGEL), List.of(D_NAAR_RATO), List.of()), zaak));
         uitkomsten.put("initialisatie", speel(document(List.of(H_INITIALISATIE), List.of(D_NAAR_RATO), List.of()), zaak));
         uitkomsten.put("twee verdelingen", speel(document(List.of(), List.of(D_NAAR_RATO, D_GELIJK), List.of()), zaak));
-        String naast = "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een verdeling naast de"
+        String naast = "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een verdeling naast de"
                 + " regel \"bergingsaandeel van een berger\" op het attribuut 'bergingsaandeel' van Berger: een verdeling"
                 + " naast een rekenende regel of een initialisatie op één doel; de truth-maintenance-tak draagt deze vorm"
                 + " nog niet";
         Map<String, String> verwacht = new LinkedHashMap<>();
         verwacht.put("regel", naast);
         verwacht.put("initialisatie", naast);
-        verwacht.put("twee verdelingen", "Excluded: tms-transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
+        verwacht.put("twee verdelingen", "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
                 + " verdelingen schrijven het attribuut 'bergingsaandeel' van Berger (ook \"verdeel de opbrengst gelijk\"):"
                 + " een doel heeft hoogstens één verdeling (WF-026)");
         assertEquals(verwacht, uitkomsten);
@@ -734,8 +734,8 @@ class TmsVerdelingWitnessTest {
             Path ir = (Path) d.getValue()[0];
             JsonNode zaak = (JsonNode) d.getValue()[1];
             String replay = speel(ir, zaak);
-            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 20)) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+            for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 20)) {
                 String sleutel = d.getKey() + " " + volgorde.stream().map(Rule::getName).toList();
                 uitkomsten.put(sleutel, speelInVolgorde(b, volgorde, zaak));
                 verwacht.put(sleutel, replay);

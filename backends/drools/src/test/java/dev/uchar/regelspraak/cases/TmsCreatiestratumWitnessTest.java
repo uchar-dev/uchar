@@ -197,8 +197,8 @@ class TmsCreatiestratumWitnessTest {
     @Test void een_initialisatie_leest_wat_een_creatie_uit_een_lager_stratum_maakte() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK), List.of(PENNINGAANTAL), TmsCreatiestratumWitnessTest::documentP, zaakP());
         DroolsBackend.Build b = DroolsBackend.build(documentP(List.of(GEEF, MAAK), List.of(PENNINGAANTAL)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             List<Object[]> objecten = new ArrayList<>();
@@ -254,8 +254,8 @@ class TmsCreatiestratumWitnessTest {
     @Test void een_voorwaarde_met_een_groeiende_operand_beslist_na_het_lagere_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK_ONDER_ACHT), REGELS_S, TmsCreatiestratumWitnessTest::documentS, zaakS());
         DroolsBackend.Build b = DroolsBackend.build(documentS(List.of(GEEF, MAAK_ONDER_ACHT), REGELS_S),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object p1 = TmsDocumenten.boon(b.beanLoader(), "Penning", Map.of("bedrag", "5"), List.of());
@@ -299,8 +299,8 @@ class TmsCreatiestratumWitnessTest {
         speeltInElkeVolgorde(List.of(GEEF, MAAK_BEWAARD), List.of(PENNINGAANTAL), TmsCreatiestratumWitnessTest::documentK,
                 zaakP());
         DroolsBackend.Build b = DroolsBackend.build(documentK(List.of(GEEF, MAAK_BEWAARD), List.of(PENNINGAANTAL)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
@@ -350,8 +350,8 @@ class TmsCreatiestratumWitnessTest {
     @Test void twee_creaties_van_een_stratum_vuren_in_een_generatie() throws Exception {
         speeltInElkeVolgorde(List.of(GEEF, MAAK, KWITEER), REGELS_T, TmsCreatiestratumWitnessTest::documentT, zaakT());
         DroolsBackend.Build b = DroolsBackend.build(documentT(List.of(GEEF, MAAK, KWITEER), REGELS_T),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             List<Object[]> objecten = new ArrayList<>();
@@ -413,8 +413,8 @@ class TmsCreatiestratumWitnessTest {
      *  52 + 1. */
     @Test void het_creatiebudget_geldt_per_stratum() throws Exception {
         speeltInElkeVolgorde(List.of(WERF, LEG), List.of(), (creaties, regels) -> documentB(creaties), zaakB());
-        DroolsBackend.Build b = DroolsBackend.build(documentB(List.of(WERF, LEG)), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 10)) {
+        DroolsBackend.Build b = DroolsBackend.build(documentB(List.of(WERF, LEG)), DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 10)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Boei", Map.of("nummer", "1"), List.of());
@@ -550,9 +550,9 @@ class TmsCreatiestratumWitnessTest {
         for (int grens : List.of(100, 101, 102)) {
             int generaties = grens - 1;
             assertEquals(generaties <= 100 ? "gespeeld" : "case: " + BUDGET, TmsFoutWitnessTest.speel(documentG(grens),
-                    zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE), generaties + " generaties");
-            DroolsBackend.Build b = DroolsBackend.build(documentG(grens), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-            for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+                    zaak, DroolsBackend.Branch.EXEC_MODEL), generaties + " generaties");
+            DroolsBackend.Build b = DroolsBackend.build(documentG(grens), DroolsBackend.Branch.EXEC_MODEL);
+            for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
                 Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
                 List<Object[]> objecten = new ArrayList<>();
@@ -602,8 +602,8 @@ class TmsCreatiestratumWitnessTest {
                 Map.of())), List.of(waarde("W1", "rang", "1")));
         speeltInElkeVolgorde(List.of(WERF, BOEI_BIJ_51, LEG), List.of(), (creaties, regels) -> documentD(creaties), zaak);
         DroolsBackend.Build b = DroolsBackend.build(documentD(List.of(WERF, BOEI_BIJ_51, LEG)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
             List<Object[]> objecten = new ArrayList<>();
@@ -639,7 +639,7 @@ class TmsCreatiestratumWitnessTest {
     @Test void een_feitcreatie_heeft_geen_budget() throws Exception {
         Path d = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-erflijn");
         assertEquals("gespeeld", TmsFoutWitnessTest.speel(d.resolve("ir.json"), erflijnzaak(103),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     /** "werf de opvolger" gives a Wachter whose rang is below {@code grens} and who has a maatgever an opvolger with rang
@@ -681,9 +681,9 @@ class TmsCreatiestratumWitnessTest {
         String fout = budget("werf de opvolger", 0, "Wachter");
         for (int grens : List.of(101, 102)) {
             assertEquals(grens <= 101 ? "gespeeld" : "case: " + fout, TmsFoutWitnessTest.speel(documentE(grens), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), "tot rang " + grens);
-            DroolsBackend.Build b = DroolsBackend.build(documentE(grens), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-            for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 10)) {
+                    DroolsBackend.Branch.EXEC_MODEL), "tot rang " + grens);
+            DroolsBackend.Build b = DroolsBackend.build(documentE(grens), DroolsBackend.Branch.EXEC_MODEL);
+            for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 10)) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
                 Object w0 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
                 Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
@@ -708,13 +708,13 @@ class TmsCreatiestratumWitnessTest {
      *  fails loudly rather than count from a stratum that has not run: here a forged mark, put in before the fire, says
      *  that a creation of stratum 1 made W1, the subject of "werf de lange keten" of stratum 0. */
     @Test void een_onderwerp_uit_een_hoger_stratum_faalt_luid() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(documentG(5), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(documentG(5), DroolsBackend.Branch.EXEC_MODEL);
         Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
         Object maker = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "0"), List.of());
         Object vervalst = Class.forName("dev.uchar.regelspraak.transpiler.tms.Gemaakt").getConstructors()[0]
                 .newInstance("vervalst", maker, w1, 1000, 1, 1);
         RuntimeException e = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> vuur(b, b.tmsTranspiler().model().getRules(), List.of(w1, vervalst), sessie -> { }, sessie -> { }));
+                () -> vuur(b, b.execModelTranspiler().model().getRules(), List.of(w1, vervalst), sessie -> { }, sessie -> { }));
         // Drools hands what a consequence throws on inside its own ConsequenceException
         StringBuilder keten = new StringBuilder();
         for (Throwable t = e; t != null; t = t.getCause() == t ? null : t.getCause())
@@ -772,8 +772,8 @@ class TmsCreatiestratumWitnessTest {
         JsonNode zaak = TmsDocumenten.zaak(List.of(instantieMetRollen("W1", "Wachter", Map.of("rang", "1"), List.of(),
                 Map.of())), List.of(waarde("W1", "opvolgerbegin", "0"), waarde("W1", "verder", "0")));
         speeltInElkeVolgorde(List.of(), REGELS_V, (creaties, regels) -> documentV(regels), zaak);
-        DroolsBackend.Build b = DroolsBackend.build(documentV(REGELS_V), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        DroolsBackend.Build b = DroolsBackend.build(documentV(REGELS_V), DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
             List<Object[]> objecten = new ArrayList<>(), links = new ArrayList<>();
@@ -890,8 +890,8 @@ class TmsCreatiestratumWitnessTest {
                 waarde("W1", "opvolgerbegin", null), waarde("W1", "verder", "0")));
         speeltInElkeVolgorde(List.of(WERF_R, BELOON_R), KRING_R, TmsCreatiestratumWitnessTest::documentR, zaak);
         DroolsBackend.Build b = DroolsBackend.build(documentR(List.of(WERF_R, BELOON_R), KRING_R),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+                DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object w1 = TmsDocumenten.boon(b.beanLoader(), "Wachter", Map.of("rang", "1"), List.of());
             List<Object[]> objecten = new ArrayList<>();
@@ -926,8 +926,8 @@ class TmsCreatiestratumWitnessTest {
     /** Fires document {@code ir} on {@link #boeienlijn} through the driver in a sample of orders of its rules: each
      *  reaches its fixpoint with {@code objecten} objects made. */
     private static void speeltDoorDeDriver(Path ir, int objecten) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 10)) {
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 10)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             List<Object[]> gemaakt = new ArrayList<>();
             assertNull(vuur(b, volgorde, boeienlijn(b), sessie -> { }, sessie -> gemaakt.addAll(gemaakt(sessie))),
@@ -952,7 +952,7 @@ class TmsCreatiestratumWitnessTest {
             for (List<String> r : permutaties(regels)) {
                 String namen = regelnamen(c) + " " + regelnamen(r);
                 uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(bouw.van(c, r), zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
         assertEquals(verwacht, uitkomsten);

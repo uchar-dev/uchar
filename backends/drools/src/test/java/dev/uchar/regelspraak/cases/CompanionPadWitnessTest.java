@@ -441,7 +441,7 @@ class CompanionPadWitnessTest {
         Path tmp = Files.createTempFile("companion-pad-witness", ".json");
         try {
             Files.writeString(tmp, ir);
-            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            return CaseRunner.speelCase(tmp, JSON.readTree(caseJson), DroolsBackend.Branch.EXEC_MODEL);
         } finally {
             Files.deleteIfExists(tmp);
         }

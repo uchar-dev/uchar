@@ -63,7 +63,7 @@ class TmsParameterWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(true),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(24, volgordes);

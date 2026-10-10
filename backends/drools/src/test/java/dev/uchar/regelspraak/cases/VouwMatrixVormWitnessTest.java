@@ -186,7 +186,7 @@ class VouwMatrixVormWitnessTest {
         Path c = tmp.resolve("twee-param-case.json");
         Files.writeString(c, TWEE_PARAM_CASE);
 
-        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
         assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));
@@ -208,7 +208,7 @@ class VouwMatrixVormWitnessTest {
         Path c = tmp.resolve("tekst-param-case.json");
         Files.writeString(c, TEKST_PARAM_CASE);
 
-        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
         assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));

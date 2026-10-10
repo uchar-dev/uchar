@@ -123,8 +123,8 @@ class TmsLetWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             java.nio.file.Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (JsonNode zaak : List.of(zaakA(), zaakB(), zaakC()))
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakD(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakD(), DroolsBackend.Branch.EXEC_MODEL));
             for (int i = 0; i < 3; i++) verwacht.add(namen + " gespeeld");
             verwacht.add(namen + " " + J5_DOOR_NUL);
         }
@@ -189,10 +189,10 @@ class TmsLetWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             java.nio.file.Path ir = TmsDocumenten.document(MODEL_MET_TARIEF, volgorde);
             for (JsonNode zaak : List.of(zaakE(), zaakF())) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaakG(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " DelingDoorNul: deling door nul in de regel \"tarief van een jutter\": 6 gedeeld door 0"
                     + " — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)");
         }
@@ -204,9 +204,9 @@ class TmsLetWitnessTest {
      *  leeg restpost (a deposit that went again) and by a zero (a fault that went again). */
     @Test void de_tussenstand_in_elke_volgorde_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0, deponering = 0, fout = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("inkomen", "40.00", "grondslag", "6.00"),
                     List.of());

@@ -94,7 +94,7 @@ class TijdlijnDatumvouwWitnessTest {
                 "[{\"kind\":\"attributeEmpty\",\"label\":\"J1\",\"attribute\":\"bewaargeld\"}]"));
         Path ir = NEGATIEF.resolve(TOTAAL).resolve("ir.json");
         CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, leeg, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, leeg, DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(x.getMessage().contains("een totaal over de eigen tijdlijn ('het totaal van zijn bewaarvergoeding per"
                 + " maand') over 'bewaarvergoeding per maand', dat geen getal is (WF-091)"), "tms names the form: "
                 + x.getMessage());
@@ -121,7 +121,7 @@ class TijdlijnDatumvouwWitnessTest {
         CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));
         assertTrue(d.getMessage().contains(drl), "drl-tekst names '" + drl + "': " + d.getMessage());
         CaseRunner.Excluded x = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(x.getMessage().contains(tms), "tms names '" + tms + "': " + x.getMessage());
     }
 

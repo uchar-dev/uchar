@@ -79,7 +79,7 @@ class TmsKenmerkbesluitWitnessTest {
     }
 
     @Test void het_besluit_onwaar_verdringt_en_de_invoer_blijft_staan() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
@@ -87,8 +87,8 @@ class TmsKenmerkbesluitWitnessTest {
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int[] verdrongen = {0};
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();

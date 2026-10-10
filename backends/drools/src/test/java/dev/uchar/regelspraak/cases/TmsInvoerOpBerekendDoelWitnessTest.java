@@ -70,7 +70,7 @@ class TmsInvoerOpBerekendDoelWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(2, volgordes);
@@ -100,7 +100,7 @@ class TmsInvoerOpBerekendDoelWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(REGELS.get(0), REGELS.get(1), initialisatie))) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);
@@ -109,8 +109,8 @@ class TmsInvoerOpBerekendDoelWitnessTest {
     /** Two rules and the two standing rules of bergloon; taxatie is input and read off the bean. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(4, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int uitDeInvoer = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 40))

@@ -151,7 +151,7 @@ class FilterfoutWitnessTest {
 
     private static final DroolsBackend.Branch EXEC = DroolsBackend.Branch.EXEC_MODEL;
     private static final DroolsBackend.Branch DRL = DroolsBackend.Branch.DRL_TEXT;
-    private static final DroolsBackend.Branch TMS = DroolsBackend.Branch.TRUTH_MAINTENANCE;
+    private static final DroolsBackend.Branch TMS = DroolsBackend.Branch.EXEC_MODEL;
 
     /** Both branches play {@code zaak} on {@code ir} with its expectations. */
     private static void gespeeld(Path ir, JsonNode zaak) throws Exception {

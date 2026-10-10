@@ -93,7 +93,7 @@ class TemporeleSetvouwBereikWitnessTest {
     private static void drlSpeeltTmsWeigert(Path ir, JsonNode c, String boodschap) throws Exception {
         org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms — " + boodschap);
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms — " + boodschap);
         org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een"
                 + " waarde van het tijdsafhankelijke doel 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen"
                 + " dagentelling is ('de som van het bewaartarief van alle vondsten van de Jutter')"), e.getMessage());

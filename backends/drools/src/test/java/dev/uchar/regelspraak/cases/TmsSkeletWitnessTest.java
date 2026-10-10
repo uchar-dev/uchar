@@ -62,8 +62,8 @@ class TmsSkeletWitnessTest {
     @Test void de_build_draagt_de_tak_en_een_kiebase_in_equality() throws Exception {
         Path ir = TmsDocumenten.document(TmsDocumenten.model(KENMERKEN),
                 List.of(kenmerkregel("vergund indien erkend", "vergund", check("erkend", false))));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        assertEquals(DroolsBackend.Branch.TRUTH_MAINTENANCE, b.branch());
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
         assertNull(b.drlTranspiler());
         assertEquals(List.of("regel: vergund indien erkend"), b.dekking().stream().map(Dekking::sleutel).toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), b.dekking()::toString);
@@ -93,8 +93,8 @@ class TmsSkeletWitnessTest {
                 dagen, "null");
         Path ir = TmsDocumenten.document(VUURTOREN, List.of(lampental));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: lampental — een BuiltinCall dayCount in een waarde ('het aantal dagen in"
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: lampental — een BuiltinCall dayCount in een waarde ('het aantal dagen in"
                 + " het jaar dat hij helder is'): de truth-maintenance-tak rekent een tijdsevenredig deel en een"
                 + " dagentelling alleen als de tijdlijn van een tijdsafhankelijk doel (RUNTIME-SEMANTICS ch. 3.7, 3.8,"
                 + " 3.11)", e.getMessage());
@@ -113,8 +113,8 @@ class TmsSkeletWitnessTest {
                 IrPad.literal("waar", "{\"node\":\"Boolean\"}", "waar"), gevuurd);
         Path ir = TmsDocumenten.document(VUURTOREN, List.of(helder));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: helder — een Regelversie 'is gevuurd' in de voorwaarde ('" + snippet
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: helder — een Regelversie 'is gevuurd' in de voorwaarde ('" + snippet
                 + "'): geen vorm van de kern maar een predicaat van het"
                 + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
                 + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage());
@@ -137,8 +137,8 @@ class TmsSkeletWitnessTest {
                 List.of(kenmerkregel("actief", "actief", check("erkend", false)),
                         kenmerkregel("actief", "vergund", check("erkend", false))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms: Duplicate rule name: actief — twee regels van één naam in pakket " + TmsTranspiler.PKG
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("exec-model: Duplicate rule name: actief — twee regels van één naam in pakket " + TmsTranspiler.PKG
                 + "; de KieBase houdt één regel per naam, zodat de tweede de eerste zou vervangen (vormnamen zijn uniek,"
                 + " WF-020)", e.getMessage());
     }

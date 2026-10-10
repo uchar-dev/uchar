@@ -54,8 +54,8 @@ class DroolsBackendWitnessTest {
     // ---------------- the entry: one rule and one defaults family ----------------
 
     @Test void de_ingang_zet_de_regel_en_de_defaultsfamilie_in_de_kiebase() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        assertEquals(DroolsBackend.Branch.TRUTH_MAINTENANCE, b.branch());
+        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
+        assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
         // the family lowers to the rules of its standings and its defaults beside the rule that reads it
         assertEquals(List.of("defaults K:Jutter.uitgesloten: default 0.0.0", "defaults K:Jutter.uitgesloten: default 1",
                 "defaults K:Jutter.uitgesloten: eens 0", "defaults K:Jutter.uitgesloten: eens wortel",

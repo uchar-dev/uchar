@@ -486,7 +486,7 @@ class HeelperiodeKwantorvouwWitnessTest {
 
         Path afwezig = schrijf("case-grens-afwezig.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01", true)), "characteristicAbsent"));
-        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(afwezig));
+        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(afwezig));
         assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         assertFalse(drlTekst(ir).contains("accumulate("),
@@ -517,7 +517,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         assertTrue(drl.reason().contains("die/dat-subselectie"),
                 "de reden noemt de AS waarop hij afketst: " + drl.reason());
 
-        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
         assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         String tekst = drlTekst(ir);
@@ -559,7 +559,7 @@ class HeelperiodeKwantorvouwWitnessTest {
                             && drl.reason().contains("niet-conjunctieve kwantor"),
                     wat + ": de reden noemt de KNOOP en de positie: " + drl.reason());
 
-            CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+            CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
             assertEquals("PLAYED", tms.status(), wat + ": de tak met truth maintenance antwoordt zoals ref: " + tms);
         }
     }
@@ -595,7 +595,7 @@ class HeelperiodeKwantorvouwWitnessTest {
         Path irPad = schrijf("ir-scope.json", ir(vouwZonderPeriode()));
         Path casePad = schrijf("case-scope.json", caseDoc(schepen(
                 schuit("S1", "12", "2025-01-01", "2026-01-01")), "characteristicPresent"));
-        CaseRunner.Result r = CaseRunner.viaTruthMaintenance(irPad, List.of(casePad));
+        CaseRunner.Result r = CaseRunner.viaExecModel(irPad, List.of(casePad));
         assertEquals("EXCLUDE", r.status(), "een niet-gelowerde kwantorvouw mag nooit meespelen");
         assertTrue(r.reason().contains("regel: Kenmerktoekenning zeewaardig — het tijdsafhankelijke attribuut"
                         + " 'wachtwaarde' van Schuit op een plek die één waarde leest of schrijft"),

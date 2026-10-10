@@ -59,7 +59,7 @@ class TmsSubtypeWitnessTest {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             List<String> namen = new ArrayList<>();
             for (String r : volgorde) namen.add(TmsDocumenten.JSON.readTree(r).get("name").asText());
-            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "exec-model, volgorde " + namen);
         }
     }

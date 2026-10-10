@@ -57,7 +57,7 @@ class TmsUniePopulatieWitnessTest {
         Path ir = Files.writeString(Files.createTempFile("tms-uniepopulatie", ".json"),
                 TmsDocumenten.JSON.writeValueAsString(tweePopulaties()));
         ir.toFile().deleteOnExit();
-        assertEquals(List.of("tms-transpiler SKIP: regel: aantal strandvondsten van een jutter — een InstanceSetUnion over"
+        assertEquals(List.of("transpiler SKIP: regel: aantal strandvondsten van een jutter — een InstanceSetUnion over"
                         + " twee populaties ('Vondst' en 'Kavel', 'het aantal aangemelde vondsten van de Jutter en geborgen"
                         + " vondsten van de Jutter'): één telling antwoordt een aantal over één gedeclareerd type, en of twee"
                         + " selecties dan een instantie delen, is een vraag over de subtyperelatie (WF-110 (d))"),

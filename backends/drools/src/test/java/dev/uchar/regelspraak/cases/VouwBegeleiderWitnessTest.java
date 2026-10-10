@@ -126,7 +126,7 @@ class VouwBegeleiderWitnessTest {
         Path tmp = Files.createTempFile("vouw-begeleider", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
-        assertNull(CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms");
+        assertNull(CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL), "tms");
         CaseRunner.Excluded d = assertThrows(CaseRunner.Excluded.class, () -> speelDrl(ir, zaak));
         assertTrue(d.getMessage().contains(zin), d.getMessage());
     }

@@ -187,7 +187,7 @@ class UniciteitSleutelvormWitnessTest {
     private static void geweigerd(Path ir, String caseJson, String vorm, String sleutel) throws Exception {
         JsonNode c = JSON.readTree(caseJson);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains(vorm + " — een uniciteitssleutel '" + sleutel + "' van Strandvondst op een"
                 + " tijdlijn naast een tweede: een sleutel heeft hoogstens één tijdsafhankelijk deel"), e.getMessage());
     }

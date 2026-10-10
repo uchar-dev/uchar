@@ -191,7 +191,7 @@ class NietTemporeleKwantorvouwWitnessTest {
         Path c = tmp.resolve("genest-case.json");
         Files.writeString(c, GENEST_CASE);
 
-        CaseRunner.Result tms = CaseRunner.viaTruthMaintenance(ir, List.of(c));
+        CaseRunner.Result tms = CaseRunner.viaExecModel(ir, List.of(c));
         assertEquals("PLAYED", tms.status(), "de tak met truth maintenance antwoordt zoals ref: " + tms);
 
         CaseRunner.Result drl = CaseRunner.viaDrlTekst(ir, List.of(c));

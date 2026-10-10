@@ -105,9 +105,9 @@ class TmsConsistentieWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(KETEN)) {
             Path ir = TmsDocumenten.document(KETEN_MODEL, volgorde, List.of(CONTROLE));
             List<String> namen = namen(volgorde);
-            assertNull(CaseRunner.speelCase(ir, ketenZonderSchending(), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+            assertNull(CaseRunner.speelCase(ir, ketenZonderSchending(), DroolsBackend.Branch.EXEC_MODEL),
                     () -> "V1 in volgorde " + namen);
-            assertNull(CaseRunner.speelCase(ir, ketenMetSchending(), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+            assertNull(CaseRunner.speelCase(ir, ketenMetSchending(), DroolsBackend.Branch.EXEC_MODEL),
                     () -> "V2 en V3 in volgorde " + namen);
             volgordes++;
         }
@@ -123,8 +123,8 @@ class TmsConsistentieWitnessTest {
     /** Two rules, the consistency, and the standings of the tussengewicht and the eindgewicht (two rules each). */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(KETEN_MODEL, KETEN, List.of(CONTROLE)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(7, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int tussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
@@ -194,7 +194,7 @@ class TmsConsistentieWitnessTest {
 
     @Test void het_uitgewerkte_voorbeeld_van_het_kanaal_in_beide_takken() throws Exception {
         Path ir = TmsDocumenten.document(SALDO_MODEL, List.of(TOEZICHT), List.of(CONTROLE_SALDO));
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.TRUTH_MAINTENANCE, DroolsBackend.Branch.EXEC_MODEL)) {
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL)) {
             assertNull(CaseRunner.speelCase(ir, saldoZaak("-5"), tak), () -> tak + ", h1 met saldo -5");
             assertNull(CaseRunner.speelCase(ir, saldoZaak("5"), tak), () -> tak + ", h1 met saldo 5");
         }
@@ -204,8 +204,8 @@ class TmsConsistentieWitnessTest {
      *  reads the characteristic. Four rules have 24 orders, so every one is tried. */
     @Test void elke_volgorde_van_de_gegenereerde_regels_van_het_uitgewerkte_voorbeeld() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(SALDO_MODEL, List.of(TOEZICHT),
-                List.of(CONTROLE_SALDO)), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                List.of(CONTROLE_SALDO)), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(4, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int volgordes = 0;
         for (List<Rule> volgorde : TmsDocumenten.permutaties(gegenereerd)) {
@@ -294,7 +294,7 @@ class TmsConsistentieWitnessTest {
             JsonNode zaak = TmsDocumenten.zaak(List.of("{\"label\":\"V1\",\"objectType\":\"Vondst\",\"attributes\":{"
                     + String.join(",", attributen) + "},\"roles\":{},\"characteristics\":[]}"),
                     List.of(rij.geschonden() ? inconsistent(naam, "V1") : consistent()));
-            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.TRUTH_MAINTENANCE, DroolsBackend.Branch.EXEC_MODEL))
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL))
                 assertNull(CaseRunner.speelCase(ir, zaak, tak), () -> tak + ", " + naam + " over " + rij);
         }
         return rijen.size();
@@ -318,7 +318,7 @@ class TmsConsistentieWitnessTest {
                 List.of(kenmerkregel("verdenking", "Vondst", "verdacht", kanaaltoets("controle verdenking"))),
                 List.of(consistentie("controle verdenking", "Vondst", check("verdacht", false))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("tms: kring in de afhankelijkheden over de knopen Vondst.verdacht en het kanaal van \"controle"
                 + " verdenking\" via de regel \"verdenking\" en de consistentieregel \"controle verdenking\" — een kring"
                 + " die niet door een creatielid van een recursieve regelgroep loopt, is onwelgevormd (WF-045), en truth"
@@ -336,16 +336,16 @@ class TmsConsistentieWitnessTest {
         Path metGevuurd = TmsDocumenten.document(model,
                 List.of(registratie, kenmerkregel("nakijken", "Vondst", "nagekeken", gevuurd)));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(metGevuurd, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: nakijken — een Regelversie 'is gevuurd' in de voorwaarde ('regelversie"
+                () -> DroolsBackend.build(metGevuurd, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: nakijken — een Regelversie 'is gevuurd' in de voorwaarde ('regelversie"
                 + " registratie is gevuurd'): geen vorm van de kern maar een predicaat van het"
                 + " RegelSpraak-dialect over het fixpunt (RUNTIME-SEMANTICS ch. 5.6, CONSTRUCTS rij 30), dat de"
                 + " referentie-interpreter en de ASP-backend niet evalueren", e.getMessage());
         Path zonderProducent = TmsDocumenten.document(model,
                 List.of(registratie, kenmerkregel("nakijken", "Vondst", "nagekeken", kanaaltoets("registratie"))));
         CaseRunner.Excluded f = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(zonderProducent, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: nakijken — een Regelversie 'is inconsistent' over \"registratie\" in de"
+                () -> DroolsBackend.build(zonderProducent, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: nakijken — een Regelversie 'is inconsistent' over \"registratie\" in de"
                 + " voorwaarde ('regelversie registratie is inconsistent'): de truth-maintenance-tak draagt als producent"
                 + " van het §9.5-kanaal alleen een Consistency, een Uniqueness en een regel met een deling of een wortel"
                 + " in haar voorwaarde of haar waarde (§6.5, §6.6)", f.getMessage());

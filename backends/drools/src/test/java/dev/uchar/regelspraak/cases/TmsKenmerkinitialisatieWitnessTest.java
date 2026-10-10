@@ -54,7 +54,7 @@ class TmsKenmerkinitialisatieWitnessTest {
         Path ir = Files.writeString(Files.createTempFile("tms-kenmerkinitialisatie", ".json"),
                 TmsDocumenten.JSON.writeValueAsString(metGetal()));
         ir.toFile().deleteOnExit();
-        assertEquals(List.of("tms-transpiler SKIP: objectcreatie: richt de rekenkamer op — een kenmerkinitialisatie van"
+        assertEquals(List.of("transpiler SKIP: objectcreatie: richt de rekenkamer op — een kenmerkinitialisatie van"
                         + " 'overzees' met een waarde van type Numeriek ('5'): een kenmerk is waar of onwaar (WF-027), en de"
                         + " referentie-interpreter faalt op zo'n waarde"),
                 TmsTijdlijnWeigeringWitnessTest.weigeringen(ir));
@@ -65,7 +65,7 @@ class TmsKenmerkinitialisatieWitnessTest {
         try (var cases = Files.list(GOLDEN)) {
             for (Path c : cases.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList())
                 assertNull(CaseRunner.speelCase(GOLDEN.resolve("ir.json"),
-                        TmsDocumenten.JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                        TmsDocumenten.JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL),
                         c.getFileName().toString());
         }
     }

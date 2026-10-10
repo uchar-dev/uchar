@@ -208,7 +208,7 @@ class DefaultsDelingWitnessTest {
         Files.writeString(tmp, ir);
         JsonNode c = JSON.readTree(zaak);
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(tmp, c, DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — " + vorm), e.getMessage());
     }
 }

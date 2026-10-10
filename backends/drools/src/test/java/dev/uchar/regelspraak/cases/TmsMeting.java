@@ -52,7 +52,7 @@ import java.util.stream.Stream;
  * on its own. The replay's listener for two writers of one attribute is not on the session, as with a consumer. Then
  * the sums and medians, the ratio new / old, the goldens with the largest ratio, and per defaults group of the branch
  * with truth maintenance its rules and control facts; last, every golden of the corpus with case files through
- * {@link CaseRunner#viaTruthMaintenance}: played, failed, or refused, the refusals grouped by family and by form.
+ * {@link CaseRunner#viaExecModel}: played, failed, or refused, the refusals grouped by family and by form.
  *
  * <p>Run it from the root of the repository, with the test classpath from the dependency plugin, which resolves
  * offline once the module has been built:
@@ -77,7 +77,7 @@ public final class TmsMeting {
     private static final int OPWARMEN = 20, HERHALINGEN = 31, BOUWRONDES = 5, RONDE = 3;
 
     private static final DroolsBackend.Branch OUD = DroolsBackend.Branch.EXEC_MODEL,
-            NIEUW = DroolsBackend.Branch.TRUTH_MAINTENANCE;
+            NIEUW = DroolsBackend.Branch.EXEC_MODEL;
 
     private static final List<DroolsBackend.Branch> TAKKEN = List.of(OUD, NIEUW);
 
@@ -173,7 +173,7 @@ public final class TmsMeting {
             for (DroolsBackend.Branch b : TAKKEN) {
                 CaseRunner.Result r;
                 try {
-                    r = b == OUD ? CaseRunner.viaExecModel(ir, paden) : CaseRunner.viaTruthMaintenance(ir, paden);
+                    r = b == OUD ? CaseRunner.viaExecModel(ir, paden) : CaseRunner.viaExecModel(ir, paden);
                 } catch (RuntimeException e) {
                     r = CaseRunner.Result.played(0, List.of(String.valueOf(e)));
                 }
@@ -347,7 +347,7 @@ public final class TmsMeting {
             }
             t.bouwMs = mediaan(tijden) / 1e6;
             t.regels = regels(bouw.kieBase());
-            if (bouw.tmsTranspiler() != null) t.groepen = bouw.tmsTranspiler().defaultsgroepen();
+            if (bouw.execModelTranspiler() != null) t.groepen = bouw.execModelTranspiler().defaultsgroepen();
             for (TmsTranspiler.Defaultsgroep g : t.groepen) t.stuurfeiten.put(g.naam(), new long[2]);
             t.runner = CaseRunner.voorMeting(ir, b);
             return t;
@@ -645,7 +645,7 @@ public final class TmsMeting {
         uit.append('\n');
     }
 
-    private static final List<String> MANIFEST = List.of("tms-transpiler SKIP: ", "tms-transpiler MARKER: ");
+    private static final List<String> MANIFEST = List.of("transpiler SKIP: ", "transpiler MARKER: ");
 
     /** The family of a refusal: after the manifest's prefix the kind of form it refuses first, the part before the
      *  first colon; a cycle refused before the build; else the part before the first colon (the loader, the bean

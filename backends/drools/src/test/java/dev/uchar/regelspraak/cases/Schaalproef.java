@@ -114,11 +114,11 @@ public final class Schaalproef {
     static final List<Integer> NS = List.of(100, 1_000, 10_000);
 
     static final List<DroolsBackend.Branch> TAKKEN =
-            List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.EXEC_MODEL);
 
     /** The branch with truth maintenance: the one the points measure by default, and the only one that reads a session
      *  between two fires ({@link DroolsBackend#lees}). */
-    static final DroolsBackend.Branch NIEUW = DroolsBackend.Branch.TRUTH_MAINTENANCE;
+    static final DroolsBackend.Branch NIEUW = DroolsBackend.Branch.EXEC_MODEL;
 
     private static final int OPWARMEN = 1, HERHALINGEN = 3;
 

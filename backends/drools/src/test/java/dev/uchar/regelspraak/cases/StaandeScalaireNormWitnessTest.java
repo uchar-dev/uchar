@@ -183,7 +183,7 @@ class StaandeScalaireNormWitnessTest {
             // the verifier does (WF-050): a target has one writer, the group or the rule.
             CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(tmp,
                     JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"",
-                            waarde("12.00"))), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                            waarde("12.00"))), DroolsBackend.Branch.EXEC_MODEL));
             assertTrue(tms.getMessage().contains("een regel naast een defaultsgroep van hetzelfde type op hetzelfde doel"
                     + " ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)"),
                     tms.getMessage());

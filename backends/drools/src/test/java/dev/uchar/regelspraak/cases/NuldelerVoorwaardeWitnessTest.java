@@ -139,7 +139,7 @@ class NuldelerVoorwaardeWitnessTest {
         // data, and DroolsBackend.zetAfgeleideWaarden throws it in the sentence of the replay, which names the rule.
         // The destructive exec-model branch threw Drools' ConstraintEvaluationException out of the fire instead, which
         // DroolsBackend.benoem named.
-        CaseRunner.voorMeting(document(zwaar(DELING_GROTER_DAN_EEN)), DroolsBackend.Branch.TRUTH_MAINTENANCE)
+        CaseRunner.voorMeting(document(zwaar(DELING_GROTER_DAN_EEN)), DroolsBackend.Branch.EXEC_MODEL)
                 .metSessie(JSON.readTree(NUL_EN_GEWOON), (bouw, sessie, labels) -> {
                     assertEquals(null, DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fire reaches its fixpoint");
                     List<dev.uchar.regelspraak.transpiler.tms.Fout> fouten = DroolsBackend.lees(bouw, sessie).fouten();

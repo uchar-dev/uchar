@@ -109,7 +109,7 @@ class TmsDeponeringWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsDocumenten.document(MODEL, volgorde, List.of(CONTROLE));
             for (JsonNode zaak : List.of(zaak1(), zaak2())) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
         }

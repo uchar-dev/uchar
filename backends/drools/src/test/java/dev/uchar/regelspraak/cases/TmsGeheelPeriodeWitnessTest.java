@@ -179,7 +179,7 @@ class TmsGeheelPeriodeWitnessTest {
             Path ir = TmsTijdlijnDocumenten.document(model, volgorde, List.of());
             for (int i = 0; i < zaken.size(); i++)
                 uit.add(namen + " zaak " + i + " " + TmsFoutWitnessTest.speel(ir, zaken.get(i),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
         }
         return uit;
     }
@@ -272,9 +272,9 @@ class TmsGeheelPeriodeWitnessTest {
 
     @Test void een_premie_van_een_tussenstand_is_aan_het_fixpunt_weg() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL_A, REGELS_A, List.of());
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int onderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j2 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("drempel", "20"), List.of());
             TmsTijdlijnDocumenten.zet(j2, "wachtplichtig", List.of(
@@ -504,15 +504,15 @@ class TmsGeheelPeriodeWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS_E)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL_E, volgorde, List.of());
-            uit.add(namen + " " + TmsFoutWitnessTest.speel(ir, emmerFout(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-            uit.add(namen + " " + TmsFoutWitnessTest.speel(ir, emmerSpeelt(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uit.add(namen + " " + TmsFoutWitnessTest.speel(ir, emmerFout(), DroolsBackend.Branch.EXEC_MODEL));
+            uit.add(namen + " " + TmsFoutWitnessTest.speel(ir, emmerSpeelt(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " " + EMMERFOUT);
             verwacht.add(namen + " gespeeld");
         }
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS_E_PAD)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uit.add(namen + " " + TmsFoutWitnessTest.speel(TmsTijdlijnDocumenten.document(MODEL_E_PAD, volgorde,
-                    List.of()), emmerOverPad(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    List.of()), emmerOverPad(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " " + EMMERFOUT_PAD);
         }
         assertEquals(verwacht, uit);
@@ -542,15 +542,15 @@ class TmsGeheelPeriodeWitnessTest {
         String tweeTijdlijnen = heleVergelijking("greater", lezing("wachtdagen", "Jutter"), lezing("vaardagen", "Jutter"),
                 heel(true, false), "zijn wachtdagen gedurende het gehele jaar groter is dan zijn vaardagen");
         assertEquals(List.of(
-                "tms-transpiler SKIP: regel: trouw — een CharacteristicCheck met wholePeriod ('hij gedurende het gehele"
+                "transpiler SKIP: regel: trouw — een CharacteristicCheck met wholePeriod ('hij gedurende het gehele"
                         + " jaar niet wachtplichtig is') met de ontkenning binnen de kwalificatie: de truth-maintenance-tak"
                         + " draagt deze vorm nog niet, zoals de andere twee takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen"
                         + " golden met cases heeft haar",
-                "tms-transpiler SKIP: regel: werftoeslag — een Comparison met wholePeriod ('de havendagen van de werf van"
+                "transpiler SKIP: regel: werftoeslag — een Comparison met wholePeriod ('de havendagen van de werf van"
                         + " de Schuit gedurende het gehele jaar groter is dan 5') over een tijdlijn langs een pad ('de"
                         + " havendagen van zijn werf'): de referentie-interpreter vouwt alleen een eigen tijdsafhankelijk"
                         + " attribuut van het onderwerp (RUNTIME-SEMANTICS ch. 3.9, 3.12)",
-                "tms-transpiler SKIP: regel: trouw — een Comparison met wholePeriod ('zijn wachtdagen gedurende het gehele"
+                "transpiler SKIP: regel: trouw — een Comparison met wholePeriod ('zijn wachtdagen gedurende het gehele"
                         + " jaar groter is dan zijn vaardagen') tussen twee tijdlijnen: de vouw toetst één tijdlijn van het"
                         + " onderwerp tegen een grens (RUNTIME-SEMANTICS ch. 3.9)"),
                 List.of(weigering(MODEL_R, trouw(binnen)), weigering(MODEL_B, overPad),
@@ -561,7 +561,7 @@ class TmsGeheelPeriodeWitnessTest {
     static String weigering(String model, String regel) throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(model, List.of(regel), List.of());
         return org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE)).getMessage();
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL)).getMessage();
     }
 
     // ---------------- the documents, for the other executors ----------------

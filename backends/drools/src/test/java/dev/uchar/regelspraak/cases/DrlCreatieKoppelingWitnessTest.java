@@ -134,7 +134,7 @@ class DrlCreatieKoppelingWitnessTest {
         String keten = oorzaken(e);
         assertTrue(keten.contains("niet booleaans: 5") && keten.contains("(WF-027)"), "drl-tekst: " + keten);
         CaseRunner.Excluded w = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, overzeeJutter(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, overzeeJutter(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(w.getMessage().contains("een kenmerkinitialisatie van 'overzees' met een waarde van type Numeriek"
                 + " ('5'): een kenmerk is waar of onwaar (WF-027)"), "tms: " + w.getMessage());
     }

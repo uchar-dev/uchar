@@ -88,7 +88,7 @@ class TmsZoalsRefWitnessTest {
             try {
                 uitkomst = CaseRunner.speelCase(m.resolve("ir.json"),
                         TmsDocumenten.JSON.readTree(Files.readString(m.resolve("case.json"))),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                        DroolsBackend.Branch.EXEC_MODEL);
             } catch (RuntimeException e) {
                 uitkomst = e.getClass().getSimpleName() + ": " + e.getMessage();
             }

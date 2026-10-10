@@ -316,7 +316,7 @@ class OpslagrichtingWitnessTest {
 
     /** The replay of one case on the truth-maintenance branch: null on a match. */
     private static String speelTms(Path ir, com.fasterxml.jackson.databind.JsonNode c) throws Exception {
-        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     private static Path ir(String golden) {

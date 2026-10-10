@@ -116,7 +116,7 @@ class TmsDoorvalWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.EXEC_MODEL),
                     () -> "volgorde " + namen);
             volgordes++;
         }
@@ -130,8 +130,8 @@ class TmsDoorvalWitnessTest {
     /** The two defaults, the four rules and the standings of tussen, afgewezen, bron1 and bron2: too many for every
      *  order, so a seeded sample, which must take the takeover and the give-back each at least once. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(16, gegenereerd.size(),
                 () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int[] overname = {0}, teruggave = {0};

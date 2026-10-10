@@ -160,7 +160,7 @@ class TmsAfnemerWitnessTest {
 
     @Test void lees_en_terugzetten_weigeren_een_sessie_die_niet_via_vuur_vuurde() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -184,7 +184,7 @@ class TmsAfnemerWitnessTest {
 
     @Test void lees_en_terugzetten_weigeren_een_sessie_waarvan_de_laatste_vuur_geen_fixpunt_bereikte() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -210,7 +210,7 @@ class TmsAfnemerWitnessTest {
 
     @Test void lees_weigert_een_sessie_waarvan_de_laatste_vuur_afbrak() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
@@ -252,7 +252,7 @@ class TmsAfnemerWitnessTest {
 
     @Test void na_een_update_lezen_lees_en_terugzetten_pas_na_een_volgende_vuur() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -280,7 +280,7 @@ class TmsAfnemerWitnessTest {
 
     @Test void een_update_na_het_terugzetten_wijst_lees_naar_een_verse_sessie() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -306,7 +306,7 @@ class TmsAfnemerWitnessTest {
     @Test void lees_met_labels_noemt_het_object_van_een_fout_bij_zijn_label() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding", "ir.json");
         JsonNode c = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling("case1-beide-schrijvers-gelden.json")));
-        CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c, (bouw, sessie, labels) -> {
+        CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL).metSessie(c, (bouw, sessie, labels) -> {
             Map<Object, String> naarLabel = new IdentityHashMap<>();
             labels.forEach((l, boon) -> naarLabel.put(boon, l));
             Object v = labels.get("V");
@@ -370,7 +370,7 @@ class TmsAfnemerWitnessTest {
     private static void speel(String golden, String zaak, CaseRunner.Sessiemeting<Void> meting) throws Exception {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         JsonNode c = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling(zaak)));
-        CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c, meting);
+        CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL).metSessie(c, meting);
     }
 
     /** The way on where something happened outside {@code vuur} after it: a further {@code vuur}, or a fresh session

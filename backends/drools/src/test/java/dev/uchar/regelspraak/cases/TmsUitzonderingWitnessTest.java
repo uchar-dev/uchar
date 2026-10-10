@@ -113,7 +113,7 @@ class TmsUitzonderingWitnessTest {
     @Test void elke_volgorde_van_de_regels_in_het_document() throws Exception {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.EXEC_MODEL),
                     () -> "volgorde " + namen);
         }
     }
@@ -123,8 +123,8 @@ class TmsUitzonderingWitnessTest {
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int[] ingetrokken = {0};
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();

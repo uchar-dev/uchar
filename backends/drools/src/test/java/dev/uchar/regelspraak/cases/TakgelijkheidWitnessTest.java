@@ -67,7 +67,7 @@ class TakgelijkheidWitnessTest {
         // exec branch already printed.
         Path ir = aggregatieJoinOnafgeleid(), c = ir(VONDSTTELLING).resolveSibling("case.json");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("regel: aantal aangemelde vondsten — de aggregatie-join van 'het aantal"
                 + " vondsten van de Jutter' heeft geen beanveld — de rol 'aanmelder' op Vondst is meervoudig"), e.getMessage());
         String drl = drlReden(ir, c);
@@ -101,7 +101,7 @@ class TakgelijkheidWitnessTest {
         // the BigDecimal's absence as an absent relation, silently.
         Path ir = aggregatieJoinVerdrongen(), c = geval(telCaseZonderRollen());
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("regel: aantal aangemelde vondsten — de aggregatie-join van 'het aantal"
                 + " vondsten van de Jutter' heeft geen beanveld — de rol 'aanmelder' op Vondst deelt haar naam met een"
                 + " gedeclareerd lid"), e.getMessage());
@@ -153,7 +153,7 @@ class TakgelijkheidWitnessTest {
         //     Drools DRL-tekst  : ERROR NullPointerException: Cannot read field "naam" because "anker" is null
         Path ir = feitcreatieZonder("anchor"), c = ir(POSTWACHT).resolveSibling("case.json");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("feitcreatie: vakbeseining door het kustvak — een feitcreatie zonder opgelost"
                 + " anker, doel, feittype of pad"), e.getMessage());
         String drl = drlReden(ir, c);
@@ -204,7 +204,7 @@ class TakgelijkheidWitnessTest {
     /** The truth-maintenance branch refuses a nameless fact creation by name, as the verifier does (WF-107). */
     private static void naamloosGeweigerd(Path ir, Path c) throws Exception {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("feitcreatie: (zonder naam) — een feitcreatie zonder naam (WF-107)"),
                 e.getMessage());
     }

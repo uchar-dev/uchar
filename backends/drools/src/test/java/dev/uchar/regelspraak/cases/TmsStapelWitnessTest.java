@@ -109,7 +109,7 @@ class TmsStapelWitnessTest {
     }
 
     @Test void de_gevouwen_initialisatie_vult_onder_haar_voorwaarde() throws Exception {
-        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertNull(CaseRunner.speelCase(document(), zaak(), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void de_exec_modeltak_geeft_dezelfde_eindtoestand() throws Exception {
@@ -117,8 +117,8 @@ class TmsStapelWitnessTest {
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         Class<?> wrakvondst = Class.forName("dev.uchar.regelspraak.facts.Wrakvondst", true, b.beanLoader());
         int[] gevouwen = {0};
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
@@ -154,9 +154,9 @@ class TmsStapelWitnessTest {
 
     /** The fold is per concrete type: the Wrakvondst carries one stack, and the Vondst none. */
     @Test void een_stapel_per_concreet_type() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<String> namen = b.tmsTranspiler().defaultsgroepen().stream().map(g -> g.naam()).toList();
+        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
+        List<String> namen = b.execModelTranspiler().defaultsgroepen().stream().map(g -> g.naam()).toList();
         assertEquals(List.of("defaults A:Wrakvondst.bergloon"), namen);
-        assertFalse(b.tmsTranspiler().defaultsgroepen().get(0).algemeen());
+        assertFalse(b.execModelTranspiler().defaultsgroepen().get(0).algemeen());
     }
 }

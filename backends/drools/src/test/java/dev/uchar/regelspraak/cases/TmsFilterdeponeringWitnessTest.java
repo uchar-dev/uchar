@@ -190,7 +190,7 @@ class TmsFilterdeponeringWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (JsonNode zaak : List.of(zaak1(), zaak2(), zaak3())) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
         }
@@ -208,7 +208,7 @@ class TmsFilterdeponeringWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             for (JsonNode zaak : List.of(metDeponering, zonder)) {
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " gespeeld");
             }
         }
@@ -226,7 +226,7 @@ class TmsFilterdeponeringWitnessTest {
                 JsonNode zaak = TmsDocumenten.zaak(List.of(jutter("J2", true, leden), vondst("V3", "10", "0"),
                         vondst("V4", "3", null)), List.of(consistent()));
                 uitkomsten.add(namen + " " + leden + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " " + leden + " " + fout);
             }
         }

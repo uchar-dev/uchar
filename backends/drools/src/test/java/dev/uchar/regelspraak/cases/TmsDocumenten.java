@@ -405,9 +405,9 @@ final class TmsDocumenten {
 
     /** A KieBase of the rules {@code b}'s transpiler generated, added in {@code volgorde}, as the branch builds it. */
     static org.kie.api.KieBase kieBase(DroolsBackend.Build b, List<org.drools.model.Rule> volgorde) {
-        org.drools.model.impl.ModelImpl m = new org.drools.model.impl.ModelImpl(b.tmsTranspiler().model().getName());
+        org.drools.model.impl.ModelImpl m = new org.drools.model.impl.ModelImpl(b.execModelTranspiler().model().getName());
         volgorde.forEach(m::addRule);
-        b.tmsTranspiler().model().getGlobals().forEach(m::addGlobal);
+        b.execModelTranspiler().model().getGlobals().forEach(m::addGlobal);
         return org.drools.modelcompiler.KieBaseBuilder.createKieBaseFromModel(m,
                 org.kie.api.conf.EqualityBehaviorOption.EQUALITY);
     }

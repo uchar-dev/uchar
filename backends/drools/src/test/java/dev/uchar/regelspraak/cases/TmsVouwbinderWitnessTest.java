@@ -92,14 +92,14 @@ class TmsVouwbinderWitnessTest {
 
     private static String weigering(Path ir) throws Exception {
         try {
-            DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
             return "gebouwd";
         } catch (CaseRunner.Excluded e) {
             return e.getMessage();
         }
     }
 
-    private static final String NOG_NIET = "tms-transpiler SKIP: regel: zware vondsten van een jutter — een"
+    private static final String NOG_NIET = "transpiler SKIP: regel: zware vondsten van een jutter — een"
             + " BinderRef 'grens' van een Let om een vouw, in het filter of de matrix van die vouw ('grens'): de"
             + " bijdrageregels van de vouw rekenen het filter en de matrix per lid uit en binden de waarde van de Let"
             + " niet: de truth-maintenance-tak draagt deze vorm nog niet";
@@ -116,7 +116,7 @@ class TmsVouwbinderWitnessTest {
     }
 
     @Test void een_binder_zonder_omsluitende_let_houdt_de_reden_van_wf064() throws Exception {
-        assertEquals("tms-transpiler SKIP: regel: zware vondsten van een jutter — een BinderRef 'grens' zonder"
+        assertEquals("transpiler SKIP: regel: zware vondsten van een jutter — een BinderRef 'grens' zonder"
                 + " omsluitende Let die hem bindt ('grens', WF-064)",
                 weigering(document(telling(groter(VONDSTGEWICHT, GRENS)))));
     }
@@ -133,6 +133,6 @@ class TmsVouwbinderWitnessTest {
         gewichten.forEach((label, gewicht) -> instanties.add(instantieMetRollen(label, "Vondst",
                 Map.of("gewicht", gewicht), List.of(), Map.of())));
         assertNull(CaseRunner.speelCase(ir, TmsDocumenten.zaak(instanties, List.of(waarde("J1", "zwaar", "2"),
-                waarde("J2", "zwaar", "0"))), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                waarde("J2", "zwaar", "0"))), DroolsBackend.Branch.EXEC_MODEL));
     }
 }

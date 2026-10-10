@@ -144,7 +144,7 @@ class TmsTijdlijnWeigeringWitnessTest {
 
     /** The sentence of a comparison clip with {@code op} ("gelijk aan", "ongelijk aan") spelled {@code snippet}. */
     static String knipzin(String regel, String op, String snippet) {
-        return "tms-transpiler SKIP: regel: " + regel + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
+        return "transpiler SKIP: regel: " + regel + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
                 + " vergoeding') met '" + op + "' in de knip ('" + snippet + "'): de truth-maintenance-tak draagt deze"
                 + " vorm nog niet; de rekenhulp rsTijdConditie leest een lege kant, een gat in de vergeleken tijdlijn of"
                 + " een lege grens, als geen periode, waar RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de"
@@ -187,7 +187,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 List.of(), Map.of("borgplichtig", List.of(periode("2024-03-01", "2025-01-01"))), Map.of())),
                         List.of(verwachteTijdlijn("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01",
                                 "306"))))),
-                List.of("tms-transpiler SKIP: regel: jaardeel init — een initialisatie van het tijdsafhankelijke"
+                List.of("transpiler SKIP: regel: jaardeel init — een initialisatie van het tijdsafhankelijke"
                         + " attribuut 'jaardeel' van Jutter: de truth-maintenance-tak draagt deze vorm nog niet; geen"
                         + " golden met cases heeft er een")));
         // a time window in the condition of a rule with a timeline target
@@ -201,7 +201,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 Map.of("borgplichtig", List.of(periode("2024-03-01", "2025-03-01"))), Map.of())),
                         List.of(verwachteTijdlijn("J1", "jaardeel", List.of(segment("2025-01-01", "2026-01-01",
                                 "59"))))),
-                List.of("tms-transpiler SKIP: regel: jaardeel vanaf 2025 — een periodevenster in de voorwaarde van een"
+                List.of("transpiler SKIP: regel: jaardeel vanaf 2025 — een periodevenster in de voorwaarde van een"
                         + " regel met het tijdsafhankelijke doel 'jaardeel' van Jutter: daar knipt het venster de tijdlijn"
                         + " (RUNTIME-SEMANTICS ch. 3.10), en de truth-maintenance-tak draagt deze vorm nog niet, zoals de"
                         + " andere twee takken van de Drools-backend haar niet dragen")));
@@ -211,7 +211,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 vergelijking("greater", lezing("score", "Jutter"), getal("5")))), List.of()),
                 TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of("score", getalwaarde("10")),
                         List.of(), Map.of(), Map.of())), List.of(TmsDocumenten.consistent())),
-                List.of("tms-transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
+                List.of("transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
                         + " Jutter als doel: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met cases"
                         + " schrijft er een (RUNTIME-SEMANTICS ch. 3.11)")));
         // a sum of timelines over a set as the value of a timeline target, the staggered contributors of ch. 3.5
@@ -234,7 +234,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(verwachteTijdlijn("J1", "tariefsom", List.of(segment("2024-01-01", "2024-02-01", "50"),
                                 segment("2024-02-01", "2024-03-01", "70"), segment("2024-03-01", "2024-04-01",
                                         "10"))))),
-                List.of("tms-transpiler SKIP: regel: tariefsom — een waarde van het tijdsafhankelijke doel 'tariefsom'"
+                List.of("transpiler SKIP: regel: tariefsom — een waarde van het tijdsafhankelijke doel 'tariefsom'"
                         + " van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van de tarieven van"
                         + " zijn vondsten'): de truth-maintenance-tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
                         + " 3.4, 3.5, 3.11); geen golden met cases schrijft er een")));
@@ -263,7 +263,7 @@ class TmsTijdlijnWeigeringWitnessTest {
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
         uit.add(new Rij("vreemde-noemer", TmsTijdlijnDocumenten.ir(MODEL_TARIEF, List.of(WACHTSOM_TARIEF), List.of()),
                 tariefzaak("10"),
-                List.of("tms-transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " vergoeding') over 'vergoeding' met het tarief EUR/jr op een raster van MAAND: de noemer"
                         + " is niet de eenheid van het raster, en de tak herrekent hem niet (RUNTIME-SEMANTICS ch. 3.6);"
                         + " geen golden met cases heeft het")));
@@ -294,7 +294,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 tijdlijn(List.of(segment("2024-01-01", "2025-01-01", "12")))), List.of(),
                                 Map.of("borgplichtig", List.of(periode("2024-01-01", "2024-04-01"))), Map.of())),
                         List.of(waarde("J1", "wachtsom", "36"))),
-                List.of("tms-transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " maanddeel') zonder knip over de tijdlijn van 'maanddeel', die een vorm schrijft: de"
                         + " referentie-interpreter neemt het totaal zonder knip alleen van de scalaire invoer op de periode"
                         + " van de rekendatum en weigert een volle tijdlijn (RUNTIME-SEMANTICS ch. 3.6); de"
@@ -310,7 +310,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                 TmsTijdlijnDocumenten.zaak(null, List.of(instantie("S1", "Schouwveld", Map.of("meetdatum",
                                 "{\"date\":\"2024-04-01\"}"), List.of(), Map.of(), Map.of())),
                         List.of(waarde("S1", "peilsom", "0"))),
-                List.of("tms-transpiler SKIP: regel: peilsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                List.of("transpiler SKIP: regel: peilsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                                 + " waterstand') over het attribuut 'waterstand' van Schouwveld op een tijdlijn met een"
                                 + " variabel startpunt: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met"
                                 + " cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster")));
@@ -327,7 +327,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of(rekenregel("opbrengst", "BEREKENING", "Jutter", "opbrengst",
                                 TmsDocumenten.parameterlezing("penningbedrag"), "null")), List.of()),
                 parameterzaak,
-                List.of("tms-transpiler SKIP: regel: opbrengst — de tijdsafhankelijke parameter 'penningbedrag': de"
+                List.of("transpiler SKIP: regel: opbrengst — de tijdsafhankelijke parameter 'penningbedrag': de"
                         + " truth-maintenance-tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen"
                         + " dat in een TemporalRead, die de lader voor alle takken weigert")));
         // a dimensioned attribute on a timeline, read by a dimension cell and by the total of its timeline; the case
@@ -338,7 +338,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                                 + "{\"snippet\":\"zijn omzet in k2\"}}", "null")), List.of()),
                 TmsTijdlijnDocumenten.zaak(null, List.of(instantie("J1", "Jutter", Map.of(), List.of(), Map.of(),
                         Map.of())), List.of(waarde("J1", "tweede kwartaal", null))),
-                List.of("tms-transpiler SKIP: regel: tweede kwartaal — het gedimensioneerde attribuut 'omzet' van"
+                List.of("transpiler SKIP: regel: tweede kwartaal — het gedimensioneerde attribuut 'omzet' van"
                         + " Jutter op een tijdlijn: de truth-maintenance-tak draagt deze vorm nog niet; geen golden met"
                         + " cases heeft er een")));
         uit.add(new Rij("totaal-over-dimensies", TmsTijdlijnDocumenten.ir(MODEL_DIMENSIE, List.of(rekenregel(
@@ -346,14 +346,14 @@ class TmsTijdlijnWeigeringWitnessTest {
                         List.of()),
                 TmsTijdlijnDocumenten.zaak("2024-06-01", List.of(instantie("J1", "Jutter", Map.of(), List.of(),
                         Map.of(), Map.of())), List.of(waarde("J1", "omzetsom", null))),
-                List.of("tms-transpiler SKIP: regel: omzetsom — het gedimensioneerde attribuut 'omzet' van Jutter,"
+                List.of("transpiler SKIP: regel: omzetsom — het gedimensioneerde attribuut 'omzet' van Jutter,"
                         + " gelezen of geschreven buiten een DimensionCellRead of een vouw over een dimensieselectie:"
                         + " de truth-maintenance-tak draagt deze vorm nog niet; geen golden met cases heeft het")));
         return uit;
     }
 
     static String tweedeSchrijver(String regel, String ander) {
-        return "tms-transpiler SKIP: regel: " + regel + " — een tijdsafhankelijk doel met een tweede schrijver"
+        return "transpiler SKIP: regel: " + regel + " — een tijdsafhankelijk doel met een tweede schrijver"
                 + " ('jaardeel' van Jutter wordt ook geschreven door \"" + ander + "\"): de truth-maintenance-tak draagt"
                 + " deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen"
                 + " golden met cases heeft er een";
@@ -409,7 +409,7 @@ class TmsTijdlijnWeigeringWitnessTest {
     /** The refusal of the wachtsom over the rate EUR/mnd where the document does not declare the month grid's unit as
      *  exactly one unit: the form, the member and the reference interpreter's sentence, which ends in {@code reden}. */
     static String rastereenheidzin(String reden) {
-        return "tms-transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+        return "transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                 + " vergoeding') over 'vergoeding': the temporal total of a EUR/mnd value: " + reden;
     }
 
@@ -445,7 +445,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                 tariefmodel(EUR_PER_MND, List.of(TmsDocumenten.eenheidstelsel("Munt", List.of(EUR)),
                         TmsDocumenten.eenheidstelsel("Tijd", List.of(MND, JR)))), List.of(WACHTSOM_TARIEF), List.of()));
         ir.toFile().deleteOnExit();
-        assertNull(CaseRunner.speelCase(ir, tariefzaak("120"), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertNull(CaseRunner.speelCase(ir, tariefzaak("120"), DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void elke_tijdlijnvorm_die_de_tak_niet_draagt_wordt_geweigerd_met_haar_zin() throws Exception {
@@ -455,7 +455,7 @@ class TmsTijdlijnWeigeringWitnessTest {
             ir.toFile().deleteOnExit();
             String gebouwd;
             try {
-                DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
                 gebouwd = "gebouwd";
             } catch (CaseRunner.Excluded e) {
                 gebouwd = e.getMessage();
@@ -479,7 +479,7 @@ class TmsTijdlijnWeigeringWitnessTest {
                     l.bronPaden(), l.navigatieBindingen());
             List<String> uit = new ArrayList<>();
             for (Dekking d : t.dekking())
-                if (!d.lowered()) uit.add("tms-transpiler " + d.verdict() + ": " + d.sleutel()
+                if (!d.lowered()) uit.add("transpiler " + d.verdict() + ": " + d.sleutel()
                         + (d.reden().isEmpty() ? "" : " — " + d.reden()));
             return uit;
         } finally {

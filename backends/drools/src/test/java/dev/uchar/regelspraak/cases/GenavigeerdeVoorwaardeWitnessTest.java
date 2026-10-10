@@ -355,6 +355,6 @@ class GenavigeerdeVoorwaardeWitnessTest {
         Path tmp = Files.createTempFile("genavigeerde-voorwaarde", ".json");
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
-        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL);
     }
 }

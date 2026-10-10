@@ -132,7 +132,7 @@ class TmsOoitUniciteitWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL, volgorde, List.of(EENMALIG));
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -140,9 +140,9 @@ class TmsOoitUniciteitWitnessTest {
 
     @Test void het_kanaal_houdt_aan_het_fixpunt_precies_de_botsingen_van_de_afgeleide_sleutels() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL, REGELS, List.of(EENMALIG));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             ClassLoader l = b.beanLoader();
             Map<Object, String> labels = new IdentityHashMap<>();

@@ -236,7 +236,7 @@ class MeerPeriodiekePoortWitnessTest {
             throw new RuntimeException(e);
         }
         return assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL),
                 "verwacht een weigering van de tak met truth maintenance").getMessage();
     }
 

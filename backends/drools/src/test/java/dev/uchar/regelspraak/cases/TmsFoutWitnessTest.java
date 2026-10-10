@@ -144,7 +144,7 @@ class TmsFoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(TIJDELIJK)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            uitkomsten.add(namen + " " + speel(tijdelijk(volgorde), tijdelijkeZaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + speel(tijdelijk(volgorde), tijdelijkeZaak(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -158,8 +158,8 @@ class TmsFoutWitnessTest {
     /** The two rules, the two defaults, and the standings of the bergloon and of erkend; a seeded sample of their
      *  orders, at least one of which must let the reader divide by the transient 0 of the lower default. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int opDeTussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -213,7 +213,7 @@ class TmsFoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(BLIJVEND)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            uitkomsten.add(namen + " " + speel(blijvend(volgorde), blijvendeZaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + speel(blijvend(volgorde), blijvendeZaak(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " " + AANDEEL_DOOR_NUL);
         }
         assertEquals(verwacht, uitkomsten);
@@ -225,9 +225,9 @@ class TmsFoutWitnessTest {
      *  erkend, and the write-back reports the fault that stands there, as a consumer that fires a KieBase itself
      *  meets it. */
     @Test void de_fout_telt_aan_het_fixpunt_en_niet_in_de_fire() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(blijvend(BLIJVEND), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(blijvend(BLIJVEND), DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
                     List.of("gemeld"));
@@ -273,7 +273,7 @@ class TmsFoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(TWEE)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            uitkomsten.add(namen + " " + speel(twee(volgorde), tweeZaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + speel(twee(volgorde), tweeZaak(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " " + TWEE_FOUTEN);
         }
         assertEquals(verwacht, uitkomsten);
@@ -282,9 +282,9 @@ class TmsFoutWitnessTest {
 
     /** The three rules and the three standings of erkend: 720 orders, every one tried. */
     @Test void twee_blijvende_fouten_in_elke_volgorde_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(twee(TWEE), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(twee(TWEE), DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst",
                     Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"), List.of("gemeld"));
@@ -300,8 +300,8 @@ class TmsFoutWitnessTest {
      *  so the red path's cause chain reads as on that branch. Two faults are one exception whose cause is the first
      *  fault of its message and whose suppressed exception is the second. */
     @Test void de_fouten_aan_het_fixpunt_dragen_de_deling_als_oorzaak() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(blijvend(BLIJVEND), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        RuntimeException een = fixpuntfout(b, b.tmsTranspiler().model().getRules(), List.of(TmsDocumenten.boon(
+        DroolsBackend.Build b = DroolsBackend.build(blijvend(BLIJVEND), DroolsBackend.Branch.EXEC_MODEL);
+        RuntimeException een = fixpuntfout(b, b.execModelTranspiler().model().getRules(), List.of(TmsDocumenten.boon(
                 b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"), List.of("gemeld"))),
                 new DefaultAgendaEventListener() {}, new Foutfeiten());
         assertInstanceOf(Breuk.DelingDoorNul.class, een);
@@ -309,8 +309,8 @@ class TmsFoutWitnessTest {
         assertInstanceOf(Breuk.DelingDoorNul.class, een.getCause());
         assertEquals("Breuk deling door 0", een.getCause().getMessage());
 
-        DroolsBackend.Build b2 = DroolsBackend.build(twee(TWEE), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        RuntimeException twee = fixpuntfout(b2, b2.tmsTranspiler().model().getRules(), List.of(TmsDocumenten.boon(
+        DroolsBackend.Build b2 = DroolsBackend.build(twee(TWEE), DroolsBackend.Branch.EXEC_MODEL);
+        RuntimeException twee = fixpuntfout(b2, b2.execModelTranspiler().model().getRules(), List.of(TmsDocumenten.boon(
                 b2.beanLoader(), "Vondst", Map.of("opbrengst", "100", "taxatie", "30", "deelnemers", "0"),
                 List.of("gemeld"))), new DefaultAgendaEventListener() {}, new Foutfeiten());
         assertEquals(TWEE_FOUTEN, twee.getClass().getSimpleName() + ": " + twee.getMessage());
@@ -332,7 +332,7 @@ class TmsFoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(TWEE)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            String regel = cli("--tms", twee(volgorde).toString(), zaak.toString());
+            String regel = cli(twee(volgorde).toString(), zaak.toString());
             List<String> mis = gebreken(regel, TWEE_KOP, List.of("aandeel", "verhouding"));
             uitkomsten.add(namen + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
             verwacht.add(namen + " in orde");
@@ -377,7 +377,7 @@ class TmsFoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (List<String> volgorde : TmsDocumenten.permutaties(LANG)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde).stream().map(n -> kort.getOrDefault(n, n)).toList();
-            String regel = cli("--tms", TmsDocumenten.document(MODEL, volgorde).toString(), zaak.toString());
+            String regel = cli(TmsDocumenten.document(MODEL, volgorde).toString(), zaak.toString());
             List<String> mis = gebreken(regel, kop, List.of(LANG_VERHOUDING, LANG_AANDEEL));
             uitkomsten.add(namen + (mis.isEmpty() ? " in orde" : " " + mis + ": " + regel));
             verwacht.add(namen + " in orde");

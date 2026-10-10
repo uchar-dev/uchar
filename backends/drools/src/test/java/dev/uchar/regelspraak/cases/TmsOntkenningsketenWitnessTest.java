@@ -114,8 +114,8 @@ class TmsOntkenningsketenWitnessTest {
     /** The generated rule list in its own order, reversed, and in 100 orders drawn with a fixed seed, each in a fresh
      *  KieBase in EQUALITY mode, fired to its fixpoint under the replay's cap and written back as the replay does. */
     private static void steekproef(Path ir, String invoer, int regels) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(regels, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         List<List<Rule>> volgordes = new ArrayList<>();
         volgordes.add(gegenereerd);
@@ -129,9 +129,9 @@ class TmsOntkenningsketenWitnessTest {
             volgordes.add(v);
         }
         for (List<Rule> volgorde : volgordes) {
-            ModelImpl m = new ModelImpl(b.tmsTranspiler().model().getName());
+            ModelImpl m = new ModelImpl(b.execModelTranspiler().model().getName());
             volgorde.forEach(m::addRule);
-            b.tmsTranspiler().model().getGlobals().forEach(m::addGlobal);
+            b.execModelTranspiler().model().getGlobals().forEach(m::addGlobal);
             KieBase kb = KieBaseBuilder.createKieBaseFromModel(m, EqualityBehaviorOption.EQUALITY);
             ClassLoader vorige = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(b.beanLoader());
@@ -161,7 +161,7 @@ class TmsOntkenningsketenWitnessTest {
     // ---------------- the documents and the case ----------------
 
     private static String speel(List<String> volgorde, String invoer) throws Exception {
-        return CaseRunner.speelCase(document(volgorde), zaak(invoer), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(document(volgorde), zaak(invoer), DroolsBackend.Branch.EXEC_MODEL);
     }
 
     private static Path document(List<String> regels) throws Exception {

@@ -100,11 +100,11 @@ class TmsTerugzettingWitnessTest {
                 List.of(verwacht("J1", "vergund", true), verwacht("J1", "erkend", true),
                         verwacht("J2", "vergund", true), verwacht("J2", "erkend", false),
                         verwacht("J3", "vergund", false), verwacht("J3", "erkend", false))),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void pas_na_het_terugzetten_draagt_de_boon_het_afgeleide_kenmerk() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         KieSession sessie = b.kieBase().newKieSession();
@@ -190,7 +190,7 @@ class TmsTerugzettingWitnessTest {
             for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN)) {
                 String waar = documentvolgorde(regels, groepen);
                 assertNull(CaseRunner.speelCase(vondstdocument(regels, groepen), vondstzaak(),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE), waar);
+                        DroolsBackend.Branch.EXEC_MODEL), waar);
                 volgordes++;
             }
         assertEquals(4, volgordes);
@@ -203,7 +203,7 @@ class TmsTerugzettingWitnessTest {
         for (List<String> regels : TmsDocumenten.permutaties(REGELS))
             for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN)) {
                 vuurEnZetTerug(DroolsBackend.build(vondstdocument(regels, groepen),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE), documentvolgorde(regels, groepen));
+                        DroolsBackend.Branch.EXEC_MODEL), documentvolgorde(regels, groepen));
                 volgordes++;
             }
         assertEquals(4, volgordes);
@@ -275,7 +275,7 @@ class TmsTerugzettingWitnessTest {
     /** Puts a Waarde of {@code eerste} by the rule "uitkering" and one of {@code tweede} by another writer on the
      *  uitkering of one Vondst, in both orders, each in a fresh session, writes back, and collects the failures. */
     private static Object tweeSchrijvers(BigDecimal eerste, BigDecimal tweede, List<String> zinnen) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(vondstdocument(REGELS, GROEPEN), DroolsBackend.Branch.EXEC_MODEL);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
         try {

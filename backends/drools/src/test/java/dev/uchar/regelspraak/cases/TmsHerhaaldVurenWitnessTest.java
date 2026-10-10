@@ -187,7 +187,7 @@ class TmsHerhaaldVurenWitnessTest {
             + " (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
     @Test void een_afleiding_vervalt_en_een_initialisatie_vuurt_opnieuw_tussen_twee_fires() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -215,7 +215,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void een_fout_vervalt_en_een_fout_ontstaat_tussen_twee_fires() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(foutdocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(foutdocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = new LinkedHashMap<>();
             bonen.put("V1", TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("noemer", "0"), List.of()));
@@ -241,7 +241,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void na_het_terugzetten_weigert_vuur_de_sessie() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -266,7 +266,7 @@ class TmsHerhaaldVurenWitnessTest {
     @Test void een_model_met_creatie_weigert_een_tweede_vuur() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
         String zaak = Files.readString(ir.resolveSibling("case1-berekend.json"));
-        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL);
         runner.metSessie(TmsDocumenten.JSON.readTree(zaak), (bouw, sessie, labels) -> {
             Object j1 = labels.get("J1");
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
@@ -301,7 +301,7 @@ class TmsHerhaaldVurenWitnessTest {
             "V2.vindloon = 9");
 
     @Test void een_relatie_naar_een_object_buiten_de_invoer_weigert_vuur() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             Object v1 = bonen.get("V1");
@@ -343,7 +343,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void invoer_die_buiten_voegIn_om_bijkomt_of_weggaat_weigert_vuur() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             String nieuwOfWeg = "): een afnemer geeft alle bonen in één Invoer aan voegIn en verandert daarna alleen hun"
                     + " attributen en kenmerken, met update, want voegIn legt de plaatsen van een lijst en de"
@@ -431,7 +431,7 @@ class TmsHerhaaldVurenWitnessTest {
     @Test void een_global_die_na_de_eerste_vuur_verandert_weigert_vuur_lees_en_terugzetten() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "golden", "jutterswet-aanvoergeld", "ir.json");
         String zaak = Files.readString(ir.resolveSibling("case.json"));
-        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL);
         String veranderd = "de global 'aanvoertarief' veranderde van 12.50 in 22.50 na de eerste DroolsBackend.vuur van"
                 + " deze sessie";
         runner.metSessie(TmsDocumenten.JSON.readTree(zaak), (bouw, sessie, labels) -> {
@@ -465,7 +465,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void een_verwijderd_feit_van_de_tak_weigert_vuur() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -487,7 +487,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void een_ingevoegd_of_gewijzigd_feit_dat_geen_boon_van_de_invoer_is_weigert_vuur() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             // a fact of no kind voegIn puts in
             Map<String, Object> bonen = waardebonen(b, "10");
@@ -521,7 +521,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void een_kale_fire_tussen_twee_fires_weigert_vuur() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();
@@ -548,7 +548,7 @@ class TmsHerhaaldVurenWitnessTest {
     /** J1 actief with V1 (10 by 2) as its aanmelder's Vondst, and V2 (9 by 0) without an aanmelder; then V2 gets J1. */
     @Test void een_relatie_die_ontstaat_tussen_twee_fires_weigert_vuur() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = new LinkedHashMap<>();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
@@ -583,7 +583,7 @@ class TmsHerhaaldVurenWitnessTest {
     /** J1 and J2 actief, V1 (9 by 0) J1's, V2 (4 by 0) J2's, each at place 0 of its list; then V1 moves to J2. */
     @Test void een_relatie_die_tussen_twee_fires_verhuist_weigert_vuur() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = new LinkedHashMap<>();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("actief"));
@@ -618,7 +618,7 @@ class TmsHerhaaldVurenWitnessTest {
 
     @Test void een_geleegde_agenda_of_een_focuswissel_buiten_vuur_om_weigert_vuur_lees_en_terugzetten()
             throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         String main = "de agendagroep \"MAIN\" werd geleegd";
         inSessie(b, () -> {
             // the agenda cleared after voegIn, before the first fire
@@ -655,7 +655,7 @@ class TmsHerhaaldVurenWitnessTest {
         });
         // a focus change after the fire, on a model with a creation, the only kind whose KieBase has a group beside MAIN
         Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
-        CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(TmsDocumenten.JSON.readTree(
+        CaseRunner.voorMeting(ir, DroolsBackend.Branch.EXEC_MODEL).metSessie(TmsDocumenten.JSON.readTree(
                 Files.readString(ir.resolveSibling("case1-berekend.json"))), (bouw, sessie, labels) -> {
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
             sessie.getAgenda().getAgendaGroup(dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.OBJECTCREATIE)
@@ -671,7 +671,7 @@ class TmsHerhaaldVurenWitnessTest {
     }
 
     @Test void een_gevuurde_sessie_zonder_haar_bewaking_weigert_vuur_en_lees() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             Map<String, Object> bonen = waardebonen(b, "10");
             KieSession sessie = b.kieBase().newKieSession();

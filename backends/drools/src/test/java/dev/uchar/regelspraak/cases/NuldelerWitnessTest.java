@@ -61,7 +61,7 @@ class NuldelerWitnessTest {
         // state, and whether it counts waits on the norm decision of card 20261008-fout-op-tussenstand.
         Path ir = document("", groep(standaard(gevuld("gewogen gewicht"), deling("dividedBy")), standaard(ALTIJD, EEN)));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir,
-                JSON.readTree(NUL_EN_GEWOON), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                JSON.readTree(NUL_EN_GEWOON), DroolsBackend.Branch.EXEC_MODEL));
         org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — een"
                 + " deling in een default ('zijn gewogen gewicht gedeeld door zijn geschatte gewicht'): "), e.getMessage());
     }

@@ -213,7 +213,7 @@ class TmsBuiltinWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             java.nio.file.Path ir = TmsDocumenten.document(GETALMODEL, volgorde);
             for (JsonNode zaak : List.of(exact, irrationaal, negatief))
-                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
             verwacht.add(namen + " Rekenfout: fout in de regel \"zijde van een vondst\": irrational square root of 2"
                     + " reached without an explicit rounding (§13.4.17.13 mandates one)");
@@ -255,8 +255,8 @@ class TmsBuiltinWitnessTest {
         String omschrijving = rekenregel("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
                 tekstreeks(List.of(tekstdeel("Bedrag: "), tekstexpressie(lezing("basis", "Vondst")))), "null");
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(TEKSTMODEL, List.of(omschrijving)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeriek in een"
+                TmsDocumenten.document(TEKSTMODEL, List.of(omschrijving)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: omschrijving van een vondst — een tekstdeel van type Numeriek in een"
                 + " TextComposition ('zijn basis'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel \"\" leest;"
                 + " de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de"
                 + " referentie-interpreter en de runtimehulp rsTekst geven er een verschillende", e.getMessage());
@@ -376,14 +376,14 @@ class TmsBuiltinWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(WAARDE, heffing))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(ONOPGELOSTMODEL, volgorde), laag,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " Rekenfout: fout in de regel \"heffing van een vondst\": Unresolved reached in"
                     + " evaluation: this rule fails observably");
         }
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(WAARDE, duur))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(ONOPGELOSTMODEL, volgorde), hoog,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " Rekenfout: fout in de regel \"duur bij waarde\": Unresolved condition reached in"
                     + " evaluation");
         }
@@ -420,9 +420,9 @@ class TmsBuiltinWitnessTest {
         String jaar = rekenregel("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
                 binair("plus", vouw, lezing("toeslag", "Jutter"), TWEE), "null");
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(DIMENSIEMODEL, List.of(toeslag, tweede, jaar)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("grondtoeslag", "1", "toeslag", "99"),
                     List.of());

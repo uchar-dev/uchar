@@ -283,7 +283,7 @@ class ObjectcreatieVouwWitnessTest {
         tmp.toFile().deleteOnExit();
         Files.writeString(tmp, ir);
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(tmp, JSON.readTree(zaak), DroolsBackend.Branch.EXEC_MODEL));
         org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("objectcreatie: maak een afrekening — " + vorm),
                 e.getMessage());
     }

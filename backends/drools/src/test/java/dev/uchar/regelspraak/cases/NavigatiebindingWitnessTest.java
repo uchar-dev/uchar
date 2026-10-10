@@ -97,7 +97,7 @@ class NavigatiebindingWitnessTest {
         Path p = tijdelijk("nav-past-niet", ir);
         JsonNode c = casus(1);
         CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(p, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(p, c, DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(tms.getMessage().contains("regel: vlagprijs van een schuit — de lezing 'het kadegeld van de vlaghaven"
                 + " van de Schuit': de navigatie resolvet niet vanaf Schuit"), tms.getMessage());
         CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(p, c, true));

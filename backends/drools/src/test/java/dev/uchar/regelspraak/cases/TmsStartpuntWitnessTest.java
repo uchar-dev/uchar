@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class TmsStartpuntWitnessTest {
 
     /** The determination's own refusal on the code before this witness; no manifest may carry it any more. */
-    private static final String OUDE_WEIGERING = "tms-transpiler SKIP: startpuntbepaling: boekjaar";
+    private static final String OUDE_WEIGERING = "transpiler SKIP: startpuntbepaling: boekjaar";
 
     /** The year grid of the named timeline 'boekjaar', whose periods start per object at the startdatum. */
     private static final String BOEKJAARFACET = "{\"node\":\"TimelineFacet\",\"granularity\":\"year\",\"count\":1,"
@@ -118,7 +118,7 @@ class TmsStartpuntWitnessTest {
     record Rij(String naam, List<String> regels, String zin) {}
 
     private static String geweigerd(String regel, String wat) {
-        return "tms-transpiler SKIP: regel: " + regel + " — " + wat + " over het attribuut 'vergoeding' van Jutter op een"
+        return "transpiler SKIP: regel: " + regel + " — " + wat + " over het attribuut 'vergoeding' van Jutter op een"
                 + " tijdlijn met een variabel startpunt: de truth-maintenance-tak draagt deze vorm nog niet; geen golden"
                 + " met cases leest of schrijft er een, en de caselezer legt geen tijdlijn op zo'n raster";
     }
@@ -169,12 +169,12 @@ class TmsStartpuntWitnessTest {
     @Test void een_startpuntbepaling_zonder_tijdlijn_op_haar_raster_speelt() throws Exception {
         // the parity zone's shape: the determination and its timeline, and no member on that grid
         assertNull(CaseRunner.speelCase(tijdelijk(document(model(false), List.of())), zaak(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void een_lid_op_het_raster_dat_geen_vorm_leest_of_schrijft_speelt() throws Exception {
         assertNull(CaseRunner.speelCase(tijdelijk(document(model(true), List.of())), zaak(),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
     }
 
     @Test void elke_vorm_die_het_raster_leest_of_schrijft_wordt_met_naam_geweigerd() throws Exception {

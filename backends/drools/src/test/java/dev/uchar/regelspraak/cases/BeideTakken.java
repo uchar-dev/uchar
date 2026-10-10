@@ -48,7 +48,7 @@ final class BeideTakken {
      *  for a form whose refusal the truth-maintenance branch words apart from the branch it replaces. */
     static void geweigerdApart(Path ir, JsonNode c, String tms, String drl, String boodschap) throws Exception {
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms — " + boodschap);
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms — " + boodschap);
         assertTrue(e.getMessage().contains(tms), "tms names '" + tms + "': " + e.getMessage());
         e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(ir, c, true), "drl-tekst — " + boodschap);

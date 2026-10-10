@@ -114,14 +114,14 @@ class SleutelconventieWitnessTest {
         // it lowers the uniqueness (UniciteitSleutelvormWitnessTest), so its count shows in the refusal.
         Path ir = metSleutels(TWEE_TEMPOREEL, o -> IrPad.bron(o, 0, 0).set("keys", JSON.createArrayNode().add("Vondstnummer").add("kavelnummer")));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, tweeTemporeleSleutels(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, tweeTemporeleSleutels(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains(TE_VEEL),
                 "the arity guard must count a mis-capitalised component too, got: " + e.getMessage());
     }
 
     @Test void de_kale_tweeling_van_de_ariteitsguard() throws Exception {
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(TWEE_TEMPOREEL, tweeTemporeleSleutels(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(TWEE_TEMPOREEL, tweeTemporeleSleutels(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains(TE_VEEL), "the declared spelling is refused on the same shape, got: "
                 + e.getMessage());
     }

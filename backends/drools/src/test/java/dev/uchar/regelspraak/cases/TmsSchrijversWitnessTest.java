@@ -134,7 +134,7 @@ class TmsSchrijversWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(DRIE)) {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(ir, drieZaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+            assertNull(CaseRunner.speelCase(ir, drieZaak(), DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             assertEquals(conflict(namen, "doel volgens tussen", "21", "doel volgens b", "5", "doel", "V6, een Vondst"),
                     fout(ir, zaakVan("V6", "Vondst", Map.of("a", "20", "b", "5"))),
                     () -> "volgorde " + namen);
@@ -154,8 +154,8 @@ class TmsSchrijversWitnessTest {
      *  sample of their orders, each over V1 to V5 and then over V6, written back without a case label. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, DRIE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(7, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         int opDeTussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 60)) {
@@ -231,7 +231,7 @@ class TmsSchrijversWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(ZUSTERS)) {
             Path ir = TmsDocumenten.document(ZUSTERMODEL, volgorde);
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             assertEquals(conflict(namen, "doel van drijfgoed", "201", "doel van een grote vondst", "5", "doel",
                             "D2, een Drijfgoed"),
                     fout(ir, zaakVan("D2", "Drijfgoed", Map.of("c", "200"))),
@@ -267,15 +267,15 @@ class TmsSchrijversWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(ZUSTERINITIALISATIES)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(ZUSTERMODEL, volgorde), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);
         List<String> metSupertype = new ArrayList<>(ZUSTERINITIALISATIES);
         metSupertype.add(rekenregel("standaarddoel van een vondst", "INITIALISATIE", "Vondst", "doel", getal("3"), "null"));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(ZUSTERMODEL, metSupertype), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: standaarddoel van drijfgoed — twee of meer initialisaties op één doel"
+                TmsDocumenten.document(ZUSTERMODEL, metSupertype), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: standaarddoel van drijfgoed — twee of meer initialisaties op één doel"
                 + " ('doel' van Vondst: \"standaarddoel van drijfgoed\", \"standaarddoel van een vondst\"), voorwaardelijk of"
                 + " niet: waar ze allebei gelden rangschikt niets ze en bepaalt het fixpunt de waarde niet"
                 + " (RUNTIME-SEMANTICS ch. 5.4, WF-079)", e.getMessage());
@@ -301,7 +301,7 @@ class TmsSchrijversWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(NAAST_INITIALISATIE)) {
             Path ir = TmsDocumenten.document(MODEL, volgorde);
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+            assertNull(CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             for (String label : List.of("V5", "V6")) {
                 Map<String, String> invoer = label.equals("V5") ? Map.of("a", "20", "c", "1")
                         : Map.of("a", "20", "c", "1", "doel", "9");
@@ -318,8 +318,8 @@ class TmsSchrijversWitnessTest {
      *  compares the values: a sample of their orders over V1 to V4, written back without a case label, and over V5. */
     @Test void naast_een_voorwaardelijke_initialisatie_in_een_steekproef_van_gegenereerde_volgordes() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, NAAST_INITIALISATIE),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         assertEquals(6, gegenereerd.size(), () -> "gegenereerde regels: " + gegenereerd.stream().map(Rule::getName).toList());
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 60)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -379,7 +379,7 @@ class TmsSchrijversWitnessTest {
     /** The message of the fault the replay of {@code zaak} on this branch ends in. */
     private static String fout(Path ir, JsonNode zaak) {
         RuntimeException e = assertThrows(RuntimeException.class,
-                () -> CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
         return e.getMessage();
     }
 

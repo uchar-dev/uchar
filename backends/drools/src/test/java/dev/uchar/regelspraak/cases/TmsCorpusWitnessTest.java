@@ -90,7 +90,7 @@ class TmsCorpusWitnessTest {
             }
             if (zaken.isEmpty()) { zonderCases++; continue; }
             String naam = GOLDEN.relativize(g).toString();
-            CaseRunner.Result r = CaseRunner.viaTruthMaintenance(g.resolve("ir.json"), zaken);
+            CaseRunner.Result r = CaseRunner.viaExecModel(g.resolve("ir.json"), zaken);
             switch (r.status()) {
                 case "PLAYED" -> telling.merge("PLAYED", 1, Integer::sum);
                 case "EXCLUDE" -> telling.merge(familie(r.reason()), 1, Integer::sum);
@@ -105,10 +105,10 @@ class TmsCorpusWitnessTest {
 
     /** The family of a refusal: the kind of form the manifest refuses first, a cycle, or the loader. */
     private static String familie(String reden) {
-        if (reden.startsWith("tms-transpiler SKIP: ")) {
-            String rest = reden.substring("tms-transpiler SKIP: ".length());
+        if (reden.startsWith("transpiler SKIP: ")) {
+            String rest = reden.substring("transpiler SKIP: ".length());
             int dubbelepunt = rest.indexOf(':');
-            return dubbelepunt < 0 ? "tms-transpiler" : rest.substring(0, dubbelepunt);
+            return dubbelepunt < 0 ? "transpiler" : rest.substring(0, dubbelepunt);
         }
         if (reden.startsWith("tms: ")) return "tms";
         if (reden.startsWith("loader: ")) return "loader";

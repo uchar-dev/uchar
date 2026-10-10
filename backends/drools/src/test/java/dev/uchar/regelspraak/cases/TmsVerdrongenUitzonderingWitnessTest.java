@@ -152,8 +152,8 @@ class TmsVerdrongenUitzonderingWitnessTest {
         JsonNode geenWrak = TmsDocumenten.zaakOp(null, List.of(instantieMet("V2", "Vondst", Map.of(), List.of())),
                 List.of(consistent()));
         assertEquals(List.of("gespeeld", fout(FOUTEN.get(0))), List.of(
-                TmsFoutWitnessTest.speel(ir, wrak, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                TmsFoutWitnessTest.speel(ir, geenWrak, DroolsBackend.Branch.TRUTH_MAINTENANCE)));
+                TmsFoutWitnessTest.speel(ir, wrak, DroolsBackend.Branch.EXEC_MODEL),
+                TmsFoutWitnessTest.speel(ir, geenWrak, DroolsBackend.Branch.EXEC_MODEL)));
     }
 
     @Test void elke_plaats_en_elke_fout_in_elke_volgorde_van_de_regels() throws Exception {
@@ -164,10 +164,10 @@ class TmsVerdrongenUitzonderingWitnessTest {
                     Path ir = TmsDocumenten.document(MODEL, volgorde, List.of(), List.of(groep(p, f)));
                     String wat = p.naam() + ", " + f.naam() + ", " + TmsDocumenten.regelnamen(volgorde);
                     uitkomsten.add(wat + ", V1: " + TmsFoutWitnessTest.speel(ir, verdrongen(),
-                            DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                            DroolsBackend.Branch.EXEC_MODEL));
                     verwacht.add(wat + ", V1: gespeeld");
                     uitkomsten.add(wat + ", V2: " + TmsFoutWitnessTest.speel(ir, bereikt(),
-                            DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                            DroolsBackend.Branch.EXEC_MODEL));
                     verwacht.add(wat + ", V2: " + fout(f));
                 }
         assertEquals(verwacht, uitkomsten);
@@ -185,9 +185,9 @@ class TmsVerdrongenUitzonderingWitnessTest {
             for (Fout f : FOUTEN.subList(0, 2)) {
                 String wat = p.naam() + ", " + f.naam();
                 DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS, List.of(),
-                        List.of(groep(p, f))), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                        List.of(groep(p, f))), DroolsBackend.Branch.EXEC_MODEL);
                 int tussenstand = 0;
-                List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
                 for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 40)) {
                     List<String> namen = volgorde.stream().map(Rule::getName).toList();
                     Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(),

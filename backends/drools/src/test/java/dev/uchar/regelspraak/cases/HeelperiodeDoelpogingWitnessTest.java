@@ -92,7 +92,7 @@ class HeelperiodeDoelpogingWitnessTest {
 
     private static void geweigerdTms(Path ir, JsonNode c, String fragment) {
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE), "tms weigert");
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL), "tms weigert");
         org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains(fragment),
                 "tms names '" + fragment + "': " + e.getMessage());
     }

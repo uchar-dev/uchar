@@ -119,7 +119,7 @@ class TmsCreatieInvoerWitnessTest {
         int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde, bron), zaak(terug), DroolsBackend.Branch.TRUTH_MAINTENANCE),
+            assertNull(CaseRunner.speelCase(document(volgorde, bron), zaak(terug), DroolsBackend.Branch.EXEC_MODEL),
                     () -> "volgorde " + namen);
             volgordes++;
         }
@@ -154,7 +154,7 @@ class TmsCreatieInvoerWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = document(volgorde, "vangst");
             RuntimeException e = assertThrows(RuntimeException.class,
-                    () -> CaseRunner.speelCase(ir, zaak("0"), DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    () -> CaseRunner.speelCase(ir, zaak("0"), DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             boolean vangstEerst = namen.indexOf("waarde volgens de vangst") < namen.indexOf("waarde volgens het tarief");
             assertEquals("geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel \""
                     + (vangstEerst ? "waarde volgens de vangst\" schrijft 98 en de regel \"waarde volgens het tarief\" schrijft 97"
@@ -190,7 +190,7 @@ class TmsCreatieInvoerWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(ZUSTERS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(ZUSTERMODEL, volgorde), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(6, volgordes);
@@ -198,8 +198,8 @@ class TmsCreatieInvoerWitnessTest {
         metSupertype.add(rekenregel("doel van een vondst", "GELIJKSTELLING", "Vondst", "doel", getal("9"),
                 TmsDocumenten.vergelijking("greater", lezing("a", "Vondst"), getal("100"))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(ZUSTERMODEL, metSupertype), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertTrue(e.getMessage().startsWith("tms-transpiler SKIP: regel: doel van drijfgoed — een deling in een"
+                TmsDocumenten.document(ZUSTERMODEL, metSupertype), DroolsBackend.Branch.EXEC_MODEL));
+        assertTrue(e.getMessage().startsWith("transpiler SKIP: regel: doel van drijfgoed — een deling in een"
                 + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'doel' van Vondst wordt ook"
                 + " geschreven door \"doel van een vondst\"): "), e.getMessage());
     }

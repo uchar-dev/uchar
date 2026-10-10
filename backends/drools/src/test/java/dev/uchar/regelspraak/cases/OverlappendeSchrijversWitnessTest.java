@@ -207,7 +207,7 @@ class OverlappendeSchrijversWitnessTest {
 
     /** The truth-maintenance branch, which gives the divergence as the fault its write-back throws at the fixpoint,
      *  and the DRL-text branch, which gives it as the verdict of the case. */
-    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.TRUTH_MAINTENANCE,
+    private static final List<DroolsBackend.Branch> TAKKEN = List.of(DroolsBackend.Branch.EXEC_MODEL,
             DroolsBackend.Branch.DRL_TEXT);
 
     private static String tak(DroolsBackend.Branch tak) {

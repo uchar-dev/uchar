@@ -102,7 +102,7 @@ class LetMeldplekWitnessTest {
         String drl = CaseRunner.speelCase(ir, c, true);
         org.junit.jupiter.api.Assertions.assertNotNull(drl, "drl-tekst — het literale deeltal draagt geen herleesbaar hek");
         org.junit.jupiter.api.Assertions.assertTrue(drl.contains("verwacht inconsistent"), "drl-tekst: " + drl);
-        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE),
+        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL),
                 "tms — de deling door een lege deler deponeert");
     }
 

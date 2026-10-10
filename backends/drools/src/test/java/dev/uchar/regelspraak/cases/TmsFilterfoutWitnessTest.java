@@ -174,7 +174,7 @@ class TmsFilterfoutWitnessTest {
     @Test void een_vouw_onder_een_voorwaarde_die_niet_geldt_faalt_niet() throws Exception {
         assertEquals("gespeeld", TmsFoutWitnessTest.speel(document(ZWARE),
                 zaak(false, List.of(waarde("J1", "zware vondsten", null), consistent())),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), fixpuntfouten(ZWARE, false, null));
     }
 
@@ -183,7 +183,7 @@ class TmsFilterfoutWitnessTest {
     @Test void een_vouw_onder_een_voorwaarde_die_geldt_geeft_dezelfde_fout() throws Exception {
         JsonNode zaak = zaak(true, List.of(consistent()));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak,
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak,
                 DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), fixpuntfouten(ZWARE, true, fout("zware vondsten")));
@@ -212,7 +212,7 @@ class TmsFilterfoutWitnessTest {
         getallen.put("V3", List.of("4", "0"));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE),
                 zaak(Map.of("vondsten", List.of("V1", "V2", "V3")), getallen, Map.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
                 List.of("9", "0"), List.of("4", "0")), List.of(0, 1, 2)), fout("zware vondsten")));
     }
@@ -226,7 +226,7 @@ class TmsFilterfoutWitnessTest {
         getallen.put("V3", List.of("9", "0"));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE),
                 zaak(Map.of("vondsten", List.of("V1", "V3", "V2")), getallen, Map.of()),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("10", "2"),
                 List.of("4", "0"), List.of("9", "0")), List.of(0, 2, 1)), fout("zware vondsten")));
     }
@@ -240,7 +240,7 @@ class TmsFilterfoutWitnessTest {
         getallen.put("V10", List.of("9", "0"));
         assertEquals(fout("zware vondsten"), TmsFoutWitnessTest.speel(document(ZWARE), zaak(Map.of(), getallen,
                 Map.of("V9", Map.of("aanmelder", List.of("J1")), "V10", Map.of("aanmelder", List.of("J1")))),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), afwijkendeVolgordes(document(ZWARE), b -> vondsten(b, List.of(List.of("4", "0"),
                 List.of("9", "0")), List.of(1, 0)), fout("zware vondsten")));
     }
@@ -293,7 +293,7 @@ class TmsFilterfoutWitnessTest {
                 instantieMetRollen("B2", "Boot", Map.of("lengte", "9", "breedte", "0"), List.of(), Map.of())),
                 List.of(consistent()));
         Path ir = TmsDocumenten.document(HAVENMODEL, BOOTLENGTE);
-        assertEquals(fout("bootlengte"), TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+        assertEquals(fout("bootlengte"), TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), afwijkendeVolgordes(ir, b -> {
             Object h1 = TmsDocumenten.boon(b.beanLoader(), "Haven", Map.of(), List.of());
             Object b1 = TmsDocumenten.boon(b.beanLoader(), "Boot", Map.of("lengte", "4", "breedte", "0"), List.of());
@@ -315,8 +315,8 @@ class TmsFilterfoutWitnessTest {
      *  six rules, else the order of the model, its reverse and a hundred shuffles), each over fresh beans and places
      *  from {@code invoer}: the orders whose outcome differs from {@code zin}, each with what it gave. */
     private static List<String> afwijkendeVolgordes(Path ir, Invoer invoer, String zin) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> regels = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> regels = b.execModelTranspiler().model().getRules();
         List<String> afwijkend = new ArrayList<>();
         int volgordes = 0;
         for (List<Rule> volgorde : regels.size() <= 6 ? TmsDocumenten.permutaties(regels)
@@ -340,21 +340,21 @@ class TmsFilterfoutWitnessTest {
     @Test void een_vouw_in_een_lid_dat_de_samenstelling_niet_leest_faalt_niet() throws Exception {
         assertEquals("gespeeld", TmsFoutWitnessTest.speel(document(DRUKTE),
                 zaak(false, List.of(verwacht("J1", "druk", false), consistent())),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), fixpuntfouten(DRUKTE, false, null));
         JsonNode actief = zaak(true, List.of(consistent()));
         assertEquals(fout("drukte"), TmsFoutWitnessTest.speel(document(DRUKTE), actief,
-                DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                DroolsBackend.Branch.EXEC_MODEL));
         assertEquals(List.of(), fixpuntfouten(DRUKTE, true, fout("drukte")));
     }
 
     /** The outcome of the write-back in every order of the rules the branch generates for {@code regels}, with J1 actief
      *  or not: the orders whose outcome differs from {@code verwacht} (null for none), each with what it gave. */
     private static List<String> fixpuntfouten(List<String> regels, boolean actief, String verwacht) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(document(regels), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(document(regels), DroolsBackend.Branch.EXEC_MODEL);
         List<String> afwijkend = new ArrayList<>();
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+        for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), actief ? List.of("actief") : List.of());
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "10", "deelnemers", "2"), List.of());
             Object v2 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "9", "deelnemers", "0"), List.of());
@@ -416,13 +416,13 @@ class TmsFilterfoutWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(TIJDELIJK)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(tijdelijk(volgorde), tijdelijkeZaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
-        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.EXEC_MODEL);
         int onderweg = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261008L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of());
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("gewicht", "12"), List.of("gemeld"));

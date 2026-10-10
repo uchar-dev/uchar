@@ -83,7 +83,7 @@ class TmsAfwezigeLinkWitnessTest {
         for (List<String> volgorde : TmsDocumenten.steekproef(REGELS, 20261008L, 20)) {
             List<String> namen = namen(volgorde);
             assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
             volgordes++;
         }
         assertEquals(22, volgordes);

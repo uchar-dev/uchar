@@ -44,8 +44,8 @@ class TmsVormweigeringWitnessTest {
         Path ir = TmsDocumenten.document(TmsFilterdeponeringWitnessTest.MODEL, List.of(
                 rekenregel("unietelling", "BEREKENING", "Jutter", "unietelling", unie, "null")));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: unietelling — een InstanceSetUnion in een waarde ('" + snippet + "'): zij"
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: unietelling — een InstanceSetUnion in een waarde ('" + snippet + "'): zij"
                 + " duidt de instanties van een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110"
                 + " (a))", e.getMessage());
     }

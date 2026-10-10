@@ -200,7 +200,7 @@ class TmsDagsoortWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(regels))
             for (List<String> defs : TmsDocumenten.permutaties(definities))
                 uit.add(TmsDocumenten.regelnamen(volgorde) + " " + definitienamen(defs) + " " + TmsFoutWitnessTest.speel(
-                        document(model, volgorde, defs), zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        document(model, volgorde, defs), zaak, DroolsBackend.Branch.EXEC_MODEL));
         return uit;
     }
 
@@ -377,9 +377,9 @@ class TmsDagsoortWitnessTest {
 
     @Test void de_reikwijdtefout_van_een_tussenstand_wordt_ingetrokken() throws Exception {
         Path ir = document(MODEL_B, REGELS_B, List.of(SEIZOENSDAG));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("wachttijd", "5"), List.of("gemeld"));
             v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"), LocalDate.class)
@@ -443,12 +443,12 @@ class TmsDagsoortWitnessTest {
 
     @Test void een_vorm_die_een_niet_te_compileren_definitie_gebruikt_wordt_geweigerd_met_naam() throws Exception {
         List<String> definities = List.of(SCHOUWDAG, HOOGSCHOUWDAG, HAVENDAG);
-        assertEquals("tms-transpiler SKIP: regel: hoogtermijn — een duur in dagsoorten ('zijn vinddatum plus zijn"
+        assertEquals("transpiler SKIP: regel: hoogtermijn — een duur in dagsoorten ('zijn vinddatum plus zijn"
                         + " hoogwachttijd'): de definitie van de dagsoort 'hoogschouwdag' toetst de dagsoort 'schouwdag' op"
                         + " een andere dag dan de gebonden dag ('21-06-2026 een schouwdag is'), een vorm die geen executor"
                         + " uitvoert (RUNTIME-SEMANTICS ch. 3.8)",
                 weigering(document(MODEL_C, List.of(SCHOUWTERMIJN, HOOGTERMIJN), definities)));
-        assertEquals("tms-transpiler SKIP: regel: streefdatum — een duur in dagsoorten ('zijn vinddatum plus zijn"
+        assertEquals("transpiler SKIP: regel: streefdatum — een duur in dagsoorten ('zijn vinddatum plus zijn"
                         + " doorlooptijd'): de definitie van de dagsoort 'havendag' leest de parameter 'openingsdatum',"
                         + " die de truth-maintenance-tak in een dagsoortdefinitie niet leest (WF-031 laat haar toe)",
                 weigering(document(MODEL_C, List.of(SCHOUWTERMIJN, STREEFDATUM), definities)));
@@ -464,7 +464,7 @@ class TmsDagsoortWitnessTest {
                     "de tijdsduur van zijn meldtijdstip tot zijn sluittijdstip in hele springtijdagen"), "null");
 
     @Test void een_duur_in_dagsoorten_tussen_twee_datum_tijden_wordt_geweigerd_met_naam() throws Exception {
-        assertEquals("tms-transpiler SKIP: regel: getijspanne — een duration in dagsoorten ('de tijdsduur van zijn"
+        assertEquals("transpiler SKIP: regel: getijspanne — een duration in dagsoorten ('de tijdsduur van zijn"
                         + " meldtijdstip tot zijn sluittijdstip in hele springtijdagen') tussen twee datum-tijden: de"
                         + " referentie-interpreter en de ASP-backend weigeren haar met naam, omdat het tellen van hele"
                         + " dagen van een soort tussen twee tijdstippen een regel voor de deeldag aan elk eind vraagt,"
@@ -475,7 +475,7 @@ class TmsDagsoortWitnessTest {
     /** The refusal of the document {@code ir} by the truth-maintenance branch, as the build raises it. */
     static String weigering(Path ir) {
         return assertThrows(CaseRunner.Excluded.class,
-                () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE)).getMessage();
+                () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL)).getMessage();
     }
 
     // ---------------- the documents, for the other executors ----------------

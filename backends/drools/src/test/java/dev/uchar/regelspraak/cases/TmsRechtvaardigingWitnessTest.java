@@ -84,8 +84,8 @@ class TmsRechtvaardigingWitnessTest {
             List<String> namen = new ArrayList<>();
             for (String r : volgorde) namen.add(TmsDocumenten.JSON.readTree(r).get("name").asText());
             Path ir = TmsDocumenten.document(TmsDocumenten.model(KENMERKEN), volgorde);
-            assertNull(CaseRunner.speelCase(ir, zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE), () -> "volgorde " + namen);
-            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+            assertNull(CaseRunner.speelCase(ir, zaak(), DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
+            DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
             vuur(b, b.kieBase(), "documentvolgorde " + namen);
             volgordes++;
         }
@@ -94,8 +94,8 @@ class TmsRechtvaardigingWitnessTest {
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(TmsDocumenten.model(KENMERKEN), REGELS),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+                DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         List<List<Rule>> volgordes = new ArrayList<>();
         volgordes.add(gegenereerd);
         List<Rule> omgekeerd = new ArrayList<>(gegenereerd);
@@ -109,7 +109,7 @@ class TmsRechtvaardigingWitnessTest {
         }
         int doorDeVallendeRechtvaardiging = 0;
         for (List<Rule> volgorde : volgordes) {
-            ModelImpl m = new ModelImpl(b.tmsTranspiler().model().getName());
+            ModelImpl m = new ModelImpl(b.execModelTranspiler().model().getName());
             volgorde.forEach(m::addRule);
             KieBase kb = KieBaseBuilder.createKieBaseFromModel(m, EqualityBehaviorOption.EQUALITY);
             if (vuur(b, kb, "volgorde " + volgorde.stream().map(Rule::getName).toList())) doorDeVallendeRechtvaardiging++;

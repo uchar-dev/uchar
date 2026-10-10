@@ -64,7 +64,7 @@ class TmsProefsetWitnessTest {
     }
 
     private static void speelt(String golden, int cases) throws Exception {
-        CaseRunner.Result r = CaseRunner.viaTruthMaintenance(GOLDEN.resolve(golden).resolve("ir.json"), zaken(golden));
+        CaseRunner.Result r = CaseRunner.viaExecModel(GOLDEN.resolve(golden).resolve("ir.json"), zaken(golden));
         assertEquals("PLAYED", r.status(), () -> golden + ": " + r);
         assertEquals(cases, r.casesPlayed(), golden);
     }

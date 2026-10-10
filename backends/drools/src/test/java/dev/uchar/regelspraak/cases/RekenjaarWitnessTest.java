@@ -177,7 +177,7 @@ class RekenjaarWitnessTest {
             Path ir = getwist(p.golden(), p.pointer());
             JsonNode c = zaakVan(p);
             String waar = p.omschrijving() + " (" + p.golden() + p.pointer() + ")";
-            tak(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE, p.tmsWeigering(), "tms — " + waar);
+            tak(ir, c, DroolsBackend.Branch.EXEC_MODEL, p.tmsWeigering(), "tms — " + waar);
             tak(ir, c, DroolsBackend.Branch.DRL_TEXT, p.drlWeigering(), "drl-tekst — " + waar);
         }
     }

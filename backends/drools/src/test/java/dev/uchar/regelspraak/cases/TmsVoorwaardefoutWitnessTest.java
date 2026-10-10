@@ -98,7 +98,7 @@ class TmsVoorwaardefoutWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(TIJDELIJK)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(tijdelijk(volgorde), tijdelijkeZaak(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -112,8 +112,8 @@ class TmsVoorwaardefoutWitnessTest {
     /** The generated rules in a seeded sample of orders, at least one of which must test the condition against the
      *  transient 0 of the lower default: there a fault fact is inserted, and it is gone again at the fixpoint. */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        List<Rule> gegenereerd = b.tmsTranspiler().model().getRules();
+        DroolsBackend.Build b = DroolsBackend.build(tijdelijk(TIJDELIJK), DroolsBackend.Branch.EXEC_MODEL);
+        List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int opDeTussenstand = 0;
         for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
@@ -170,7 +170,7 @@ class TmsVoorwaardefoutWitnessTest {
                 List<String> namen = TmsDocumenten.regelnamen(volgorde);
                 uitkomsten.add(v.naam() + " " + namen + " " + TmsFoutWitnessTest.speel(
                         TmsDocumenten.document(MODEL, volgorde, v.consistenties()), blijvendeZaak(),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(v.naam() + " " + namen + " " + melding(v.naam()));
             }
             if (!v.execModel()) continue;
@@ -190,8 +190,8 @@ class TmsVoorwaardefoutWitnessTest {
         List<String> uitkomsten = new ArrayList<>(), verwacht = new ArrayList<>();
         for (Vorm v : VORMEN) {
             DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(MODEL, v.regels(), v.consistenties()),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE);
-            for (List<Rule> volgorde : TmsDocumenten.permutaties(b.tmsTranspiler().model().getRules())) {
+                    DroolsBackend.Branch.EXEC_MODEL);
+            for (List<Rule> volgorde : TmsDocumenten.permutaties(b.execModelTranspiler().model().getRules())) {
                 List<String> namen = volgorde.stream().map(Rule::getName).toList();
                 Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("opbrengst", "100", "deelnemers", "0"),
                         List.of("gemeld"));

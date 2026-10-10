@@ -161,7 +161,7 @@ class TmsUniciteitWitnessTest {
                 v.addAll(kanaal.get(n - 1));
                 JsonNode zaak = TmsDocumenten.zaak(wereld(n), v);
                 uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " " + n + " gespeeld");
             }
         }
@@ -181,7 +181,7 @@ class TmsUniciteitWitnessTest {
                 v.addAll(kanaal.get(n - 1));
                 JsonNode zaak = TmsDocumenten.zaak(wereld(n), v);
                 uitkomsten.add(namen + " " + n + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " " + n + " gespeeld");
             }
         }
@@ -190,9 +190,9 @@ class TmsUniciteitWitnessTest {
 
     @Test void een_schending_op_een_tussenstand_verdwijnt_weer_in_elke_volgorde_van_de_regels() throws Exception {
         Path ir = document(MODEL, List.of(FACTOR, TOESLAG, NUMMER), List.of(EENMALIG));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("basis", "5", "opgave", "1"), List.of());
             Object v2 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of("basis", "5", "opgave", "2"), List.of());
@@ -267,7 +267,7 @@ class TmsUniciteitWitnessTest {
             Path ir = document(UNIEMODEL, List.of(STRANDNUMMER), uniciteiten);
             for (int n = 0; n < zaken.size(); n++) {
                 uitkomsten.add(uniciteiten.indexOf(VONDSTUNIE) + " " + n + " " + TmsFoutWitnessTest.speel(ir, zaken.get(n),
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(uniciteiten.indexOf(VONDSTUNIE) + " " + n + " gespeeld");
             }
         }

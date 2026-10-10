@@ -73,7 +73,7 @@ class StilleGuardflankWitnessTest {
         Path ir = metGuard(onopgelost());
         JsonNode c = geval("[\"risicopost\"]", "[]", "0");
         RuntimeException tms = assertThrows(RuntimeException.class,
-                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL));
         assertEquals("Rekenfout", tms.getClass().getSimpleName(), tms::toString);
         assertTrue(tms.getMessage().contains("Unresolved condition reached in evaluation"), tms.getMessage());
         CaseRunner.Excluded drl = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, true));

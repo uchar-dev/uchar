@@ -216,7 +216,7 @@ class HerhaaldTypepaarWitnessTest {
         // relation it JOINED over (`thuishaven`) is untouched. The two are different fields over the same
         // type pair, which is the whole construct. On the truth-maintenance branch, through the entry a consumer
         // uses: one vuur to the fixpoint, then the write-back, which puts the link the creation laid on the field.
-        CaseRunner.voorMeting(ir(DUBBELVERBINDING), DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(
+        CaseRunner.voorMeting(ir(DUBBELVERBINDING), DroolsBackend.Branch.EXEC_MODEL).metSessie(
                 JSON.readTree(golden("case1-binnen-venster.json")), (bouw, sessie, labels) -> {
                     assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
                     DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
@@ -299,7 +299,7 @@ class HerhaaldTypepaarWitnessTest {
         // destructive exec-model branch did. Pinned so the asymmetry is a recorded decision rather than an unnoticed
         // drift.
         CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(elementrolToOne(),
-                JSON.readTree(tweeRollenCase("2", "0", "0", "1")), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                JSON.readTree(tweeRollenCase("2", "0", "0", "1")), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(tms.getMessage().contains("regel: liggertal van een haven — een Aggregation over de enkelvoudige"
                 + " elementrol 'ligger' wiens zusterrol 'thuishaven' meervoudig is ('het aantal liggers van de Haven'):"
                 + " dat feittype heeft één beanveld voor beide richtingen"), tms.getMessage());

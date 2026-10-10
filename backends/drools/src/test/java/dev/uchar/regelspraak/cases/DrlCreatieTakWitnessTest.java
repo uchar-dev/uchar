@@ -155,7 +155,7 @@ class DrlCreatieTakWitnessTest {
         org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(penningVorm(), penningJutter(), true),
                 "drl-tekst — the to-many arm links on the created side only, and the fold still reaches the mint");
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(penningVorm(), penningJutter(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                () -> CaseRunner.speelCase(penningVorm(), penningJutter(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("objectcreatie: penning voor een gerechtigde jutter — een objectcreatie zonder"
                 + " connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), "tms: " + e.getMessage());
     }

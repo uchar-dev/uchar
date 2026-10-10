@@ -96,11 +96,11 @@ class TmsTotaalRekendatumWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL, volgorde, List.of());
             uitkomsten.add(namen + " vrijgesteld " + TmsFoutWitnessTest.speel(ir, vrijgesteld(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " niet vrijgesteld " + TmsFoutWitnessTest.speel(ir, nietVrijgesteld(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " met datum " + TmsFoutWitnessTest.speel(ir, metDatum(),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " vrijgesteld gespeeld");
             verwacht.add(namen + " niet vrijgesteld " + ZONDER_DATUM);
             verwacht.add(namen + " met datum gespeeld");
@@ -110,9 +110,9 @@ class TmsTotaalRekendatumWitnessTest {
 
     @Test void de_fout_van_een_tussenstand_wordt_ingetrokken() throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL, REGELS, List.of());
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of("score", "3"), List.of());
             TmsLetWitnessTest.Feiten feiten = new TmsLetWitnessTest.Feiten();

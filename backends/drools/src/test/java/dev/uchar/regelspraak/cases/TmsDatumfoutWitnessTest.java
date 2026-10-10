@@ -99,7 +99,7 @@ class TmsDatumfoutWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(List.of(ERKENNING, MELDTERMIJN))) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(MODEL, volgorde, List.of(),
-                    List.of(WACHTDAGEN)), zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    List.of(WACHTDAGEN)), zaak(), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -123,7 +123,7 @@ class TmsDatumfoutWitnessTest {
     @Test void een_datumstap_buiten_het_bereik_in_een_verdrongen_default_telt_niet() throws Exception {
         for (String groep : defaultgroepen()) {
             Path ir = TmsDocumenten.document(MODEL, List.of(ERKENNING), List.of(), List.of(groep));
-            assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            assertEquals("gespeeld", TmsFoutWitnessTest.speel(ir, zaak(), DroolsBackend.Branch.EXEC_MODEL));
             assertTussenstand(ir);
         }
     }
@@ -132,9 +132,9 @@ class TmsDatumfoutWitnessTest {
      *  there, the meldtermijn is 2026-03-04, and in at least one order the out-of-range step happened and its fault
      *  went again. */
     private static void assertTussenstand(Path ir) throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0, volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(), List.of("gemeld"));
             v1.getClass().getMethod(dev.uchar.regelspraak.transpiler.kern.Namen.setter("vinddatum"),
@@ -172,8 +172,8 @@ class TmsDatumfoutWitnessTest {
                         + " representable millisecond range",
                         "Rekenfout: fout in de regel \"meldtermijn\": duration count " + TE_GROOT + " is out of range"),
                 List.of(TmsFoutWitnessTest.speel(TmsDocumenten.document(TIJDMODEL, List.of(sluiten)), uren,
-                                DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                                DroolsBackend.Branch.EXEC_MODEL),
                         TmsFoutWitnessTest.speel(TmsDocumenten.document(TIJDMODEL, List.of(melden)), dagen,
-                                DroolsBackend.Branch.TRUTH_MAINTENANCE)));
+                                DroolsBackend.Branch.EXEC_MODEL)));
     }
 }

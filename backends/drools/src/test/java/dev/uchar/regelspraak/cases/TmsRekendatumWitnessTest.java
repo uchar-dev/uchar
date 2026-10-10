@@ -114,16 +114,16 @@ class TmsRekendatumWitnessTest {
             Path ir = TmsDocumenten.document(KENMERKMODEL, volgorde);
             for (Map.Entry<String, Boolean> d : data.entrySet()) {
                 uitkomsten.add(namen + " " + d.getKey() + " " + TmsFoutWitnessTest.speel(ir,
-                        kenmerkzaak(d.getKey(), d.getValue()), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        kenmerkzaak(d.getKey(), d.getValue()), DroolsBackend.Branch.EXEC_MODEL));
                 verwacht.add(namen + " " + d.getKey() + " gespeeld");
             }
             uitkomsten.add(namen + " tijdvrij " + TmsFoutWitnessTest.speel(ir, kenmerkzaak(null, false),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " tijdvrij Rekenfout: fout in de regel \"premiewaardig in 2026\": " + ZONDER_DATUM);
             // the reference interpreter asks the window of a rule before it takes a subject, so a time-free session
             // faults also where the rule has none
             uitkomsten.add(namen + " tijdvrij zonder Jutter " + TmsFoutWitnessTest.speel(ir,
-                    TmsDocumenten.zaakOp(null, List.of(), List.of(consistent())), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    TmsDocumenten.zaakOp(null, List.of(), List.of(consistent())), DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " tijdvrij zonder Jutter Rekenfout: fout in de regel \"premiewaardig in 2026\": "
                     + ZONDER_DATUM);
         }
@@ -159,12 +159,12 @@ class TmsRekendatumWitnessTest {
             Path ir = TmsDocumenten.document(PREMIEMODEL, volgorde, List.of(PREMIECONTROLE));
             uitkomsten.add(namen + " binnen " + TmsFoutWitnessTest.speel(ir, premiezaak("2026-06-01", List.of(
                     waarde("J1", "premie", "50"), waarde("J2", "premie", "10"), waarde("J3", "premie", "20"),
-                    inconsistent("premiecontrole vanaf 2026", "J1"))), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    inconsistent("premiecontrole vanaf 2026", "J1"))), DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " ervoor " + TmsFoutWitnessTest.speel(ir, premiezaak("2025-12-31", List.of(
                     waarde("J1", "premie", null), waarde("J2", "premie", "10"), consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " tijdvrij " + TmsFoutWitnessTest.speel(ir, premiezaak(null, List.of(consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " binnen gespeeld");
             verwacht.add(namen + " ervoor gespeeld");
             verwacht.add(namen + " tijdvrij Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regels"
@@ -196,15 +196,15 @@ class TmsRekendatumWitnessTest {
         JsonNode tijdvrijZonderJutter = TmsDocumenten.zaakOp(null, List.of(), List.of(consistent()));
         assertEquals(List.of("gespeeld", "gespeeld", "Rekenfout: fout in de regel \"defaults A:Jutter.premie\": "
                         + ZONDER_DATUM, "gespeeld"),
-                List.of(TmsFoutWitnessTest.speel(ir, binnen, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                        TmsFoutWitnessTest.speel(ir, ervoor, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                        TmsFoutWitnessTest.speel(ir, tijdvrij, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                        TmsFoutWitnessTest.speel(ir, tijdvrijZonderJutter, DroolsBackend.Branch.TRUTH_MAINTENANCE)));
+                List.of(TmsFoutWitnessTest.speel(ir, binnen, DroolsBackend.Branch.EXEC_MODEL),
+                        TmsFoutWitnessTest.speel(ir, ervoor, DroolsBackend.Branch.EXEC_MODEL),
+                        TmsFoutWitnessTest.speel(ir, tijdvrij, DroolsBackend.Branch.EXEC_MODEL),
+                        TmsFoutWitnessTest.speel(ir, tijdvrijZonderJutter, DroolsBackend.Branch.EXEC_MODEL)));
         // the group and the erkenning it reads, in a sample of the orders of the generated rules, on both sides of
         // the date
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 60)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 60)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             for (String datum : List.of("2026-01-01", "2025-12-31")) {
                 Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
@@ -254,11 +254,11 @@ class TmsRekendatumWitnessTest {
         JsonNode tijdvrij = TmsDocumenten.zaakOp(null, List.of(
                 instantieMet("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent()));
         assertEquals(List.of("gespeeld", "gespeeld", "Rekenfout: fout in de regel \"meld vanaf 2026\": " + ZONDER_DATUM),
-                List.of(TmsFoutWitnessTest.speel(ir, binnen, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                        TmsFoutWitnessTest.speel(ir, ervoor, DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                        TmsFoutWitnessTest.speel(ir, tijdvrij, DroolsBackend.Branch.TRUTH_MAINTENANCE)));
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 60)) {
+                List.of(TmsFoutWitnessTest.speel(ir, binnen, DroolsBackend.Branch.EXEC_MODEL),
+                        TmsFoutWitnessTest.speel(ir, ervoor, DroolsBackend.Branch.EXEC_MODEL),
+                        TmsFoutWitnessTest.speel(ir, tijdvrij, DroolsBackend.Branch.EXEC_MODEL)));
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 60)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             for (String datum : List.of("2026-01-01", "2025-12-31")) {
                 Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
@@ -295,14 +295,14 @@ class TmsRekendatumWitnessTest {
                         + " needs an evaluation date; the case carries asOfDate null", "gespeeld"),
                 List.of(TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaakOp(null, List.of(
                                 instantieMet("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent())),
-                                DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                                DroolsBackend.Branch.EXEC_MODEL),
                         TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaakOp("2026-06-01", List.of(
                                 instantieMet("J1", "Jutter", Map.of(), List.of("aangemeld"))), List.of(consistent())),
-                                DroolsBackend.Branch.TRUTH_MAINTENANCE)));
+                                DroolsBackend.Branch.EXEC_MODEL)));
         // a sample of the orders of the generated rules: the one fault, and no Melding that the rule could read
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 60)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 60)) {
             Object j1 = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), List.of("aangemeld"));
             String fout;
             try {
@@ -361,17 +361,17 @@ class TmsRekendatumWitnessTest {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             assertEquals(List.of("gespeeld", "gespeeld", "gespeeld",
                             "Rekenfout: fout in de regel \"werving tot en met 2025\": " + ZONDER_DATUM),
-                    List.of(TmsFoutWitnessTest.speel(ir, havenzaak("2025-06-01", "2"), DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                            TmsFoutWitnessTest.speel(ir, havenzaak("2025-12-31", "2"), DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                            TmsFoutWitnessTest.speel(ir, havenzaak("2026-01-01", "1"), DroolsBackend.Branch.TRUTH_MAINTENANCE),
-                            TmsFoutWitnessTest.speel(ir, havenzaak(null, null), DroolsBackend.Branch.TRUTH_MAINTENANCE)),
+                    List.of(TmsFoutWitnessTest.speel(ir, havenzaak("2025-06-01", "2"), DroolsBackend.Branch.EXEC_MODEL),
+                            TmsFoutWitnessTest.speel(ir, havenzaak("2025-12-31", "2"), DroolsBackend.Branch.EXEC_MODEL),
+                            TmsFoutWitnessTest.speel(ir, havenzaak("2026-01-01", "1"), DroolsBackend.Branch.EXEC_MODEL),
+                            TmsFoutWitnessTest.speel(ir, havenzaak(null, null), DroolsBackend.Branch.EXEC_MODEL)),
                     () -> "volgorde " + namen);
         }
         // a sample of the orders of the generated rules, on both sides of the date
         DroolsBackend.Build b = DroolsBackend.build(havendocument(List.of(OPENING, JUTTERAANTAL)),
-                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+                DroolsBackend.Branch.EXEC_MODEL);
         int volgordes = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 60)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 60)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             for (String datum : List.of("2025-12-31", "2026-01-01")) {
                 Object k1 = TmsDocumenten.boon(b.beanLoader(), "Kustwacht", Map.of(), List.of());
@@ -437,9 +437,9 @@ class TmsRekendatumWitnessTest {
             Path ir = TmsDocumenten.document(WACHTMODEL, volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, wachtzaak("2026-06-01", List.of(
                     waarde("J1", "wachtjaren", "2"), waarde("J2", "wachtjaren", "2026"), consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, wachtzaak(null, List.of(consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
             verwacht.add(namen + " Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"wachtjaren van"
                     + " een jutter\" (2×): fout in de regel \"wachtjaren van een jutter\": the evaluationYear context value"
@@ -451,9 +451,9 @@ class TmsRekendatumWitnessTest {
             Path ir = TmsDocumenten.document(WACHTMODEL, volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, wachtzaak("2026-06-01", List.of(
                     waarde("J1", "verstreken", "533"), waarde("J2", "verstreken", null), consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, wachtzaak(null, List.of(consistent())),
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
             verwacht.add(namen + " Evaluatiefouten: aan het fixpunt staan 2 evaluatiefouten, in de regel \"verstreken dagen"
                     + " van een jutter\" (2×): fout in de regel \"verstreken dagen van een jutter\": the evaluationDate"
@@ -495,7 +495,7 @@ class TmsRekendatumWitnessTest {
                     vensterzaak("2027-01-01", null, "100", "100"), vensterzaak("2025-12-31", null, "100", null),
                     vensterzaak(null, null, null, null)))
                 uitkomsten.add(namen + " " + zaak.get("asOfDate") + " " + TmsFoutWitnessTest.speel(ir, zaak,
-                        DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                        DroolsBackend.Branch.EXEC_MODEL));
             for (String d : List.of("\"2026-06-01\"", "\"2026-01-01\"", "\"2026-12-31\"", "\"2027-01-01\"",
                     "\"2025-12-31\"", "null"))
                 verwacht.add(namen + " " + d + " gespeeld");
@@ -509,8 +509,8 @@ class TmsRekendatumWitnessTest {
                 samengesteld("none", 0, List.of(venster(literaal("2026-01-01", DATUM), literaal("2027-01-01", DATUM),
                         false))));
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocumenten.document(WACHTMODEL, List.of(regel)), DroolsBackend.Branch.TRUTH_MAINTENANCE));
-        assertEquals("tms-transpiler SKIP: regel: bonus buiten 2026 — periodevenster in een GEEN-samenstelling (WF-112):"
+                TmsDocumenten.document(WACHTMODEL, List.of(regel)), DroolsBackend.Branch.EXEC_MODEL));
+        assertEquals("transpiler SKIP: regel: bonus buiten 2026 — periodevenster in een GEEN-samenstelling (WF-112):"
                 + " de kwantor telt of ontkent het vensterverdict, terwijl het venster de regel poort (RUNTIME-SEMANTICS"
                 + " ch. 3.10), en voor die lezing is niets gespecificeerd: none 0", e.getMessage());
     }

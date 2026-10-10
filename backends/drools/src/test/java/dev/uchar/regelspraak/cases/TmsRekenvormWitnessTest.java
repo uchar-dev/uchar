@@ -257,7 +257,7 @@ class TmsRekenvormWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(TmsDocumenten.document(model, volgorde), zaak,
-                    DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);

@@ -85,7 +85,7 @@ class TmsKringWitnessTest {
         Path zaak = Files.createTempFile("tms-kring-zaak", ".json");
         zaak.toFile().deleteOnExit();
         Files.writeString(zaak, TmsDocumenten.JSON.writeValueAsString(zaak()));
-        CaseRunner.Result r = CaseRunner.viaTruthMaintenance(ir, List.of(zaak));
+        CaseRunner.Result r = CaseRunner.viaExecModel(ir, List.of(zaak));
         assertEquals("EXCLUDE", r.status(), r::toString);
         assertEquals("tms: kring in de afhankelijkheden over het lid Jutter.dwarsligger via de regel"
                 + " \"dwarsligger tenzij dwarsligger\"" + REDEN, r.reason());
@@ -112,10 +112,10 @@ class TmsKringWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(regels)) {
             Path ir = TmsDocumenten.document(TmsDocumenten.model(KENMERKEN), volgorde);
             CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                    () -> DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE), volgorde::toString);
+                    () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL), volgorde::toString);
             assertEquals(zin, e.getMessage());
             CaseRunner.Excluded replay = assertThrows(CaseRunner.Excluded.class,
-                    () -> CaseRunner.speelCase(ir, zaak(), DroolsBackend.Branch.TRUTH_MAINTENANCE));
+                    () -> CaseRunner.speelCase(ir, zaak(), DroolsBackend.Branch.EXEC_MODEL));
             assertEquals(zin, replay.getMessage());
             volgordes++;
         }

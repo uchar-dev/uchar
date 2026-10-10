@@ -131,7 +131,7 @@ class TmsTijdlijnVouwWitnessTest {
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
             Path ir = TmsTijdlijnDocumenten.document(MODEL, volgorde, List.of());
-            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.TRUTH_MAINTENANCE));
+            uitkomsten.add(namen + " " + TmsFoutWitnessTest.speel(ir, zaak, DroolsBackend.Branch.EXEC_MODEL));
             verwacht.add(namen + " gespeeld");
         }
         assertEquals(verwacht, uitkomsten);
@@ -140,9 +140,9 @@ class TmsTijdlijnVouwWitnessTest {
     @Test void aan_het_fixpunt_hoogstens_een_waarde_per_doel_en_de_last_onderweg_zonder_het_afgeleide_tarief()
             throws Exception {
         Path ir = TmsTijdlijnDocumenten.document(MODEL, REGELS, List.of());
-        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
         int tussenstand = 0;
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.tmsTranspiler().model().getRules(), 20261009L, 100)) {
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(b.execModelTranspiler().model().getRules(), 20261009L, 100)) {
             List<String> namen = volgorde.stream().map(Rule::getName).toList();
             ClassLoader l = b.beanLoader();
             Object j1 = TmsDocumenten.boon(l, "Jutter", Map.of(), List.of());

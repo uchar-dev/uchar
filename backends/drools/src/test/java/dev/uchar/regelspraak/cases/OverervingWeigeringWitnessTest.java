@@ -403,7 +403,7 @@ class OverervingWeigeringWitnessTest {
 
     /** The replay of one case on the truth-maintenance branch: null on a match. */
     private static String speelTms(Path ir, JsonNode c) throws Exception {
-        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        return CaseRunner.speelCase(ir, c, DroolsBackend.Branch.EXEC_MODEL);
     }
 
     private static JsonNode geval(String golden, String bestand) throws Exception {
