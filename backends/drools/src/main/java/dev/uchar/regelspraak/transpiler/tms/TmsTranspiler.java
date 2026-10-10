@@ -6274,10 +6274,19 @@ public final class TmsTranspiler {
 
     private String id(String soort) { return soort + "_" + (idSeq++); }
 
-    /** The {@code indexId} of every beta index. In Drools 8.44 a beta index hands it to the field reader of the
-     *  pattern's own fact ({@code LambdaReadAccessor}), and in a beta node that number only seeds the hash of the node's
-     *  tuple memories ({@code TupleIndexHashTable}), with the same seed on both sides of the node, so any value is
-     *  correct. An alpha index uses its number otherwise. */
+    /**
+     * The {@code indexId} of every beta index. In Drools 8.44 a beta index hands it to the field reader of the pattern's
+     * own fact ({@code LambdaReadAccessor}), and in a beta node that number only seeds the hash of the node's tuple
+     * memories ({@code TupleIndexHashTable}), with the same seed on both sides of the node, so any value is correct.
+     *
+     * <p>The alpha constraints carry no index, since an alpha index uses its number otherwise. The object type node
+     * puts the alpha nodes of one number in one hash map, keyed by the number and the constant
+     * ({@code CompositeObjectSinkAdapter}), so two alpha nodes on one constant replace each other there unless Drools
+     * shares them as one node, which it does only for constraints with equal ids. Every constraint of this branch has
+     * an id of its own ({@link #id}): two rules that read one attribute each have an alpha node on it, and with an
+     * alpha index one of the two would never see a fact. An alpha index therefore waits for equal ids on equal
+     * constraints.
+     */
     private static final int BETA_INDEX = 0;
 
     /** What an identity join ({@link #zelfde}) hashes for a side that reads null: a key of that side alone, so that a
