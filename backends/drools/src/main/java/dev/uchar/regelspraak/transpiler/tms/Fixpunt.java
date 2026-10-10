@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * What stands in a session of the truth-maintenance branch after a fire that reached its fixpoint, read without
+ * What stands in a session of the exec-model branch after a fire that reached its fixpoint, read without
  * writing anything on a bean ({@code DroolsBackend.lees}). The branch derives with logical facts and leaves the case
  * input alone on the beans, so a consumer that fires one session more than once reads the answer here between the
  * fires: a bean that carried a derived value would have it read as input by the next fire, and an initialisation of

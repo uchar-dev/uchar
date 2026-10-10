@@ -1,7 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 /**
- * The stated mark the driver leaves in a session of the truth-maintenance branch after each run
+ * The stated mark the driver leaves in a session of the exec-model branch after each run
  * ({@code DroolsBackend.vuur}): that the session was fired through the driver, and how its last run ended.
  * {@code geenFixpunt} is null where the run reached its fixpoint, and otherwise the sentence of a run that ended without
  * one: at the fire cap, at the creation budget, or with an exception out of the fire. Only the driver fires to the

@@ -32,7 +32,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * The watch the entry ({@code DroolsBackend}) keeps on a session of the truth-maintenance branch between its own calls.
+ * The watch the entry ({@code DroolsBackend}) keeps on a session of the exec-model branch between its own calls.
  * Outside the entry a consumer changes the attributes and the characteristics of the beans {@code DroolsBackend.voegIn}
  * put in, with {@code update}, and does nothing else: the watch keeps, from {@code voegIn} or the last
  * {@code DroolsBackend.vuur} on, the first fact that was inserted, updated or deleted outside the entry, the first rule

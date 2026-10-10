@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import java.util.Objects;
 
 /**
- * A characteristic a rule of the truth-maintenance branch derived for one object. The branch inserts it with
+ * A characteristic a rule of the exec-model branch derived for one object. The branch inserts it with
  * {@code drools.logicalInsert}, so it stands exactly as long as the condition of a rule that inserted it holds, and
  * it goes, with everything that rested on it, when that condition stops holding. The case input stays on the beans;
  * this fact is the derivation, and {@code DroolsBackend.zetAfgeleideWaarden} writes it onto the bean only after the

@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * The cycles of the dependency graph of IR-SPEC ch. 5, which the truth-maintenance branch refuses before it builds a
+ * The cycles of the dependency graph of IR-SPEC ch. 5, which the exec-model branch refuses before it builds a
  * KieBase: WF-045, a cycle that does not pass through a creation member of a recursive rule group, and WF-046, a
  * negative edge on any cycle, one through such a member included. The verifier refuses both, but this backend does
  * not run the verifier, so a hand-written document brings its cycle here unchecked. Truth maintenance does not settle

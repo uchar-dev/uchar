@@ -15,7 +15,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Shippable runtime support for the EXECUTABLE-MODEL back-end ({@code ExecModelTranspiler}). Two roles:
+ * Shippable runtime support for both branches of the backend, the exec-model branch ({@code TmsTranspiler}) and the
+ * DRL-text branch. Two roles:
  *
  * <ol>
  *   <li><b>The reflective fact bridge</b> — the model's constraint/consequence lambdas reach a RegelSpraak
@@ -128,7 +129,7 @@ public final class RegelSpraakRuntime {
      *  created object. True sets it; false or leeg leaves it unset (the closed-world reading of an absent
      *  initialisation). Any other value is a WF-027 violation the verifier rejects and ref faults on at
      *  evaluation, so it faults here too instead of reading as "unset" — the DRL-text branch calls this from the
-     *  consequence, with the exec branch's own sentence. */
+     *  consequence; the exec-model branch refuses such an initialisation by name while it builds the model. */
     public static boolean rsKenmerkWaarde(Object v, String attr) {
         if (v == null || v instanceof Boolean) return Boolean.TRUE.equals(v);
         throw new IllegalStateException("kenmerkinitialisatie van '" + attr + "' is niet booleaans: " + v + " (WF-027)");
@@ -1083,10 +1084,9 @@ public final class RegelSpraakRuntime {
 
     /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm): does a computed timeline DECIDE? A null or empty result
      *  is the temporal leeg (empty == never-written, ch. 3.1), which decides nothing — so on a standing
-     *  temporal target the write is skipped and the case-supplied input timeline stands WHOLE. The single
-     *  implementation of that emptiness test: the exec model's timeline write calls it, and the DRL text
-     *  imports it into its emitted guard (single-runtime principle), so the two back-ends cannot disagree on
-     *  what "gevuld" means for a timeline. */
+     *  temporal target the write is skipped and the case-supplied input timeline stands WHOLE. The DRL text
+     *  imports it into its emitted guard (single-runtime principle); the exec-model branch, which computes a
+     *  timeline as a list of {@code Tijdvak}s, tests the same emptiness where it writes one. */
     public static boolean rsTijdreeksGevuld(List<?> t) {
         return t != null && !t.isEmpty();
     }
@@ -1275,10 +1275,10 @@ public final class RegelSpraakRuntime {
      *  is "some contributor fails the matrix", which is not "no contributor satisfies it". The caller's NIET
      *  prefix does not need a third helper — a negated matrix turns ALLE into GEEN and GEEN into ALLE
      *  (∀c.¬P = ¬∃c.P and ¬∃c.¬P = ∀c.P), so the transpiler flips the quantifier and picks the other fold.
-     *  The single implementation, and BOTH transpiler branches read it: the exec-model branch calls it from the
-     *  result-var predicate of its collectList accumulate, the DRL-text branch imports it as a DRL function and
-     *  calls it from the eval after its own (2026-09-18 — until then that branch markered the whole-period
-     *  matrix, which is what this sentence used to record). */
+     *  The DRL-text branch imports it as a DRL function and calls it from the eval after its own (2026-09-18 —
+     *  until then that branch markered the whole-period matrix, which is what this sentence used to record); the
+     *  exec-model branch folds the qualifier per member with {@link #rsGeheelPeriode}, a contribution of its
+     *  quantifier fold. */
     public static boolean rsGeheelPeriodeGeen(List<? extends List<?>> reeksen, String granulariteit, int toets, BigDecimal grens) {
         if (reeksen == null) return true;
         for (List<?> r : reeksen) if (rsGeheelPeriode(r, granulariteit, toets, grens)) return false;

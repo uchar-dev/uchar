@@ -62,6 +62,14 @@ import java.util.function.Predicate;
  * the path gate 12 replays. {@link CaseRunner} builds every golden through {@link #build(JsonNode, Branch)}, so what
  * a consumer fires is what the gate plays; there is no second copy of this path to drift from it.
  *
+ * <p>The backend has two branches ({@link Branch}), each a lowering of the IR of its own. The exec-model branch
+ * ({@link TmsTranspiler}, Drools' executable model) derives with truth maintenance: a derived value is a logical fact,
+ * every read it depends on is a pattern in the rule's left-hand side, and the beans hold the input until the
+ * write-back. Gate 12's square replays it, and the distribution builds with it. The DRL-text branch
+ * ({@link DrlTranspiler}) lowers to DRL text whose rules write the beans as they fire, in an order of salience bands,
+ * the design the exec-model branch had until card tms-omschakeling (2026-10-10); gate 12 counts it apart, and its
+ * rebuild on truth maintenance is the card drl-teksttak-op-truth-maintenance.
+ *
  * <p>The consumer it exists for is the toolchain distribution — CLI, decision service, scenario runner — that
  * builds this repository as a git submodule and fires rule sets through it: a source goes through the frontend
  * ({@code Resolver.resolve}, then {@code IrEmitter.emit}) and the emitted document comes here. What the loader
@@ -87,8 +95,9 @@ import java.util.function.Predicate;
  * {@link #vuur}: the two readings refuse a session in which something happened outside {@code vuur} after the last
  * one. A session of a model with a creation fires once, since what a creation made is stated and does not lapse: such
  * a consumer opens a fresh session per input. On the DRL-text branch the rules write the beans as they fire, the
- * write-back does nothing and {@link #lees} refuses. A {@code ConsequenceException} out of the fire is named by
- * {@link #benoem}.
+ * write-back does nothing and {@link #lees} refuses. An evaluation fault is on the exec-model branch a fact of the
+ * fixpoint, which {@link #lees} gives as data and {@link #zetAfgeleideWaarden} throws; on the DRL-text branch it
+ * leaves the fire as a {@code ConsequenceException}, which {@link #benoem} names.
  */
 public final class DroolsBackend {
 
@@ -991,12 +1000,13 @@ public final class DroolsBackend {
     }
 
     /** Names the fault behind {@code e}, the exception Drools' default handler throws out of the fire when a consequence
-     *  throws: a division by a numeric zero in a consequence (a rule's value, a default's justification or consequence)
-     *  becomes {@link Breuk.DelingDoorNul} naming the rule and the operands, with what the consequence threw as its
-     *  cause; any other {@code e} is returned unchanged. {@link CaseRunner} calls it where it fires, so the replay, the
-     *  red path and the scenario report read the sentence; a consumer that fires a KieBase itself gets Drools'
-     *  {@code ConsequenceException}, which names the rule, and can call this the same way. A division in a condition
-     *  is evaluated outside a consequence and does not come here.
+     *  throws: on the DRL-text branch a division by a numeric zero in a rule's value becomes
+     *  {@link Breuk.DelingDoorNul} naming the rule and the operands, with what the consequence threw as its cause; any
+     *  other {@code e} is returned unchanged. The exec-model branch throws no evaluation fault out of its fire, so what
+     *  comes here from it is a broken contract or a bug. {@link CaseRunner} calls it where it fires, so the replay, the
+     *  red path and the scenario report read the sentence; a consumer that fires a KieBase of the DRL-text branch
+     *  itself gets Drools' {@code ConsequenceException}, which names the rule, and can call this the same way. A
+     *  division in a condition is evaluated outside a consequence and does not come here.
      *
      *  <p>The KieBases built here keep Drools' default consequence handler on purpose. Drools takes a handler by class
      *  name and instantiates it in every new session; where the kie API and this backend are loaded by different

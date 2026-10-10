@@ -5,7 +5,7 @@ import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import java.util.Objects;
 
 /**
- * The value a computing rule or an initialisation of the truth-maintenance branch derived for one attribute of one
+ * The value a computing rule or an initialisation of the exec-model branch derived for one attribute of one
  * object, inserted logically: it stands as long as the condition of the rule and every value the rule read hold, and is
  * replaced when one of them changes. {@code schrijver} is the name of the rule's form, so a write-back that meets two
  * different values on one attribute of one object can name both writers, and an initialisation's guard tells another

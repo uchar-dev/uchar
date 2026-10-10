@@ -12,16 +12,15 @@ import java.util.function.Function;
 
 /**
  * Typed per-objecttype fact accessors — the executable-model back-end's "codegen" path (migration option B /
- * the deferred Phase-H optimization). Where {@code ExecModelTranspiler} knows an objecttype's fact CLASS at
- * model-build time, it resolves a getter/setter to a TYPED {@code Function}/{@code BiConsumer} bound to the
+ * the deferred Phase-H optimization). Where the exec-model branch ({@code TmsTranspiler}) knows an objecttype's fact
+ * CLASS at model-build time, it resolves a getter/setter to a TYPED {@code Function}/{@code BiConsumer} bound to the
  * bean's {@code get<Prop>()} / {@code set<Prop>(v)} via a per-owner {@link MethodHandles.Lookup} — a direct
- * MethodHandle invoke, no reflection, the same direct-dispatch a Kogito-generated executable model uses. The
- * handle is adapted to the interface with {@link MethodHandleProxies#asInterfaceInstance} (a hidden-class proxy
- * on JDK 21+); {@link java.lang.invoke.LambdaMetafactory} is deliberately NOT used because it demands a
- * full-privilege ({@code ORIGINAL}) lookup, a bar a cross-module {@code privateLookupIn} into a CHILD-classloader
- * bean cannot clear — the reason the typed path used to {@code NoClassDefFound} against generated beans (see
- * {@code ownerLookup}). Two wins over the reflective bridge
- * ({@link RegelSpraakRuntime#get}/{@link RegelSpraakRuntime#set}):
+ * MethodHandle invoke, no reflection, the same direct-dispatch a Kogito-generated executable model uses. The handle is
+ * adapted to the interface with {@link MethodHandleProxies#asInterfaceInstance} (a hidden-class proxy on JDK 21+);
+ * {@link java.lang.invoke.LambdaMetafactory} is deliberately NOT used because it demands a full-privilege
+ * ({@code ORIGINAL}) lookup, a bar a cross-module {@code privateLookupIn} into a CHILD-classloader bean cannot clear —
+ * the reason the typed path used to {@code NoClassDefFound} against generated beans (see {@code ownerLookup}). Two wins
+ * over the reflective bridge ({@link RegelSpraakRuntime#get}/{@link RegelSpraakRuntime#set}):
  *
  * <ul>
  *   <li><b>fire-time speed</b> — {@code apply()}/{@code accept()} inline to a direct virtual call, no reflection;</li>

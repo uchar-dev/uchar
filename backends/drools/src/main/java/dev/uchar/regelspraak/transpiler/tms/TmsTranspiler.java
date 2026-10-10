@@ -94,13 +94,14 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * The lowering of the truth-maintenance branch: a uchar IR document to a Drools executable model that derives with
+ * The lowering of the exec-model branch: a uchar IR document to a Drools executable model that derives with
  * {@code drools.logicalInsert}. A derived fact stands exactly as long as the condition of a rule that inserted it
  * holds, and goes, with everything that rested on it, when that condition stops holding. The outcome of an acyclic
- * rule set then does not depend on which rule the agenda fires first, which is what the exec-model branch secures
- * with measures of its own on top of destructive writes (a rule attribute against re-firing, a priority per stratum,
- * class reactivity, a conditional bean update, a record of an initialisation's own write). This branch carries none
- * of them; the replay's fire cap stays.
+ * rule set then does not depend on which rule the agenda fires first, which a lowering that writes the beans secures
+ * only with measures of its own (a rule attribute against re-firing, a priority per stratum, class reactivity, a
+ * conditional bean update, a record of an initialisation's own write), as the DRL-text branch does and the exec-model
+ * branch did until card tms-omschakeling (2026-10-10). This branch carries none of them; the fire cap of
+ * {@code DroolsBackend.vuur} stays.
  *
  * <p>Truth maintenance follows only what the left-hand side of a rule binds: a value a consequence reads with a
  * getter, or looks up in working memory itself, records no dependency, so a derived fact computed from it stays when
@@ -253,8 +254,8 @@ public final class TmsTranspiler {
     private final Set<ElementSleutel> defaultsdoelen = new LinkedHashSet<>();
     /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
     private Stapels stapels;
-    /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified as the
-     *  other two branches classify them. */
+    /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified by the class
+     *  both branches share. */
     private StaandeDoelen staandeDoelen;
     /** The place of each rule of the document in its list, by name: the sentence of two writers that disagree names
      *  them in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7). */
@@ -431,11 +432,11 @@ public final class TmsTranspiler {
      * attribute stays where no rule derived a value for it.
      *
      * <p>An evaluation fault that stands at the fixpoint ({@link Fout}) means the session has no answer, so before it
-     * writes anything this throws the faults that stand: one as the exception it is, named after its rule as the
-     * exec-model branch names it out of its fire, two or more as {@link Evaluatiefouten}, ordered by the name of the
-     * form and then by the sentence, so that the report does not depend on the order of the rules or of the firings.
-     * Then it writes nothing, and the session stays as it was. It refuses the sessions {@link #lees} refuses, those
-     * without a fixpoint of the driver, likewise before it writes anything.
+     * writes anything this throws the faults that stand: one as the exception it is, named after its rule, two or more
+     * as {@link Evaluatiefouten}, ordered by the name of the form and then by the sentence, so that the report does not
+     * depend on the order of the rules or of the firings. Then it writes nothing, and the session stays as it was. It
+     * refuses the sessions {@link #lees} refuses, those without a fixpoint of the driver, likewise before it writes
+     * anything.
      *
      * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
      * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
@@ -922,7 +923,7 @@ public final class TmsTranspiler {
      * the reference interpreter answers it in pass order; and any other value, among them a sum of timelines over a
      * set (ch. 3.5) and the arithmetic of two timelines (ch. 3.4), which no golden of this branch's gap asks. Refused
      * by name as well: a time window in the condition, which on a temporal target clips the timeline instead of
-     * gating the rule on the evaluation date (ch. 3.10), as the other two branches refuse it; golden
+     * gating the rule on the evaluation date (ch. 3.10), as the DRL-text branch refuses it; golden
      * {@code jutterswet-pachtvenster} has it.
      */
     private List<Rule> tijdlijnregel(ResolvedRegel r, Expr.AttribuutRef doel) {
@@ -952,8 +953,8 @@ public final class TmsTranspiler {
      * {@code subject} (RUNTIME-SEMANTICS ch. 3.7, 3.8), as a function of the values the rule binds: the true periods of
      * the subject's own characteristic in its gedurende clause and, for the pro-rata part, the timeline of the base, an
      * own attribute, each bound in the left-hand side ({@link Lezingen#tijdlijn}), so a base that a rule derives later
-     * takes the result along. The runtime's helpers compute them, as the exec-model branch computes them, with
-     * {@link Tijdvak} as their segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
+     * takes the result along. The runtime's helpers compute them, with {@link Tijdvak} as their
+     * segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
      * value at the bucket's start times the share of true days, a base that is leeg there or absent giving no segment,
      * and {@code rsAantalDagenIn} the true days per touched bucket, on the calendar or from the anchor of the target's
      * fixed start point ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). The
@@ -1103,9 +1104,9 @@ public final class TmsTranspiler {
      * {@link Waarde} carries its name as the writer and does not match the guard: the value is an equation like any
      * attribute write, withdrawn and computed again when a value it reads changes. A guard that counted the own write
      * blocked the initialisation the moment it wrote and truth maintenance withdrew the value: on one object the target
-     * ended leeg without a message (the trial's A5, and the first case of {@code jutterswet-initialisatievolgorde} on
-     * this branch), on several the session reached the fire cap (measured 2026-10-08,
-     * {@code TmsInitialisatieWitnessTest}).
+     * ended leeg without a message (A5 of the trial of card drools-logische-afleiding, and the first case of
+     * {@code jutterswet-initialisatievolgorde} on this branch), on several the session reached the fire cap (measured
+     * 2026-10-08, {@code TmsInitialisatieWitnessTest}).
      *
      * <p>A computing rule beside it that is outside the standing domain writes a computed leeg (ch. 1.2g). The guard
      * then reads the target as the other writers leave it, as the reference interpreter's guard reads the running fact
@@ -1321,7 +1322,7 @@ public final class TmsTranspiler {
      * pattern and what precedes it), with the same {@code blokkade} after the test and the test that the condition
      * faults, inserts the named {@link Fout} logically, on the subject of the form. It fires exactly where the form's
      * rule tests the condition and the test faults, and the fault goes when a read it rested on changes. The sentence
-     * names the form's rule as the exec-model branch names a fault in a condition. A condition faults also where it
+     * names the form's rule. A condition faults also where it
      * reaches a fold whose filter faulted for a member ({@link #vouw}); the filter itself inserts no fault
      * ({@link #filterfoutregel}).
      */
@@ -1416,14 +1417,14 @@ public final class TmsTranspiler {
      * A consistency (IR-SPEC ch. 3.5): the subject pattern with the reads of its assertion bound as a rule's are, one
      * test that holds where the assertion does not, and a consequence that inserts the subject's §9.5 inconsistency
      * logically, under the form's name. The violation is the negation of the assertion read with the empty operand of
-     * RUNTIME-SEMANTICS ch. 1.2: the reference interpreter deposits where the assertion does not evaluate to true, and
-     * the exec-model branch writes the same tables out per shape (an equality of numbers violated where exactly one is
-     * leeg, an ordering violated where an operand is leeg), which the condition lowering of this branch carries. Every
-     * read is bound to a total standing, so a subject has one activation and the channel one error fact per form and
-     * subject, without the guard the exec-model branch needs. A violation found against a transient value goes when
-     * that value changes, where the exec-model branch orders the consistency after the writers of what it reads and
-     * never withdraws one; the fixpoint is the same. An assertion that faults is no violation: beside the rule, where the
-     * assertion can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
+     * RUNTIME-SEMANTICS ch. 1.2: the reference interpreter deposits where the assertion does not evaluate to true,
+     * table by table per shape (an equality of numbers violated where exactly one is leeg, an ordering violated where
+     * an operand is leeg), which the condition lowering of this branch carries. Every read is bound to a total
+     * standing, so a subject has one activation and the channel one error fact per form and subject, without a guard
+     * against a second firing. A violation found against a transient value goes when that value changes; the
+     * destructive lowering, until card tms-omschakeling, ordered the consistency after the writers of what it reads
+     * instead and never withdrew one, which reaches the same fixpoint. An assertion that faults is no violation: beside
+     * the rule, where the assertion can fault, the rule that inserts its fault ({@link #voorwaardefoutregel}).
      */
     private List<Rule> consistentieRegels(ResolvedConsistentie c) {
         // the rule is named by the form, and the channel test reads the error facts by that name
@@ -1533,11 +1534,10 @@ public final class TmsTranspiler {
      *  <p>A component on a timeline reads ever-uniqueness (RUNTIME-SEMANTICS ch. 5.9, decided 2026-08-20): it claims
      *  every value its timeline ever carries, so the rule inserts one key per such value, beside the other components,
      *  and none where the timeline is absent or carries no value. The timeline is bound like any read
-     *  ({@link Lezingen#tijdlijn}), so a key a rule derives later takes its keys along. The values are taken as the
-     *  exec-model branch takes them ({@code rsOoitWaarden}): without trailing zeros and once each, so an instance whose
-     *  timeline carries one value in two segments claims it once and does not duplicate against itself. A key has at
-     *  most one component on a timeline, as the reference interpreter refuses more: the same-moment join of two has no
-     *  corpus case. */
+     *  ({@link Lezingen#tijdlijn}), so a key a rule derives later takes its keys along. The values are taken by the
+     *  runtime's {@code rsOoitWaarden}: without trailing zeros and once each, so an instance whose timeline carries one
+     *  value in two segments claims it once and does not duplicate against itself. A key has at most one component on a
+     *  timeline, as the reference interpreter refuses more: the same-moment join of two has no corpus case. */
     private Rule sleutelregel(String naam, String regelnaam, int b, ResolvedUniciteitUnie.Bron bron, RolBindingRef scopeRol,
                               Geldigheid geldigheid) {
         Objecttype type = bron.type();
@@ -1642,9 +1642,9 @@ public final class TmsTranspiler {
      * A test of the §9.5 channel, "regelversie X is inconsistent" (RUNTIME-SEMANTICS ch. 5.6): an existential over the
      * error facts of the form X, with no subject of its own, read through X's {@link KanaalStand}. The producers this
      * branch carries are a consistency, a uniqueness, and a rule whose condition or value can deposit a §6.5 or §6.6
-     * inconsistency ({@link #schrijfregel}, {@link #deponeerregel}); any other name is refused, as the exec-model branch
-     * refuses a name that produces nothing it lowers, since a test of a channel nothing fills would never hold and say
-     * nothing. "is gevuurd" reads no channel; it is no construct of the core, and is refused with that reason.
+     * inconsistency ({@link #schrijfregel}, {@link #deponeerregel}); any other name is refused, since a test of a
+     * channel nothing fills would never hold and say nothing. "is gevuurd" reads no channel; it is no construct of the
+     * core, and is refused with that reason.
      */
     private Toets kanaallezing(Conditie.Regelversie rv, Lezingen lez) {
         // decided as a predicate of the dialect over the fixpoint, never a construct of the core: the reference
@@ -1866,8 +1866,8 @@ public final class TmsTranspiler {
     }
 
     /** Attribute {@code naam} of {@code houder} as an allocation reads or writes it as a number: the pot, a share, the
-     *  rest, a weight or a cap, {@code rol} naming which. The distribution computes with numbers only, as the
-     *  exec-model branch does, so another datatype is refused by name. */
+     *  rest, a weight or a cap, {@code rol} naming which. The distribution computes with numbers only, so another
+     *  datatype is refused by name. */
     private Lid getallid(Objecttype houder, String naam, String rol) {
         Lid lid = lid(houder, naam, false);
         if (!lid.datatype().isGetalachtig())
@@ -1984,7 +1984,7 @@ public final class TmsTranspiler {
      * <p>The 1:1 shape guards on the input world, as ch. 5.5 says: a subject whose reference field toward the created
      * type is filled in the case input creates nothing; this branch writes no bean while it fires, so the field is the
      * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creatiekoppeling}). Refused by
-     * name besides: an ambiguous back-link, which the exec-model branch faults at fire; a creation without a
+     * name besides: an ambiguous back-link; a creation without a
      * {@code connectingRole} binding, whose relation this branch does not derive from the type pair; a connecting
      * relation that is not one of two roles; a characteristic initialisation whose value is no truth value (WF-027); and
      * a division in a member value, whose §6.5 deposit this branch does not make. Where the condition can fault, its
@@ -2372,7 +2372,7 @@ public final class TmsTranspiler {
 
     // ---------------- prioritized defaults ----------------
 
-    /** The name of an effective stack, as the exec-model branch names the rule of the group: the kind-discriminated
+    /** The name of an effective stack, as the destructive lowering named the rule of the group: the kind-discriminated
      *  target on the stack's owner, so two types that share one inherited target name two stacks. */
     private static String stapelnaam(Stapels.Stapel st) {
         PrioritizedDefaults l0 = st.leden().get(0);
@@ -2422,16 +2422,16 @@ public final class TmsTranspiler {
     /**
      * The rules of one effective stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.8-7.10), each default lowered on its own
      * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link Stuurfeit}) where
-     * the exec-model branch walks the stack in one consequence ({@code DefaultsRun}). One chain without exception groups
+     * the destructive lowering walked the stack in one consequence. One chain without exception groups
      * takes the simple form ({@link #eenvoudigeVorm}); exception groups, or more than one group at the root, the
      * general form ({@link #algemeneVorm}). A deciding default writes the target: a {@link Waarde} with the stack as the
      * writer, which replaces the input on an attribute, or a {@link HeeftKenmerk} for an attribution, beside which the
      * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key.
      *
-     * <p>Refused as the exec-model branch refuses them: a characteristic target that shares its name with an attribute,
-     * a group with a dated validity, an initialisation default on a characteristic, a deciding default without a
-     * justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a division
-     * anywhere in a default ({@link #deling(Conditie, Expr)}).
+     * <p>Refused by name, as the destructive lowering refused them: a characteristic target that shares its name with
+     * an attribute, a group with a dated validity, an initialisation default on a characteristic, a deciding default
+     * without a justification; a target on a timeline or with dimensions through {@link #lid}. Refused besides: a
+     * division anywhere in a default ({@link #deling(Conditie, Expr)}).
      */
     private List<Rule> stapelregels(Stapels.Stapel st) {
         PrioritizedDefaults l0 = st.leden().get(0);
@@ -2534,11 +2534,11 @@ public final class TmsTranspiler {
 
     /** The snippet of the first division in {@code voorwaarde} or {@code waarde}, or null: in the justification or the
      *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
-     *  ch. 7.7 reads as the lowest default ({@link #initialisatieRegel}). The exec-model branch refuses a division below
-     *  the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a default is
-     *  evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault on an
-     *  intermediate state, which this branch would withdraw ({@link Fout}); whether such a fault counts waits on a
-     *  decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
+     *  ch. 7.7 reads as the lowest default ({@link #initialisatieRegel}). The destructive lowering refused a division
+     *  below the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a
+     *  default is evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault
+     *  on an intermediate state, which this branch would withdraw ({@link Fout}); whether such a fault counts waits on
+     *  a decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
      *  no division fault ({@link #eigenRegel}). The walk enters every expression and condition the forms carry, a
      *  {@code Let}'s value and body, both branches of an {@code IfThenElse} and its condition, a rounding, a clamp's
      *  bounds and a fold's argument, fallback and filter among them, so a division under one of them is found too. */
@@ -2587,12 +2587,13 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The simple form, variant M of the trial's A10: one rule per default that decides anything itself, with its reads
-     * bound, its justification as the test and {@code not Beslist} over every higher index; the consequence computes
-     * the value from what the rule bound and, where it decides, inserts the write and, where a lower default has a rule,
-     * {@link Beslist}. A leeg consequence inserts nothing, so the lower defaults decide (ch. 7.1); the initialisation
-     * default matches only where the target is empty on the bean, which holds the input (ch. 7.3). A do-not-attribute
-     * decision with no attribution below it has nothing to displace and gets no rule.
+     * The simple form, variant M of A10 in the trial of card drools-logische-afleiding: one rule per default that
+     * decides anything itself, with its reads bound, its justification as the test and {@code not Beslist} over every
+     * higher index; the consequence computes the value from what the rule bound and, where it decides, inserts the
+     * write and, where a lower default has a rule, {@link Beslist}. A leeg consequence inserts nothing, so the lower
+     * defaults decide (ch. 7.1); the initialisation default matches only where the target is empty on the bean, which
+     * holds the input (ch. 7.3). A do-not-attribute decision with no attribution below it has nothing to displace and
+     * gets no rule.
      */
     private List<Rule> eenvoudigeVorm(Stapelbouw b, List<Knoop> keten) {
         List<Knoop> beslissend = new ArrayList<>(keten.stream().filter(k -> beslistZelf(b, k.d())).toList());
@@ -2696,7 +2697,7 @@ public final class TmsTranspiler {
 
     /**
      * The reconciliation of RUNTIME-SEMANTICS ch. 7.2, applied at every level by ch. 7.9, over the outcomes of the
-     * member chains {@code [eerste, eerste + aantal)}, as {@code DefaultsRun.reconcile} reads them: the first conflict
+     * member chains {@code [eerste, eerste + aantal)}: the first conflict
      * in member order passes on unchanged; else the first deciding member's decision, which is a conflict under
      * {@code sleutel} where another member decides differently (numbers by value), and the decision otherwise. A rule
      * per outcome, each under {@code wacht}; the rules that cannot match are left out (a conflict among members that
@@ -2857,8 +2858,7 @@ public final class TmsTranspiler {
         return uit;
     }
 
-    /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here, as at
-     *  the exec-model branch's write boundary. */
+    /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here. */
     private static Object collapse(Object v) {
         return v instanceof Breuk b ? b.naarDecimal() : v;
     }
@@ -2889,7 +2889,7 @@ public final class TmsTranspiler {
             case Expr.Functie f -> functie(f, lez);
             // IR-SPEC ch. 4.3: a union denotes instances and stands only as the argument of a count, which reads it in
             // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)), the reference
-            // interpreter faults on and the other two branches refuse in this sentence
+            // interpreter faults on and the DRL-text branch refuses in this sentence
             case Expr.InstanceSetUnion u -> throw nietBerekend("InstanceSetUnion", u.bron(), "zij duidt de instanties van"
                     + " een §5.7-concatenatie aan, en alleen een instantietelling verbruikt ze (WF-110 (a))");
             case Expr.Afgerond a -> afronding(a, lez);
@@ -2923,7 +2923,7 @@ public final class TmsTranspiler {
         return snippet(c.bron());
     }
 
-    /** A literal as the exec-model branch reads it: a number, and a percentage, a number in the unit %, exact where its
+    /** A literal: a number, and a percentage, a number in the unit %, exact where its
      *  quotient does not terminate, a date, a boolean, and a text or an enumeration label as its string. */
     private static Waardefunctie literaal(Expr.Literal l) {
         Datatype t = l.type();
@@ -2994,10 +2994,10 @@ public final class TmsTranspiler {
     }
 
     /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
-     *  leeg (ch. 1.2), as the exec-model branch computes that shape ({@code rsMacht}). Any other exponent is refused: a
+     *  leeg (ch. 1.2), through the runtime's {@code rsMacht}. Any other exponent is refused: a
      *  negative or fractional literal, or a value read while the session fires, reaches the real power, which ch. 2.1
-     *  leaves OPEN, where the reference interpreter answers an exact root or faults and the exec-model branch computes a
-     *  binary double. */
+     *  leaves OPEN, where the reference interpreter answers an exact root or faults and the destructive lowering
+     *  computed a binary double. */
     private Waardefunctie macht(Expr.Binair b, Lezingen lez) {
         Integer n = b.rechts() instanceof Expr.Literal lit && lit.type().isGetalachtig() ? heleExponent(lit.waarde()) : null;
         if (n == null)
@@ -3023,11 +3023,10 @@ public final class TmsTranspiler {
         }
     }
 
-    /** A date plus or minus a duration with a calendar or clock unit, as the exec-model branch computes it
-     *  ({@code datumRekenWaarde}): no date minus date, no duration minus a date, a clock unit only on a date-time. A
-     *  duration counted in a day kind walks the calendar ({@link #dagsoortstap}). A step or a count outside the range of
-     *  RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault ({@link #datumfout}); the date is evaluated before the duration
-     *  (ch. 5.11). */
+    /** A date plus or minus a duration with a calendar or clock unit: no date minus date, no duration minus a date, a
+     *  clock unit only on a date-time. A duration counted in a day kind walks the calendar ({@link #dagsoortstap}). A
+     *  step or a count outside the range of RUNTIME-SEMANTICS ch. 3.8 is an evaluation fault ({@link #datumfout}); the
+     *  date is evaluated before the duration (ch. 5.11). */
     private Waardefunctie datumrekening(Expr.Binair b, Lezingen lez) {
         Expr.BinOp op = b.op();
         if (op != Expr.BinOp.PLUS && op != Expr.BinOp.MIN && op != Expr.BinOp.VERMINDERD_MET)
@@ -3170,7 +3169,7 @@ public final class TmsTranspiler {
      *  stays exact until a collapse point (ch. 2.1), as the reference interpreter restates; times the single ratio of the
      *  two units otherwise, a rate whose factors are not both known; unchanged where no restatement is due, a unitless
      *  side adopting the other's unit. A leeg value stays leeg and a value that is not a number passes through. Two units
-     *  that do not convert fault while the model is built ({@link Eenheidsconflict}), as at the exec-model branch. */
+     *  that do not convert fault while the model is built ({@link Eenheidsconflict}). */
     private static Waardefunctie herschaald(Waardefunctie f, Eenheid van, Eenheid naar, String plek) {
         Eenheidsconflict.eisHerschaalbaar(van, naar, plek);
         if (van == null || naar == null || !van.convertibleNaar(naar) || !van.vereistOmrekening(naar)) return f;
@@ -3213,7 +3212,7 @@ public final class TmsTranspiler {
         };
     }
 
-    /** A square root under its rounding (§13.4.17.13), as the exec-model branch computes it: the runtime's root at 34
+    /** A square root under its rounding (§13.4.17.13): the runtime's root at 34
      *  digits ({@code rsWortel}), which the rounding above it collapses; a leeg radicand leeg, and a negative one leeg
      *  with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (RUNTIME-SEMANTICS ch. 1.2,
      *  {@link Sonde}). */
@@ -3288,7 +3287,7 @@ public final class TmsTranspiler {
     }
 
     /** A cell of a dimensioned attribute (§3.6): the value at its one label in the attribute's {@code Map<label, value>}
-     *  bean member, leeg where the map or the label is absent, as the exec-model branch reads it. The attribute is
+     *  bean member, leeg where the map or the label is absent. The attribute is
      *  input, read off the subject's own bean ({@link #dimensielezing}); a cell over several dimensions is refused by
      *  name, as that branch refuses it. The reference interpreter and the ASP backend do not read a cell. */
     private Waardefunctie dimensiecel(Expr.DimensieCel c, Lezingen lez) {
@@ -3301,8 +3300,8 @@ public final class TmsTranspiler {
     }
 
     /** A sum, minimum or maximum over a dimension selection (§5.8.5): the attribute's cells at the selected labels, a
-     *  leeg cell skipped and an all-leeg selection leeg, as the exec-model branch folds them ({@code rsDimSom},
-     *  {@code rsDimMin}, {@code rsDimMax}); a sum's {@code emptyFallback} is evaluated after the cells, every time
+     *  leeg cell skipped and an all-leeg selection leeg, through the runtime's {@code rsDimSom},
+     *  {@code rsDimMin} and {@code rsDimMax}; a sum's {@code emptyFallback} is evaluated after the cells, every time
      *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The reference interpreter and the ASP backend do
      *  not fold a dimension selection. */
     private Waardefunctie dimensievouw(Expr.Functie f, Lezingen lez) {
@@ -3566,7 +3565,7 @@ public final class TmsTranspiler {
 
     /**
      * A builtin call (IR-SPEC ch. 4.3), its arguments evaluated in wire order (RUNTIME-SEMANTICS ch. 5.11), through the
-     * runtime's helpers where the exec-model branch uses them: the absolute value ({@code rsAbs}); a concatenation of
+     * runtime's helpers: the absolute value ({@code rsAbs}); a concatenation of
      * texts ({@link #tekstdeel}); the duration and the absolute duration in a calendar unit ({@code rsTijdsduur},
      * ch. 3.8); the year, month and day of a date and the hour, minute, second and millisecond of a date-time
      * ({@code rsDatumDeel}); easterSunday of a whole year ({@link #paasdag}); a date and a date-time made of their parts
@@ -3619,7 +3618,7 @@ public final class TmsTranspiler {
      *  a radicand that is the square of a rational, and otherwise the fault that executor gives, since an irrational
      *  root exists only under the rounding §13.4.17.13 mandates (RUNTIME-SEMANTICS ch. 2.2). A leeg radicand is leeg,
      *  a negative one leeg with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (ch. 1.2,
-     *  {@link Sonde}). The exec-model branch computes a binary approximation here instead. */
+     *  {@link Sonde}). The destructive lowering computed a binary approximation here. */
     private Waardefunctie exacteWortel(Expr.Functie f, Lezingen lez) {
         if (f.argumenten().size() != 1)
             throw new Weigering("een squareRoot met " + f.argumenten().size() + " argumenten ('" + snippet(f.bron())
@@ -3710,7 +3709,7 @@ public final class TmsTranspiler {
     }
 
     /** A part of a date or a date-time, as a whole number without a unit; a leeg date leeg (RUNTIME-SEMANTICS ch. 1.2,
-     *  3.8). A clock part demands a date-time, as the exec-model branch demands it. */
+     *  3.8). A clock part demands a date-time. */
     private Waardefunctie datumdeel(Expr.Functie f, Lezingen lez, String spelling, ChronoField veld, boolean klok) {
         Expr arg = eenArgument(f, spelling);
         Datatype t = eff.typeVan(arg);
@@ -3745,9 +3744,9 @@ public final class TmsTranspiler {
         };
     }
 
-    /** A date of three parts or a date-time of seven, as the exec-model branch makes them ({@code rsDatumMet},
-     *  {@code rsDatumtijdMet}): every part evaluated in order (RUNTIME-SEMANTICS ch. 5.11), any leeg part leeg (ch. 1.2).
-     *  A part that is not a whole number within the range of a date part, or parts that name no day, fault: the
+    /** A date of three parts or a date-time of seven, through the runtime's {@code rsDatumMet} and
+     *  {@code rsDatumtijdMet}: every part evaluated in order (RUNTIME-SEMANTICS ch. 5.11), any leeg part leeg (ch.
+     *  1.2). A part that is not a whole number within the range of a date part, or parts that name no day, fault: the
      *  reference interpreter makes no such date, and the runtime would truncate the part or throw past the fire. */
     private Waardefunctie datumconstructie(Expr.Functie f, Lezingen lez, String spelling) {
         boolean tijd = f.kind() == Expr.FunctieKind.DATUMTIJD_MET;
@@ -3965,8 +3964,7 @@ public final class TmsTranspiler {
      * clipped to the clause's true
      * periods first ({@link #knip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
      * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
-     * reference interpreter. The runtime's helpers compute this as the exec-model branch computes it, with
-     * {@link Tijdvak} as their segment class.
+     * reference interpreter. The runtime's helpers compute this, with {@link Tijdvak} as their segment class.
      *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
      * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator is not that
@@ -4030,16 +4028,16 @@ public final class TmsTranspiler {
 
     /**
      * The gedurende clause {@code c} of a temporal total as a clip of the subject's timeline (RUNTIME-SEMANTICS
-     * ch. 3.6), in the three shapes the reference interpreter carries, each through the runtime's helpers as the
-     * exec-model branch clips: a check of an own characteristic on a timeline, which keeps the fragments of each segment
-     * within its true periods ({@code rsTijdKnip}), or, negated, outside them within the segment
-     * ({@code rsTijdKnipNiet}); a flat {@code all} of such checks, which clips by each in turn, the intersection of
-     * their true periods; and a comparison of an own attribute on a timeline with a value, whose true periods are the
-     * segments of that timeline whose value satisfies it ({@code rsTijdConditie}), where a leeg segment and a leeg bound
-     * satisfy no ordering. The fragments are kept apart, never coalesced, so a clip that splits one
-     * whole unit loses it. Every characteristic's true periods are bound off the bean ({@link Lezingen#tijdlijn}), the
-     * compared timeline through its standing, read whole ({@link #vergelijkingsknip}), and the bound like any value of
-     * the rule. {@code geknipt} names the attribute whose timeline is clipped.
+     * ch. 3.6), in the three shapes the reference interpreter carries, each through the runtime's helpers: a check of
+     * an own characteristic on a timeline, which keeps the fragments of each segment within its true periods
+     * ({@code rsTijdKnip}), or, negated, outside them within the segment ({@code rsTijdKnipNiet}); a flat {@code all}
+     * of such checks, which clips by each in turn, the intersection of their true periods; and a comparison of an own
+     * attribute on a timeline with a value, whose true periods are the segments of that timeline whose value satisfies
+     * it ({@code rsTijdConditie}), where a leeg segment and a leeg bound satisfy no ordering. The fragments are kept
+     * apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's true periods are
+     * bound off the bean ({@link Lezingen#tijdlijn}), the compared timeline through its standing, read whole
+     * ({@link #vergelijkingsknip}), and the bound like any value of the rule. {@code geknipt} names the attribute whose
+     * timeline is clipped.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
@@ -4605,7 +4603,7 @@ public final class TmsTranspiler {
 
     /**
      * The multi-step range of a fold (IR-SPEC ch. 4.3, {@code sourcePath}; RUNTIME-SEMANTICS ch. 3.4b), on the plan the
-     * shared {@link Bronpad} derives, lowered as the exec-model branch lowers it: where the walk down from the subject
+     * shared {@link Bronpad} derives: where the walk down from the subject
      * and the walk up from the member meet, one constraint on the member's pattern; otherwise the intermediates neither
      * walk determines go into one {@code exists} after the member's pattern, so a member that two intermediates reach
      * still matches once. Two matches would give two equal contributions, which merge into one fact as well. The filter
@@ -4827,7 +4825,7 @@ public final class TmsTranspiler {
      * path is absent the timeline is null, which touches no bucket and passes, as a characteristic without periods does,
      * where the unqualified check over an absent link holds in neither polarity. No executor writes a characteristic on
      * a timeline (ch. 3.11), so its periods are input. Refused by name: the negation inside the qualifier
-     * ("gedurende het gehele jaar niet …"), a per-day complement of the periods, which both other branches refuse as
+     * ("gedurende het gehele jaar niet …"), a per-day complement of the periods, which the DRL-text branch refuses as
      * well (ch. 3.12).
      */
     private Toets geheelPeriodeKenmerk(Conditie.Kenmerk k, Lezingen lez) {
@@ -4951,13 +4949,13 @@ public final class TmsTranspiler {
 
     /**
      * The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) over the timeline bound at {@code tijdlijn}, as
-     * the runtime folds it for the exec-model branch ({@code rsGeheelPeriode}): for every calendar year or month the
+     * the runtime folds it ({@code rsGeheelPeriode}): for every calendar year or month the
      * timeline touches, the days on which the test holds must be all the days of that bucket. The grid is the
      * qualifier's own, "het gehele jaar" or "de gehele maand", never the member's grid nor the session's, so the fold
      * reads no evaluation date and a session without one answers. A leeg segment reads as a gap: it touches no bucket
      * and satisfies no test but the leeg test. A timeline without segments, and a null one, touch no bucket and pass,
      * so the qualifier's own negation ("niet gedurende …"), which complements the folded verdict, fails on them. The
-     * bound of a comparison is read as a decimal ({@code toBd}), as the exec-model branch reads it, after the timeline.
+     * bound of a comparison is read as a decimal ({@code toBd}), after the timeline.
      * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults with the fault
      * {@code emmer} gives ({@link #emmerfout}); a characteristic, whose input is its true periods, has none
      * ({@code emmer} null).
@@ -4983,7 +4981,7 @@ public final class TmsTranspiler {
      * stores it ({@link FactModelGenerator#lidmaatschapsopslag}): a to-one other role is the subject's own reference
      * field, read off the subject's bean, and a to-many other role is the field of the other end, which names the
      * subject, counted over the beans of the counterpart's class. Both roles to-many leaves no field, and the check is
-     * refused in the sentence the other two branches give.
+     * refused in the sentence the DRL-text branch gives.
      */
     private Toets rolcontrole(Conditie.Rollidmaatschap r, Lezingen lez) {
         RolBindingRef rb = rolBindingen.get(r);
@@ -5049,8 +5047,7 @@ public final class TmsTranspiler {
         };
     }
 
-    /** The stop triggers of RUNTIME-SEMANTICS ch. 5.10, as the exec-model branch reads them
-     *  ({@code ExecModelTranspiler.vastgesteld}, private there): the verdict once {@code gelezen} members are read, of
+    /** The stop triggers of RUNTIME-SEMANTICS ch. 5.10: the verdict once {@code gelezen} members are read, of
      *  which {@code raak} hold and {@code rest} are unread, or null while the unread members can still change it. */
     private static Boolean vastgesteld(Conditie.Kwantor kw, int drempel, int raak, int gelezen, int rest) {
         return switch (kw) {
@@ -5081,7 +5078,7 @@ public final class TmsTranspiler {
      * hand-built model carries one.
      */
     private Toets kwantorvouw(Conditie.Kwantorvouw kv, Lezingen lez) {
-        // WF-112, in the sentence of the other two branches: a window in the filter or the test under none or a counting
+        // WF-112, in the sentence of the DRL-text branch: a window in the filter or the test under none or a counting
         // quantifier has no reading
         String venster = Vensterpositie.weigering(kv);
         if (venster != null) throw new Weigering(venster + ": " + snippet(kv));
@@ -5238,14 +5235,14 @@ public final class TmsTranspiler {
     }
 
     /**
-     * A comparison of two values the rule binds or computes, with the empty operand of RUNTIME-SEMANTICS ch. 1.2 as the
-     * exec-model branch reads it: numbers through {@code rsAggVergelijk} (an ordering with a leeg operand is onwaar, two
-     * leeg numbers are equal, exactly one leeg is unequal; exact where a value is a rational), a percentage being a
-     * number in the unit %, the right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of
-     * one precision through {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a
-     * truth value through {@link #tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated
-     * before the right one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period
-     * qualifier the comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
+     * A comparison of two values the rule binds or computes, with the empty operand of RUNTIME-SEMANTICS ch. 1.2:
+     * numbers through {@code rsAggVergelijk} (an ordering with a leeg operand is onwaar, two leeg numbers are equal,
+     * exactly one leeg is unequal; exact where a value is a rational), a percentage being a number in the unit %, the
+     * right operand restated into the left one's unit (RUNTIME-SEMANTICS ch. 2.6); dates of one precision through
+     * {@link #datumVergelijk} (two leeg dates are not equal); a text, an enumeration label or a truth value through
+     * {@link #tekstGelijk}, an enumeration up to its normalised label. The left operand is evaluated before the right
+     * one (ch. 5.11). Two sides whose types allow no comparison are refused. Under the whole-period qualifier the
+     * comparison folds a timeline instead ({@link #geheelPeriodeVergelijking}).
      */
     private Toets vergelijking(Conditie.Vergelijking v, Lezingen lez) {
         if (v.periode() != null) return geheelPeriodeVergelijking(v, lez);
@@ -5303,7 +5300,7 @@ public final class TmsTranspiler {
         return v instanceof java.time.LocalDate || v instanceof java.time.LocalDateTime ? v : null;
     }
 
-    /** A date comparison with the exec-model branch's leeg tables ({@code datumVergelijkTemporal}, private there): an
+    /** A date comparison with its leeg tables: an
      *  ordering with a leeg operand is onwaar, equality of two leeg dates is onwaar (§5.3 Tabel 38), inequality holds
      *  where exactly one is leeg (§5.6 Tabel 44). */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -5324,9 +5321,8 @@ public final class TmsTranspiler {
         };
     }
 
-    /** The equality of a text, an enumeration label or a truth value with the exec-model branch's leeg tables
-     *  ({@code tekstAttrGelijk}): equal only where both are filled and the same, unequal where exactly one is leeg or
-     *  the two differ. */
+    /** The equality of a text, an enumeration label or a truth value with its leeg tables: equal only where both are
+     *  filled and the same, unequal where exactly one is leeg or the two differ. */
     private static boolean tekstGelijk(Object a, Object b, boolean gelijk) {
         boolean beideLeeg = a == null && b == null;
         boolean zelfde = Objects.equals(a, b);
@@ -5356,8 +5352,8 @@ public final class TmsTranspiler {
         }
     }
 
-    /** The eleven test and the exact-digit test (§8.1.3, §8.1.4), as the exec-model branch tests them
-     *  ({@code rsElfproef}, {@code rsNumeriekMetExact}), the written negation complementing the verdict: a leeg value
+    /** The eleven test and the exact-digit test (§8.1.3, §8.1.4), through the runtime's
+     *  {@code rsElfproef} and {@code rsNumeriekMetExact}, the written negation complementing the verdict: a leeg value
      *  passes neither test. The operand is read as any value; over a path of roles that branch makes an absent link fail
      *  both polarities, which a leeg read here cannot tell from a leeg value, so such an operand is refused by name. The
      *  reference interpreter and the ASP backend do not evaluate these predicates. */
@@ -5884,8 +5880,8 @@ public final class TmsTranspiler {
                         drools.logicalInsert(new ParameterStand(naam, v))));
     }
 
-    /** The global of parameter {@code p}, of the Java type the exec-model branch declares it with, so that the case
-     *  runner sets it by name; one per parameter for the whole model. */
+    /** The global of parameter {@code p}, of the Java type of its datatype, so that the case runner sets it by name;
+     *  one per parameter for the whole model. */
     private Global<?> global(Parameter p) {
         String naam = Namen.ident(p.naam(), false);
         Global<?> g = globals.get(naam);
@@ -5984,8 +5980,8 @@ public final class TmsTranspiler {
 
     /** A consequence over any number of bound variables. Each typed {@code execute} of the DSL sets its builder's block
      *  to a {@link org.drools.model.functions.BlockN} over the Drools handle and the bound facts, and the engine calls
-     *  that block whatever its arity; this builder sets the same block directly, as the exec-model branch's
-     *  {@code GebondenN} does, so a consequence is not limited by the arities the DSL spells out. */
+     *  that block whatever its arity; this builder sets the same block directly, so a consequence is not limited by the
+     *  arities the DSL spells out. */
     private static final class Gevolg extends org.drools.model.consequences.ConsequenceBuilder.AbstractValidBuilder<Gevolg> {
         @SuppressWarnings("rawtypes")
         Gevolg(Variable[] v, BiConsumer<org.drools.model.Drools, Object[]> body) {

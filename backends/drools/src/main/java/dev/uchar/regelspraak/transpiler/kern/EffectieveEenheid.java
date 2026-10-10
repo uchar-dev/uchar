@@ -276,7 +276,7 @@ public final class EffectieveEenheid {
      *
      * <p><b>Scope: exactly the two kinds that fold.</b> SOM and TOTAAL, because those are exactly the kinds both
      * consumers admit into the per-element timeline fold, and the scope is taken from them rather than from the
-     * corpus. {@code ExecModelTranspiler}'s instance-fold guard skips a temporal operand for every other kind;
+     * corpus. The exec-model branch refuses a fold over a member on a timeline by name for every other kind;
      * {@code ref}'s {@code eval.ml} faults on it in as many words ("only sum and total carry the per-element
      * timeline fold"). A MINIMUM or an EERSTE over a timeline has no defined moment to rank, so neither consumer
      * folds it, no denominator is consumed, and none may be dropped.
@@ -322,13 +322,13 @@ public final class EffectieveEenheid {
      * before it ever asks, and never an invented factor — and {@code exacteHerschaalFactoren} is null):
      * <ul>
      *   <li>a site that REFUSES on {@code convertibleNaar} — the §4.1/§5.1.4 TEMPORAL restatements
-     *       ({@code DrlTranspiler.schaalbaarNaarDoel} / {@code schaalTijd}, and the fold- and
-     *       timeline-restatement guards in {@code ExecModelTranspiler}) — gets a false and turns the whole
-     *       construct into an honest marker/skip. Symmetric in both back-ends;</li>
+     *       ({@code DrlTranspiler.schaalbaarNaarDoel} / {@code schaalTijd}, and until card tms-omschakeling the
+     *       fold- and timeline-restatement guards of the destructive exec-model lowering) — gets a false and turns
+     *       the whole construct into an honest marker/skip;</li>
      *   <li>a site that merely COMPUTES a factor — the scalar §4 write boundary, the additive operand
      *       boundary, the §5.1 Tabel 32 comparison restatement — gets the IDENTITY and the restatement becomes
-     *       a NO-OP. {@code ExecModelTranspiler.restatement} returns {1, 1} and {@code herschaalWaarde} falls
-     *       through {@code valueFactor}'s null to the unchanged value; {@code DrlTranspiler.herschaalExact}
+     *       a NO-OP. {@code TmsTranspiler.herschaald} returns the value unchanged, as the destructive exec-model
+     *       lowering did until card tms-omschakeling; {@code DrlTranspiler.herschaalExact}
      *       and {@code herschaalConditie} likewise return the expression unchanged, one
      *       line ABOVE their "an OPAQUE product unit stays an honest marker" branch (which an opaque product
      *       never reaches, having already failed the convertibility guard). No marker on either side.</li>

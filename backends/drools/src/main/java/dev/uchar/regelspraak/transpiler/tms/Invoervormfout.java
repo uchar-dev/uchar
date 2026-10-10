@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.function.Function;
 
 /**
- * An evaluation fault of the truth-maintenance branch: a form reads the case input of an attribute on a timeline in the
+ * An evaluation fault of the exec-model branch: a form reads the case input of an attribute on a timeline in the
  * one convention, and the case gives it in the other (RUNTIME-SEMANTICS ch. 8.4: "An executor that needs the one and
  * finds the other faults — never guesses"). The asOfDate-bucket scalar ({@link Emmerscalair}) serves the subject's own
  * total without a clip (ch. 3.6); the full timeline serves the clip of a total and the timeline a comparison clip

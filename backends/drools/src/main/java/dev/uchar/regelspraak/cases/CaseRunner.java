@@ -333,10 +333,11 @@ public final class CaseRunner {
         return build(irPath, tak).runCase("case", c);
     }
 
-    /** The measuring seam of the truth-maintenance trial (card drools-logische-afleiding, acceptance (e)): a runner of
-     *  {@code irPath} on {@code tak} whose KieBase is built once, so that a harness in the test tree can fire one case
-     *  many times and time the fire alone. The replay entries cannot serve: they build per call and hand back a
-     *  verdict, not the firings or the session. Package-private, no production caller, and no gate runs it. */
+    /** The measuring seam of the harnesses and witnesses in the test tree, first made for the trial of card
+     *  drools-logische-afleiding (acceptance (e)): a runner of {@code irPath} on {@code tak} whose KieBase is built
+     *  once, so that a harness in the test tree can fire one case many times and time the fire alone. The replay
+     *  entries cannot serve: they build per call and hand back a verdict, not the firings or the session.
+     *  Package-private, no production caller, and no gate runs it. */
     static CaseRunner voorMeting(Path irPath, DroolsBackend.Branch tak) throws java.io.IOException {
         return build(irPath, tak);
     }

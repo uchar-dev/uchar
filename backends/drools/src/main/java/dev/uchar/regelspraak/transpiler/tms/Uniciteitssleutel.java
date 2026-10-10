@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The key of one instance in one source of a uniqueness of the truth-maintenance branch, inserted logically by the
+ * The key of one instance in one source of a uniqueness of the exec-model branch, inserted logically by the
  * source's key rule (RUNTIME-SEMANTICS ch. 5.9): {@code element} carries {@code waarden}, its key components in the
  * order the source lists them, each gevuld, an enumeration label in its normalised form, and, for a uniqueness scoped
  * by a parent, the {@code scope} it is linked to (null where the form has no scope). An instance with an empty

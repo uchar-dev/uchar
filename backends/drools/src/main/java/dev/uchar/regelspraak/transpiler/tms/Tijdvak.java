@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * One segment {@code [van, tot)} of a timeline as the truth-maintenance branch carries it in a fact (RUNTIME-SEMANTICS
+ * One segment {@code [van, tot)} of a timeline as the exec-model branch carries it in a fact (RUNTIME-SEMANTICS
  * ch. 3.1): a value, or leeg (null), from day {@code van} up to, not including, day {@code tot}; a true period of a
  * time-dependent characteristic carries null. A timeline is an immutable {@code List<Tijdvak>}, ordered as its producer
  * gave it: a {@link Stand} or a {@link Waarde} holds one as its value.

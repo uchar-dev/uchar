@@ -9,7 +9,8 @@ import java.util.Objects;
  * above its own. A decision therefore displaces every lower one by truth maintenance alone: when a higher default
  * decides after a lower one already wrote, the lower one's match goes and its write with it, and when the higher
  * decision goes, the lower one matches again. A default whose consequence is leeg inserts nothing, so the lower ones
- * decide (RUNTIME-SEMANTICS ch. 7.1). This is the form the trial's A10 measured as variant M.
+ * decide (RUNTIME-SEMANTICS ch. 7.1). This is the form A10 of the trial of card drools-logische-afleiding measured as
+ * variant M.
  *
  * <p>Keyed and compared as {@link HeeftKenmerk}: the subject by identity, the stack and the index by value.
  */

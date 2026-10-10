@@ -15,22 +15,22 @@ import java.util.Set;
 
 /**
  * The distribution of one allocation over the recipients of one source (RUNTIME-SEMANTICS ch. 4.2 to 4.4), as a
- * function of the values the allocation's rule binds: the pot and the {@link Ontvanger} facts of the source, which carry
- * every recipient's weight, ordering key and cap. It computes as the exec-model branch computes, with the runtime's
- * helpers ({@code rsPlafond}, {@code rsAfronding} and, for the ordered method, {@code rsVerdeelOpVolgorde}), so a share
- * is the quotient at 16 significant digits, capped and then floored, the v0 residual ch. 4.2 records beside the exact
- * fractions; the edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that
- * ch. 4.4 decides otherwise for v1 (below).
+ * function of the values the allocation's rule binds: the pot and the {@link Ontvanger} facts of the source, which
+ * carry every recipient's weight, ordering key and cap. It computes with the runtime's helpers ({@code rsPlafond},
+ * {@code rsAfronding} and, for the ordered method, {@code rsVerdeelOpVolgorde}), so a share is the quotient at 16
+ * significant digits, capped and then floored, the v0 residual ch. 4.2 records beside the exact fractions; the edge
+ * rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that ch. 4.4 decides
+ * otherwise for v1 (below).
  *
- * <p>Where the spec and that branch differ, the spec decides. An empty pot distributes nothing in every method, as
- * ch. 4.4 decides for v1, so nothing is written and nothing deposited; in the equal-shares and the proportional method
- * the reference interpreter keeps the v0 hole there and faults, and the exec-model branch throws. A negative weight in
- * the proportional method counts as 0
- * and surfaces the §9.5 deposit, as ch. 4.4 decides for v1; the exec-model branch and the reference interpreter keep
- * the v0 hole there, an unclamped weight. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and
- * the reference interpreter read it, where {@code rsVerdeelOpVolgorde} splits a group whose weights are all empty in
- * equal parts; and two ordering keys of one value are one group whatever their scale, as the reference interpreter
- * compares them, where that helper groups by {@code equals}. The weights and keys are handed to the helper read so.
+ * <p>Where the spec and the destructive lowering of before card tms-omschakeling differed, the spec decides. An empty
+ * pot distributes nothing in every method, as ch. 4.4 decides for v1, so nothing is written and nothing deposited; in
+ * the equal-shares and the proportional method the reference interpreter keeps the v0 hole there and faults, and the
+ * destructive lowering threw. A negative weight in the proportional method counts as 0 and surfaces the §9.5 deposit,
+ * as ch. 4.4 decides for v1; the reference interpreter keeps the v0 hole there, an unclamped weight, as the destructive
+ * lowering did. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and the reference interpreter
+ * read it, where {@code rsVerdeelOpVolgorde} splits a group whose weights are all empty in equal parts; and two
+ * ordering keys of one value are one group whatever their scale, as the reference interpreter compares them, where that
+ * helper groups by {@code equals}. The weights and keys are handed to the helper read so.
  *
  * <p>Public and free of the rule DSL, a function of plain values, so that a rendering of the branch as DRL text can call
  * it from a consequence as the exec-model rendering does.

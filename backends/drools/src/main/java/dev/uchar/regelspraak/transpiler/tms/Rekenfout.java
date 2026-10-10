@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.runtime.Breuk;
 
 /**
- * An evaluation fault of the truth-maintenance branch other than a division by a numeric zero
+ * An evaluation fault of the exec-model branch other than a division by a numeric zero
  * ({@link Breuk.DelingDoorNul}): a date step or a duration count outside the range of RUNTIME-SEMANTICS ch. 3.8, a
  * walk over the days of a day kind that passes the reach of ch. 3.8 without one, a context value, a validity window or
  * the subject's own temporal total without a clip that needs the evaluation date in a session that carries none

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * One recipient of one allocation of the truth-maintenance branch, for one source, inserted logically:
+ * One recipient of one allocation of the exec-model branch, for one source, inserted logically:
  * {@code ontvanger} is an instance of the allocation's {@code targetType} that its connecting relation links to the
  * source {@code bron} (RUNTIME-SEMANTICS ch. 4.1), and {@code gewicht}, {@code sleutel} and {@code maximum} are its
  * weight, ordering key and cap as they stand, each null where it is leeg or where the allocation declares no such

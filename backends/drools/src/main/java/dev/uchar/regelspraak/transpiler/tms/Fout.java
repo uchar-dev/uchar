@@ -3,7 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import java.util.Objects;
 
 /**
- * An evaluation fault a rule of the truth-maintenance branch raised on one object, inserted logically by the activation
+ * An evaluation fault a rule of the exec-model branch raised on one object, inserted logically by the activation
  * that raised it: a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4), in a rule's value or in a
  * condition, a {@link Rekenfout}, or two writers of one attribute that disagree ({@link Schrijversconflict}, ch. 5.7).
  * The branch has no strata and passes intermediate states the reference interpreter does not see, and a fault thrown

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * One member's contribution to one aggregation of the truth-maintenance branch, inserted logically: {@code element} is
+ * One member's contribution to one aggregation of the exec-model branch, inserted logically: {@code element} is
  * a member of the range of the fold {@code vouw}, reached from the fold's subject {@code onderwerp} and passing the
  * fold's filter, and {@code waarde} the value it contributes, or null for a count, where the member itself is what
  * counts. A rule per range of a fold inserts it, with the member's value and every read of the filter bound in its

@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Two or more evaluation faults that stand at the fixpoint of one session of the truth-maintenance branch
- * ({@link Fout}). A single fault is thrown as the exception it is, the one the exec-model branch names out of its fire;
- * several are thrown as this exception, ordered by the name of the form and then by the sentence, so the report does
- * not depend on the order of the rules in the model or of the firings. Its message is a head ({@link #kop}) that names
- * the rule of every fault, then the sentences of the faults ({@link #zinnen}). A report that bounds its length bounds
- * the sentences and keeps the head whole, as the CLI's ERROR line does: the bound may shorten a sentence, but no fault
- * drops off the report. The first fault in that order is the cause, and the others are suppressed exceptions.
+ * Two or more evaluation faults that stand at the fixpoint of one session of the exec-model branch
+ * ({@link Fout}). A single fault is thrown as the exception it is; several are thrown as this exception, ordered by the
+ * name of the form and then by the sentence, so the report does not depend on the order of the rules in the model or of
+ * the firings. Its message is a head ({@link #kop}) that names the rule of every fault, then the sentences of the
+ * faults ({@link #zinnen}). A report that bounds its length bounds the sentences and keeps the head whole, as the CLI's
+ * ERROR line does: the bound may shorten a sentence, but no fault drops off the report. The first fault in that order
+ * is the cause, and the others are suppressed exceptions.
  */
 public final class Evaluatiefouten extends RuntimeException {
 
