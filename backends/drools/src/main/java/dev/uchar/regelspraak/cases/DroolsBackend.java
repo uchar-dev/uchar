@@ -829,7 +829,9 @@ public final class DroolsBackend {
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
         if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
-        List<FactHandle> merken = List.copyOf(sessie.<FactHandle>getFactHandles(o -> o instanceof Gevuurd));
+        // per class: Drools keeps the facts of a class apart and hands out only those for a ClassObjectFilter, where a
+        // filter of another kind walks every fact the session holds, at every vuur
+        List<FactHandle> merken = List.copyOf(sessie.<FactHandle>getFactHandles(new ClassObjectFilter(Gevuurd.class)));
         // what a creation made is stated and does not lapse, so a later fire would keep it beside an input it no longer
         // follows from; checked first, since a written-back session of such a model cannot be read between fires either
         if (!merken.isEmpty() && !tms.creatieregels().isEmpty())
@@ -838,7 +840,7 @@ public final class DroolsBackend {
                     + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
                     + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
                     + " verse sessie");
-        if (!sessie.getObjects(o -> o instanceof Teruggezet).isEmpty())
+        if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
             throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"

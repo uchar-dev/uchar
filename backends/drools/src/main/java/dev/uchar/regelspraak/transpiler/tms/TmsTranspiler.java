@@ -475,7 +475,8 @@ public final class TmsTranspiler {
     }
 
     private Lezing lezing(KieSession sessie, Function<Object, String> label) {
-        List<Object> merken = new ArrayList<>(sessie.getObjects(o -> o instanceof Gevuurd));
+        // per class, as the driver asks for it: a filter of another kind walks every fact the session holds
+        List<Object> merken = new ArrayList<>(sessie.getObjects(new ClassObjectFilter(Gevuurd.class)));
         if (merken.isEmpty())
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: deze sessie is niet via"
                     + " DroolsBackend.vuur gevuurd, dat tot het fixpunt vuurt"
