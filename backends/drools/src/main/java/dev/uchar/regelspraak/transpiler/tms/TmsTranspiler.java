@@ -44,6 +44,7 @@ import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
 
 import org.drools.model.DSL;
 import org.drools.model.Global;
+import org.drools.model.Index;
 import org.drools.model.Model;
 import org.drools.model.PatternDSL;
 import org.drools.model.Rule;
@@ -52,6 +53,7 @@ import org.drools.model.Variable;
 import org.drools.model.functions.Block2;
 import org.drools.model.functions.Block3;
 import org.drools.model.functions.Block4;
+import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.functions.Predicate10;
 import org.drools.model.functions.Predicate11;
@@ -1006,23 +1008,22 @@ public final class TmsTranspiler {
             return schrijfregel(r, doel.objecttype(), lid, lez -> {
                 lez.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
                 Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
-                return List.of(DSL.not(PatternDSL.pattern(w)
-                        .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam))
-                        .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
+                return List.of(DSL.not(zelfde(PatternDSL.pattern(w)
+                        .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam)),
+                        "andere-schrijver-onderwerp", lez.s, Waarde::onderwerp)));
             }, geabsorbeerd, false);
         return schrijfregel(r, doel.objecttype(), lid, lez -> {
             Variable<Waarde> w = DSL.declarationOf(Waarde.class, "$andere_schrijver");
             Variable<Waarde> l = DSL.declarationOf(Waarde.class, "$lege_schrijver");
             Variable<Object> legen = DSL.declarationOf(Object.class, "$lege_schrijvers");
             return List.of(
-                    DSL.not(PatternDSL.pattern(w)
+                    DSL.not(zelfde(PatternDSL.pattern(w)
                             .expr(id("andere-schrijver"), x -> x.attribuut().equals(sleutel) && !x.schrijver().equals(naam)
-                                    && x.waarde() != null)
-                            .expr(id("andere-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)),
-                    DSL.accumulate(PatternDSL.pattern(l)
+                                    && x.waarde() != null), "andere-schrijver-onderwerp", lez.s, Waarde::onderwerp)),
+                    DSL.accumulate(zelfde(PatternDSL.pattern(l)
                                     .expr(id("lege-schrijver"), x -> x.attribuut().equals(sleutel)
-                                            && !x.schrijver().equals(naam) && x.waarde() == null)
-                                    .expr(id("lege-schrijver-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o),
+                                            && !x.schrijver().equals(naam) && x.waarde() == null),
+                                    "lege-schrijver-onderwerp", lez.s, Waarde::onderwerp),
                             DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), l).as(legen)),
                     DSL.expr(id("doel-leeg"), legen, lez.s, (n, o) -> !leeg(n) || invoer.apply(o) == null));
         }, geabsorbeerd, false);
@@ -1135,8 +1136,8 @@ public final class TmsTranspiler {
         Variable<Object> lijst = DSL.declarationOf(Object.class, "$waarden");
         return PatternDSL.rule(PKG, "schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil").build(
                 PatternDSL.pattern(s),
-                DSL.accumulate(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
-                                .expr(id("waarde-onderwerp"), s, (x, o) -> x.onderwerp() == o),
+                DSL.accumulate(zelfde(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel)),
+                                "waarde-onderwerp", s, Waarde::onderwerp),
                         DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), w).as(lijst)),
                 DSL.expr(id("verschil"), lijst, l -> verschillen((List<?>) l)),
                 DSL.on(s, lijst).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, l) -> {
@@ -1798,7 +1799,7 @@ public final class TmsTranspiler {
             throw new Weigering("de join van de verdeling heeft geen beanveld — "
                     + FactModelGenerator.geenJoinveldReden(model, drager, rol, ander) + " (§13.3.9 opslagrichting)");
         Function<Object, Object> veld = Accessors.getter(bonenklasse(drager), rol);
-        return lid -> lid.onderwerp.expr(id("ontvanger-bron"), lid.drager, voorwaarts
+        return lid -> lid.onderwerp.expr(id("verdelingsbereik"), lid.drager, voorwaarts
                 ? (e, s) -> veld.apply(s) == e
                 : (e, s) -> veld.apply(e) == s);
     }
@@ -1889,8 +1890,8 @@ public final class TmsTranspiler {
         // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
         // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
         Variable<Fout> eigenFout = DSL.declarationOf(Fout.class, "$eigen_fout");
-        items.add(DSL.not(PatternDSL.pattern(eigenFout).expr(id("eigen-fout"), x -> x.regel().equals(naam))
-                .expr(id("eigen-fout-onderwerp"), lez.s, (x, o) -> x.onderwerp() == o)));
+        items.add(DSL.not(zelfde(PatternDSL.pattern(eigenFout).expr(id("eigen-fout"), x -> x.regel().equals(naam)),
+                "eigen-fout-onderwerp", lez.s, Fout::onderwerp)));
         if (k.eenOpEen()) {
             // an instance linked toward the subject in the input world blocks the creation (ch. 5.5)
             Function<Object, Object> voorwaarts = Accessors.getter(bonenklasse(subject), k.fwdRef());
@@ -1963,9 +1964,9 @@ public final class TmsTranspiler {
         Variable<Gemaakt> eigen = DSL.declarationOf(Gemaakt.class, "$gemaakt_" + id("creatie"));
         Variable<Gemaakt> nieuw = DSL.declarationOf(Gemaakt.class, "$nieuw_" + id("creatie"));
         return List.of(
-                DSL.not(PatternDSL.pattern(eigen).expr(id("gemaakt"), g -> g.regel().equals(naam))
-                        .expr(id("gemaakt-onderwerp"), lez.s, (g, o) -> g.onderwerp() == o)),
-                DSL.not(PatternDSL.pattern(nieuw).expr(id("nieuw-object"), lez.s, (g, o) -> g.object() == o)
+                DSL.not(zelfde(PatternDSL.pattern(eigen).expr(id("gemaakt"), g -> g.regel().equals(naam)),
+                        "gemaakt-onderwerp", lez.s, Gemaakt::onderwerp)),
+                DSL.not(zelfde(PatternDSL.pattern(nieuw), "nieuw-object", lez.s, Gemaakt::object)
                         .expr(id("nieuw-in-deze-fase"), f, (g, n) -> g.fase() == (Integer) n)));
     }
 
@@ -2136,8 +2137,8 @@ public final class TmsTranspiler {
         if (schrijvers.containsKey(sleutel)) {
             Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$doelstand_" + id("doel"));
             Variable<Object> doel = doelpatroon.getFirstVariable();
-            items.add(PatternDSL.pattern(st).expr(id("doelstand"), x -> x.kenmerk().equals(sleutel))
-                    .expr(id("doelstand-doel"), doel, (x, d) -> x.onderwerp() == d)
+            items.add(zelfde(PatternDSL.pattern(st).expr(id("doelstand"), x -> x.kenmerk().equals(sleutel)),
+                    "doelstand-doel", doel, KenmerkStand::onderwerp)
                     .expr(id("doelstand-waar"), x -> x.waar() == gewenst));
             gelezen.putIfAbsent(sleutel, lid);
         } else {
@@ -2615,24 +2616,24 @@ public final class TmsTranspiler {
     private PatternDSL.PatternDef<Uitkomst> uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort,
                                                       Variable<Object> onderwerp) {
         Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$uitkomst_" + idSeq);
-        return PatternDSL.pattern(x).expr(id("uitkomst"), y -> y.stapel().equals(naam) && y.keten() >= van
-                        && y.keten() < tot && (soort == null || y.soort() == soort))
-                .expr(id("uitkomst-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo);
+        return zelfde(PatternDSL.pattern(x).expr(id("uitkomst"), y -> y.stapel().equals(naam) && y.keten() >= van
+                        && y.keten() < tot && (soort == null || y.soort() == soort)),
+                "uitkomst-onderwerp", onderwerp, Uitkomst::onderwerp);
     }
 
     /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}. */
     private RuleItemBuilder<?> geenUitkomst(String naam, int keten, int positie, Variable<Object> onderwerp) {
         Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$hoger_" + idSeq);
-        return DSL.not(PatternDSL.pattern(x).expr(id("hoger-uitkomst"), y -> y.stapel().equals(naam)
-                        && y.keten() == keten && y.positie() < positie)
-                .expr(id("hoger-uitkomst-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo));
+        return DSL.not(zelfde(PatternDSL.pattern(x).expr(id("hoger-uitkomst"), y -> y.stapel().equals(naam)
+                        && y.keten() == keten && y.positie() < positie),
+                "hoger-uitkomst-onderwerp", onderwerp, Uitkomst::onderwerp));
     }
 
     /** {@code not Beslist} over the indices above {@code index} in the stack. */
     private RuleItemBuilder<?> geenBeslist(String naam, int index, Variable<Object> onderwerp) {
         Variable<Beslist> x = DSL.declarationOf(Beslist.class, "$hoger_" + idSeq);
-        return DSL.not(PatternDSL.pattern(x).expr(id("hoger-beslist"), y -> y.stapel().equals(naam) && y.index() < index)
-                .expr(id("hoger-beslist-onderwerp"), onderwerp, (y, oo) -> y.onderwerp() == oo));
+        return DSL.not(zelfde(PatternDSL.pattern(x).expr(id("hoger-beslist"), y -> y.stapel().equals(naam)
+                && y.index() < index), "hoger-beslist-onderwerp", onderwerp, Beslist::onderwerp));
     }
 
     /**
@@ -5322,8 +5323,8 @@ public final class TmsTranspiler {
                     v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1,
                     v.waardeKanFalen() ? bestaand("lidfout " + sleutel) : -1};
             Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
-            PatternDSL.PatternDef<Bijdrage> p = PatternDSL.pattern(b).expr(id("vouw"), x -> x.vouw().equals(sleutel))
-                    .expr(id("vouw-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+            PatternDSL.PatternDef<Bijdrage> p = zelfde(PatternDSL.pattern(b)
+                    .expr(id("vouw"), x -> x.vouw().equals(sleutel)), "vouw-onderwerp", s, Bijdrage::onderwerp);
             Variable<Object> aantal = DSL.declarationOf(Object.class, "$aantal_" + id("vouw"));
             int[] uit;
             if (functie == null) {
@@ -5340,9 +5341,8 @@ public final class TmsTranspiler {
             }
             if (v.kanFalen()) {
                 Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
-                PatternDSL.PatternDef<Filterfout> q = PatternDSL.pattern(f)
-                        .expr(id("filterfout"), x -> x.vouw().equals(sleutel))
-                        .expr(id("filterfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                PatternDSL.PatternDef<Filterfout> q = zelfde(PatternDSL.pattern(f)
+                        .expr(id("filterfout"), x -> x.vouw().equals(sleutel)), "filterfout-onderwerp", s, Filterfout::onderwerp);
                 Variable<Object> fouten = DSL.declarationOf(Object.class, "$filterfouten_" + id("vouw"));
                 Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_filterfout_" + id("vouw"));
                 standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
@@ -5351,9 +5351,8 @@ public final class TmsTranspiler {
             }
             if (v.deponeert()) {
                 Variable<Filterdeponering> d = DSL.declarationOf(Filterdeponering.class, "$filterdeponering_" + id("vouw"));
-                PatternDSL.PatternDef<Filterdeponering> q = PatternDSL.pattern(d)
-                        .expr(id("filterdeponering"), x -> x.vouw().equals(sleutel))
-                        .expr(id("filterdeponering-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                PatternDSL.PatternDef<Filterdeponering> q = zelfde(PatternDSL.pattern(d)
+                        .expr(id("filterdeponering"), x -> x.vouw().equals(sleutel)), "filterdeponering-onderwerp", s, Filterdeponering::onderwerp);
                 Variable<Object> deponeringen = DSL.declarationOf(Object.class, "$filterdeponeringen_" + id("vouw"));
                 standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), d)
                         .as(deponeringen)));
@@ -5361,9 +5360,8 @@ public final class TmsTranspiler {
             }
             if (v.waardeKanFalen()) {
                 Variable<Lidfout> f = DSL.declarationOf(Lidfout.class, "$lidfout_" + id("vouw"));
-                PatternDSL.PatternDef<Lidfout> q = PatternDSL.pattern(f)
-                        .expr(id("lidfout"), x -> x.vouw().equals(sleutel))
-                        .expr(id("lidfout-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+                PatternDSL.PatternDef<Lidfout> q = zelfde(PatternDSL.pattern(f)
+                        .expr(id("lidfout"), x -> x.vouw().equals(sleutel)), "lidfout-onderwerp", s, Lidfout::onderwerp);
                 Variable<Object> fouten = DSL.declarationOf(Object.class, "$lidfouten_" + id("vouw"));
                 Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_lidfout_" + id("vouw"));
                 standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
@@ -5447,8 +5445,8 @@ public final class TmsTranspiler {
             if (bekend >= 0) return bekend;
             Variable<Ontvanger> o = DSL.declarationOf(Ontvanger.class, "$ontvanger_" + id("verdeling"));
             Variable<Object> lijst = DSL.declarationOf(Object.class, "$ontvangers_" + id("verdeling"));
-            standen.add(DSL.accumulate(PatternDSL.pattern(o).expr(id("ontvanger"), x -> x.verdeling().equals(verdeling))
-                            .expr(id("ontvanger-bron"), s, (x, b) -> x.bron() == b),
+            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(o).expr(id("ontvanger"),
+                            x -> x.verdeling().equals(verdeling)), "ontvanger-bron", s, Ontvanger::bron),
                     DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), o).as(lijst)));
             return nieuw(sleutel, lijst);
         }
@@ -5458,7 +5456,7 @@ public final class TmsTranspiler {
             if (bekend >= 0) return bekend;
             Variable<Gemaakt> g = DSL.declarationOf(Gemaakt.class, "$herkomst_" + id("creatie"));
             Variable<Object> lijst = DSL.declarationOf(Object.class, "$herkomsten_" + id("creatie"));
-            standen.add(DSL.accumulate(PatternDSL.pattern(g).expr(id("herkomst"), s, (x, o) -> x.object() == o),
+            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(g), "herkomst", s, Gemaakt::object),
                     DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), g).as(lijst)));
             return nieuw("herkomst", lijst);
         }
@@ -5578,14 +5576,12 @@ public final class TmsTranspiler {
             if (schrijvers.containsKey(lk)) {
                 if (lid.kenmerk()) {
                     Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand_" + variabelen.size());
-                    standen.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk))
-                            .expr(id("stand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
-                            .bind(w, KenmerkStand::waar));
+                    standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)),
+                            "stand-onderwerp", s, KenmerkStand::onderwerp).bind(w, KenmerkStand::waar));
                 } else {
                     Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
-                    standen.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
-                            .expr(id("stand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
-                            .bind(w, Stand::waarde));
+                    standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)),
+                            "stand-onderwerp", s, Stand::onderwerp).bind(w, Stand::waarde));
                 }
                 afgeleid.put(lk, lid);
             } else {
@@ -5623,9 +5619,8 @@ public final class TmsTranspiler {
                 onderwerp.bind(w, o -> Tijdvak.lijst((List<?>) getter.apply(o)));
             } else {
                 Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
-                standen.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
-                        .expr(id("stand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
-                        .bind(w, Stand::waarde));
+                standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)),
+                        "stand-onderwerp", s, Stand::onderwerp).bind(w, Stand::waarde));
                 afgeleid.put(lk, lid);
             }
             return nieuw(sleutel, w);
@@ -5652,9 +5647,8 @@ public final class TmsTranspiler {
                 Padlezing p = new Padlezing(pad, lid);
                 String ps = pad.sleutel();
                 Variable<PadStand> st = DSL.declarationOf(PadStand.class, "$padstand_" + variabelen.size());
-                standen.add(PatternDSL.pattern(st).expr(id("padstand"), x -> x.pad().equals(ps) && x.lid().equals(lk))
-                        .expr(id("padstand-onderwerp"), s, (x, o) -> x.onderwerp() == o)
-                        .bind(w, PadStand::waarde));
+                standen.add(zelfde(PatternDSL.pattern(st).expr(id("padstand"), x -> x.pad().equals(ps) && x.lid().equals(lk)),
+                        "padstand-onderwerp", s, PadStand::onderwerp).bind(w, PadStand::waarde));
                 paden.put(p.sleutel(), p);
             } else {
                 // input over links that are input: bound off the subject's bean, null where a link is absent
@@ -5832,8 +5826,8 @@ public final class TmsTranspiler {
         Variable<HeeftKenmerk> h2 = DSL.declarationOf(HeeftKenmerk.class, "$afgeleid");
         Rule afleiding = PatternDSL.rule(PKG, naam + "waar uit een afleiding").build(
                 PatternDSL.pattern(s2),
-                PatternDSL.pattern(h2).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel))
-                        .expr(id("afgeleid-onderwerp"), s2, (x, o) -> x.onderwerp() == o),
+                zelfde(PatternDSL.pattern(h2).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel)),
+                        "afgeleid-onderwerp", s2, HeeftKenmerk::onderwerp),
                 DSL.on(s2).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                         drools.logicalInsert(new KenmerkStand(o, sleutel, true))));
 
@@ -5841,8 +5835,8 @@ public final class TmsTranspiler {
         Variable<HeeftKenmerk> h3 = DSL.declarationOf(HeeftKenmerk.class, "$afgeleid");
         Rule onwaar = PatternDSL.rule(PKG, naam + "onwaar").build(
                 PatternDSL.pattern(s3).expr(id("geen-invoer"), (Predicate1) o -> !Boolean.TRUE.equals(getter.apply(o))),
-                DSL.not(PatternDSL.pattern(h3).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel))
-                        .expr(id("afgeleid-onderwerp"), s3, (x, o) -> x.onderwerp() == o)),
+                DSL.not(zelfde(PatternDSL.pattern(h3).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel)),
+                        "afgeleid-onderwerp", s3, HeeftKenmerk::onderwerp)),
                 DSL.on(s3).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                         drools.logicalInsert(new KenmerkStand(o, sleutel, false))));
         return List.of(invoer, afleiding, onwaar);
@@ -5876,9 +5870,8 @@ public final class TmsTranspiler {
             Variable<Object> v1 = DSL.declarationOf(Object.class, "$v");
             uit.add(PatternDSL.rule(PKG, naam + "uit een afleiding").build(
                     PatternDSL.pattern(s1),
-                    PatternDSL.pattern(w1).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
-                            .expr(id("waarde-onderwerp"), s1, (x, o) -> x.onderwerp() == o)
-                            .bind(v1, Waarde::waarde),
+                    zelfde(PatternDSL.pattern(w1).expr(id("waarde"), x -> x.attribuut().equals(sleutel)),
+                            "waarde-onderwerp", s1, Waarde::onderwerp).bind(v1, Waarde::waarde),
                     DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
                             drools.logicalInsert(new Stand(o, sleutel, v)))));
         }
@@ -5909,12 +5902,12 @@ public final class TmsTranspiler {
         items.add(((PatternDSL.PatternDef) PatternDSL.pattern(s)).bind(v, o -> invoer.apply(o)));
         if (emmer != null) {
             Variable<Emmerinvoer> e = DSL.declarationOf(Emmerinvoer.class, "$emmerinvoer");
-            PatternDSL.PatternDef<Emmerinvoer> p = PatternDSL.pattern(e).expr(id("emmerinvoer"),
-                    x -> x.attribuut().equals(sleutel)).expr(id("emmerinvoer-onderwerp"), s, (x, o) -> x.onderwerp() == o);
+            PatternDSL.PatternDef<Emmerinvoer> p = zelfde(PatternDSL.pattern(e).expr(id("emmerinvoer"),
+                    x -> x.attribuut().equals(sleutel)), "emmerinvoer-onderwerp", s, Emmerinvoer::onderwerp);
             items.add(emmer ? DSL.exists(p) : DSL.not(p));
         }
-        items.add(DSL.not(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel))
-                .expr(id("waarde-onderwerp"), s, (x, o) -> x.onderwerp() == o)));
+        items.add(DSL.not(zelfde(PatternDSL.pattern(w).expr(id("waarde"), x -> x.attribuut().equals(sleutel)),
+                "waarde-onderwerp", s, Waarde::onderwerp)));
         boolean alsEmmer = Boolean.TRUE.equals(emmer);
         items.add(DSL.on(s, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, x) ->
                 drools.logicalInsert(new Stand(o, sleutel, alsEmmer ? Emmerscalair.van((List<?>) x) : x))));
@@ -5946,12 +5939,12 @@ public final class TmsTranspiler {
         RuleItemBuilder<?> stand;
         if (lid.kenmerk()) {
             Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand");
-            stand = PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk))
-                    .expr(id("stand-bereikt"), bereikt, (x, b) -> x.onderwerp() == b).bind(v1, KenmerkStand::waar);
+            stand = zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)), "stand-bereikt",
+                    bereikt, KenmerkStand::onderwerp).bind(v1, KenmerkStand::waar);
         } else {
             Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand");
-            stand = PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
-                    .expr(id("stand-bereikt"), bereikt, (x, b) -> x.onderwerp() == b).bind(v1, Stand::waarde);
+            stand = zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)), "stand-bereikt",
+                    bereikt, Stand::onderwerp).bind(v1, Stand::waarde);
         }
         Rule aanwezig = PatternDSL.rule(PKG, naam + "link aanwezig").build(bron, stand,
                 DSL.on(s1, v1).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, v) ->
@@ -5994,12 +5987,12 @@ public final class TmsTranspiler {
             Variable<Object> doel = bereikt.getFirstVariable();
             if (lid.kenmerk()) {
                 Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand");
-                items.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk))
-                        .expr(id("stand-bereikt"), doel, (x, b) -> x.onderwerp() == b).bind(v, KenmerkStand::waar));
+                items.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)), "stand-bereikt",
+                        doel, KenmerkStand::onderwerp).bind(v, KenmerkStand::waar));
             } else {
                 Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand");
-                items.add(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk))
-                        .expr(id("stand-bereikt"), doel, (x, b) -> x.onderwerp() == b).bind(v, Stand::waarde));
+                items.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)), "stand-bereikt",
+                        doel, Stand::onderwerp).bind(v, Stand::waarde));
             }
         } else {
             Function<Object, Object> lees = invoerlezing(lid);
@@ -6274,4 +6267,45 @@ public final class TmsTranspiler {
     }
 
     private String id(String soort) { return soort + "_" + (idSeq++); }
+
+    /** The {@code indexId} of every beta index. In Drools 8.44 a beta index hands it to the field reader of the
+     *  pattern's own fact ({@code LambdaReadAccessor}), and in a beta node that number only seeds the hash of the node's
+     *  tuple memories ({@code TupleIndexHashTable}), with the same seed on both sides of the node, so any value is
+     *  correct. An alpha index uses its number otherwise. */
+    private static final int BETA_INDEX = 0;
+
+    /** What an identity join ({@link #zelfde}) hashes for a side that reads null: a key of that side alone, so that a
+     *  null meets nothing, as in the predicate beside the index. */
+    private static final Object NIETS_LINKS = new Object(), NIETS_RECHTS = new Object();
+
+    /**
+     * Constrains {@code p} to the facts whose {@code links} is the object that {@code rechts} reads off the object
+     * {@code v} binds, by identity, as an indexed join. Unindexed, Drools tests every fact of the pattern's class
+     * against every tuple on the other side, so that a read of a derived value costs one test per subject and a fire
+     * grows with the square of the input (the scale test of card tms-omschakeling, {@code Schaalproef}). Indexed, the
+     * memories of the join hash the object, and a fact meets only the tuples of its own object. Drools does not
+     * evaluate an indexed constraint but trusts the hash, which compares with {@code equals} and {@code hashCode}: a
+     * bean overrides neither ({@code FactModelGenerator}, held by {@code TmsIndexWitnessTest}), so equal is identical
+     * there, as {@code ==} in the predicate. One extractor per side gives both the predicate and the key, so the two
+     * cannot differ; Drools evaluates the predicate where it does not use the index. A side that reads null meets
+     * nothing.
+     */
+    private <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String soort, Variable<U> v,
+                                                  Function1<T, Object> links, Function1<U, Object> rechts) {
+        return p.expr(id(soort), v, (x, o) -> {
+            Object a = links.apply(x);
+            return a != null && a == rechts.apply(o);
+        }, PatternDSL.betaIndexedBy(Object.class, Index.ConstraintType.EQUAL, BETA_INDEX,
+                x -> sleutel(links.apply(x), NIETS_LINKS), o -> sleutel(rechts.apply(o), NIETS_RECHTS)));
+    }
+
+    /** {@link #zelfde} where the fact's {@code veld} is the object {@code v} binds. */
+    private <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String soort, Variable<U> v,
+                                                  Function1<T, Object> veld) {
+        return zelfde(p, soort, v, veld, o -> o);
+    }
+
+    private static Object sleutel(Object waarde, Object niets) {
+        return waarde == null ? niets : waarde;
+    }
 }
