@@ -91,6 +91,49 @@ class TmsIndexWitnessTest {
         geindexeerd(Set.of("bereik", "verdelingsbereik", "rolvuller"), Set.of());
     }
 
+    /** Step 3: the ends of a link, a {@code Koppeling}: the end the read stands on and the end it reaches, in a fold
+     *  over a created relation, in a fact creation's guard against a link that exists, in a role check and a path over
+     *  a created relation, and the near end in the guard against a second filler of a to-one role. */
+    @Test
+    void koppelingseinden() {
+        geindexeerd(Set.of("bereik-lid", "bereik-drager", "bestaand-anker", "bestaand-doel", "rolkoppeling-onderwerp",
+                "koppeling-nabij", "koppeling-ver", "tweede-vulling-nabij"), Set.of());
+    }
+
+    /** The joins that stay without an index, each with its reason: a test that is no identity of two objects, on the
+     *  facts an indexed join of the same pattern already selects, or a join the card's steps left out. */
+    private static final Map<String, String> ONGEINDEXEERD = Map.of(
+            "eerder-lid", "the order of two chains of one stack, among the outcomes of one subject",
+            "ander-besluit", "the inequality of two decided values of one stack, among the outcomes of one subject",
+            "tweede-vulling-ander", "the inequality of the far ends of two links whose near ends the index pairs",
+            "nieuw-in-deze-fase", "the phase number of the mark of the object that the indexed join selects",
+            "koppeling-eerder", "the inequality of two phase numbers, beside the indexed end of the link",
+            "botsing", "the collision of two uniqueness keys, compared per value (card point 14)",
+            "pad", "the range of a fold over more steps, two walks that meet: not among the card's steps",
+            "plaats-lid", "the place of a member in an input list, reached by a walk: not among the card's steps",
+            "veld-nabij", "a reference field on a path over a created relation: not among the card's steps",
+            "veld-ver", "a reference field on a path over a created relation: not among the card's steps");
+
+    /** Every join of the documents carries an equality index or is listed in {@link #ONGEINDEXEERD}, and every listed
+     *  kind occurs, so that the list cannot keep a kind that the branch no longer lowers. */
+    @Test
+    void elkeJoinGeindexeerdOfBenoemd() {
+        Set<String> gezien = new TreeSet<>();
+        List<String> zonder = new ArrayList<>();
+        for (Beperking b : beperkingen) {
+            if (!b.join()) continue;
+            gezien.add(b.soort());
+            boolean index = b.index() instanceof BetaIndexN<?, ?> && b.index().getConstraintType() == Index.ConstraintType.EQUAL;
+            if (!index && !ONGEINDEXEERD.containsKey(b.soort()))
+                zonder.add(b.soort() + " (" + b.klasse().getSimpleName() + ") in " + b.document() + ", regel '" + b.regel()
+                        + "'");
+        }
+        assertEquals(List.of(), zonder, "joins zonder gelijkheidsindex en zonder reden");
+        Set<String> verouderd = new TreeSet<>(ONGEINDEXEERD.keySet());
+        verouderd.removeAll(gezien);
+        assertEquals(Set.of(), verouderd, "soorten in de lijst zonder index die geen document hier verlaagt");
+    }
+
     /** Asserts that every kind of {@code soorten} occurs in the documents, and that every constraint of those kinds and
      *  of {@code zeldzaam}, which need not occur, is a join with an equality index. */
     private static void geindexeerd(Set<String> soorten, Set<String> zeldzaam) {

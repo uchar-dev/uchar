@@ -2076,9 +2076,9 @@ public final class TmsTranspiler {
         Variable<Object> doelvar = doelpatroon.getFirstVariable();
         if (doelcheck != null) doelbewaking(doelcheck, doelpatroon, items);
         Variable<Koppeling> bestaand = DSL.declarationOf(Koppeling.class, "$bestaand_" + id("feitcreatie"));
-        items.add(DSL.not(PatternDSL.pattern(bestaand).expr(id("bestaand"), x -> x.relatie().equals(relatie))
-                .expr(id("bestaand-anker"), lez.s, (x, a) -> (ankerIsEerste ? x.eerste() : x.tweede()) == a)
-                .expr(id("bestaand-doel"), doelvar, (x, d) -> (ankerIsEerste ? x.tweede() : x.eerste()) == d)));
+        items.add(DSL.not(zelfde(zelfde(PatternDSL.pattern(bestaand).expr(id("bestaand"), x -> x.relatie().equals(relatie)),
+                "bestaand-anker", lez.s, x -> ankerIsEerste ? x.eerste() : x.tweede()),
+                "bestaand-doel", doelvar, x -> ankerIsEerste ? x.tweede() : x.eerste())));
         items.add(DSL.on(lez.s, doelvar, f).execute((Block4<org.drools.model.Drools, Object, Object, Object>)
                 (drools, a, d, n) -> drools.insert(ankerIsEerste ? new Koppeling(relatie, a, d, (Integer) n)
                         : new Koppeling(relatie, d, a, (Integer) n))));
@@ -2198,10 +2198,11 @@ public final class TmsTranspiler {
         return PatternDSL.rule(PKG, "koppeling " + relatie + ": tweede vulling van " + rol).build(
                 PatternDSL.pattern(een).expr(id("vulling"), x -> x.relatie().equals(relatie))
                         .bind(nabij, x -> nabijIsEerste ? x.eerste() : x.tweede()),
-                PatternDSL.pattern(twee).expr(id("tweede-vulling"), x -> x.relatie().equals(relatie))
-                        .expr(id("tweede-vulling-nabij"), een, (x, y) -> nabijIsEerste
-                                ? x.eerste() == y.eerste() && x.tweede() != y.tweede()
-                                : x.tweede() == y.tweede() && x.eerste() != y.eerste()),
+                zelfde(PatternDSL.pattern(twee).expr(id("tweede-vulling"), x -> x.relatie().equals(relatie)),
+                        "tweede-vulling-nabij", een, x -> nabijIsEerste ? x.eerste() : x.tweede(),
+                        y -> nabijIsEerste ? y.eerste() : y.tweede())
+                        .expr(id("tweede-vulling-ander"), een, (x, y) -> nabijIsEerste
+                                ? x.tweede() != y.tweede() : x.eerste() != y.eerste()),
                 DSL.on(nabij).execute((Block2<org.drools.model.Drools, Object>) (drools, n) ->
                         drools.logicalInsert(new Fout(n, ft.naam, new IllegalStateException(zin)))));
     }
@@ -4403,9 +4404,10 @@ public final class TmsTranspiler {
         boolean lidIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(lidrol.naam()));
         return new Bereik(lid -> {
             Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$koppeling_" + id("bereik"));
-            lid.bereik.add(DSL.exists(PatternDSL.pattern(k).expr(id("bereik-koppeling"), x -> x.relatie().equals(relatie))
-                    .expr(id("bereik-lid"), lid.s, (x, e) -> (lidIsEerste ? x.eerste() : x.tweede()) == e)
-                    .expr(id("bereik-drager"), lid.drager, (x, d) -> (lidIsEerste ? x.tweede() : x.eerste()) == d)));
+            lid.bereik.add(DSL.exists(zelfde(zelfde(PatternDSL.pattern(k)
+                    .expr(id("bereik-koppeling"), x -> x.relatie().equals(relatie)),
+                    "bereik-lid", lid.s, x -> lidIsEerste ? x.eerste() : x.tweede()),
+                    "bereik-drager", lid.drager, x -> lidIsEerste ? x.tweede() : x.eerste())));
         }, lid -> {
             throw new Weigering("een filter dat kan falen in een vouw over de gecreëerde relatie '" + rb.feittype()
                     + "' ('" + wat + "'): een gemaakte link heeft geen plaats in de vouwvolgorde, die bepaalt welke fout"
@@ -5522,9 +5524,11 @@ public final class TmsTranspiler {
             if (bekend >= 0) return bekend;
             Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$rolkoppeling_" + id("rol"));
             Variable<Object> aantal = DSL.declarationOf(Object.class, "$rolkoppelingen_" + id("rol"));
-            standen.add(DSL.accumulate(PatternDSL.pattern(k).expr(id("rolkoppeling"), x -> x.relatie().equals(relatie))
-                    .expr(id("rolkoppeling-onderwerp"), s, (x, o) -> (onderwerpIsEerste ? x.eerste() : x.tweede()) == o
+            // the test of the other end's class reads the link alone, so it goes with the relation and the join to the
+            // subject stays an identity join that the memories can hash
+            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(k).expr(id("rolkoppeling"), x -> x.relatie().equals(relatie)
                             && (klasse == null || klasse.isInstance(onderwerpIsEerste ? x.tweede() : x.eerste()))),
+                    "rolkoppeling-onderwerp", s, x -> onderwerpIsEerste ? x.eerste() : x.tweede()),
                     DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), k).as(aantal)));
             return nieuw(sleutel, aantal);
         }
@@ -6035,13 +6039,13 @@ public final class TmsTranspiler {
                 boolean eerste = h.nabijIsEerste();
                 Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$koppeling_" + id("keten"));
                 Variable<Object> overzijde = DSL.declarationOf(Object.class, "$overzijde_" + id("keten"));
-                PatternDSL.PatternDef<Koppeling> kp = PatternDSL.pattern(k)
-                        .expr(id("koppeling"), x -> x.relatie().equals(relatie))
-                        .expr(id("koppeling-nabij"), n, (x, o) -> (eerste ? x.eerste() : x.tweede()) == o);
+                PatternDSL.PatternDef<Koppeling> kp = zelfde(PatternDSL.pattern(k)
+                        .expr(id("koppeling"), x -> x.relatie().equals(relatie)), "koppeling-nabij", n,
+                        x -> eerste ? x.eerste() : x.tweede());
                 // a creation rule does not walk a link of the phase it fires in: the rule layer has not seen it yet
                 if (fase != null) kp.expr(id("koppeling-eerder"), fase, (x, f) -> x.fase() != (Integer) f);
                 uit.add(kp.bind(overzijde, x -> eerste ? x.tweede() : x.eerste()));
-                p.expr(id("koppeling-ver"), overzijde, (x, o) -> x == o);
+                zelfde(p, "koppeling-ver", overzijde, x -> x);
             } else if (h.opNabij()) {
                 Function<Object, Object> lees = h.lees();
                 p.expr(id("veld-nabij"), n, (x, o) -> lees.apply(o) == x);
