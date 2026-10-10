@@ -21,14 +21,16 @@ a result). Both OCaml executors stop at that mint, in the same words:
   on the same chain (`ch5.5 creation budget, a chain of 101 mints`):
   exactly one witness, on the mint at depth 101.
 
-The Drools red run drives the exec-model branch, which has no creation
-budget, only a cap of 100 000 firings: it mints all 104 Wachters and
-reaches a fixpoint, so `scripts/check-rood.sh` lists the case as NOFAULT
-with that reason. The branch with truth maintenance (`--tms`), which the red
-run does not drive, faults at the same mint: `creation budget exhausted:
-objectcreatie "werf de lange keten" van stratum 0 zou een object maken op
-aanmaakdiepte 101, voor een Wachter op diepte 100 — …`, pinned whole in
-`TmsCreatieWitnessTest` (`het_creatiebudget_ligt_waar_het_corpus_het_pint`).
+The Drools red run drives the exec-model branch, which since the card
+`tms-omschakeling` (2026-10-10) is the branch with truth maintenance. It
+faults at the same mint: `creation budget exhausted: objectcreatie "werf de
+lange keten" van stratum 0 zou een object maken op aanmaakdiepte 101, voor
+een Wachter op diepte 100 — …`, pinned up to `aanmaakdiepte 101` in the
+case and whole in `TmsCreatieWitnessTest`
+(`het_creatiebudget_ligt_waar_het_corpus_het_pint`). Until that card the red
+run drove the destructive lowering, which had no creation budget, only a cap
+of 100 000 firings: it minted all 104 Wachters and reached a fixpoint, and
+`scripts/check-rood.sh` listed the case as NOFAULT with that reason.
 
 The green side of the bound is pinned twice: `corpus/golden/
 synth2-budgetgrens-onder` (the same shape bounded at rank < 98, 97 mints,

@@ -38,7 +38,6 @@
   },
   "expectedFault": {
     "ref": "at most one temporal key component",
-    "clingo": "at most one temporal key component",
-    "drools": "at most one temporal key component"
+    "clingo": "at most one temporal key component"
   }
 }

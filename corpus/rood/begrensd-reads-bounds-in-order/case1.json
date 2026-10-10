@@ -18,6 +18,7 @@
   },
   "expectedFault": {
     "ref": "division by numeric zero",
-    "clingo": "a Clamp minimum bound that is not a ground literal"
+    "clingo": "a Clamp minimum bound that is not a ground literal",
+    "drools": "deling door nul in de regel \"begrenswaarde van een jutter\": 1 gedeeld door 0"
   }
 }

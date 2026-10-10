@@ -11,6 +11,7 @@
   },
   "expectedFault": {
     "ref": "the bound day of a day-kind definition",
-    "clingo": "the bound day of a day-kind definition"
+    "clingo": "the bound day of a day-kind definition",
+    "drools": "fout in de regel \"jaartal van een baken\": a BoundDay is the bound day of a day-kind definition"
   }
 }

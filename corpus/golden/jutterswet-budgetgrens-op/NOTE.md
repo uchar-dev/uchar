@@ -102,8 +102,8 @@ Until 2026-10-09 no OCaml executor played this document:
   interpreter's change and before the ASP backend's): `UNSATISFIABLE — a
   fail-fast guard fired: viol("generation budget exhausted",…)` in both
   cases. Its depth reached the bound at the 100th Wachter of a chain.
-- the Drools branch with truth maintenance (`--tms`, before the card
-  `creatiebudget-ref-en-clingo`): `geen fixpunt binnen 100 generaties:
+- the Drools branch with truth maintenance (then behind a flag of its own,
+  before the card `creatiebudget-ref-en-clingo`): `geen fixpunt binnen 100 generaties:
   generatie 101 maakt niets meer, maar de regellaag verandert nog 1 waarde,
   kenmerk of link na wat generatie 100 maakte …` in case 1, and `nog 2
   waarden` in case 2.
@@ -127,7 +127,10 @@ ref and clingo replay both cases with the pinned values (clingo in about 0.2
 and 0.4 s). The Drools backend plays both in all three branches, PLAYED 2
 each (measured 2026-10-09, and again on the document of the fix round): the exec-model branch and the DRL-text branch,
 which have no creation budget and only a cap of 100 000 firings, and the
-branch with truth maintenance. Neither case survives a no-op run: the
+branch with truth maintenance. Since the card `tms-omschakeling`
+(2026-10-10) the backend has two branches: the exec-model branch, which is
+the branch with truth maintenance, and the DRL-text branch; both play both
+cases. Neither case survives a no-op run: the
 opvolgerrang is derived, and the channel is empty without evaluation.
 
 The rule reads the rang of the opvolger, where `synth2-budgetgrens-onder`

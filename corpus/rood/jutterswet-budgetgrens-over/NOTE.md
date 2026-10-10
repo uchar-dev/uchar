@@ -23,12 +23,13 @@ cut off at 100:
   term of 101 levels whole, so the ASP backend's suite checks the witness
   itself on the same chain (`ch5.5 creation budget, a chain of 101 mints`):
   exactly one witness, on the mint at depth 101.
-- the Drools branch with truth maintenance (`--tms`), which the red run does
-  not drive: `creation budget exhausted: objectcreatie "werf de lange keten"
-  van stratum 0 zou een object maken op aanmaakdiepte 101, voor een Wachter
-  op diepte 100 — …`, pinned whole in `TmsCreatieWitnessTest`
-  (`het_creatiebudget_ligt_waar_het_corpus_het_pint`), beside the two pins
-  above.
+- the Drools exec-model branch, which derives with truth maintenance since
+  the card `tms-omschakeling` (2026-10-10) and which the red run drives:
+  `creation budget exhausted: objectcreatie "werf de lange keten" van
+  stratum 0 zou een object maken op aanmaakdiepte 101, voor een Wachter op
+  diepte 100 — …`. Pinned: the sentence up to `aanmaakdiepte 101`, as for
+  ref; `TmsCreatieWitnessTest`
+  (`het_creatiebudget_ligt_waar_het_corpus_het_pint`) pins it whole.
 
 Until the card's third step (2026-10-09) the fragments were `no fixpoint
 within` (ref, which counted 100 generations per stratum that mint or link)
@@ -36,11 +37,12 @@ and `generation budget exhausted` (clingo); from then until the card's fix
 round the same day both pinned `creation budget exhausted` only, which a
 fault on another object or at another depth satisfied as well.
 
-The Drools red run drives the exec-model branch. That branch and the DRL-text
-branch have no creation budget, only a cap of 100 000 firings: they make all
-101 Wachters and reach a fixpoint, so the red run reports `NOFAULT ran to a
-model without faulting`, and `scripts/check-rood.sh` lists the case with that
-reason, as it lists `finite-chain-over-budget` (measured 2026-10-09).
+Until the card `tms-omschakeling` the Drools red run drove the destructive
+lowering. That branch, like the DRL-text branch today, had no creation
+budget, only a cap of 100 000 firings: it made all 101 Wachters and reached
+a fixpoint, so the red run reported `NOFAULT ran to a model without
+faulting`, and `scripts/check-rood.sh` listed the case with that reason, as
+it listed `finite-chain-over-budget` (measured 2026-10-09).
 
 The case keeps the golden's rule and its three consistencies, and W1 has
 ketennummer 1 as in the golden's first case; the fault comes before any of

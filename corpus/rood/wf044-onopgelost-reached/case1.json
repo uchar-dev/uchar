@@ -15,6 +15,7 @@
   },
   "expectedFault": {
     "ref": "Unresolved reached in evaluation",
-    "clingo": "Unresolved reached in translation"
+    "clingo": "Unresolved reached in translation",
+    "drools": "fout in de regel \"waardering van een vondst\": Unresolved reached in evaluation"
   }
 }
