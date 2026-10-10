@@ -9,6 +9,8 @@ package dev.uchar.regelspraak.transpiler.tms;
  * {@code fireAllRules} leaves no mark. So {@link TmsTranspiler#lees} and {@link TmsTranspiler#zetAfgeleideWaarden} read
  * a session only under a mark whose {@code geenFixpunt} is null, and what they give is then always a fixpoint. The
  * driver replaces the mark at every run and holds none in the session while it fires, so the facts that compute the
- * fire cap are the consumer's and the branch's own. No rule reads it.
+ * fire cap are the consumer's and the branch's own. On a model with a creation it refuses a session that holds one:
+ * what a creation made is stated and does not lapse, so a later fire after an input change would keep it beside an
+ * input it no longer follows from. No rule reads it.
  */
 public record Gevuurd(String geenFixpunt) {}

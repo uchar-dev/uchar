@@ -83,7 +83,9 @@ import java.util.function.Predicate;
  * cap and, for a model with a creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. On the
  * truth-maintenance branch the beans hold the input alone until the write-back, which comes once, at the end of the
  * session, and closes it: a consumer that fires one session more than once, changing input in between with
- * {@code update}, reads every answer but the last with {@link #lees}. On the other two branches the rules write the
+ * {@code update}, reads every answer but the last with {@link #lees}. A session of a model with a creation fires once,
+ * since what a creation made is stated and does not lapse: such a consumer opens a fresh session per input. On the
+ * other two branches the rules write the
  * beans as they fire, the write-back does nothing and {@link #lees} refuses. A {@code ConsequenceException} out of the
  * fire is named by {@link #benoem}.
  */
@@ -461,9 +463,9 @@ public final class DroolsBackend {
      * read without writing anything on a bean: per object the derived attribute values, in the form the bean field takes
      * them, a timeline as the bean model's segments, and the derived characteristics; the objects and links the
      * creations made; the evaluation faults that stand, as data and not thrown; and the §9.5 deposits, the
-     * {@code Inconsistentie} facts. A consumer that fires one session more than once reads every answer but the last
-     * here: the beans hold the input alone until {@link #zetAfgeleideWaarden}, which writes exactly this, and after which
-     * the session does not fire again. A fault names its object by type and identity.
+     * {@code Inconsistentie} facts. A consumer that fires one session of a model without a creation more than once reads
+     * every answer but the last here: the beans hold the input alone until {@link #zetAfgeleideWaarden}, which writes
+     * exactly this, and after which the session does not fire again. A fault names its object by type and identity.
      *
      * <p>It reads only a session whose last {@link #vuur} reached its fixpoint, so what it gives is always a fixpoint:
      * that of the input as it stood at that {@code vuur}; an {@code update} after it shows at the next one.
@@ -562,6 +564,12 @@ public final class DroolsBackend {
      * <p>On the truth-maintenance branch it refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
      * {@link #lees}, or opens a fresh session with beans that hold input alone.
+     *
+     * <p>On the truth-maintenance branch it fires a session of a model with a creation once, and refuses it at every
+     * later call. An object or a fact creation is stated and never lapses, and so are the initialisations, the links
+     * and the fault of a failed initialisation it brought (RUNTIME-SEMANTICS ch. 5.5, {@code Gevuurd}): after an input
+     * change a second fire would keep them beside an input they no longer follow from, a state no fresh evaluation
+     * gives. The sentence says so, and that the way is a fresh session per input.
      *
      * <p>A model with a creation fires in generations; see {@link #vuur(Build, KieSession, int)}. There the cap is
      * computed again over the facts at the start of every phase, so the objects the creations made count, and never
@@ -681,20 +689,29 @@ public final class DroolsBackend {
         }
     }
 
-    /** The driver of every {@code vuur}. On the truth-maintenance branch it refuses a session that was written back, and
-     *  marks how the run ended ({@link Gevuurd}), which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
+    /** The driver of every {@code vuur}. On the truth-maintenance branch it refuses a session of a model with a creation
+     *  that it fired before, and a session that was written back, and it marks how the run ended ({@link Gevuurd}),
+     *  which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
      *  of the previous run goes before the fire, so none stands while the session fires, and a fire that throws leaves
      *  a mark with its exception, so that no reading follows a run that broke off. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
         if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
+        List<FactHandle> merken = List.copyOf(sessie.<FactHandle>getFactHandles(o -> o instanceof Gevuurd));
+        // what a creation made is stated and does not lapse, so a later fire would keep it beside an input it no longer
+        // follows from; checked first, since a written-back session of such a model cannot be read between fires either
+        if (!merken.isEmpty() && !tms.creatieregels().isEmpty())
+            throw new IllegalStateException("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.vuur"
+                    + " gevuurd: wat een creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte"
+                    + " initialisatie, is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou"
+                    + " na een invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een"
+                    + " verse sessie");
         if (!sessie.getObjects(o -> o instanceof Teruggezet).isEmpty())
             throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide"
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
                     + " alleen invoer dragen");
-        for (FactHandle merk : List.copyOf(sessie.<FactHandle>getFactHandles(o -> o instanceof Gevuurd)))
-            sessie.delete(merk);
+        for (FactHandle merk : merken) sessie.delete(merk);
         Vuring vuring;
         try {
             vuring = vuurOnderPlafond(build, sessie, plafond);

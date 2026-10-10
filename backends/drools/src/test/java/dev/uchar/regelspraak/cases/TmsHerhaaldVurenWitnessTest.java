@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.cases;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 import dev.uchar.regelspraak.transpiler.tms.Fout;
@@ -8,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -59,6 +62,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>After the write-back ({@link DroolsBackend#zetAfgeleideWaarden}) the beans hold derived values beside their input,
  * and {@link DroolsBackend#vuur} refuses the session with the sentence that says what to do instead.
+ *
+ * <p>A session of a model with a creation fires once (the fix round of step 3, point 1). On golden
+ * {@code anchor/jutterswet-rekenkamer}, case 1, the object creation makes a Rekenkamer whose grondslag and aftrek it
+ * initialises from J1's, 100 and 30, and J1's heffing is 70. Then J1's grondslag becomes 150 ({@code update}), and
+ * {@code vuur} refuses the session, with the sentence that what a creation made is stated and that the way is a fresh
+ * session per input. A fresh session of grondslag 150 gives heffing 120, as the reference interpreter and the ASP runner
+ * give it on that case (measured 2026-10-10). <b>Red before the change</b> (measured 2026-10-10 on {@code f4b83d7b}):
+ * the second {@code vuur} raised nothing, "Expected java.lang.IllegalStateException to be thrown, but nothing was
+ * thrown.", and the old form of the row, fire, change, fire and read, gave the state of the first input: "expected:
+ * &lt;[…, J1.heffing = 120, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 120]&gt; but was:
+ * &lt;[…, J1.heffing = 70, gemaakt: richt de rekenkamer op voor J1, gemaakte Rekenkamer.heffing = 70]&gt;", since the
+ * made Rekenkamer kept the grondslag it was initialised with.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}, the old form of the witness, in which a
  * consumer could only fire, write back and read the beans): after the second fire and write-back V1 still carried
@@ -187,7 +202,47 @@ class TmsHerhaaldVurenWitnessTest {
         });
     }
 
+    @Test void een_model_met_creatie_weigert_een_tweede_vuur() throws Exception {
+        Path ir = Path.of("..", "..", "corpus", "golden", "anchor", "jutterswet-rekenkamer", "ir.json");
+        String zaak = Files.readString(ir.resolveSibling("case1-berekend.json"));
+        CaseRunner runner = CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        runner.metSessie(TmsDocumenten.JSON.readTree(zaak), (bouw, sessie, labels) -> {
+            Object j1 = labels.get("J1");
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "first fire");
+            assertEquals("70", heffing(DroolsBackend.lees(bouw, sessie), j1), "J1 heffing, first fire");
+            try {
+                zet(j1, "grondslag", "150");
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+            sessie.update(sessie.getFactHandle(j1), j1);
+            IllegalStateException e = assertThrows(IllegalStateException.class, () -> DroolsBackend.vuur(bouw, sessie));
+            assertEquals("dit model heeft creatieregels, en deze sessie is al via DroolsBackend.vuur gevuurd: wat een"
+                    + " creatie maakte, met de initialisaties, de koppelingen en de fout van een mislukte initialisatie,"
+                    + " is gesteld en vervalt niet (RUNTIME-SEMANTICS ch. 5.5), dus een volgende fire zou na een"
+                    + " invoerwijziging een toestand geven die geen verse evaluatie geeft; open per invoer een verse"
+                    + " sessie", e.getMessage());
+            return null;
+        });
+        // the way the sentence names: a fresh session of the changed input
+        JsonNode veranderd = TmsDocumenten.JSON.readTree(zaak.replace("\"100\"", "\"150\""));
+        runner.metSessie(veranderd, (bouw, sessie, labels) -> {
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "fresh fire");
+            assertEquals("120", heffing(DroolsBackend.lees(bouw, sessie), labels.get("J1")),
+                    "J1 heffing in a fresh session of grondslag 150");
+            return null;
+        });
+    }
+
     // ---------------- helpers ----------------
+
+    /** The heffing {@code f} derives for {@code jutter}, as a plain number, or null. */
+    private static String heffing(Fixpunt f, Object jutter) {
+        for (Fixpunt.AfgeleideWaarde w : f.waarden())
+            if (w.object() == jutter && w.attribuut().equals("heffing"))
+                return ((BigDecimal) w.waarde()).stripTrailingZeros().toPlainString();
+        return null;
+    }
 
     /** J1, and V1 of {@code gewichtV1} and V2 of 4, each found by J1. */
     static Map<String, Object> waardebonen(DroolsBackend.Build b, String gewichtV1) throws Exception {
