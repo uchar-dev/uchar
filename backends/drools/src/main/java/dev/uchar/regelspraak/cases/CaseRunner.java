@@ -20,8 +20,6 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
-import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
-import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
 
 import org.kie.api.KieBase;
 import org.kie.api.event.rule.AfterMatchFiredEvent;
@@ -382,14 +380,14 @@ public final class CaseRunner {
     /** Sets up case {@code c} as {@link #runCase} does, in a fresh session with the bean loader as the thread's context
      *  class loader, and hands that session, not yet fired, to {@code meting}; the session is disposed afterwards. The
      *  seam of the scale harness of card tms-omschakeling (point 9), which fires through {@link DroolsBackend#vuur} under
-     *  a cap of its own and times the fire and the write-back apart: {@link #meet} fires under the replay's cap of
-     *  100 000 firings, which a case of ten thousand objects reaches. Package-private, no production caller, and no
-     *  gate runs it. */
+     *  a cap of its own and times the fire and the write-back apart: {@link #meet} fires under the replay's cap, which on
+     *  the exec-model and the DRL-text branch is the fixed 100 000 firings a case of ten thousand objects reaches.
+     *  Package-private, no production caller, and no gate runs it. */
     <T> T metSessie(JsonNode c, Sessiemeting<T> meting) {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
-        emmerinvoer.clear();
+        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -487,7 +485,7 @@ public final class CaseRunner {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
-        emmerinvoer.clear();
+        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -529,12 +527,12 @@ public final class CaseRunner {
     private final Map<String, Object> labelNaarBean = new LinkedHashMap<>();
     private final Map<String, Objecttype> labelType = new LinkedHashMap<>();
     /** The to-many lists of the case input per holder bean and per reference field of their members, as
-     *  {@link #zetRollen} writes them: what {@link #voegInvoerIn} states as {@link Lijstplaats} facts. */
+     *  {@link #zetRollen} writes them: the order {@link #voegInvoerIn} gives each list ({@link Invoer#lijst}). */
     private final Map<Object, Map<String, Lijst>> lijsten = new IdentityHashMap<>();
     /** Every scalar input on a temporal attribute of the case, the asOfDate-bucket convention that
-     *  {@link #temporeleInvoer} lays on the bean as one segment: what {@link #voegInvoerIn} states as
-     *  {@link Emmerinvoer} facts on the truth-maintenance branch. */
-    private final List<Emmerinvoer> emmerinvoer = new ArrayList<>();
+     *  {@link #temporeleInvoer} lays on the bean as one segment: what {@link #voegInvoerIn} names as bucket scalars
+     *  ({@link Invoer#emmerscalair}). */
+    private final List<Invoer.Emmer> emmers = new ArrayList<>();
     /** The case's evaluation date, read BEFORE the inputs are set: the asOfDate-bucket convention places a
      *  scalar input on a temporal attribute in the bucket this date falls in ({@link #temporeleInvoer}). */
     private LocalDate rekendatum;
@@ -552,7 +550,7 @@ public final class CaseRunner {
         labelNaarBean.clear();
         labelType.clear();
         lijsten.clear();
-        emmerinvoer.clear();
+        emmers.clear();
         rekendatum = asOfDatum(c);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
@@ -585,37 +583,38 @@ public final class CaseRunner {
         }
     }
 
-    /** Fires {@code sessie} under the replay's cap and returns null at a fixpoint. At the cap the run has none
-     *  (RUNTIME-SEMANTICS ch. 5.7): the sentence names the writers of one attribute that kept overwriting each other
-     *  with different values in the last firings ({@link Schrijfconflict}), and where those show none it says only
-     *  that the cap was reached. A consequence that throws, and on the exec-model branch a condition, leaves the fire
-     *  as {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any
-     *  branch. At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them,
-     *  or the evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
-     *  other branches); without a fixpoint nothing is written back, since the replay reports the cap and reads no bean.
-     *  The fire is {@link DroolsBackend#vuur}, which fires a truth-maintenance model with a creation in generations; a
-     *  creation that does not stop meets the creation budget, and the run has no fixpoint either and returns that
-     *  sentence. */
+    /** Fires {@code sessie} through the backend's entry ({@link DroolsBackend#vuur}), under the cap a consumer gets, and
+     *  returns null at a fixpoint. A run without one returns its sentence: at the cap on the exec-model and the DRL-text
+     *  branch, whose rules write the beans as they fire, the writers of one attribute that kept overwriting each other
+     *  with different values in the last firings (RUNTIME-SEMANTICS ch. 5.7, {@link Schrijfconflict}), and where those
+     *  show none only that the cap was reached; on the truth-maintenance branch, which writes no bean while it fires,
+     *  the sentence of {@code vuur}, which names the cap and what it was computed from, or that of the creation budget. A
+     *  consequence that throws, and on the exec-model branch a condition, leaves the fire as
+     *  {@link DroolsBackend#benoem} names it; every replay, red path and report of this class fires here, on any branch.
+     *  At a fixpoint the truth-maintenance branch's derivations go onto the beans before anything reads them, or the
+     *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the other
+     *  branches); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean. */
     private String vuurTotFixpunt(KieSession sessie) {
         Schrijfconflict schrijvers = new Schrijfconflict(model, cl);
         sessie.addEventListener(schrijvers);
         DroolsBackend.Vuring vuring;
         try {
-            vuring = DroolsBackend.vuur(bouw, sessie, 100_000);
+            vuring = DroolsBackend.vuur(bouw, sessie);
         } catch (ConsequenceException e) {
             throw DroolsBackend.benoem(e);
         } catch (org.drools.modelcompiler.constraints.ConstraintEvaluationException e) {
             throw DroolsBackend.benoem(e);
         }
-        int gevuurd = vuring.vuringen();
-        vuringen = gevuurd;
-        if (vuring.geenFixpunt() != null) return vuring.geenFixpunt();
-        if (gevuurd < 100_000) {
+        vuringen = vuring.vuringen();
+        if (vuring.geenFixpunt() == null) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
         }
-        String conflict = schrijvers.conflict(this::labelVanBean);
-        return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
+        if (bouw.tmsTranspiler() == null && vuring.vuringen() >= vuring.plafond()) {
+            String conflict = schrijvers.conflict(this::labelVanBean);
+            return conflict != null ? conflict : "geen fixpunt (kringverwijzing?)";
+        }
+        return vuring.geenFixpunt();
     }
 
     private Object beanVoor(JsonNode i) {
@@ -667,7 +666,7 @@ public final class CaseRunner {
                         temporeleInvoer(e.getValue(), e.getKey(), i.get("label").asText() + "." + e.getKey(),
                                 rooster(ot, e.getKey())));
                 if (!e.getValue().isNull() && !e.getValue().has("timeline"))
-                    emmerinvoer.add(new Emmerinvoer(bean, ProducentConsument.elementVan(ot, e.getKey(), false)));
+                    emmers.add(new Invoer.Emmer(bean, e.getKey()));
                 continue;
             }
             roep(bean, Namen.setter(e.getKey()), argType(dt), waardeNaarArg(e.getValue(), e.getKey()));
@@ -799,44 +798,49 @@ public final class CaseRunner {
         }
     }
 
-    /** One to-many list of the case input: the members the case wrote under the holder, in the order it wrote them,
-     *  and the members whose own link to the holder the reverse leg mirrors into it (RUNTIME-SEMANTICS ch. 5.7a), by
-     *  label in ref's order, plain byte order. */
+    /** One to-many list of the case input under the reference field of the holder's role {@code rol}: the members the
+     *  case wrote under the holder, in the order it wrote them, and the members whose own link to the holder the reverse
+     *  leg mirrors into it (RUNTIME-SEMANTICS ch. 5.7a), by label in ref's order, plain byte order. */
     private static final class Lijst {
+        final String rol;
         final List<Object> geschreven = new ArrayList<>();
         final TreeMap<String, Object> gespiegeld = new TreeMap<>(
                 Comparator.comparing((String l) -> l.getBytes(StandardCharsets.UTF_8), Arrays::compareUnsigned));
+
+        Lijst(String rol) {
+            this.rol = rol;
+        }
     }
 
     private Lijst lijst(Object houder, String rol) {
         return lijsten.computeIfAbsent(houder, k -> new LinkedHashMap<>())
-                .computeIfAbsent(Namen.ident(rol, false), k -> new Lijst());
+                .computeIfAbsent(Namen.ident(rol, false), k -> new Lijst(rol));
     }
 
     /**
-     * Inserts the case input into {@code sessie}: the beans, and on the truth-maintenance branch an {@link Emmerinvoer}
-     * per scalar input on a temporal attribute, and where the model reads it, the place of every member of a to-many
-     * list ({@link Lijstplaats}). The bean shows such a scalar as the one segment of its bucket, which a full timeline
-     * of one segment would be as well, while that branch reads the two conventions of RUNTIME-SEMANTICS ch. 8.4 apart:
-     * the bucket scalar serves the subject's own total, the full timeline every other read, and a form that needs the
-     * one and finds the other faults. The other two branches read the bean alone. The bean model keeps a to-many role
-     * as a reference field on each member and no order, while the truth-maintenance branch names the first member in
-     * fold order whose filter faults (RUNTIME-SEMANTICS ch. 5.11). The places are those of the list the reference interpreter folds over: the written
+     * Puts the case input into {@code sessie} through the backend's entry ({@link DroolsBackend#voegIn}), as a consumer
+     * does: the beans, in the order of the case, every scalar input on a temporal attribute as a bucket scalar, and the
+     * order of every to-many list. The bean shows such a scalar as the one segment of its bucket, which a full timeline
+     * of one segment would be as well, while the truth-maintenance branch reads the two conventions of
+     * RUNTIME-SEMANTICS ch. 8.4 apart: the bucket scalar serves the subject's own total, the full timeline every other
+     * read, and a form that needs the one and finds the other faults. The bean model keeps a to-many role as a reference
+     * field on each member and no order, while that branch names the first member in fold order whose filter faults
+     * (RUNTIME-SEMANTICS ch. 5.11). The order is that of the list the reference interpreter folds over: the written
      * members first, in the order the case wrote them, then the members whose own link the loader mirrors into the
      * list, in ascending label order (ch. 5.7a, "member ORDER"), a member in both counting once, where it was written.
+     * The other two branches read the beans alone.
      */
     private void voegInvoerIn(KieSession sessie) {
-        for (Object bean : labelNaarBean.values()) sessie.insert(bean);
-        if (bouw.tmsTranspiler() == null) return;
-        for (Emmerinvoer e : emmerinvoer) sessie.insert(e);
-        if (!bouw.tmsTranspiler().leestLijstplaatsen()) return;
-        for (Map<String, Lijst> perVeld : lijsten.values())
-            for (Map.Entry<String, Lijst> e : perVeld.entrySet()) {
-                List<Object> leden = new ArrayList<>(e.getValue().geschreven);
-                for (Object lid : e.getValue().gespiegeld.values())
+        Invoer invoer = new Invoer().bonen(labelNaarBean.values());
+        for (Invoer.Emmer e : emmers) invoer.emmerscalair(e.boon(), e.attribuut());
+        for (Map.Entry<Object, Map<String, Lijst>> perHouder : lijsten.entrySet())
+            for (Lijst l : perHouder.getValue().values()) {
+                List<Object> leden = new ArrayList<>(l.geschreven);
+                for (Object lid : l.gespiegeld.values())
                     if (leden.stream().noneMatch(x -> x == lid)) leden.add(lid);
-                for (int k = 0; k < leden.size(); k++) sessie.insert(new Lijstplaats(leden.get(k), e.getKey(), k));
+                invoer.lijst(perHouder.getKey(), l.rol, leden);
             }
+        DroolsBackend.voegIn(bouw, sessie, invoer);
     }
 
     /** Whether {@code rol} is one of the reference fields {@link FactModelGenerator#leden} DERIVES on
@@ -1016,8 +1020,8 @@ public final class CaseRunner {
      *  not a wrong value but a read Drools would answer where ref faults; such a case can never become a
      *  golden, because gate 5 replays every case through ref first — the executors agree wherever the corpus
      *  looks, by construction. That holds for the exec-model and the DRL-text branch, which read the bean alone;
-     *  for the truth-maintenance branch the caller records each scalar as an {@link Emmerinvoer}, which
-     *  {@link #voegInvoerIn} states beside the beans, and that branch reads the two conventions apart and faults
+     *  for the truth-maintenance branch the caller records each scalar as a bucket scalar, which
+     *  {@link #voegInvoerIn} names to {@link DroolsBackend#voegIn}, and that branch reads the two conventions apart and faults
      *  where a form needs the one and finds the other (RUNTIME-SEMANTICS ch. 8.4). */
     private List<Object> temporeleInvoer(JsonNode w, String attr, String plek, Rooster gran) {
         if (w == null || w.isNull()) return null;   // an absent value is an absent timeline (leeg, ch. 3.1)

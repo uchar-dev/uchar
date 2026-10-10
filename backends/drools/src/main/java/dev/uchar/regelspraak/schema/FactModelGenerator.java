@@ -106,6 +106,14 @@ public final class FactModelGenerator {
         return null;
     }
 
+    /** The declaration the bean property {@code eigenschap} of {@code ot}'s bean stands for, its own or an inherited
+     *  one; null when no bean of the chain has that property. For a reference field it names the role and its fact
+     *  type, so two fields of one name on the beans of two types tell their relations apart. */
+    public static Herkomst herkomst(RegelSpraakModel model, Objecttype ot, String eigenschap) {
+        Kandidaat k = veld(model, ot, eigenschap);
+        return k == null ? null : k.herkomst();
+    }
+
     /** Every bean member the model implies for {@code ot}, with its origin, in the order the dedup of
      *  {@link #alleLeden} keeps the first of: the attributes, the kenmerken, the reference fields. */
     private static List<Kandidaat> kandidaten(RegelSpraakModel model, Objecttype ot) {

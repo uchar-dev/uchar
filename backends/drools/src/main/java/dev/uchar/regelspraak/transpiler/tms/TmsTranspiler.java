@@ -293,8 +293,8 @@ public final class TmsTranspiler {
     private Map<Object, Integer> strata = Map.of();
     /** The strata of the lowered creation rules ({@link #creatiestrata}). */
     private final Set<Integer> creatiestrata = new TreeSet<>();
-    /** Whether a rule reads a {@link Lijstplaats} ({@link #plaats}; see {@link #leestLijstplaatsen}). */
-    private boolean lijstplaatsen;
+    /** The reference fields under which a rule reads a {@link Lijstplaats} ({@link #plaats}; see {@link #lijstvelden}). */
+    private final Set<String> lijstvelden = new LinkedHashSet<>();
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
      *  two different tests under one id would collapse into the first. */
     private int idSeq;
@@ -356,8 +356,13 @@ public final class TmsTranspiler {
     /** Whether a rule of the model reads a {@link Lijstplaats}: the filter fault rule of a fold whose filter can fault,
      *  the member fault rule of a per-element fold over a timeline, or the contribution rule of a quantifier fold whose
      *  matrix can fault or deposit, each over a range with a to-many step. Only then does the case input state the
-     *  places of its to-many lists, and a consumer that fills a session itself states them too. */
-    public boolean leestLijstplaatsen() { return lijstplaatsen; }
+     *  places of its to-many lists, and {@code DroolsBackend.voegIn} states them for a consumer. */
+    public boolean leestLijstplaatsen() { return !lijstvelden.isEmpty(); }
+
+    /** The reference fields under which a rule of the model reads a {@link Lijstplaats}: each the field a member of a
+     *  to-many list holds toward the list's holder, named after the holder's role as the bean property is
+     *  ({@link Lijstplaats#veld}). Empty where {@link #leestLijstplaatsen} is false. */
+    public Set<String> lijstvelden() { return Set.copyOf(lijstvelden); }
 
     /**
      * The size of the lowering of one effective defaults stack, counted when it is built: {@code naam} as the manifest
@@ -380,26 +385,41 @@ public final class TmsTranspiler {
     public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
 
     /**
-     * Writes every derivation of this model in {@code sessie} onto its bean: {@code setX(true)} for each
-     * {@link HeeftKenmerk}, and the value of each {@link Waarde} through the setter of the declared attribute. The
-     * engine is not told, so the session must not be fired again afterwards: a rule that reads the bean pattern would
-     * see a value the network never propagated. Input on a characteristic stays, since nothing writes {@code false};
-     * input on an attribute stays where no rule derived a value for it.
+     * What stands in {@code sessie} after a fire that reached its fixpoint, read without writing anything on a bean:
+     * the derived values and characteristics, the objects and links the creations made, the evaluation faults that
+     * stand, as data, and the §9.5 deposits. {@code label} names the objects of the case in the sentence of a fault, as
+     * {@link #zetAfgeleideWaarden(KieSession, Function)} does; null names an object by type and identity.
+     *
+     * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7). The
+     * rule of {@link #verschilregel} makes that a {@link Fout} of the fixpoint where two writers can disagree; where no
+     * such rule stood, as in a session filled by hand, this reads the same {@link Schrijversconflict} as a fault and gives
+     * the attribute no value: it does not choose. Equal values are no conflict.
+     *
+     * <p>A model with a creation is fired in generations ({@code DroolsBackend.vuur}), which leaves a
+     * {@link Creatiefase} in the session. Without one the creation rules never had the focus and the session holds no
+     * created object or link, so this refuses such a session rather than hand out an answer without the creations.
+     */
+    public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
+        return lezing(sessie, label).fixpunt();
+    }
+
+    /**
+     * Writes what stands at the fixpoint of {@code sessie} onto the beans, exactly what {@link #lees} gives, read by the
+     * same code: {@code setX(true)} for each derived characteristic, the value of each derived attribute through the
+     * setter of the declared attribute, a timeline as the bean model's segments, and each link a creation laid on the
+     * reference field of every to-one end the bean model gives a field, the field the input of such a link is read from
+     * ({@link #koppelingregels}). Input on a characteristic stays, since nothing writes {@code false}; input on an
+     * attribute stays where no rule derived a value for it.
      *
      * <p>An evaluation fault that stands at the fixpoint ({@link Fout}) means the session has no answer, so before it
      * writes anything this throws the faults that stand: one as the exception it is, named after its rule as the
      * exec-model branch names it out of its fire, two or more as {@link Evaluatiefouten}, ordered by the name of the
      * form and then by the sentence, so that the report does not depend on the order of the rules or of the firings.
+     * Then it writes nothing, and the session stays as it was.
      *
-     * <p>Two different values on one attribute of one object have no common fixpoint (RUNTIME-SEMANTICS ch. 5.7). The
-     * rule of {@link #verschilregel} makes that a {@link Fout} of the fixpoint where two writers can disagree; this
-     * does not choose between two values either where no such rule stood, as in a session filled by hand: it fails with
-     * the same {@link Schrijversconflict}. Equal values are no conflict.
-     *
-     * <p>A model with a creation is fired in generations ({@code DroolsBackend.vuur}), which leaves a
-     * {@link Creatiefase} in the session. Without one the creation rules never had the focus and the session holds no
-     * created object or link, so this refuses to write such a session back rather than hand out an answer without the
-     * creations.
+     * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
+     * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
+     * the session again ({@code DroolsBackend.vuur}).
      */
     public void zetAfgeleideWaarden(KieSession sessie) {
         zetAfgeleideWaarden(sessie, null);
@@ -412,10 +432,26 @@ public final class TmsTranspiler {
      * that label. Null names an object by type and identity.
      */
     public void zetAfgeleideWaarden(KieSession sessie, Function<Object, String> label) {
+        Lezing lezing = lezing(sessie, label);
+        List<Fout> fouten = lezing.fixpunt().fouten();
+        if (fouten.size() == 1) throw fouten.get(0).fout();
+        if (!fouten.isEmpty()) throw new Evaluatiefouten(fouten);
+        lezing.schrijfdaden().forEach(Runnable::run);
+        sessie.insert(new Teruggezet());
+    }
+
+    /** What {@link #lees} reads, with beside it the writes that put it on the beans, made from the same facts in the
+     *  same pass so that the reading and the write-back cannot differ. */
+    private record Lezing(Fixpunt fixpunt, List<Runnable> schrijfdaden) {}
+
+    private Lezing lezing(KieSession sessie, Function<Object, String> label) {
         if (!creatieregels.isEmpty() && sessie.getObjects(o -> o instanceof Creatiefase).isEmpty())
             throw new IllegalStateException("dit model heeft creatieregels en vuurt in generaties (DroolsBackend.vuur);"
                     + " de sessie is zonder creatiefase gevuurd, dus zonder de creaties");
-        List<Fout> fouten = new ArrayList<>();
+        List<Runnable> daden = new ArrayList<>();
+        // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
+        // are one fault, equal as facts are
+        Set<Fout> fouten = new LinkedHashSet<>();
         for (Object f : sessie.getObjects(o -> o instanceof Fout)) {
             Fout fout = (Fout) f;
             fouten.add(label != null && fout.fout() instanceof Schrijversconflict c
@@ -423,15 +459,13 @@ public final class TmsTranspiler {
                     : label != null && fout.fout() instanceof Invoervormfout i
                     ? new Fout(fout.onderwerp(), fout.regel(), i.benoemd(label)) : fout);
         }
-        if (!fouten.isEmpty()) {
-            fouten.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
-            if (fouten.size() == 1) throw fouten.get(0).fout();
-            throw new Evaluatiefouten(fouten);
-        }
+        List<Fixpunt.AfgeleidKenmerk> kenmerken = new ArrayList<>();
         for (Object f : sessie.getObjects(o -> o instanceof HeeftKenmerk)) {
             HeeftKenmerk h = (HeeftKenmerk) f;
             Lid lid = lidVan(h, h.kenmerk());
-            Accessors.setter(lid.klasse(), lid.naam()).accept(h.onderwerp(), Boolean.TRUE);
+            kenmerken.add(new Fixpunt.AfgeleidKenmerk(h.onderwerp(), lid.naam()));
+            BiConsumer<Object, Object> zetter = Accessors.setter(lid.klasse(), lid.naam());
+            daden.add(() -> zetter.accept(h.onderwerp(), Boolean.TRUE));
         }
         Map<Object, Map<ElementSleutel, List<Waarde>>> perDoel = new IdentityHashMap<>();
         for (Object f : sessie.getObjects(o -> o instanceof Waarde)) {
@@ -439,21 +473,61 @@ public final class TmsTranspiler {
             perDoel.computeIfAbsent(w.onderwerp(), o -> new LinkedHashMap<>())
                     .computeIfAbsent(w.attribuut(), a -> new ArrayList<>()).add(w);
         }
+        List<Fixpunt.AfgeleideWaarde> waarden = new ArrayList<>();
         for (Map<ElementSleutel, List<Waarde>> perLid : perDoel.values())
-            for (List<Waarde> waarden : perLid.values()) {
-                Waarde eerste = waarden.get(0);
-                for (Waarde w : waarden)
-                    if (!gelijkeWaarde(eerste.waarde(), w.waarde())) {
-                        Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), waarden);
-                        throw label == null ? c : c.benoemd(label);
-                    }
+            for (List<Waarde> geschreven : perLid.values()) {
+                Waarde eerste = geschreven.get(0);
+                if (geschreven.stream().anyMatch(w -> !gelijkeWaarde(eerste.waarde(), w.waarde()))) {
+                    Schrijversconflict c = conflict(eerste.onderwerp(), eerste.attribuut(), geschreven);
+                    fouten.add(new Fout(eerste.onderwerp(), c.schrijvers().get(0).schrijver(),
+                            label == null ? c : c.benoemd(label)));
+                    continue;
+                }
                 Lid lid = lidVan(eerste, eerste.attribuut());
                 // a timeline goes onto the bean as the bean model's segments, which carry no value equality
                 @SuppressWarnings("unchecked")
                 Object v = lid.tijd() == null ? eerste.waarde()
                         : Tijdvak.bonen((List<Tijdvak>) eerste.waarde(), segmentklasse());
-                Accessors.setter(lid.klasse(), lid.naam()).accept(eerste.onderwerp(), v);
+                waarden.add(new Fixpunt.AfgeleideWaarde(eerste.onderwerp(), lid.naam(), v));
+                BiConsumer<Object, Object> zetter = Accessors.setter(lid.klasse(), lid.naam());
+                daden.add(() -> zetter.accept(eerste.onderwerp(), v));
             }
+        List<Fixpunt.GemaaktObject> objecten = new ArrayList<>();
+        for (Object f : sessie.getObjects(o -> o instanceof Gemaakt)) {
+            Gemaakt g = (Gemaakt) f;
+            objecten.add(new Fixpunt.GemaaktObject(g.object(), g.regel(), g.onderwerp()));
+        }
+        List<Fixpunt.GemaakteKoppeling> koppelingen = new ArrayList<>();
+        // a link of the input carries phase 0 and is in the bean fields already
+        for (Object f : sessie.getObjects(o -> o instanceof Koppeling k && k.fase() > 0))
+            koppelingen.add(gemaakteKoppeling((Koppeling) f, daden));
+        List<Fout> geordend = new ArrayList<>(fouten);
+        geordend.sort(Comparator.comparing(Fout::regel).thenComparing(Fout::melding));
+        List<Object> inconsistenties = new ArrayList<>(sessie.getObjects(o -> o.getClass().getName().equals(INCONSISTENTIE)));
+        return new Lezing(new Fixpunt(waarden, kenmerken, objecten, koppelingen, geordend, inconsistenties), daden);
+    }
+
+    /** The created link {@code k} as {@link Fixpunt} gives it, with into {@code daden} the write of each of its to-one
+     *  ends that the bean model gives a reference field: the field on the filler of the other role, named after the
+     *  to-one role, holds the filler of that role (§13.3.9), as {@link #koppelingregels} reads the input of the relation
+     *  back from it. A to-many end has no field of its own; where both ends are to-many no bean holds the link, and it
+     *  is in {@link Fixpunt#koppelingen} only. */
+    private Fixpunt.GemaakteKoppeling gemaakteKoppeling(Koppeling k, List<Runnable> daden) {
+        RegelSpraakModel.Feittype ft = feittype(k.relatie());
+        if (ft == null || ft.rollen.size() != 2)
+            throw new IllegalStateException(k + " in de sessie, maar het model kent geen feittype van twee rollen '"
+                    + k.relatie() + "'");
+        RegelSpraakModel.Rol r0 = ft.rollen.get(0), r1 = ft.rollen.get(1);
+        Objecttype t0 = model.objecttypeOpNaam(r0.objecttypeNaam()), t1 = model.objecttypeOpNaam(r1.objecttypeNaam());
+        if (!r1.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t0, r1.naam(), t1)) {
+            BiConsumer<Object, Object> zetter = Accessors.setter(bonenklasse(t0), r1.naam());
+            daden.add(() -> zetter.accept(k.eerste(), k.tweede()));
+        }
+        if (!r0.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t1, r0.naam(), t0)) {
+            BiConsumer<Object, Object> zetter = Accessors.setter(bonenklasse(t1), r0.naam());
+            daden.add(() -> zetter.accept(k.tweede(), k.eerste()));
+        }
+        return new Fixpunt.GemaakteKoppeling(ft.naam, r0.naam(), k.eerste(), r1.naam(), k.tweede());
     }
 
     /** The bean model's {@code Segment}, the class of a timeline's segments on a bean. */
@@ -4378,7 +4452,7 @@ public final class TmsTranspiler {
      *  itself without a chain), which counts them and takes the least place. The count gives a row where the input
      *  stated no place, so the rule still fires and its consequence names the gap instead of dropping the fault. */
     private Plaatslezing plaats(Lezingen lid, String veld, Variable<Object> knoop, List<String> keten) {
-        lijstplaatsen = true;
+        lijstvelden.add(veld);
         Variable<Lijstplaats> p = DSL.declarationOf(Lijstplaats.class, "$lijstplaats_" + id("plaats"));
         Variable<Object> waarde = DSL.declarationOf(Object.class, "$lijstplaatswaarde_" + id("plaats"));
         Variable<Object> aantal = DSL.declarationOf(Object.class, "$lijstplaatsen_" + id("plaats"));

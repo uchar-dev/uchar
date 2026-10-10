@@ -275,11 +275,12 @@ public final class Schaalproef {
         long gevuurd = System.nanoTime();
         sessie.removeEventListener(teller);
         if (vuring.geenFixpunt() != null) throw new IllegalStateException(vuring.geenFixpunt());
-        DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
-        long teruggezet = System.nanoTime();
+        // counted before the write-back, which states the mark that closes the session on the truth-maintenance branch
         if (teller.stand != sessie.getFactCount())
             throw new IllegalStateException("de feitenteller staat op " + teller.stand + ", de sessie houdt "
                     + sessie.getFactCount() + " feiten");
+        DroolsBackend.zetAfgeleideWaarden(bouw, sessie);
+        long teruggezet = System.nanoTime();
         long heap = gebruikt();
         Object kusttotaal = RegelSpraakRuntime.get(labels.get("K"), "kusttotaal");
         int inconsistent = sessie.getObjects(o -> o.getClass().getSimpleName().equals("Inconsistentie")).size();

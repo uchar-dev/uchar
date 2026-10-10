@@ -14,12 +14,18 @@ import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
 import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
+import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
+import dev.uchar.regelspraak.transpiler.tms.Fixpunt;
 import dev.uchar.regelspraak.transpiler.tms.Kringen;
+import dev.uchar.regelspraak.transpiler.tms.Lijstplaats;
+import dev.uchar.regelspraak.transpiler.tms.Teruggezet;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
+import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 
 import org.drools.modelcompiler.KieBaseBuilder;
@@ -38,10 +44,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -62,19 +74,17 @@ import java.util.function.Predicate;
  * {@link CaseRunner.Excluded} for a form the backend does not carry past the loader — among them every construct
  * the chosen branch does not lower, so no KieBase is handed out that silently lacks a rule.
  *
- * <p>Firing stays with the consumer, as the replay does it: a fresh {@link org.kie.api.runtime.KieSession} per
- * case, the fact beans instantiated from {@link Build#beanLoader()} while that loader is the thread's context
- * class loader, the parameters and the evaluation date as globals, and on the DRL-text branch also
- * {@link Build#dagsoortGlobalen()}; a {@code ConsequenceException} out of the fire is named by {@link #benoem}, and a
- * fire that reached its fixpoint is followed by {@link #zetAfgeleideWaarden}, which on the truth-maintenance branch
- * throws the evaluation faults that stand at the fixpoint and otherwise puts what that branch derived on the beans, and
- * does nothing on the other two.
- *
- * <p>A truth-maintenance build with a creation fires in generations, which a plain {@code fireAllRules} does not do:
- * its creation rules sit in agenda groups of their own and would never fire. The replay fires through {@link #vuur},
- * which is not public: how a consumer calls it is for the card that switches the toolchain over
- * ({@code tms-omschakeling}). Until then {@link #zetAfgeleideWaarden} refuses a session of such a build that was fired
- * without it, rather than hand out an answer without the creations.
+ * <p>A session of a build goes through four calls, as the replay makes them ({@link CaseRunner}): a fresh
+ * {@link org.kie.api.runtime.KieSession} of {@link Build#kieBase()}, with {@link Build#beanLoader()} as the thread's
+ * context class loader, the parameters and the evaluation date ({@code rekendatum}) as globals and on the DRL-text
+ * branch also {@link Build#dagsoortGlobalen()}; then {@link #voegIn}, which puts in the fact beans and, on the
+ * truth-maintenance branch, what that branch reads beside them; then {@link #vuur}, which fires to the fixpoint under a
+ * cap and, for a model with a creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. On the
+ * truth-maintenance branch the beans hold the input alone until the write-back, which comes once, at the end of the
+ * session, and closes it: a consumer that fires one session more than once, changing input in between with
+ * {@code update}, reads every answer but the last with {@link #lees}. On the other two branches the rules write the
+ * beans as they fire, the write-back does nothing and {@link #lees} refuses. A {@code ConsequenceException} out of the
+ * fire is named by {@link #benoem}.
  */
 public final class DroolsBackend {
 
@@ -270,22 +280,220 @@ public final class DroolsBackend {
     }
 
     /**
-     * Puts what the truth-maintenance branch derived in {@code sessie} on the fact beans, after a fire that reached its
-     * fixpoint: that branch never writes a bean while it fires, so until this call the beans hold the case input only.
-     * On the exec-model and the DRL-text branch it does nothing, since their rules write the beans as they fire. A
-     * consumer that fires a KieBase itself calls it as {@link CaseRunner} does, after every fire that ends at a
-     * fixpoint and before it reads the beans.
+     * Puts {@code invoer} into {@code sessie}, a fresh session of {@code build}: the fact beans, and on the
+     * truth-maintenance branch what that branch reads beside them and the bean model does not hold, as that branch's own
+     * facts, so that a consumer names it in the words of the model and states none of them. That is an
+     * {@code Emmerinvoer} for every bucket scalar {@code invoer} names ({@link Invoer#emmerscalair}), without which the
+     * branch reads an input timeline as a full timeline (RUNTIME-SEMANTICS ch. 8.4); and where a rule of the model reads
+     * the order of a to-many list ({@code TmsTranspiler.lijstvelden}), a {@code Lijstplaats} for every member of every
+     * such list, in the order {@link Invoer#lijst} gives or else in the order of the beans. On the exec-model and the
+     * DRL-text branch it inserts the beans alone, since those branches read nothing else.
      *
-     * <p>The write-back tells the engine nothing, so the session must not be fired again afterwards: the beans then hold
-     * values the network never saw arrive, and a rule that reads the bean pattern would be evaluated against a state
-     * that no propagation produced.
+     * <p>On the truth-maintenance branch it checks all of it before it inserts anything, and refuses by name: a session
+     * that already holds a fact, since the places of a list are numbered over the beans of one input and a bean
+     * inserted without this call has none; a bean that is not of the build's bean model or that comes twice; a bucket
+     * scalar on a bean outside the input or on a member its type does not declare as an attribute on a timeline; and a
+     * list that names a bean outside the input, a member whose reference field {@code rol} does not hold the holder, a
+     * member twice, or not every bean of the input whose field of that relation holds the holder, or that comes twice. A
+     * place the rules need is thus never missing at the fire, where it would stop the run with an
+     * {@code IllegalStateException}.
      *
-     * <p>On the truth-maintenance branch an evaluation fault, a division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4,
-     * point 4), is a fact the fire inserts logically, not an exception out of the fire, so that a fault on an
-     * intermediate state goes again when that state passes. Before anything is written, this throws the faults that
-     * stand at the fixpoint: one as the {@link Breuk.DelingDoorNul} the exec-model branch's fire gives through
-     * {@link #benoem}, naming the rule and the operands, and two or more as {@code Evaluatiefouten}, in an order that does
-     * not depend on the order of the rules ({@code TmsTranspiler.zetAfgeleideWaarden}).
+     * @throws IllegalStateException    {@code sessie} is not fresh, on the truth-maintenance branch
+     * @throws IllegalArgumentException a statement of {@code invoer} that does not fit its beans or the model, on the
+     *                                  truth-maintenance branch
+     */
+    public static void voegIn(Build build, KieSession sessie, Invoer invoer) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        Objects.requireNonNull(invoer, "invoer");
+        List<Object> bonen = invoer.bonen();
+        TmsTranspiler tms = build.tmsTranspiler();
+        if (tms == null) {
+            for (Object boon : bonen) sessie.insert(boon);
+            return;
+        }
+        if (sessie.getFactCount() != 0)
+            throw new IllegalStateException("voegIn vult een verse sessie, maar deze houdt al " + sessie.getFactCount()
+                    + " feiten: de plaatsen van een lijst worden over de bonen van één invoer geteld, en een boon die"
+                    + " zonder voegIn in de sessie kwam, heeft er geen; geef alle bonen in één Invoer aan een verse"
+                    + " sessie, en verander tussen twee fires hun waarden met update");
+        Map<Object, Objecttype> typen = new IdentityHashMap<>();
+        for (Object boon : bonen)
+            if (typen.put(boon, objecttype(build, boon)) != null)
+                throw new IllegalArgumentException("voegIn: de boon " + naam(boon) + " staat twee keer in de invoer");
+        List<Object> feiten = new ArrayList<>(bonen);
+        for (Invoer.Emmer e : invoer.emmers()) feiten.add(emmerinvoer(typen, e));
+        feiten.addAll(lijstplaatsen(build, tms.lijstvelden(), bonen, typen, invoer.lijsten()));
+        for (Object feit : feiten) sessie.insert(feit);
+    }
+
+    /** The object type whose bean {@code boon} is, a bean of the build's bean model. */
+    private static Objecttype objecttype(Build build, Object boon) {
+        for (Objecttype ot : build.model().objecttypen.values()) {
+            if (!Namen.ident(ot.naam, true).equals(boon.getClass().getSimpleName())) continue;
+            try {
+                if (Class.forName(FactModelGenerator.PAKKET + "." + Namen.ident(ot.naam, true), false,
+                        build.beanLoader()) == boon.getClass()) return ot;
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException("geen bonenklasse voor objecttype " + ot.naam, e);
+            }
+        }
+        throw new IllegalArgumentException("voegIn: " + naam(boon) + " is geen boon van dit model: een boon is een"
+                + " instantie van een klasse die Build.beanLoader() laadt");
+    }
+
+    /** The {@code Emmerinvoer} of bucket scalar {@code e}, keyed as {@code ProducentConsument.elementVan} keys the
+     *  attribute, on the type that declares it. */
+    private static Emmerinvoer emmerinvoer(Map<Object, Objecttype> typen, Invoer.Emmer e) {
+        Objecttype ot = typen.get(e.boon());
+        if (ot == null)
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
+                    + ", een boon die niet in de invoer staat");
+        if (ot.attribuut(e.attribuut()) == null)
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
+                    + ", maar " + ot.naam + " heeft geen attribuut van die naam");
+        if (!Namen.bevatNaam(ot.granulariteitLeden(), e.attribuut()))
+            throw new IllegalArgumentException("voegIn: emmerscalair '" + e.attribuut() + "' op " + naam(e.boon())
+                    + ", maar dat attribuut van " + ot.naam + " ligt niet op een tijdlijn; alleen de invoer van een"
+                    + " tijdlijn kent de emmerconventie (RUNTIME-SEMANTICS ch. 8.4)");
+        return new Emmerinvoer(e.boon(), ProducentConsument.elementVan(ot, e.attribuut(), false));
+    }
+
+    /** One to-many list: the reference field {@code veld} its members hold toward {@code houder}, and the relation that
+     *  field stands for on the members' bean ({@link FactModelGenerator#herkomst}), since beans of two types can hold
+     *  fields of one name toward one holder over two fact types, and a fold reads the members of one relation. The
+     *  holder is compared by identity, as the beans do not override {@code equals}. */
+    private record Lijstsleutel(String veld, Object houder, FactModelGenerator.Herkomst relatie) {}
+
+    /**
+     * The places of the members of every to-many list a rule reads ({@code gelezen}, the fields the members hold toward
+     * the holder): per field, holder and relation, the beans of the input whose field holds the holder, in the order of
+     * the beans, or in the order of the list {@code opgegeven} gives for that holder. A given list is checked against the
+     * beans whether or not a rule reads its field, and counts only where one does; split by the relations of its
+     * members, the order kept, it must name every bean of the input whose field of that relation holds the holder.
+     */
+    private static List<Lijstplaats> lijstplaatsen(Build build, Set<String> gelezen, List<Object> bonen,
+                                                   Map<Object, Objecttype> typen, List<Invoer.Lijst> opgegeven) {
+        RegelSpraakModel model = build.model();
+        Set<String> velden = new HashSet<>(gelezen);
+        for (Invoer.Lijst l : opgegeven) velden.add(Namen.ident(l.rol(), false));
+        Map<Objecttype, List<String>> referentievelden = new HashMap<>();
+        Map<Objecttype, Map<String, FactModelGenerator.Herkomst>> relaties = new HashMap<>();
+        Function<Object, Function<String, FactModelGenerator.Herkomst>> relatie = boon -> veld ->
+                relaties.computeIfAbsent(typen.get(boon), t -> new HashMap<>())
+                        .computeIfAbsent(veld, v -> FactModelGenerator.herkomst(model, typen.get(boon), v));
+        // per list, the beans whose field holds the holder, in the order of the beans
+        Map<Lijstsleutel, List<Object>> werkelijk = new LinkedHashMap<>();
+        for (Object boon : bonen)
+            for (String veld : referentievelden.computeIfAbsent(typen.get(boon), t -> referentievelden(model, t))) {
+                if (!velden.contains(veld)) continue;
+                Object houder = Accessors.getter(boon.getClass(), veld).apply(boon);
+                if (houder != null)
+                    werkelijk.computeIfAbsent(new Lijstsleutel(veld, houder, relatie.apply(boon).apply(veld)),
+                            k -> new ArrayList<>()).add(boon);
+            }
+        Map<Lijstsleutel, List<Object>> lijsten = new LinkedHashMap<>();
+        werkelijk.forEach((k, leden) -> { if (gelezen.contains(k.veld())) lijsten.put(k, leden); });
+        Set<Lijstsleutel> gegeven = new HashSet<>();
+        for (Invoer.Lijst l : opgegeven) {
+            String veld = Namen.ident(l.rol(), false);
+            String wat = "voegIn: de lijst van " + naam(l.houder()) + " onder de rol '" + l.rol() + "'";
+            Map<Lijstsleutel, List<Object>> delen = new LinkedHashMap<>();
+            Set<Object> genoemd = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+            for (Object lid : l.leden()) {
+                Objecttype ot = typen.get(lid);
+                if (ot == null) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", dat geen boon van de invoer is");
+                if (!referentievelden.computeIfAbsent(ot, t -> referentievelden(model, t)).contains(veld))
+                    throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar een " + ot.naam
+                            + " heeft geen referentieveld '" + veld + "'; de rol is die van de houder, de naam van het"
+                            + " veld waarmee een lid naar de houder wijst");
+                Object houder = Accessors.getter(lid.getClass(), veld).apply(lid);
+                if (houder != l.houder())
+                    throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar diens veld '" + veld
+                            + "' wijst " + (houder == null ? "nergens heen" : "naar " + naam(houder)));
+                if (!genoemd.add(lid)) throw new IllegalArgumentException(wat + " noemt " + naam(lid) + " twee keer");
+                delen.computeIfAbsent(new Lijstsleutel(veld, houder, relatie.apply(lid).apply(veld)),
+                        k -> new ArrayList<>()).add(lid);
+            }
+            if (delen.isEmpty())
+                for (Map.Entry<Lijstsleutel, List<Object>> e : werkelijk.entrySet())
+                    if (e.getKey().veld().equals(veld) && e.getKey().houder() == l.houder())
+                        throw new IllegalArgumentException(wat + " is leeg gegeven, maar " + naam(e.getValue().get(0))
+                                + " wijst met zijn veld '" + veld + "' naar de houder");
+            for (Map.Entry<Lijstsleutel, List<Object>> deel : delen.entrySet()) {
+                if (!gegeven.add(deel.getKey())) throw new IllegalArgumentException(wat + " is twee keer gegeven");
+                for (Object lid : werkelijk.getOrDefault(deel.getKey(), List.of()))
+                    if (!genoemd.contains(lid))
+                        throw new IllegalArgumentException(wat + " mist " + naam(lid) + ", dat met zijn veld '" + veld
+                                + "' naar de houder wijst: een lid buiten de gegeven volgorde heeft geen plaats");
+                if (gelezen.contains(veld)) lijsten.put(deel.getKey(), deel.getValue());
+            }
+        }
+        List<Lijstplaats> uit = new ArrayList<>();
+        lijsten.forEach((k, leden) -> {
+            for (int i = 0; i < leden.size(); i++) uit.add(new Lijstplaats(leden.get(i), k.veld(), i));
+        });
+        return uit;
+    }
+
+    /** The reference fields of a bean of {@code ot}, its inherited ones among them: the members the bean model derives
+     *  whose type is the bean class of an object type (§13.3.9, {@link FactModelGenerator#leden}). */
+    private static List<String> referentievelden(RegelSpraakModel model, Objecttype ot) {
+        Set<String> klassen = new HashSet<>();
+        for (Objecttype t : model.objecttypen.values()) klassen.add(Namen.ident(t.naam, true));
+        List<String> uit = new ArrayList<>();
+        for (Objecttype t : ot.keten())
+            for (FactModelGenerator.Lid lid : FactModelGenerator.leden(model, t))
+                if (klassen.contains(lid.javaType())) uit.add(lid.eigenschap());
+        return uit;
+    }
+
+    /** An object in a sentence of {@link #voegIn}: its type and its identity, as the facts of the branch print it. */
+    private static String naam(Object o) {
+        return o.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(o));
+    }
+
+    /**
+     * What stands in {@code sessie} of the truth-maintenance branch after a {@link #vuur} that reached its fixpoint,
+     * read without writing anything on a bean: per object the derived attribute values, in the form the bean field takes
+     * them, a timeline as the bean model's segments, and the derived characteristics; the objects and links the
+     * creations made; the evaluation faults that stand, as data and not thrown; and the §9.5 deposits, the
+     * {@code Inconsistentie} facts. A consumer that fires one session more than once reads every answer but the last
+     * here: the beans hold the input alone until {@link #zetAfgeleideWaarden}, which writes exactly this, and after which
+     * the session does not fire again. A fault names its object by type and identity.
+     *
+     * @throws UnsupportedOperationException on the exec-model and the DRL-text branch, whose rules write the derived
+     *                                       values on the beans as they fire
+     * @throws IllegalStateException         a session of a model with a creation that was fired without {@link #vuur}
+     */
+    public static Fixpunt lees(Build build, KieSession sessie) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        if (build.tmsTranspiler() == null)
+            throw new UnsupportedOperationException("lees leest wat de tak met truth maintenance afleidde; op de "
+                    + build.branch() + "-tak schrijven de regels de afgeleide waarden al tijdens het vuren op de bonen");
+        return build.tmsTranspiler().lees(sessie, null);
+    }
+
+    /**
+     * Puts what the truth-maintenance branch derived in {@code sessie} on the fact beans, after the last {@link #vuur}
+     * of the session, which reached its fixpoint: exactly what {@link #lees} gives, read by the same code. It sets each
+     * derived characteristic and attribute value on its bean, and each link a creation laid on the reference fields that
+     * hold it (§13.3.9). Until this call the beans hold the input alone, since that branch writes no bean while it fires.
+     * On the exec-model and the DRL-text branch it does nothing, since their rules write the beans as they fire.
+     *
+     * <p>Before anything is written, it throws the evaluation faults that stand at the fixpoint, and then writes nothing:
+     * one fault as its own exception, which is a {@link Breuk.DelingDoorNul} for a division by a numeric zero (an
+     * {@code ArithmeticException}, named after the rule with the operands, as the exec-model branch's fire gives it
+     * through {@link #benoem}), a {@code Rekenfout} for a fault of a computation or of the evaluation date, a
+     * {@code Schrijversconflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
+     * RUNTIME-SEMANTICS ch. 5.7) and an {@code Invoervormfout} for a timeline input in the other convention (ch. 8.4);
+     * two or more as {@code Evaluatiefouten}, ordered by the name of the form and then by the sentence, with the faults
+     * as {@code fouten()}. {@link #lees} gives the same faults as data.
+     *
+     * <p>The write-back tells the engine nothing, and a bean then holds derived values beside its input, which a further
+     * fire would read as input: an initialisation of a member that holds a value written back would not fire again. So
+     * the write-back closes the session with a stated mark, and {@link #vuur} refuses it.
      */
     public static void zetAfgeleideWaarden(Build build, KieSession sessie) {
         Objects.requireNonNull(build, "build");
@@ -294,25 +502,75 @@ public final class DroolsBackend {
     }
 
     /** As {@link #zetAfgeleideWaarden(Build, KieSession)}, with {@code label} giving the case label of an input bean
-     *  and null for an object a creation made: the replay's write-back, so that the fault of two writers that disagree
-     *  on the truth-maintenance branch names its object as the reference interpreter names it, "V, een Vondst"
-     *  (RUNTIME-SEMANTICS ch. 5.7), where a consumer without labels gets the type and the identity. */
-    static void zetAfgeleideWaarden(Build build, KieSession sessie, java.util.function.Function<Object, String> label) {
+     *  and null for an object a creation made, so that a fault names its object as the reference interpreter names it:
+     *  "V, een Vondst" in the fault of two writers that disagree (RUNTIME-SEMANTICS ch. 5.7), where a consumer without
+     *  labels gets the type and the identity. The replay writes back through it. */
+    public static void zetAfgeleideWaarden(Build build, KieSession sessie, Function<Object, String> label) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(sessie, "sessie");
         Objects.requireNonNull(label, "label");
         if (build.tmsTranspiler() != null) build.tmsTranspiler().zetAfgeleideWaarden(sessie, label);
     }
 
-    /** What {@link #vuur} did: the firings of all its fires together, and the sentence of a run that ends without a
-     *  fixpoint at the creation budget ({@link Creatiebudget}), null otherwise. A run that reaches the fire cap has no
-     *  fixpoint either; the caller reads that off {@code vuringen}. A run that ends at the budget counts the firings of
-     *  its fires before the one in which the creation rule threw. */
-    record Vuring(int vuringen, String geenFixpunt) {}
+    /** The fixed fire cap of the exec-model and the DRL-text branch, as before the truth-maintenance branch: their rules
+     *  write the beans as they fire, and the cap ends a run whose rules keep overwriting each other. */
+    static final int VAST_PLAFOND = 100_000;
 
     /**
-     * Fires {@code sessie} of {@code build} to its fixpoint, at most {@code plafond} firings in all. On the exec-model
-     * and the DRL-text branch, and on the truth-maintenance branch without a lowered creation, that is one fire.
+     * The factor of the fire cap of the truth-maintenance branch, {@code FACTOR × R × N0} ({@link #vuur}). Every firing
+     * of that branch makes or renews a logical fact of one rule on one subject, and without a cycle, which the build
+     * refuses ({@code Kringen}), the renewals per rule and subject are bounded by the depth of the dependency graph, so
+     * a run fires a number of times that grows with the rules and the facts. The scale models of card
+     * {@code tms-omschakeling} fired 0.56 and 0.74 times per rule per fact before the fire (2026-10-10); 4 is
+     * provisional, until the measurement over the played goldens sets it at twice the largest ratio it finds, at least 4.
+     */
+    static final int FACTOR = 4;
+
+    /** The least fire cap of the truth-maintenance branch: below it a small document would get a cap of a few hundred
+     *  firings, which a fixpoint can need. */
+    static final int VLOER = 10_000;
+
+    /** What {@link #vuur} did: the firings of all its fires together; the cap it fired under, on the truth-maintenance
+     *  branch the cap of its last phase; and the sentence of a run that ends without a fixpoint, at the cap or at the
+     *  creation budget ({@code Creatiebudget}), and null at a fixpoint. A run that ends at the budget counts the firings
+     *  of its fires before the one in which the creation rule threw. */
+    public record Vuring(int vuringen, int plafond, String geenFixpunt) {}
+
+    /**
+     * Fires {@code sessie} of {@code build} to its fixpoint under a cap on the firings of the run. On the exec-model and
+     * the DRL-text branch the cap is a fixed {@value #VAST_PLAFOND}. On the truth-maintenance branch it is
+     * {@code max(}{@value #VLOER}{@code , FACTOR × R × N0)}, with {@code R} the rules of the session's KieBase and
+     * {@code N0} the facts the session holds just before it fires ({@link #FACTOR}): the cap is a safeguard against a
+     * fault of the lowering, not a norm, so it grows with the input. The sentence at the cap names {@code R}, {@code N0}
+     * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Vuring#geenFixpunt}
+     * says so; nothing should be read of it then.
+     *
+     * <p>On the truth-maintenance branch it refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
+     * hold derived values beside their input: a consumer that fires more than once reads between the fires with
+     * {@link #lees}, or opens a fresh session with beans that hold input alone.
+     *
+     * <p>A model with a creation fires in generations; see {@link #vuur(Build, KieSession, int)}. There the cap is
+     * computed again over the facts at the start of every phase, so the objects the creations made count, and never
+     * lowered: a later phase may hold fewer facts than an earlier one, and the cap bounds the run as a whole.
+     */
+    public static Vuring vuur(Build build, KieSession sessie) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(sessie, "sessie");
+        return build.tmsTranspiler() == null ? vuur(build, sessie, VAST_PLAFOND) : vuur(build, sessie, FACTOR, VLOER);
+    }
+
+    /** As {@link #vuur(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded
+     *  up: the seam a witness gives a small factor and floor to reach the cap, a factor below 1 among them. */
+    static Vuring vuur(Build build, KieSession sessie, double factor, int vloer) {
+        if (!(factor > 0)) throw new IllegalArgumentException("vuurfactor " + factor + " is niet groter dan 0");
+        return drijf(build, sessie, new Plafond(factor, vloer, regels(sessie)));
+    }
+
+    /**
+     * Fires {@code sessie} of {@code build} to its fixpoint, at most {@code plafond} firings in all, a cap that does not
+     * grow: the seam of the scale harness, which sets a cap that never cuts it off, and of a witness that sets a small
+     * one. On the exec-model and the DRL-text branch, and on the truth-maintenance branch without a lowered creation,
+     * that is one fire.
      *
      * <p>On the truth-maintenance branch with a creation a creation fires only at a fixpoint of the rule layer, and
      * what it makes is stated and never lapses, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5): a logical
@@ -349,14 +607,81 @@ public final class DroolsBackend {
      * and this ends the run there, with its sentence, as a run without a fixpoint. The generations need no bound of
      * their own: every generation but the last makes an object or lays a link, and under the budget a stratum makes
      * finitely many of both. The rule layer has no budget here either: truth maintenance takes it to rest within the
-     * fire, and {@code plafond} bounds that. Until 2026-10-09 this counted the generations of a stratum that make
+     * fire, and the cap bounds that. Until 2026-10-09 this counted the generations of a stratum that make
      * something, at most 100, as the reference interpreter did that day: a chain whose every mint waits a generation for
      * a link, and a fact creation that lays a closure of 102 hops, ended without a fixpoint at their 101st generation.
      */
     static Vuring vuur(Build build, KieSession sessie, int plafond) {
+        return drijf(build, sessie, new Plafond(plafond));
+    }
+
+    /** The rules of the KieBase {@code sessie} fires: the {@code R} of the cap. */
+    private static long regels(KieSession sessie) {
+        long n = 0;
+        for (org.kie.api.definition.KiePackage p : sessie.getKieBase().getKiePackages()) n += p.getRules().size();
+        return n;
+    }
+
+    /** The cap of one run of {@link #drijf}: a fixed number of firings, or {@code max(vloer, factor × R × N)} over the
+     *  facts {@code N} at the start of a phase, rounded up and never lowered within the run. */
+    private static final class Plafond {
+        /** 0 for a fixed cap. */
+        private final double factor;
+        private final int vloer;
+        private final long regels;
+        private int waarde;
+        private long feiten = -1;
+
+        /** A fixed cap. */
+        Plafond(int vast) {
+            this(0, vast, 0);
+        }
+
+        Plafond(double factor, int vloer, long regels) {
+            this.factor = factor;
+            this.vloer = vloer;
+            this.regels = regels;
+            this.waarde = vloer;
+        }
+
+        /** Computes the growing cap over the facts {@code sessie} holds now, where that raises it. */
+        void herreken(KieSession sessie) {
+            if (factor == 0) return;
+            long n = sessie.getFactCount();
+            // a double holds every product below 2^53 exactly, and a cap is an int
+            double nieuw = Math.min(Integer.MAX_VALUE, Math.max(vloer, Math.ceil(factor * regels * n)));
+            if (feiten < 0 || nieuw > waarde) {
+                waarde = (int) nieuw;
+                feiten = n;
+            }
+        }
+
+        /** The sentence of a run that reached the cap. */
+        String zin() {
+            return factor == 0
+                    ? "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt"
+                    : "geen fixpunt: het vuurplafond van " + waarde + " vuringen is bereikt, het grootste van " + vloer
+                      + " en " + java.math.BigDecimal.valueOf(factor).stripTrailingZeros().toPlainString() + " × "
+                      + regels + " regels × " + feiten + " feiten vlak vóór het vuren; zonder kring vuurt de tak per"
+                      + " regel en feit een begrensd aantal keren, dus dit is een fout van de verlaging";
+        }
+    }
+
+    /** The driver of every {@code vuur}: refuses a session that was written back, and fires as
+     *  {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}. */
+    private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
+        if (tms != null && !sessie.getObjects(o -> o instanceof Teruggezet).isEmpty())
+            throw new IllegalStateException("deze sessie is teruggezet (zetAfgeleideWaarden): haar bonen dragen afgeleide"
+                    + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
+                    + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
+                    + " alleen invoer dragen");
         Set<String> creaties = tms == null ? Set.of() : tms.creatieregels();
-        if (creaties.isEmpty()) return new Vuring(sessie.fireAllRules(plafond), null);
+        plafond.herreken(sessie);
+        if (creaties.isEmpty()) {
+            int gevuurd = sessie.fireAllRules(plafond.waarde);
+            return new Vuring(gevuurd, plafond.waarde, gevuurd >= plafond.waarde ? plafond.zin() : null);
+        }
         // Drools makes a group on demand only in a KieBase that declares a group beside MAIN, which every creation
         // rule does; null means the KieBase lacks the creation rules the transpiler reports
         org.kie.api.runtime.rule.Agenda agenda = sessie.getAgenda();
@@ -372,29 +697,29 @@ public final class DroolsBackend {
         };
         sessie.addEventListener(teller);
         try {
-            int gevuurd = sessie.fireAllRules(plafond);
+            int gevuurd = sessie.fireAllRules(plafond.waarde);
             FactHandle fase = null;
             int nummer = 0;
             for (int stratum : tms.creatiestrata()) {
-                while (gevuurd < plafond) {
+                while (gevuurd < plafond.waarde) {
                     gemaakt[0] = 0;
                     if (fase != null) sessie.delete(fase);
                     fase = sessie.insert(new Creatiefase(++nummer, stratum));
+                    plafond.herreken(sessie);
                     // the focus is a stack: the group given the focus last fires first
                     agenda.getAgendaGroup(TmsTranspiler.OBJECTCREATIE).setFocus();
                     agenda.getAgendaGroup(TmsTranspiler.FEITCREATIE).setFocus();
                     try {
-                        gevuurd += sessie.fireAllRules(plafond - gevuurd);
+                        gevuurd += sessie.fireAllRules(plafond.waarde - gevuurd);
                     } catch (ConsequenceException e) {
                         Creatiebudget budget = creatiebudget(e);
                         if (budget == null) throw e;
-                        return new Vuring(gevuurd, budget.getMessage());
+                        return new Vuring(gevuurd, plafond.waarde, budget.getMessage());
                     }
-                    if (gevuurd >= plafond) return new Vuring(gevuurd, null);
                     if (gemaakt[0] == 0) break;
                 }
             }
-            return new Vuring(gevuurd, null);
+            return new Vuring(gevuurd, plafond.waarde, gevuurd >= plafond.waarde ? plafond.zin() : null);
         } finally {
             sessie.removeEventListener(teller);
         }
