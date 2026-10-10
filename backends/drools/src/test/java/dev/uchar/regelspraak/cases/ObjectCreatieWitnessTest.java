@@ -291,8 +291,9 @@ class ObjectCreatieWitnessTest {
         // case reaches a fire and the red fence still finds ONE fragment.
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> speel(AMBIGU, jutterZonderVerwachting()));
-        assertTrue(e.getMessage().contains("objectcreatie: insigne voor een jutter — more than one fact type relates "
-                + "\"Jutter\" to \"Insigne\"; the created object's back-link is ambiguous (ch. 5.5)"), e.getMessage());
+        assertTrue(e.getMessage().endsWith("objectcreatie: insigne voor een jutter — more than one fact type relates "
+                + "\"Jutter\" to \"Insigne\"; the created object's back-link is ambiguous (ch. 5.5); de"
+                + " truth-maintenance-tak draagt deze vorm nog niet"), e.getMessage());
     }
 
     @Test void diezelfde_ambiguiteit_zonder_subject_weigert_ook() throws Exception {

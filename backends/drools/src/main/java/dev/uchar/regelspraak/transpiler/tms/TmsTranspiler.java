@@ -914,8 +914,7 @@ public final class TmsTranspiler {
         if (Conditie.bevatPeriode(r.voorwaarde()))
             throw new Weigering("een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '"
                     + lid.naam() + "' van " + lid.declarant().naam + ": daar knipt het venster de tijdlijn"
-                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET + ", zoals de andere twee takken van de"
-                    + " Drools-backend haar niet dragen");
+                    + " (RUNTIME-SEMANTICS ch. 3.10), en " + NOG_NIET + ", zoals de DRL-teksttak haar niet draagt");
         if (!(r.waarde() instanceof Expr.Functie f && (f.kind() == Expr.FunctieKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctieKind.AANTAL_DAGEN_IN)))
             throw new Weigering("een waarde van het tijdsafhankelijke doel '" + lid.naam() + "' van "
@@ -1976,7 +1975,7 @@ public final class TmsTranspiler {
         RolBindingRef vr = rolBindingen.get(oc);
         FactModelGenerator.Creatiekoppeling k = FactModelGenerator.creatiekoppeling(model, nieuw, subject, vr, oc.naam());
         if (k.dubbelzinnig() != null)
-            throw new Weigering(k.dubbelzinnig() + "; de exec-modeltak faalt hier bij het vuren, deze tak weigert: " + NOG_NIET);
+            throw new Weigering(k.dubbelzinnig() + "; " + NOG_NIET);
         if (k.weigering() != null) throw new Weigering(k.weigering());
         if (vr == null)
             throw new Weigering("een objectcreatie zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar"
@@ -2995,7 +2994,7 @@ public final class TmsTranspiler {
         if (n == null)
             throw new Weigering("een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('"
                     + snippet(b.bron()) + "'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de"
-                    + " referentie-interpreter een exacte wortel geeft of faalt en de exec-modeltak een binaire double rekent");
+                    + " referentie-interpreter een exacte wortel geeft of faalt");
         Waardefunctie basis = waarde(b.links(), lez);
         int exponent = n;
         return w -> RegelSpraakRuntime.rsMacht(basis.van(w), exponent);
@@ -3286,8 +3285,7 @@ public final class TmsTranspiler {
     private Waardefunctie dimensiecel(Expr.DimensieCel c, Lezingen lez) {
         if (c.labels() == null || c.labels().size() != 1)
             throw new Weigering("een DimensionCellRead over " + (c.labels() == null ? 0 : c.labels().size())
-                    + " dimensies ('" + snippet(c.bron()) + "'): de exec-modeltak en deze tak lezen alleen een cel van"
-                    + " één dimensie");
+                    + " dimensies ('" + snippet(c.bron()) + "'): deze tak leest alleen een cel van één dimensie");
         int i = dimensielezing(c.attribuut(), lez, "een DimensionCellRead");
         String label = c.labels().get(0);
         return w -> w[i] instanceof Map<?, ?> m ? m.get(label) : null;
@@ -3925,8 +3923,8 @@ public final class TmsTranspiler {
      * one: an additive fold over members that are no number (WF-091), and an ordering fold over members that are neither
      * a number nor a date (WF-038). The reference interpreter faults on the addition or the comparison itself and the
      * ASP runner declines the form, while this branch would hand the members to a BigDecimal sum, which fails at fire,
-     * or to the Java order of their values, which answers. The sentence opens as the other two branches open theirs
-     * ({@code Vouwwaarde}), so a gate report names the same form in each.
+     * or to the Java order of their values, which answers. The sentence opens as the DRL-text branch opens its own
+     * ({@code Vouwwaarde}), so a gate report names the same form in both.
      */
     private String setbronweigering(Expr.FunctieKind kind, Objecttype elem, Expr.AttribuutRef arg) {
         boolean optellend = kind == Expr.FunctieKind.SOM || kind == Expr.FunctieKind.TOTAAL;
@@ -4553,8 +4551,7 @@ public final class TmsTranspiler {
         if (voorwaarts && model.naarVeelRol(elem, subject, terug))
             throw new Weigering("een Aggregation over de enkelvoudige elementrol '" + elemRol + "' wiens zusterrol '"
                     + terug + "' meervoudig is ('" + wat + "'): dat feittype heeft één beanveld voor beide richtingen, en"
-                    + " de exec-modeltak weigert deze vorm voorzichtig tot een eigen kaart haar meet (§13.3.9"
-                    + " opslagrichting)");
+                    + " deze tak weigert de vorm voorzichtig tot een eigen kaart haar meet (§13.3.9 opslagrichting)");
         Objecttype drager = voorwaarts ? subject : elem, doel = voorwaarts ? elem : subject;
         String rol = voorwaarts ? elemRol : terug;
         if (!FactModelGenerator.heeftReferentieVeld(model, drager, rol, doel))
@@ -5358,7 +5355,7 @@ public final class TmsTranspiler {
     private Toets cijferproef(Conditie.Predicaat p, Lezingen lez) {
         if (p.operand() instanceof Expr.AttribuutRef a && navigatieBindingen.containsKey(a))
             throw new Weigering("een Predicate " + Spelling.PREDICATE_KIND.spelling(p.soort()) + " over een pad ('"
-                    + snippet(p) + "'): de exec-modeltak laat een afwezige link beide polariteiten onwaar maken, wat"
+                    + snippet(p) + "'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, wat"
                     + " een lege lezing hier niet van een lege waarde onderscheidt");
         Waardefunctie f = waarde(p.operand(), lez);
         boolean elf = p.soort() == Conditie.Predicaatsoort.ELFPROEF;

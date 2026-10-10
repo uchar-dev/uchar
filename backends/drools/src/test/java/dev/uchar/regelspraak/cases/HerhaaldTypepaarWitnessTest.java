@@ -300,9 +300,10 @@ class HerhaaldTypepaarWitnessTest {
         // drift.
         CaseRunner.Excluded tms = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(elementrolToOne(),
                 JSON.readTree(tweeRollenCase("2", "0", "0", "1")), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(tms.getMessage().contains("regel: liggertal van een haven — een Aggregation over de enkelvoudige"
+        assertTrue(tms.getMessage().endsWith("regel: liggertal van een haven — een Aggregation over de enkelvoudige"
                 + " elementrol 'ligger' wiens zusterrol 'thuishaven' meervoudig is ('het aantal liggers van de Haven'):"
-                + " dat feittype heeft één beanveld voor beide richtingen"), tms.getMessage());
+                + " dat feittype heeft één beanveld voor beide richtingen, en deze tak weigert de vorm voorzichtig tot"
+                + " een eigen kaart haar meet (§13.3.9 opslagrichting)"), tms.getMessage());
     }
 
     @Test void een_consument_zonder_bereik_laadt_niet() throws Exception {

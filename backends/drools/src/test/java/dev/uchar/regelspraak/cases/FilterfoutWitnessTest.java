@@ -1068,9 +1068,10 @@ class FilterfoutWitnessTest {
         }
         String macht = TmsFoutWitnessTest.speel(vondsttal(filters.get("macht")), TmsDocumenten.zaak(List.of(),
                 List.of(consistent())), EXEC);
-        if (!(macht.startsWith("Excluded: ") && macht.contains("regel: vondsttal — een macht met een exponent die geen"
+        if (!(macht.startsWith("Excluded: ") && macht.endsWith("regel: vondsttal — een macht met een exponent die geen"
                 + " geheel getal van ten minste 0 als literal is ('zijn gewicht tot de macht zijn deelnemers'): de reële"
-                + " macht is OPEN (RUNTIME-SEMANTICS ch. 2.1)")))
+                + " macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de referentie-interpreter een exacte wortel geeft of"
+                + " faalt")))
             afwijkend.add("macht " + EXEC + ": " + macht);
         assertEquals(List.of(), afwijkend);
     }
