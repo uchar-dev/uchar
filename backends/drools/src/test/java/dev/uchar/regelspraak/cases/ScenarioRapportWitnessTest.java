@@ -45,6 +45,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * at its first ": ", and the rules of no form, the standings, in rows of their own ("stand Jutter.borgtarief: uit de
  * invoer"); the lens on steps 5b2 and 5b3 of card tms-omschakeling found the cut. The report before the switch-over
  * cut the same way.
+ *
+ * <p>The coverage takes a form's exact name, so each version of a rule has a verdict of its own, while the trace gives
+ * the versions of one rule one row. On {@code anchor/jutterswet-jutheffing} the first version of "jutheffing naar
+ * jaartarief" holds in 2025 and the second does not. <b>Red before the repair</b> (measured 2026-10-10 on
+ * {@code cad4b55b}): "jutheffing naar jaartarief #2 GEVUURD", since the coverage compared on the row's name; the
+ * report before the switch-over said the same, when the destructive lowering fired the rule of every version and let
+ * its window decide (the herkeuring after the fix round).
  */
 class ScenarioRapportWitnessTest {
 
@@ -125,6 +132,20 @@ class ScenarioRapportWitnessTest {
                 "twee vormen, twee rijen, elk met de hele naam");
         assertEquals(DekkingSoort.GEVUURD, dekking(r, "premie: basis"));
         assertEquals(DekkingSoort.GEVUURD, dekking(r, "toeslag: basis"));
+    }
+
+    @Test void elke_versie_van_een_regel_heeft_haar_eigen_dekking() throws Exception {
+        Path jutheffing = GOLDEN.resolve("anchor").resolve("jutterswet-jutheffing");
+        ScenarioResultaat r = CaseRunner.rapport(jutheffing.resolve("ir.json"),
+                List.of(jutheffing.resolve("case1-tarief-2025.json"))).get(0);
+        assertEquals(Status.PASS, r.status(), r::toString);
+        List<String> spoor = r.trace().vuringen().stream().map(v -> v.regel() + " " + v.labels() + " " + v.aantal())
+                .sorted().toList();
+        assertEquals(List.of("jutheffing naar jaartarief [A1] 1", "registratiegetal bij aangifte [A1] 1"), spoor,
+                "de versies van één regel delen een rij");
+        assertEquals(DekkingSoort.GEVUURD, dekking(r, "jutheffing naar jaartarief #1"));
+        assertEquals(DekkingSoort.NIET_GERAAKT, dekking(r, "jutheffing naar jaartarief #2"),
+                "de tweede versie geldt niet in 2025 en vuurt dus niet");
     }
 
     private static DekkingSoort dekking(ScenarioResultaat r, String regel) {
