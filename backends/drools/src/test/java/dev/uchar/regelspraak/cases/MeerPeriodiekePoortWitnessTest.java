@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -160,7 +160,7 @@ class MeerPeriodiekePoortWitnessTest {
         // The card's question 3 on the position a REPLAYING corpus document occupies: jutterswet-keurploeg states a
         // §8.2 whole-period matrix (a Kwantorvouw) over the MAAND-granular keurvergoeding. Measured rather than
         // assumed: THIS position routes through the fold's whole-period arm, whose gate elementTijdlijnLid
-        // (DrlTranspiler / ExecModelTranspiler) DOES consult the count table — and must classify an explicit 1 as
+        // (DrlTranspiler / TmsTranspiler's tijdlid) DOES consult the count table — and must classify an explicit 1 as
         // single-periodic, where the PRE-FIX containsKey test refused it. That is exactly why the mutant kills this
         // test, and it makes this a stronger witness than the cabinet position ever was (that one never consulted
         // the table at all). The SET gates (isTemporeelSetAttribuut/isTemporeelSet82) are reached by no corpus
@@ -183,23 +183,26 @@ class MeerPeriodiekePoortWitnessTest {
         assertEquals(drl, drlTekst(keurploeg, met),
                 "de §8.2-vergelijking leest het periodeaantal niet — de DRL is identiek met en zonder de sleutel");
         assertEquals(dekking(keurploeg, zonder), dekking(keurploeg, met),
-                "en de exec-model-dekking eveneens");
+                "en de dekking van de tak met truth maintenance eveneens");
     }
 
     // ---------------- the over-acceptance flank ----------------
 
     @Test void een_echt_raster_blijft_geweigerd() throws Exception {
         // Without this, deleting the gate outright would satisfy every test above. A count of TWO is a §13.3.6.7
-        // multi-period raster whose producer semantics no branch carries, and BOTH must keep refusing it by name.
+        // multi-period raster whose producer semantics no branch carries, and BOTH must keep refusing it by name: the
+        // truth-maintenance branch and the DRL-text branch.
         Path kenmerk = metAantal(GEHELEJAARKENMERK, "Werf", "characteristics", "bedrijvig", 2);
-        assertTrue(execReden(kenmerk, GEHELEJAARKENMERK).contains("voorwaarde buiten Phase-B scope"),
-                execReden(kenmerk, GEHELEJAARKENMERK));
+        assertTrue(tmsReden(kenmerk, GEHELEJAARKENMERK).contains("regel: toeslag van een schuit — een CharacteristicCheck"
+                        + " met wholePeriod ('de werf van de Schuit gedurende het gehele jaar bedrijvig is') over het kenmerk"
+                        + " 'bedrijvig' van Werf op een raster van meer perioden, dat geen bewerking draagt"),
+                tmsReden(kenmerk, GEHELEJAARKENMERK));
         assertTrue(drlReden(kenmerk, GEHELEJAARKENMERK).contains("§8.2 gehele-periode"),
                 drlReden(kenmerk, GEHELEJAARKENMERK));
 
         Path attribuut = metAantal(CLIPPRORATA, "Jutter", "attributes", "borgdeel", 2);
-        assertTrue(execReden(attribuut, CLIPPRORATA).contains("meer-periodieke temporele doel — §13.3.6.7"),
-                execReden(attribuut, CLIPPRORATA));
+        assertTrue(tmsReden(attribuut, CLIPPRORATA).contains("op een raster van meer perioden, dat geen bewerking draagt"),
+                tmsReden(attribuut, CLIPPRORATA));
         assertTrue(drlReden(attribuut, CLIPPRORATA).contains("meer-periodieke temporele toekenning (§13.3.6.7)"),
                 drlReden(attribuut, CLIPPRORATA));
     }
@@ -225,15 +228,16 @@ class MeerPeriodiekePoortWitnessTest {
         assertEquals(cases, drl.casesPlayed());
     }
 
-    private static String execReden(Path ir, String golden) {
+    private static String tmsReden(Path ir, String golden) {
         JsonNode c;
         try {
             c = JSON.readTree(Files.readString(gevallen(golden).get(0)));
         } catch (java.io.IOException e) {
             throw new RuntimeException(e);
         }
-        return assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c),
-                "verwacht een weigering van de exec-model-tak").getMessage();
+        return assertThrows(CaseRunner.Excluded.class,
+                () -> CaseRunner.speelCase(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE),
+                "verwacht een weigering van de tak met truth maintenance").getMessage();
     }
 
     private static String drlReden(Path ir, String golden) {
@@ -291,8 +295,8 @@ class MeerPeriodiekePoortWitnessTest {
                 l.navigatieBindingen()).drl();
     }
 
-    /** The exec-model branch's coverage manifest for a document, as comparable text; {@code ingreep} edits the
-     *  loaded model first. */
+    /** The truth-maintenance branch's coverage manifest for a document, as comparable text; {@code ingreep} edits
+     *  the loaded model first. */
     private static List<String> dekking(Path irPath, java.util.function.Consumer<RegelSpraakModel> ingreep) throws Exception {
         IrLoader.Loaded loaded = IrLoader.loadAll(JSON.readTree(Files.readString(irPath)));
         RegelSpraakModel model = loaded.model();
@@ -301,7 +305,7 @@ class MeerPeriodiekePoortWitnessTest {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, loaded.prioritizedDefaults(),
+            TmsTranspiler et = TmsTranspiler.build(model, cl, loaded.prioritizedDefaults(),
                     loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen());
             List<String> uit = new ArrayList<>();
             for (Dekking d : et.dekking()) uit.add(d.verdict() + " " + d.sleutel() + " — " + d.reden());

@@ -9,7 +9,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -78,10 +78,10 @@ class TegenpartijWitnessTest {
         IrLoader.Loaded l = IrLoader.loadAll(eenOpEen());
         DrlTranspiler drl = DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
                 l.rolBindingen(), l.navigatieBindingen());
-        List<Dekking> exec = execDekking(l);
+        List<Dekking> tms = tmsDekking(l);
         for (String regel : REGELS) {
             assertTrue(dekkingVan(drl.dekking(), regel).lowered(), "drl-tekst lowert " + regel);
-            assertTrue(dekkingVan(exec, regel).lowered(), "exec-model lowert " + regel);
+            assertTrue(dekkingVan(tms, regel).lowered(), "tms lowert " + regel);
         }
         assertTrue(drl.drl().contains("instanceof Strandjutter"), "de vernauwde check toetst de klasse:\n" + drl.drl());
 
@@ -101,12 +101,12 @@ class TegenpartijWitnessTest {
         throw new AssertionError("geen manifestregel " + sleutel + " in " + dekking);
     }
 
-    private static List<Dekking> execDekking(IrLoader.Loaded l) {
+    private static List<Dekking> tmsDekking(IrLoader.Loaded l) {
         ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(l.model()));
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            return ExecModelTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.rolBindingen(), l.lets(),
+            return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.rolBindingen(), l.lets(),
                     l.bronPaden(), l.navigatieBindingen()).dekking();
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);

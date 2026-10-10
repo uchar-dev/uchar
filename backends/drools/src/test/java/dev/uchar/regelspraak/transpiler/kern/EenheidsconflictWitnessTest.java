@@ -14,7 +14,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Objecttype;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -266,15 +266,15 @@ class EenheidsconflictWitnessTest {
         List<String> stil = new ArrayList<>();
         List<String> ongeprobeerd = new ArrayList<>();
         for (Map.Entry<String, Verdraaiing> t : twists.entrySet()) {
-            int execGezien = 0, drlGezien = 0;
+            int tmsGezien = 0, drlGezien = 0;
             for (Path ir : goldens()) {
                 JsonNode eerlijk = JSON.readTree(Files.readString(ir));
                 JsonNode liegend = t.getValue().pas(eerlijk);
                 if (liegend == null) continue;                   // this golden does not carry the shape
-                if (lowertExec(eerlijk)) {
-                    execGezien++;
-                    if (!(vangExec(liegend) instanceof Eenheidsconflict))
-                        stil.add(t.getKey() + " | " + naam(ir) + " (exec-model): " + omschrijf(vangExec(liegend)));
+                if (lowertTms(eerlijk)) {
+                    tmsGezien++;
+                    if (!(vangTms(liegend) instanceof Eenheidsconflict))
+                        stil.add(t.getKey() + " | " + naam(ir) + " (tms): " + omschrijf(vangTms(liegend)));
                 }
                 if (lowertDrl(eerlijk)) {
                     drlGezien++;
@@ -284,7 +284,7 @@ class EenheidsconflictWitnessTest {
             }
             // never silently green: a twist no golden carries would make its whole row vacuous, so an unprobed
             // twist is itself the failure — per branch, because the two lower different subsets of the corpus.
-            if (execGezien == 0) ongeprobeerd.add(t.getKey() + " (exec-model)");
+            if (tmsGezien == 0) ongeprobeerd.add(t.getKey() + " (tms)");
             if (drlGezien == 0) ongeprobeerd.add(t.getKey() + " (DRL-tekst)");
         }
         assertEquals(List.of(), ongeprobeerd, "een verdraaiing vond geen enkele golden om op te staan");
@@ -314,8 +314,8 @@ class EenheidsconflictWitnessTest {
             Throwable t = vangDrl(liegend);
             if (t != null) { bewogen.add(naam(ir) + " faalde: " + omschrijf(t)); continue; }
             if (!drl(eerlijk).equals(drl(liegend))) bewogen.add(naam(ir) + ": de DRL-tekst bewoog");
-            if (lowertExec(eerlijk) && vangExec(liegend) != null)
-                bewogen.add(naam(ir) + " (exec-model) faalde: " + omschrijf(vangExec(liegend)));
+            if (lowertTms(eerlijk) && vangTms(liegend) != null)
+                bewogen.add(naam(ir) + " (tms) faalde: " + omschrijf(vangTms(liegend)));
         }
         assertTrue(gezien > 0, "geen enkele golden bood een verdraaibare annotatie op deze positie");
         assertEquals(List.of(), bewogen, "de annotatie is niet de bron: een leugen daar mag niets bewegen");
@@ -488,13 +488,13 @@ class EenheidsconflictWitnessTest {
     }
 
     /** Lower through the EXEC-MODEL branch — the branch gate 12 replays — returning the throwable (null on success). */
-    private static Throwable vangExec(JsonNode ir) {
-        try { exec(ir); return null; } catch (Throwable t) { return t; }
+    private static Throwable vangTms(JsonNode ir) {
+        try { tms(ir); return null; } catch (Throwable t) { return t; }
     }
 
     private static boolean lowertDrl(JsonNode ir) { return vangDrl(ir) == null; }
 
-    private static boolean lowertExec(JsonNode ir) { return vangExec(ir) == null; }
+    private static boolean lowertTms(JsonNode ir) { return vangTms(ir) == null; }
 
     private static String drl(JsonNode ir) {
         IrLoader.Loaded l = IrLoader.loadAll(ir);
@@ -502,13 +502,13 @@ class EenheidsconflictWitnessTest {
                 l.navigatieBindingen()).drl();
     }
 
-    private static void exec(JsonNode ir) {
+    private static void tms(JsonNode ir) {
         IrLoader.Loaded loaded = IrLoader.loadAll(ir);
         ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(loaded.model()));
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            assertNotNull(ExecModelTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
+            assertNotNull(TmsTranspiler.build(loaded.model(), cl, loaded.prioritizedDefaults(),
                     loaded.rolBindingen(), loaded.lets(), loaded.bronPaden(), loaded.navigatieBindingen()));
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);

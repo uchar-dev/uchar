@@ -7,7 +7,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.schema.ContractValidator;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The loader round-trip witness (card acceptance): loader(emit(model)) reaches a valid transpiler
  * input. The corpus {@code ir.json} files ARE emit(model) — the frontend's IrEmitter dump of a
  * resolved model — so loading one and building the exec-model transpiler over the result witnesses
- * that {@link IrLoader} faithfully inverts the emitter into a model the ported transpiler accepts
- * and wholly lowers. Pinned on THREE structurally-different goldens: scalar arithmetic, a date
+ * that {@link IrLoader} faithfully inverts the emitter into a model the transpiler accepts and wholly
+ * lowers; since card tms-omschakeling that is the transpiler of the truth-maintenance branch. Pinned on THREE structurally-different goldens: scalar arithmetic, a date
  * computation, and a feittype-role navigation. (The 41-golden played set of gate 12 is the stronger
  * end-to-end witness — those loaded models fire to the exact pinned ref≡clingo values.)
  */
@@ -59,7 +59,7 @@ class RoundTripWitnessTest {
         assertFalse(model.resolvedRegels.isEmpty(), golden + ": loaded resolvedRegels");
 
         // the loaded model is a valid transpiler input: beans generate, the contract holds, and
-        // the exec-model back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.
+        // the truth-maintenance back-end wholly lowers it (no marker/skip) — loader(emit(model)) round-trips.
         Map<String, String> bronnen = FactModelGenerator.genereer(model);
         ClassLoader cl = BeanCompiler.compileer(bronnen);
         List<String> schendingen = ContractValidator.valideer(model, cl);
@@ -68,7 +68,7 @@ class RoundTripWitnessTest {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            ExecModelTranspiler et = ExecModelTranspiler.build(model, cl, geladen.prioritizedDefaults(),
+            TmsTranspiler et = TmsTranspiler.build(model, cl, geladen.prioritizedDefaults(),
                     geladen.rolBindingen(), geladen.lets(), geladen.bronPaden(), geladen.navigatieBindingen());
             for (Dekking d : et.dekking())
                 assertTrue(d.lowered(), golden + ": construct lowered — " + d.sleutel() + " " + d.verdict());

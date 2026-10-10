@@ -11,7 +11,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The twisted rows are the positions the refusal was pinned at, now with an answer to compare. One literal of a
  * playing golden is turned into the node, the case's date is set where it had none, and the expectations are the
  * reference interpreter's answer on the twisted document. Where a branch does not lower the node, the row pins that
- * branch's refusal, so a branch that starts lowering there fails the row until the row expects its values.
+ * branch's refusal, so a branch that starts lowering there fails the row until the row expects its values. The rows of
+ * the exec-model branch run on the truth-maintenance branch since card tms-omschakeling (2026-10-10), which plays the
+ * assertion of a consistency and the filter of a fold that the destructive exec-model branch refused.
  */
 class RekenjaarWitnessTest {
 
@@ -127,8 +129,8 @@ class RekenjaarWitnessTest {
             Dekking drl = dekkingVan(DrlTranspiler.build(l.model(), l.lets(), l.prioritizedDefaults(), l.bronPaden(),
                     l.rolBindingen(), l.navigatieBindingen()).dekking(), sleutel);
             assertEquals(Dekking.Verdict.LOWERED, drl.verdict(), "drl-tekst — " + sleutel + ": " + drl.reden());
-            Dekking exec = dekkingVan(execDekking(l), sleutel);
-            assertEquals(Dekking.Verdict.LOWERED, exec.verdict(), "exec-model — " + sleutel + ": " + exec.reden());
+            Dekking tms = dekkingVan(tmsDekking(l), sleutel);
+            assertEquals(Dekking.Verdict.LOWERED, tms.verdict(), "tms — " + sleutel + ": " + tms.reden());
         }
     }
 
@@ -138,13 +140,13 @@ class RekenjaarWitnessTest {
      *  or null for leeg); {@code inconsistent} turns its {@code consistent} into {@code inconsistent}; a null refusal
      *  means the branch must play the patched case. */
     private record Plek(String golden, String pointer, String zaak, String datum, Map<String, String> waarden,
-                        boolean inconsistent, String execWeigering, String drlWeigering, String omschrijving) {}
+                        boolean inconsistent, String tmsWeigering, String drlWeigering, String omschrijving) {}
 
     @Test void op_de_andere_plekken_het_antwoord_van_ref_of_de_weigering_van_de_tak() throws Exception {
         List<Plek> plekken = List.of(
             new Plek("synth2-budgetgrens-onder", "/rules/consistencies/0/versions/0/assertion/right", "case1.json",
                     "2026-03-15", Map.of(), false,
-                    "schending buiten Phase-D scope", null, "the assertion of a consistency"),
+                    null, null, "the assertion of a consistency"),
             new Plek("synth2-budgetgrens-onder", "/rules/objectCreations/0/versions/0/initialisations/0/value/right",
                     "case1.json", "2026-03-15", Map.of("W1.opvolgerrang", "{\"number\":\"2027\"}"), true,
                     null, null, "an initialisation of an object creation"),
@@ -156,7 +158,7 @@ class RekenjaarWitnessTest {
                     null, null, "the guard of a fact creation"),
             new Plek("jutterswet-drempelvangst", "/rules/rules/0/versions/0/value/filter/right", "case.json",
                     "2026-03-15", Map.of("J1.drempelgewicht", "{\"number\":\"0\"}", "J1.drempelaandeel", "{\"number\":\"0\"}"),
-                    false, "aggregatie buiten Phase-C scope", null, "the filter of a fold"),
+                    false, null, null, "the filter of a fold"),
             new Plek("anchor/jutterswet-strandrechtketen", "/rules/prioritizedDefaults/1/defaults/1/consequence/right",
                     "case1-basis.json", "2026-03-15",
                     Map.of("W1.uitkering", "{\"number\":\"20260.00\"}", "K1.uitkeringstotaal", "{\"number\":\"20270.00\"}"),
@@ -175,19 +177,20 @@ class RekenjaarWitnessTest {
             Path ir = getwist(p.golden(), p.pointer());
             JsonNode c = zaakVan(p);
             String waar = p.omschrijving() + " (" + p.golden() + p.pointer() + ")";
-            tak(ir, c, false, p.execWeigering(), "exec-model — " + waar);
-            tak(ir, c, true, p.drlWeigering(), "drl-tekst — " + waar);
+            tak(ir, c, DroolsBackend.Branch.TRUTH_MAINTENANCE, p.tmsWeigering(), "tms — " + waar);
+            tak(ir, c, DroolsBackend.Branch.DRL_TEXT, p.drlWeigering(), "drl-tekst — " + waar);
         }
     }
 
     // ---------------- fixtures ----------------
 
-    private static void tak(Path ir, JsonNode c, boolean viaDrl, String weigering, String boodschap) throws Exception {
+    private static void tak(Path ir, JsonNode c, DroolsBackend.Branch tak, String weigering, String boodschap)
+            throws Exception {
         if (weigering == null) {
-            assertNull(CaseRunner.speelCase(ir, c, viaDrl), boodschap);
+            assertNull(CaseRunner.speelCase(ir, c, tak), boodschap);
             return;
         }
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, viaDrl), boodschap);
+        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.speelCase(ir, c, tak), boodschap);
         assertTrue(e.getMessage().contains(weigering), boodschap + " names '" + weigering + "': " + e.getMessage());
     }
 
@@ -294,12 +297,12 @@ class RekenjaarWitnessTest {
         throw new AssertionError("no manifest entry " + sleutel + " in " + dekking);
     }
 
-    private static List<Dekking> execDekking(IrLoader.Loaded l) {
+    private static List<Dekking> tmsDekking(IrLoader.Loaded l) {
         ClassLoader cl = BeanCompiler.compileer(FactModelGenerator.genereer(l.model()));
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            return ExecModelTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.rolBindingen(), l.lets(),
+            return TmsTranspiler.build(l.model(), cl, l.prioritizedDefaults(), l.rolBindingen(), l.lets(),
                     l.bronPaden(), l.navigatieBindingen()).dekking();
         } finally {
             Thread.currentThread().setContextClassLoader(vorige);

@@ -7,7 +7,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
-import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.drools.modelcompiler.KieBaseBuilder;
 import org.junit.jupiter.api.Test;
@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * that KieBase held one rule instead of two — the defaults family was not in it — and the manifest said every
  * construct lowered, so four of four HTTP answers called an excluded jutter entitled, with status 200 and no
  * marker. The replay IS the entry here ({@code CaseRunner} builds through it), so gate 12 plays the entry on
- * every golden; these rows pin what the gate cannot see — that the defaults family is a rule of its own in the
- * KieBase the entry hands out, that the entry refuses in the replay's sentence, and that no build of either
- * transpiler can leave a side table out.
+ * every golden; these rows pin what the gate cannot see — that the defaults family is in the KieBase the entry
+ * hands out, on the truth-maintenance branch as eight rules of its own beside the one that reads it, that the entry
+ * refuses in the replay's sentence, and that no build of either transpiler can leave a side table out.
  */
 class DroolsBackendWitnessTest {
 
@@ -54,13 +54,19 @@ class DroolsBackendWitnessTest {
     // ---------------- the entry: one rule and one defaults family ----------------
 
     @Test void de_ingang_zet_de_regel_en_de_defaultsfamilie_in_de_kiebase() throws Exception {
-        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
-        assertEquals(DroolsBackend.Branch.EXEC_MODEL, b.branch());
-        assertEquals(List.of("defaults K:Jutter.uitgesloten", "penninggerechtigd tenzij uitgesloten"), regels(b.kieBase()));
+        DroolsBackend.Build b = DroolsBackend.build(UITSLUITING.resolve("ir.json"), DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        assertEquals(DroolsBackend.Branch.TRUTH_MAINTENANCE, b.branch());
+        // the family lowers to the rules of its standings and its defaults beside the rule that reads it
+        assertEquals(List.of("defaults K:Jutter.uitgesloten: default 0.0.0", "defaults K:Jutter.uitgesloten: default 1",
+                "defaults K:Jutter.uitgesloten: eens 0", "defaults K:Jutter.uitgesloten: eens wortel",
+                "defaults K:Jutter.uitgesloten: terugval 0", "kenmerkstand Jutter.uitgesloten: onwaar",
+                "kenmerkstand Jutter.uitgesloten: waar uit de invoer",
+                "kenmerkstand Jutter.uitgesloten: waar uit een afleiding", "penninggerechtigd tenzij uitgesloten"),
+                regels(b.kieBase()));
         assertEquals(List.of("defaults: defaults K:Jutter.uitgesloten", "regel: penninggerechtigd tenzij uitgesloten"),
                 b.dekking().stream().map(Dekking::sleutel).sorted().toList());
         assertTrue(b.dekking().stream().allMatch(Dekking::lowered), "every entry lowered: " + b.dekking());
-        assertTrue(b.dagsoortGlobalen().isEmpty(), "the exec-model branch declares no day-kind globals");
+        assertTrue(b.dagsoortGlobalen().isEmpty(), "the truth-maintenance branch declares no day-kind globals");
     }
 
     /** What the build without the side tables handed out: the same model through the same transpiler with the
@@ -72,7 +78,7 @@ class DroolsBackendWitnessTest {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {
-            ExecModelTranspiler et = ExecModelTranspiler.build(l.model(), cl, List.of(), l.rolBindingen(), l.lets(),
+            TmsTranspiler et = TmsTranspiler.build(l.model(), cl, List.of(), l.rolBindingen(), l.lets(),
                     l.bronPaden(), l.navigatieBindingen());
             assertEquals(List.of("penninggerechtigd tenzij uitgesloten"),
                     regels(KieBaseBuilder.createKieBaseFromModel(et.model())));
@@ -108,7 +114,7 @@ class DroolsBackendWitnessTest {
     @Test void elke_publieke_ingang_die_een_model_neemt_neemt_elke_zijtafel() {
         List<Type> geladen = Arrays.stream(IrLoader.Loaded.class.getRecordComponents())
                 .map(RecordComponent::getGenericType).toList();
-        for (Class<?> t : List.of(ExecModelTranspiler.class, DrlTranspiler.class)) {
+        for (Class<?> t : List.of(TmsTranspiler.class, DrlTranspiler.class)) {
             assertEquals(0, t.getConstructors().length, t.getSimpleName() + " has a public constructor");
             List<Method> ingangen = modelIngangen(t);
             for (Method m : ingangen) {
@@ -125,7 +131,7 @@ class DroolsBackendWitnessTest {
      *  stand for "empty", which is the silent omission again by another route. */
     @Test void een_ontbrekende_zijtafel_wordt_luid_geweigerd() throws Exception {
         IrLoader.Loaded l = IrLoader.loadAll(JSON.readTree(Files.readString(UITSLUITING.resolve("ir.json"))));
-        for (Class<?> t : List.of(ExecModelTranspiler.class, DrlTranspiler.class)) {
+        for (Class<?> t : List.of(TmsTranspiler.class, DrlTranspiler.class)) {
             Method build = modelIngangen(t).get(0);
             Class<?>[] soorten = build.getParameterTypes();
             int getoetst = 0;
