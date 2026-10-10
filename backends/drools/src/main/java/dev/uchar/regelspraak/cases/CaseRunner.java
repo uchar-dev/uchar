@@ -416,9 +416,12 @@ public final class CaseRunner {
      *  AT fire (a division by zero, a fixpoint failure), a named refusal while the case is read (a date lexeme
      *  that names no day, corpus/rood/asofdate-kalender), and equally a CRASH while the case is read — measured
      *  2026-09-23: meldwaarde written as a boolean gives "IllegalArgumentException: argument type mismatch", an
-     *  undeclared characteristic a failed setter call. A run that hits the fire cap without a fixpoint is a FAULT
-     *  too, and raises no exception: two writers of one attribute that kept overwriting each other are named
-     *  ({@link #vuurTotFixpunt}), any other run says "geen fixpunt (kringverwijzing?)". Gate 8 therefore pins only
+     *  undeclared characteristic a failed setter call. A run without a fixpoint is a FAULT too, and raises no
+     *  exception: on the exec-model branch, which this path drives, it says what {@link DroolsBackend#vuur} says,
+     *  "creation budget exhausted …" at the creation budget or "geen fixpunt: het vuurplafond van … vuringen is
+     *  bereikt, …" at the fire cap, and two writers of one attribute that disagree are a fault at the fixpoint, which
+     *  the write-back throws. "geen fixpunt (kringverwijzing?)" is the sentence of the DRL-text branch at its cap where
+     *  no writers kept overwriting each other ({@link #vuurTotFixpunt}). Gate 8 therefore pins only
      *  this backend's own sentence, never platform text, since a pin on a JDK message would pin a crash; for a
      *  refusal while the case is read, that sentence names position and lexeme. */
     public static RoodResult runRood(Path irPath, Path casePath) {

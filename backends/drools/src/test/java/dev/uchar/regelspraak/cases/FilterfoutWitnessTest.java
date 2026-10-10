@@ -366,7 +366,7 @@ class FilterfoutWitnessTest {
         String tms = TmsFoutWitnessTest.speel(ir, TmsDocumenten.zaak(j1(false), List.of(consistent())), EXEC);
         assertTrue(tms.startsWith("Excluded: ") && tms.contains("objectcreatie: meld — een deling in een"
                 + " ledeninitialisatie ('zijn gewicht gedeeld door zijn deelnemers'), waarvan deze tak de"
-                + " §6.5-deponering niet maakt"), "tms: " + tms);
+                + " §6.5-deponering niet maakt"), "exec-model: " + tms);
     }
 
     /** The filter of a quantifier fold, after "hij is actief" in a composite, under ten minste één (druk), alle

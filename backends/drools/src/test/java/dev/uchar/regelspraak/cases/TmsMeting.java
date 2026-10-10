@@ -119,12 +119,12 @@ public final class TmsMeting {
                 .append(" cases die hij speelt (het oordeel van de replay).\n");
         uit.append("- Opzet per case: een verse sessie, gevuld zoals de replay dat doet (`CaseRunner.metSessie`, via")
                 .append(" `DroolsBackend.voegIn`); dan `DroolsBackend.vuur` onder het plafond dat een afnemer krijgt en")
-                .append(" `DroolsBackend.zetAfgeleideWaarden`, elk apart getimed. Niet getimed: sessie, bonen, invoegen.")
+                .append(" `DroolsBackend.zetAfgeleideWaarden`, elk apart getimed. Niet getimed: sessie, beans, invoegen.")
                 .append(" De schrijfconflictluisteraar van de replay hangt niet aan de sessie, zoals bij een afnemer.\n");
         uit.append("- Herhalingen: eerst een ronde over alle gemeten goldens, ").append(RONDE)
                 .append(" keer per case (opwarmen van de gedeelde engine); dan per golden: bouw ")
-                .append(BOUWRONDES).append(" keer `DroolsBackend.build` (laden, bonen, verlagen, KieBase; de mediaan; de")
-                .append(" bonen worden per JVM op inhoud gecachet, dus javac telt niet mee), en per case ").append(OPWARMEN)
+                .append(BOUWRONDES).append(" keer `DroolsBackend.build` (laden, beanklassen, verlagen, KieBase; de mediaan; de")
+                .append(" beanklassen worden per JVM op inhoud gecachet, dus javac telt niet mee), en per case ").append(OPWARMEN)
                 .append(" opwarmers en ").append(HERHALINGEN).append(" herhalingen; per case de mediaan,")
                 .append(" per golden de som van de medianen.\n");
         uit.append("- Vuringen: wat `vuur` teruggeeft, opgeteld over de cases (een bereik als herhalingen verschillen).")

@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Red before the step that indexes a kind, each measured on the commit before its step: {@code identiteitsjoins}
  * found 123 identity joins without an index in these documents, {@code beanveldjoins} 23 bean-field joins, and
  * {@code koppelingseinden} 36 joins on an end of a link, which {@code elkeJoinGeindexeerdOfBenoemd} also named.
- * {@code bonenZonderEqualsOfHashCode} guards what the index rests on, so it was green before; it is red under a
+ * {@code beansZonderEqualsOfHashCode} guards what the index rests on, so it was green before; it is red under a
  * mutant of the bean generator that compares by value.
  */
 class TmsIndexWitnessTest {
@@ -152,7 +152,7 @@ class TmsIndexWitnessTest {
      *  equal to itself alone: a bean that compared its values would join a standing to every subject with equal values,
      *  and merge two subjects into one. */
     @Test
-    void bonenZonderEqualsOfHashCode() throws Exception {
+    void beansZonderEqualsOfHashCode() throws Exception {
         List<String> eigen = new ArrayList<>();
         int bonen = 0;
         for (DroolsBackend.Build b : BOUW.values())
@@ -164,8 +164,8 @@ class TmsIndexWitnessTest {
                     eigen.add(k.getSimpleName() + ".equals");
                 if (k.getMethod("hashCode").getDeclaringClass() != Object.class) eigen.add(k.getSimpleName() + ".hashCode");
             }
-        assertTrue(bonen > 0, "geen bonen gelezen");
-        assertEquals(List.of(), eigen, "bonen die equals of hashCode overschrijven");
+        assertTrue(bonen > 0, "geen beanklassen gelezen");
+        assertEquals(List.of(), eigen, "beanklassen die equals of hashCode overschrijven");
     }
 
     /** Asserts that every kind of {@code soorten} occurs in the documents, and that every constraint of those kinds and

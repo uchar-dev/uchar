@@ -502,7 +502,7 @@ class TmsHerhaaldVurenWitnessTest {
         });
     }
 
-    @Test void een_ingevoegd_of_gewijzigd_feit_dat_geen_boon_van_de_invoer_is_weigert_vuur() throws Exception {
+    @Test void een_ingevoegd_of_gewijzigd_feit_dat_geen_bean_van_de_invoer_is_weigert_vuur() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(waardedocument(), DroolsBackend.Branch.EXEC_MODEL);
         inSessie(b, () -> {
             // a fact of no kind voegIn puts in

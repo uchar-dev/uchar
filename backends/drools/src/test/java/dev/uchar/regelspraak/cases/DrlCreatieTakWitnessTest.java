@@ -157,7 +157,7 @@ class DrlCreatieTakWitnessTest {
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.speelCase(penningVorm(), penningJutter(), DroolsBackend.Branch.EXEC_MODEL));
         assertTrue(e.getMessage().contains("objectcreatie: penning voor een gerechtigde jutter — een objectcreatie zonder"
-                + " connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), "tms: " + e.getMessage());
+                + " connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), "exec-model: " + e.getMessage());
     }
 
     // ---------------- the authored documents ----------------

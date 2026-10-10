@@ -72,7 +72,7 @@ class TmsInvoerWitnessTest {
     private static final String NUL = " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg"
             + " (RUNTIME-SEMANTICS ch. 1.4, punt 4)";
 
-    @Test void een_lijst_heeft_standaard_de_volgorde_van_de_bonen() throws Exception {
+    @Test void een_lijst_heeft_standaard_de_volgorde_van_de_beans() throws Exception {
         DroolsBackend.Build b = vondstbouw();
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             List<Object> jv = jutterMetVondsten(b);
@@ -114,7 +114,7 @@ class TmsInvoerWitnessTest {
         });
     }
 
-    @Test void wat_niet_bij_de_bonen_of_het_model_past_weigert_voegIn_luid() throws Exception {
+    @Test void wat_niet_bij_de_beans_of_het_model_past_weigert_voegIn_luid() throws Exception {
         DroolsBackend.Build b = vondstbouw();
         TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
             List<Object> jv = jutterMetVondsten(b);
@@ -222,8 +222,9 @@ class TmsInvoerWitnessTest {
         });
     }
 
-    @Test void op_de_andere_takken_voegt_voegIn_alleen_de_bonen_in() throws Exception {
-        // the DRL-text branch alone: the exec-model branch becomes the branch with truth maintenance at this card
+    @Test void op_de_drl_teksttak_voegt_voegIn_alleen_de_beans_in() throws Exception {
+        // the DRL-text branch alone: since card tms-omschakeling the exec-model branch derives with truth maintenance
+        // and states what it reads beside the beans
         for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
             DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
                     tak);

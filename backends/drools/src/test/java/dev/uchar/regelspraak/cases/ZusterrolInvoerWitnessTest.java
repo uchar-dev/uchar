@@ -58,7 +58,7 @@ class ZusterrolInvoerWitnessTest {
                 "and no more than that: nobody fills `voorligger` toward W1, so W1's own reference stays empty");
     }
 
-    @Test void de_drie_spellingen_van_een_relatie_leveren_dezelfde_bonen() throws Exception {
+    @Test void de_drie_spellingen_van_een_relatie_leveren_dezelfde_beans() throws Exception {
         // The law itself, at bean level: one relation, three ways to spell it, one fact base. case1 writes
         // both legs, case2 the to-many leg only, case3 the to-one legs only.
         for (String c : new String[] { "case1", "case2", "case3" }) {

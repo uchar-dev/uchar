@@ -355,7 +355,7 @@ class TmsTijdlijnWitnessTest {
                 TmsTijdlijnDocumenten.boonsegment(b.beanLoader(), "2024-01-01", "2025-01-01", "4")));
         TmsDocumenten.vuur(b, b.execModelTranspiler().model().getRules(), List.of(j1),
                 sessie -> sessie.setGlobal("rekendatum", java.time.LocalDate.parse("2025-06-01")), sessie -> { });
-        assertEquals(List.of(), tijdlijnVan(j1, "jaardeel"), "een lege lijst op de boon, niet null en niet de invoer");
+        assertEquals(List.of(), tijdlijnVan(j1, "jaardeel"), "een lege lijst op de bean, niet null en niet de invoer");
     }
 
     // ---------------- D: the clip over a characteristic on a timeline, ch. 3.6 ----------------

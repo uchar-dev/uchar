@@ -103,7 +103,7 @@ class TmsTerugzettingWitnessTest {
                 DroolsBackend.Branch.EXEC_MODEL));
     }
 
-    @Test void pas_na_het_terugzetten_draagt_de_boon_het_afgeleide_kenmerk() throws Exception {
+    @Test void pas_na_het_terugzetten_draagt_de_bean_het_afgeleide_kenmerk() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(), DroolsBackend.Branch.EXEC_MODEL);
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
@@ -196,7 +196,7 @@ class TmsTerugzettingWitnessTest {
         assertEquals(4, volgordes);
     }
 
-    @Test void pas_na_het_terugzetten_dragen_de_bonen_de_afgeleide_attributen() throws Exception {
+    @Test void pas_na_het_terugzetten_dragen_de_beans_de_afgeleide_attributen() throws Exception {
         int volgordes = 0;
         for (List<String> regels : TmsDocumenten.permutaties(REGELS))
             for (List<String> groepen : TmsDocumenten.permutaties(GROEPEN)) {

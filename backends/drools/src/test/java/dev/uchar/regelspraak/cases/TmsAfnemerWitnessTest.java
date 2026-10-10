@@ -103,7 +103,7 @@ class TmsAfnemerWitnessTest {
 
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
 
-    @Test void een_objectcreatie_staat_na_het_terugzetten_aan_beide_kanten_op_de_bonen() throws Exception {
+    @Test void een_objectcreatie_staat_na_het_terugzetten_aan_beide_kanten_op_de_beans() throws Exception {
         speel("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
             Object j1 = labels.get("J1");
             assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");

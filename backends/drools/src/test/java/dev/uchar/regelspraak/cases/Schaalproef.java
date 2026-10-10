@@ -621,7 +621,7 @@ public final class Schaalproef {
                 .append(" sessie met de gewijzigde case: `voegIn`, `vuur`, `lees`. De lezing na de tweede fire is gelijk aan")
                 .append(" die van de verse sessie, anders faalt het punt. Belasting: de load average over 1, 5 en 15")
                 .append(" minuten (`uptime`) bij de start van het punt.\n");
-        uit.append("- Tweede fire: de wijziging (`set` en `update`) en `vuur` samen. Verse sessie, opzetten: sessie, bonen")
+        uit.append("- Tweede fire: de wijziging (`set` en `update`) en `vuur` samen. Verse sessie, opzetten: sessie, beans")
                 .append(" uit de case en `voegIn` (`CaseRunner.metSessie`); vuren: `vuur`.\n\n");
         uit.append("| N | belasting | R | N0 | vuringen eerste fire | vuringen tweede fire | vuringen verse sessie")
                 .append(" | plafond tweede fire | eerste fire (ms) | tweede fire (ms) | verse sessie: opzetten (ms)")
