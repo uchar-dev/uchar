@@ -37,9 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>On the exec-model and the DRL-text branch it inserts the beans alone.</li>
  * </ul>
  *
- * <p>The values of the fold order and of the bucket scalar are those the replay pins on the same documents
- * ({@code TmsFilterfoutWitnessTest}, {@code TmsInvoervormWitnessTest}), there confirmed against the reference
- * interpreter.
+ * <p>Measured on 2026-10-10, both documents passing the verifier: on document C with J3 alone, the reference
+ * interpreter and the ASP runner give topsom 7 with the bedrag 7 as a bucket scalar, and with the same 7 as the full
+ * timeline of June 2024 the one faults and the other refuses the translation with the sentence of the
+ * {@code Invoervormfout}, "the temporal total of "bedrag" over a case-supplied full timeline is not exercised by any
+ * corpus case; the asOfDate-bucket convention carries the total". On the filter document, in either order, the
+ * reference interpreter faults with "division by numeric zero", a sentence without the operands, and the ASP runner
+ * reports both members without an order: which member it names, {@code TmsFilterfoutWitnessTest} measured with the
+ * dividend added to the reference interpreter's sentence.
  *
  * <p><b>Red before the change</b> (measured 2026-10-10 on {@code 095a586a}): the witness does not compile there, since
  * the entry had no {@code voegIn} and no {@code Invoer}; a consumer stated {@code Emmerinvoer} and {@code Lijstplaats}
