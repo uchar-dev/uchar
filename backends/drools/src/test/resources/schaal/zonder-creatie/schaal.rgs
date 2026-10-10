@@ -1,0 +1,58 @@
+Parameter de vondstfactor : Numeriek (geheel getal)
+
+Objecttype de Kustwacht (mv: Kustwachten)
+    het kusttotaal Numeriek (getal met 2 decimalen);
+
+Objecttype de Wachter (mv: Wachters) (bezield)
+    de rang Numeriek (geheel getal);
+    de wachtsom Numeriek (getal met 2 decimalen);
+    de hoogste beloning Numeriek (getal met 2 decimalen);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen);
+    de waarde Numeriek (getal met 2 decimalen);
+    de beloning Numeriek (getal met 2 decimalen);
+
+Feittype kustbewaking
+    de kustwacht Kustwacht
+    de wachter (mv: wachters) Wachter
+Eén kustwacht bewaakt meerdere wachters
+
+Feittype vondstbeheer
+    de beheerder Wachter
+    de vondst (mv: vondsten) Vondst
+Eén beheerder beheert meerdere vondsten
+
+Feittype opvolging
+    de voorganger Wachter
+    de opvolger (mv: opvolgers) Wachter
+Eén voorganger heeft één opvolger
+
+Regel waarde van een vondst
+    geldig altijd
+        De waarde van een Vondst moet berekend worden als het gewicht van de Vondst maal de vondstfactor.
+
+Regel beloning van een vondst
+    geldig altijd
+        De beloning van een Vondst moet gesteld worden op 1,00.
+
+Uitzondering op beloning van een vondst: beloning van een waardevolle vondst
+    geldig altijd
+        De beloning van een Vondst moet gesteld worden op de waarde van de Vondst
+        indien de waarde van de Vondst groter is dan 50.
+
+Regel wachtsom van een wachter
+    geldig altijd
+        De wachtsom van een Wachter moet berekend worden als de som van de beloning van alle vondsten van de Wachter of 0 als die er niet zijn.
+
+Regel hoogste beloning van een wachter
+    geldig altijd
+        De hoogste beloning van een Wachter moet berekend worden als de maximale waarde van de beloning van alle vondsten van de Wachter.
+
+Regel kusttotaal van een kustwacht
+    geldig altijd
+        Het kusttotaal van een Kustwacht moet berekend worden als de som van de wachtsom van alle wachters van de Kustwacht.
+
+Regel wachtsomgrens
+    geldig altijd
+        De wachtsom van een Wachter moet kleiner zijn dan 300.
