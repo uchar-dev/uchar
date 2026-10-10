@@ -175,6 +175,14 @@ D is de deponeringsvariant van C: ref rekent de voorwaarde uit vóór de blokkad
 voor C noemt (in ref de blokkade vóór de voorwaarde, in clingo de guard van de `val`-kop) lost D mee op. Neem D mee in
 (b) en (c).
 
+## Aanvulling (2026-10-09, nacht): volgordeafhankelijkheid van ref op getuigen van `20261008-tms-verdeling-en-tijdlijnen`
+
+Ref houdt in een deel van de regelvolgordes een tijdlijn of fout van een tussenstand vast, waar de tak met truth
+maintenance (en clingo, waar die de vorm vertaalt) de uitkomst aan het fixpunt geeft. De getuigen meten het per volgorde:
+`TmsTijdlijnWitnessTest` deel B2 (een vergelijking met een waarde die een regel later vervangt: in de volgorde jaardeel
+vóór teller "MISMATCH … 306 … 59, expected … 4"), `TmsInvoervormWitnessTest` deel E en `TmsGeheelPeriodeWitnessTest`
+delen A en A3 ("J1.gelijkpremie = 20" in 3 van de 6 volgordes). Dezelfde klasse als de documenten A–D hierboven.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Het besluit staat in de spec (beschermd pad: voorstel aan de

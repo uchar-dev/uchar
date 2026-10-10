@@ -32,6 +32,17 @@ schrijft niet), en met een niet-staande regel die leeg berekent 7 waar ref 0 gee
 waarde).
 Geen golden heeft de combinatie. (Een variant met een defaults-groep op hetzelfde lid is niet welgevormd: WF-050.)
 
+## Aanvulling (2026-10-09, avond): een verdeling naast een andere schrijver
+
+Dezelfde klasse, gemeten tijdens `20261008-tms-verdeling-en-tijdlijnen` (documenten verifier PASS): een verdeling naar
+rato (pot 100, één ontvanger met gewicht 1) naast een andere schrijver van het aandeel.
+- Naast een initialisatie 5: ref 100 (de verdeling schrijft, de initialisatie beslist niet); clingo `J1.bergingsaandeel
+  = [5;100]`.
+- Naast een rekenende regel die 5 schrijft: ref faalt ("two writers of one target disagree: rule … writes 5 and
+  allocation … writes 100", ch. 5.7); clingo `[100;5]`.
+De tak met truth maintenance weigert beide paren luid (getuige `TmsVerdelingWitnessTest` deel H); de oude Drools-takken
+spelen 100 bij het paar met de regel.
+
 ## Acceptatie (bij oppakken aanscherpen)
 
 - (a) Een golden met deze vorm, eigen Jutterswet-casus, rechtenvrij, met cases met en zonder de staande regel, en een

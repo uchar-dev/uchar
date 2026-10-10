@@ -157,6 +157,47 @@ exec-modeltak; de overige 46 weigert hij eerst op een vorm van `20261008-tms-ver
     omsluitende `Let` in het filter of de matrix van een vouw (de oude takken weigeren die ook). Een gewone regelset
     van de distributie kan ze bevatten; voorstel daar: eerst een golden.
 
+## Aanvulling na `20261008-tms-verdeling-en-tijdlijnen` (2026-10-09)
+
+Uit het `Result:` van die kaart. De tak met truth maintenance speelt daarna alle 242 goldens die de exec-modeltak speelt,
+met dezelfde namen en zonder FAIL (de doorloop van punt 1, gemeten op haar tip).
+
+18. **Gedrag dat alleen de destructieve exec-modeltak heeft** (afspraak van de eigenaar van 2026-10-09: geen eigen
+    kaart; het verdwijnt met de omschakeling, en de doorloop van punt 1 telt het niet als verlies):
+    - een pot die een regel later afleidt: het restant blijft leeg;
+    - een lege pot in gelijke delen of naar rato: een NullPointerException in de consequentie;
+    - een verdeling met twee versies (geldigheid) wordt geweigerd als "twee verdelingen schrijven hetzelfde doel";
+    - `rsVerdeelOpVolgorde`: een tiegroep met alleen lege gewichten krijgt gelijke delen (ref 0, 0 en de pot gaat door),
+      en sleutels als 2019 en 2019.0 vormen twee groepen (ref één); de tak met truth maintenance rekent met
+      `Verdeling.bereken`, dus de hulp kan met de exec-modeltak weg of gerepareerd worden;
+    - een rekenende regel naast een verdeling op één doel speelt 100 waar ref faalt (ch. 5.7);
+    - een tarief waarvan het document de noemer niet declareert: 120 waar ref en clingo falen (ch. 3.6);
+    - `CaseRunner` zet een asOfDate-emmerscalair als segment op de boon (bewust, javadoc van `temporeleInvoer`), zodat
+      de exec-modeltak antwoordt waar ref en clingo volgens ch. 8.4 falen: een knip (11), een lid van een vouw (135),
+      een ooit-sleutel (inconsistent), het eigen totaal over een volledige tijdlijn (126); bij de basis van een pro rata
+      (306) schrijven ref en clingo niets;
+    - "gelijk aan" en "ongelijk aan" in een knip geven 0 waar ref 50 geeft (`20261009-runtime-tijdconditie-leeg`);
+    - een verifier-schone regel die een gedimensioneerd attribuut schrijft ("De omzet van een Jutter moet berekend
+      worden als 5"), stopt bij het vuren met een ClassCastException (BigDecimal naar Map), waar de vorm luid geweigerd
+      hoort te worden (de DRL-teksttak weigert haar bij het compileren, de tak met truth maintenance met naam).
+19. **Voor het contract van punt 12:** een afnemer die zelf een sessie vult, stelt per asOfDate-emmerscalair op een
+    tijdsafhankelijk attribuut `new Emmerinvoer(boon, ProducentConsument.elementVan(type, attribuut, false))`; zonder
+    dat feit leest de tak elke invoertijdlijn als volledige tijdlijn (ch. 8.4). De `Lijstplaats`-feiten van punt 12
+    vraagt sinds die kaart ook een kwantorvouw over een meervoudige rol waarvan de matrix een attribuut vergelijkt of
+    toetst onder "gedurende het gehele" (de vorm van `jutterswet-reddingsvloot`), ook zonder één emmerscalair; zonder die
+    feiten stopt het vuren met een IllegalStateException. De javadoc van `Lijstplaats` en `leestLijstplaatsen` noemt
+    alleen de filterfout als lezer; ook de lidfoutregel en de geordende kwantorvouw lezen hem (tekstvoorstel in het
+    verslag van de eindfix van die kaart). Nieuw publiek in het pakket van de
+    tak: `Emmerinvoer`, `Emmerscalair`, `Invoervormfout`, `Lidfout`, `Ontvanger`, `Tijdvak`, `Verdeling`.
+20. **Voor de schaalproef van punt 9:** een verdeling vuurt per bron opnieuw bij elke verandering van een ontvanger,
+    dus O(N²) als N ontvangers één voor één binnenkomen; tijdlijnen en verdelingen zitten niet in het synthetische model.
+21. **Nog geweigerd, zonder golden** (de README van de tak somt ze op, met reden): een variabel startpunt, een
+    tijdsafhankelijke parameter, een som over tijdlijnen, een tijdlijndoel met een tweede schrijver, een
+    tijdsafhankelijk kenmerk als doel, "(on)gelijk aan" in een knip, de ontkenning binnen de kwalificatie op een kenmerk,
+    een kwalificatie langs een pad of tussen twee tijdlijnen, een duur in dagsoorten tussen datum-tijden, een
+    dagsoortdefinitie met een parameter (`jutterswet-havenrooster`, ook de exec-modeltak), een tweede schrijver van een
+    verdelingsdoel, en een vouw per lid of een kwantorvouw met de kwalificatie als matrix over een gecreëerde relatie.
+
 ## Acceptatie
 
 - (a) De doorloop van punt 1, als tabel in het `Result:`.

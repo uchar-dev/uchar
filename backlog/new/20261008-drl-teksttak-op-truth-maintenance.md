@@ -80,6 +80,21 @@ de maatregelen tegen destructief schrijven verdwijnen uit deze tak.
   volgordes); een deling door leeg deponeert niet in een voorwaarde, bij een operand die geen gelezen attribuut is, of
   in het filter van een vouw; een tekstdeel van een getal of een waarheidswaarde schrijft "5.50" en "true".
 
+## Aanvulling na `20261008-tms-verdeling-en-tijdlijnen` (2026-10-09)
+
+- **Wat deze tak in DRL-tekst moet weergeven,** naast de vormen van de vorige kaarten: de verdeling (een `Ontvanger`-feit
+  per bron en ontvanger en één activering per bron; de berekening is de statische functie `Verdeling.bereken`, die
+  DRL-tekst kan aanroepen zoals nu `rsVerdeelOpVolgorde`), een tijdlijn als `List<Tijdvak>` in een feit, de invoervorm
+  (`Emmerinvoer`), "gedurende het gehele" en de dagsoorten (een gecompileerd predicaat als constante van het document;
+  deze tak levert het nu als sessie-global `rsDagsoort_<Naam>`).
+- **Gedrag dat alleen de destructieve DRL-teksttak heeft** (afspraak van de eigenaar van 2026-10-09: geen eigen kaart;
+  het verdwijnt met deze kaart): een later afgeleide volgordesleutel geeft 450/450 waar 900/0 hoort; twee verdelingen
+  over dezelfde ontvangers werpen "cannot invoke method: setBergingsaandeel" (`20260923-drl-verdeling-dubbelbezet`; de
+  tak met truth maintenance draagt die vorm, getuige `TmsVerdelingWitnessTest` deel B); een verdeling met twee versies
+  deponeert op elke ontvanger in 2026 en faalt niet zonder rekendatum; een lege pot geeft een NullPointerException; de
+  twee punten van `rsVerdeelOpVolgorde`; een rekenende regel naast een verdeling speelt 100 waar ref faalt; een tarief
+  zonder gedeclareerde noemer geeft 120; de emmerscalair als segment (zie punt 18 van `20261008-tms-omschakeling`).
+
 ## Acceptatie
 
 - (a) Rood-eerst getuigen in deze tak voor de vormen van
