@@ -8,6 +8,9 @@ import dev.uchar.regelspraak.transpiler.tms.Fout;
 import dev.uchar.regelspraak.transpiler.tms.Schrijversconflict;
 
 import org.junit.jupiter.api.Test;
+import org.kie.api.event.rule.AgendaEventListener;
+import org.kie.api.event.rule.BeforeMatchFiredEvent;
+import org.kie.api.event.rule.DefaultAgendaEventListener;
 import org.kie.api.runtime.KieSession;
 
 import java.lang.reflect.Method;
@@ -53,6 +56,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       refuses a session whose last {@code vuur} broke off with an exception, here the filter document of
  *       {@link TmsFilterfoutWitnessTest} with its beans inserted without {@code voegIn}, so that the filter fault rule
  *       finds no place. What {@code lees} gives is thus always a fixpoint.</li>
+ *   <li>And after a {@code vuur} that reached its fixpoint (the second fix round of step 3, point 1), both refuse a
+ *       session in which something happened outside {@code vuur}, naming what happened and the way on, and write
+ *       nothing. On {@code anchor/jutterswet-rekenkamer}, case 1, J1's heffing is 70 at the fixpoint; J1's grondslag
+ *       becomes 150 ({@code update}) and a plain {@code fireAllRules} follows, which leaves the made Rekenkamer on the
+ *       grondslag it was initialised with; the sentence names the update and the first rule the plain fire fired, and
+ *       sends the consumer to a fresh session, since {@code vuur} refuses a second fire on a model with a creation; a
+ *       fresh session of grondslag 150 gives 120 ({@link TmsHerhaaldVurenWitnessTest}, measured in the reference
+ *       interpreter and the ASP runner). On the values document, without a creation, both refuse after an update
+ *       alone and after a plain fire that follows it, with the sentence that asks a {@code vuur} first; after that
+ *       {@code vuur} the reading is that of a fresh session of the changed input. After the write-back, an update makes
+ *       both refuse with the way to a fresh session, since {@code vuur} refuses a written-back session. <b>Red before
+ *       the change</b> (measured 2026-10-10 on {@code 32a649c4}, the tip of the first fix round): each of the three rows
+ *       failed on "Expected java.lang.IllegalStateException to be thrown, but nothing was thrown."; their old form, which
+ *       read where these rows expect a refusal, gave the state of the first input: after the update and a plain fire of
+ *       two firings, J1's heffing 70, which the write-back then wrote on the bean, where a fresh session gives 120; and
+ *       after an update of V1 without a further {@code vuur}, the first reading, J1's totaalgewicht 14 and V1 zwaar with
+ *       bonus 7, heffing 40, uitkering 20 and vindloon 15.</li>
  *   <li>{@code lees} with labels (the fix round of step 3, point 5): on the red case
  *       {@code corpus/rood/jutterswet-dubbele-melding}, case 1, two writers give V's meldingsdatum two dates, and the
  *       fault of the fixpoint names V as "V, een Vondst", where {@code lees} without labels names it by type and
@@ -207,6 +227,84 @@ class TmsAfnemerWitnessTest {
         });
     }
 
+    @Test void een_wijziging_en_een_kale_fire_na_vuur_weigeren_lees_en_terugzetten_op_een_model_met_creatie()
+            throws Exception {
+        speel("anchor/jutterswet-rekenkamer", "case1-berekend.json", (bouw, sessie, labels) -> {
+            Object j1 = labels.get("J1");
+            assertNull(DroolsBackend.vuur(bouw, sessie).geenFixpunt(), "the fixpoint");
+            assertEquals("70", heffing(DroolsBackend.lees(bouw, sessie), j1), "J1 heffing at the fixpoint");
+            RegelSpraakRuntime.set(j1, "grondslag", new BigDecimal("150"));
+            sessie.update(sessie.getFactHandle(j1), j1);
+            String regel = kaleFire(sessie);
+            String zin = buitenVuurOm(naam(j1) + " werd gewijzigd met update"
+                    + (regel == null ? "" : " en de regel \"" + regel + "\" vuurde"), VERS_BIJ_CREATIE);
+            assertEquals(zin, assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(bouw, sessie))
+                    .getMessage(), "the reading");
+            assertEquals(zin, assertThrows(IllegalStateException.class,
+                    () -> DroolsBackend.zetAfgeleideWaarden(bouw, sessie)).getMessage(), "the write-back");
+            assertNull(RegelSpraakRuntime.get(j1, "heffing"), "the write-back wrote nothing");
+            return null;
+        });
+    }
+
+    @Test void na_een_update_lezen_lees_en_terugzetten_pas_na_een_volgende_vuur() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the first fire");
+                Object v1 = bonen.get("V1");
+                TmsHerhaaldVurenWitnessTest.zet(v1, "gewicht", "3");
+                sessie.update(sessie.getFactHandle(v1), v1);
+                String gewijzigd = naam(v1) + " werd gewijzigd met update";
+                assertEquals(buitenVuurOm(gewijzigd, VUUR_EERST), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.lees(b, sessie)).getMessage(), "the reading after the update");
+                assertEquals(buitenVuurOm(gewijzigd, VUUR_EERST), assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.zetAfgeleideWaarden(b, sessie)).getMessage(), "the write-back after the update");
+                assertNull(TmsDocumenten.lees(v1, "uitkering"), "the write-back wrote nothing");
+                String regel = kaleFire(sessie);
+                assertNotNull(regel, "the plain fire fires a rule: the network has not seen V1's new gewicht");
+                assertEquals(buitenVuurOm(gewijzigd + " en de regel \"" + regel + "\" vuurde", VUUR_EERST),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading after a plain fire");
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire the sentence asks for");
+                assertEquals(TmsHerhaaldVurenWitnessTest.TWEEDE_WAARDEN,
+                        TmsHerhaaldVurenWitnessTest.beschrijf(DroolsBackend.lees(b, sessie), bonen),
+                        "the reading after that fire, that of a fresh session of the changed input");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
+    @Test void een_update_na_het_terugzetten_wijst_lees_naar_een_verse_sessie() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(TmsHerhaaldVurenWitnessTest.waardedocument(),
+                DroolsBackend.Branch.TRUTH_MAINTENANCE);
+        TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
+            Map<String, Object> bonen = TmsHerhaaldVurenWitnessTest.waardebonen(b, "10");
+            KieSession sessie = b.kieBase().newKieSession();
+            try {
+                DroolsBackend.voegIn(b, sessie, new Invoer().bonen(bonen.values()));
+                assertNull(DroolsBackend.vuur(b, sessie).geenFixpunt(), "the fire");
+                DroolsBackend.zetAfgeleideWaarden(b, sessie);
+                assertEquals(TmsHerhaaldVurenWitnessTest.EERSTE_WAARDEN,
+                        TmsHerhaaldVurenWitnessTest.beschrijf(DroolsBackend.lees(b, sessie), bonen),
+                        "the write-back is the entry's own: the session reads after it as before it");
+                Object v1 = bonen.get("V1");
+                TmsHerhaaldVurenWitnessTest.zet(v1, "gewicht", "3");
+                sessie.update(sessie.getFactHandle(v1), v1);
+                assertEquals(buitenVuurOm(naam(v1) + " werd gewijzigd met update", VERS_NA_TERUGZETTEN),
+                        assertThrows(IllegalStateException.class, () -> DroolsBackend.lees(b, sessie)).getMessage(),
+                        "the reading after an update of a written-back session");
+            } finally {
+                sessie.dispose();
+            }
+        });
+    }
+
     @Test void lees_met_labels_noemt_het_object_van_een_fout_bij_zijn_label() throws Exception {
         Path ir = Path.of("..", "..", "corpus", "rood", "jutterswet-dubbele-melding", "ir.json");
         JsonNode c = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling("case1-beide-schrijvers-gelden.json")));
@@ -274,5 +372,51 @@ class TmsAfnemerWitnessTest {
         Path ir = CORPUS.resolve(golden).resolve("ir.json");
         JsonNode c = TmsDocumenten.JSON.readTree(Files.readString(ir.resolveSibling(zaak)));
         CaseRunner.voorMeting(ir, DroolsBackend.Branch.TRUTH_MAINTENANCE).metSessie(c, meting);
+    }
+
+    /** The way on where something happened outside {@code vuur} after it: a further {@code vuur}, or a fresh session
+     *  where {@code vuur} refuses the session. */
+    static final String VUUR_EERST = "vuur haar eerst opnieuw met DroolsBackend.vuur";
+    static final String VERS_BIJ_CREATIE = "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede"
+            + " fire: open een verse sessie";
+    static final String VERS_NA_TERUGZETTEN = "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een"
+            + " verse sessie met bonen die alleen invoer dragen";
+
+    /** The sentence of {@code lees} and {@code zetAfgeleideWaarden} where {@code wat} happened outside {@code vuur}
+     *  after the last one, with {@code weg} the way on. */
+    static String buitenVuurOm(String wat, String weg) {
+        return "geen fixpunt om te lezen of terug te zetten: sinds de laatste DroolsBackend.vuur van deze sessie gebeurde"
+                + " er iets buiten vuur om, wat het fixpunt van die vuur kan veranderen (" + wat + "); " + weg;
+    }
+
+    /** Fires {@code sessie} with a plain {@code fireAllRules}, as a consumer can, and gives the name of the first rule
+     *  that fired, or null. */
+    static String kaleFire(KieSession sessie) {
+        String[] eerste = {null};
+        AgendaEventListener l = new DefaultAgendaEventListener() {
+            @Override public void beforeMatchFired(BeforeMatchFiredEvent e) {
+                if (eerste[0] == null) eerste[0] = e.getMatch().getRule().getName();
+            }
+        };
+        sessie.addEventListener(l);
+        try {
+            sessie.fireAllRules();
+        } finally {
+            sessie.removeEventListener(l);
+        }
+        return eerste[0];
+    }
+
+    /** An object as the sentences of the entry name it: its type and its identity. */
+    static String naam(Object o) {
+        return o.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(o));
+    }
+
+    /** The heffing {@code f} derives for {@code jutter}, as a plain number, or null. */
+    private static String heffing(Fixpunt f, Object jutter) {
+        for (Fixpunt.AfgeleideWaarde w : f.waarden())
+            if (w.object() == jutter && w.attribuut().equals("heffing"))
+                return ((BigDecimal) w.waarde()).stripTrailingZeros().toPlainString();
+        return null;
     }
 }

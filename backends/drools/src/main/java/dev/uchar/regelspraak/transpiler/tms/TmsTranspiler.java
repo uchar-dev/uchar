@@ -67,6 +67,7 @@ import org.drools.model.functions.Predicate7;
 import org.drools.model.functions.Predicate8;
 import org.drools.model.functions.Predicate9;
 import org.drools.model.impl.ModelImpl;
+import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
@@ -399,8 +400,11 @@ public final class TmsTranspiler {
      * as the driver's mark says ({@link Gevuurd}), and refuses any other with a sentence that says what is missing: a
      * session fired with a plain {@code fireAllRules} or not at all holds no fixpoint it can tell, and on a model with a
      * creation the creation rules never had the focus, so it holds no created object or link; a run that ended at the
-     * cap, at the creation budget or with an exception holds a state on the way to the fixpoint. What this gives is
-     * thus always a fixpoint, that of the input as it stood at the last run.
+     * cap, at the creation budget or with an exception holds a state on the way to the fixpoint. It refuses as well a
+     * session in which something happened outside the driver after its last run, a fact inserted, updated or deleted or
+     * a rule that fired ({@link Bewaking}), naming what happened and what to do: fire again through the driver, or open
+     * a fresh session where the driver refuses a further fire. What this gives is thus always a fixpoint, that of the
+     * input as it stands.
      */
     public Fixpunt lees(KieSession sessie, Function<Object, String> label) {
         return lezing(sessie, label).fixpunt();
@@ -423,7 +427,8 @@ public final class TmsTranspiler {
      *
      * <p>The engine is not told of the writes, and a bean then holds derived values beside its input, which a further
      * fire would read as input. So after the writes this states a {@link Teruggezet} mark, and the driver refuses to fire
-     * the session again ({@code DroolsBackend.vuur}).
+     * the session again ({@code DroolsBackend.vuur}). It states the mark with the {@link Bewaking} off, as its own work:
+     * {@link #lees} reads the session after the write-back as before it.
      */
     public void zetAfgeleideWaarden(KieSession sessie) {
         zetAfgeleideWaarden(sessie, null);
@@ -441,12 +446,24 @@ public final class TmsTranspiler {
         if (fouten.size() == 1) throw fouten.get(0).fout();
         if (!fouten.isEmpty()) throw new Evaluatiefouten(fouten);
         lezing.schrijfdaden().forEach(Runnable::run);
-        sessie.insert(new Teruggezet());
+        // the entry's own insert: the session is read after it as before it
+        Bewaking.van(sessie).zonder(sessie, () -> sessie.insert(new Teruggezet()));
     }
 
     /** What {@link #lees} reads, with beside it the writes that put it on the beans, made from the same facts in the
      *  same pass so that the reading and the write-back cannot differ. */
     private record Lezing(Fixpunt fixpunt, List<Runnable> schrijfdaden) {}
+
+    /** What a consumer does where something happened outside the driver after its last run ({@link Bewaking}): fire
+     *  again, or open a fresh session where the driver refuses a further fire ({@code DroolsBackend.vuur}). */
+    private String vuurWeg(KieSession sessie) {
+        if (!creatieregels.isEmpty())
+            return "dit model heeft creatieregels, dus DroolsBackend.vuur weigert een tweede fire: open een verse sessie";
+        if (!sessie.getObjects(new ClassObjectFilter(Teruggezet.class)).isEmpty())
+            return "deze sessie is teruggezet, dus DroolsBackend.vuur weigert haar: open een verse sessie met bonen die"
+                    + " alleen invoer dragen";
+        return "vuur haar eerst opnieuw met DroolsBackend.vuur";
+    }
 
     private Lezing lezing(KieSession sessie, Function<Object, String> label) {
         List<Object> merken = new ArrayList<>(sessie.getObjects(o -> o instanceof Gevuurd));
@@ -461,6 +478,17 @@ public final class TmsTranspiler {
         if (geenFixpunt != null)
             throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de laatste DroolsBackend.vuur"
                     + " van deze sessie bereikte er geen — " + geenFixpunt);
+        Bewaking bewaking = Bewaking.van(sessie);
+        // the driver puts the watch back after every run, so only a consumer that took it off leaves a mark without it
+        if (bewaking == null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: de bewaking die"
+                    + " DroolsBackend.vuur op deze sessie zet, staat er niet meer op, dus wat er na de laatste vuur"
+                    + " gebeurde, is niet te zien; vuur haar opnieuw met DroolsBackend.vuur");
+        String buitenom = bewaking.buitenom();
+        if (buitenom != null)
+            throw new IllegalStateException("geen fixpunt om te lezen of terug te zetten: sinds de laatste"
+                    + " DroolsBackend.vuur van deze sessie gebeurde er iets buiten vuur om, wat het fixpunt van die vuur"
+                    + " kan veranderen (" + buitenom + "); " + vuurWeg(sessie));
         List<Runnable> daden = new ArrayList<>();
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are

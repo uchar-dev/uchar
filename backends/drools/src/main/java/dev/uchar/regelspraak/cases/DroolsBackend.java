@@ -16,6 +16,7 @@ import dev.uchar.regelspraak.transpiler.DrlTranspiler;
 import dev.uchar.regelspraak.transpiler.kern.Dekking;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
 import dev.uchar.regelspraak.transpiler.model.ExecModelTranspiler;
+import dev.uchar.regelspraak.transpiler.tms.Bewaking;
 import dev.uchar.regelspraak.transpiler.tms.Creatiebudget;
 import dev.uchar.regelspraak.transpiler.tms.Creatiefase;
 import dev.uchar.regelspraak.transpiler.tms.Emmerinvoer;
@@ -83,11 +84,11 @@ import java.util.function.Predicate;
  * cap and, for a model with a creation, in generations; then {@link #lees} or {@link #zetAfgeleideWaarden}. On the
  * truth-maintenance branch the beans hold the input alone until the write-back, which comes once, at the end of the
  * session, and closes it: a consumer that fires one session more than once, changing input in between with
- * {@code update}, reads every answer but the last with {@link #lees}. A session of a model with a creation fires once,
- * since what a creation made is stated and does not lapse: such a consumer opens a fresh session per input. On the
- * other two branches the rules write the
- * beans as they fire, the write-back does nothing and {@link #lees} refuses. A {@code ConsequenceException} out of the
- * fire is named by {@link #benoem}.
+ * {@code update}, reads every answer but the last with {@link #lees}, each after a {@link #vuur}: the two readings
+ * refuse a session in which something happened outside {@code vuur} after the last one. A session of a model with a
+ * creation fires once, since what a creation made is stated and does not lapse: such a consumer opens a fresh session
+ * per input. On the other two branches the rules write the beans as they fire, the write-back does nothing and
+ * {@link #lees} refuses. A {@code ConsequenceException} out of the fire is named by {@link #benoem}.
  */
 public final class DroolsBackend {
 
@@ -490,15 +491,19 @@ public final class DroolsBackend {
      * exactly this, and after which the session does not fire again. A fault names its object by type and identity,
      * and by its label in {@link #lees(Build, KieSession, Function)}.
      *
-     * <p>It reads only a session whose last {@link #vuur} reached its fixpoint, so what it gives is always a fixpoint:
-     * that of the input as it stood at that {@code vuur}; an {@code update} after it shows at the next one.
+     * <p>It reads only a session whose last {@link #vuur} reached its fixpoint and in which nothing happened since outside
+     * {@code vuur}: no fact inserted, updated or deleted, and no rule fired, by a plain {@code fireAllRules} among others.
+     * What it gives is thus always a fixpoint, that of the input as it stands. After an {@code update}, a consumer fires
+     * with {@code vuur} before it reads again; where {@code vuur} refuses the session, the sentence says to open a fresh
+     * one.
      *
      * @throws UnsupportedOperationException on the exec-model and the DRL-text branch, whose rules write the derived
      *                                       values on the beans as they fire
      * @throws IllegalStateException         a session that was not fired through {@link #vuur}, among them one fired
-     *                                       with a plain {@code fireAllRules}, or whose last {@code vuur} ended without
-     *                                       a fixpoint ({@link Vuring#geenFixpunt}) or with an exception; the sentence
-     *                                       says which
+     *                                       with a plain {@code fireAllRules}, whose last {@code vuur} ended without a
+     *                                       fixpoint ({@link Vuring#geenFixpunt}) or with an exception, or in which a
+     *                                       fact was inserted, updated or deleted, or a rule fired, after the last
+     *                                       {@code vuur} and outside it; the sentence says which, and what to do
      */
     public static Fixpunt lees(Build build, KieSession sessie) {
         return lezing(build, sessie, null);
@@ -541,7 +546,8 @@ public final class DroolsBackend {
      * as {@code fouten()}. {@link #lees} gives the same faults as data.
      *
      * <p>It refuses the sessions {@link #lees} refuses, with the same {@code IllegalStateException}, before anything is
-     * written: one not fired through {@link #vuur}, and one whose last {@code vuur} ended without a fixpoint.
+     * written: one not fired through {@link #vuur}, one whose last {@code vuur} ended without a fixpoint, and one in which
+     * something happened outside {@code vuur} after the last one.
      *
      * <p>The write-back tells the engine nothing, and a bean then holds derived values beside its input, which a further
      * fire would read as input: an initialisation of a member that holds a value written back would not fire again. So
@@ -602,8 +608,10 @@ public final class DroolsBackend {
      * fault of the lowering, not a norm, so it grows with the input. The sentence at the cap names {@code R}, {@code N0}
      * and the cap. A run that reaches the cap or the creation budget has no fixpoint, and {@link Vuring#geenFixpunt}
      * says so. On the truth-maintenance branch every run leaves a stated mark of how it ended, at its fixpoint, without
-     * one, or with an exception out of the fire ({@code Gevuurd}), and {@link #lees} and {@link #zetAfgeleideWaarden}
-     * read a session only where the last run reached its fixpoint.
+     * one, or with an exception out of the fire ({@code Gevuurd}), and keeps a watch on the session from then on
+     * ({@code Bewaking}), a listener that it takes off while it fires itself; {@link #lees} and
+     * {@link #zetAfgeleideWaarden} read a session only where the last run reached its fixpoint and the watch saw nothing
+     * happen outside {@code vuur} since.
      *
      * <p>On the truth-maintenance branch it refuses a session that {@link #zetAfgeleideWaarden} wrote back, whose beans
      * hold derived values beside their input: a consumer that fires more than once reads between the fires with
@@ -737,7 +745,10 @@ public final class DroolsBackend {
      *  that it fired before, and a session that was written back, and it marks how the run ended ({@link Gevuurd}),
      *  which {@link #lees} and {@link #zetAfgeleideWaarden} read: the mark
      *  of the previous run goes before the fire, so none stands while the session fires, and a fire that throws leaves
-     *  a mark with its exception, so that no reading follows a run that broke off. */
+     *  a mark with its exception, so that no reading follows a run that broke off. It runs with the watch of the session
+     *  off ({@link Bewaking}), so that its own inserts, deletes and firings count as none, and puts the watch back
+     *  afterwards with nothing kept: the two readings see what happens after this run. A refusal leaves the watch as it
+     *  was, so a reading after it still sees what happened before. */
     private static Vuring drijf(Build build, KieSession sessie, Plafond plafond) {
         TmsTranspiler tms = build.tmsTranspiler();
         if (tms == null) return vuurOnderPlafond(build, sessie, plafond);
@@ -755,20 +766,23 @@ public final class DroolsBackend {
                     + " waarden naast de invoer, en een volgende fire zou die als invoer lezen; lees tussen twee fires met"
                     + " DroolsBackend.lees en zet pas na de laatste fire terug, of open een verse sessie met bonen die"
                     + " alleen invoer dragen");
-        for (FactHandle merk : merken) sessie.delete(merk);
-        Vuring vuring;
-        try {
-            vuring = vuurOnderPlafond(build, sessie, plafond);
-        } catch (RuntimeException e) {
+        return Bewaking.op(sessie).zonder(sessie, () -> {
+            for (FactHandle merk : merken) sessie.delete(merk);
+            Vuring vuring;
             try {
-                sessie.insert(new Gevuurd("de fire brak af met " + e.getClass().getSimpleName() + ": " + e.getMessage()));
-            } catch (RuntimeException merkfout) {
-                e.addSuppressed(merkfout);
+                vuring = vuurOnderPlafond(build, sessie, plafond);
+            } catch (RuntimeException e) {
+                try {
+                    sessie.insert(new Gevuurd("de fire brak af met " + e.getClass().getSimpleName() + ": "
+                            + e.getMessage()));
+                } catch (RuntimeException merkfout) {
+                    e.addSuppressed(merkfout);
+                }
+                throw e;
             }
-            throw e;
-        }
-        sessie.insert(new Gevuurd(vuring.geenFixpunt()));
-        return vuring;
+            sessie.insert(new Gevuurd(vuring.geenFixpunt()));
+            return vuring;
+        });
     }
 
     /** Fires {@code sessie} as {@link #vuur(Build, KieSession, int)} describes, under {@code plafond}: in one go, or for
