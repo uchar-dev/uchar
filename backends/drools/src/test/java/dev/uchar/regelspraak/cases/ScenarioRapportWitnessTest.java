@@ -58,7 +58,11 @@ class ScenarioRapportWitnessTest {
         assertEquals("", geweigerd.diagnose());
         List<String> gevuurd = geweigerd.trace().vuringen().stream().map(Vuring::regel).toList();
         assertFalse(gevuurd.isEmpty(), "de defaultsgroep vuurt");
-        assertTrue(geweigerd.trace().vuringen().stream().allMatch(v -> v.labels().equals(List.of("M")) && v.aantal() > 0),
+        // a firing names the case's objects it matched: M, or none where a rule of the defaults family matches facts of
+        // the branch with truth maintenance alone, as its agreement over the root does
+        assertTrue(geweigerd.trace().vuringen().stream().allMatch(v -> (v.labels().equals(List.of("M"))
+                || v.labels().isEmpty()) && v.aantal() > 0), () -> geweigerd.trace().toString());
+        assertTrue(geweigerd.trace().vuringen().stream().anyMatch(v -> v.labels().equals(List.of("M"))),
                 () -> geweigerd.trace().toString());
         // the rule reads 'niet uitgesloten': with the refusal standing it never matches, without it it fires
         assertEquals(DekkingSoort.NIET_GERAAKT, dekking(geweigerd, "penninggerechtigd tenzij uitgesloten"));

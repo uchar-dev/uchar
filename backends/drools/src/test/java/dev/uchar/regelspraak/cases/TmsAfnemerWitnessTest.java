@@ -328,7 +328,8 @@ class TmsAfnemerWitnessTest {
     }
 
     @Test void lees_weigert_op_de_andere_takken() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
+        // the DRL-text branch alone: the exec-model branch becomes the branch with truth maintenance at this card
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
             DroolsBackend.Build b = DroolsBackend.build(TmsDocumenten.document(TmsDocumenten.model(List.of("erkend",
                     "vergund")), List.of(TmsDocumenten.kenmerkregel("vergund indien erkend", "vergund",
                     TmsDocumenten.check("erkend", false)))), tak);

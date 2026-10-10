@@ -223,7 +223,8 @@ class TmsInvoerWitnessTest {
     }
 
     @Test void op_de_andere_takken_voegt_voegIn_alleen_de_bonen_in() throws Exception {
-        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
+        // the DRL-text branch alone: the exec-model branch becomes the branch with truth maintenance at this card
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.DRL_TEXT)) {
             DroolsBackend.Build b = DroolsBackend.build(TmsFilterfoutWitnessTest.document(TmsFilterfoutWitnessTest.ZWARE),
                     tak);
             TmsHerhaaldVurenWitnessTest.inSessie(b, () -> {
