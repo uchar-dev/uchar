@@ -29,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * een Vondst moet berekend worden als zijn gewicht plus het tarief", "Een Vondst is goedkoop indien het tarief kleiner
  * is dan de drempel" and "De korting van een Vondst moet berekend worden als het tarief plus de drempel". Drempel 10,
  * tarief 3. V1 (gewicht 12): zwaar, toeslag 15, goedkoop, korting 13. V2 (gewicht 5): not zwaar, toeslag 8, goedkoop,
- * korting 13. Every order of the four rules in the document. The golden
+ * korting 13. Every order of the four rules in the document, and every order of the three without the rule that
+ * compares the two parameters, which give the same values but goedkoop. The reference interpreter and the ASP runner
+ * give these values on both documents, and the verifier passes both (measured 2026-10-10). The golden
  * {@code jutterswet-aanvoergeld} has this shape with two parameters of which each rule reads one.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-08 on the branch's fourth step, which bound each parameter
@@ -41,6 +43,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * probe split it: a document with the toeslag rule alone, and one with the korting rule alone, played right; the
  * toeslag rule followed by the zwaar rule read the tarief in both, "kenmerk zwaar: verwacht afwezig, werkelijk
  * aanwezig". The exec-model row was green from the start, on the three rules it carries.
+ *
+ * <p>The row of three rules played the destructive exec-model branch, which refused the comparison of two parameters,
+ * in the document's own order. At the switch-over (card tms-omschakeling, step 5a2) it went as a comparison of the
+ * branch with itself; it was none, since the four rules are another document, and the lens on that step brought it
+ * back on the exec-model branch, in every order.
  */
 class TmsParameterWitnessTest {
 
@@ -67,6 +74,18 @@ class TmsParameterWitnessTest {
             volgordes++;
         }
         assertEquals(24, volgordes);
+    }
+
+    @Test void elke_volgorde_van_drie_regels_zonder_de_vergelijking_van_de_parameters() throws Exception {
+        List<String> drie = List.of(REGELS.get(0), REGELS.get(1), REGELS.get(3));
+        int volgordes = 0;
+        for (List<String> volgorde : TmsDocumenten.permutaties(drie)) {
+            List<String> namen = namen(volgorde);
+            assertNull(CaseRunner.speelCase(TmsDocumenten.document(MODEL, volgorde), zaak(false),
+                    DroolsBackend.Branch.EXEC_MODEL), () -> "volgorde " + namen);
+            volgordes++;
+        }
+        assertEquals(6, volgordes);
     }
 
     /** The case; {@code goedkoop} says whether the document carries the rule that compares the two parameters. */
