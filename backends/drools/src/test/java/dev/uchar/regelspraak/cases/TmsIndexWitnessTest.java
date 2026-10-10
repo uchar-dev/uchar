@@ -40,8 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * occur in the documents read here, so that the check is not met by a kind that no document lowers. The documents
  * are the scale model and goldens of the corpus that together hold every kind checked.
  *
- * <p>Red before the step that indexes a kind, measured on the commit before it (the output is in the step's report):
- * on {@code identiteitsjoins} every kind of step 1 was unindexed.
+ * <p>Red before the step that indexes a kind, each measured on the commit before its step: {@code identiteitsjoins}
+ * found 123 identity joins without an index in these documents, {@code beanveldjoins} 23 bean-field joins, and
+ * {@code koppelingseinden} 36 joins on an end of a link, which {@code elkeJoinGeindexeerdOfBenoemd} also named.
+ * {@code bonenZonderEqualsOfHashCode} guards what the index rests on, so it was green before; it is red under a
+ * mutant of the bean generator that compares by value.
  */
 class TmsIndexWitnessTest {
 
