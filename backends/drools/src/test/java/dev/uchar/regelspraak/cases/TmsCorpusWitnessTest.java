@@ -18,9 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * flag, against the expectations gates 5, 6 and 12 pin. A golden must play every case or be refused with a reason: a
  * document the branch carries but computes wrong is a silent wrong value, the one outcome the branch may never give.
  * The count of played goldens is held to a floor, so that a step that makes the branch drop goldens it played fails
- * here by number. Gate 12 pins the same count ({@code EXPECTED_PLAYED}) and is the authority; this witness stays as
- * the suite's own check, which runs in-process at every {@code mvn package}, between two runs of the gate, and reports
- * the refusals per family and form, where the gate reads one status line per golden.
+ * here by number. Gate 12 pins the same count ({@code EXPECTED_PLAYED}) and is the authority. This witness stays in the
+ * suite beside it, by decision of card tms-omschakeling: it runs in-process at every {@code mvn package}, between two
+ * runs of the gate, and reports the refusals per family and form, which the gate does not give, since it reads one
+ * status line per golden from the jar.
  *
  * <p>The refusals are counted per family and reported, not pinned: the kind of form the manifest refuses first
  * ({@code transpiler SKIP: <family>: …}), a cycle refused before the build and two rules of one name, which carry
@@ -74,7 +75,12 @@ class TmsCorpusWitnessTest {
      *  <p>Raised from 235 to 248 on purpose (card tms-verdeling-en-tijdlijnen, step 3, acceptance (b)), measured
      *  2026-10-09 over the corpus with the jar of this step after the branch took on the whole-period qualifier and day
      *  kinds: 248 of the 294 goldens with cases play, none FAILs; the thirteen that rose are the goldens of the step,
-     *  and the branch now plays every golden the exec-model branch plays. */
+     *  and the branch then played every golden the destructive exec-model branch played.
+     *
+     *  <p>Since card tms-omschakeling (2026-10-10) this branch is the exec-model branch, and gate 12 pins its count as an
+     *  equality, {@code EXPECTED_PLAYED} 248, equal to this floor. The pin of gate 12 is the truth: where the two
+     *  disagree, the gate decides, and a corpus card that adds a golden the branch plays raises the gate's pin and
+     *  leaves this floor as it is. */
     private static final int EXPECTED_MIN_PLAYED = 248;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
