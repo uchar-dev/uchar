@@ -39,3 +39,8 @@ tak met truth maintenance sinds die kaart met de reden dat hij haar nog niet dra
 Klein tot middel.
 
 May touch: `backends/clingo/`, `corpus/golden/<nieuwe golden>/`, kaartverplaatsing.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Na `20261008-tms-omschakeling` is 'de tak met truth maintenance' de exec-model-tak. Een ander gebrek van clingo bij
+een Let-binder staat in `20261010-clingo-let-binder-vergelijking-over-eenheden`.

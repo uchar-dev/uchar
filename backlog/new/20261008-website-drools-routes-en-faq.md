@@ -221,3 +221,8 @@ nodig hebben; in uchar alleen de kaartverplaatsing.
 Out of scope: andere pagina's (behalve één link vanaf de Drools-alinea van
 `index.html`, als die nodig is), uchar-code, en deployen (`deploy.sh` is van
 de eigenaar).
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Sinds `20261008-tms-omschakeling` (2026-10-10) heet de verlaging van de exec-model-tak `TmsTranspiler`
+(`transpiler/tms/`, met truth maintenance); `ExecModelTranspiler` in het schema bestaat niet meer.

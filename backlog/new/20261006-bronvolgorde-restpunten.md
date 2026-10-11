@@ -130,3 +130,9 @@ May touch: `frontends/regelspraak/**`, het commentaar op regel 548 van
 javadoc; bij (a) met wijziging ook `spec/verifier/` (**voorstel**, beschermd
 pad) en de betrokken `expect.txt`; kaartverplaatsing.
 Niet in deze kaart: de volgorde binnen een lijst; (c).
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Bij (e): het commentaar op r. 548 van `ExecModelTranspiler.java` is met dat bestand weg (`20261008-tms-omschakeling`,
+2026-10-10); de exec-model-tak weigert een kring die WF-045/046 verbieden bij de bouw, en de twee meldingen in de
+toolchain verdwijnen met haar kaart voor de omschakeling.

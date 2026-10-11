@@ -147,3 +147,20 @@ andere Drools-kaarten.
 
 Out of scope: het gedrag van de exec-modeltak, de toolchain (die gebruikt deze
 tak niet), `spec/`, `corpus/`.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+De exec-model-tak is de tak met truth maintenance (`transpiler/tms/`, label `exec-model:`); gate 12 pint 248 en 196, en
+klasse (A) van `DRL_CHANNEL` telt 52 spelers alleen in de exec-model-tak. Acceptatie (c) van de omschakeling vond
+alleen `DrlTranspiler.java:1965`, een commentaarregel. Begininventaris voor deze kaart, uit het `Result:` van de
+omschakeling:
+- de gemeten grenzen van de DRL-teksttak die in de acht weggevallen README-secties "Recorded: …" stonden (onder meer
+  een test over een rol in het patroon van het subject, `anchor/jutterswet-kustwacht`; een lege-toets en vergelijking
+  op de tussenstand; geen volgorde van creaties; markers voor een datumvouw; een maximum dat blijft staan als de
+  subselectie leegloopt; `gesplitsteConjunctie`; geen defaultsverlaging); ze staan in de geschiedenis van
+  `backends/drools/README.md` vóór `ba0e8264`;
+- `DrlTranspiler` noemt `ExecModelTranspiler` op negen plekken, waaronder een `{@link
+  ExecModelTranspiler#stratificatieSalience}` (r. 351) die nergens heen wijst (javadoc merkt het, javac niet);
+  daarnaast `Stratificatie` r. 142 en `kern/Vouwwaarde` r. 63, r. 98 en de weigerzin r. 68–70;
+- circa 180 keer "the truth-maintenance branch" als naam van de tak in testjavadoc: niet onjuist, maar dubbelzinnig
+  zodra deze tak ook truth maintenance heeft.

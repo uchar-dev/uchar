@@ -122,3 +122,38 @@ May touch: `backends/clingo/**`, `backends/drools/src/main/java/.../transpiler/m
 Bouwt op `20261009-drools-filterfout-buiten-de-lezende-regel`; daarna.
 `20261008-fout-op-tussenstand` gaat over een fout op een tussenstand, deze kaart
 over een fout waar ref niet rekent.
+
+## Aanvulling (2026-10-10): twee getuigen uit `20261008-tms-omschakeling`, en de stand na de omschakeling
+
+Dit is dezelfde fout van clingo als in de eerste twee rijen van de tabel hierboven (`g-buiten-bereik` case 2 en
+`c8-buiten-het-bereik`): de foutguard voor een deling in het filter van een vouw draagt de voorwaarde van de lezende
+regel, maar niet de join van het lid op het onderwerp, en vuurt daardoor ook voor een lid van een ander onderwerp of van
+geen enkel. De twee documenten hieronder zijn extra getuigen op een ander model; ze vragen geen ander werk.
+
+Gevonden door de bouwer van stap 5a1 van `20261008-tms-omschakeling` (bijvangst 1 van zijn verslag), gemeten op
+2026-10-10 met ref, clingo en de verifier uit `_build` van de worktree van die kaart. De twee cases zijn niet in de
+repository bewaard; de tabel geeft hun invoer.
+
+Het document is het vouwdocument van `TmsFilterfoutWitnessTest` (verifier PASS): Jutters met aangemelde Vondsten (feittype
+`aanmelding`, rollen `aanmelder` en `vondst`), en één regel "zware vondsten" voor een actieve Jutter: het aantal vondsten
+van de Jutter waarvoor "zijn gewicht gedeeld door zijn deelnemers is groter dan 2".
+
+| Case | Invoer | ref | clingo |
+|---|---|---|---|
+| `a-eerst` | J1 actief met V1 (gewicht 10, deelnemers 2); V2 (gewicht 9, deelnemers 0) hoort bij geen Jutter | `oracle: PASS (2 expectations)`: J1 1, consistent | `UNSATISFIABLE — a fail-fast guard fired: viol("division by numeric zero","V2")` |
+| `b-vers-j1` | J1 actief zonder vondsten; J2 niet actief met V1 (9/0) en V2 (4/0) | `oracle: PASS (2 expectations)`: J1 0, consistent | `UNSATISFIABLE`, de guard op V1 en V2 |
+
+Drools: op de invoer van `a-eerst` bevat de lezing van de exec-model-tak alleen "J1.zware vondsten = 1" (de eerste
+lezing van `TmsHerhaaldVurenWitnessTest.een_relatie_die_ontstaat_tussen_twee_fires_weigert_vuur`, hetzelfde document en
+dezelfde invoer). Op `b-vers-j1` is Drools niet gemeten.
+
+**De stand na de landing van `20261008-tms-omschakeling`:**
+- De exec-model-tak is de tak met truth maintenance. `ExecModelTranspiler.java` bestaat niet meer; in May touch wordt
+  dat `backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java`.
+- (c) "De fixes in de exec-modeltak … vervallen met de omschakeling" is daarmee gebeurd. De tabel van deze kaart gaf
+  voor de tak met truth maintenance: de eerste drie vormen spelen, `c7b-defaults-hoger-beslist` (een deling in een
+  default) en `c6e-kwantorvouw-matrix-stop` (een kwantorvouw) weigert hij (gemeten 2026-10-09). Of dat na
+  `20261008-tms-expressievormen-en-rekendatum` en `20261008-tms-verdeling-en-tijdlijnen` nog zo is, is niet opnieuw
+  gemeten; meten bij het oppakken.
+- Een deling in een default weigert de exec-model-tak tot `20261008-fout-op-tussenstand` (dekkingsverlies, punt 2 in het
+  `Result:` van de omschakeling).

@@ -160,3 +160,10 @@ May touch: `frontends/regelspraak/**` (resolver, tests,
 `backends/drools/**`.
 Niet in deze kaart: de spec, de verifier en ref (die weigeren al); het plaatsen
 van de registertekst (hoofdsessie, serieel).
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Na `20261008-tms-omschakeling` (2026-10-10) bestaan `ExecModelTranspiler`, `kringWeigering` en `groepVolgorde` niet
+meer; de exec-model-tak weigert bij de bouw wat WF-045/046 weigeren (`Kringen`, 'exec-model: kring in de
+afhankelijkheden …'). De kolom 'exec-modeltak' van de tabel beschrijft de verwijderde verlaging; wat de huidige
+exec-model-tak op de vijf negatieven doet, is niet nagemeten.

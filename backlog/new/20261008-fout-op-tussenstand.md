@@ -230,3 +230,11 @@ maintenance:
   maintenance trekt haar in, ref houdt haar. RUNTIME-SEMANTICS ch. 6.1
   ("Recorded residuals") legt dat laatste al vast als residu dat op het
   defaultsmodel van ch. 7 wacht. Neem het mee in het besluit.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Na `20261008-tms-omschakeling` (2026-10-10) is de exec-model-tak de tak met truth maintenance; de rijen 'Drools,
+exec-modeltak' in de tabellen beschrijven de verwijderde destructieve verlaging. De twee weigeringen die op dit
+besluit wachten (een deling in een default, een deling in een initialisatie naast een andere schrijver) staan nu in de
+exec-model-tak en zijn dekkingsverlies (punt 2 van de lijst in het `Result:` van die kaart); (c) geldt voor de
+exec-model-tak en de DRL-teksttak.

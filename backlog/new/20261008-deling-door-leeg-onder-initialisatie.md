@@ -104,3 +104,10 @@ exec-modeltak, want de nieuwe verlaging geeft hier al het goede antwoord.
 Document D van `20261008-fout-op-tussenstand` (2026-10-09) is de variant met de deling in de voorwaarde van een
 initialisatie waarvan het doel in de invoer gevuld is: daar deponeren ref en clingo nog, waar het besluit van
 2026-10-09 nee zegt. Die kaart repareert het; de tak met truth maintenance geeft al het besloten antwoord.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Na `20261008-tms-omschakeling` (2026-10-10) leidt de exec-model-tak af met truth maintenance en speelt beide cases
+(getuige `TmsInitialisatieWitnessTest.een_deling_door_leeg_deponeert_alleen_waar_de_initialisatie_geldt`, beide op
+`EXEC_MODEL`): (b) geldt nog voor clingo, (c) voor de DRL-teksttak, en `ExecModelTranspiler.java` in May touch bestaat
+niet meer.

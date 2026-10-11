@@ -38,3 +38,8 @@ Klein tot middel. Na `20261008-tms-omschakeling`, zodat alleen de tak met truth 
 volgt met `20261008-drl-teksttak-op-truth-maintenance`.
 
 May touch: `backends/drools/**`, `corpus/rood/<nieuw geval>/`, `spec/verifier/` (voorstel), kaartverplaatsing.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Sinds `20261008-tms-omschakeling` (2026-10-10) heeft de Drools-backend twee takken; 'drie takken' is de stand van
+2026-10-09.

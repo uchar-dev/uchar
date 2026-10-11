@@ -41,3 +41,10 @@ gate-12-kanaalbeweging.
   (beschermd-padvoorstel); de conservatieve-arm-gevallen bewegen NIET.
 - (d) Dual-branchgetuigen + mutatieproeven; alle veertien gates groen;
   registervoorstel.
+
+## Na `20261008-tms-omschakeling` (2026-10-11)
+
+Na `20261008-tms-omschakeling` (2026-10-10) speelt `anchor/jutterswet-erflijn` in de exec-model-tak (gate 12, 248) en
+weigert alleen de DRL-teksttak hem nog; `anchor/jutterswet-bootberging` en `jutterswet-muntketen` weigeren in beide
+takken, in de exec-model-tak met 'sourcePath-stap 1 (Boot -> Vondst/Munt) heeft geen beanveld'. De kaart raakt twee
+takken, `transpiler/tms/` en `DrlTranspiler`.

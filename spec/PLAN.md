@@ -1118,6 +1118,46 @@ that grows" (ch. 6.1) are an ASP shortfall now, not an open norm question
 (card `clingo-creatievoorwaarde-op-de-kring`); whether such a condition
 becomes a negative edge stays open.
 
+**The exec-model branch derives with truth maintenance, and the destructive
+lowering is gone (2026-10-10, card `tms-omschakeling`):**
+`DroolsBackend.Branch.EXEC_MODEL` builds through the truth-maintenance lowering
+(`transpiler/tms`), and `Branch` has two values, `EXEC_MODEL` and `DRL_TEXT`;
+the destructive lowering (`transpiler/model/ExecModelTranspiler`, 9 950 lines),
+`Branch.TRUTH_MAINTENANCE` and the flag `--tms` left without an alias, and
+`Stapels` is the one composition of RUNTIME-SEMANTICS ch. 7.10. Over every
+golden with cases the branch plays the 242 the destructive lowering played,
+with the same pinned outcomes, and six it refused, 248 of 294, without a FAIL;
+gate 12 pins 248 (from 242) and the DRL-text branch's 196 unchanged. A consumer
+fires a session through four public calls of `DroolsBackend`: `voegIn` states
+the beans and what the branch reads beside them, `vuur` fires to the fixpoint
+under a cap of max(10 000, 4 × R × N0) recomputed at every creation phase,
+`lees` reads the fixpoint, and `zetAfgeleideWaarden` writes it on the beans
+once and closes the session. Until then the beans hold the input alone, and an
+evaluation fault stands as a fact of the fixpoint that `lees` gives as data and
+the write-back throws. Between two fires only an update of an attribute or a
+characteristic is admitted; a watch on the session refuses anything else by
+name, and it reads Drools' internal agenda (`org.drools.core`), because a
+cleared agenda raises no event. A value set without an update is seen neither
+by Drools nor by the entry, so a consumer updates after every change (the
+README's list of what a consumer can forget). The scale test of the
+maintainer's decision of 2026-10-08 meets its floor once the joins of an object
+with an object are indexed: on the landed code growth exponent 1.05 and firings
+at 0.016 of the cap at 10 000 Wachters, where the destructive lowering grew
+with exponent 2.34 on the same model. Maintainer decisions during the card
+(2026-10-10): the forms the destructive lowering carried and the new branch
+refuses by name, none with a golden, are an accepted loss of coverage, listed
+in the card's `Result:` and in the distribution's card, with one follow-up card
+that adds a golden for an object creation without a connectingRole binding and
+carries it (`objectcreatie-zonder-connectingrole-binding`); and gate 8's Drools
+leg, which drives the exec-model branch, was re-pinned within the card on the
+branch's own sentences (the `drools` fragments of twelve red cases, the leg's
+exclusion list and head, and the eight notes the switch-over made untrue), the
+ref and clingo pins untouched. Next: the distribution moves its pin with a card
+of its own, in which its own `fireAllRules(100_000)` gives way to the consumer
+entry in the service, the engine and the scenario explanation; then
+`drl-teksttak-op-truth-maintenance` lowers the DRL-text branch to the same
+design, and `Stratificatie` leaves with it.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3

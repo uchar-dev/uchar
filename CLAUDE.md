@@ -258,12 +258,14 @@ reviewer's duty on a machine that has catala. Current gates:
     gate 10) CONSUMES the uchar IR: it loads every golden's `ir.json` off
     the wire (never the RegelSpraak source — the source-compile path may
     serve only as an internal test comparison, NEVER as the gate path),
-    builds a KieBase through the ported exec-model back-end — which, since
-    the defaults-service card (2026-08-29, PRIORITIZED-DEFAULTS-EVOLUTIE Q3), also carries a
-    spec-ch.-7 prioritizedDefaults lowering the production toolchain does not
-    have: the backend implements the uchar spec beyond the ported
-    production semantics — and replays
-    every `case*.json`. A golden whose forms the loader+transpiler carry
+    builds a KieBase through the exec-model branch — since the card
+    `tms-omschakeling` (2026-10-10) the lowering with truth maintenance
+    (`transpiler/tms`), which replaced the exec-model back-end ported from the
+    production toolchain; like that back-end since the defaults-service card
+    (2026-08-29, PRIORITIZED-DEFAULTS-EVOLUTIE Q3) it carries a spec-ch.-7
+    prioritizedDefaults lowering the production toolchain does not have, so
+    the backend implements the uchar spec beyond the ported production
+    semantics — and replays every `case*.json`. A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
