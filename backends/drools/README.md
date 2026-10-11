@@ -245,10 +245,11 @@ java -jar backends/drools/target/uchar-drools-backend-*-shaded.jar \
 `scripts/check-drools.sh` replays every corpus golden through both branches. The exec-model
 branch is the square: a golden whose forms the loader+transpiler carry **must** match the
 pinned expectations gates 5 (ref) and 6 (clingo) verify — a played pass is the square — and
-`EXPECTED_PLAYED` pins the played count as an equality, 248 since card `tms-omschakeling`
-(2026-10-10), every golden the destructive exec-model lowering played among them. The
+`EXPECTED_PLAYED` pins the played count as an equality, 250 since card
+`objectcreatie-zonder-connectingrole-binding` (2026-10-11), every golden the destructive
+exec-model lowering played among them. The
 DRL-text branch is swept apart, with an equality pin of its own, `EXPECTED_DRL_PLAYED`
-(196), and its non-players listed by name with their reasons (`DRL_CHANNEL`). Not-carried
+(197), and its non-players listed by name with their reasons (`DRL_CHANNEL`). Not-carried
 forms never vanish silently: per-form auto-refusals print their reason, and a
 reason-carrying value-divergence list in the script (the check-noop survivor pattern)
 names each golden whose fired outcome differs from ref/clingo and fails when stale.
@@ -277,8 +278,9 @@ added aggregations, object and fact creation and evaluation faults as logical fa
 the value forms, the evaluation date, the faults of date arithmetic as facts, the condition forms and the writers of
 one target; `tms-verdeling-en-tijdlijnen` allocations, timelines, the whole-period qualifier and day kinds; and
 `tms-omschakeling` made it the exec-model branch on 2026-10-10 and removed the destructive lowering, the branch value
-`TRUTH_MAINTENANCE` and the flag `--tms`. Each card's `Result:` gives its measurements. It plays 248 of the 294 goldens
-with cases, every golden the destructive lowering played among them. `TmsMeting` and `Schaalproef` in the test tree
+`TRUTH_MAINTENANCE` and the flag `--tms`. Each card's `Result:` gives its measurements. It plays 250 of the 295 goldens
+with cases (since card `objectcreatie-zonder-connectingrole-binding`, 2026-10-11), every golden the destructive lowering
+played among them. `TmsMeting` and `Schaalproef` in the test tree
 measure it, their javadoc says how to run them, and the suite runs its witnesses (`Tms*WitnessTest`), among them
 `TmsCorpusWitnessTest` (above, "Gate 12").
 
@@ -726,7 +728,8 @@ never as a silent fall:
   `TmsVouwbinderWitnessTest`;
 - the shapes of a fold's range the bean model gives no field, refused as the DRL-text branch refuses them (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
-  role whose sibling is to-many;
+  role whose sibling is to-many, over a relation no form creates (a created relation is read over its `Koppeling`
+  facts);
 - the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
   composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
   ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
