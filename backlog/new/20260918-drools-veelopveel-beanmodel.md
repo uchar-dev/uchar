@@ -48,3 +48,14 @@ Na `20261008-tms-omschakeling` (2026-10-10) speelt `anchor/jutterswet-erflijn` i
 weigert alleen de DRL-teksttak hem nog; `anchor/jutterswet-bootberging` en `jutterswet-muntketen` weigeren in beide
 takken, in de exec-model-tak met 'sourcePath-stap 1 (Boot -> Vondst/Munt) heeft geen beanveld'. De kaart raakt twee
 takken, `transpiler/tms/` en `DrlTranspiler`.
+
+## Na `20261010-objectcreatie-zonder-connectingrole-binding` (2026-10-11)
+
+`anchor/jutterswet-penninguitgifte` speelt sinds die kaart in de exec-model-tak (PLAYED 3, met de absolute
+ankerwaarden):
+- Zijn twee creaties maken `penningbezit`, en een gemaakte relatie leest de tak over koppelingsfeiten, niet over het
+  gedeelde beanveld `Penning.houder`.
+- De §13.3.9-weigering van deze kaart geldt in de exec-model-tak dus alleen nog voor een invoerrelatie die geen vorm
+  maakt. De getuige daarvan is `ObjectCreatieWitnessTest.een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd`,
+  op de golden zonder haar creaties.
+- De DRL-teksttak weigert het anker nog.

@@ -109,3 +109,14 @@ zegt het al).
 
 Bouwt op de generatielus van `20261009-creatie-initialisatie-leest-groeiende-waarde`
 en het budget van `20261009-creatiebudget-ref-en-clingo`; serieel, daarna.
+
+## Na `20261010-objectcreatie-zonder-connectingrole-binding` (2026-10-11)
+
+De eindlens van die kaart wijst op twee plekken in deze kaart (gelezen, niet gemeten):
+- De meettabel (r. 51) en acceptatiepunt (c) (r. 96) noemen de weigering van de tak met truth maintenance "een
+  objectcreatie zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt". Die zin bestaat niet
+  meer. De exec-model-tak leidt `havenpost` (Haven en Post, exacte vullers) nu af uit het typenpaar, en weigert het
+  document zonder binding dus niet meer.
+- Een `bron.rgs`-versie krijgt wel een binding, omdat de rol `post` heet zoals het type `Post`.
+
+Bij het oppakken opnieuw meten en (c) aanscherpen.

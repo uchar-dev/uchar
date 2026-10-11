@@ -164,3 +164,18 @@ omschakeling:
   daarnaast `Stratificatie` r. 142 en `kern/Vouwwaarde` r. 63, r. 98 en de weigerzin r. 68–70;
 - circa 180 keer "the truth-maintenance branch" als naam van de tak in testjavadoc: niet onjuist, maar dubbelzinnig
   zodra deze tak ook truth maintenance heeft.
+
+## Na `20261010-objectcreatie-zonder-connectingrole-binding` (2026-10-11)
+
+- **De exec-model-tak draagt een objectcreatie zonder `connectingRole`-binding.** De terugkoppeling volgt uit het
+  gedeelde beslisblok en de relatie uit `TmsTranspiler.typenpaarrelatie`, met exacte vullers. Een gemaakte relatie leest
+  de tak over koppelingsfeiten. De DRL-weergave neemt dat over.
+- **`anchor/jutterswet-penninguitgifte`** speelt in de exec-model-tak (PLAYED 3). De DRL-teksttak weigert hem nog
+  (`MARKER consistentie: unresolved consistency rule over every Penning`, `DRL_CHANNEL`). Speelt hij ook in deze tak, dan
+  gaan `EXPECTED_DRL_PLAYED` en die regel mee.
+- **Bijvangst: een bestaande fout van de DRL-teksttak**, gemeten door de bouwer van die kaart. Op
+  `backends/drools/src/test/resources/objectcreatie/afwijzing-na-het-besluit` (verifier PASS; ref en clingo PASS, J1 0
+  afwijzingen) geeft de DRL-teksttak `FAIL case.json: attribuut aantal afwijzingen: verwacht 0, werkelijk 1`. Op twee
+  proefdocumenten van die bouwer (`strataproef3`, `strataproef4`, niet bewaard) gebeurt hetzelfde. De gevolgtrekking van
+  de bouwer, niet nagegaan in de DRL-tekst: de afwijzende creatie vuurt vóór de creatie die de relatie maakt die zij
+  negatief leest.

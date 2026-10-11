@@ -148,7 +148,7 @@ Drools-kaarten.
   - gate 5 en 6 808 cases;
   - gate 10 125 goldens met een `bron.rgs`.
 
-  `74c1fd88` raakt alleen één testklasse, groen (31 tests); de volledige set draait er nog op.
+  Op de tip `74c1fd88` opnieuw alle 16 groen (12:23), gate 12 met 250, 197 en JUnit 1443.
 - **Doorloop van het corpus** tegen de nulmeting op de claim:
   - exec-model-tak 248 → 250, DRL-teksttak 196 → 197;
   - alleen de nieuwe golden en penninguitgifte wisselen;
@@ -168,7 +168,11 @@ De lens bevestigde verder:
 - dat een creatie mét binding op een supertype het probleem niet heeft;
 - de waarden van de golden.
 
-**Eindlens (Opus 5.5):** zie de aanvulling hieronder.
+**Eindlens (Opus 5.5, op `74c1fd88`):** "door naar de landing", niets blokkerend. De lens bevestigt dat de fix
+de vondsten van lens 1 oplost, en dat het pad zonder binding voor elke lezer gelijkloopt met de strata. Ze vond geen
+afwijking van ref op frontendvormen (twee creaties, voorwaarde en venster, een rol naar veel aan de onderwerpzijde,
+naast een feitcreatie). Ze gaf drie tekstadviezen, alle drie bij de landing verwerkt: CONSTRUCTS rij 21, een
+aanvulling op `20261009-ref-strata-na-een-creatie`, en de javadoc van `Kringen.terugkoppeling` in de vervolgkaart.
 
 ### Open punten en vervolg
 
