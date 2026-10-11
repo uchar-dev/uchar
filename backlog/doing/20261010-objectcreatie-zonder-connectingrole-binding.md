@@ -80,3 +80,105 @@ Drools-kaarten.
 - `20260918-drools-veelopveel-beanmodel`: `anchor/jutterswet-penninguitgifte` weigert ook op §13.3.9; die golden speelt
   pas als beide kaarten geland zijn.
 - `20261008-drl-teksttak-op-truth-maintenance`: de DRL-teksttak deelt het beslisblok en draagt de vorm al.
+
+## Result (2026-10-11)
+
+### Wat de kaart opleverde
+
+- **De vorm wordt gedragen.** De exec-model-tak draagt een objectcreatie zonder `connectingRole`-binding weer.
+  - De terugkoppeling komt uit het gedeelde beslisblok `FactModelGenerator.creatiekoppeling`, zoals in de
+    DRL-teksttak.
+  - De relatie zoekt `TmsTranspiler.typenpaarrelatie` op exacte vullers.
+  - Daarna gaat alles als bij een binding: dezelfde `Koppeling`-feiten, dezelfde 1:1-wacht en hetzelfde terugzetten op
+    beide uiteinden.
+  - `FactModelGenerator` en de publieke vorm zijn ongewijzigd.
+- **Golden `jutterswet-penningbesluit`** (art. 3 jo. 8, eigen casus, drie cases):
+  - een besluit per gerechtigde jutter, in beide richtingen over de relatie gelezen;
+  - een jutter onder de drempel;
+  - een eerder besluit in de invoer dat de creatie blokkeert.
+
+  Verifier, ref en clingo geven PASS, en beide takken PLAYED 3. Op de claim weigerde de exec-model-tak de golden met
+  precies de oude zin; dat was de enige post van zijn manifest die niet LOWERED was.
+- **`anchor/jutterswet-penninguitgifte` speelt in de exec-model-tak** (PLAYED 3, met de absolute ankerwaarden).
+  - Zijn twee creaties hebben geen binding en maken `penningbezit`. Een gemaakte relatie leest de tak over
+    koppelingsfeiten, niet over het gedeelde beanveld waarop de §13.3.9-weigering stond.
+  - Eigen nameting met een probe: op case2 geeft de tak precies penningcontrole @ P1 en houderscontrole @ P2, zonder
+    extra schending.
+  - De DRL-teksttak weigert het anker nog.
+- **Gate 12**, een voorstel waarop de eigenaar op 2026-10-11 akkoord gaf:
+  - `EXPECTED_PLAYED` 248 → 250;
+  - penninguitgifte gaat uit `EXPECTED_CHANNEL`;
+  - `EXPECTED_DRL_PLAYED` 196 → 197.
+- **Nieuwe weigering met naam:** een creatie zonder binding waarvan het typenpaar de relatie alleen via een supertype
+  bereikt. De strata (`Kringen.terugkoppeling`) lezen exacte typen; een bouw zonder de weigering gaf een verkeerde
+  telling (gemeten). Dit wordt een vervolgkaart.
+
+### Commits
+
+`9d4fd9ea` claim · `8e325d79` golden · `2c264047` dragen, README, NOTE · `455a7cbc` de vijf getuigen ·
+`6f373632` getuige voor de volgorde van creaties · `0f81eca3` README-tellingen en §13.3.9 · `9db42d8a` gate 12
+(voorstel) · `74c1fd88` fix van lens 1.
+
+### Acceptatie
+
+- **(a) De golden.** Zie hierboven: ref ≡ clingo ≡ Drools in beide takken.
+- **(b) De vijf getuigen spelen het antwoord van ref.** Verifier, ref en clingo geven PASS op elk document, en clingo
+  is gelijk aan ref. In de exec-model-tak gingen ze van de weigering naar PLAYED.
+
+  | Getuige | ref | DRL-teksttak (claim) |
+  |---|---|---|
+  | `een_kenmerkassertie_vlagt_de_genegeerde_lezing` | penningcontrole @ P1 (de getuige pint nu de hele set) | MARKER consistentie |
+  | `dezelfde_kenmerkassertie_vlagt_de_vervulde_lezing_niet` | consistent | MARKER |
+  | `een_aantalassertie_over_een_enkelvoudige_rol_vlagt_de_lege_telling` | houderscontrole @ J1 | MARKER |
+  | `dezelfde_aantalassertie_vlagt_een_gevulde_telling_niet` | consistent | MARKER |
+  | `de_naar_veel_arm_koppelt_alleen_aan_de_gemunte_zijde` | 1 penning, totaal 7, 1 dossier | PLAYED 1 |
+
+  Nieuw:
+  - `een_typenpaar_via_een_supertype_weigert_bij_de_bouw`;
+  - `een_tweede_creatie_leest_de_afgeleide_relatie_na_de_eerste` (document en `bron.rgs` in
+    `src/test/resources/objectcreatie/afwijzing-na-het-besluit`).
+
+  Omgezet: `een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd` leest nu de golden zonder haar creaties, waar
+  `penningbezit` een invoerrelatie is. Geen test verwijderd. Suite: 1443 tests (nulmeting 1441), 0 failures.
+- **(c) Een dubbelzinnig paar blijft geweigerd.** `een_niet_uniek_verbindend_feittype_weigert_bij_de_bouw` en
+  `diezelfde_ambiguiteit_zonder_subject_weigert_ook` zijn ongewijzigd groen, en `scripts/check-rood.sh` is
+  ongewijzigd.
+- **(d) Alle 16 gates groen** op `9db42d8a`:
+  - gate 12 "played 250", "DRL-text branch played 197", JUnit 1443;
+  - gate 5 en 6 808 cases;
+  - gate 10 125 goldens met een `bron.rgs`.
+
+  `74c1fd88` raakt alleen één testklasse, groen (31 tests); de volledige set draait er nog op.
+- **Doorloop van het corpus** tegen de nulmeting op de claim:
+  - exec-model-tak 248 → 250, DRL-teksttak 196 → 197;
+  - alleen de nieuwe golden en penninguitgifte wisselen;
+  - v2 herleving-ww speelt 160 van de 160 cases.
+
+### Lensvondsten
+
+**Lens 1 (sol6):** twee BLOKKEREND, allebei over een claim van een getuige; overgenomen na nameting en gefixt in
+`74c1fd88`.
+1. De kenmerkgetuige toetste existentieel. Een mutant zonder de kenmerkinitialisatie bleef groen en flagde de gemaakte
+   penning erbij. De getuige pint nu de hele set uit het fixpunt.
+2. Het commentaar van de aantalgetuige noemde het beanveld, terwijl de tak over koppelingsfeiten telt.
+
+De lens bevestigde verder:
+- de exacte set op penninguitgifte;
+- de noodzaak van de supertypeweigering;
+- dat een creatie mét binding op een supertype het probleem niet heeft;
+- de waarden van de golden.
+
+**Eindlens (Opus 5.5):** zie de aanvulling hieronder.
+
+### Open punten en vervolg
+
+1. **Vervolgkaart** `20261011-creatie-zonder-binding-via-supertype`: `Kringen` en `typenpaarrelatie` met ⊑, zoals de
+   verifier en ref.
+2. **Kaart 5** (`20261008-drl-teksttak-op-truth-maintenance`):
+   - bijvangst: de DRL-teksttak telt op `afwijzing-na-het-besluit` één afwijzing te veel (1, waar ref 0 geeft);
+   - penninguitgifte weigert daar nog.
+3. **`20260918-drools-veelopveel-beanmodel`:** penninguitgifte speelt in de exec-model-tak. Die kaart geldt nog voor
+   de DRL-teksttak en voor een invoerrelatie.
+4. **CONSTRUCTS rij 21:** de hoofdsessie zet bij de landing de nieuwe tekst.
+5. **Toolchain:** de toolchainkaart (`20261010-sessie-via-de-ingang-van-uchar`) pint op deze landing. Punt 4 van het
+   dekkingsverlies is dan terug, behalve het supertypepad. De pin beweegt pas na de demo van 2026-10-12.
