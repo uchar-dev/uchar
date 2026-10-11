@@ -147,17 +147,11 @@ class DrlCreatieTakWitnessTest {
         // back-reference (1 penning, totalling 7, and 1 dossier). A lowering that wrote the forward end here
         // anyway would reach `$subject.setPenning(…)`, which no Jutter bean carries — measured, and the whole
         // package then fails to build, so this row is what keeps the write on the arm that has a field.
-        //   The truth-maintenance branch refuses the document by name: its creations have no connectingRole binding,
-        // and that branch does not derive the back-link from the type pair. Coverage lost against the destructive
-        // exec-model branch, accepted by the owner (2026-10-10); card
-        // 20261010-objectcreatie-zonder-connectingrole-binding carries the form, and then this row plays on both
-        // branches again.
-        org.junit.jupiter.api.Assertions.assertNull(CaseRunner.speelCase(penningVorm(), penningJutter(), true),
-                "drl-tekst — the to-many arm links on the created side only, and the fold still reaches the mint");
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> CaseRunner.speelCase(penningVorm(), penningJutter(), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("objectcreatie: penning voor een gerechtigde jutter — een objectcreatie zonder"
-                + " connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), "exec-model: " + e.getMessage());
+        //   Neither creation has a connectingRole binding, and both branches derive the back-link from the type pair.
+        // From the switch-over (2026-10-10) until card 20261010-objectcreatie-zonder-connectingrole-binding the
+        // exec-model branch refused the document by name, and this row ran on the DRL-text branch alone.
+        BeideTakken.groen(penningVorm(), penningJutter(),
+                "the to-many arm links on the created side only, and the fold still reaches the mint");
     }
 
     // ---------------- the authored documents ----------------

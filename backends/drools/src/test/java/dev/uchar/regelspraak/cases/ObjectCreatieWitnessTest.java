@@ -60,6 +60,9 @@ class ObjectCreatieWitnessTest {
     /** The §9.5 Phase-D model: two consistenties (a kenmerk assertie, an AANTAL-over-a-role assertie) beside two
      *  creations, one of them toekenningloos. */
     private static final String PENNING = "anchor/jutterswet-penninguitgifte";
+    /** Jutter -> Penningbesluit over `penningtoekenning`, a 1:1 creation WITHOUT a connectingRole binding: its back-link
+     *  is derived from the type pair, and the jutter reads the besluit back over the relation in both directions. */
+    private static final String PENNINGBESLUIT = "jutterswet-penningbesluit";
     /** The red model whose creation subject and created type are related by TWO feittypen. */
     private static final Path AMBIGU = Path.of("..", "..", "corpus", "rood", "ambiguous-backlink", "ir.json");
 
@@ -378,18 +381,17 @@ class ObjectCreatieWitnessTest {
         // penninguitgifte golden with the OTHER consistentie removed, so this arm is what decides. ref on this
         // model+case: the supplied P1 (never uitgereikt) is inconsistent under `penningcontrole`; the MINTED
         // penning, whose kenmerkinitialisatie sets the mark, is not.
-        // NOT CARRIED on this branch: its creations have no connectingRole binding, and the branch does not derive the
-        // back-link from the type pair; it refuses the document by name. Coverage lost against the destructive
-        // lowering, accepted by the owner (2026-10-10); card 20261010-objectcreatie-zonder-connectingrole-binding
-        // carries the form, and then this row plays the ref answer above again.
-        geenBinding(zonderHouderscontrole(), penningCase(false));
+        // The creations of this model have no connectingRole binding: the branch derives their back-link from the type
+        // pair, as the DRL-text branch does. From the switch-over (2026-10-10) until card
+        // 20261010-objectcreatie-zonder-connectingrole-binding it refused the document by name instead.
+        assertNull(speel(zonderHouderscontrole(), penningCase(false)), "ref agrees: penningcontrole @ P1");
     }
 
     @Test void dezelfde_kenmerkassertie_vlagt_de_vervulde_lezing_niet() throws Exception {
         // The flank that keeps the arm from being a rule that always fires: the SAME model and instances with the
-        // mark supplied on P1 leaves every Penning consistent. ref pins the same. Refused by name on this branch, as
-        // the row above (card 20261010-objectcreatie-zonder-connectingrole-binding).
-        geenBinding(zonderHouderscontrole(), penningCase(true));
+        // mark supplied on P1 leaves every Penning consistent. ref pins the same. The back-link comes from the type
+        // pair, as in the row above.
+        assertNull(speel(zonderHouderscontrole(), penningCase(true)), "ref agrees: consistent");
     }
 
     @Test void een_aantalassertie_over_een_enkelvoudige_rol_vlagt_de_lege_telling() throws Exception {
@@ -399,29 +401,46 @@ class ObjectCreatieWitnessTest {
         // rewritten onto `dossiervoering`, the 1:1 relation where each direction owns a field (see the refusal
         // witness below for why the penningbezit form cannot be carried). A jutter who is not penninggerechtigd
         // gets no dossier minted, so the count is 0 and the assertion is violated. ref agrees: inconsistent @ J1.
-        // Refused by name on this branch, as the kenmerk assertion above: the creations of the penninguitgifte model
-        // have no connectingRole binding (card 20261010-objectcreatie-zonder-connectingrole-binding).
-        geenBinding(dossierAantalAssertie(), jutterMetDossierVerwachting(false, "0"));
+        // The creations of the penninguitgifte model have no connectingRole binding, and the back-link comes from the
+        // type pair, as in the kenmerk assertion above.
+        assertNull(speel(dossierAantalAssertie(), jutterMetDossierVerwachting(false, "0")),
+                "ref agrees: houderscontrole @ J1");
     }
 
     @Test void dezelfde_aantalassertie_vlagt_een_gevulde_telling_niet() throws Exception {
         // and its flank: a jutter whose dossier the CASE supplies counts 1 and is not flagged. Without this arm a
-        // lowering that always counted 0 would pass the one above. ref agrees: consistent. Refused by name on this
-        // branch (card 20261010-objectcreatie-zonder-connectingrole-binding).
-        geenBinding(dossierAantalAssertie(), jutterMetIngevoerdDossier());
+        // lowering that always counted 0 would pass the one above. ref agrees: consistent.
+        assertNull(speel(dossierAantalAssertie(), jutterMetIngevoerdDossier()), "ref agrees: consistent");
     }
 
     @Test void een_aantalassertie_over_een_gedeeld_veld_wordt_luid_geweigerd() throws Exception {
-        // The §13.3.9 STORAGE-DIRECTION limit, named rather than silently answered. `penningbezit` pairs a to-one
-        // `houder` with a to-many `penning`, so the relation has exactly ONE bean field (Penning.houder) and it
-        // necessarily carries BOTH directions: a link the case supplies from the JUTTER's side lands there and
-        // would be counted as the penning's own houder, where ref — storing links per instance per role key —
-        // counts none. A presence count over a shared field is not a directional count, so the assertion is
-        // refused per construct, by name, instead of asserting a violation that is not there or missing one that
-        // is. (This is why the penninguitgifte golden stays gate-12 excluded; its OTHER consistentie plays.)
-        CaseRunner.Excluded e = weigering(ir(PENNING));
+        // The §13.3.9 STORAGE-DIRECTION limit on an INPUT relation, named rather than silently answered.
+        // `penningbezit` pairs a to-one `houder` with a to-many `penning`, so the bean model gives the relation exactly
+        // ONE field (Penning.houder), which carries BOTH directions, and the branch refuses a presence count over that
+        // shared field by name until a card of its own measures it. Model: the penninguitgifte golden without its two
+        // creations, so that nothing creates `penningbezit` and the count reads the bean field. Verifier PASS; ref and
+        // clingo play it (measured with J1 holding P1, and P2 without a houder: aantal penningen 1, houderscontrole
+        // @ P2). With its creations the golden plays on this branch since card
+        // 20261010-objectcreatie-zonder-connectingrole-binding: they create `penningbezit`, and a created relation is
+        // read over Koppeling facts, each link once with its two ends, not over the shared field.
+        CaseRunner.Excluded e = weigering(zonderCreaties());
         assertTrue(e.getMessage().contains("houderscontrole"), e.getMessage());
         assertTrue(e.getMessage().contains("zusterrol 'penning' meervoudig"), e.getMessage());
+    }
+
+    @Test void een_typenpaar_via_een_supertype_weigert_bij_de_bouw() throws Exception {
+        // The penningbesluit golden with its creation making a SUBTYPE, `Jaarbesluit is een Penningbesluit`, so that
+        // the created-side role `toegekend besluit` is declared on the supertype. The shared decision reaches both roles
+        // through the supertype and links them, and the verifier, ref and clingo do too (ref's connecting_pair asks
+        // whether a type FILLS a role, which a subtype does): all PASS, uitkering 250, as does the DRL-text branch
+        // (PLAYED 1). The strata of this branch derive the back-link from the exact types (Kringen.terugkoppeling), see
+        // no relation written, and could let a creation that reads the relation fire before this one has made its
+        // links; so the branch refuses the creation by name when it builds.
+        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                () -> speel(jaarbesluit(), gerechtigdeJutter()));
+        assertTrue(e.getMessage().contains("objectcreatie: stel het penningbesluit vast — een objectcreatie zonder"
+                + " connectingRole-binding waarvan de terugkoppeling uit het typenpaar ('begunstigde' en 'toegekend"
+                + " besluit') via een supertype van het onderwerp of van het gemaakte type loopt"), e.getMessage());
     }
 
     // ---------------- 6. the §4.2 validity window ON the creation ----------------
@@ -478,16 +497,6 @@ class ObjectCreatieWitnessTest {
     /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
     private static String speel(Path irPath, JsonNode c) throws Exception {
         return CaseRunner.speelCase(irPath, c, DroolsBackend.Branch.EXEC_MODEL);
-    }
-
-    /** The branch refuses {@code irPath} by name: its creations have no connectingRole binding, and the branch does not
-     *  derive the back-link from the type pair (card 20261010-objectcreatie-zonder-connectingrole-binding). The
-     *  sentence after the prefix of the manifest. */
-    private static void geenBinding(Path irPath, JsonNode c) {
-        CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
-                () -> speel(irPath, c));
-        assertTrue(e.getMessage().contains("objectcreatie: penning voor een gerechtigde jutter — een objectcreatie "
-                + "zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar volgt"), e.getMessage());
     }
 
     /** The objects the creations made, as the fixpoint gives them. */
@@ -708,6 +717,42 @@ class ObjectCreatieWitnessTest {
                   "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
                       "attributes": {}, "roles": {}, "characteristics": [] } ], "parameters": {} },
                   "expected": [] }
+                """);
+    }
+
+    /** The penninguitgifte model without its two object creations: nothing creates `penningbezit`, so the relation is
+     *  input and a read of it goes over the bean fields. */
+    private static Path zonderCreaties() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNING)));
+        IrPad.rules(ir).set("objectCreations", JSON.createArrayNode());
+        return schrijf(ir, "zonder-creaties");
+    }
+
+    /** The penningbesluit model with a subtype `Jaarbesluit` of `Penningbesluit`, which the creation makes instead:
+     *  the connecting relation `penningtoekenning` declares its role `toegekend besluit` on the supertype. */
+    private static Path jaarbesluit() throws Exception {
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) JSON.readTree(Files.readString(ir(PENNINGBESLUIT)));
+        IrPad.modelLijst(ir, "objectTypes").add(JSON.readTree("""
+                { "node": "ObjectType", "name": "Jaarbesluit", "supertype": "Penningbesluit", "animate": false,
+                  "plural": "Jaarbesluiten", "attributes": [], "characteristics": [] }"""));
+        IrPad.versie(ir, "objectCreations", 0, 0).put("createdType", "Jaarbesluit");
+        return schrijf(ir, "jaarbesluit");
+    }
+
+    /** One penninggerechtigde Jutter for the penningbesluit model (14 vondsten against a vondstdrempel of 12): the
+     *  besluit made for him carries the penningbedrag 250 and his penningjaar 2025, which he reads back. */
+    private static JsonNode gerechtigdeJutter() throws Exception {
+        return JSON.readTree("""
+                { "format": "uchar-case-v0", "asOfDate": null,
+                  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+                      "attributes": { "aantal aangemelde vondsten": { "number": "14" }, "penningjaar": { "number": "2025" } },
+                      "roles": {}, "characteristics": [] } ],
+                      "parameters": { "vondstdrempel": { "number": "12" }, "penningbedrag": { "number": "250" } } },
+                  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "uitkering",
+                                  "value": { "number": "250" } },
+                                { "kind": "attributeValue", "label": "J1", "attribute": "uitkeringsjaar",
+                                  "value": { "number": "2025" } },
+                                { "kind": "consistent" } ] }
                 """);
     }
 
