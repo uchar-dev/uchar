@@ -385,6 +385,10 @@ class ObjectCreatieWitnessTest {
         // pair, as the DRL-text branch does. From the switch-over (2026-10-10) until card
         // 20261010-objectcreatie-zonder-connectingrole-binding it refused the document by name instead.
         assertNull(speel(zonderHouderscontrole(), penningCase(false)), "ref agrees: penningcontrole @ P1");
+        // The case's inconsistent expectation is existential (CaseRunner.consistentie): it would also pass with the
+        // minted penning flagged beside P1. The fixpoint gives the whole set, and it is P1 alone.
+        assertEquals(List.of("penningcontrole @ P1"),
+                schendingen(naVuur(zonderHouderscontrole(), penningCase(false))));
     }
 
     @Test void dezelfde_kenmerkassertie_vlagt_de_vervulde_lezing_niet() throws Exception {
@@ -396,13 +400,13 @@ class ObjectCreatieWitnessTest {
 
     @Test void een_aantalassertie_over_een_enkelvoudige_rol_vlagt_de_lege_telling() throws Exception {
         // §9.5 form (b): an AANTAL over a role compared with 1. Over a TO-ONE role the count is the PRESENCE
-        // count — 0 or 1 — read from the subject's own scalar reference field, which is where ref reads it too
-        // (its role_links are per instance per role key). Model: penninguitgifte with the houderscontrole
-        // rewritten onto `dossiervoering`, the 1:1 relation where each direction owns a field (see the refusal
-        // witness below for why the penningbezit form cannot be carried). A jutter who is not penninggerechtigd
-        // gets no dossier minted, so the count is 0 and the assertion is violated. ref agrees: inconsistent @ J1.
-        // The creations of the penninguitgifte model have no connectingRole binding, and the back-link comes from the
-        // type pair, as in the kenmerk assertion above.
+        // count — 0 or 1 — per subject, as ref counts it (its role_links are per instance per role key). Model:
+        // penninguitgifte with the houderscontrole rewritten onto `dossiervoering`, the 1:1 relation. The model's
+        // dossier creation makes that relation, so this branch counts it over Koppeling facts, each link once with
+        // its two ends, and a link the case supplies enters as such a fact too (the flank below); the bean field is
+        // not what it reads. A jutter who is not penninggerechtigd gets no dossier minted, so the count is 0 and the
+        // assertion is violated. ref agrees: inconsistent @ J1. The creations of the penninguitgifte model have no
+        // connectingRole binding, and the back-link comes from the type pair, as in the kenmerk assertion above.
         assertNull(speel(dossierAantalAssertie(), jutterMetDossierVerwachting(false, "0")),
                 "ref agrees: houderscontrole @ J1");
     }
@@ -509,6 +513,19 @@ class ObjectCreatieWitnessTest {
 
     /** The input beans of a case by label, and the fixpoint of its session. */
     private record Na(Map<String, Object> invoer, Fixpunt fixpunt) {}
+
+    /** The §9.5 deposits of the fixpoint as "regel @ label", sorted; an object a creation made, which no case label
+     *  names, as "gemaakt". */
+    private static List<String> schendingen(Na na) throws Exception {
+        Map<Object, String> label = new java.util.IdentityHashMap<>();
+        na.invoer().forEach((l, bean) -> label.put(bean, l));
+        List<String> uit = new java.util.ArrayList<>();
+        for (Object f : na.fixpunt().inconsistenties())
+            uit.add(f.getClass().getMethod("getRegel").invoke(f) + " @ "
+                    + label.getOrDefault(f.getClass().getMethod("getSubject").invoke(f), "gemaakt"));
+        uit.sort(null);
+        return uit;
+    }
 
     /** The full replay of case {@code c} on the truth-maintenance branch: null on a match. */
     private static String speel(Path irPath, JsonNode c) throws Exception {
