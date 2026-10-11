@@ -1,0 +1,46 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is penninggerechtigd kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+    het penningjaar Numeriek (geheel getal);
+    het aantal afwijzingen Numeriek (niet-negatief geheel getal);
+
+Objecttype het Penningbesluit (mv: Penningbesluiten)
+    het besluitbedrag Numeriek (niet-negatief geheel getal) met eenheid €;
+
+Objecttype de Afwijzing (mv: Afwijzingen)
+    het afwijzingsjaar Numeriek (geheel getal);
+
+Parameter de vondstdrempel : Numeriek (geheel getal)
+Parameter het penningbedrag : Numeriek (niet-negatief geheel getal) met eenheid €
+
+Feittype penningtoekenning
+    de begunstigde Jutter
+    het toegekend besluit (mv: toegekende besluiten) Penningbesluit
+Eén begunstigde heeft één toegekend besluit
+
+Feittype afwijzingsbrief
+    de afgewezen jutter Jutter
+    de ontvangen afwijzing (mv: ontvangen afwijzingen) Afwijzing
+Eén afgewezen jutter heeft één ontvangen afwijzing
+
+Regel penningrecht bij drempel
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
+
+Regel wijs af zonder besluit
+    geldig altijd
+        Een Jutter heeft een Afwijzing met afwijzingsjaar gelijk aan zijn penningjaar
+        indien hij geen begunstigde is.
+
+Regel stel het penningbesluit vast
+    geldig altijd
+        Een Jutter heeft een Penningbesluit met besluitbedrag gelijk aan het penningbedrag
+        indien hij penninggerechtigd is.
+
+Regel tel de afwijzingen
+    geldig altijd
+        Het aantal afwijzingen van een Jutter moet berekend worden als het aantal ontvangen afwijzingen van de Jutter.

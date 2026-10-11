@@ -435,12 +435,28 @@ class ObjectCreatieWitnessTest {
         // whether a type FILLS a role, which a subtype does): all PASS, uitkering 250, as does the DRL-text branch
         // (PLAYED 1). The strata of this branch derive the back-link from the exact types (Kringen.terugkoppeling), see
         // no relation written, and could let a creation that reads the relation fire before this one has made its
-        // links; so the branch refuses the creation by name when it builds.
+        // links; so the branch refuses the creation by name when it builds. Measured 2026-10-11 on the document of the
+        // row below with a Jaarbesluit as the created type: a build of this branch without the refusal put both
+        // creations in stratum 0 and gave J1 "aantal afwijzingen" 1, where the verifier, ref and clingo pass 0.
         CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
                 () -> speel(jaarbesluit(), gerechtigdeJutter()));
         assertTrue(e.getMessage().contains("objectcreatie: stel het penningbesluit vast — een objectcreatie zonder"
                 + " connectingRole-binding waarvan de terugkoppeling uit het typenpaar ('begunstigde' en 'toegekend"
                 + " besluit') via een supertype van het onderwerp of van het gemaakte type loopt"), e.getMessage());
+    }
+
+    @Test void een_tweede_creatie_leest_de_afgeleide_relatie_na_de_eerste() throws Exception {
+        // Two creations without a connectingRole binding. "wijs af zonder besluit" makes an Afwijzing for a Jutter that
+        // is no begunstigde; "stel het penningbesluit vast" makes the Penningbesluit that makes a penninggerechtigde
+        // Jutter one. The first reads, negatively, the relation the second derives from its type pair, so it belongs a
+        // stratum above it (RUNTIME-SEMANTICS ch. 6.1, 6.3). The strata of this branch see that only because Kringen
+        // derives the back-link of a creation without a binding as well; declared first, the first creation would
+        // otherwise fire in the same generation and give J1 an Afwijzing (measured on the subtype twin, see the row
+        // above). The document comes from the RegelSpraak frontend, its bron.rgs beside it; verifier PASS, ref and
+        // clingo PASS (J1 penninggerechtigd and 0 afwijzingen, J2 1). The DRL-text branch gives J1 1 afwijzing.
+        Path map = Path.of("src", "test", "resources", "objectcreatie", "afwijzing-na-het-besluit");
+        assertNull(speel(map.resolve("ir.json"), JSON.readTree(Files.readString(map.resolve("case.json")))),
+                "ref agrees: J1 0 afwijzingen, J2 1");
     }
 
     // ---------------- 6. the §4.2 validity window ON the creation ----------------
