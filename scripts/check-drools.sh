@@ -233,7 +233,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-beschikkingsom|EXCLUDE|loader Refusal: Datatype:SumType"
   "anchor/jutterswet-bootberging|EXCLUDE|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
   "anchor/jutterswet-gemeenteberging|EXCLUDE|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
-  "anchor/jutterswet-penninguitgifte|EXCLUDE|transpiler SKIP: an Aggregation (AANTAL) over the to-one element role 'houder' whose sister role 'penning' is to-many: that fact type has one bean field for both directions, and the branch refuses the form CONSERVATIVELY until a card of its own measures it (§13.3.9). The refusal stands since 2026-09-10, its old ground (the directed count of the case input) withdrawn by RUNTIME-SEMANTICS ch. 5.7a; since card tms-omschakeling (2026-10-10) the lowering with truth maintenance gives it in its own words"
   "anchor/jutterswet-penningvintage|EXCLUDE|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
@@ -1277,7 +1276,18 @@ EXPECTED_CHANNEL=(
 # (a value outside its scope), jutterswet-afdrachtstapel (a comparison of percentages) and jutterswet-klipwacht (the
 # gedurende clip as a member of a composite). They leave EXPECTED_CHANNEL. The six refusals that stay keep their
 # channel; their reasons follow the new branch's sentence. The DRL-text branch does not move.
-EXPECTED_PLAYED=248
+# 248 -> 250 (2026-10-11, card objectcreatie-zonder-connectingrole-binding): the exec-model branch carries an object
+# creation without a connectingRole binding again, the form the frontend writes when the sentence names the type
+# instead of a role. The back-link is the one the shared decision (FactModelGenerator.creatiekoppeling) derives from
+# the type pair, read and written as with a binding; an ambiguous pair stays refused at build. Two goldens move.
+# jutterswet-penningbesluit, new, from bron.rgs and hand-computed, plays its three cases, PLAYED 3, with ref's and
+# clingo's values. anchor/jutterswet-penninguitgifte, whose two creations have no binding, leaves EXPECTED_CHANNEL: its
+# creations make 'penningbezit', and the branch reads a created relation over its link facts, not over the one bean
+# field the §13.3.9 refusal stands on (as it already did for a creation with a binding); it plays its three cases,
+# PLAYED 3, with the anchor's absolute values. Measured before and after over every golden in both branches: no other
+# report line moves. The DRL-text branch plays jutterswet-penningbesluit too, PLAYED 3, and still refuses
+# penninguitgifte (DRL_CHANNEL), so EXPECTED_DRL_PLAYED moves by one.
+EXPECTED_PLAYED=250
 
 # --- the DRL-TEXT branch's non-player list (card gate12-drl-takteller, 2026-09-19) --------------
 # Same form and same two stale directions as EXPECTED_CHANNEL above: "<golden>|<channel>|<reason>",
@@ -1730,7 +1740,9 @@ DRL_CHANNEL=(
 # accumulate and plays both cases, PLAYED 2. Reason block at EXPECTED_PLAYED above.
 # 195 -> 196 (2026-10-09, card creatiebudget-ref-en-clingo): jutterswet-budgetgrens-op, new. This branch plays its two
 # cases with no change of its own, PLAYED 2. Reason block at EXPECTED_PLAYED above.
-EXPECTED_DRL_PLAYED=196
+# 196 -> 197 (2026-10-11, card objectcreatie-zonder-connectingrole-binding): jutterswet-penningbesluit, new. This
+# branch plays its three cases with no change of its own, PLAYED 3. Reason block at EXPECTED_PLAYED above.
+EXPECTED_DRL_PLAYED=197
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
 # The floors below compare each MEASURED golden against ITS pin, so a malformed list can weaken a
