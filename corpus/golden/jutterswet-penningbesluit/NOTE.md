@@ -131,11 +131,13 @@ its jutter. In case 3 the input besluit B1 has a label, so its derived
 ## Executors
 
 ref and clingo replay the three cases with the pinned values. The Drools
-backend, measured 2026-10-11 at this golden's admission: the DRL-text branch
-plays all three (`PLAYED 3`). The exec-model branch refuses the document
-with `transpiler SKIP: objectcreatie: stel het penningbesluit vast — een
+backend plays all three in both branches, exec-model and DRL text,
+`PLAYED 3` each (2026-10-11). The DRL-text branch already did at this
+golden's admission. The exec-model branch then refused the document with
+`transpiler SKIP: objectcreatie: stel het penningbesluit vast — een
 objectcreatie zonder connectingRole-binding, waarvan de terugkoppeling uit
-het typenpaar volgt: deze tak draagt deze vorm nog niet`; its manifest
-lowers the other five forms and refuses nothing else. The card
+het typenpaar volgt: deze tak draagt deze vorm nog niet`, and its manifest
+lowered the other five forms and refused nothing else. The card
 objectcreatie-zonder-connectingrole-binding, which adds this golden, carries
-the form in that branch.
+the form in that branch: it takes the back-link the shared decision derives
+from the type pair, as the DRL-text branch does.

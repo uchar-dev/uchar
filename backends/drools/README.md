@@ -648,7 +648,11 @@ the absence of its own `Gemaakt` mark for the subject (one object per creation p
 `Gemaakt` that made the subject in the current phase, and on the 1:1 shape the empty reference field of the subject,
 which is the input world, since the branch writes no bean. Which roles link the subject and the new object, with the
 guards on the reference fields and the refusal sentences, is one decision shared with the DRL-text branch
-(`FactModelGenerator.creatiekoppeling`, with `verbindendeFeittypen`). Its consequence makes a new bean of the
+(`FactModelGenerator.creatiekoppeling`, with `verbindendeFeittypen`): the creation's `connectingRole` binding, or
+without one the derivation from the type pair of ch. 5.5, the one fact type that relates the subject's type and the
+created type. The connecting relation of a derived pair is the fact type of the two derived roles, with the fillers
+compared exactly, as `Kringen` derives the back-link for the strata (`TmsTranspiler.typenpaarrelatie`); golden
+`jutterswet-penningbesluit`. Its consequence makes a new bean of the
 created type and inserts, stated, the bean, its `Gemaakt` with the phase, the `Koppeling` of the connecting relation and
 the initialisations as `Waarde` and `HeeftKenmerk`, computed from the values the rule binds. A fact creation's rule
 walks its path, over the reference fields of an input relation and over the `Koppeling` facts of a created one, none of
@@ -706,8 +710,11 @@ never as a silent fall:
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
   either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the DRL-text branch;
-- the creations it does not build yet: an object creation without a `connectingRole`, whose relation would follow from
-  the pair of types, or with a back-link that is ambiguous, a created
+- the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
+  the program and this branch refuses when it builds (red case `ambiguous-backlink`), an object creation without a
+  `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
+  created type, since the strata derive that relation from the exact types (`Kringen`) and would not see the creation
+  write it, a created
   relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
   whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,

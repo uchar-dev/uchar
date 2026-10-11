@@ -123,8 +123,9 @@ import java.util.function.UnaryOperator;
  * duplicates are as well ({@link #uniciteitsregels}); a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link Stuurfeit}) and into which an
  * ordinary rule on an ancestor's level folds, so that it does not fire on that type; an allocation, as a computation
- * over the recipients its left-hand side binds ({@link #verdeling}); and an object creation over a
- * {@code connectingRole} and a fact creation, each over a relation of two roles. Each always valid or gated on the
+ * over the recipients its left-hand side binds ({@link #verdeling}); and an object creation, over its
+ * {@code connectingRole} binding or else over the relation its type pair derives, and a fact creation, each over a
+ * relation of two roles. Each always valid or gated on the
  * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
  * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
  * root at all), whose condition, assertion or justification is built from characteristic checks (own or over a path,
@@ -664,6 +665,10 @@ public final class TmsTranspiler {
         for (ResolvedObjectCreatie o : model.objectCreaties) {
             RolBindingRef vr = rolBindingen.get(o);
             if (vr != null && vr.feittype() != null) gecreeerdeRelaties.add(Namen.norm(vr.feittype()));
+            if (vr == null) {
+                RegelSpraakModel.Feittype ft = typenpaarrelatie(o);
+                if (ft != null) gecreeerdeRelaties.add(Namen.norm(ft.naam));
+            }
         }
         for (ResolvedFeitCreatie f : model.feitCreaties)
             if (f.feittype() != null) gecreeerdeRelaties.add(Namen.norm(f.feittype()));
@@ -1983,10 +1988,13 @@ public final class TmsTranspiler {
      *
      * <p>The 1:1 shape guards on the input world, as ch. 5.5 says: a subject whose reference field toward the created
      * type is filled in the case input creates nothing; this branch writes no bean while it fires, so the field is the
-     * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creatiekoppeling}). Refused by
-     * name besides: an ambiguous back-link; a creation without a
-     * {@code connectingRole} binding, whose relation this branch does not derive from the type pair; a connecting
-     * relation that is not one of two roles; a characteristic initialisation whose value is no truth value (WF-027); and
+     * input. The decision of the link roles is the shared one ({@link FactModelGenerator#creatiekoppeling}): the
+     * creation's {@code connectingRole} binding, or without one the derivation from the type pair that the DRL-text
+     * branch takes as well. The relation of a derived pair is {@link #typenpaarrelatie}, and either way the link is the
+     * same {@link Koppeling}, put on both ends at the write-back. Refused by name besides: an ambiguous back-link, which
+     * ch. 5.5 makes a fault of the program; a derived pair whose roles the decision reaches only through a supertype of
+     * either end, whose relation the strata of this branch do not see written; a connecting relation that is not one of
+     * two roles; a characteristic initialisation whose value is no truth value (WF-027); and
      * a division in a member value, whose §6.5 deposit this branch does not make. Where the condition can fault, its
      * fault rule is an ordinary rule of the rule layer, without the marks and without the 1:1 guard: the reference
      * interpreter evaluates the condition first, in every pass.
@@ -2000,13 +2008,15 @@ public final class TmsTranspiler {
         if (k.dubbelzinnig() != null)
             throw new Weigering(k.dubbelzinnig() + "; " + NOG_NIET);
         if (k.weigering() != null) throw new Weigering(k.weigering());
-        if (vr == null)
-            throw new Weigering("een objectcreatie zonder connectingRole-binding, waarvan de terugkoppeling uit het typenpaar"
-                    + " volgt: " + NOG_NIET);
-        RegelSpraakModel.Feittype ft = feittype(vr.feittype());
+        RegelSpraakModel.Feittype ft = vr != null ? feittype(vr.feittype()) : typenpaarrelatie(subject, nieuw, k);
+        if (vr == null && ft == null)
+            throw new Weigering("een objectcreatie zonder connectingRole-binding waarvan de terugkoppeling uit het typenpaar"
+                    + " ('" + k.backRol() + "' en '" + k.fwdRol() + "') via een supertype van het onderwerp of van het"
+                    + " gemaakte type loopt: de strata van deze tak leiden de relatie van de terugkoppeling af uit de exacte"
+                    + " typen en zien haar dan niet geschreven: " + NOG_NIET);
         if (ft == null || ft.rollen.size() != 2 || ft.wederkerig)
-            throw new Weigering("een objectcreatie over de relatie '" + vr.feittype() + "', die geen relatie van twee rollen"
-                    + " is: " + NOG_NIET);
+            throw new Weigering("een objectcreatie over de relatie '" + (vr != null ? vr.feittype() : ft.naam)
+                    + "', die geen relatie van twee rollen is: " + NOG_NIET);
         String relatie = Namen.norm(ft.naam);
         boolean nieuwIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRol()));
         String naam = oc.naam();
@@ -2116,6 +2126,52 @@ public final class TmsTranspiler {
         Rule zonderDatum = geldigheidsfout(regelnaam, naam, oc.geldigheid());
         if (zonderDatum != null) uit.add(zonderDatum);
         return uit;
+    }
+
+    /** {@link #typenpaarrelatie(Objecttype, Objecttype, FactModelGenerator.Creatiekoppeling)} for the object creation
+     *  {@code oc} without a {@code connectingRole} binding, before any form lowers; null where the shared decision does
+     *  not link the creation, which {@link #objectCreatie} then refuses by name. */
+    private RegelSpraakModel.Feittype typenpaarrelatie(ResolvedObjectCreatie oc) {
+        Objecttype nieuw = oc.nieuwType(), subject = oc.subject();
+        if (oc.naam() == null || nieuw == null || subject == null) return null;
+        FactModelGenerator.Creatiekoppeling k = FactModelGenerator.creatiekoppeling(model, nieuw, subject, null, oc.naam());
+        return k.dubbelzinnig() != null || k.weigering() != null ? null : typenpaarrelatie(subject, nieuw, k);
+    }
+
+    /**
+     * The connecting relation of an object creation without a {@code connectingRole} binding (RUNTIME-SEMANTICS ch.
+     * 5.5): the fact type of the two roles that the shared decision {@code k} derived from the type pair, the role the
+     * made object plays ({@code fwdRol}) filled by the created type and the other ({@code backRol}) by the subject's, and
+     * for a subject of the created type a reciprocal fact type of that one role. The fillers are compared exactly, as
+     * {@link Kringen} derives the back-link for the strata: where the decision reached a role through a supertype of
+     * either end, the strata would not see the creation write the relation, so a creation that reads it could fire
+     * before this one has made its links. Null then, and {@link #objectCreatie} refuses the creation by name. Two fact
+     * types cannot match where the decision linked: its roles are unique among the roles the pair reaches through any
+     * supertype, of which the exact ones are a part.
+     */
+    private RegelSpraakModel.Feittype typenpaarrelatie(Objecttype subject, Objecttype nieuw,
+                                                        FactModelGenerator.Creatiekoppeling k) {
+        RegelSpraakModel.Feittype gevonden = null;
+        for (RegelSpraakModel.Feittype ft : model.feittypen.values()) {
+            List<RegelSpraakModel.Rol> r = ft.rollen;
+            boolean past = r.size() == 2
+                    ? vult(r.get(0), k.fwdRol(), nieuw) && vult(r.get(1), k.backRol(), subject)
+                      || vult(r.get(1), k.fwdRol(), nieuw) && vult(r.get(0), k.backRol(), subject)
+                    : r.size() == 1 && ft.wederkerig && subject == nieuw && vult(r.get(0), k.fwdRol(), nieuw);
+            if (!past) continue;
+            if (gevonden != null)
+                throw new IllegalStateException("exec-model: de terugkoppeling ('" + k.backRol() + "' en '" + k.fwdRol()
+                        + "') van een " + subject.naam + " naar een " + nieuw.naam + " ligt in twee feittypen, '"
+                        + gevonden.naam + "' en '" + ft.naam + "', waar het gedeelde besluit haar rollen uniek vond");
+            gevonden = ft;
+        }
+        return gevonden;
+    }
+
+    /** Whether role {@code r} carries the name {@code naam} and is filled by exactly {@code type}. */
+    private static boolean vult(RegelSpraakModel.Rol r, String naam, Objecttype type) {
+        return naam != null && Namen.norm(r.naam()).equals(Namen.norm(naam))
+                && type.naam.equalsIgnoreCase(r.objecttypeNaam());
     }
 
     /** The guard of an object creation beside its condition: no {@link Gemaakt} of creation {@code naam} for the
