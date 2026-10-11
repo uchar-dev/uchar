@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "13"
+          },
+          "penningjaar": {
+            "number": "2025"
+          }
+        },
+        "roles": {
+          "toegekend besluit": [
+            "B1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Penningbesluit",
+        "attributes": {
+          "besluitbedrag": {
+            "number": "200"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vondstdrempel": {
+        "number": "12"
+      },
+      "penningbedrag": {
+        "number": "250"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "uitkering",
+      "value": {
+        "number": "200"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "uitkeringsjaar",
+      "value": {
+        "number": "2025"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "aantal penningbesluiten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "besluitjaar",
+      "value": {
+        "number": "2025"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

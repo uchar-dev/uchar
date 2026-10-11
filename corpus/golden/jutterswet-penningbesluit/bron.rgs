@@ -1,0 +1,50 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is penninggerechtigd kenmerk (bijvoeglijk);
+    het aantal aangemelde vondsten Numeriek (niet-negatief geheel getal);
+    het penningjaar Numeriek (geheel getal);
+    de uitkering Numeriek (niet-negatief geheel getal) met eenheid €;
+    het uitkeringsjaar Numeriek (geheel getal);
+    het aantal penningbesluiten Numeriek (niet-negatief geheel getal);
+
+Objecttype het Penningbesluit (mv: Penningbesluiten)
+    het besluitjaar Numeriek (geheel getal);
+    het besluitbedrag Numeriek (niet-negatief geheel getal) met eenheid €;
+
+Parameter de vondstdrempel : Numeriek (geheel getal)
+Parameter het penningbedrag : Numeriek (niet-negatief geheel getal) met eenheid €
+
+Feittype penningtoekenning
+    de begunstigde Jutter
+    het toegekend besluit (mv: toegekende besluiten) Penningbesluit
+Eén begunstigde heeft één toegekend besluit
+
+// Bron: art. 3
+Regel penningrecht bij drempel
+    geldig altijd
+        Een Jutter is penninggerechtigd
+        indien zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel.
+
+// Bron: art. 8
+Regel stel het penningbesluit vast
+    geldig altijd
+        Een Jutter heeft een Penningbesluit met besluitbedrag gelijk aan het penningbedrag
+        indien hij penninggerechtigd is.
+
+Regel besluitjaar van het penningbesluit
+    geldig altijd
+        Het besluitjaar van een Penningbesluit moet gesteld worden op het penningjaar van zijn begunstigde.
+
+Regel uitkering volgens het penningbesluit
+    geldig altijd
+        De uitkering van een Jutter moet gesteld worden op het besluitbedrag van zijn toegekend besluit.
+
+Regel uitkeringsjaar volgens het penningbesluit
+    geldig altijd
+        Het uitkeringsjaar van een Jutter moet gesteld worden op het besluitjaar van zijn toegekend besluit.
+
+Regel tel de penningbesluiten
+    geldig altijd
+        Het aantal penningbesluiten van een Jutter moet berekend worden als het aantal toegekende besluiten van de Jutter.

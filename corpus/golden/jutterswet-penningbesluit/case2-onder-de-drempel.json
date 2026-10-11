@@ -1,0 +1,58 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "11"
+          },
+          "penningjaar": {
+            "number": "2025"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vondstdrempel": {
+        "number": "12"
+      },
+      "penningbedrag": {
+        "number": "250"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "uitkering"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "uitkeringsjaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "aantal penningbesluiten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "14"
+          },
+          "penningjaar": {
+            "number": "2025"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "aantal aangemelde vondsten": {
+            "number": "12"
+          },
+          "penningjaar": {
+            "number": "2024"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vondstdrempel": {
+        "number": "12"
+      },
+      "penningbedrag": {
+        "number": "250"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "uitkering",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "uitkeringsjaar",
+      "value": {
+        "number": "2025"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal penningbesluiten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "uitkering",
+      "value": {
+        "number": "250"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "uitkeringsjaar",
+      "value": {
+        "number": "2024"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal penningbesluiten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

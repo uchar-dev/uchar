@@ -1,0 +1,466 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal aangemelde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "penningjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkering",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkeringsjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal penningbesluiten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "penninggerechtigd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Penningbesluit",
+        "animate": false,
+        "plural": "Penningbesluiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "besluitjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "besluitbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "penningtoekenning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "begunstigde",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "toegekend besluit",
+            "objectType": "Penningbesluit",
+            "plural": "toegekende besluiten",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "vondstdrempel",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "penningbedrag",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "nonNegative",
+          "unit": {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            }
+          }
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "penningrecht bij drempel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "penninggerechtigd",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is penninggerechtigd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "aantal aangemelde vondsten",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aantal aangemelde vondsten"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "vondstdrempel",
+                "source": {
+                  "snippet": "de vondstdrempel"
+                }
+              },
+              "source": {
+                "snippet": "zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel"
+              }
+            },
+            "initialisation": false
+          }
+        ],
+        "statuteAnnotations": [
+          "art. 3"
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "besluitjaar van het penningbesluit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "besluitjaar",
+              "subjectType": "Penningbesluit",
+              "source": {
+                "snippet": "Het besluitjaar van een Penningbesluit"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "penningjaar",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "het penningjaar van zijn begunstigde"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "penningtoekenning",
+                  "role": "begunstigde"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uitkering volgens het penningbesluit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uitkering",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De uitkering van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "besluitbedrag",
+              "subjectType": "Penningbesluit",
+              "source": {
+                "snippet": "het besluitbedrag van zijn toegekend besluit"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "penningtoekenning",
+                  "role": "toegekend besluit"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uitkeringsjaar volgens het penningbesluit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uitkeringsjaar",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het uitkeringsjaar van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "besluitjaar",
+              "subjectType": "Penningbesluit",
+              "source": {
+                "snippet": "het besluitjaar van zijn toegekend besluit"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "penningtoekenning",
+                  "role": "toegekend besluit"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "tel de penningbesluiten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal penningbesluiten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal penningbesluiten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "toegekende besluiten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "toegekende besluiten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Penningbesluit",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "penningtoekenning",
+                "role": "toegekend besluit"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal toegekende besluiten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "stel het penningbesluit vast",
+        "versions": [
+          {
+            "createdType": "Penningbesluit",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "besluitbedrag",
+                "value": {
+                  "node": "ParameterReference",
+                  "parameter": "penningbedrag",
+                  "source": {
+                    "snippet": "het penningbedrag"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "penninggerechtigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij penninggerechtigd is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
