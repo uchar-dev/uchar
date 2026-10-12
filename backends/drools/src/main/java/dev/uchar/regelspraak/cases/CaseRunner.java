@@ -89,6 +89,9 @@ public final class CaseRunner {
     /** The build this runner fires: the exec-model branch puts its derivations on the beans only after a fire
      *  ({@link DroolsBackend#zetAfgeleideWaarden}), and that needs the transpiler that made them. */
     private DroolsBackend.Build bouw;
+    /** The hash of the document this runner built, which names the files of the seam in {@link #vuurTotFixpunt}; null
+     *  without the property {@value Sessiedump#EIGENSCHAP}, and then the seam does nothing. */
+    private String documenthash;
 
     /** The members of the model without a bean field of their own ({@link FactModelGenerator#verdringingen}): a
      *  case that sets or reads one is refused by name, since the replay would reach the field of the declaration
@@ -397,6 +400,7 @@ public final class CaseRunner {
         DroolsBackend.Build b = DroolsBackend.build(irPath, tak);
         CaseRunner runner = new CaseRunner(b.model(), b.kieBase(), b.beanLoader(), b.dagsoortGlobalen());
         runner.bouw = b;
+        if (Sessiedump.NAADMAP != null) runner.documenthash = Sessiedump.hash(irPath);
         // the exec branch's coverage manifest feeds the scenario report; the DRL-text branch reports nothing
         if (tak == DroolsBackend.Branch.EXEC_MODEL) runner.dekking = b.dekking();
         return runner;
@@ -568,7 +572,10 @@ public final class CaseRunner {
      *  report of this class fires here, on any branch.
      *  At a fixpoint the exec-model branch's derivations go onto the beans before anything reads them, or the
      *  evaluation faults that stand there are thrown ({@link DroolsBackend#zetAfgeleideWaarden}, a no-op on the
-     *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean. */
+     *  DRL-text branch); without a fixpoint nothing is written back, since the replay reports the sentence and reads no bean.
+     *  With the property {@value Sessiedump#EIGENSCHAP} a seam writes the dump of the session ({@link Sessiedump}) right
+     *  after the fire, before the write-back, also where the fire throws; not on the DRL-text branch, whose rules write
+     *  the beans as they fire, so that {@link DroolsBackend#lees} refuses it. */
     private String vuurTotFixpunt(KieSession sessie) {
         // only the DRL-text branch writes the beans as it fires, so only its cap can come from writers that keep
         // overwriting each other; on the exec-model branch nothing reads the listener, and it cost every firing a call
@@ -577,12 +584,17 @@ public final class CaseRunner {
             schrijvers = new Schrijfconflict(model, cl);
             sessie.addEventListener(schrijvers);
         }
+        Sessiedump spoor = documenthash == null || bouw.branch() == DroolsBackend.Branch.DRL_TEXT ? null
+                : Sessiedump.op(sessie);
         DroolsBackend.Vuring vuring;
         try {
             vuring = DroolsBackend.vuur(bouw, sessie);
-        } catch (ConsequenceException e) {
-            throw DroolsBackend.benoem(e);
+        } catch (RuntimeException e) {
+            if (spoor != null) spoor.naad(documenthash, bouw, e, labelNaarBean);
+            if (e instanceof ConsequenceException c) throw DroolsBackend.benoem(c);
+            throw e;
         }
+        if (spoor != null) spoor.naad(documenthash, bouw, vuring, labelNaarBean);
         if (vuring.geenFixpunt() == null) {
             DroolsBackend.zetAfgeleideWaarden(bouw, sessie, this::labelVanBean);
             return null;
