@@ -4,7 +4,9 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
  * What one slot of a rule's value array holds, as the analysis decided to read it. Each kind comes from one method of
  * {@code TmsTranspiler.Lezingen}, named per constant; a method that decides between two ways of reading gives a kind per
  * way. A validity window ({@code Lezingen.geldig}) gates the rule on the evaluation date and binds no slot, so it is a
- * pattern of the left-hand side and no kind of this table.
+ * pattern of the left-hand side and no kind of this table. Two kinds come from outside {@code Lezingen}: the places
+ * that {@code TmsTranspiler.plaats} binds in the range of a filter fault rule, with a pattern outside the plan until
+ * step 1c of card drl-teksttak-op-truth-maintenance, have a slot all the same, since the table holds every slot.
  */
 public enum Leessoort {
     /** The subject itself, for a consequence that hands it on ({@code lid}). */
@@ -55,5 +57,9 @@ public enum Leessoort {
     /** The binder of a {@code Let}: no pattern binds it ({@code binder}). */
     BINDER,
     /** The probe of the rule's deposits: no pattern binds it ({@code sonde}). */
-    SONDE
+    SONDE,
+    /** The number of places a to-many step's member has in its list ({@code TmsTranspiler.plaats}). */
+    LIJSTPLAATSEN,
+    /** The least place a to-many step's member has in its list ({@code TmsTranspiler.plaats}). */
+    LIJSTPLAATS
 }

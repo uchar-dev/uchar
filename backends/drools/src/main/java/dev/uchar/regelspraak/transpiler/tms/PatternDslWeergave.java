@@ -93,6 +93,16 @@ final class PatternDslWeergave {
         slots.add(l.naam() == null ? null : bekend(l.naam()));
     }
 
+    /** Registers slot {@code l}, which a pattern built outside the plan binds to {@code v}: the variable is that
+     *  pattern's, so this rendering does not bind it again. */
+    void extern(Lezing l, Variable<Object> v) {
+        if (l.slot() != slots.size())
+            throw new IllegalStateException("slot " + l.slot() + " na " + slots.size() + " slots");
+        if (waarden.putIfAbsent(l.naam(), v) != null || !gebonden.add(l.naam()))
+            throw new IllegalStateException("de variabele " + l.naam() + " wordt twee keer gebonden");
+        slots.add(v);
+    }
+
     /** Binds {@code b} off the subject pattern. */
     void bindOnderwerp(Binding b) {
         onderwerpPatroon.bind(bind(b.doel()), lezer(b));

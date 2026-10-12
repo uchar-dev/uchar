@@ -46,7 +46,6 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
 import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
-import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
@@ -65,18 +64,6 @@ import org.drools.model.functions.Block3;
 import org.drools.model.functions.Block4;
 import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
-import org.drools.model.functions.Predicate10;
-import org.drools.model.functions.Predicate11;
-import org.drools.model.functions.Predicate12;
-import org.drools.model.functions.Predicate13;
-import org.drools.model.functions.Predicate2;
-import org.drools.model.functions.Predicate3;
-import org.drools.model.functions.Predicate4;
-import org.drools.model.functions.Predicate5;
-import org.drools.model.functions.Predicate6;
-import org.drools.model.functions.Predicate7;
-import org.drools.model.functions.Predicate8;
-import org.drools.model.functions.Predicate9;
 import org.drools.model.impl.ModelImpl;
 import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
@@ -3982,10 +3969,10 @@ public final class TmsTranspiler {
             return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), kanFalen, deponeert(f.filter()), false,
                     false, tijdlijnlid);
         });
-        Class<?> functie = switch (kind) {
-            case SOM, TOTAAL -> accumulatiefunctie("BigDecimalSumAccumulateFunction");
-            case MINIMUM, EERSTE -> accumulatiefunctie("MinAccumulateFunction");
-            case MAXIMUM, LAATSTE -> accumulatiefunctie("MaxAccumulateFunction");
+        Accumulatie.Soort functie = switch (kind) {
+            case SOM, TOTAAL -> Accumulatie.Soort.SOM;
+            case MINIMUM, EERSTE -> Accumulatie.Soort.MINIMUM;
+            case MAXIMUM, LAATSTE -> Accumulatie.Soort.MAXIMUM;
             default -> null;
         };
         int[] i = lez.vouw(v, functie);
@@ -4605,7 +4592,8 @@ public final class TmsTranspiler {
         lid.bereik.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), p).as(aantal),
                 DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), waarde).as(minste)));
         int n = lid.variabelen.size();
-        return new Plaatslezing(veld, lid.nieuw("lijstplaatsen " + n, aantal), lid.nieuw("lijstplaats " + n, minste));
+        return new Plaatslezing(veld, lid.extern(Leessoort.LIJSTPLAATSEN, "lijstplaatsen " + n, aantal),
+                lid.extern(Leessoort.LIJSTPLAATS, "lijstplaats " + n, minste));
     }
 
     /** The range of the fold {@code f} from {@code subject} to {@code elem}: its multi-step path, or its one step. */
@@ -5175,14 +5163,14 @@ public final class TmsTranspiler {
         int drempel = kv.drempel();
         Vouw v = vouwVoor(kv, lez, (sleutel, naam) -> kwantorbijdragen(kv, sleutel, naam, lez.subject, elem));
         if (!v.geordend()) {
-            int[] i = lez.vouw(v, accumulatiefunctie("BigDecimalSumAccumulateFunction"));
+            int[] i = lez.vouw(v, Accumulatie.Soort.SOM);
             Waardefunctie oordeel = gelezenVouw(v, i, lez, w -> {
                 long n = ((Number) w[i[0]]).longValue();
                 return eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) w[i[1]]).longValueExact(), n);
             });
             return w -> (Boolean) oordeel.van(w);
         }
-        int[] i = lez.vouw(v, accumulatiefunctie("CollectListAccumulateFunction"));
+        int[] i = lez.vouw(v, Accumulatie.Soort.LIJST);
         if (v.lidKanFalen()) lez.markeerFalen();
         int sonde = v.lidDeponeert() ? lez.sonde() : -1;
         Waardefunctie oordeel = gelezenVouw(v, i, lez, w -> kwantorlezing(kw, drempel,
@@ -5459,14 +5447,30 @@ public final class TmsTranspiler {
      * {@link PadStand}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
      * the condition's test and the consequence receive. The standings and path standings a rule reads are registered
      * with the transpiler only when the rule lowers ({@link #vastleggen}).
+     *
+     * <p>It decides what the rule reads and plans it: a {@link dev.uchar.regelspraak.transpiler.tms.plan.Lezing} per
+     * slot (the plan's record, which the record {@link Lezing} of a read of the fixpoint shadows here), and the items of
+     * the left-hand side in the closed vocabulary of {@code transpiler/tms/plan} ({@link Linkerkant}). It builds no
+     * pattern itself: it hands every item to the rendering of this rule ({@link PatternDslWeergave}), which makes the
+     * executable model of it.
      */
     private final class Lezingen {
         final Objecttype subject;
+        /** The rendering of this rule's plan into the executable model. */
+        private final PatternDslWeergave weergave;
         final Variable<Object> s;
+        /** The rendered subject pattern, to which the forms still add constraints of their own until step 1c. */
         final PatternDSL.PatternDef<Object> onderwerp;
-        final List<RuleItemBuilder<?>> parameters = new ArrayList<>();
-        final List<RuleItemBuilder<?>> standen = new ArrayList<>();
-        final List<Variable<?>> variabelen = new ArrayList<>();
+        /** The variable of each slot, as the rendering binds it, null for a binder or a probe: a read-only view. */
+        final List<Variable<?>> variabelen;
+        /** The slots of the value array, as the plan reads them. */
+        private final List<dev.uchar.regelspraak.transpiler.tms.plan.Lezing> slots = new ArrayList<>();
+        /** The values bound off the subject pattern. */
+        private final List<Binding> onderwerpbindingen = new ArrayList<>();
+        /** The parameter items of the left-hand side: parameters, the evaluation date, the validity gate, the phase. */
+        private final List<LhsItem> parameters = new ArrayList<>();
+        /** The standing items of the left-hand side: standings, folds and the other accumulates, channels. */
+        private final List<LhsItem> standen = new ArrayList<>();
         private final Map<String, Integer> index = new LinkedHashMap<>();
         private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
         private final Map<String, Padlezing> paden = new LinkedHashMap<>();
@@ -5495,11 +5499,12 @@ public final class TmsTranspiler {
         /** The slot of the probe of this rule's deposits ({@link #sonde}), -1 while no place that deposits compiled. */
         private int sonde = -1;
 
-        @SuppressWarnings("unchecked")
         Lezingen(Objecttype subject) {
             this.subject = subject;
-            this.s = (Variable<Object>) DSL.declarationOf(bonenklasse(subject), "$onderwerp");
-            this.onderwerp = PatternDSL.pattern(s);
+            this.weergave = new PatternDslWeergave(bonenklasse(subject), ONDERWERP);
+            this.s = weergave.onderwerp();
+            this.onderwerp = weergave.onderwerpPatroon();
+            this.variabelen = weergave.slots();
         }
 
         /** The binders in scope where the expression being compiled stands: this rule's own and {@link #buiten}. */
@@ -5513,7 +5518,7 @@ public final class TmsTranspiler {
         /** The subject itself as a bound value, for a consequence that hands on another object beside it. */
         int lid() {
             int bekend = bestaand("onderwerp zelf");
-            return bekend >= 0 ? bekend : nieuw("onderwerp zelf", s);
+            return bekend >= 0 ? bekend : nieuw(Leessoort.ONDERWERP, "onderwerp zelf", ONDERWERP);
         }
 
         /** The left-hand side of the rule, once its condition and its value are compiled: the subject pattern with its
@@ -5524,16 +5529,32 @@ public final class TmsTranspiler {
         }
 
         /** As {@link #linkerkant(Toets, Set, Conditie)}, with {@code stuur} between the standing patterns and the test:
-         *  the control-fact patterns of a default, so that a default a higher one displaced is not tested at all. */
+         *  the control-fact patterns of a default, so that a default a higher one displaced is not tested at all. The
+         *  plan of the left-hand side goes to the transpiler's plans ({@link #linkerkanten}); the rendering gives the
+         *  items, among them those a form built directly ({@code kop}, {@code bereik}, {@code stuur}). */
         List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
                                             List<RuleItemBuilder<?>> stuur) {
+            Toetsitem test = null;
+            if (toets != null) {
+                int[] pos = posities(gelezen);
+                if (pos.length > MAX_LEZINGEN)
+                    throw new Weigering("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(voorwaarde)
+                            + "'): de toets van deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
+                test = new Toetsitem(id("voorwaarde"), toets::test, List.copyOf(gelezen), slots.size());
+            }
+            List<LhsItem> plan = new ArrayList<>();
+            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpbindingen));
+            plan.addAll(parameters);
+            plan.addAll(standen);
+            if (test != null) plan.add(test);
+            linkerkanten.add(new Linkerkant(vorm, new Leestabel(slots), plan));
             List<RuleItemBuilder<?>> items = new ArrayList<>(kop);
             items.add(onderwerp);
             items.addAll(bereik);
-            items.addAll(parameters);
-            items.addAll(standen);
+            for (LhsItem p : parameters) items.add(weergave.item(p));
+            for (LhsItem p : standen) items.add(weergave.item(p));
             items.addAll(stuur);
-            if (toets != null) items.add(test(this, posities(gelezen), toets, voorwaarde));
+            if (test != null) items.add(weergave.item(test));
             return items;
         }
 
@@ -5571,17 +5592,17 @@ public final class TmsTranspiler {
 
         /**
          * A fold of this rule's subject, bound off the contributions of the fold {@code sleutel} ({@link Bijdrage}): one
-         * accumulate over them that counts them and, where {@code functie} names an accumulate function, folds their
-         * values with it; where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts
-         * on this subject, which binds the least of them, the first in fold order, or null; where the filter can
-         * deposit, an accumulate that counts its {@link Filterdeponering} facts on this subject; and where a member's
-         * value can fault, an accumulate over its {@link Lidfout} facts on this subject, which binds the least of them in
-         * the same way. Returns the index of the count, that of the folded value, that of the least filter fault, that of
-         * the count of filter deposits and that of the least member fault, each -1 without one. An accumulate over no
-         * fact still binds a row, through the count, so the rule reads an empty fold, and a fold without a filter fault,
-         * a filter deposit or a member fault, as well.
+         * accumulate over them that counts them and, where {@code functie} names a fold, folds their values with it;
+         * where the fold's filter can fault, a second accumulate over its {@link Filterfout} facts on this subject, which
+         * binds the least of them, the first in fold order, or null; where the filter can deposit, an accumulate that
+         * counts its {@link Filterdeponering} facts on this subject; and where a member's value can fault, an
+         * accumulate over its {@link Lidfout} facts on this subject, which binds the least of them in the same way.
+         * Returns the index of the count, that of the folded value, that of the least filter fault, that of the count of
+         * filter deposits and that of the least member fault, each -1 without one. An accumulate over no fact still binds
+         * a row, through the count, so the rule reads an empty fold, and a fold without a filter fault, a filter deposit
+         * or a member fault, as well.
          */
-        int[] vouw(Vouw v, Class<?> functie) {
+        int[] vouw(Vouw v, Accumulatie.Soort functie) {
             vouwen.add(v);
             String sleutel = v.sleutel();
             int bekend = bestaand("vouw " + sleutel);
@@ -5589,51 +5610,56 @@ public final class TmsTranspiler {
                     v.kanFalen() ? bestaand("filterfout " + sleutel) : -1,
                     v.deponeert() ? bestaand("filterdeponering " + sleutel) : -1,
                     v.waardeKanFalen() ? bestaand("lidfout " + sleutel) : -1};
-            Variable<Bijdrage> b = DSL.declarationOf(Bijdrage.class, "$bijdrage_" + id("vouw"));
-            PatternDSL.PatternDef<Bijdrage> p = zelfde(PatternDSL.pattern(b)
-                    .expr(id("vouw"), x -> x.vouw().equals(sleutel)), "vouw-onderwerp", s, Bijdrage::onderwerp);
-            Variable<Object> aantal = DSL.declarationOf(Object.class, "$aantal_" + id("vouw"));
+            String b = "$bijdrage_" + id("vouw");
+            Alfa vanVouw = gelijk(id("vouw"), "vouw", sleutel);
+            Join opOnderwerp = opOnderwerp(id("vouw-onderwerp"));
+            String aantal = "$aantal_" + id("vouw");
             int[] uit;
             if (functie == null) {
-                standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
-                        .as(aantal)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), -1, -1, -1, -1};
+                standen(new Accumulatie(new Patroon(Bijdrage.class, b, List.of(vanVouw), List.of(opOnderwerp), List.of()),
+                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
+                uit = new int[]{nieuw(Leessoort.VOUW_AANTAL, "vouw " + sleutel, aantal), -1, -1, -1, -1};
             } else {
-                Variable<Object> bijdragewaarde = DSL.declarationOf(Object.class, "$bijdragewaarde_" + id("vouw"));
-                Variable<Object> uitkomst = DSL.declarationOf(Object.class, "$vouw_" + id("vouw"));
-                p.bind(bijdragewaarde, Bijdrage::waarde);
-                standen.add(DSL.accumulate(p, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), b)
-                        .as(aantal), DSL.accFunction(functie, bijdragewaarde).as(uitkomst)));
-                uit = new int[]{nieuw("vouw " + sleutel, aantal), nieuw("vouwwaarde " + sleutel, uitkomst), -1, -1, -1};
+                String bijdragewaarde = "$bijdragewaarde_" + id("vouw");
+                String uitkomst = "$vouw_" + id("vouw");
+                standen(new Accumulatie(new Patroon(Bijdrage.class, b, List.of(vanVouw), List.of(opOnderwerp),
+                        List.of(Binding.van(bijdragewaarde, Bijdrage.class, "waarde"))),
+                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal),
+                                new Accumulatie.Functie(functie, bijdragewaarde, uitkomst))));
+                uit = new int[]{nieuw(Leessoort.VOUW_AANTAL, "vouw " + sleutel, aantal),
+                        nieuw(Leessoort.VOUW_WAARDE, "vouwwaarde " + sleutel, uitkomst), -1, -1, -1};
             }
             if (v.kanFalen()) {
-                Variable<Filterfout> f = DSL.declarationOf(Filterfout.class, "$filterfout_" + id("vouw"));
-                PatternDSL.PatternDef<Filterfout> q = zelfde(PatternDSL.pattern(f)
-                        .expr(id("filterfout"), x -> x.vouw().equals(sleutel)), "filterfout-onderwerp", s, Filterfout::onderwerp);
-                Variable<Object> fouten = DSL.declarationOf(Object.class, "$filterfouten_" + id("vouw"));
-                Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_filterfout_" + id("vouw"));
-                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
-                        .as(fouten), DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
-                uit[2] = nieuw("filterfout " + sleutel, eerste);
+                String f = "$filterfout_" + id("vouw");
+                Alfa vanFilter = gelijk(id("filterfout"), "vouw", sleutel);
+                Join filterOpOnderwerp = opOnderwerp(id("filterfout-onderwerp"));
+                String fouten = "$filterfouten_" + id("vouw");
+                String eerste = "$eerste_filterfout_" + id("vouw");
+                standen(new Accumulatie(new Patroon(Filterfout.class, f, List.of(vanFilter), List.of(filterOpOnderwerp),
+                        List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, fouten),
+                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, null, eerste))));
+                uit[2] = nieuw(Leessoort.FILTERFOUT, "filterfout " + sleutel, eerste);
             }
             if (v.deponeert()) {
-                Variable<Filterdeponering> d = DSL.declarationOf(Filterdeponering.class, "$filterdeponering_" + id("vouw"));
-                PatternDSL.PatternDef<Filterdeponering> q = zelfde(PatternDSL.pattern(d)
-                        .expr(id("filterdeponering"), x -> x.vouw().equals(sleutel)), "filterdeponering-onderwerp", s, Filterdeponering::onderwerp);
-                Variable<Object> deponeringen = DSL.declarationOf(Object.class, "$filterdeponeringen_" + id("vouw"));
-                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), d)
-                        .as(deponeringen)));
-                uit[3] = nieuw("filterdeponering " + sleutel, deponeringen);
+                String d = "$filterdeponering_" + id("vouw");
+                Alfa vanDeponering = gelijk(id("filterdeponering"), "vouw", sleutel);
+                Join deponeringOpOnderwerp = opOnderwerp(id("filterdeponering-onderwerp"));
+                String deponeringen = "$filterdeponeringen_" + id("vouw");
+                standen(new Accumulatie(new Patroon(Filterdeponering.class, d, List.of(vanDeponering),
+                        List.of(deponeringOpOnderwerp), List.of()),
+                        List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, deponeringen))));
+                uit[3] = nieuw(Leessoort.FILTERDEPONERING, "filterdeponering " + sleutel, deponeringen);
             }
             if (v.waardeKanFalen()) {
-                Variable<Lidfout> f = DSL.declarationOf(Lidfout.class, "$lidfout_" + id("vouw"));
-                PatternDSL.PatternDef<Lidfout> q = zelfde(PatternDSL.pattern(f)
-                        .expr(id("lidfout"), x -> x.vouw().equals(sleutel)), "lidfout-onderwerp", s, Lidfout::onderwerp);
-                Variable<Object> fouten = DSL.declarationOf(Object.class, "$lidfouten_" + id("vouw"));
-                Variable<Object> eerste = DSL.declarationOf(Object.class, "$eerste_lidfout_" + id("vouw"));
-                standen.add(DSL.accumulate(q, DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), f)
-                        .as(fouten), DSL.accFunction(accumulatiefunctie("MinAccumulateFunction"), f).as(eerste)));
-                uit[4] = nieuw("lidfout " + sleutel, eerste);
+                String f = "$lidfout_" + id("vouw");
+                Alfa vanLid = gelijk(id("lidfout"), "vouw", sleutel);
+                Join lidOpOnderwerp = opOnderwerp(id("lidfout-onderwerp"));
+                String fouten = "$lidfouten_" + id("vouw");
+                String eerste = "$eerste_lidfout_" + id("vouw");
+                standen(new Accumulatie(new Patroon(Lidfout.class, f, List.of(vanLid), List.of(lidOpOnderwerp),
+                        List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, fouten),
+                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, null, eerste))));
+                uit[4] = nieuw(Leessoort.LIDFOUT, "lidfout " + sleutel, eerste);
             }
             return uit;
         }
@@ -5644,10 +5670,11 @@ public final class TmsTranspiler {
             int bekend = bestaand("rekendatum");
             if (bekend >= 0) return bekend;
             rekendatumGlobal();
-            Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$rekendatum_" + variabelen.size());
-            Variable<Object> d = DSL.declarationOf(Object.class, "$rekendatumwaarde_" + variabelen.size());
-            parameters.add(PatternDSL.pattern(r).bind(d, Rekendatum::datum));
-            return nieuw("rekendatum", d);
+            String r = "$rekendatum_" + slots.size();
+            String d = "$rekendatumwaarde_" + slots.size();
+            parameters(new Patroon(Rekendatum.class, r, List.of(), List.of(),
+                    List.of(Binding.van(d, Rekendatum.class, "datum"))));
+            return nieuw(Leessoort.REKENDATUM, "rekendatum", d);
         }
 
         /** Gates this rule on the evaluation date (RUNTIME-SEMANTICS ch. 8.2): it matches only where the validity
@@ -5657,25 +5684,22 @@ public final class TmsTranspiler {
         Lezingen geldig(Geldigheid g) {
             if (g == null || g.altijd()) return this;
             rekendatumGlobal();
-            Variable<Rekendatum> r = DSL.declarationOf(Rekendatum.class, "$geldigheid_" + variabelen.size());
-            parameters.add(PatternDSL.pattern(r).expr(id("geldig"), x -> g.bevat(x.datum())));
+            String r = "$geldigheid_" + slots.size();
+            parameters(new Patroon(Rekendatum.class, r, List.of(new Alfa(id("geldig"),
+                    List.of(new Alfa.Veldtoets("datum", Alfa.Vergelijker.BINNEN, g)))), List.of(), List.of()));
             return this;
         }
 
         /** A slot of the value array for the binder of a {@code Let} ({@link TmsTranspiler#let}): no pattern binds it, so
          *  it is no position a condition reads or a consequence binds, and the array is sized past it. */
         int binder() {
-            variabelen.add(null);
-            return variabelen.size() - 1;
+            return ongebonden(Leessoort.BINDER);
         }
 
         /** The slot of the probe of this rule's deposits ({@link Sonde}), made at the first place that deposits; like a
          *  binder's slot no pattern binds it. */
         int sonde() {
-            if (sonde < 0) {
-                variabelen.add(null);
-                sonde = variabelen.size() - 1;
-            }
+            if (sonde < 0) sonde = ongebonden(Leessoort.SONDE);
             return sonde;
         }
 
@@ -5691,11 +5715,10 @@ public final class TmsTranspiler {
         int creatiefase(int stratum) {
             int bekend = bestaand("creatiefase");
             if (bekend >= 0) return bekend;
-            Variable<Creatiefase> f = DSL.declarationOf(Creatiefase.class, "$creatiefase");
-            Variable<Object> n = DSL.declarationOf(Object.class, "$fase");
-            parameters.add(PatternDSL.pattern(f).expr(id("creatiestratum"), c -> c.stratum() >= stratum)
-                    .bind(n, Creatiefase::nummer));
-            return nieuw("creatiefase", n);
+            parameters(new Patroon(Creatiefase.class, "$creatiefase", List.of(new Alfa(id("creatiestratum"),
+                    List.of(new Alfa.Veldtoets("stratum", Alfa.Vergelijker.MINSTENS, stratum)))), List.of(),
+                    List.of(Binding.van("$fase", Creatiefase.class, "nummer"))));
+            return nieuw(Leessoort.CREATIEFASE, "creatiefase", "$fase");
         }
 
         /** The marks of the creation that made this rule's subject, the {@link Gemaakt} facts whose object is the
@@ -5710,37 +5733,38 @@ public final class TmsTranspiler {
             String sleutel = "ontvangers " + verdeling;
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Ontvanger> o = DSL.declarationOf(Ontvanger.class, "$ontvanger_" + id("verdeling"));
-            Variable<Object> lijst = DSL.declarationOf(Object.class, "$ontvangers_" + id("verdeling"));
-            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(o).expr(id("ontvanger"),
-                            x -> x.verdeling().equals(verdeling)), "ontvanger-bron", s, Ontvanger::bron),
-                    DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), o).as(lijst)));
-            return nieuw(sleutel, lijst);
+            String o = "$ontvanger_" + id("verdeling");
+            String lijst = "$ontvangers_" + id("verdeling");
+            Alfa vanVerdeling = gelijk(id("ontvanger"), "verdeling", verdeling);
+            standen(new Accumulatie(new Patroon(Ontvanger.class, o, List.of(vanVerdeling),
+                    List.of(new Join(id("ontvanger-bron"), "bron", ONDERWERP)), List.of()),
+                    List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, lijst))));
+            return nieuw(Leessoort.ONTVANGERS, sleutel, lijst);
         }
 
         int herkomst() {
             int bekend = bestaand("herkomst");
             if (bekend >= 0) return bekend;
-            Variable<Gemaakt> g = DSL.declarationOf(Gemaakt.class, "$herkomst_" + id("creatie"));
-            Variable<Object> lijst = DSL.declarationOf(Object.class, "$herkomsten_" + id("creatie"));
-            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(g), "herkomst", s, Gemaakt::object),
-                    DSL.accFunction(accumulatiefunctie("CollectListAccumulateFunction"), g).as(lijst)));
-            return nieuw("herkomst", lijst);
+            String g = "$herkomst_" + id("creatie");
+            String lijst = "$herkomsten_" + id("creatie");
+            standen(new Accumulatie(new Patroon(Gemaakt.class, g, List.of(),
+                    List.of(new Join(id("herkomst"), "object", ONDERWERP)), List.of()),
+                    List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, lijst))));
+            return nieuw(Leessoort.HERKOMST, "herkomst", lijst);
         }
 
         /** The standing of the §9.5 channel of the form named {@code producent}, bound off its {@link KanaalStand}:
          *  one fact for the whole session, joined to no subject, since the channel test has none of its own. */
-        @SuppressWarnings("unchecked")
         int kanaal(String producent) {
             String sleutel = "kanaal " + producent;
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
-            Variable<KanaalStand> st = DSL.declarationOf(KanaalStand.class, "$kanaal_" + variabelen.size());
-            standen.add(PatternDSL.pattern(st).expr(id("kanaal"), k -> k.regel().equals(producent))
-                    .bind(w, KanaalStand::inconsistent));
+            String w = "$lezing_" + slots.size();
+            String st = "$kanaal_" + slots.size();
+            standen(new Patroon(KanaalStand.class, st, List.of(gelijk(id("kanaal"), "regel", producent)), List.of(),
+                    List.of(Binding.van(w, KanaalStand.class, "inconsistent"))));
             kanaalnamen.add(producent);
-            return nieuw(sleutel, w);
+            return nieuw(Leessoort.KANAAL, sleutel, w);
         }
 
         /** Whether the reference field {@code veld} of this rule's subject is set, to an instance of {@code klasse} where
@@ -5751,29 +5775,25 @@ public final class TmsTranspiler {
             String sleutel = "rolveld " + veld + " " + (klasse == null ? "" : klasse.getName());
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
-            Function<Object, Object> getter = Accessors.getter(bonenklasse(subject), veld);
-            onderwerp.bind(w, o -> {
-                Object ander = getter.apply(o);
-                return ander != null && (klasse == null || klasse.isInstance(ander));
-            });
-            return nieuw(sleutel, w);
+            String w = "$lezing_" + slots.size();
+            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), veld), Binding.Leesvorm.GEZET,
+                    klasse));
+            return nieuw(Leessoort.ROLVELD, sleutel, w);
         }
 
         /** The number of beans of {@code klasse} whose reference field {@code veld} names this rule's subject: the links
          *  of an input relation stored on the other end ({@link TmsTranspiler#rolcontrole}), bound off an accumulate,
          *  which over no bean still binds a row. */
-        @SuppressWarnings("unchecked")
         int rolvullers(Class<?> klasse, String veld) {
             String sleutel = "rolvullers " + klasse.getName() + " " + veld;
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> vuller = (Variable<Object>) DSL.declarationOf(klasse, "$vuller_" + id("rol"));
-            Variable<Object> aantal = DSL.declarationOf(Object.class, "$vullers_" + id("rol"));
-            Function<Object, Object> getter = Accessors.getter(klasse, veld);
-            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(vuller), "rolvuller", s, getter::apply),
-                    DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), vuller).as(aantal)));
-            return nieuw(sleutel, aantal);
+            String vuller = "$vuller_" + id("rol");
+            String aantal = "$vullers_" + id("rol");
+            standen(new Accumulatie(new Patroon(klasse, vuller, List.of(),
+                    List.of(new Join(id("rolvuller"), veld, ONDERWERP)), List.of()),
+                    List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
+            return nieuw(Leessoort.ROLVULLERS, sleutel, aantal);
         }
 
         /** The number of links of the created relation {@code relatie} that hold this rule's subject at its first end
@@ -5785,15 +5805,19 @@ public final class TmsTranspiler {
                     + (klasse == null ? "" : klasse.getName());
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$rolkoppeling_" + id("rol"));
-            Variable<Object> aantal = DSL.declarationOf(Object.class, "$rolkoppelingen_" + id("rol"));
+            String k = "$rolkoppeling_" + id("rol");
+            String aantal = "$rolkoppelingen_" + id("rol");
             // the test of the other end's class reads the link alone, so it goes with the relation and the join to the
             // subject stays an identity join that the memories can hash
-            standen.add(DSL.accumulate(zelfde(PatternDSL.pattern(k).expr(id("rolkoppeling"), x -> x.relatie().equals(relatie)
-                            && (klasse == null || klasse.isInstance(onderwerpIsEerste ? x.tweede() : x.eerste()))),
-                    "rolkoppeling-onderwerp", s, x -> onderwerpIsEerste ? x.eerste() : x.tweede()),
-                    DSL.accFunction(accumulatiefunctie("CountAccumulateFunction"), k).as(aantal)));
-            return nieuw(sleutel, aantal);
+            List<Alfa.Veldtoets> toetsen = new ArrayList<>();
+            toetsen.add(new Alfa.Veldtoets("relatie", Alfa.Vergelijker.GELIJK, relatie));
+            if (klasse != null)
+                toetsen.add(new Alfa.Veldtoets(onderwerpIsEerste ? "tweede" : "eerste", Alfa.Vergelijker.IS_EEN, klasse));
+            Alfa vanRelatie = new Alfa(id("rolkoppeling"), toetsen);
+            Join opOnderwerp = new Join(id("rolkoppeling-onderwerp"), onderwerpIsEerste ? "eerste" : "tweede", ONDERWERP);
+            standen(new Accumulatie(new Patroon(Koppeling.class, k, List.of(vanRelatie), List.of(opOnderwerp), List.of()),
+                    List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, aantal))));
+            return nieuw(Leessoort.ROLKOPPELINGEN, sleutel, aantal);
         }
 
         /** The parent of this rule's subject in the scope of a uniqueness ({@link TmsTranspiler#sleutelregel}): the
@@ -5815,10 +5839,10 @@ public final class TmsTranspiler {
             if (!FactModelGenerator.heeftReferentieVeld(model, subject, paar[0].naam(), ouder))
                 throw new Weigering("de scope van een Uniqueness: " + FactModelGenerator.geenReferentieveldReden(model,
                         subject, paar[0].naam(), ouder) + " (§13.3.9 opslagrichting)");
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
-            Function<Object, Object> getter = Accessors.getter(bonenklasse(subject), paar[0].naam());
-            onderwerp.bind(w, o -> getter.apply(o));
-            return nieuw(sleutel, w);
+            String w = "$lezing_" + slots.size();
+            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), paar[0].naam()),
+                    Binding.Leesvorm.WAARDE, null));
+            return nieuw(Leessoort.SCOPE, sleutel, w);
         }
 
         private int bestaand(String sleutel) {
@@ -5827,39 +5851,82 @@ public final class TmsTranspiler {
             return i == null ? -1 : i;
         }
 
-        private int nieuw(String sleutel, Variable<?> v) {
-            int i = variabelen.size();
-            variabelen.add(v);
+        /** A slot that a binding of the plan binds to the variable {@code naam}, read once per rule under
+         *  {@code sleutel}. */
+        private int nieuw(Leessoort soort, String sleutel, String naam) {
+            int i = slots.size();
+            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(i, soort, sleutel, naam);
+            slots.add(l);
+            weergave.lezing(l);
             index.put(sleutel, i);
             if (gebruik != null) gebruik.add(i);
             return i;
         }
 
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        /** A slot that a pattern built outside the plan binds to {@code v}, read once per rule under {@code sleutel}:
+         *  the places of a to-many step that the range of a filter fault rule binds ({@link TmsTranspiler#plaats}),
+         *  until step 1c plans that range too. */
+        int extern(Leessoort soort, String sleutel, Variable<Object> v) {
+            int i = slots.size();
+            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(i, soort, sleutel, v.getName());
+            slots.add(l);
+            weergave.extern(l, v);
+            index.put(sleutel, i);
+            if (gebruik != null) gebruik.add(i);
+            return i;
+        }
+
+        /** A slot that no pattern binds: the consequence fills it. */
+        private int ongebonden(Leessoort soort) {
+            dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(slots.size(), soort, null, null);
+            slots.add(l);
+            weergave.lezing(l);
+            return l.slot();
+        }
+
+        private void bindOnderwerp(Binding b) {
+            onderwerpbindingen.add(b);
+            weergave.bindOnderwerp(b);
+        }
+
+        private void parameters(LhsItem item) {
+            parameters.add(item);
+            weergave.item(item);
+        }
+
+        private void standen(LhsItem item) {
+            standen.add(item);
+            weergave.item(item);
+        }
+
+        /** The standing of {@code lid} of the subject, a {@link Stand} or a {@link KenmerkStand}, binding {@code veld}
+         *  of it to {@code w}: a constraint on the member, the join on the subject, the binding. */
+        private Patroon stand(Class<?> klasse, String naam, String lidveld, ElementSleutel lk, String veld, String w) {
+            Alfa vanLid = gelijk(id("stand"), lidveld, lk);
+            Join opOnderwerp = opOnderwerp(id("stand-onderwerp"));
+            return new Patroon(klasse, naam, List.of(vanLid), List.of(opOnderwerp), List.of(Binding.van(w, klasse, veld)));
+        }
+
         int eigen(Lid lid) {
             String sleutel = "eigen " + lid.sleutel();
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            String w = "$lezing_" + slots.size();
             ElementSleutel lk = lid.sleutel();
             if (schrijvers.containsKey(lk)) {
                 if (lid.kenmerk()) {
-                    Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand_" + variabelen.size());
-                    standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)),
-                            "stand-onderwerp", s, KenmerkStand::onderwerp).bind(w, KenmerkStand::waar));
-                } else {
-                    Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
-                    standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)),
-                            "stand-onderwerp", s, Stand::onderwerp).bind(w, Stand::waarde));
+                    standen(stand(KenmerkStand.class, "$stand_" + slots.size(), "kenmerk", lk, "waar", w));
+                    afgeleid.put(lk, lid);
+                    return nieuw(Leessoort.KENMERKSTAND, sleutel, w);
                 }
+                standen(stand(Stand.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
                 afgeleid.put(lk, lid);
-            } else {
-                // input: no form writes it, so it does not change while the session fires and is read off the bean
-                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-                if (lid.kenmerk()) onderwerp.bind(w, o -> Boolean.TRUE.equals(getter.apply(o)));
-                else onderwerp.bind(w, o -> getter.apply(o));
+                return nieuw(Leessoort.STAND, sleutel, w);
             }
-            return nieuw(sleutel, w);
+            // input: no form writes it, so it does not change while the session fires and is read off the bean
+            bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(lid.klasse(), lid.naam()),
+                    lid.kenmerk() ? Binding.Leesvorm.WAAR : Binding.Leesvorm.WAARDE, null));
+            return nieuw(Leessoort.INVOER, sleutel, w);
         }
 
         /**
@@ -5878,21 +5945,19 @@ public final class TmsTranspiler {
             String sleutel = "tijdlijn " + lid.sleutel();
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> w = DSL.declarationOf(Object.class, "$tijdlijn_" + variabelen.size());
+            String w = "$tijdlijn_" + slots.size();
             ElementSleutel lk = lid.sleutel();
             if (lid.kenmerk()) {
                 if (schrijvers.containsKey(lk))
                     throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
                             + ", dat een vorm schrijft: " + NOG_NIET + " (RUNTIME-SEMANTICS ch. 3.11)");
-                Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-                onderwerp.bind(w, o -> Tijdvak.lijst((List<?>) getter.apply(o)));
+                bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(lid.klasse(), lid.naam()),
+                        Binding.Leesvorm.TIJDVAKKEN, null));
             } else {
-                Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand_" + variabelen.size());
-                standen.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)),
-                        "stand-onderwerp", s, Stand::onderwerp).bind(w, Stand::waarde));
+                standen(stand(Stand.class, "$stand_" + slots.size(), "attribuut", lk, "waarde", w));
                 afgeleid.put(lk, lid);
             }
-            return nieuw(sleutel, w);
+            return nieuw(Leessoort.TIJDLIJN, sleutel, w);
         }
 
         /** A member of the object {@code pad} reaches from this rule's subject, null where a link on the path is absent.
@@ -5900,12 +5965,11 @@ public final class TmsTranspiler {
          *  one of the subject's own, so the read carries the case's input convention, a {@code List<Tijdvak>} or an
          *  {@link Emmerscalair}; a characteristic on a timeline, which is input only, is bound as its true periods, a
          *  {@code List<Tijdvak>} ({@link #invoerlezing}). */
-        @SuppressWarnings({"unchecked", "rawtypes"})
         int genavigeerd(Pad pad, Lid lid) {
             String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
+            String w = "$lezing_" + slots.size();
             ElementSleutel lk = lid.sleutel();
             if (lid.tijd() != null && lid.kenmerk() && schrijvers.containsKey(lk))
                 throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
@@ -5915,19 +5979,21 @@ public final class TmsTranspiler {
             if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid) || pad.gecreeerd()) {
                 Padlezing p = new Padlezing(pad, lid);
                 String ps = pad.sleutel();
-                Variable<PadStand> st = DSL.declarationOf(PadStand.class, "$padstand_" + variabelen.size());
-                standen.add(zelfde(PatternDSL.pattern(st).expr(id("padstand"), x -> x.pad().equals(ps) && x.lid().equals(lk)),
-                        "padstand-onderwerp", s, PadStand::onderwerp).bind(w, PadStand::waarde));
+                String st = "$padstand_" + slots.size();
+                Alfa vanPad = new Alfa(id("padstand"), List.of(new Alfa.Veldtoets("pad", Alfa.Vergelijker.GELIJK, ps),
+                        new Alfa.Veldtoets("lid", Alfa.Vergelijker.GELIJK, lk)));
+                Join opOnderwerp = opOnderwerp(id("padstand-onderwerp"));
+                standen(new Patroon(PadStand.class, st, List.of(vanPad), List.of(opOnderwerp),
+                        List.of(Binding.van(w, PadStand.class, "waarde"))));
                 paden.put(p.sleutel(), p);
-            } else {
-                // input over links that are input: bound off the subject's bean, null where a link is absent
-                Function<Object, Object> lees = invoerlezing(lid);
-                onderwerp.bind(w, o -> {
-                    Object d = pad.loop(o);
-                    return d == null ? null : lees.apply(d);
-                });
+                return nieuw(Leessoort.PADSTAND, sleutel, w);
             }
-            return nieuw(sleutel, w);
+            // input over links that are input: bound off the subject's bean, null where a link is absent
+            List<Binding.Veld> stappen = new ArrayList<>();
+            for (int i = 0; i < pad.hops().size(); i++)
+                stappen.add(new Binding.Veld(bonenklasse(pad.hops().get(i).van()), pad.rollen().get(i)));
+            bindOnderwerp(new Binding(w, stappen, new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null));
+            return nieuw(Leessoort.INVOERPAD, sleutel, w);
         }
 
         /** A parameter, bound off its {@link ParameterStand}: no test or consequence names a global itself, since two
@@ -5940,12 +6006,25 @@ public final class TmsTranspiler {
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
             global(p);
-            Variable<Object> w = DSL.declarationOf(Object.class, "$lezing_" + variabelen.size());
-            Variable<ParameterStand> st = DSL.declarationOf(ParameterStand.class, "$parameter_" + variabelen.size());
-            parameters.add(PatternDSL.pattern(st).expr(id("parameter"), x -> x.parameter().equals(naam))
-                    .bind(w, ParameterStand::waarde));
-            return nieuw(sleutel, w);
+            String w = "$lezing_" + slots.size();
+            String st = "$parameter_" + slots.size();
+            parameters(new Patroon(ParameterStand.class, st, List.of(gelijk(id("parameter"), "parameter", naam)),
+                    List.of(), List.of(Binding.van(w, ParameterStand.class, "waarde"))));
+            return nieuw(Leessoort.PARAMETER, sleutel, w);
         }
+    }
+
+    /** The name of the variable of a rule's subject in every plan: the name joins on the subject refer to. */
+    private static final String ONDERWERP = "$onderwerp";
+
+    /** A constraint that field {@code veld} of a fact equals {@code waarde}. */
+    private static Alfa gelijk(String id, String veld, Object waarde) {
+        return new Alfa(id, List.of(new Alfa.Veldtoets(veld, Alfa.Vergelijker.GELIJK, waarde)));
+    }
+
+    /** The join of a standing fact on the rule's subject: its field {@code onderwerp} is the subject. */
+    private static Join opOnderwerp(String id) {
+        return new Join(id, "onderwerp", ONDERWERP);
     }
 
     /** The rule that puts the {@link ParameterStand} of one parameter in working memory: it matches no fact, so it fires
@@ -5981,55 +6060,6 @@ public final class TmsTranspiler {
 
     private static int[] posities(Set<Integer> gebruik) {
         return gebruik.stream().mapToInt(Integer::intValue).toArray();
-    }
-
-    /** The test over the values a condition reads, as a standalone test after the patterns that bind them. A condition
-     *  that reads nothing is a constant. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private RuleItemBuilder<?> test(Lezingen lez, int[] pos, Toets toets, Conditie c) {
-        if (pos.length > MAX_LEZINGEN)
-            throw new Weigering("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(c) + "'): de toets van"
-                    + " deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
-        int n = lez.variabelen.size();
-        Toets t = args -> {
-            Object[] w = new Object[n];
-            for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j];
-            return toets.test(w);
-        };
-        String id = id("voorwaarde");
-        Variable[] v = new Variable[pos.length];
-        for (int j = 0; j < pos.length; j++) v[j] = lez.variabelen.get(pos[j]);
-        return switch (v.length) {
-            case 0 -> DSL.expr(id, t.test(new Object[0]));
-            case 1 -> DSL.expr(id, v[0], (Predicate1) a -> t.test(new Object[]{a}));
-            case 2 -> DSL.expr(id, v[0], v[1], (Predicate2) (a, b) -> t.test(new Object[]{a, b}));
-            case 3 -> DSL.expr(id, v[0], v[1], v[2], (Predicate3) (a, b, d) -> t.test(new Object[]{a, b, d}));
-            case 4 -> DSL.expr(id, v[0], v[1], v[2], v[3],
-                    (Predicate4) (a, b, d, e) -> t.test(new Object[]{a, b, d, e}));
-            case 5 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4],
-                    (Predicate5) (a, b, d, e, f) -> t.test(new Object[]{a, b, d, e, f}));
-            case 6 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5],
-                    (Predicate6) (a, b, d, e, f, g) -> t.test(new Object[]{a, b, d, e, f, g}));
-            case 7 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6],
-                    (Predicate7) (a, b, d, e, f, g, h) -> t.test(new Object[]{a, b, d, e, f, g, h}));
-            case 8 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7],
-                    (Predicate8) (a, b, d, e, f, g, h, i) -> t.test(new Object[]{a, b, d, e, f, g, h, i}));
-            case 9 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8],
-                    (Predicate9) (a, b, d, e, f, g, h, i, j) -> t.test(new Object[]{a, b, d, e, f, g, h, i, j}));
-            case 10 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9],
-                    (Predicate10) (a, b, d, e, f, g, h, i, j, k) -> t.test(new Object[]{a, b, d, e, f, g, h, i, j, k}));
-            case 11 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10],
-                    (Predicate11) (a, b, d, e, f, g, h, i, j, k, l) ->
-                            t.test(new Object[]{a, b, d, e, f, g, h, i, j, k, l}));
-            case 12 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11],
-                    (Predicate12) (a, b, d, e, f, g, h, i, j, k, l, m) ->
-                            t.test(new Object[]{a, b, d, e, f, g, h, i, j, k, l, m}));
-            case 13 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12],
-                    (Predicate13) (a, b, d, e, f, g, h, i, j, k, l, m, p) ->
-                            t.test(new Object[]{a, b, d, e, f, g, h, i, j, k, l, m, p}));
-            default -> throw new IllegalStateException("'" + snippet(c) + "' bindt " + v.length + " waarden; "
-                    + "hierboven geweigerd boven " + MAX_LEZINGEN);
-        };
     }
 
     /** The body of a consequence: the Drools handle, the subject, and the bound values at their indices. */
