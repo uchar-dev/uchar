@@ -174,14 +174,15 @@ final class PatternDslWeergave {
         }
     }
 
-    /** The test of the condition over the values at its slots, as a standalone test after the patterns that bind them;
+    /** The test of the condition over the values at its slots, as a standalone test after the patterns that bind them,
+     *  asking of the condition what the plan's role says ({@link ClosureWeergave#toets(Toetsitem.Rol, Predicate, int)});
      *  a condition that reads nothing is a constant. The analysis refuses a condition over more than
      *  {@link TmsTranspiler#MAX_LEZINGEN} values, the most the DSL's standalone test takes. */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private RuleItemBuilder<?> toets(Toetsitem toets) {
         int[] pos = toets.slots().stream().mapToInt(Integer::intValue).toArray();
         int n = toets.grootte();
-        Predicate<Object[]> gecompileerd = toets.gecompileerd();
+        Predicate<Object[]> gecompileerd = ClosureWeergave.toets(toets.rol(), toets.gecompileerd(), toets.sonde());
         Predicate<Object[]> t = args -> {
             Object[] w = new Object[n];
             for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j];

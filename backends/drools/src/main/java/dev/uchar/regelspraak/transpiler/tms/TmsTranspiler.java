@@ -90,6 +90,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -879,7 +880,7 @@ public final class TmsTranspiler {
         Toets toets = r.voorwaarde() == null ? null : voorwaarde(r.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
         ElementSleutel sleutel = lid.sleutel();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(new HeeftKenmerk(o, sleutel))));
@@ -1245,7 +1246,7 @@ public final class TmsTranspiler {
                         "een §4 schrijfgrens naar het doel"));
         lez.stop();
         int sonde = lez.sondeplaats();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, r.voorwaarde());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, r.voorwaarde());
         if (blokkade != null) items.addAll(blokkade.apply(lez));
         String naam = r.naam();
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
@@ -1348,11 +1349,12 @@ public final class TmsTranspiler {
      * The rule that inserts the fault of a condition that can fault, beside the rule {@code regelnaam} of the form
      * {@code vorm} that tests the condition. A condition is tested in the left-hand side, and an exception there leaves
      * the fire, where truth maintenance cannot withdraw it when the reads it rested on change; the form's own rule
-     * therefore tests the condition through {@link #zonderFout}, which does not hold where it faults, and this rule,
-     * whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw} sets up the subject
-     * pattern and what precedes it), with the same {@code blokkade} after the test and the test that the condition
-     * faults, inserts the named {@link Fout} logically, on the subject of the form. It fires exactly where the form's
-     * rule tests the condition and the test faults, and the fault goes when a read it rested on changes. The sentence
+     * therefore tests the condition with the role {@link Toetsitem.Rol#ZONDER_FOUT}, which does not hold where it
+     * faults, and this rule, whose left-hand side is that rule's own built again over fresh declarations ({@code nieuw}
+     * sets up the subject pattern and what precedes it), with the same {@code blokkade} after the test and the test of
+     * the role {@link Toetsitem.Rol#FOUT}, that the condition faults, inserts the named {@link Fout} logically, on the
+     * subject of the form. It fires exactly where the form's rule tests the condition and the test faults, and the
+     * fault goes when a read it rested on changes. The sentence
      * names the form's rule. A condition faults also where it
      * reaches a fold whose filter faulted for a member ({@link #vouw}); the filter itself inserts no fault
      * ({@link #filterfoutregel}).
@@ -1363,7 +1365,7 @@ public final class TmsTranspiler {
         Set<Integer> gelezen = lez.volg();
         Toets toets = voorwaarde(c, lez);
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, c);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, c);
         if (blokkade != null) items.addAll(blokkade.apply(lez));
         String zinregel = model.geëmitteerdeRegelNaam(vorm);
         items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
@@ -1377,17 +1379,17 @@ public final class TmsTranspiler {
         return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
     }
 
-    /** {@code toets} where it answers, and not holding where it faults: the fault is the fault rule's
-     *  ({@link #voorwaardefoutregel}). */
+    /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
+     *  its fault, which the fault rule takes ({@link #voorwaardefoutregel}). */
+    private static Toetsitem.Rol voorwaarderol(boolean kanFalen) {
+        return kanFalen ? Toetsitem.Rol.ZONDER_FOUT : Toetsitem.Rol.VOORWAARDE;
+    }
+
+    /** {@code toets} where it answers, and not holding where it faults, for a test a form composes itself
+     *  ({@link #lidfoutregel}); the test of a condition says so by its role ({@link Toetsitem.Rol#ZONDER_FOUT}). */
     private static Toets zonderFout(Toets toets) {
-        return w -> {
-            try {
-                return toets.test(w);
-            } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
-                return false;
-            }
-        };
+        Predicate<Object[]> p = ClosureWeergave.zonderFout(toets::test);
+        return p::test;
     }
 
     /**
@@ -1409,17 +1411,7 @@ public final class TmsTranspiler {
         lez.stop();
         int sonde = lez.sondeplaats();
         if (sonde < 0) throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" deelt, maar kreeg geen sonde");
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> {
-            Sonde s = new Sonde();
-            w[sonde] = s;
-            try {
-                toets.test(w);
-            } catch (RuntimeException e) {
-                // a fault is the fault rule's; what the evaluation deposited before it stays heard
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
-            }
-            return s.gemeld();
-        }, gelezen, c);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.DEPONERING, toets, gelezen, c);
         if (blokkade != null) items.addAll(blokkade.apply(lez));
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                 drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, vorm, o))));
@@ -1427,19 +1419,10 @@ public final class TmsTranspiler {
         return PatternDSL.rule(PKG, regelnaam + ": deponering in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
     }
 
-    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
-     *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link Rekenfout}: a date step or a duration
-     *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
-     *  {@code Unresolved} node reached, and the other faults that class names. Any other exception is a broken contract
-     *  or a bug and leaves the fire as it is. */
+    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers, as the test of the fault rule
+     *  finds it ({@link ClosureWeergave#fout}): the consequence of that rule asks it again for the fault it inserts. */
     private static RuntimeException fout(Toets toets, Object[] w) {
-        try {
-            toets.test(w);
-            return null;
-        } catch (RuntimeException e) {
-            if (!Rekenfout.isEvaluatiefout(e)) throw e;
-            return e;
-        }
+        return ClosureWeergave.fout(toets::test, w);
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -1468,7 +1451,7 @@ public final class TmsTranspiler {
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Toets geschonden = w -> !houdt.test(w);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(geschonden) : geschonden, gelezen,
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), geschonden, gelezen,
                 c.assertie());
         String naam = c.naam();
         items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
@@ -1605,7 +1588,7 @@ public final class TmsTranspiler {
             if (tijdlijn >= 0 && w[sleutels.get(tijdlijn)] instanceof Emmerscalair) return false;
             return scope < 0 || w[scope] != null;
         };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(doetMee, gelezen, null);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, doetMee, gelezen, null);
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> {
             List<Object> waarden = new ArrayList<>(sleutels.size());
             for (int i = 0; i < sleutels.size(); i++) {
@@ -1659,7 +1642,7 @@ public final class TmsTranspiler {
             for (int i : ervoor) if (w[i] == null) return false;
             return w[tijdlijn] instanceof Emmerscalair;
         };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(emmer, gelezen, null);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, emmer, gelezen, null);
         String sleutelnaam = tijdlid.naam();
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> drools.logicalInsert(new Fout(o, naam,
                 new Invoervormfout("the ever-unique key \"" + sleutelnaam + "\" needs the full timeline; ", o,
@@ -1850,7 +1833,7 @@ public final class TmsTranspiler {
         int k = sleutel == null ? -1 : lid.eigen(sleutel);
         int m = maximum == null ? -1 : lid.eigen(maximum);
         lid.stop();
-        List<RuleItemBuilder<?>> lidregel = lid.linkerkant(null, Set.of(), null);
+        List<RuleItemBuilder<?>> lidregel = lid.linkerkant(Toetsitem.Rol.VOORWAARDE, null, Set.of(), null);
         lidregel.add(gevolg(lid, lid.drager, posities(lidgebruik), (drools, b, w) ->
                 drools.logicalInsert(new Ontvanger(naam, b, w[ontvanger], g < 0 ? null : w[g], k < 0 ? null : w[k],
                         m < 0 ? null : w[m])), lid.variabelen.size()));
@@ -1868,7 +1851,7 @@ public final class TmsTranspiler {
         int p = lez.eigen(pot);
         int lijst = lez.ontvangers(naam);
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, v.voorwaarde());
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, v.voorwaarde());
         ElementSleutel aandeelSleutel = aandeel.sleutel(), restSleutel = rest == null ? null : rest.sleutel();
         boolean gewogen = gewicht != null, gemaximeerd = maximum != null, afnemend = v.afnemend();
         Integer decimalen = v.afrondingDecimalen();
@@ -2085,7 +2068,7 @@ public final class TmsTranspiler {
         gebruik.add(fase);
         int herkomst = lez.herkomst();
         gebruik.add(herkomst);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, oc.voorwaarde(),
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, oc.voorwaarde(),
                 creatiebewaking(naam, lez, fase));
         // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
         // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
@@ -2304,7 +2287,7 @@ public final class TmsTranspiler {
         lez.stop();
         int stratum = stratum(fc, fc.naam());
         int fase = lez.creatiefase(stratum);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, ankerguard);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, ankerguard);
         List<RolBindingRef> stappen = new ArrayList<>();
         for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) stappen.add(t.rolBinding());
         stappen.add(fc.joinRol());
@@ -2905,11 +2888,10 @@ public final class TmsTranspiler {
         Toets toets = d.voorwaarde() == null ? null : voorwaarde(d.voorwaarde(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
-        Toets getoetst = kanFalen ? zonderFout(toets) : toets;
         String naam = b.naam;
         List<RuleItemBuilder<?>> items;
         if (b.kenmerk) {
-            items = lez.linkerkant(getoetst, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
             Boolean beslissing = d.besluit();
             items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                     besluit.voer(drools, o, beslissing)));
@@ -2918,7 +2900,7 @@ public final class TmsTranspiler {
             Waardefunctie waarde = gevolgwaarde(herschaald(waarde(d.consequentie(), lez),
                     eff.eenheidVan(d.consequentie()), b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel"));
             lez.stop();
-            items = lez.linkerkant(getoetst, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
             int n = lez.variabelen.size();
             items.add(gevolg(lez, posities(gebruik), (drools, o, w) -> {
                 Object v;
@@ -4239,7 +4221,7 @@ public final class TmsTranspiler {
         int waarde = lidwaarde == null ? -1 : lidwaarde.tijd() == null ? lez.eigen(lidwaarde) : lez.tijdlijn(lidwaarde);
         String totaal = lidwaarde == null || lidwaarde.tijd() == null ? null : lidwaarde.tijd().name();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(kanFalen ? zonderFout(toets) : toets, gelezen, filter);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, filter);
         boolean telling = kind == Expr.FunctieKind.AANTAL, gevuld = kind == Expr.FunctieKind.AANTAL_GEVULDE;
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             if (telling) {
@@ -4285,16 +4267,7 @@ public final class TmsTranspiler {
         Set<Integer> gebruik = lez.volg();
         int lid = lez.lid();
         lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> {
-            Sonde s = new Sonde();
-            w[sonde] = s;
-            try {
-                toets.test(w);
-            } catch (RuntimeException e) {
-                if (!Rekenfout.isEvaluatiefout(e)) throw e;
-            }
-            return s.gemeld();
-        }, gelezen, filter);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.DEPONERING, toets, gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) ->
                 drools.logicalInsert(new Filterdeponering(sleutel, onderwerp, w[lid])), lez.variabelen.size()));
         vastleggen.accept(lez);
@@ -4327,7 +4300,7 @@ public final class TmsTranspiler {
             gebruik.add(p.aantal());
             gebruik.add(p.plaats());
         }
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> fout(toets, w) != null, gelezen, filter);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             RuntimeException fout = fout(toets, w);
             if (fout == null)
@@ -4379,8 +4352,8 @@ public final class TmsTranspiler {
             gebruik.add(p.plaats());
         }
         String naam = lidwaarde.naam();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(w -> houdt.test(w) && w[waarde] instanceof Emmerscalair,
-                gelezen, filter);
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
+                w -> houdt.test(w) && w[waarde] instanceof Emmerscalair, gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
             plaats.add(selectie);
@@ -5033,12 +5006,12 @@ public final class TmsTranspiler {
     /**
      * The contribution rules of the quantifier fold {@code kv} on {@code subject}: one over its range, the fold's
      * subject bound first and the member joined to it, the member's reads of the filter and of the matrix bound, the
-     * filter as the test (through {@link #zonderFout} where it can fault), and a consequence that evaluates the matrix
-     * for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its verdict, or, where the matrix
-     * can fault or deposit, its {@link Lidtoets}, with the member's place bound as the filter fault rule binds it
-     * ({@link Bereik#perRoute}). Beside it the filter fault rule and the filter deposit rule of a filter that can fault
-     * or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order of the members, so a
-     * matrix that can fault or deposit over a relation a form creates is refused.
+     * filter as the test (with the role {@link Toetsitem.Rol#ZONDER_FOUT} where it can fault), and a consequence that
+     * evaluates the matrix for the member and inserts the member's {@link Bijdrage} logically: 1 or 0 for its verdict,
+     * or, where the matrix can fault or deposit, its {@link Lidtoets}, with the member's place bound as the filter fault
+     * rule binds it ({@link Bereik#perRoute}). Beside it the filter fault rule and the filter deposit rule of a filter
+     * that can fault or deposit, as for any fold ({@link #bijdrageregels}). A made link has no place in the order of the
+     * members, so a matrix that can fault or deposit over a relation a form creates is refused.
      */
     private Vouw kwantorbijdragen(Conditie.Kwantorvouw kv, String sleutel, String naam, Objecttype subject,
                                   Objecttype elem) {
@@ -5072,7 +5045,7 @@ public final class TmsTranspiler {
                 gebruik.add(p.plaats());
             }
         } else bereik.koppel().accept(lez);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(filterKanFalen ? zonderFout(filter) : filter, gelezen,
+        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(filterKanFalen), filter, gelezen,
                 kv.filter());
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             if (!geordend) {
@@ -5376,16 +5349,17 @@ public final class TmsTranspiler {
 
         /** The left-hand side of the rule, once its condition and its value are compiled: the subject pattern with its
          *  bindings, the parameter declarations, the standing patterns, and the test of {@code voorwaarde} over the
-         *  values at {@code gelezen}. */
-        List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde) {
-            return linkerkant(toets, gelezen, voorwaarde, List.of());
+         *  values at {@code gelezen}, which asks {@code rol} of it ({@link Toetsitem.Rol}). */
+        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Toets toets, Set<Integer> gelezen, Conditie voorwaarde) {
+            return linkerkant(rol, toets, gelezen, voorwaarde, List.of());
         }
 
-        /** As {@link #linkerkant(Toets, Set, Conditie)}, with {@code stuur} between the standing patterns and the test:
-         *  the control-fact patterns of a default, so that a default a higher one displaced is not tested at all. The
-         *  plan of the left-hand side goes to the transpiler's plans ({@link #linkerkanten}); the rendering gives the
-         *  items, among them those a form built directly ({@code kop}, {@code bereik}, {@code stuur}). */
-        List<RuleItemBuilder<?>> linkerkant(Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
+        /** As {@link #linkerkant(Toetsitem.Rol, Toets, Set, Conditie)}, with {@code stuur} between the standing patterns
+         *  and the test: the control-fact patterns of a default, so that a default a higher one displaced is not tested
+         *  at all. The plan of the left-hand side goes to the transpiler's plans ({@link #linkerkanten}); the rendering
+         *  gives the items, among them those a form built directly ({@code kop}, {@code bereik}, {@code stuur}). A test
+         *  of deposits takes the probe of this rule ({@link #sondeplaats}). */
+        List<RuleItemBuilder<?>> linkerkant(Toetsitem.Rol rol, Toets toets, Set<Integer> gelezen, Conditie voorwaarde,
                                             List<RuleItemBuilder<?>> stuur) {
             Toetsitem test = null;
             if (toets != null) {
@@ -5393,7 +5367,8 @@ public final class TmsTranspiler {
                 if (pos.length > MAX_LEZINGEN)
                     throw new Weigering("een voorwaarde die " + pos.length + " waarden leest ('" + snippet(voorwaarde)
                             + "'): de toets van deze tak neemt hoogstens " + MAX_LEZINGEN + " gebonden waarden");
-                test = new Toetsitem(id("voorwaarde"), toets::test, List.copyOf(gelezen), slots.size());
+                test = new Toetsitem(id("voorwaarde"), rol, toets::test, rol == Toetsitem.Rol.DEPONERING ? sonde : -1,
+                        List.copyOf(gelezen), slots.size());
             }
             List<LhsItem> plan = new ArrayList<>();
             plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpbindingen));
@@ -5423,7 +5398,7 @@ public final class TmsTranspiler {
         void markeerFalen() { falen = true; }
 
         /** Whether an expression compiled since the last {@link #volg} can raise an evaluation fault: a condition that
-         *  can is tested through {@link #zonderFout}, beside the rule that inserts its fault. */
+         *  can is tested with the role {@link Toetsitem.Rol#ZONDER_FOUT}, beside the rule that inserts its fault. */
         boolean kanFalen() { return falen; }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel

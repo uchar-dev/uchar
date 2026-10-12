@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
+import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -19,7 +20,8 @@ import java.util.function.Supplier;
  * the form in which the consequences and the tests of the executable model compute it. Each node becomes the lambda the
  * value compilers made before the values were planned, with the same calls in the same order, the same guards and the
  * same faults. It decides nothing: the functions, the unit factors, the probes, the faults and the order of evaluation
- * are the plan's ({@code TmsTranspiler}), and a function of the plan is called here by its constant, never chosen.
+ * are the plan's ({@code TmsTranspiler}), and a function of the plan is called here by its constant, never chosen. The
+ * same holds for the role of a rule's test ({@link Toetsitem.Rol}), which the analysis sets and this class carries out.
  *
  * <p>A {@code Let} is rendered by need, as RUNTIME-SEMANTICS ch. 10.6 evaluates it, whatever {@link Term.Let#gretig}
  * says: a lambda can carry the need, and evaluating by need is right in every case, where evaluating first is right
@@ -109,6 +111,55 @@ final class ClosureWeergave {
         if (t instanceof Term.GecompileerdeToets g) return g.toets();
         Waardefunctie f = waardefunctie(t);
         return w -> (Boolean) f.van(w);
+    }
+
+    /** The test of a rule's left-hand side that asks {@code rol} of the condition {@code toets}
+     *  ({@link Toetsitem.Rol}); {@code sonde} is the probe's slot of a test of deposits. */
+    static Predicate<Object[]> toets(Toetsitem.Rol rol, Predicate<Object[]> toets, int sonde) {
+        return switch (rol) {
+            case VOORWAARDE, VORM -> toets;
+            case ZONDER_FOUT -> zonderFout(toets);
+            case FOUT -> w -> fout(toets, w) != null;
+            case DEPONERING -> w -> {
+                Sonde s = new Sonde();
+                w[sonde] = s;
+                try {
+                    toets.test(w);
+                } catch (RuntimeException e) {
+                    // a fault is the fault rule's; what the evaluation deposited before it stays heard
+                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                }
+                return s.gemeld();
+            };
+        };
+    }
+
+    /** {@code toets} where it answers, and not holding where it faults: the fault is the fault rule's
+     *  ({@link Toetsitem.Rol#ZONDER_FOUT}). */
+    static Predicate<Object[]> zonderFout(Predicate<Object[]> toets) {
+        return w -> {
+            try {
+                return toets.test(w);
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                return false;
+            }
+        };
+    }
+
+    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers. An evaluation fault is a
+     *  division by a numeric zero (RUNTIME-SEMANTICS ch. 1.4, point 4) or a {@link Rekenfout}: a date step or a duration
+     *  count outside the range of ch. 3.8, a context value or a validity window without an evaluation date, an
+     *  {@code Unresolved} node reached, and the other faults that class names. Any other exception is a broken contract
+     *  or a bug and leaves the fire as it is. */
+    static RuntimeException fout(Predicate<Object[]> toets, Object[] w) {
+        try {
+            toets.test(w);
+            return null;
+        } catch (RuntimeException e) {
+            if (!Rekenfout.isEvaluatiefout(e)) throw e;
+            return e;
+        }
     }
 
     /** The function {@code functie} on the values of {@code argumenten}, evaluated in order. */
