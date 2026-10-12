@@ -127,9 +127,11 @@ final class Sessiedump {
         }
     }
 
-    /** Appends the dump of a session whose {@code vuur} returned {@code v}: the firings, and at a fixpoint what
-     *  {@link DroolsBackend#lees} gives and every object in working memory. {@code labels} maps each case label to its
-     *  input bean. */
+    /** Appends the dump of a session whose {@code vuur} returned {@code v}: the firings, at a fixpoint what
+     *  {@link DroolsBackend#lees} gives, and every object in working memory. A session without a fixpoint gets its
+     *  objects too, as they stand where the fire stopped: {@code lees} refuses such a session, and without them a
+     *  rebuild that changes what a capped session derives would pass the comparison unseen. {@code labels} maps each
+     *  case label to its input bean. */
     void schrijf(StringBuilder uit, DroolsBackend.Build bouw, DroolsBackend.Vuring v, Map<String, Object> labels) {
         sessie.removeEventListener(luisteraar);
         Map<Object, String> naam = namen(labels);
@@ -137,7 +139,10 @@ final class Sessiedump {
         uit.append("vuringen ").append(v.vuringen()).append(" plafond ").append(v.plafond()).append(" geenFixpunt ")
                 .append(zonderIdentiteit(String.valueOf(v.geenFixpunt()), identiteit)).append('\n');
         spoor(uit);
-        if (v.geenFixpunt() != null) return;
+        if (v.geenFixpunt() != null) {
+            feiten(uit, naam, identiteit);
+            return;
+        }
         Map<Object, String> label = new IdentityHashMap<>();
         labels.forEach((l, b) -> label.put(b, l));
         Fixpunt fp = DroolsBackend.lees(bouw, sessie, label::get);
@@ -153,18 +158,26 @@ final class Sessiedump {
         for (Fout f : fp.fouten()) lees.add("fout " + naamVan(f.onderwerp(), naam) + " " + f.regel() + ": " + f.melding());
         for (Object i : fp.inconsistenties()) lees.add("inconsistentie " + render(i, naam));
         regels(uit, "lees", lees, identiteit);
+        feiten(uit, naam, identiteit);
+    }
+
+    /** Appends the dump of a session whose {@code vuur} threw {@code e}: the exception, the firings before it, and
+     *  every object in working memory as it stands where the fire stopped. */
+    void schrijf(StringBuilder uit, RuntimeException e, Map<String, Object> labels) {
+        sessie.removeEventListener(luisteraar);
+        Map<Object, String> naam = namen(labels);
+        Map<String, String> identiteit = identiteiten(naam);
+        uit.append("vuringen gooit ").append(zonderIdentiteit(fout(e), identiteit)).append('\n');
+        spoor(uit);
+        feiten(uit, naam, identiteit);
+    }
+
+    /** Appends every object in working memory, sorted and named. */
+    private void feiten(StringBuilder uit, Map<Object, String> naam, Map<String, String> identiteit) {
         List<String> feiten = new ArrayList<>();
         for (Object o : sessie.getObjects()) feiten.add(feit(o, naam));
         uit.append("feiten ").append(feiten.size()).append('\n');
         regels(uit, "feit", feiten, identiteit);
-    }
-
-    /** Appends the dump of a session whose {@code vuur} threw {@code e}: the exception and the firings before it. */
-    void schrijf(StringBuilder uit, RuntimeException e, Map<String, Object> labels) {
-        sessie.removeEventListener(luisteraar);
-        Map<String, String> identiteit = identiteiten(namen(labels));
-        uit.append("vuringen gooit ").append(zonderIdentiteit(fout(e), identiteit)).append('\n');
-        spoor(uit);
     }
 
     private void spoor(StringBuilder uit) {

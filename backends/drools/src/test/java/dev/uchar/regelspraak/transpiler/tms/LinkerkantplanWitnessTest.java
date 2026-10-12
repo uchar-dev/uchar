@@ -25,10 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * drl-teksttak-op-truth-maintenance, step 1a): {@code TmsTranspiler.Lezingen} decides what a rule reads and gives the
  * slots of its value array ({@code Leestabel}) and the items that bind them ({@code LhsItem}), and only
  * {@link PatternDslWeergave} makes the executable model of them. That plan is what a rendering into DRL text will take,
- * so this witness pins it for one golden: per form, the plans, the kinds of the slots, and the kinds of the items with
- * their constraints, joins, bindings and folds.
+ * so this witness pins its shape for one golden: per form, how many plans, slots of each kind and items of each kind
+ * (constraints, joins, bindings, folds). It counts; it does not pin the constraint ids, the fields, the join targets or
+ * the order of the items, which the harness covers through the rules they render to. Nor does it cover every read: in
+ * step 1a the carrier pattern of a fold and the accumulates over {@code Lijstplaats} of a filter fault are still built
+ * outside the plan, by the transpiler itself (step 1c plans them).
  *
- * <p>The golden {@code jutterswet-premierecht} has every kind of read the step changed in one small document: an input
+ * <p>The golden {@code jutterswet-premierecht} has the reads the step planned in one small document: an input
  * member bound off the subject ({@code toekenning van een recht op premie}), a derived characteristic and a parameter
  * through their standing facts ({@code premie van een recht op premie}), a derived attribute
  * ({@code premiegerechtigdheid}), and two folds, a sum and a count with a filter, each with its contribution rule, which
