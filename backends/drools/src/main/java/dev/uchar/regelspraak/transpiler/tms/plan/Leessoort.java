@@ -1,0 +1,59 @@
+package dev.uchar.regelspraak.transpiler.tms.plan;
+
+/**
+ * What one slot of a rule's value array holds, as the analysis decided to read it. Each kind comes from one method of
+ * {@code TmsTranspiler.Lezingen}, named per constant; a method that decides between two ways of reading gives a kind per
+ * way. A validity window ({@code Lezingen.geldig}) gates the rule on the evaluation date and binds no slot, so it is a
+ * pattern of the left-hand side and no kind of this table.
+ */
+public enum Leessoort {
+    /** The subject itself, for a consequence that hands it on ({@code lid}). */
+    ONDERWERP,
+    /** A member of the subject that no form writes, bound off its bean ({@code eigen}). */
+    INVOER,
+    /** A derived attribute of the subject, through its {@code Stand} ({@code eigen}). */
+    STAND,
+    /** A derived characteristic of the subject, through its {@code KenmerkStand} ({@code eigen}). */
+    KENMERKSTAND,
+    /** The timeline of a member of the subject: an attribute through its {@code Stand}, a characteristic as its true
+     *  periods off the bean ({@code tijdlijn}). */
+    TIJDLIJN,
+    /** A member at the end of a path, through its {@code PadStand} ({@code genavigeerd}). */
+    PADSTAND,
+    /** An input member at the end of a path of input links, bound off the beans ({@code genavigeerd}). */
+    INVOERPAD,
+    /** A parameter, through its {@code ParameterStand} ({@code parameter}). */
+    PARAMETER,
+    /** The session's evaluation date, through its {@code Rekendatum} ({@code rekendatum}). */
+    REKENDATUM,
+    /** The number of contributions to a fold on the subject ({@code vouw}). */
+    VOUW_AANTAL,
+    /** The folded value of the contributions ({@code vouw}). */
+    VOUW_WAARDE,
+    /** The least filter fault of a fold on the subject ({@code vouw}). */
+    FILTERFOUT,
+    /** The number of filter deposits of a fold on the subject ({@code vouw}). */
+    FILTERDEPONERING,
+    /** The least member fault of a fold on the subject ({@code vouw}). */
+    LIDFOUT,
+    /** The standing of the §9.5 channel of a form, through its {@code KanaalStand} ({@code kanaal}). */
+    KANAAL,
+    /** The number of the creation phase the driver opened ({@code creatiefase}). */
+    CREATIEFASE,
+    /** The marks of the creation that made the subject ({@code herkomst}). */
+    HERKOMST,
+    /** The recipients of an allocation from the subject ({@code ontvangers}). */
+    ONTVANGERS,
+    /** Whether a reference field of the subject is set ({@code rolveld}). */
+    ROLVELD,
+    /** The number of beans whose reference field names the subject ({@code rolvullers}). */
+    ROLVULLERS,
+    /** The number of links of a created relation that hold the subject ({@code rolkoppelingen}). */
+    ROLKOPPELINGEN,
+    /** The parent of the subject in the scope of a uniqueness ({@code scopelezing}). */
+    SCOPE,
+    /** The binder of a {@code Let}: no pattern binds it ({@code binder}). */
+    BINDER,
+    /** The probe of the rule's deposits: no pattern binds it ({@code sonde}). */
+    SONDE
+}

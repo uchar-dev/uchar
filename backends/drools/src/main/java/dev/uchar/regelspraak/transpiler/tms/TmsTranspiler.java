@@ -40,10 +40,21 @@ import dev.uchar.regelspraak.transpiler.kern.Operatoren;
 import dev.uchar.regelspraak.transpiler.kern.StaandeDoelen;
 import dev.uchar.regelspraak.transpiler.kern.Tijdlijnen;
 import dev.uchar.regelspraak.transpiler.kern.Vensterpositie;
+import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
+import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
+import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
+import dev.uchar.regelspraak.transpiler.tms.plan.Join;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
+import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
+import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
+import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
+import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
+import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
+import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.drools.model.DSL;
 import org.drools.model.Global;
-import org.drools.model.Index;
 import org.drools.model.Model;
 import org.drools.model.PatternDSL;
 import org.drools.model.Rule;
@@ -270,6 +281,8 @@ public final class TmsTranspiler {
     /** The rules of the model that belong to no form of the document ({@link #vormVan}). */
     private final Set<String> regelsZonderVorm = new LinkedHashSet<>();
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
+    /** The planned left-hand sides of the lowered rules, in the order {@link Lezingen#linkerkant} made them. */
+    private final List<Linkerkant> linkerkanten = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -397,6 +410,12 @@ public final class TmsTranspiler {
 
     /** One entry per effective stack the branch lowered, in the order of the model. */
     public List<Defaultsgroep> defaultsgroepen() { return List.copyOf(defaultsgroepen); }
+
+    /** The plan of the left-hand side of every lowered rule that reads through {@link Lezingen}, in the order the rules
+     *  were lowered, of the forms that lowered: what a rendering takes. Until step 1c of card
+     *  drl-teksttak-op-truth-maintenance it holds what {@link Lezingen} decides ({@link Linkerkant}). No consumer reads a
+     *  plan, so it is no public entry. */
+    List<Linkerkant> linkerkanten() { return List.copyOf(linkerkanten); }
 
     /**
      * What stands in {@code sessie} after a fire that reached its fixpoint, read without writing anything on a bean:
@@ -762,12 +781,15 @@ public final class TmsTranspiler {
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
     private List<Rule> meet(String soort, String naam, Supplier<List<Rule>> bouw) {
         vorm = naam;
+        int plannen = linkerkanten.size();
         try {
             List<Rule> rules = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
             for (Rule r : rules) vormVanRegel.put(r.getName(), naam);
             return rules;
         } catch (Weigering w) {
+            // a refused form leaves no rule, so the plans it made go as well
+            linkerkanten.subList(plannen, linkerkanten.size()).clear();
             weiger(soort, naam, w.getMessage());
             return List.of();
         }
@@ -6322,10 +6344,15 @@ public final class TmsTranspiler {
      *  that holds one truth value as that value, and any other member as its value. An attribute on a timeline is read
      *  through its standing instead ({@link #tijdlijnattribuut}). */
     private static Function<Object, Object> invoerlezing(Lid lid) {
-        Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-        if (lid.tijd() != null) return o -> Tijdvak.lijst((List<?>) getter.apply(o));
-        if (lid.kenmerk()) return o -> Boolean.TRUE.equals(getter.apply(o));
-        return getter;
+        return PatternDslWeergave.invoerlezer(new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null);
+    }
+
+    /** How the input member {@code lid} is read off a bean ({@link #invoerlezing}): the decision a plan's binding
+     *  carries. */
+    private static Binding.Leesvorm invoervorm(Lid lid) {
+        if (lid.tijd() != null) return Binding.Leesvorm.TIJDVAKKEN;
+        if (lid.kenmerk()) return Binding.Leesvorm.WAAR;
+        return Binding.Leesvorm.WAARDE;
     }
 
     /** Member {@code naam} as declared on {@code houder}'s chain, compared as the verifier compares names, holding one
@@ -6515,53 +6542,16 @@ public final class TmsTranspiler {
 
     private String id(String soort) { return soort + "_" + (idSeq++); }
 
-    /**
-     * The {@code indexId} of every beta index. In Drools 8.44 a beta index hands it to the field reader of the pattern's
-     * own fact ({@code LambdaReadAccessor}), and in a beta node that number only seeds the hash of the node's tuple
-     * memories ({@code TupleIndexHashTable}), with the same seed on both sides of the node, so any value is correct.
-     *
-     * <p>The alpha constraints carry no index, since an alpha index uses its number otherwise. The object type node
-     * puts the alpha nodes of one number in one hash map, keyed by the number and the constant
-     * ({@code CompositeObjectSinkAdapter}), so two alpha nodes on one constant replace each other there unless Drools
-     * shares them as one node, which it does only for constraints with equal ids. Every constraint of this branch has
-     * an id of its own ({@link #id}): two rules that read one attribute each have an alpha node on it, and with an
-     * alpha index one of the two would never see a fact. An alpha index therefore waits for equal ids on equal
-     * constraints.
-     */
-    private static final int BETA_INDEX = 0;
-
-    /** What an identity join ({@link #zelfde}) hashes for a side that reads null: a key of that side alone, so that a
-     *  null meets nothing, as in the predicate beside the index. */
-    private static final Object NIETS_LINKS = new Object(), NIETS_RECHTS = new Object();
-
-    /**
-     * Constrains {@code p} to the facts whose {@code links} is the object that {@code rechts} reads off the object
-     * {@code v} binds, by identity, as an indexed join. Unindexed, Drools tests every fact of the pattern's class
-     * against every tuple on the other side, so that a read of a derived value costs one test per subject and a fire
-     * grows with the square of the input (the scale test of card tms-omschakeling, {@code Schaalproef}). Indexed, the
-     * memories of the join hash the object, and a fact meets only the tuples of its own object. Drools does not
-     * evaluate an indexed constraint but trusts the hash, which compares with {@code equals} and {@code hashCode}: a
-     * bean overrides neither ({@code FactModelGenerator}, held by {@code TmsIndexWitnessTest}), so equal is identical
-     * there, as {@code ==} in the predicate. One extractor per side gives both the predicate and the key, so the two
-     * cannot differ; Drools evaluates the predicate where it does not use the index. A side that reads null meets
-     * nothing.
-     */
+    /** An indexed identity join under a constraint id of its own: {@link PatternDslWeergave#zelfde}, which also
+     *  renders the joins of a plan. */
     private <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String soort, Variable<U> v,
                                                   Function1<T, Object> links, Function1<U, Object> rechts) {
-        return p.expr(id(soort), v, (x, o) -> {
-            Object a = links.apply(x);
-            return a != null && a == rechts.apply(o);
-        }, PatternDSL.betaIndexedBy(Object.class, Index.ConstraintType.EQUAL, BETA_INDEX,
-                x -> sleutel(links.apply(x), NIETS_LINKS), o -> sleutel(rechts.apply(o), NIETS_RECHTS)));
+        return PatternDslWeergave.zelfde(p, id(soort), v, links, rechts);
     }
 
     /** {@link #zelfde} where the fact's {@code veld} is the object {@code v} binds. */
     private <T, U> PatternDSL.PatternDef<T> zelfde(PatternDSL.PatternDef<T> p, String soort, Variable<U> v,
                                                   Function1<T, Object> veld) {
         return zelfde(p, soort, v, veld, o -> o);
-    }
-
-    private static Object sleutel(Object waarde, Object niets) {
-        return waarde == null ? niets : waarde;
     }
 }
