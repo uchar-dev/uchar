@@ -51,6 +51,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
+import dev.uchar.regelspraak.transpiler.tms.plan.Waardeplan;
 
 import org.drools.model.DSL;
 import org.drools.model.Global;
@@ -270,6 +271,8 @@ public final class TmsTranspiler {
     private final List<Defaultsgroep> defaultsgroepen = new ArrayList<>();
     /** The planned left-hand sides of the lowered rules, in the order {@link Lezingen#linkerkant} made them. */
     private final List<Linkerkant> linkerkanten = new ArrayList<>();
+    /** The planned values the consequences of the lowered rules compute, in the order the rules were lowered. */
+    private final List<Waardeplan> waardeplannen = new ArrayList<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
      *  through is the bean property of the declared spelling, which the key no longer carries. */
     private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
@@ -403,6 +406,11 @@ public final class TmsTranspiler {
      *  drl-teksttak-op-truth-maintenance it holds what {@link Lezingen} decides ({@link Linkerkant}). No consumer reads a
      *  plan, so it is no public entry. */
     List<Linkerkant> linkerkanten() { return List.copyOf(linkerkanten); }
+
+    /** The planned value of every consequence of a lowered rule that computes one, in the order the rules were lowered,
+     *  of the forms that lowered ({@link Waardeplan}). Until step 1c of card drl-teksttak-op-truth-maintenance they stand
+     *  apart from the left-hand sides. No consumer reads a plan, so it is no public entry. */
+    List<Waardeplan> waardeplannen() { return List.copyOf(waardeplannen); }
 
     /**
      * What stands in {@code sessie} after a fire that reached its fixpoint, read without writing anything on a bean:
@@ -768,7 +776,7 @@ public final class TmsTranspiler {
     /** Lowers one form and records its verdict: lowered, or a skip with the reason a {@link Weigering} carries. */
     private List<Rule> meet(String soort, String naam, Supplier<List<Rule>> bouw) {
         vorm = naam;
-        int plannen = linkerkanten.size();
+        int plannen = linkerkanten.size(), waarden = waardeplannen.size();
         try {
             List<Rule> rules = bouw.get();
             dekking.add(Dekking.lowered(soort, naam));
@@ -777,6 +785,7 @@ public final class TmsTranspiler {
         } catch (Weigering w) {
             // a refused form leaves no rule, so the plans it made go as well
             linkerkanten.subList(plannen, linkerkanten.size()).clear();
+            waardeplannen.subList(waarden, waardeplannen.size()).clear();
             weiger(soort, naam, w.getMessage());
             return List.of();
         }
