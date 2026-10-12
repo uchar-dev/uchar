@@ -110,6 +110,8 @@ final class PatternDslWeergave {
 
     /** The rendering of {@code item}, made at the first call and the same object at every later one. */
     RuleItemBuilder<?> item(LhsItem item) {
+        // the subject pattern exists from the start and takes its bindings as they come (bindOnderwerp); the plan's
+        // subject item is a copy of those bindings per planned left-hand side, so it renders as that one pattern
         if (item instanceof Onderwerp) return onderwerpPatroon;
         RuleItemBuilder<?> r = weergegeven.get(item);
         if (r == null) {
