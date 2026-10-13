@@ -513,12 +513,56 @@ class CreatieplanWitnessTest {
                                 List.of(nieuw, merk, link, eerste, tweede))));
     }
 
+    /**
+     * A creation states what it makes (RUNTIME-SEMANTICS ch. 5.5; the owner's decision at card 1: a creation is stated,
+     * not logical), and the analysis makes every insertion of a creation {@code GESTELD}. The constructor refuses a plan
+     * that would insert the new object, its mark, its link or a characteristic logically, and one that would insert the
+     * fault at the making logically, each with a sentence that names it (round 5b, on the lens of round 5: a rendering
+     * that inserted a logical characteristic as a stated one passed every measurement, since no plan of the analysis
+     * had one). <b>Red</b> on {@code ea8b5c6f}, where the constructor took all six plans: "expected: &lt;[ok, een
+     * creatie stelt wat ze maakt, …]&gt; but was: &lt;[ok, ok, ok, ok, ok, ok]&gt;".
+     */
+    @Test void een_creatie_stelt_wat_ze_maakt() {
+        ElementSleutel bedrag = ElementSleutel.van("Penning", "bedrag", false);
+        ElementSleutel uitgereikt = ElementSleutel.van("Penning", "uitgereikt", true);
+        List<Gevolg.Initialisatie> inits = List.of(new Gevolg.Initialisatie(bedrag, new Term.Lees(1, "bedrag")),
+                new Gevolg.Initialisatie(uitgereikt, new Term.Const(true, null, "waar")));
+        Gevolg.Constructie bouw = new Gevolg.Constructie(Object.class,
+                List.of(new Gevolg.Constructie.Zetting(0, new Binding.Veld(Object.class, "bedrag"))));
+        Gevolg.Invoeging gesteld = Gevolg.Invoeging.GESTELD, logisch = Gevolg.Invoeging.LOGISCH;
+        Gevolg.Invoegsel nieuw = new Gevolg.Invoegsel.Nieuw(gesteld);
+        Gevolg.Invoegsel merk = new Gevolg.Invoegsel.Merk(gesteld);
+        Gevolg.Invoegsel link = new Gevolg.Invoegsel.Link("uitgifte", true, gesteld);
+        Gevolg.Invoegsel kenmerk = new Gevolg.Invoegsel.Kenmerk(1, gesteld);
+        String zin = "een creatie stelt wat ze maakt, want dat vervalt nooit: ";
+        assertEquals(List.of("ok",
+                        zin + "Nieuw[invoeging=LOGISCH] is niet gesteld",
+                        zin + "Merk[invoeging=LOGISCH] is niet gesteld",
+                        zin + "Link[relatie=uitgifte, nieuwIsEerste=true, invoeging=LOGISCH] is niet gesteld",
+                        zin + "Kenmerk[initialisatie=1, invoeging=LOGISCH] is niet gesteld",
+                        "een creatie stelt haar fout bij het maken, want die houdt haar regel tegen: de foutinvoeging"
+                                + " LOGISCH is niet gesteld"),
+                List.of(creatie(inits, bouw, List.of(nieuw, merk, link, kenmerk)),
+                        creatie(inits, bouw, List.of(new Gevolg.Invoegsel.Nieuw(logisch), merk, link, kenmerk)),
+                        creatie(inits, bouw, List.of(nieuw, new Gevolg.Invoegsel.Merk(logisch), link, kenmerk)),
+                        creatie(inits, bouw, List.of(nieuw, merk, new Gevolg.Invoegsel.Link("uitgifte", true, logisch),
+                                kenmerk)),
+                        creatie(inits, bouw, List.of(nieuw, merk, link, new Gevolg.Invoegsel.Kenmerk(1, logisch))),
+                        creatie(inits, bouw, List.of(nieuw, merk, link, kenmerk), logisch)));
+    }
+
     /** "ok" where the constructor of {@link Gevolg.Creatie} takes the plan, else its refusal. */
     private static String creatie(List<Gevolg.Initialisatie> inits, Gevolg.Constructie bouw,
                                   List<Gevolg.Invoegsel> invoegingen) {
+        return creatie(inits, bouw, invoegingen, Gevolg.Invoeging.GESTELD);
+    }
+
+    /** {@link #creatie(List, Gevolg.Constructie, List)} with the fault at the making inserted as {@code foutinvoeging}. */
+    private static String creatie(List<Gevolg.Initialisatie> inits, Gevolg.Constructie bouw,
+                                  List<Gevolg.Invoegsel> invoegingen, Gevolg.Invoeging foutinvoeging) {
         try {
             new Gevolg.Creatie("$onderwerp", "uitgifte", new Gevolg.Creatiediepte(0, 1, "Jutter", 100), inits,
-                    new Gevolg.Foutnaam("uitgifte", "uitgifte"), Gevolg.Invoeging.GESTELD, bouw, 2, invoegingen,
+                    new Gevolg.Foutnaam("uitgifte", "uitgifte"), foutinvoeging, bouw, 2, invoegingen,
                     List.of(0, 1, 2), 3);
             return "ok";
         } catch (IllegalArgumentException e) {

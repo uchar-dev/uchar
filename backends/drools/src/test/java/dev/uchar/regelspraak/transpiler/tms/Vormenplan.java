@@ -194,7 +194,7 @@ final class Vormenplan {
                     + " Rekenhulpen.benoem(v, \"proefcreatie\")));\n    } else {\n"
                     + "        java.util.List feiten = (java.util.List) v;\n        insert(feiten.get(0));\n"
                     + "        insert(feiten.get(1));\n        insert(feiten.get(2));\n"
-                    + "        if (feiten.get(3) != null) {\n            insertLogical(feiten.get(3));\n        }\n    }",
+                    + "        if (feiten.get(3) != null) {\n            insert(feiten.get(3));\n        }\n    }",
             "function Object r1_creatie0(Object $fase, Object $herkomsten, Object $onderwerp) {\n    int diepte =",
             "    Object nieuw = Rekenhulpen.nieuwObject($onderwerp, \"dev.uchar.regelspraak.facts.Wachter\");\n"
                     + "    int fase",
@@ -207,11 +207,11 @@ final class Vormenplan {
     /**
      * A plan with every consequence of a creation and of a link (step 5 of card drl-teksttak-op-truth-maintenance), over
      * the beans of the same document as {@link #plan}: an object creation of a Post for a Wachter, in its agenda group,
-     * with an attribute initialisation set on the new bean and a characteristic initialisation inserted with an
-     * insertion of its own, each from a function that can fault; one of a Wachter without initialisations, whose new
-     * object is the first end of its link; the link a reference field of the input carries, at phase 0, and the link of
-     * a fact creation, in its agenda group, at the phase it binds; and the fault of a second filling. No rule of it is
-     * meant to fire.
+     * with an attribute initialisation set on the new bean and a characteristic initialisation inserted after it,
+     * stated as everything a creation makes (round 5b), each from a function that can fault; one of a Wachter without
+     * initialisations, whose new object is the first end of its link; the link a reference field of the input carries,
+     * at phase 0, and the link of a fact creation, in its agenda group, at the phase it binds; and the fault of a second
+     * filling. No rule of it is meant to fire.
      */
     static Modelplan creaties(Class<?> wachter, Class<?> post) {
         List<Regelplan> regels = new ArrayList<>();
@@ -238,7 +238,7 @@ final class Vormenplan {
                         List.of(new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD),
                                 new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD),
                                 new Gevolg.Invoegsel.Link("wachterpost", false, Gevolg.Invoeging.GESTELD),
-                                new Gevolg.Invoegsel.Kenmerk(1, Gevolg.Invoeging.LOGISCH)),
+                                new Gevolg.Invoegsel.Kenmerk(1, Gevolg.Invoeging.GESTELD)),
                         List.of(0, 1, 2), 3)));
         regels.add(new Regelplan("creatie zonder initialisaties", "proefcreatie", "uchar-objectcreatie",
                 tabel(new Lezing(0, Leessoort.CREATIEFASE, "creatiefase", "$fase"),

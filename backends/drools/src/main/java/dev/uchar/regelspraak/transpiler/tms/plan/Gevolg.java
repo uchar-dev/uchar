@@ -336,7 +336,8 @@ public sealed interface Gevolg {
      * initialisation is set in the construction where it is an attribute, or inserted as a characteristic after the new
      * object where it is one, exactly once; the attributes are set in the order of the initialisations; the new object is
      * inserted first, then its mark, then its link, then the characteristics in the order of the initialisations. Any
-     * other order fails loudly.
+     * other order fails loudly. A creation states everything it makes, the fault at the making among it
+     * (RUNTIME-SEMANTICS ch. 5.5): the constructor refuses an insertion that is not {@link Invoeging#GESTELD}.
      */
     record Creatie(String onderwerp, String creatie, Creatiediepte diepte, List<Initialisatie> initialisaties,
                    Foutnaam fout, Invoeging foutinvoeging, Constructie constructie, int fase,
@@ -345,6 +346,16 @@ public sealed interface Gevolg {
             initialisaties = List.copyOf(initialisaties);
             invoegingen = List.copyOf(invoegingen);
             slots = List.copyOf(slots);
+            // a logical insertion lapses when the match of its rule goes, and the match of a creation rule goes as soon
+            // as the creation is made: its mark and its fault are the guard of the rule, so each logical fact would be
+            // withdrawn right after it went in, and the creation would fire again
+            for (Invoegsel i : invoegingen)
+                if (i.invoeging() != Invoeging.GESTELD)
+                    throw new IllegalArgumentException("een creatie stelt wat ze maakt, want dat vervalt nooit: "
+                            + i + " is niet gesteld");
+            if (foutinvoeging != Invoeging.GESTELD)
+                throw new IllegalArgumentException("een creatie stelt haar fout bij het maken, want die houdt haar"
+                        + " regel tegen: de foutinvoeging " + foutinvoeging + " is niet gesteld");
             int[] keer = new int[initialisaties.size()];
             for (Constructie.Zetting z : constructie.zettingen()) {
                 if (initialisaties.get(z.initialisatie()).lid().kenmerk())

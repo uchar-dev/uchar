@@ -257,10 +257,11 @@ class DrlWeergaveWitnessTest {
     /**
      * Every form of a creation and of a link compiles (step 5), also where no golden has it: a plan made here over the
      * same beans ({@link Vormenplan#creaties}), with an object creation in its agenda group that sets an attribute
-     * initialisation on the new bean and inserts a characteristic initialisation with an insertion of its own, one
-     * without initialisations whose new object is the first end of its link, the link of the input and that of a fact
-     * creation, and the fault of a second filling. One plan gives one text, written to {@code <map>/_creatieplan.drl}
-     * under {@code -Duchar.drlvorm}.
+     * initialisation on the new bean and inserts a characteristic initialisation after it, stated as everything a
+     * creation makes (round 5b; until then logically, which the plan of a creation no longer admits), one without
+     * initialisations whose new object is the first end of its link, the link of the input and that of a fact creation,
+     * and the fault of a second filling. One plan gives one text, written to {@code <map>/_creatieplan.drl} under
+     * {@code -Duchar.drlvorm}.
      *
      * <p><b>Red</b> before step 5, on {@code b4d83a69}: the rendering refused the plan, "de DRL-weergave draagt Creatie
      * nog niet".
