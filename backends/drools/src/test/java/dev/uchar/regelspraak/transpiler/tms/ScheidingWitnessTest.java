@@ -29,8 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>the main sources of {@code transpiler/tms}, read as text, name {@code org.drools.model} only in the two
  *       renderings, and {@code TmsTranspiler} only in its import of {@code Model}, the type of its public
- *       {@code model()}. Every occurrence counts: an import, a fully qualified name in the code or in a comment;</li>
+ *       {@code model()}. Every occurrence counts: an import, a fully qualified name in the code or in a comment, also
+ *       one broken over two lines, since the scan searches the text without its whitespace;</li>
  *   <li>no class of {@code transpiler/tms/plan} declares an instance field of a functional type (an interface of
  *       {@code java.util.function}, one annotated {@code @FunctionalInterface}, or any other interface that is not
  *       sealed and has one abstract method, through the type arguments as well), apart from
@@ -60,15 +59,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>Red</b> before step 1d, on {@code 86176419}: {@code TmsTranspiler} built the rules itself and named
  * {@code org.drools.model} in ten imports and one fully qualified name. The other two checks held there already; a
- * mutation (a record with a functional component, a lambda as the key of a read) turns each red.
+ * mutation (a record with a functional component, a lambda as the key of a read) turns each red. Until the fix round of
+ * step 1d the scan read the sources line by line, and a field {@code static org.drools.} with {@code model.Index proef;}
+ * on the next line passed it, though it compiles.
  */
 class ScheidingWitnessTest {
 
     private static final Path TMS = Path.of("src", "main", "java", "dev", "uchar", "regelspraak", "transpiler", "tms");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final String PLANPAKKET = "dev.uchar.regelspraak.transpiler.tms.plan.";
-    /** The name of Drools' executable model API, with or without spaces around its dots. */
-    private static final Pattern DROOLS_MODEL = Pattern.compile("\\borg\\s*\\.\\s*drools\\s*\\.\\s*model\\b");
+    /** The name of Drools' executable model API, searched in a source text without its whitespace: a fully qualified
+     *  name compiles with a line break or spaces around its dots, so a scan per line misses one broken over two lines.
+     *  Without the whitespace the words around the name join it, so it is searched without word boundaries; a longer
+     *  name that begins with it ({@code org.drools.modelcompiler}) counts as well. */
+    private static final String DROOLS_MODEL = "org.drools.model";
     /** The two renderings into the executable model. */
     private static final Set<String> WEERGAVEN = Set.of("PatternDslWeergave.java", "ClosureWeergave.java");
     /** The one functional component a plan carries: the predicate of a
@@ -92,11 +96,7 @@ class ScheidingWitnessTest {
         }
         for (Path p : bestanden) {
             String naam = TMS.relativize(p).toString().replace(File.separatorChar, '/');
-            List<String> treffers = new ArrayList<>();
-            for (String regel : Files.readAllLines(p)) {
-                Matcher m = DROOLS_MODEL.matcher(regel);
-                while (m.find()) treffers.add(regel.strip());
-            }
+            List<String> treffers = treffers(Files.readString(p));
             if (WEERGAVEN.contains(naam)) inWeergaven.put(naam, treffers.size());
             else if (!treffers.isEmpty()) buiten.put(naam, treffers);
         }
@@ -107,6 +107,32 @@ class ScheidingWitnessTest {
                 + inWeergaven);
         assertTrue(bestanden.size() >= EXPECTED_MIN_BESTANDEN, () -> bestanden.size()
                 + " bronbestanden, onder de vloer " + EXPECTED_MIN_BESTANDEN);
+    }
+
+    /** Every occurrence of {@link #DROOLS_MODEL} in {@code tekst} with its whitespace removed, each as the source lines
+     *  it spans, stripped and joined by a space. */
+    static List<String> treffers(String tekst) {
+        StringBuilder zonder = new StringBuilder();
+        List<Integer> plaats = new ArrayList<>();
+        for (int i = 0; i < tekst.length(); i++) {
+            if (Character.isWhitespace(tekst.charAt(i))) continue;
+            zonder.append(tekst.charAt(i));
+            plaats.add(i);
+        }
+        List<String> uit = new ArrayList<>();
+        for (int k = zonder.indexOf(DROOLS_MODEL); k >= 0; k = zonder.indexOf(DROOLS_MODEL, k + 1)) {
+            int van = tekst.lastIndexOf('\n', plaats.get(k)) + 1;
+            int eind = tekst.indexOf('\n', plaats.get(k + DROOLS_MODEL.length() - 1));
+            uit.add(String.join(" ", tekst.substring(van, eind < 0 ? tekst.length() : eind).strip().split("\\s*\n\\s*")));
+        }
+        return uit;
+    }
+
+    /** The scan itself: a name broken over two lines, which compiles, counts, with the lines it spans. */
+    @Test void de_scan_vindt_een_over_twee_regels_afgebroken_naam() {
+        assertEquals(List.of("static org.drools. model.Index proef;"),
+                treffers("class X {\n    static org.drools.\n            model.Index proef;\n}\n"));
+        assertEquals(List.of("import org . drools . model . Model;"), treffers("import org . drools . model . Model;"));
     }
 
     @Test void geen_planklasse_draagt_een_functioneel_type() throws Exception {
