@@ -47,10 +47,12 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
     }
 
     /** How a field is tested: {@code GELIJK} by {@code equals}, {@code NIET_GELIJK} by its negation, {@code MINSTENS}
-     *  as a whole number at least the value, {@code BINNEN} as a date the validity window {@code waarde} admits,
-     *  {@code IS_EEN} as an instance of the class {@code waarde}, {@code LEEG} as null and {@code GEVULD} as not null
-     *  (both without a {@code waarde}), {@code KLASSE_NIET_IN} as an object whose own class, exactly, is none of the
-     *  set of classes {@code waarde}, and {@code KLASSE_IS} as an object whose own class, exactly, is the class
-     *  {@code waarde}. */
-    public enum Vergelijker { GELIJK, NIET_GELIJK, MINSTENS, BINNEN, IS_EEN, LEEG, GEVULD, KLASSE_NIET_IN, KLASSE_IS }
+     *  as a whole number at least the value, {@code ONDER} as a whole number below the value, {@code BINNEN} as a date
+     *  the validity window {@code waarde} admits, {@code IS_EEN} as an instance of the class {@code waarde},
+     *  {@code LEEG} as null and {@code GEVULD} as not null (both without a {@code waarde}), {@code KLASSE_NIET_IN} as an
+     *  object whose own class, exactly, is none of the set of classes {@code waarde}, and {@code KLASSE_IS} as an object
+     *  whose own class, exactly, is the class {@code waarde}. */
+    public enum Vergelijker {
+        GELIJK, NIET_GELIJK, MINSTENS, ONDER, BINNEN, IS_EEN, LEEG, GEVULD, KLASSE_NIET_IN, KLASSE_IS
+    }
 }

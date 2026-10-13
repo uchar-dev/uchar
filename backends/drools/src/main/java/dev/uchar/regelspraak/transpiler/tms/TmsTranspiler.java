@@ -68,7 +68,6 @@ import org.drools.model.Rule;
 import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
 import org.drools.model.functions.Block2;
-import org.drools.model.functions.Block3;
 import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.impl.ModelImpl;
@@ -2600,7 +2599,7 @@ public final class TmsTranspiler {
             boolean hoger = j > 0, lager = j < beslissend.size() - 1;
             if (lager) b.stuurfeiten.add("Beslist");
             uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(),
-                    s -> hoger ? List.of(geenBeslist(naam, i, s)) : List.of(),
+                    () -> hoger ? List.of(geenBeslist(naam, i)) : List.of(),
                     (drools, o, v) -> {
                         if (!kenmerk) drools.logicalInsert(new Waarde(o, sleutel, v, naam));
                         else if (Boolean.TRUE.equals(v)) drools.logicalInsert(new HeeftKenmerk(o, sleutel));
@@ -2621,17 +2620,14 @@ public final class TmsTranspiler {
      */
     private List<Rule> algemeneVorm(Stapelbouw b, List<List<Knoop>> wortel) {
         List<Rule> uit = new ArrayList<>();
-        for (List<Knoop> keten : wortel) ketenregels(b, keten, o -> List.of(), uit);
-        String naam = b.naam;
+        for (List<Knoop> keten : wortel) ketenregels(b, keten, List::of, uit);
         ElementSleutel sleutel = b.lid.sleutel();
-        boolean kenmerk = b.kenmerk;
+        // at the root the reconciliation writes the target and deposits a conflict as the §9.5 inconsistency; on a
+        // characteristic only an attribution reaches the write (alleenWaar), so the attribution is planned as such
+        Gevolg.Stapelfeit doel = b.kenmerk ? new Gevolg.Stapelfeit.Kenmerk(sleutel)
+                : new Gevolg.Stapelfeit.Waarde(sleutel, b.naam);
         verzoening(b, 0, wortel.size(), wortel.stream().anyMatch(TmsTranspiler::kanConflicteren), b.doelvorm, "wortel",
-                o -> List.of(),
-                (drools, o, s) -> drools.logicalInsert(
-                        RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, (String) s, o)),
-                (drools, o, v) -> drools.logicalInsert(
-                        kenmerk ? new HeeftKenmerk(o, sleutel) : new Waarde(o, sleutel, v, naam)),
-                kenmerk, false, uit);
+                List::of, new Gevolg.Stapelfeit.Inconsistentie(), doel, b.kenmerk, false, uit);
         return uit;
     }
 
@@ -2642,14 +2638,13 @@ public final class TmsTranspiler {
      * only where no higher default in its chain decides ({@code decide}), so a group below a displaced default is not
      * evaluated, settles nothing and raises no fault (RUNTIME-SEMANTICS ch. 7.9; PLAN §9, 2026-10-09).
      */
-    private void ketenregels(Stapelbouw b, List<Knoop> keten,
-                             Function<Variable<Object>, List<RuleItemBuilder<?>>> voorouders, List<Rule> uit) {
+    private void ketenregels(Stapelbouw b, List<Knoop> keten, Supplier<List<LhsItem>> voorouders, List<Rule> uit) {
         String naam = b.naam;
         for (Knoop k : keten) {
             int id = k.keten(), i = k.positie();
-            Function<Variable<Object>, List<RuleItemBuilder<?>>> nietHoger = o -> {
-                List<RuleItemBuilder<?>> wacht = new ArrayList<>(voorouders.apply(o));
-                if (i > 0) wacht.add(geenUitkomst(naam, id, i, o));
+            Supplier<List<LhsItem>> nietHoger = () -> {
+                List<LhsItem> wacht = new ArrayList<>(voorouders.get());
+                if (i > 0) wacht.add(geenUitkomst(naam, id, i));
                 return wacht;
             };
             Afloop beslist = (drools, o, v) ->
@@ -2664,14 +2659,13 @@ public final class TmsTranspiler {
             int eerste = k.eersteLid(), tot = eerste + k.leden().size();
             verzoening(b, eerste, k.leden().size(), k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren),
                     k.sleutel(), k.label(), nietHoger,
-                    (drools, o, s) -> drools.logicalInsert(
-                            new Uitkomst(o, naam, id, i, Uitkomst.Soort.CONFLICT, null, (String) s)),
-                    beslist, false, true, uit);
+                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.CONFLICT),
+                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.BESLIST), false, true, uit);
             if (beslistZelf(b, k.d()))
-                uit.addAll(eigenRegel(b, k, naam + ": terugval " + k.label(), o -> {
-                    List<RuleItemBuilder<?>> wacht = new ArrayList<>();
-                    wacht.add(DSL.not(uitkomsten(naam, eerste, tot, null, o)));
-                    wacht.addAll(nietHoger.apply(o));
+                uit.addAll(eigenRegel(b, k, naam + ": terugval " + k.label(), () -> {
+                    List<LhsItem> wacht = new ArrayList<>();
+                    wacht.add(new Niet(uitkomsten(naam, eerste, tot, null)));
+                    wacht.addAll(nietHoger.get());
                     return wacht;
                 }, beslist));
         }
@@ -2694,88 +2688,119 @@ public final class TmsTranspiler {
      * cannot conflict, a difference among one member). {@code alleenWaar} restricts the decision to an attribution, the
      * one decision on a characteristic that writes; {@code tussen} says the outcomes are control facts, not the write.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private void verzoening(Stapelbouw b, int eerste, int aantal, boolean ledenConflicteren, String sleutel, String label,
-                            Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop bijConflict,
-                            Afloop bijBesluit, boolean alleenWaar, boolean tussen, List<Rule> uit) {
+                            Supplier<List<LhsItem>> wacht, Gevolg.Stapelfeit bijConflict,
+                            Gevolg.Stapelfeit bijBesluit, boolean alleenWaar, boolean tussen, List<Rule> uit) {
         String naam = b.naam;
         int tot = eerste + aantal;
+        Binding vanOnderwerp = Binding.van(ONDERWERP, Uitkomst.class, "onderwerp");
         if (ledenConflicteren) {
-            Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$conflict");
-            Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
-            Variable<Object> s = DSL.declarationOf(Object.class, "$sleutel");
-            List<RuleItemBuilder<?>> items = new ArrayList<>();
-            items.add(PatternDSL.pattern(u).expr(id("lid-conflict"), x -> x.stapel().equals(naam) && x.conflict()
-                    && x.keten() >= eerste && x.keten() < tot).bind(o, Uitkomst::onderwerp).bind(s, Uitkomst::sleutel));
-            if (aantal > 1) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)
-                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
-            items.addAll(wacht.apply(o));
-            items.add(DSL.on(o, s).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, oo, ss) ->
-                    bijConflict.voer(drools, oo, ss)));
-            uit.add(PatternDSL.rule(PKG, naam + ": doorgeven " + label).build(items.toArray(new RuleItemBuilder[0])));
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new Patroon(Uitkomst.class, "$conflict",
+                    List.of(uitkomstVanLid("lid-conflict", naam, Uitkomst.Soort.CONFLICT, eerste, tot, false)), List.of(),
+                    List.of(vanOnderwerp, Binding.van("$sleutel", Uitkomst.class, "sleutel"))));
+            if (aantal > 1) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT,
+                    "eerder-lid", Functie.EERDER_LID, "$conflict")));
+            items.addAll(wacht.get());
+            uit.add(weergeef(new Regelplan(naam + ": doorgeven " + label, vorm, null,
+                    new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0,
+                            Leessoort.CONFLICTSLEUTEL, "conflictsleutel", "$sleutel"))), items,
+                    new Gevolg.Conflict(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, bijConflict,
+                            Gevolg.Invoeging.LOGISCH))));
             if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
         }
         if (aantal > 1) {
-            Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$besluit");
-            Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
-            List<RuleItemBuilder<?>> items = new ArrayList<>();
-            items.add(PatternDSL.pattern(u).expr(id("lid-besluit"), x -> x.stapel().equals(naam) && !x.conflict()
-                    && x.keten() >= eerste && x.keten() < tot).bind(o, Uitkomst::onderwerp));
-            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
-                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
-            if (ledenConflicteren) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)));
-            items.add(DSL.exists(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
-                    .expr(id("ander-besluit"), u, (x, y) -> !Uitkomst.gelijk(x.waarde(), y.waarde()))));
-            items.addAll(wacht.apply(o));
-            items.add(DSL.on(o).execute((Block2<org.drools.model.Drools, Object>) (drools, oo) ->
-                    bijConflict.voer(drools, oo, sleutel)));
-            uit.add(PatternDSL.rule(PKG, naam + ": verschil " + label).build(items.toArray(new RuleItemBuilder[0])));
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new Patroon(Uitkomst.class, "$besluit",
+                    List.of(uitkomstVanLid("lid-besluit", naam, Uitkomst.Soort.BESLIST, eerste, tot, false)), List.of(),
+                    List.of(vanOnderwerp)));
+            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "eerder-lid",
+                    Functie.EERDER_LID, "$besluit")));
+            if (ledenConflicteren) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT)));
+            Patroon ander = uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "ander-besluit", Functie.ANDER_BESLUIT,
+                    "$besluit");
+            items.add(new Bestaat(List.of(ander), Bestaat.verklaard(List.of(ander)), Bestaat.gelezen(List.of(ander))));
+            items.addAll(wacht.get());
+            uit.add(weergeef(new Regelplan(naam + ": verschil " + label, vorm, null, new Leestabel(List.of()), items,
+                    new Gevolg.Conflict(ONDERWERP, constante(sleutel), List.of(), 0, bijConflict,
+                            Gevolg.Invoeging.LOGISCH))));
             if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.CONFLICT);
         }
-        Variable<Uitkomst> u = DSL.declarationOf(Uitkomst.class, "$besluit");
-        Variable<Object> o = DSL.declarationOf(Object.class, "$onderwerp");
-        Variable<Object> v = DSL.declarationOf(Object.class, "$waarde");
-        List<RuleItemBuilder<?>> items = new ArrayList<>();
-        items.add(PatternDSL.pattern(u).expr(id("lid-besluit"), x -> x.stapel().equals(naam) && !x.conflict()
-                && x.keten() >= eerste && x.keten() < tot && (!alleenWaar || Boolean.TRUE.equals(x.waarde())))
-                .bind(o, Uitkomst::onderwerp).bind(v, Uitkomst::waarde));
+        List<LhsItem> items = new ArrayList<>();
+        items.add(new Patroon(Uitkomst.class, "$besluit",
+                List.of(uitkomstVanLid("lid-besluit", naam, Uitkomst.Soort.BESLIST, eerste, tot, alleenWaar)), List.of(),
+                List.of(vanOnderwerp, Binding.van("$waarde", Uitkomst.class, "waarde"))));
         if (aantal > 1) {
-            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
-                    .expr(id("eerder-lid"), u, (x, y) -> x.keten() < y.keten())));
-            if (ledenConflicteren) items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT, o)));
-            items.add(DSL.not(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, o)
-                    .expr(id("ander-besluit"), u, (x, y) -> !Uitkomst.gelijk(x.waarde(), y.waarde()))));
+            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "eerder-lid", Functie.EERDER_LID,
+                    "$besluit")));
+            if (ledenConflicteren) items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.CONFLICT)));
+            items.add(new Niet(uitkomsten(naam, eerste, tot, Uitkomst.Soort.BESLIST, "ander-besluit",
+                    Functie.ANDER_BESLUIT, "$besluit")));
         }
-        items.addAll(wacht.apply(o));
-        items.add(DSL.on(o, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, oo, vv) ->
-                bijBesluit.voer(drools, oo, vv)));
-        uit.add(PatternDSL.rule(PKG, naam + ": eens " + label).build(items.toArray(new RuleItemBuilder[0])));
+        items.addAll(wacht.get());
+        uit.add(weergeef(new Regelplan(naam + ": eens " + label, vorm, null,
+                new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.BESLUIT,
+                        "besluit", "$waarde"))), items,
+                new Gevolg.Afloop(ONDERWERP, new Term.Lees(0, null), List.of(0), 1, false, null, List.of(bijBesluit),
+                        Gevolg.Invoeging.LOGISCH))));
         if (tussen) b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
     }
 
-    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for {@code onderwerp}, of {@code soort}, or of
-     *  either where it is null. */
-    private PatternDSL.PatternDef<Uitkomst> uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort,
-                                                      Variable<Object> onderwerp) {
-        Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$uitkomst_" + idSeq);
-        return zelfde(PatternDSL.pattern(x).expr(id("uitkomst"), y -> y.stapel().equals(naam) && y.keten() >= van
-                        && y.keten() < tot && (soort == null || y.soort() == soort)),
-                "uitkomst-onderwerp", onderwerp, Uitkomst::onderwerp);
+    /** The constraint {@code soort} on the outcome a reconciliation binds: of stack {@code naam}, settled as
+     *  {@code uitkomst}, of a member chain in {@code [eerste, tot)}, and where {@code alleenWaar} an attribution, the one
+     *  decision on a characteristic that writes. */
+    private Alfa uitkomstVanLid(String soort, String naam, Uitkomst.Soort uitkomst, int eerste, int tot,
+                                boolean alleenWaar) {
+        List<Alfa.Veldtoets> toetsen = new ArrayList<>(List.of(
+                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
+                new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, uitkomst),
+                new Alfa.Veldtoets("keten", Alfa.Vergelijker.MINSTENS, eerste),
+                new Alfa.Veldtoets("keten", Alfa.Vergelijker.ONDER, tot)));
+        if (alleenWaar) toetsen.add(new Alfa.Veldtoets("waarde", Alfa.Vergelijker.GELIJK, Boolean.TRUE));
+        return new Alfa(id(soort), toetsen);
     }
 
-    /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}. */
-    private RuleItemBuilder<?> geenUitkomst(String naam, int keten, int positie, Variable<Object> onderwerp) {
-        Variable<Uitkomst> x = DSL.declarationOf(Uitkomst.class, "$hoger_" + idSeq);
-        return DSL.not(zelfde(PatternDSL.pattern(x).expr(id("hoger-uitkomst"), y -> y.stapel().equals(naam)
-                        && y.keten() == keten && y.positie() < positie),
-                "hoger-uitkomst-onderwerp", onderwerp, Uitkomst::onderwerp));
+    /** The outcomes of the chains {@code [van, tot)} of stack {@code naam} for the subject, of {@code soort}, or of
+     *  either where it is null, under a variable of their own. */
+    private Patroon uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort) {
+        return uitkomsten(naam, van, tot, soort, null, null, null);
     }
 
-    /** {@code not Beslist} over the indices above {@code index} in the stack. */
-    private RuleItemBuilder<?> geenBeslist(String naam, int index, Variable<Object> onderwerp) {
-        Variable<Beslist> x = DSL.declarationOf(Beslist.class, "$hoger_" + idSeq);
-        return DSL.not(zelfde(PatternDSL.pattern(x).expr(id("hoger-beslist"), y -> y.stapel().equals(naam)
-                && y.index() < index), "hoger-beslist-onderwerp", onderwerp, Beslist::onderwerp));
+    /** As {@link #uitkomsten(String, int, int, Uitkomst.Soort)}, with the constraint {@code betasoort}, which calls
+     *  {@code functie}, between the outcome and the one the variable {@code doel} binds, where it is not null. */
+    private Patroon uitkomsten(String naam, int van, int tot, Uitkomst.Soort soort, String betasoort, Functie functie,
+                               String doel) {
+        String variabele = "$uitkomst_" + idSeq;
+        List<Alfa.Veldtoets> toetsen = new ArrayList<>(List.of(
+                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
+                new Alfa.Veldtoets("keten", Alfa.Vergelijker.MINSTENS, van),
+                new Alfa.Veldtoets("keten", Alfa.Vergelijker.ONDER, tot)));
+        if (soort != null) toetsen.add(new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, soort));
+        Alfa alfa = new Alfa(id("uitkomst"), toetsen);
+        Join opOnderwerp = new Join(id("uitkomst-onderwerp"), "onderwerp", ONDERWERP);
+        List<Betatoets> beta = betasoort == null ? List.of() : List.of(new Betatoets(id(betasoort), functie, doel));
+        return new Patroon(Uitkomst.class, variabele, List.of(alfa), List.of(opOnderwerp), beta, List.of());
+    }
+
+    /** {@code not Uitkomst} over the positions above {@code positie} in chain {@code keten}, for the subject. */
+    private LhsItem geenUitkomst(String naam, int keten, int positie) {
+        String variabele = "$hoger_" + idSeq;
+        Alfa hoger = new Alfa(id("hoger-uitkomst"), List.of(
+                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
+                new Alfa.Veldtoets("keten", Alfa.Vergelijker.GELIJK, keten),
+                new Alfa.Veldtoets("positie", Alfa.Vergelijker.ONDER, positie)));
+        return new Niet(new Patroon(Uitkomst.class, variabele, List.of(hoger),
+                List.of(new Join(id("hoger-uitkomst-onderwerp"), "onderwerp", ONDERWERP)), List.of()));
+    }
+
+    /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject. */
+    private LhsItem geenBeslist(String naam, int index) {
+        String variabele = "$hoger_" + idSeq;
+        Alfa hoger = new Alfa(id("hoger-beslist"), List.of(
+                new Alfa.Veldtoets("stapel", Alfa.Vergelijker.GELIJK, naam),
+                new Alfa.Veldtoets("index", Alfa.Vergelijker.ONDER, index)));
+        return new Niet(new Patroon(Beslist.class, variabele, List.of(hoger),
+                List.of(new Join(id("hoger-beslist-onderwerp"), "onderwerp", ONDERWERP)), List.of()));
     }
 
     /**
@@ -2795,8 +2820,8 @@ public final class TmsTranspiler {
      * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
      * 2026-10-09).
      */
-    private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam,
-                                  Function<Variable<Object>, List<RuleItemBuilder<?>>> wacht, Afloop besluit) {
+    private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam, Supplier<List<LhsItem>> wacht,
+                                  Afloop besluit) {
         Default d = k.d();
         Class<?> klasse = b.klasse;
         Supplier<Lezingen> nieuw = () -> {
@@ -2816,7 +2841,7 @@ public final class TmsTranspiler {
         String naam = b.naam;
         List<RuleItemBuilder<?>> items;
         if (b.kenmerk) {
-            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), weergegeven(lez, wacht.get()));
             Boolean beslissing = d.besluit();
             items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
                     besluit.voer(drools, o, beslissing)));
@@ -2825,7 +2850,7 @@ public final class TmsTranspiler {
             Waardefunctie waarde = gevolgwaarde(herschaald(waarde(d.consequentie(), lez),
                     eff.eenheidVan(d.consequentie()), b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel"));
             lez.stop();
-            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.apply(lez.s));
+            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), weergegeven(lez, wacht.get()));
             int n = lez.variabelen.size();
             items.add(gevolg(lez, posities(gebruik), (drools, o, w) -> {
                 Object v;
@@ -2843,7 +2868,16 @@ public final class TmsTranspiler {
         List<Rule> uit = new ArrayList<>();
         uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
         if (kanFalen)
-            uit.add(voorwaardefoutregelRechtstreeks(naam, regelnaam, nieuw, d.voorwaarde(), l -> wacht.apply(l.s)));
+            uit.add(voorwaardefoutregelRechtstreeks(naam, regelnaam, nieuw, d.voorwaarde(),
+                    l -> weergegeven(l, wacht.get())));
+        return uit;
+    }
+
+    /** The planned control-fact patterns {@code stuur} of a default, rendered by the rendering of {@code lez}, whose rule
+     *  is built item by item until the rule of a default comes whole from its plan. */
+    private static List<RuleItemBuilder<?>> weergegeven(Lezingen lez, List<LhsItem> stuur) {
+        List<RuleItemBuilder<?>> uit = new ArrayList<>();
+        for (LhsItem item : stuur) uit.add(lez.weergave.item(item));
         return uit;
     }
 

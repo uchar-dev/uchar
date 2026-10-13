@@ -21,7 +21,8 @@ public enum Route {
     /** The evaluation fault of a fixed sentence, named in a rule, which {@link Gevolg.Fout} inserts. */
     REKENFOUT(Rekenhulpen.class, "rekenfout"),
     /** The §9.5 inconsistency of a form on an object, which {@link Gevolg.Inconsistentie} and the deposit of a
-     *  {@link Gevolg.Waarde} insert. */
+     *  {@link Gevolg.Waarde} insert, and of the conflict of a defaults stack at its root under the conflict's key
+     *  ({@link Gevolg.Stapelfeit.Inconsistentie}). */
     INCONSISTENTIE(Rekenhulpen.class, "inconsistentie"),
     /** An input timeline as the asOfDate-bucket scalar the case gave, which {@link Gevolg.Stand} carries where it says
      *  so. */

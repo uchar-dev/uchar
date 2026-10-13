@@ -692,6 +692,19 @@ public final class Rekenhulpen {
         };
     }
 
+    // ---------------- the reconciliation of a defaults stack (plan.Betatoets) ----------------
+
+    /** Whether the outcome {@code x}, an {@link Uitkomst}, is of an earlier member chain than the outcome {@code y}. */
+    public static boolean eerderLid(Object x, Object y) {
+        return ((Uitkomst) x).keten() < ((Uitkomst) y).keten();
+    }
+
+    /** Whether the outcome {@code x}, an {@link Uitkomst}, decides otherwise than the outcome {@code y}, as the
+     *  reconciliation compares two decisions ({@link Uitkomst#gelijk}). */
+    public static boolean anderBesluit(Object x, Object y) {
+        return !Uitkomst.gelijk(((Uitkomst) x).waarde(), ((Uitkomst) y).waarde());
+    }
+
     /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
      *  subject of declared type {@code type}, whose own marks are {@code herkomst}, the {@link Gemaakt} facts whose object
      *  is the subject: none for an object of the input, one for an object a creation made. It is one more than the

@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.transpiler.tms.Uitkomst.Soort;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +26,10 @@ import java.util.Map;
  * contribution, with what it contributes as a kind of its own ({@link Inbreng}), and the intermediate facts of a
  * fold's filter and members, with the member's place in the fold's order ({@link Vouwplaats}); and those of an object
  * creation, a link and the fault of a second filler of a to-one role (step 1c-C1), where a creation constructs its new
- * object before it inserts anything ({@link Creatie}). The consequences of the defaults are kinds of their own when
- * their step plans them; each names the fact it inserts and how, as these do.
+ * object before it inserts anything ({@link Creatie}); and those of the rules of a defaults stack (step 1c-C2): the
+ * decision of a default or of a reconciliation ({@link Afloop}) and the conflict of a reconciliation ({@link Conflict}),
+ * each with the facts it inserts as a kind of their own ({@link Stapelfeit}): the target, and the control facts by
+ * which the rules of the stack displace one another.
  */
 public sealed interface Gevolg {
 
@@ -443,4 +446,74 @@ public sealed interface Gevolg {
      *  objects, under the declared name of the relation {@code relatie}, an {@code IllegalStateException} with the
      *  sentence {@code zin}. */
     record TweedeVulling(String onderwerp, String relatie, String zin, Invoeging invoeging) implements Gevolg {}
+
+    /**
+     * The decision of a default or of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.9), on the
+     * object {@code onderwerp} binds: the value {@code waarde} evaluates to over a value array of {@code grootte} slots
+     * with the bound values at {@code slots}, collapsed from an exact rational to a decimal where {@code collapse}. That
+     * value is a characteristic's decision as the default declares it, a constant; an attribute's consequence, computed
+     * from what the rule bound; or the decision of the first deciding member chain, bound off its outcome
+     * ({@link Leessoort#BESLUIT}). The consequence inserts each of {@code feiten} with it, in order, as {@code invoeging}
+     * says. Where the evaluation raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under
+     * {@code fout} on the object in place of the decision; {@code fout} is null where the value is a constant or a bound
+     * decision, which cannot fault, and such a fault would be a broken contract. Where the value is null, a leeg
+     * consequence, the default decides nothing and inserts nothing, so the lower defaults decide (ch. 7.1).
+     */
+    record Afloop(String onderwerp, Term waarde, List<Integer> slots, int grootte, boolean collapse, Foutnaam fout,
+                  List<Stapelfeit> feiten, Invoeging invoeging) implements Gevolg {
+        public Afloop {
+            slots = List.copyOf(slots);
+            feiten = List.copyOf(feiten);
+            if (feiten.isEmpty()) throw new IllegalArgumentException("een besluit voegt ten minste één feit in");
+            for (Stapelfeit f : feiten)
+                if (f instanceof Stapelfeit.Inconsistentie || f instanceof Stapelfeit.Uitkomst u && u.soort() != Soort.BESLIST)
+                    throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
+        }
+    }
+
+    /**
+     * The conflict of a reconciliation in a defaults stack (RUNTIME-SEMANTICS ch. 7.2, 7.9), on the object
+     * {@code onderwerp} binds, under the key {@code sleutel} evaluates to over a value array of {@code grootte} slots
+     * with the bound values at {@code slots}: the key of the reconciliation itself where two of its members decide
+     * differently, a constant, or the key of the first conflicting member chain, bound off its outcome
+     * ({@link Leessoort#CONFLICTSLEUTEL}), which passes on unchanged. The consequence inserts {@code feit} with the key,
+     * as {@code invoeging} says: the outcome of the default that reconciles, of the kind {@code CONFLICT}, which the
+     * reconciliation above it reads, or at the root of the stack the §9.5 inconsistency under the key.
+     */
+    record Conflict(String onderwerp, Term sleutel, List<Integer> slots, int grootte, Stapelfeit feit,
+                    Invoeging invoeging) implements Gevolg {
+        public Conflict {
+            slots = List.copyOf(slots);
+            if (!(feit instanceof Stapelfeit.Inconsistentie
+                    || feit instanceof Stapelfeit.Uitkomst u && u.soort() == Soort.CONFLICT))
+                throw new IllegalArgumentException("een conflict voegt zijn uitkomst of de inconsistentie in, niet " + feit);
+        }
+    }
+
+    /** A fact the rules of a defaults stack insert on their subject with a decision or with the key of a conflict. */
+    sealed interface Stapelfeit {
+
+        /** The value of the stack's target attribute {@code doel}, the decision, written by {@code schrijver}, the
+         *  stack: a {@code Waarde}. */
+        record Waarde(ElementSleutel doel, String schrijver) implements Stapelfeit {}
+
+        /** The attribution of the stack's target characteristic {@code kenmerk}: a {@code HeeftKenmerk}. The analysis
+         *  plans it only where the decision is an attribution, true. */
+        record Kenmerk(ElementSleutel kenmerk) implements Stapelfeit {}
+
+        /** The control fact of the simple form: default {@code index} of the stack {@code stapel} decided, a
+         *  {@code Beslist}. The analysis plans it only where a lower default of the stack has a rule, which carries the
+         *  negation of it over the indices above its own: the condition under which this decision displaces a lower
+         *  one. */
+        record Beslist(String stapel, int index) implements Stapelfeit {}
+
+        /** The control fact of the general form: the default at {@code positie} in chain {@code keten} of the stack
+         *  {@code stapel} settled as {@code soort} says, {@code BESLIST} with the decision as its value or
+         *  {@code CONFLICT} with the key of the conflict: an {@code Uitkomst}. */
+        record Uitkomst(String stapel, int keten, int positie, Soort soort) implements Stapelfeit {}
+
+        /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the
+         *  route {@link Route#INCONSISTENTIE}. */
+        record Inconsistentie() implements Stapelfeit {}
+    }
 }

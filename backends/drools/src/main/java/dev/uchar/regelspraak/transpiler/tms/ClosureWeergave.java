@@ -404,6 +404,8 @@ final class ClosureWeergave {
             case IN_FASE -> x -> Rekenhulpen.inFase(x[0], x[1]);
             case NIET_IN_FASE -> x -> Rekenhulpen.nietInFase(x[0], x[1]);
             case ANDERE_VULLING -> x -> Rekenhulpen.andereVulling(x[0], x[1], (String) x[2]);
+            case EERDER_LID -> x -> Rekenhulpen.eerderLid(x[0], x[1]);
+            case ANDER_BESLUIT -> x -> Rekenhulpen.anderBesluit(x[0], x[1]);
         };
     }
 

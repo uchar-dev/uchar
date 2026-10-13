@@ -83,5 +83,11 @@ public enum Leessoort {
     BEREIKTE_INVOER,
     /** The number of keys of a uniqueness that collide with the key the rule binds, itself included, off an accumulate
      *  ({@code TmsTranspiler.uniciteitsregels}). */
-    BOTSINGEN
+    BOTSINGEN,
+    /** The decision of the first deciding member chain of a reconciliation of a defaults stack, off its
+     *  {@code Uitkomst} ({@code TmsTranspiler.verzoening}). */
+    BESLUIT,
+    /** The key of the first conflicting member chain of a reconciliation of a defaults stack, off its
+     *  {@code Uitkomst}, which passes on unchanged ({@code TmsTranspiler.verzoening}). */
+    CONFLICTSLEUTEL
 }

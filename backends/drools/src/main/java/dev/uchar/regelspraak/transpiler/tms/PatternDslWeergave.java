@@ -228,6 +228,12 @@ final class PatternDslWeergave {
                                     new Koppeling(x.relatie(), a[0], a[1], (Integer) a[2])));
             case Gevolg.TweedeVulling x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), new Fout(a[0], x.relatie(), new IllegalStateException(x.zin()))));
+            case Gevolg.Afloop x -> afloop(x);
+            case Gevolg.Conflict x -> {
+                Waardefunctie sleutel = ClosureWeergave.waardefunctie(x.sleutel());
+                yield consequentie(x.onderwerp(), x.slots(), x.grootte(), (drools, onderwerp, w) ->
+                        voegIn(drools, x.invoeging(), stapelfeit(x.feit(), onderwerp, sleutel.van(w))));
+            }
             case Gevolg.Uitdeling x -> consequentie(x.onderwerp(), slotsVan(x.pot(), x.lijst()), (drools, bron, w) -> {
                 for (Object feit : Rekenhulpen.uitdeling(x.vorm(), bron, x.methode(), w[x.pot()], w[x.lijst()],
                         x.gewogen(), x.gemaximeerd(), x.afnemend(), x.decimalen(), x.aandeel(), x.rest(), x.schrijver()))
@@ -418,6 +424,41 @@ final class PatternDslWeergave {
                     }
                 }
         });
+    }
+
+    /** The decision of {@link Gevolg.Afloop}: its value from the bound values, with its fault where the plan names
+     *  one; nothing where the value is null; else the facts of the decision, in order. */
+    private RuleItemBuilder<?> afloop(Gevolg.Afloop g) {
+        Waardefunctie waarde = ClosureWeergave.waardefunctie(g.waarde());
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
+            Object v;
+            try {
+                v = waarde.van(w);
+                if (g.collapse()) v = Rekenhulpen.collapse(v);
+            } catch (RuntimeException e) {
+                if (g.fout() == null || !Rekenfout.isEvaluatiefout(e)) throw e;
+                voegIn(drools, g.invoeging(),
+                        new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                return;
+            }
+            if (v == null) return;
+            for (Gevolg.Stapelfeit f : g.feiten()) voegIn(drools, g.invoeging(), stapelfeit(f, onderwerp, v));
+        });
+    }
+
+    /** The fact {@code f} of a defaults stack on {@code onderwerp}, with {@code v}: the decision, or the key of a
+     *  conflict. */
+    private static Object stapelfeit(Gevolg.Stapelfeit f, Object onderwerp, Object v) {
+        return switch (f) {
+            case Gevolg.Stapelfeit.Waarde x -> new Waarde(onderwerp, x.doel(), v, x.schrijver());
+            case Gevolg.Stapelfeit.Kenmerk x -> new HeeftKenmerk(onderwerp, x.kenmerk());
+            case Gevolg.Stapelfeit.Beslist x -> new Beslist(onderwerp, x.stapel(), x.index());
+            case Gevolg.Stapelfeit.Uitkomst x -> x.soort() == Uitkomst.Soort.BESLIST
+                    ? new Uitkomst(onderwerp, x.stapel(), x.keten(), x.positie(), Uitkomst.Soort.BESLIST, v, null)
+                    : new Uitkomst(onderwerp, x.stapel(), x.keten(), x.positie(), Uitkomst.Soort.CONFLICT, null,
+                            (String) v);
+            case Gevolg.Stapelfeit.Inconsistentie x -> Rekenhulpen.inconsistentie((String) v, onderwerp);
+        };
     }
 
     /** A new bean of {@code klasse} by its constructor without arguments, every field unset. */
@@ -736,6 +777,16 @@ final class PatternDslWeergave {
         veld(Koppeling.class, "tweede", Koppeling::tweede);
         veld(Lijstplaats.class, "veld", Lijstplaats::veld);
         veld(Lijstplaats.class, "plaats", Lijstplaats::plaats);
+        veld(Beslist.class, "onderwerp", Beslist::onderwerp);
+        veld(Beslist.class, "stapel", Beslist::stapel);
+        veld(Beslist.class, "index", Beslist::index);
+        veld(Uitkomst.class, "onderwerp", Uitkomst::onderwerp);
+        veld(Uitkomst.class, "stapel", Uitkomst::stapel);
+        veld(Uitkomst.class, "keten", Uitkomst::keten);
+        veld(Uitkomst.class, "positie", Uitkomst::positie);
+        veld(Uitkomst.class, "soort", Uitkomst::soort);
+        veld(Uitkomst.class, "waarde", Uitkomst::waarde);
+        veld(Uitkomst.class, "sleutel", Uitkomst::sleutel);
     }
 
     @SuppressWarnings("unchecked")
@@ -764,6 +815,7 @@ final class PatternDslWeergave {
                 case GELIJK -> x -> f.apply(x).equals(w);
                 case NIET_GELIJK -> x -> !f.apply(x).equals(w);
                 case MINSTENS -> x -> ((Number) f.apply(x)).intValue() >= ((Number) w).intValue();
+                case ONDER -> x -> ((Number) f.apply(x)).intValue() < ((Number) w).intValue();
                 case BINNEN -> x -> ((Geldigheid) w).bevat((LocalDate) f.apply(x));
                 case IS_EEN -> x -> ((Class<?>) w).isInstance(f.apply(x));
                 case LEEG -> x -> f.apply(x) == null;

@@ -223,7 +223,15 @@ public enum Functie {
     /** Whether two {@code Koppeling} facts hold different objects at the end their constant names ({@code "eerste"} or
      *  {@code "tweede"}), by identity: the constraint of the rule of a second filler of a to-one role, between the
      *  second link and the first ({@link Betatoets}). */
-    ANDERE_VULLING(Rekenhulpen.class, "andereVulling", false);
+    ANDERE_VULLING(Rekenhulpen.class, "andereVulling", false),
+    /** Whether an {@code Uitkomst} is of an earlier member chain than the one another pattern binds, by the number of
+     *  its chain: the constraint of a reconciliation of a defaults stack that keeps to the first member in member order
+     *  (RUNTIME-SEMANTICS ch. 7.2; {@link Betatoets}). */
+    EERDER_LID(Rekenhulpen.class, "eerderLid", false),
+    /** Whether an {@code Uitkomst} decides otherwise than the one another pattern binds, numbers by value
+     *  (RUNTIME-SEMANTICS ch. 7.2): the constraint of a reconciliation of a defaults stack that finds a member which
+     *  decides differently ({@link Betatoets}). */
+    ANDER_BESLUIT(Rekenhulpen.class, "anderBesluit", false);
 
     private final Class<?> klasse;
     private final String methode;
