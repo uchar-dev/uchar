@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Gate 11 — the TOKA parity zone (TEMPORARY, maintainer decision 2026-08-27).
+# Gate 11 — the TOKA parity zone (maintainer decision 2026-08-27; a regular
+# gate of the set since 2026-10-13, when the maintainer decided that the
+# `toka/` zone stays).
 #
-# This gate exists ONLY while the isolated `toka/` zone exists. It is the one
-# documented exception to gate-set monotonicity (CLAUDE.md): it leaves the set
-# when the ©-Belastingdienst zone is removed ahead of any public flip. Until
-# then it is unconditional and blocking. NOTE: it is NOT "exactly like gate 10"
+# Unconditional and blocking. NOTE: it is NOT "exactly like gate 10"
 # any more — obligation 5 (the differential replay, added by decision V6-A)
 # needs the FULL toolchain of gates 6 + 12 combined: OCaml/dune (ref + clingo,
 # and since obligation 4 the verifier of gate 3),
@@ -18,8 +17,8 @@
 #      NON-ZERO test count — a suite that ran nothing is a silent greenlight;
 #   2. every pinned parity dump (`toka/**/ir.json`) re-emits through uchar's
 #      OWN frontend byte-identically — the feature-parity proof (frontend ==
-#      toolchain on the ©-Belastingdienst casus the public corpus may never
-#      carry), MINUS the recorded divergences. The dump was emitted once with
+#      toolchain on the TOKA casus, which the corpus does not carry), MINUS
+#      the recorded divergences. The dump was emitted once with
 #      the toolchain at the pin; where uchar's emitter has since changed ON
 #      PURPOSE the pin was re-taken in that card and listed in toka/README.md
 #      ("Deliberate divergences from the toolchain emission"), and for those
@@ -31,14 +30,14 @@
 #      them. Divergence by holdout (toka-45, below) and divergence by re-pin
 #      are both recorded; a silent one is not available;
 #   3. every replay slice (`toka/cases/**/ir.json`) obeys the SAME metaschema
-#      + byte-round-trip discipline gate 2 enforces on the public corpus, run
+#      + byte-round-trip discipline gate 2 enforces on the corpus, run
 #      here in explicit mode via scripts/check-ir-schema.sh — one serialiser,
 #      one source of truth. Gate 2 scans only corpus/, so without this leg the
 #      newly-committed IR wire artifacts would ride only on the more-permissive
-#      ref/clingo/Drools loaders (defense-in-depth for the temporary zone);
+#      ref/clingo/Drools loaders (defense-in-depth for the zone);
 #   4. every replay slice is WELL-FORMED (the card toka-welgevormd, 2026-09-25):
 #      verifier-clean under gate 3's OCaml verifier, built as gate 3 builds it, so a
-#      slice is held to the rules the public corpus is held to and not only to
+#      slice is held to the rules the corpus is held to and not only to
 #      schema, round-trip and replay. A slice carries beside its scenario whatever
 #      anchors its model (toka/README.md). The reason-carrying VERIFIER_HOLDOUTS list
 #      names each slice held out with the one rule and pointer it is rejected at; a
@@ -90,8 +89,7 @@ TOKA=toka
 # removal lowers the floor in the same commit.
 # The three counts are unseen elsewhere: this zone is outside corpus/, so no other gate reads a
 # single file of it. The casus-dump count is deliberately NOT floored — it is 1, and the existing
-# "-gt 0" is already that floor. These constants leave the gate set WITH this gate, at the zone's
-# removal (CLAUDE.md gate 11: the one documented exception to gate-set monotonicity).
+# "-gt 0" is already that floor.
 EXPECTED_MIN_TESTS=27       # 2026-09-10: measured 27 (the zone's own JUnit suite)
 EXPECTED_MIN_FRAGMENTS=45   # 2026-09-10: measured 45 (.rgs fragments re-emitted byte-identical)
 EXPECTED_MIN_CASES=29       # 2026-09-10: measured 29 (manifest-pinned replay cases)
@@ -136,7 +134,7 @@ JUNIT=$(ls "$FE"/lib/junit-platform-console-standalone-*.jar 2>/dev/null | head 
 [ -d "$FE/out" ] || fail "no compiled frontend classes under $FE/out after the build"
 
 # 2. compile + run the TOKA test suite against the frontend classes. The tests
-#    carry unswept ©-material, so they live under toka/ (not frontends/, which
+#    carry TOKA material, so they live under toka/ (not frontends/, which
 #    gate 1 keeps TOKA-free) and compile into a scratch dir scanned in
 #    isolation — java runs with cwd = repo root, so CasusTest's Path.of(
 #    "toka/casus") resolves.

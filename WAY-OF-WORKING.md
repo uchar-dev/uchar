@@ -76,8 +76,8 @@ development:
 - the **regelspraak-java** toolchain — the IR being mirrored
   (mirror-then-diverge, `spec/IR-SPEC.md` § Method; the founding review's
   citations are pinned to its commit `b85dff3`); archived 2026-09-26, its
-  successor `uchar-dev/regelspraak-toolchain` consumes this repository as a
-  submodule;
+  successor `uchar-dev/regelspraak-toolchain` (public since 2026-10-12)
+  consumes this repository as a submodule;
 - the **calculemus course** — origin of the Jutterswet casus.
 
 The maintainer supplies their local locations when launching a session.
@@ -106,8 +106,10 @@ without access to the maintainer's machine or private repositories.
   delivery. **Graduated (Phase-1 exit, 2026-08-19):** `spec/IR-SPEC.md` and
   `spec/RUNTIME-SEMANTICS.md` are in the gated set — the normative documents
   read stand-alone, mechanically enforced.
-- **Rights tripwire.** Corpus data must contain no TOKA material
-  (`corpus/README.md`); the same script trips on it.
+- **TOKA tripwire.** Corpus data must contain no TOKA material
+  (`corpus/README.md`: the corpus is own work, and TOKA is third-party
+  material whose release is not yet confirmed in writing); the same script
+  trips on it.
 
 Run `scripts/check-self-contained.sh` before every commit, and the full gate
 set before every landing — locally (maintainer decision 2026-09-26: no

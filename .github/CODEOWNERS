@@ -1,6 +1,8 @@
 # Protected paths (see CLAUDE.md and spec/PLAN.md §8): maintainer review required.
-# Effective once branch protection with "require review from code owners" is
-# enabled (on the free org plan that requires a public repo).
+# GitHub enforces this only with branch protection that requires review from
+# code owners. The repository is public since 2026-10-12, so the free org plan
+# allows that; it is not enabled (2026-10-13). Without it, the
+# mandate-and-review protocol of WAY-OF-WORKING.md carries the review.
 /spec/                  @yhavinga
 /corpus/golden/anchor/  @yhavinga
 /.github/               @yhavinga

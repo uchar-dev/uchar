@@ -72,7 +72,7 @@ selfcheck() {  # <pattern> <reason for a hit>
 }
 PRIVATE='(/users/|/home/|~/|regelspraak-java|regelspraakruntime|calculemus)'
 selfcheck "$PRIVATE" "machine-local path or private-repo reference in the candidate"
-selfcheck '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' "TOKA material in the candidate (rights policy, corpus/README.md)"
+selfcheck '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' "TOKA material in the candidate (corpus provenance, corpus/README.md)"
 
 # 2. the verifier accepts the document.
 "$VERIFIER" "$CAND/ir.json" || fail "the verifier rejects $CAND/ir.json"

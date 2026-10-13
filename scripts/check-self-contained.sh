@@ -4,7 +4,7 @@
 # Artifact zones must carry their full meaning without access to the
 # maintainer's machine or private repositories: no machine-local paths, no
 # private-repo names, no citations into private code. Corpus data must be
-# free of TOKA material (rights policy, corpus/README.md).
+# free of TOKA material (corpus provenance, corpus/README.md).
 #
 # The exception list covers placeholder READMEs in still-empty zones; it only
 # shrinks — sweeping a README clean and dropping its entry is part of the
@@ -34,10 +34,9 @@ EXCEPTIONS=''
 # landed (decision V3-a): the production RegelSpraakRuntime now lives — legitimately and
 # by design — under backends/drools/runtime/. The no-share tripwire below re-imposes the
 # invariant precisely, forbidding that runtime ONLY where it must never be (ref/, spec/verifier/).
-# The successor of regelspraak-java is matched with its org prefix: the bare name
-# 'regelspraak-toolchain' also matches the compound "RegelSpraak-toolchain", which
-# artifact-zone prose uses for the toolchain in general (corpus/golden/README.md).
-PRIVATE='(/users/|/home/|~/|regelspraak-java|uchar-dev/regelspraak-toolchain|calculemus|[^a-zA-Z]main-spec)'
+# Of the repositories, only private ones belong in this pattern: uchar-dev/regelspraak-toolchain,
+# the successor of regelspraak-java, is public since 2026-10-12 and left the pattern on 2026-10-13.
+PRIVATE='(/users/|/home/|~/|regelspraak-java|calculemus|[^a-zA-Z]main-spec)'
 
 status=0
 
@@ -62,21 +61,22 @@ for zone in $ZONES; do
     fi
 done
 
-# The TOKA rights tripwire. ©-Belastingdienst material is admitted in exactly
-# ONE place — the top-level toka/ parity zone (maintainer decision 2026-08-27,
-# temporary; it leaves with the zone ahead of any public flip). Every OTHER
-# artifact zone stays TOKA-free and this tripwire keeps firing on it — so it
-# sweeps the SAME $ZONES the private-reference scan does (backends included: the
-# ported Drools backend is an artifact zone and a comment quoting a TOKA/
-# RegelSpraak-spec excerpt is a leak). toka/ is deliberately absent from $ZONES
-# — it is NOT swept — and is asserted separately to carry no machine-local paths.
+# The TOKA tripwire. TOKA material is admitted in exactly ONE place — the
+# top-level toka/ parity zone (maintainer decision 2026-08-27). The reason is
+# provenance: the corpus is own work, and TOKA is third-party material whose
+# release is not yet confirmed in writing. Every OTHER artifact zone stays
+# TOKA-free and this tripwire keeps firing on it — so it sweeps the SAME $ZONES
+# the private-reference scan does (backends included: the ported Drools backend
+# is an artifact zone, and a comment there quoting a TOKA excerpt is TOKA
+# material outside the zone). toka/ is deliberately absent from $ZONES — it is
+# NOT swept — and is asserted separately to carry no machine-local paths.
 # The [ -e ] guard here and in the no-share loop below stays a plain skip on purpose: the
 # existence of every $ZONES entry is already asserted, by name, in the first loop above, so a
 # missing zone is reported once instead of three times.
 for zone in $ZONES; do
     [ -e "$zone" ] || continue
     if git grep -nIiE '(^|[^[:alpha:]])toka([^[:alpha:]]|$)' -- "$zone"; then
-        echo "FAIL: TOKA material in artifact zone '$zone' (rights policy, corpus/README.md; the sole exception is the isolated toka/ zone)" >&2
+        echo "FAIL: TOKA material in artifact zone '$zone' (corpus provenance, corpus/README.md; the sole exception is the toka/ parity zone)" >&2
         status=1
     fi
 done
@@ -96,7 +96,7 @@ for zone in ref spec/verifier; do
 done
 
 # toka/ is exempt from the self-containedness prose rules (it carries the
-# ©-material and names the toolchain by design) but MUST carry no machine-local
+# TOKA casus and names the toolchain by design) but MUST carry no machine-local
 # paths — the one rule that still applies inside the zone.
 if [ -e toka ]; then
     if git grep -nIiE '(/users/|/home/|~/)' -- toka; then

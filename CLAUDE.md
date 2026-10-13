@@ -32,9 +32,12 @@ Sessions may propose diffs to these; only the maintainer merges them:
 - `.github/` (CODEOWNERS; the workflow file, hand-triggered only)
 - `scripts/` (gate scripts), `WAY-OF-WORKING.md`, and this file
 
-Mechanism: `.github/CODEOWNERS` plus branch protection (note: on the free org
-plan branch protection requires a public repo). A change to a protected path
-without maintainer review must not land.
+Mechanism: `.github/CODEOWNERS` lists these paths, and the mandate-and-review
+protocol of `WAY-OF-WORKING.md` carries the review (§3: a card branch that
+touches them stays an unmerged proposal). The repository is public since
+2026-10-12, so the free org plan allows branch protection; it is not enabled
+(2026-10-13), so GitHub does not enforce that review. A change to a protected
+path without maintainer review must not land.
 
 **The CODEOWNERS claim is wider on purpose** (recorded 2026-09-10, existing
 practice). `.github/CODEOWNERS` claims `/spec/` whole — a safety net,
@@ -73,22 +76,46 @@ Within that claim, per item:
 
 - **Rights-free by construction.** Own-authored casus material (the
   Jutterswet) and statute text (copyright-free under art. 11 Auteurswet)
-  only. No ©-Belastingdienst material enters this repo — no TOKA casus, no
-  RegelSpraak specification excerpts — **with exactly one exception (below).**
-  Programs *written in* RegelSpraak are ours; the language specification text
-  is not.
-- **The `toka/` exception (maintainer decision 2026-08-27, temporary).**
-  ©-Belastingdienst TOKA material is admitted for feature-parity testing of
-  uchar's own frontend against the original toolchain, isolated in one
-  top-level `toka/` zone and **nowhere else**. Consequences, accepted and
-  recorded: (1) the material is in git **history** from the card that created
-  the zone, so the repository **must stay private while the zone exists**;
-  (2) any public flip (PLAN §9 decision 10) requires **both** removing the
-  zone **and** a history rewrite (filter-repo or a fresh public copy) —
-  deletion alone does not erase history; (3) every other zone stays TOKA-free
-  and gate 1 keeps tripping on it (`scripts/check-self-contained.sh`). The
-  zone is exempt from the self-containedness prose rules but carries no
-  machine-local paths.
+  only. No RegelSpraak specification excerpts enter this repo — the
+  specification carries "Alle rechten voorbehouden" (all rights reserved) —
+  **with exactly one exception:** the TOKA casus, Bijlage 1 of the
+  specification, in the `toka/` parity zone (below). Programs *written in*
+  RegelSpraak are ours; the language specification text is not.
+- **The `toka/` parity zone (maintainer decision 2026-08-27; amended
+  2026-10-13).** TOKA material is kept for feature-parity testing of uchar's
+  own frontend against the original toolchain (gate 11), in one top-level
+  `toka/` zone and **nowhere else**. Every other zone stays TOKA-free and
+  gate 1 keeps tripping on it (`scripts/check-self-contained.sh`): the corpus
+  is own work, and TOKA is third-party material whose release is not yet
+  confirmed in writing. The repository is public since 2026-10-12, with the
+  zone and its git history; the history is not rewritten. The zone is exempt
+  from the self-containedness prose rules but carries no machine-local
+  paths. Provenance and status, the same text as in `toka/README.md` and
+  `README.md`:
+
+  > **TOKA casus.** Source: *RegelSpraak specificatie* v2.3.0 (4-12-2025),
+  > Bijlage 1, "Treinen Op Korte Afstand" (TOKA, a fictitious act from the
+  > Belastingdienst's ALEF course), published by the Belastingdienst at
+  > https://wendbarewetsuitvoering.pleio.nl/page/view/291f5846-cdfc-42d9-9f31-a2158fe59128/specificaties-regelspraak.
+  > Rights notice of the source:
+  > "© 2025 Belastingdienst / Alle rechten voorbehouden".
+  > Status: the Belastingdienst indicated to the maintainer on 2026-10-13 that
+  > TOKA is meant to be releasable. It is probably under EUPL-1.2, like ALEF
+  > (https://github.com/belastingdienst/ALEF) and the repository
+  > MinBZK/regels.overheid.nl, which carries a 2022 version of the course
+  > casus. Written confirmation: not yet received.
+  > The licences of this repository (Apache-2.0, CC BY 4.0) do not cover this
+  > material.
+  >
+  > Files in this repository. Copied verbatim from the source: the 47
+  > definition fragments `toka/casus/toka-*.rgs`. Derived from them or own
+  > work: the IR dump `toka/casus/ir.json` and the 29 IR slices
+  > `toka/cases/scenario-*/ir.json` (the dump and 22 of the slices carry text
+  > of the fragments in their source snippets); the 29 case files
+  > `toka/cases/scenario-*/case.json`, with situations and expected values
+  > derived by hand; the parity manifest `toka/cases/parity.manifest`; the two
+  > tests under `toka/src/test/java/`, which quote lines of the fragments; and
+  > `toka/README.md`.
 - Synthesized cases are admitted only when the full differential square
   agrees (Drools ≡ reference interpreter ≡ Clingo, to the extent those
   exist); disagreement routes to adversarial triage, never to admission.
@@ -121,12 +148,13 @@ reviewer's duty on a machine that has catala. Current gates:
    since the Phase-1 exit, `spec/IR-SPEC.md`
    and `spec/RUNTIME-SEMANTICS.md`)
    carry no machine-local paths or private-repo references, and corpus data
-   is free of TOKA material — with the single, temporary exception of the
-   `toka/` parity zone (see Corpus rules), which the tripwire deliberately
-   skips while it keeps firing on every other zone; `toka/` itself is checked
-   only for machine-local paths. Working prose (plan, backlog, reviews) may
-   reference the private source repos during development — see
-   `WAY-OF-WORKING.md` §5–6.
+   is free of TOKA material (provenance: the corpus is own work, and TOKA is
+   third-party material whose release is not yet confirmed in writing) —
+   with the single exception of the `toka/` parity zone (see Corpus rules),
+   which the tripwire deliberately skips while it keeps firing on every
+   other zone; `toka/` itself is checked only for machine-local paths.
+   Working prose (plan, backlog, reviews) may reference the private source
+   repos during development — see `WAY-OF-WORKING.md` §5–6.
 2. `scripts/check-ir-schema.sh` — the schema file is metaschema-valid;
    every `corpus/golden/**/ir.json` and `corpus/rood/**/ir.json`
    validates against
@@ -222,14 +250,15 @@ reviewer's duty on a machine that has catala. Current gates:
     is a failure, never silently green. Its CI leg is unconditional
     and blocking (maintainer decision 2026-08-27).
 
-11. `scripts/check-toka-parity.sh` — **TEMPORARY** (maintainer decision
-    2026-08-27): the isolated `toka/` parity zone. The frontend builds and
+11. `scripts/check-toka-parity.sh` — the `toka/` parity zone (maintainer
+    decision 2026-08-27; a regular gate of the set since 2026-10-13, when
+    the maintainer decided that the zone stays). The frontend builds and
     the TOKA integration tests under `toka/` (excluded at the frontend
     takeover, brought here in original form) compile + pass against it with a
     non-zero test count; every toolchain-pinned `toka/**/ir.json` re-emits
     through uchar's own frontend byte-identically (frontend ≡ toolchain on
-    the ©-Belastingdienst casus the public corpus may never carry — since L1
-    of the v1 wire migration, 2026-09-24, a REGRESSION form: the zone
+    the TOKA casus, which the corpus does not carry — since L1 of the v1
+    wire migration, 2026-09-24, a REGRESSION form: the zone
     migrates with every landing, the casus dump is re-emitted by the
     frontend and the slices go through the landing's migration script, so
     the comparison proves frontend ≡ the recorded state, `toka/README.md`
@@ -248,9 +277,7 @@ reviewer's duty on a machine that has catala. Current gates:
     unitless base, WF-099) that fails when stale; the casus dump stays outside
     that leg (the parity object, over-determined by its nature: its scenarios
     write the same targets each in their own way).
-    CI leg unconditional and blocking. **This gate is the one documented
-    exception to gate-set monotonicity: it leaves the set with the zone,
-    ahead of any public flip.**
+    CI leg unconditional and blocking.
 
 12. `scripts/check-drools.sh` — the Drools differential leg of the square
     (maintainer decision 2026-08-27). The Drools backend
@@ -410,9 +437,9 @@ A gate that gets no floor carries one sentence in its script saying why.
 
 ## Repo relationships
 
-- `uchar-dev/regelspraak-toolchain` (separate, private repository; the
-  successor of `yhavinga/regelspraak-java`, maintainer decision 2026-09-26;
-  the old repository is archived since the same day)
+- `uchar-dev/regelspraak-toolchain` (separate, public repository since
+  2026-10-12; the successor of `yhavinga/regelspraak-java`, maintainer
+  decision 2026-09-26; the old repository is archived since the same day)
   is the DISTRIBUTION — CLI, service, docker/helm — with no semantics of its
   own: it consumes this repo as a git SUBMODULE (the submodule commit is the
   pin; no `SPEC_REV`, no conformance gate) and builds `frontends/regelspraak`

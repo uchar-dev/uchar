@@ -176,9 +176,8 @@ jobs:
         run: bash scripts/check-regelspraak.sh
 
   toka-parity:
-    # Gate 11 — the isolated toka/ parity zone (maintainer decision
-    # 2026-08-27), TEMPORARY: this job leaves CI with the zone, the one
-    # documented exception to gate-set monotonicity. Unconditional and
+    # Gate 11 — the toka/ parity zone (maintainer decision 2026-08-27; a
+    # regular gate of the set since 2026-10-13). Unconditional and
     # blocking: hosted CI must catch a frontend-vs-toolchain TOKA parity
     # regression AND a differential-replay divergence. It is NOT the same
     # shape as gate 10 any more: obligation 4 (the decision-V6-A replay)
@@ -190,7 +189,7 @@ jobs:
     # once here (as gate 12 does) so the gate runs jar-only; ref/clingo build
     # inside the script under opam exec. The gate script itself fails LOUDLY
     # on any missing tool, so a local run can never be silently green.
-    name: "Gate 11: TOKA parity zone (temporary, unconditional, blocking)"
+    name: "Gate 11: TOKA parity zone (unconditional, blocking)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
