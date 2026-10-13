@@ -37,10 +37,10 @@ final class BeideTakken {
 
     /** The kinds {@code DRL_TMS} does not carry yet, each with the step of card drl-teksttak-op-truth-maintenance that
      *  brings it: the consequences its rendering refuses by their simple names, and the day kinds, whose predicates
-     *  the branch does not set as globals yet. Measured at step 2b. */
+     *  the branch does not set as globals yet. Measured at step 2b; the kinds of the rules of a fold left at step 3a,
+     *  which carries them, so that every row of a fold or a quantifier fold runs on {@code DRL_TMS}. */
     static final Map<String, String> NOG_NIET = Map.ofEntries(
-            Map.entry("Bijdrage", "3a"), Map.entry("Filterdeponering", "3a"), Map.entry("Filterfout", "3a"),
-            Map.entry("Lidfout", "3a"), Map.entry("Uniciteitssleutel", "3b"), Map.entry("Uniciteitsschending", "3b"),
+            Map.entry("Uniciteitssleutel", "3b"), Map.entry("Uniciteitsschending", "3b"),
             Map.entry("Invoervormfout", "3b"), Map.entry("Kanaalstand", "3b"), Map.entry("Afloop", "4"),
             Map.entry("Conflict", "4"), Map.entry("Creatie", "5a"), Map.entry("Koppeling", "5a"),
             Map.entry("TweedeVulling", "5a"), Map.entry("Ontvanger", "5b"), Map.entry("Uitdeling", "5b"),

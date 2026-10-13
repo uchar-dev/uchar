@@ -28,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code drl-tms:} sentence of its own, the exec-model branch refuses the golden in the same words.
  *
  * <p><b>Red</b> on {@code 5eda2eff}, before the branch: {@code CaseRunner.viaDrlTms} did not exist, and this class did
- * not compile.
+ * not compile. With the floor of step 3a red on {@code 4c8a687b}, before that step: 113 goldens played, under the
+ * floor of 161.
  */
 class DrlTmsCorpusWitnessTest {
 
@@ -37,8 +38,9 @@ class DrlTmsCorpusWitnessTest {
 
     /** The floor of the goldens the branch plays, measured 2026-10-13 at step 2b: 113 of the 295 goldens with cases,
      *  the 117 whose text the rendering gives and Drools compiles (step 2a) less the four with day kinds; the acceptance
-     *  of the step asks at least 88. A later step that carries more raises it on purpose. */
-    private static final int EXPECTED_MIN_PLAYED = 113;
+     *  of the step asks at least 88. A later step that carries more raises it on purpose: step 3a, which carries the
+     *  rules of a fold, to the 161 measured then, the 113 and the 48 goldens it refused for a contribution only. */
+    private static final int EXPECTED_MIN_PLAYED = 161;
 
     @Test void elke_golden_speelt_al_zijn_cases_of_wordt_geweigerd() throws Exception {
         List<Path> goldens;
