@@ -2916,12 +2916,6 @@ public final class TmsTranspiler {
         return Rekenhulpen.collapse(v);
     }
 
-    /** Whether a computed value is leeg: null, or a timeline without a segment, which is the temporal leeg
-     *  (RUNTIME-SEMANTICS ch. 3.1, 7.8: an empty timeline is one never written). */
-    private static boolean isLeeg(Object v) {
-        return v == null || v instanceof List<?> l && l.isEmpty();
-    }
-
     // ---------------- values ----------------
 
     /** A value as the analysis plans it ({@link Term}): a tree of calls over the values the rule binds, indexed as

@@ -40,8 +40,9 @@ public sealed interface Gevolg {
      * {@code slots}, collapses an exact rational to a decimal where {@code collapse}, and inserts the value where it is
      * gevuld, or also where it is leeg (null, or a timeline without a segment) where {@code schrijftLeeg}. Where the
      * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fout} in
-     * place of the value and of a deposit; otherwise the deposit first ({@code deponering}, null where the value holds
-     * no place that deposits).
+     * place of the value and of a deposit; otherwise the deposit first ({@code deponering}: the rule's probe, which
+     * hears only the places the evaluation of the value reaches, so a probe of the condition alone hears nothing here;
+     * null where the rule has no probe).
      */
     record Waarde(String onderwerp, ElementSleutel doel, String schrijver, Term waarde, List<Integer> slots,
                   int grootte, boolean collapse, boolean schrijftLeeg, Deponering deponering, Foutnaam fout,
