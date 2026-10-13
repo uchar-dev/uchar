@@ -126,12 +126,12 @@ class CreatieplanWitnessTest {
         assertEquals(List.of(
                 "regel penning voor een gerechtigde jutter | vorm penning voor een gerechtigde jutter |"
                         + " groep uchar-objectcreatie",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true]), 1 INVOER $lezing_1 (eigen"
+                "  lezingen [0 INVOER $penninggerechtigd (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=penninggerechtigd, kenmerk=true]), 1 INVOER $vondstwaarde (eigen"
                         + " ElementSleutel[objecttype=jutter, naam=vondstwaarde, kenmerk=false]), 2 CREATIEFASE"
                         + " $fase (creatiefase), 3 HERKOMST $herkomsten_creatie_42 (herkomst)]",
-                "  onderwerp Jutter $onderwerp alfa [] join [] beta [] bind [$lezing_0 = []"
-                        + " Jutter.penninggerechtigd WAAR, $lezing_1 = [] Jutter.vondstwaarde WAARDE]",
+                "  onderwerp Jutter $onderwerp alfa [] join [] beta [] bind [$penninggerechtigd = []"
+                        + " Jutter.penninggerechtigd WAAR, $vondstwaarde = [] Jutter.vondstwaarde WAARDE]",
                 "  patroon Creatiefase $creatiefase alfa [creatiestratum_40: [[] stratum WAARDE MINSTENS"
                         + " 0]] join [] beta [] na [] bind [$fase = [] Creatiefase.nummer WAARDE]",
                 "  accumulatie Gemaakt $herkomst_creatie_41 alfa [] join [herkomst_43: object ="
@@ -166,11 +166,11 @@ class CreatieplanWitnessTest {
                         + " Kenmerk[initialisatie=1, invoeging=GESTELD]]",
                 "regel dossier voor een gerechtigde jutter | vorm dossier voor een gerechtigde jutter |"
                         + " groep uchar-objectcreatie",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter,"
+                "  lezingen [0 INVOER $penninggerechtigd (eigen ElementSleutel[objecttype=jutter,"
                         + " naam=penninggerechtigd, kenmerk=true]), 1 CREATIEFASE $fase (creatiefase), 2 HERKOMST"
                         + " $herkomsten_creatie_55 (herkomst)]",
-                "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_66: [[] dossier WAARDE"
-                        + " LEEG]] join [] beta [] bind [$lezing_0 = [] Jutter.penninggerechtigd WAAR]",
+                "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_66: [[] dossier WAARDE LEEG]] join"
+                        + " [] beta [] bind [$penninggerechtigd = [] Jutter.penninggerechtigd WAAR]",
                 "  patroon Creatiefase $creatiefase alfa [creatiestratum_53: [[] stratum WAARDE MINSTENS"
                         + " 0]] join [] beta [] na [] bind [$fase = [] Creatiefase.nummer WAARDE]",
                 "  accumulatie Gemaakt $herkomst_creatie_54 alfa [] join [herkomst_56: object ="
@@ -203,21 +203,21 @@ class CreatieplanWitnessTest {
         assertEquals(List.of(
                 "regel stel het penningbesluit vast | vorm stel het penningbesluit vast | groep"
                         + " uchar-objectcreatie",
-                "  lezingen [0 KENMERKSTAND $lezing_0 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=penninggerechtigd, kenmerk=true]), 1 PARAMETER $lezing_1 (parameter"
+                "  lezingen [0 KENMERKSTAND $penninggerechtigd (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=penninggerechtigd, kenmerk=true]), 1 PARAMETER $penningbedrag (parameter"
                         + " penningbedrag), 2 CREATIEFASE $fase (creatiefase), 3 HERKOMST $herkomsten_creatie_21"
                         + " (herkomst)]",
                 "  onderwerp Jutter $onderwerp alfa [geen-gekoppelde-instantie_32: [[] toegekend besluit"
                         + " WAARDE LEEG]] join [] beta [] bind []",
                 "  patroon ParameterStand $parameter_1 alfa [parameter_18: [[] parameter WAARDE GELIJK"
-                        + " penningbedrag]] join [] beta [] na [] bind [$lezing_1 = [] ParameterStand.waarde"
+                        + " penningbedrag]] join [] beta [] na [] bind [$penningbedrag = [] ParameterStand.waarde"
                         + " WAARDE]",
                 "  patroon Creatiefase $creatiefase alfa [creatiestratum_19: [[] stratum WAARDE MINSTENS"
                         + " 0]] join [] beta [] na [] bind [$fase = [] Creatiefase.nummer WAARDE]",
                 "  patroon KenmerkStand $stand_0 alfa [stand_16: [[] kenmerk WAARDE GELIJK"
                         + " ElementSleutel[objecttype=jutter, naam=penninggerechtigd, kenmerk=true]]] join"
-                        + " [stand-onderwerp_17: onderwerp = $onderwerp] beta [] na [] bind [$lezing_0 = []"
-                        + " KenmerkStand.waar WAARDE]",
+                        + " [stand-onderwerp_17: onderwerp = $onderwerp] beta [] na [] bind [$penninggerechtigd ="
+                        + " [] KenmerkStand.waar WAARDE]",
                 "  accumulatie Gemaakt $herkomst_creatie_20 alfa [] join [herkomst_22: object ="
                         + " $onderwerp] beta [] na [] bind [] functies [LIJST null -> $herkomsten_creatie_21]",
                 "  niet binnen [$gemaakt_creatie_23] buiten [$onderwerp] [Gemaakt $gemaakt_creatie_23"

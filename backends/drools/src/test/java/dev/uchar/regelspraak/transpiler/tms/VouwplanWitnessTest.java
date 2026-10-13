@@ -113,11 +113,11 @@ class VouwplanWitnessTest {
                 "    inbreng Telling",
                 "regel seingewicht van een post: bijdrage aan vouw 1 | vorm seingewicht van een post |"
                         + " groep null",
-                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $lezing_1 (eigen"
+                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
                         + " ElementSleutel[objecttype=sein, naam=gewicht, kenmerk=false])]",
                 "  patroon Post $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Sein $onderwerp alfa [] join [bereik_6: post = $vouwonderwerp] beta [] bind"
-                        + " [$lezing_1 = [] Sein.gewicht WAARDE]",
+                "  onderwerp Sein $onderwerp alfa [] join [bereik_6: post = $vouwonderwerp] beta [] bind [$gewicht"
+                        + " = [] Sein.gewicht WAARDE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=seingewicht van een post: vouw 1,"
                         + " lid=0, slots=[0, 1], grootte=2, invoeging=LOGISCH]",
                 "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=false]",
@@ -140,12 +140,12 @@ class VouwplanWitnessTest {
         assertEquals(List.of(
                 "regel keurlast van een jutter: bijdrage aan vouw 0 | vorm keurlast van een jutter |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gekeurd,"
+                "  lezingen [0 INVOER $gekeurd (eigen ElementSleutel[objecttype=vondst, naam=gekeurd,"
                         + " kenmerk=true]), 1 ONDERWERP $onderwerp (onderwerp zelf), 2 TIJDLIJN $tijdlijn_2"
                         + " (tijdlijn ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: keurende jutter = $vouwonderwerp]"
-                        + " beta [] bind [$lezing_0 = [] Vondst.gekeurd WAAR]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_0: keurende jutter = $vouwonderwerp] beta []"
+                        + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
                 "  patroon Stand $stand_2 alfa [stand_1: [[] attribuut WAARDE GELIJK"
                         + " ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]]] join"
                         + " [stand-onderwerp_2: onderwerp = $onderwerp] beta [] bind [$tijdlijn_2 = []"
@@ -161,13 +161,13 @@ class VouwplanWitnessTest {
                 "regel keurlast van een jutter: lidfout in vouw 0 | vorm keurlast van een jutter | groep"
                         + " null",
                 "  lezingen [0 LIJSTPLAATSEN $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIJSTPLAATS"
-                        + " $plaats_plaats_8 (lijstplaats 0), 2 INVOER $lezing_2 (eigen"
+                        + " $plaats_plaats_8 (lijstplaats 0), 2 INVOER $gekeurd (eigen"
                         + " ElementSleutel[objecttype=vondst, naam=gekeurd, kenmerk=true]), 3 TIJDLIJN $tijdlijn_3"
                         + " (tijdlijn ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]), 4"
                         + " ONDERWERP $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp]"
-                        + " beta [] bind [$lezing_2 = [] Vondst.gekeurd WAAR]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp] beta []"
+                        + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_5 alfa [plaats-veld_9: [[] veld WAARDE"
                         + " GELIJK keurendeJutter]] join [] beta [plaats-lid_10: PLAATS_VAN $onderwerp [] {List<>,"
                         + " type null, bron null}] bind [$lijstplaatswaarde_plaats_6 = [] Lijstplaats.plaats"
@@ -205,13 +205,13 @@ class VouwplanWitnessTest {
                         + " slots=[0], grootte=1, invoeging=LOGISCH]",
                 "    inbreng Telling",
                 "regel zware vondsten: bijdrage aan vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=vondst,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
                         + " naam=deelnemers, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_0 = [] Vondst.gewicht WAARDE, $lezing_1 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_5: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_6 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -228,13 +228,13 @@ class VouwplanWitnessTest {
                 "    inbreng Telling",
                 "regel zware vondsten: filterfout in vouw 1 | vorm zware vondsten | groep null",
                 "  lezingen [0 LIJSTPLAATSEN $lijstplaatsen_plaats_10 (lijstplaatsen 0), 1 LIJSTPLAATS"
-                        + " $plaats_plaats_11 (lijstplaats 0), 2 INVOER $lezing_2 (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $lezing_3"
-                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 SONDE"
-                        + " null (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
+                        + " $plaats_plaats_11 (lijstplaats 0), 2 INVOER $gewicht (eigen"
+                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $deelnemers"
+                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 SONDE null"
+                        + " (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_2 = [] Vondst.gewicht WAARDE, $lezing_3 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_8 alfa [plaats-veld_12: [[] veld WAARDE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_13: PLAATS_VAN $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_9 = [] Lijstplaats.plaats WAARDE]"
@@ -265,13 +265,13 @@ class VouwplanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel zware vondsten: filterdeponering in vouw 1 | vorm zware vondsten | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=vondst,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
                         + " naam=deelnemers, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_15: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_0 = [] Vondst.gewicht WAARDE, $lezing_1 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_15: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_16 DEPONERING sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -286,13 +286,13 @@ class VouwplanWitnessTest {
                 "  gevolg Filterdeponering [onderwerp=$vouwonderwerp, vouw=zware vondsten: vouw 1,"
                         + " lid=3, invoeging=LOGISCH]",
                 "regel drukte: bijdrage aan vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=vondst,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
                         + " naam=deelnemers, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_0 = [] Vondst.gewicht WAARDE, $lezing_1 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_31: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_32 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -309,13 +309,13 @@ class VouwplanWitnessTest {
                 "    inbreng Telling",
                 "regel drukte: filterfout in vouw 2 | vorm drukte | groep null",
                 "  lezingen [0 LIJSTPLAATSEN $lijstplaatsen_plaats_36 (lijstplaatsen 0), 1 LIJSTPLAATS"
-                        + " $plaats_plaats_37 (lijstplaats 0), 2 INVOER $lezing_2 (eigen"
-                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $lezing_3"
-                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 SONDE"
-                        + " null (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
+                        + " $plaats_plaats_37 (lijstplaats 0), 2 INVOER $gewicht (eigen"
+                        + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false]), 3 INVOER $deelnemers"
+                        + " (eigen ElementSleutel[objecttype=vondst, naam=deelnemers, kenmerk=false]), 4 SONDE null"
+                        + " (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_2 = [] Vondst.gewicht WAARDE, $lezing_3 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_34 alfa [plaats-veld_38: [[] veld WAARDE"
                         + " GELIJK aanmelder]] join [] beta [plaats-lid_39: PLAATS_VAN $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_35 = [] Lijstplaats.plaats WAARDE]"
@@ -346,13 +346,13 @@ class VouwplanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '2'",
                 "    filter 0.0.2 Const String",
                 "regel drukte: filterdeponering in vouw 2 | vorm drukte | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=vondst,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                        + " kenmerk=false]), 1 INVOER $deelnemers (eigen ElementSleutel[objecttype=vondst,"
                         + " naam=deelnemers, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Vondst $onderwerp alfa [] join [bereik_41: aanmelder = $vouwonderwerp] beta"
-                        + " [] bind [$lezing_0 = [] Vondst.gewicht WAARDE, $lezing_1 = [] Vondst.deelnemers WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [bereik_41: aanmelder = $vouwonderwerp] beta [] bind"
+                        + " [$gewicht = [] Vondst.gewicht WAARDE, $deelnemers = [] Vondst.deelnemers WAARDE]",
                 "  toets voorwaarde_42 DEPONERING sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -373,12 +373,12 @@ class VouwplanWitnessTest {
         assertEquals(List.of(
                 "regel laagste vondstgewicht van een jutter: bijdrage aan vouw 0 | vorm laagste"
                         + " vondstgewicht van een jutter | groep null",
-                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $lezing_1 (eigen"
+                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $gewicht (eigen"
                         + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [pad_0: ONTMOETING $vouwonderwerp"
                         + " [bergendeBoot, schipper] {List<String>, type null, bron null} [] {List<>, type null,"
-                        + " bron null}] bind [$lezing_1 = [] Vondst.gewicht WAARDE]",
+                        + " bron null}] bind [$gewicht = [] Vondst.gewicht WAARDE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
                         + " vouw 0, lid=0, slots=[0, 1], grootte=2, invoeging=LOGISCH]",
                 "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=false]"),
@@ -389,10 +389,10 @@ class VouwplanWitnessTest {
         assertEquals(List.of(
                 "regel aantal gevulde bergplaatsen: bijdrage aan vouw 0 | vorm aantal gevulde"
                         + " bergplaatsen | groep null",
-                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $lezing_1 (eigen"
+                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $vangstgewicht (eigen"
                         + " ElementSleutel[objecttype=bergplaats, naam=vangstgewicht, kenmerk=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$lezing_1 = []"
+                "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$vangstgewicht = []"
                         + " Bergplaats.vangstgewicht WAARDE]",
                 "  bestaat binnen [$tussen_pad_0] buiten [$vouwonderwerp, $onderwerp] [Boot"
                         + " $tussen_pad_0 alfa [] join [] beta [pad_1: ONTMOETING $vouwonderwerp [schipper]"
@@ -404,13 +404,13 @@ class VouwplanWitnessTest {
                 "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=true]",
                 "regel havengeldtotaal van een Jutter: bijdrage aan vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=haven,"
+                "  lezingen [0 INVOER $havengeld (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
+                        + " kenmerk=false]), 1 INVOER $ligplaatsen (eigen ElementSleutel[objecttype=haven,"
                         + " naam=ligplaatsen, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$lezing_0 = []"
-                        + " Haven.havengeld WAARDE, $lezing_1 = [] Haven.ligplaatsen WAARDE]",
+                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld WAARDE,"
+                        + " $ligplaatsen = [] Haven.ligplaatsen WAARDE]",
                 "  bestaat binnen [$tussen_pad_7, $tussen_pad_8] buiten [$vouwonderwerp, $onderwerp]"
                         + " [Boot $tussen_pad_7 alfa [] join [] beta [pad_9: ONTMOETING $vouwonderwerp [schipper]"
                         + " {List<String>, type null, bron null} [] {List<>, type null, bron null}] bind [],"
@@ -436,13 +436,13 @@ class VouwplanWitnessTest {
                 "regel havengeldtotaal van een Jutter: filterfout in vouw 1 | vorm havengeldtotaal van"
                         + " een Jutter | groep null",
                 "  lezingen [0 LIJSTPLAATSEN $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIJSTPLAATS"
-                        + " $plaats_plaats_21 (lijstplaats 0), 2 INVOER $lezing_2 (eigen"
-                        + " ElementSleutel[objecttype=haven, naam=havengeld, kenmerk=false]), 3 INVOER $lezing_3"
-                        + " (eigen ElementSleutel[objecttype=haven, naam=ligplaatsen, kenmerk=false]), 4 SONDE"
-                        + " null (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
+                        + " $plaats_plaats_21 (lijstplaats 0), 2 INVOER $havengeld (eigen"
+                        + " ElementSleutel[objecttype=haven, naam=havengeld, kenmerk=false]), 3 INVOER $ligplaatsen"
+                        + " (eigen ElementSleutel[objecttype=haven, naam=ligplaatsen, kenmerk=false]), 4 SONDE null"
+                        + " (null), 5 ONDERWERP $onderwerp (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$lezing_2 = []"
-                        + " Haven.havengeld WAARDE, $lezing_3 = [] Haven.ligplaatsen WAARDE]",
+                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld WAARDE,"
+                        + " $ligplaatsen = [] Haven.ligplaatsen WAARDE]",
                 "  patroon Boot $tussen_pad_13 alfa [] join [] beta [pad_15: ONTMOETING $vouwonderwerp"
                         + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
                         + " bind []",
@@ -483,13 +483,13 @@ class VouwplanWitnessTest {
                 "    filter 0.0.2 Const String",
                 "regel havengeldtotaal van een Jutter: filterdeponering in vouw 1 | vorm havengeldtotaal"
                         + " van een Jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=haven,"
+                "  lezingen [0 INVOER $havengeld (eigen ElementSleutel[objecttype=haven, naam=havengeld,"
+                        + " kenmerk=false]), 1 INVOER $ligplaatsen (eigen ElementSleutel[objecttype=haven,"
                         + " naam=ligplaatsen, kenmerk=false]), 2 SONDE null (null), 3 ONDERWERP $onderwerp"
                         + " (onderwerp zelf)]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$lezing_0 = []"
-                        + " Haven.havengeld WAARDE, $lezing_1 = [] Haven.ligplaatsen WAARDE]",
+                "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$havengeld = [] Haven.havengeld WAARDE,"
+                        + " $ligplaatsen = [] Haven.ligplaatsen WAARDE]",
                 "  bestaat binnen [$tussen_pad_25, $tussen_pad_26] buiten [$vouwonderwerp, $onderwerp]"
                         + " [Boot $tussen_pad_25 alfa [] join [] beta [pad_27: ONTMOETING $vouwonderwerp"
                         + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
@@ -517,14 +517,14 @@ class VouwplanWitnessTest {
     @Test void een_kwantorbijdrage_met_lidtoets_en_sonde() throws Exception {
         assertEquals(List.of(
                 "regel rustigheid: bijdrage aan vouw 0 | vorm rustigheid | groep null",
-                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $lezing_1 (eigen"
-                        + " ElementSleutel[objecttype=wacht, naam=opgave, kenmerk=false]), 2 STAND $lezing_2"
+                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $opgave (eigen"
+                        + " ElementSleutel[objecttype=wacht, naam=opgave, kenmerk=false]), 2 STAND $deelnemers"
                         + " (eigen ElementSleutel[objecttype=wacht, naam=deelnemers, kenmerk=false]), 3 SONDE null"
                         + " (null), 4 LIJSTPLAATSEN $lijstplaatsen_plaats_5 (lijstplaatsen 4), 5 LIJSTPLAATS"
                         + " $plaats_plaats_6 (lijstplaats 4)]",
                 "  patroon Ploeg $vouwonderwerp alfa [] join [] beta [] bind []",
-                "  onderwerp Wacht $onderwerp alfa [] join [bereik_2: ploeg = $vouwonderwerp] beta []"
-                        + " bind [$lezing_1 = [] Wacht.opgave WAARDE]",
+                "  onderwerp Wacht $onderwerp alfa [] join [bereik_2: ploeg = $vouwonderwerp] beta [] bind [$opgave"
+                        + " = [] Wacht.opgave WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_3 alfa [plaats-veld_7: [[] veld WAARDE"
                         + " GELIJK ploeg]] join [] beta [plaats-lid_8: PLAATS_VAN $onderwerp [] {List<>, type"
                         + " null, bron null}] bind [$lijstplaatswaarde_plaats_4 = [] Lijstplaats.plaats WAARDE]"
@@ -532,7 +532,7 @@ class VouwplanWitnessTest {
                         + " -> $plaats_plaats_6]",
                 "  patroon Stand $stand_2 alfa [stand_0: [[] attribuut WAARDE GELIJK"
                         + " ElementSleutel[objecttype=wacht, naam=deelnemers, kenmerk=false]]] join"
-                        + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$lezing_2 = [] Stand.waarde"
+                        + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$deelnemers = [] Stand.waarde"
                         + " WAARDE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=rustigheid: vouw 0, lid=0, slots=[0,"
                         + " 1, 2, 4, 5], grootte=6, invoeging=LOGISCH]",

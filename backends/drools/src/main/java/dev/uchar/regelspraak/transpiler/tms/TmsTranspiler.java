@@ -70,6 +70,7 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -4978,6 +4979,8 @@ public final class TmsTranspiler {
         /** The standing items of the left-hand side: standings, folds and the other accumulates, channels. */
         private final List<LhsItem> standen = new ArrayList<>();
         private final Map<String, Integer> index = new LinkedHashMap<>();
+        /** The variables of this rule's slots, so that a read name ({@link #leesnaam}) is one no other slot has. */
+        private final Set<String> namen = new HashSet<>();
         private final Map<ElementSleutel, Lid> afgeleid = new LinkedHashMap<>();
         private final Map<String, Padlezing> paden = new LinkedHashMap<>();
         private final Set<String> kanaalnamen = new LinkedHashSet<>();
@@ -5325,7 +5328,7 @@ public final class TmsTranspiler {
             String sleutel = "kanaal " + producent;
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(producent + " inconsistent");
             String st = "$kanaal_" + slots.size();
             standen(new Patroon(KanaalStand.class, st, List.of(gelijk(id("kanaal"), "regel", producent)), List.of(),
                     List.of(Binding.van(w, KanaalStand.class, "inconsistent"))));
@@ -5341,7 +5344,7 @@ public final class TmsTranspiler {
             String sleutel = "rolveld " + veld + " " + (klasse == null ? "" : klasse.getName());
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(veld + " gezet");
             bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), veld), Binding.Leesvorm.GEZET,
                     klasse));
             return nieuw(Leessoort.ROLVELD, sleutel, w);
@@ -5405,7 +5408,7 @@ public final class TmsTranspiler {
             if (!FactModelGenerator.heeftReferentieVeld(model, subject, paar[0].naam(), ouder))
                 throw new Weigering("de scope van een Uniqueness: " + FactModelGenerator.geenReferentieveldReden(model,
                         subject, paar[0].naam(), ouder) + " (§13.3.9 opslagrichting)");
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(paar[0].naam());
             bindOnderwerp(new Binding(w, List.of(), new Binding.Veld(bonenklasse(subject), paar[0].naam()),
                     Binding.Leesvorm.WAARDE, null));
             return nieuw(Leessoort.SCOPE, sleutel, w);
@@ -5417,6 +5420,19 @@ public final class TmsTranspiler {
             return i == null ? -1 : i;
         }
 
+        /** The variable of a slot that reads {@code gelezen}, a name as the document declares it: {@code $} and that
+         *  name as an identifier ({@link Namen#ident}), so that a rendering shows what the slot holds, in DRL text as
+         *  well. It is unique within the rule by construction: the identifier has no underscore, while every other
+         *  variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of this class) or is one of
+         *  {@link #VASTE_NAMEN}; where such a fixed name or another slot of this rule has it already, the first free
+         *  number from 2 after it makes it unique. It depends only on the reads of the rule before it, in their order. */
+        private String leesnaam(String gelezen) {
+            String basis = "$" + Namen.ident(gelezen, false);
+            String naam = basis;
+            for (int n = 2; VASTE_NAMEN.contains(naam) || namen.contains(naam); n++) naam = basis + n;
+            return naam;
+        }
+
         /** A slot that a binding of the plan binds to the variable {@code naam}, read once per rule under
          *  {@code sleutel}. */
         private int nieuw(Leessoort soort, String sleutel, String naam) {
@@ -5424,6 +5440,7 @@ public final class TmsTranspiler {
             dev.uchar.regelspraak.transpiler.tms.plan.Lezing l = new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(i, soort, sleutel, naam);
             slots.add(l);
             index.put(sleutel, i);
+            namen.add(naam);
             if (gebruik != null) gebruik.add(i);
             return i;
         }
@@ -5459,7 +5476,7 @@ public final class TmsTranspiler {
             String sleutel = "eigen " + lid.sleutel();
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(lid.naam());
             ElementSleutel lk = lid.sleutel();
             if (schrijvers.containsKey(lk)) {
                 if (lid.kenmerk()) {
@@ -5517,7 +5534,7 @@ public final class TmsTranspiler {
             String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(String.join(" ", pad.rollen()) + " " + lid.naam());
             ElementSleutel lk = lid.sleutel();
             if (lid.tijd() != null && lid.kenmerk() && schrijvers.containsKey(lk))
                 throw new Weigering("het tijdsafhankelijke kenmerk '" + lid.naam() + "' van " + lid.declarant().naam
@@ -5552,7 +5569,7 @@ public final class TmsTranspiler {
             int bekend = bestaand(sleutel);
             if (bekend >= 0) return bekend;
             global(p);
-            String w = "$lezing_" + slots.size();
+            String w = leesnaam(p.naam());
             String st = "$parameter_" + slots.size();
             parameters(new Patroon(ParameterStand.class, st, List.of(gelijk(id("parameter"), "parameter", naam)),
                     List.of(), List.of(Binding.van(w, ParameterStand.class, "waarde"))));
@@ -5565,6 +5582,13 @@ public final class TmsTranspiler {
     /** The variable of the object a rule binds before its subject: a fold's subject in a contribution rule, the source
      *  in an allocation's recipient rule. */
     private static final String VOUWONDERWERP = "$vouwonderwerp";
+    /** Every name without an underscore that the analysis gives a variable of a rule other than a read name
+     *  ({@link Lezingen#leesnaam}): a read name that equals one of these takes a number, so that no rule binds one
+     *  name twice. {@code LeesnaamWitnessTest} holds this set equal to the fixed names this source spells. */
+    static final Set<String> VASTE_NAMEN = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
+            "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
+            "$invoer", "$nabij", "$onderwerp", "$rekendatum", "$schending", "$sleutel", "$stand", "$subject", "$twee",
+            "$v", "$vouwonderwerp", "$waarde", "$waarden");
 
     /** A constraint that field {@code veld} of a fact equals {@code waarde}. */
     private static Alfa gelijk(String id, String veld, Object waarde) {

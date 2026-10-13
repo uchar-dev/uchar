@@ -82,11 +82,13 @@ class RegelplanWitnessTest {
         assertEquals(List.of(
                 "regel Kenmerktoekenning jutter penninggerechtigd | vorm Kenmerktoekenning jutter penninggerechtigd |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=aantal aangemelde"
-                        + " vondsten, kenmerk=false]), 1 PARAMETER $lezing_1 (parameter vondstdrempel)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].aantal aangemelde vondsten WAARDE]",
+                "  lezingen [0 INVOER $aantalAangemeldeVondsten (eigen ElementSleutel[objecttype=jutter,"
+                        + " naam=aantal aangemelde vondsten, kenmerk=false]), 1 PARAMETER $vondstdrempel (parameter"
+                        + " vondstdrempel)]",
+                "  onderwerp Jutter $onderwerp alfa [] bind [$aantalAangemeldeVondsten = [].aantal aangemelde"
+                        + " vondsten WAARDE]",
                 "  patroon ParameterStand $parameter_1 alfa [parameter_0: [parameter GELIJK vondstdrempel]] join []"
-                        + " bind [$lezing_1 = [].waarde WAARDE]",
+                        + " bind [$vondstdrempel = [].waarde WAARDE]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: RS_AGG_VERGELIJK(Lees 0, Lees 1,"
                         + " Const >=)",
                 "    toets 0 Aanroep bron 'zijn aantal aangemelde vondsten groter of gelijk is aan de vondstdrempel'",
@@ -104,10 +106,10 @@ class RegelplanWitnessTest {
     @Test void een_rekenregel_met_sonde_en_de_regels_van_haar_voorwaarde() throws Exception {
         assertEquals(List.of(
                 "regel bergingsaandeel van een jutter | vorm bergingsaandeel van een jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
                         + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
+                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang WAARDE, $vangstwaarde ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_0 ZONDER_FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE"
                         + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
@@ -140,10 +142,10 @@ class RegelplanWitnessTest {
                         + " bron '1'",
                 "regel bergingsaandeel van een jutter: fout in de voorwaarde | vorm bergingsaandeel van een jutter |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
                         + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
+                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang WAARDE, $vangstwaarde ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_1 FOUT sonde -1 slots [0, 1] grootte 3: Samengesteld ALLE 0(RS_AGG_VERGELIJK(Lees"
                         + " 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD sonde 2 (Lees 1, Lees"
@@ -193,10 +195,10 @@ class RegelplanWitnessTest {
                 "    toets 0.1.2 Const String",
                 "regel bergingsaandeel van een jutter: deponering in de voorwaarde | vorm bergingsaandeel van een"
                         + " jutter | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                "  lezingen [0 INVOER $ploegomvang (eigen ElementSleutel[objecttype=jutter, naam=ploegomvang,"
+                        + " kenmerk=false]), 1 INVOER $vangstwaarde (eigen ElementSleutel[objecttype=jutter,"
                         + " naam=vangstwaarde, kenmerk=false]), 2 SONDE null (null)]",
-                "  onderwerp Jutter $onderwerp alfa [] bind [$lezing_0 = [].ploegomvang WAARDE, $lezing_1 ="
+                "  onderwerp Jutter $onderwerp alfa [] bind [$ploegomvang = [].ploegomvang WAARDE, $vangstwaarde ="
                         + " [].vangstwaarde WAARDE]",
                 "  toets voorwaarde_2 DEPONERING sonde 2 slots [0, 1] grootte 3: Samengesteld ALLE"
                         + " 0(RS_AGG_VERGELIJK(Lees 0, Const 0, Const !=), RS_AGG_VERGELIJK(RS_AFRONDING(Deel GEDEELD"
@@ -228,9 +230,9 @@ class RegelplanWitnessTest {
     @Test void een_begrensde_geldigheid_en_de_rekendatumstand() throws Exception {
         assertEquals(List.of(
                 "regel vensterheffing in 2026 | vorm vensterheffing in 2026 | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
+                "  lezingen [0 INVOER $meldwaarde (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$lezing_0 = [].meldwaarde WAARDE]",
+                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde WAARDE]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_0: [datum BINNEN Geldigheid[vanaf=2026-01-01,"
                         + " tot=2026-12-31]]] join [] bind []",
                 "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondstmelding,"
@@ -249,9 +251,9 @@ class RegelplanWitnessTest {
                         + " session is time-free, fout=Foutnaam[vorm=vensterheffing in 2026, regel=vensterheffing in"
                         + " 2026], invoeging=LOGISCH]",
                 "regel overgangsheffing tot en met 2025 | vorm overgangsheffing tot en met 2025 | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
+                "  lezingen [0 INVOER $meldwaarde (eigen ElementSleutel[objecttype=vondstmelding, naam=meldwaarde,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$lezing_0 = [].meldwaarde WAARDE]",
+                "  onderwerp Vondstmelding $onderwerp alfa [] bind [$meldwaarde = [].meldwaarde WAARDE]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_2: [datum BINNEN Geldigheid[vanaf=null,"
                         + " tot=2025-12-31]]] join [] bind []",
                 "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondstmelding,"
@@ -279,10 +281,10 @@ class RegelplanWitnessTest {
     @Test void twee_schrijvers_van_een_doel() throws Exception {
         assertEquals(List.of(
                 "regel vrijgave zonder beletsel | vorm vrijgave zonder beletsel | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=bergingszaak,"
+                "  lezingen [0 INVOER $geclaimd (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
+                        + " kenmerk=true]), 1 INVOER $bezwaren (eigen ElementSleutel[objecttype=bergingszaak,"
                         + " naam=bezwaren, kenmerk=false])]",
-                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$lezing_0 = [].geclaimd WAAR, $lezing_1 ="
+                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren WAARDE]",
                 "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld GEEN 0(KENMERK(Lees 0,"
                         + " Const true), RS_AGG_VERGELIJK(Lees 1, Const 0, Const >))",
@@ -301,10 +303,10 @@ class RegelplanWitnessTest {
                         + " zonder beletsel, regel=vrijgave zonder beletsel], invoeging=LOGISCH]",
                 "    waarde 0 Const String type Tekst[] bron ''vrijgegeven''",
                 "regel aanhouding bij beletsel | vorm aanhouding bij beletsel | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=bergingszaak,"
+                "  lezingen [0 INVOER $geclaimd (eigen ElementSleutel[objecttype=bergingszaak, naam=geclaimd,"
+                        + " kenmerk=true]), 1 INVOER $bezwaren (eigen ElementSleutel[objecttype=bergingszaak,"
                         + " naam=bezwaren, kenmerk=false])]",
-                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$lezing_0 = [].geclaimd WAAR, $lezing_1 ="
+                "  onderwerp Bergingszaak $onderwerp alfa [] bind [$geclaimd = [].geclaimd WAAR, $bezwaren ="
                         + " [].bezwaren WAARDE]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld TEN_MINSTE"
                         + " 1(KENMERK(Lees 0, Const true), RS_AGG_VERGELIJK(Lees 1, Const 0, Const >))",
@@ -342,10 +344,10 @@ class RegelplanWitnessTest {
     @Test void een_onderwerp_buiten_een_stapel() throws Exception {
         assertEquals(List.of(
                 "regel uitkering van een strandrecht | vorm uitkering van een strandrecht | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=strandrecht, naam=grondslag,"
+                "  lezingen [0 INVOER $grondslag (eigen ElementSleutel[objecttype=strandrecht, naam=grondslag,"
                         + " kenmerk=false])]",
                 "  onderwerp Strandrecht $onderwerp alfa [niet-in-een-stapel_0: [null KLASSE_NIET_IN [Wrakrecht]]]"
-                        + " bind [$lezing_0 = [].grondslag WAARDE]",
+                        + " bind [$grondslag = [].grondslag WAARDE]",
                 "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=strandrecht, naam=uitkering,"
                         + " kenmerk=false], schrijver=uitkering van een strandrecht, waarde=RS_MAAL(Lees 0, Const 2),"
                         + " slots=[0], grootte=1, collapse=true, schrijftLeeg=false, deponering=null,"
@@ -361,9 +363,9 @@ class RegelplanWitnessTest {
     @Test void een_initialisatie_zonder_andere_schrijver() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$lezing_0 ="
+                "  onderwerp Vondst $onderwerp alfa [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$gewicht ="
                         + " [].gewicht WAARDE]",
                 "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
                         + " Const >)",
@@ -389,10 +391,10 @@ class RegelplanWitnessTest {
     @Test void een_initialisatie_naast_een_schrijver_die_leeg_schrijft() throws Exception {
         assertEquals(List.of(
                 "regel standaardbergloon | vorm standaardbergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
                         + " kenmerk=false]), 1 LEGE_SCHRIJVERS $lege_schrijvers (lege schrijvers), 2 ONDERWERP"
                         + " $onderwerp (onderwerp zelf)]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht WAARDE]",
                 "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
                         + " Const >)",
                 "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
@@ -423,9 +425,9 @@ class RegelplanWitnessTest {
                         + " eenheid=null] bron '2'",
                 "    waarde 0.1 Lees bron 'zijn gewicht'",
                 "regel zwaar bergloon | vorm zwaar bergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht WAARDE]",
                 "  toets voorwaarde_6 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
                         + " Const >)",
                 "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",
@@ -442,9 +444,9 @@ class RegelplanWitnessTest {
                         + " eenheid=null] bron '2'",
                 "    waarde 0.1 Lees bron 'zijn gewicht'",
                 "regel licht bergloon | vorm licht bergloon | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
+                "  lezingen [0 INVOER $gewicht (eigen ElementSleutel[objecttype=vondst, naam=gewicht,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] bind [$lezing_0 = [].gewicht WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] bind [$gewicht = [].gewicht WAARDE]",
                 "  toets voorwaarde_7 VOORWAARDE sonde -1 slots [0] grootte 1: RS_AGG_VERGELIJK(Lees 0, Const 10,"
                         + " Const >)",
                 "    toets 0 Aanroep bron 'zijn gewicht groter is dan 10'",

@@ -90,11 +90,11 @@ class KanaalplanWitnessTest {
     @Test void een_consistentie_en_een_uniciteit_zonder_scope() throws Exception {
         assertEquals(List.of(
                 "regel aanmelding niet voor de vondstdag | vorm aanmelding niet voor de vondstdag | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=aanmelddatum,"
-                        + " kenmerk=false]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=vondst,"
+                "  lezingen [0 INVOER $aanmelddatum (eigen ElementSleutel[objecttype=vondst, naam=aanmelddatum,"
+                        + " kenmerk=false]), 1 INVOER $vondstdag (eigen ElementSleutel[objecttype=vondst,"
                         + " naam=vondstdag, kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$lezing_0 = [] Vondst.aanmelddatum WAARDE,"
-                        + " $lezing_1 = [] Vondst.vondstdag WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$aanmelddatum = [] Vondst.aanmelddatum WAARDE,"
+                        + " $vondstdag = [] Vondst.vondstdag WAARDE]",
                 "  toets voorwaarde_0 VOORWAARDE sonde -1 slots [0, 1] grootte 2: NIET(DATUM_VERGELIJK(Lees 0, Lees 1,"
                         + " Const LATER_OF_GELIJK))",
                 "    toets 0 Aanroep bron 'De aanmelddatum van een Vondst moet later of gelijk zijn aan de vondstdag"
@@ -107,9 +107,9 @@ class KanaalplanWitnessTest {
                 "  gevolg Inconsistentie [onderwerp=$onderwerp, vorm=aanmelding niet voor de vondstdag,"
                         + " invoeging=LOGISCH]",
                 "regel eenmalig vondstnummer: sleutel van Vondst 1 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=vondstnummer,"
+                "  lezingen [0 INVOER $vondstnummer (eigen ElementSleutel[objecttype=vondst, naam=vondstnummer,"
                         + " kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$lezing_0 = [] Vondst.vondstnummer WAARDE]",
+                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$vondstnummer = [] Vondst.vondstnummer WAARDE]",
                 "  toets voorwaarde_1 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const"
                         + " false))",
                 "    toets 0 Samengesteld",
@@ -142,8 +142,8 @@ class KanaalplanWitnessTest {
     @Test void een_uniciteit_over_een_enumeratie() throws Exception {
         assertEquals(List.of(
                 "regel eenmalige staat: sleutel van Vondst 1 | vorm eenmalige staat | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=vondst, naam=staat, kenmerk=false])]",
-                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$lezing_0 = [] Vondst.staat WAARDE]",
+                "  lezingen [0 INVOER $staat (eigen ElementSleutel[objecttype=vondst, naam=staat, kenmerk=false])]",
+                "  onderwerp Vondst $onderwerp alfa [] join [] bind [$staat = [] Vondst.staat WAARDE]",
                 "  toets voorwaarde_5 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const"
                         + " false))",
                 "    toets 0 Samengesteld",
@@ -177,9 +177,9 @@ class KanaalplanWitnessTest {
     @Test void een_consistentie_en_de_twee_kanaalstanden() throws Exception {
         assertEquals(List.of(
                 "regel controle saldo | vorm controle saldo | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=rekeninghouder, naam=saldo,"
+                "  lezingen [0 INVOER $saldo (eigen ElementSleutel[objecttype=rekeninghouder, naam=saldo,"
                         + " kenmerk=false])]",
-                "  onderwerp Rekeninghouder $onderwerp alfa [] join [] bind [$lezing_0 = [] Rekeninghouder.saldo"
+                "  onderwerp Rekeninghouder $onderwerp alfa [] join [] bind [$saldo = [] Rekeninghouder.saldo"
                         + " WAARDE]",
                 "  toets voorwaarde_2 VOORWAARDE sonde -1 slots [0] grootte 1: NIET(RS_AGG_VERGELIJK(Lees 0, Const 0,"
                         + " Const >=))",
@@ -206,10 +206,10 @@ class KanaalplanWitnessTest {
     @Test void een_uniciteit_met_scope_en_een_unie() throws Exception {
         assertEquals(List.of(
                 "regel eenmalig kaveletiket: sleutel van Kavel 1 | vorm eenmalig kaveletiket | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=kavel, naam=etiket, kenmerk=false]),"
-                        + " 1 SCOPE $lezing_1 (scope kavelindeling gemeente)]",
-                "  onderwerp Kavel $onderwerp alfa [] join [] bind [$lezing_0 = [] Kavel.etiket WAARDE, $lezing_1 = []"
-                        + " Kavel.gemeente WAARDE]",
+                "  lezingen [0 INVOER $etiket (eigen ElementSleutel[objecttype=kavel, naam=etiket, kenmerk=false]),"
+                        + " 1 SCOPE $gemeente (scope kavelindeling gemeente)]",
+                "  onderwerp Kavel $onderwerp alfa [] join [] bind [$etiket = [] Kavel.etiket WAARDE, $gemeente ="
+                        + " [] Kavel.gemeente WAARDE]",
                 "  toets voorwaarde_5 VORM sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE 0(LEEGTOETS(Lees 0,"
                         + " Const false), LEEGTOETS(Lees 1, Const false))",
                 "    toets 0 Samengesteld",
@@ -239,10 +239,10 @@ class KanaalplanWitnessTest {
                         + " kaveletiket]] join [] beta [] bind [$subject = [] Uniciteitsschending.element WAARDE]",
                 "  gevolg Inconsistentie [onderwerp=$subject, vorm=eenmalig kaveletiket, invoeging=LOGISCH]",
                 "regel eenmalig vondstnummer: sleutel van Strandvondst 1 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=strandvondst, naam=vondstnummer,"
-                        + " kenmerk=false])]",
-                "  onderwerp Strandvondst $onderwerp alfa [] join [] bind [$lezing_0 = [] Strandvondst.vondstnummer"
-                        + " WAARDE]",
+                "  lezingen [0 INVOER $vondstnummer (eigen ElementSleutel[objecttype=strandvondst,"
+                        + " naam=vondstnummer, kenmerk=false])]",
+                "  onderwerp Strandvondst $onderwerp alfa [] join [] bind [$vondstnummer = []"
+                        + " Strandvondst.vondstnummer WAARDE]",
                 "  toets voorwaarde_17 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const"
                         + " false))",
                 "    toets 0 Samengesteld",
@@ -253,9 +253,9 @@ class KanaalplanWitnessTest {
                         + " componenten=[Lees 0], tijdlijn=-1, scope=-1, slots=[0], grootte=1, invoeging=LOGISCH]",
                 "    componenten 0 0 Lees",
                 "regel eenmalig vondstnummer: sleutel van Wrakvondst 2 | vorm eenmalig vondstnummer | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=wrakvondst, naam=vondstnummer,"
+                "  lezingen [0 INVOER $vondstnummer (eigen ElementSleutel[objecttype=wrakvondst, naam=vondstnummer,"
                         + " kenmerk=false])]",
-                "  onderwerp Wrakvondst $onderwerp alfa [] join [] bind [$lezing_0 = [] Wrakvondst.vondstnummer"
+                "  onderwerp Wrakvondst $onderwerp alfa [] join [] bind [$vondstnummer = [] Wrakvondst.vondstnummer"
                         + " WAARDE]",
                 "  toets voorwaarde_18 VORM sonde -1 slots [0] grootte 1: Samengesteld ALLE 0(LEEGTOETS(Lees 0, Const"
                         + " false))",
@@ -345,24 +345,24 @@ class KanaalplanWitnessTest {
         assertEquals(List.of(
                 "regel verdeel het penningbudget van een penningkas: ontvanger | vorm verdeel het penningbudget van"
                         + " een penningkas | groep null",
-                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $lezing_1 (eigen"
+                "  lezingen [0 ONDERWERP $onderwerp (onderwerp zelf), 1 INVOER $voorranggewicht (eigen"
                         + " ElementSleutel[objecttype=wachter, naam=voorranggewicht, kenmerk=false]), 2 INVOER"
-                        + " $lezing_2 (eigen ElementSleutel[objecttype=wachter, naam=wachtjaar, kenmerk=false]), 3"
-                        + " INVOER $lezing_3 (eigen ElementSleutel[objecttype=wachter, naam=penningmaximum,"
+                        + " $wachtjaar (eigen ElementSleutel[objecttype=wachter, naam=wachtjaar, kenmerk=false]), 3"
+                        + " INVOER $penningmaximum (eigen ElementSleutel[objecttype=wachter, naam=penningmaximum,"
                         + " kenmerk=false])]",
                 "  patroon Penningkas $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Wachter $onderwerp alfa [] join [verdelingsbereik_0: penningkas = $vouwonderwerp] bind"
-                        + " [$lezing_1 = [] Wachter.voorranggewicht WAARDE, $lezing_2 = [] Wachter.wachtjaar WAARDE,"
-                        + " $lezing_3 = [] Wachter.penningmaximum WAARDE]",
+                        + " [$voorranggewicht = [] Wachter.voorranggewicht WAARDE, $wachtjaar = []"
+                        + " Wachter.wachtjaar WAARDE, $penningmaximum = [] Wachter.penningmaximum WAARDE]",
                 "  gevolg Ontvanger [onderwerp=$vouwonderwerp, verdeling=verdeel het penningbudget van een penningkas,"
                         + " ontvanger=0, gewicht=1, sleutel=2, maximum=3, invoeging=LOGISCH]",
                 "regel verdeel het penningbudget van een penningkas | vorm verdeel het penningbudget van een"
                         + " penningkas | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=penningkas, naam=penningbudget,"
-                        + " kenmerk=false]), 1 ONTVANGERS $ontvangers_verdeling_2 (ontvangers verdeel het"
-                        + " penningbudget van een penningkas)]",
-                "  onderwerp Penningkas $onderwerp alfa [] join [] bind [$lezing_0 = [] Penningkas.penningbudget"
-                        + " WAARDE]",
+                "  lezingen [0 INVOER $penningbudget (eigen ElementSleutel[objecttype=penningkas,"
+                        + " naam=penningbudget, kenmerk=false]), 1 ONTVANGERS $ontvangers_verdeling_2 (ontvangers"
+                        + " verdeel het penningbudget van een penningkas)]",
+                "  onderwerp Penningkas $onderwerp alfa [] join [] bind [$penningbudget = []"
+                        + " Penningkas.penningbudget WAARDE]",
                 "  accumulatie Ontvanger $ontvanger_verdeling_1 alfa [ontvanger_3: [[] verdeling WAARDE GELIJK verdeel"
                         + " het penningbudget van een penningkas]] join [ontvanger-bron_4: bron = $onderwerp] beta []"
                         + " bind [] functies [LIJST null -> $ontvangers_verdeling_2]",
@@ -387,10 +387,10 @@ class KanaalplanWitnessTest {
                 "  gevolg Ontvanger [onderwerp=$vouwonderwerp, verdeling=verdeel de opbrengst van een berging,"
                         + " ontvanger=0, gewicht=-1, sleutel=-1, maximum=-1, invoeging=LOGISCH]",
                 "regel verdeel de opbrengst van een berging | vorm verdeel de opbrengst van een berging | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=berging, naam=opbrengst,"
-                        + " kenmerk=false]), 1 ONTVANGERS $ontvangers_verdeling_2 (ontvangers verdeel de opbrengst van"
-                        + " een berging)]",
-                "  onderwerp Berging $onderwerp alfa [] join [] bind [$lezing_0 = [] Berging.opbrengst WAARDE]",
+                "  lezingen [0 INVOER $opbrengst (eigen ElementSleutel[objecttype=berging, naam=opbrengst,"
+                        + " kenmerk=false]), 1 ONTVANGERS $ontvangers_verdeling_2 (ontvangers verdeel de opbrengst"
+                        + " van een berging)]",
+                "  onderwerp Berging $onderwerp alfa [] join [] bind [$opbrengst = [] Berging.opbrengst WAARDE]",
                 "  accumulatie Ontvanger $ontvanger_verdeling_1 alfa [ontvanger_3: [[] verdeling WAARDE GELIJK verdeel"
                         + " de opbrengst van een berging]] join [ontvanger-bron_4: bron = $onderwerp] beta [] bind []"
                         + " functies [LIJST null -> $ontvangers_verdeling_2]",
@@ -452,10 +452,10 @@ class KanaalplanWitnessTest {
                 "  gevolg Ontvanger [onderwerp=$vouwonderwerp, verdeling=verdeel de opbrengst gelijk, ontvanger=0,"
                         + " gewicht=-1, sleutel=-1, maximum=-1, invoeging=LOGISCH]",
                 "regel verdeel de opbrengst gelijk | vorm verdeel de opbrengst gelijk | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=berging, naam=opbrengst,"
+                "  lezingen [0 INVOER $opbrengst (eigen ElementSleutel[objecttype=berging, naam=opbrengst,"
                         + " kenmerk=false]), 1 ONTVANGERS $ontvangers_verdeling_5 (ontvangers verdeel de opbrengst"
                         + " gelijk)]",
-                "  onderwerp Berging $onderwerp alfa [] join [] bind [$lezing_0 = [] Berging.opbrengst WAARDE]",
+                "  onderwerp Berging $onderwerp alfa [] join [] bind [$opbrengst = [] Berging.opbrengst WAARDE]",
                 "  accumulatie Ontvanger $ontvanger_verdeling_4 alfa [ontvanger_6: [[] verdeling WAARDE GELIJK verdeel"
                         + " de opbrengst gelijk]] join [ontvanger-bron_7: bron = $onderwerp] beta [] bind [] functies"
                         + " [LIJST null -> $ontvangers_verdeling_5]",

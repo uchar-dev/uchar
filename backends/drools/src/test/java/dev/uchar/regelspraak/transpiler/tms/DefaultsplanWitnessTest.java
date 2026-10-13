@@ -93,12 +93,12 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults A:Jutter.waardering: default 0 | vorm defaults A:Jutter.waardering |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=erkend,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=basisbedrag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.erkend WAAR, $lezing_1 = []"
-                        + " Jutter.basisbedrag WAARDE]",
+                "  lezingen [0 INVOER $erkend (eigen ElementSleutel[objecttype=jutter, naam=erkend, kenmerk=true]),"
+                        + " 1 INVOER $basisbedrag (eigen ElementSleutel[objecttype=jutter, naam=basisbedrag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$erkend = [] Jutter.erkend WAAR, $basisbedrag = [] Jutter.basisbedrag"
+                        + " WAARDE]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij erkend is'",
@@ -112,11 +112,11 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Lees bron 'zijn basisbedrag'",
                 "regel defaults A:Jutter.waardering: default 1 | vorm defaults A:Jutter.waardering |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=kandidaat,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
+                "  lezingen [0 INVOER $kandidaat (eigen ElementSleutel[objecttype=jutter, naam=kandidaat,"
+                        + " kenmerk=true]), 1 INVOER $kandidaatbedrag (eigen ElementSleutel[objecttype=jutter,"
                         + " naam=kandidaatbedrag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.kandidaat WAAR, $lezing_1 = []"
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$kandidaat = [] Jutter.kandidaat WAAR, $kandidaatbedrag = []"
                         + " Jutter.kandidaatbedrag WAARDE]",
                 "  niet binnen [$hoger_3] buiten [$onderwerp] [Beslist $hoger_3 alfa [hoger-beslist_3:"
                         + " [[] stapel WAARDE GELIJK defaults A:Jutter.waardering {String}, [] index WAARDE ONDER"
@@ -156,13 +156,15 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults K:Jutter.uitgesloten: default 0 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
-                        + " geweigerd, kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=weigering herroepen, kenmerk=true]), 2 INVOER $lezing_2 (eigen"
-                        + " ElementSleutel[objecttype=jutter, naam=herroeping vervallen, kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_3: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.vergunning geweigerd WAAR, $lezing_1 = []"
-                        + " Jutter.weigering herroepen WAAR, $lezing_2 = [] Jutter.herroeping vervallen WAAR]",
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
+                        + " geweigerd, kenmerk=true]), 1 INVOER $weigeringHerroepen (eigen"
+                        + " ElementSleutel[objecttype=jutter, naam=weigering herroepen, kenmerk=true]), 2 INVOER"
+                        + " $herroepingVervallen (eigen ElementSleutel[objecttype=jutter, naam=herroeping"
+                        + " vervallen, kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_3: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR,"
+                        + " $weigeringHerroepen = [] Jutter.weigering herroepen WAAR, $herroepingVervallen = []"
+                        + " Jutter.herroeping vervallen WAAR]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_4: [[] datum WAARDE BINNEN"
                         + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
                 "  toets voorwaarde_5 VOORWAARDE sonde -1 slots [0, 1, 2] grootte 3: Samengesteld ALLE"
@@ -186,12 +188,12 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: default 1 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
-                        + " geweigerd, kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=weigering herroepen, kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_6: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.vergunning geweigerd WAAR, $lezing_1 = []"
-                        + " Jutter.weigering herroepen WAAR]",
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
+                        + " geweigerd, kenmerk=true]), 1 INVOER $weigeringHerroepen (eigen"
+                        + " ElementSleutel[objecttype=jutter, naam=weigering herroepen, kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_6: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR,"
+                        + " $weigeringHerroepen = [] Jutter.weigering herroepen WAAR]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_7: [[] datum WAARDE BINNEN"
                         + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
                 "  niet binnen [$hoger_8] buiten [$onderwerp] [Beslist $hoger_8 alfa [hoger-beslist_8:"
@@ -213,10 +215,10 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.uitgesloten: default 2 | vorm defaults K:Jutter.uitgesloten |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
+                "  lezingen [0 INVOER $vergunningGeweigerd (eigen ElementSleutel[objecttype=jutter, naam=vergunning"
                         + " geweigerd, kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_11: [[] null WAARDE KLASSE_IS"
-                        + " Jutter]] join [] beta [] bind [$lezing_0 = [] Jutter.vergunning geweigerd WAAR]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_11: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$vergunningGeweigerd = [] Jutter.vergunning geweigerd WAAR]",
                 "  patroon Rekendatum $geldigheid_0 alfa [geldig_12: [[] datum WAARDE BINNEN"
                         + " Geldigheid[vanaf=2026-01-01, tot=null] {Geldigheid}]] join [] beta [] na [] bind []",
                 "  niet binnen [$hoger_13] buiten [$onderwerp] [Beslist $hoger_13 alfa"
@@ -248,12 +250,11 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults A:Jutter.korting: default 0.0.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=grondp,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=grondslag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.grondP WAAR, $lezing_1 = []"
-                        + " Jutter.grondslag WAARDE]",
+                "  lezingen [0 INVOER $grondP (eigen ElementSleutel[objecttype=jutter, naam=grondp, kenmerk=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$grondP = [] Jutter.grondP WAAR, $grondslag = [] Jutter.grondslag WAARDE]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij grondP heeft'",
@@ -269,12 +270,11 @@ class DefaultsplanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '20.00'",
                 "regel defaults A:Jutter.korting: default 0.1.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=grondq,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=grondslag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.grondQ WAAR, $lezing_1 = []"
-                        + " Jutter.grondslag WAARDE]",
+                "  lezingen [0 INVOER $grondQ (eigen ElementSleutel[objecttype=jutter, naam=grondq, kenmerk=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$grondQ = [] Jutter.grondQ WAAR, $grondslag = [] Jutter.grondslag WAARDE]",
                 "  toets voorwaarde_3 VOORWAARDE sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij grondQ heeft'",
@@ -290,12 +290,11 @@ class DefaultsplanWitnessTest {
                         + " teken=ONBEPAALD, eenheid=null] bron '35.00'",
                 "regel defaults A:Jutter.korting: default 0.2.0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=grondr,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=grondslag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.grondR WAAR, $lezing_1 = []"
-                        + " Jutter.grondslag WAARDE]",
+                "  lezingen [0 INVOER $grondR (eigen ElementSleutel[objecttype=jutter, naam=grondr, kenmerk=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$grondR = [] Jutter.grondR WAAR, $grondslag = [] Jutter.grondslag WAARDE]",
                 "  toets voorwaarde_5 VOORWAARDE sonde -1 slots [0] grootte 2: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij grondR heeft'",
@@ -355,12 +354,11 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Lees",
                 "regel defaults A:Jutter.korting: terugval 0 | vorm defaults A:Jutter.korting | groep"
                         + " null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=rechta,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=grondslag, kenmerk=false])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_20: [[] null WAARDE KLASSE_IS"
-                        + " Jutter]] join [] beta [] bind [$lezing_0 = [] Jutter.rechtA WAAR, $lezing_1 = []"
-                        + " Jutter.grondslag WAARDE]",
+                "  lezingen [0 INVOER $rechtA (eigen ElementSleutel[objecttype=jutter, naam=rechta, kenmerk=true]),"
+                        + " 1 INVOER $grondslag (eigen ElementSleutel[objecttype=jutter, naam=grondslag,"
+                        + " kenmerk=false])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_20: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$rechtA = [] Jutter.rechtA WAAR, $grondslag = [] Jutter.grondslag WAARDE]",
                 "  niet binnen [$uitkomst_21] buiten [$onderwerp] [Uitkomst $uitkomst_21 alfa"
                         + " [uitkomst_21: [[] stapel WAARDE GELIJK defaults A:Jutter.korting {String}, [] keten"
                         + " WAARDE MINSTENS 1 {Integer}, [] keten WAARDE ONDER 4 {Integer}]] join"
@@ -420,11 +418,10 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults K:Jutter.vrijgesteld: default 0.0.0 | vorm defaults K:Jutter.vrijgesteld"
                         + " | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=nx,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter, naam=ny,"
-                        + " kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.nx WAAR, $lezing_1 = [] Jutter.ny WAAR]",
+                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true]), 1"
+                        + " INVOER $ny (eigen ElementSleutel[objecttype=jutter, naam=ny, kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$nx = [] Jutter.nx WAAR, $ny = [] Jutter.ny WAAR]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE"
                         + " 0(KENMERK(Lees 0, Const true), KENMERK(Lees 1, Const true))",
                 "    toets 0 Samengesteld bron 'hij nx heeft en hij ny heeft'",
@@ -440,11 +437,10 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Const Boolean",
                 "regel defaults K:Jutter.vrijgesteld: default 0.1.0 | vorm defaults K:Jutter.vrijgesteld"
                         + " | groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=nx,"
-                        + " kenmerk=true]), 1 INVOER $lezing_1 (eigen ElementSleutel[objecttype=jutter, naam=nz,"
-                        + " kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.nx WAAR, $lezing_1 = [] Jutter.nz WAAR]",
+                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true]), 1"
+                        + " INVOER $nz (eigen ElementSleutel[objecttype=jutter, naam=nz, kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$nx = [] Jutter.nx WAAR, $nz = [] Jutter.nz WAAR]",
                 "  toets voorwaarde_3 VOORWAARDE sonde -1 slots [0, 1] grootte 2: Samengesteld ALLE"
                         + " 0(KENMERK(Lees 0, Const true), KENMERK(Lees 1, Const true))",
                 "    toets 0 Samengesteld bron 'hij nx heeft en hij nz heeft'",
@@ -502,10 +498,9 @@ class DefaultsplanWitnessTest {
                 "    waarde 0 Lees",
                 "regel defaults K:Jutter.vrijgesteld: terugval 0 | vorm defaults K:Jutter.vrijgesteld |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=nx,"
-                        + " kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_18: [[] null WAARDE KLASSE_IS"
-                        + " Jutter]] join [] beta [] bind [$lezing_0 = [] Jutter.nx WAAR]",
+                "  lezingen [0 INVOER $nx (eigen ElementSleutel[objecttype=jutter, naam=nx, kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_18: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$nx = [] Jutter.nx WAAR]",
                 "  niet binnen [$uitkomst_19] buiten [$onderwerp] [Uitkomst $uitkomst_19 alfa"
                         + " [uitkomst_19: [[] stapel WAARDE GELIJK defaults K:Jutter.vrijgesteld {String}, []"
                         + " keten WAARDE MINSTENS 1 {Integer}, [] keten WAARDE ONDER 3 {Integer}]] join"
@@ -547,10 +542,10 @@ class DefaultsplanWitnessTest {
         assertEquals(List.of(
                 "regel defaults A:Jutter.wachtgeld: default 0:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter, naam=kustwacht,"
+                "  lezingen [0 INVOER $kustwacht (eigen ElementSleutel[objecttype=jutter, naam=kustwacht,"
                         + " kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.kustwacht WAAR]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_0: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$kustwacht = [] Jutter.kustwacht WAAR]",
                 "  toets voorwaarde_1 VOORWAARDE sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij kustwacht is'",
@@ -564,10 +559,10 @@ class DefaultsplanWitnessTest {
                         + " eenheid=null] bron '30'",
                 "regel defaults A:Jutter.wachtgeld: default 1:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=havenmeester, kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.havenmeester WAAR]",
+                "  lezingen [0 INVOER $havenmeester (eigen ElementSleutel[objecttype=jutter, naam=havenmeester,"
+                        + " kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_2: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$havenmeester = [] Jutter.havenmeester WAAR]",
                 "  toets voorwaarde_3 VOORWAARDE sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij havenmeester is'",
@@ -581,10 +576,10 @@ class DefaultsplanWitnessTest {
                         + " eenheid=null] bron '45'",
                 "regel defaults A:Jutter.wachtgeld: default 2:0 | vorm defaults A:Jutter.wachtgeld |"
                         + " groep null",
-                "  lezingen [0 INVOER $lezing_0 (eigen ElementSleutel[objecttype=jutter,"
-                        + " naam=strandvoogd, kenmerk=true])]",
-                "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null WAARDE KLASSE_IS Jutter]]"
-                        + " join [] beta [] bind [$lezing_0 = [] Jutter.strandvoogd WAAR]",
+                "  lezingen [0 INVOER $strandvoogd (eigen ElementSleutel[objecttype=jutter, naam=strandvoogd,"
+                        + " kenmerk=true])]",
+                "  onderwerp Jutter $onderwerp alfa [concreet-type_4: [[] null WAARDE KLASSE_IS Jutter]] join []"
+                        + " beta [] bind [$strandvoogd = [] Jutter.strandvoogd WAAR]",
                 "  toets voorwaarde_5 VOORWAARDE sonde -1 slots [0] grootte 1: KENMERK(Lees 0, Const"
                         + " true)",
                 "    toets 0 Aanroep bron 'hij strandvoogd is'",
