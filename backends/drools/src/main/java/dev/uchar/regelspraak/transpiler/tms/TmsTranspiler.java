@@ -5438,17 +5438,10 @@ public final class TmsTranspiler {
             return i == null ? -1 : i;
         }
 
-        /** The variable of a slot that reads {@code gelezen}, a name as the document declares it: {@code $} and that
-         *  name as an identifier ({@link Namen#ident}), so that a rendering shows what the slot holds, in DRL text as
-         *  well. It is unique within the rule by construction: the identifier has no underscore, while every other
-         *  variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of this class) or is one of
-         *  {@link #VASTE_NAMEN}; where such a fixed name or another slot of this rule has it already, the first free
-         *  number from 2 after it makes it unique. It depends only on the reads of the rule before it, in their order. */
+        /** The variable of a slot that reads {@code gelezen} ({@link TmsTranspiler#leesnaam(String, Set)}), unique
+         *  against the slots of this rule before it. */
         private String leesnaam(String gelezen) {
-            String basis = "$" + Namen.ident(gelezen, false);
-            String naam = basis;
-            for (int n = 2; VASTE_NAMEN.contains(naam) || namen.contains(naam); n++) naam = basis + n;
-            return naam;
+            return TmsTranspiler.leesnaam(gelezen, namen);
         }
 
         /** A slot that a binding of the plan binds to the variable {@code naam}, read once per rule under
@@ -5600,9 +5593,31 @@ public final class TmsTranspiler {
     /** The variable of the object a rule binds before its subject: a fold's subject in a contribution rule, the source
      *  in an allocation's recipient rule. */
     private static final String VOUWONDERWERP = "$vouwonderwerp";
+    /**
+     * The variable of a slot that reads {@code gelezen}, a name as the document declares it, in a rule whose slots
+     * before it have the variables {@code bezet}: {@code $} and that name as an identifier ({@link Namen#ident}), so
+     * that a rendering shows what the slot holds, in DRL text as well. Only the characters a Java identifier may hold
+     * stay: {@code Namen.ident} keeps every letter and every number of Unicode, and a number such as {@code ²} or
+     * {@code ½} is none, so "artikel 3²" reads {@code $artikel3}. A name of which nothing stays reads {@code $x}, the
+     * name {@code Namen.ident} gives an empty name. It is unique within the rule by construction: the identifier has no
+     * underscore, while every other variable of a rule has one ({@link TmsTranspiler#id}, the numbered names of
+     * {@code Lezingen}) or is one of {@link #VASTE_NAMEN}; where such a fixed name or a name in {@code bezet} has it
+     * already, the first free number from 2 after it makes it unique. It depends only on the reads of the rule before
+     * it, in their order. {@code Regelplan} refuses a rule that declares one variable twice, so a name that escaped
+     * this would fail the build, and not bind two values to one variable.
+     */
+    static String leesnaam(String gelezen, Set<String> bezet) {
+        StringBuilder id = new StringBuilder();
+        Namen.ident(gelezen, false).codePoints().filter(Character::isJavaIdentifierPart).forEach(id::appendCodePoint);
+        String basis = "$" + (id.isEmpty() ? "x" : id);
+        String naam = basis;
+        for (int n = 2; VASTE_NAMEN.contains(naam) || bezet.contains(naam); n++) naam = basis + n;
+        return naam;
+    }
+
     /** Every name without an underscore that the analysis gives a variable of a rule other than a read name
-     *  ({@link Lezingen#leesnaam}): a read name that equals one of these takes a number, so that no rule binds one
-     *  name twice. {@code LeesnaamWitnessTest} holds this set equal to the fixed names this source spells. */
+     *  ({@link #leesnaam(String, Set)}): a read name that equals one of these takes a number, so that no rule binds
+     *  one name twice. {@code LeesnaamWitnessTest} holds this set equal to the fixed names this source spells. */
     static final Set<String> VASTE_NAMEN = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
             "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
             "$invoer", "$nabij", "$onderwerp", "$rekendatum", "$schending", "$sleutel", "$stand", "$subject", "$twee",

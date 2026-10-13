@@ -6,6 +6,9 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
+import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leessoort;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
@@ -20,7 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -28,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -45,12 +51,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>the names of six rules of the corpus, one per kind of read that the corpus names this way, among them a member
  *       called "waarde", whose name {@code $waarde} is a fixed name of the analysis and so takes a number;</li>
  *   <li>the fixed names, those without an underscore that {@code TmsTranspiler} gives a variable itself, are exactly
- *       {@link TmsTranspiler#VASTE_NAMEN}: a read name has no underscore and is none of them, so it can meet no other
- *       variable of its rule, also in a document outside the corpus.</li>
+ *       {@link TmsTranspiler#VASTE_NAMEN}: a read name has no underscore and is none of them, so it does not meet
+ *       another variable of its rule. That is how the analysis avoids a second declaration; that none reaches a
+ *       rendering, also in a document outside the corpus, is the plan's own check ({@link Regelplan}).</li>
+ * </ul>
+ * Fix round 1e adds two checks outside the corpus:
+ * <ul>
+ *   <li>a read name is {@code $} and a Java identifier for any declared name: of what {@code Namen.ident} keeps, only
+ *       the characters a Java identifier may hold stay, so a number such as {@code ²} or {@code ½} goes, and a name of
+ *       which nothing stays reads {@code $x}, with a number where that is taken;</li>
+ *   <li>the plan refuses a rule that declares a variable a second time in its scope, or gives two slots one
+ *       variable.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step, on {@code 123e39e5}: the analysis called a read {@code $lezing_} with its slot, 1112
- * slots over the corpus, and {@code VASTE_NAMEN} did not exist.
+ * slots over the corpus, and {@code VASTE_NAMEN} did not exist. <b>Red</b> before fix round 1e, on {@code 32b44001}
+ * with only the read name drawn out into a method of its own: {@code "artikel 3² inconsistent"} read
+ * {@code $artikel3²Inconsistent}, which no DRL function can declare, and the plan took two declarations of one name.
  */
 class LeesnaamWitnessTest {
 
@@ -122,6 +139,62 @@ class LeesnaamWitnessTest {
         Matcher m = Pattern.compile("\"(\\$[A-Za-z]+)\"").matcher(Files.readString(TRANSPILER));
         while (m.find()) inBron.add(m.group(1));
         assertEquals(inBron, new TreeSet<>(TmsTranspiler.VASTE_NAMEN));
+    }
+
+    @Test void een_leesnaam_is_een_java_identifier_ook_buiten_het_corpus() {
+        Map<String, String> verwacht = new LinkedHashMap<>();
+        verwacht.put("artikel 3² inconsistent", "$artikel3Inconsistent");
+        verwacht.put("½ deel", "$Deel");
+        verwacht.put("3e lid", "$3eLid");
+        verwacht.put("één coördinaat", "$éénCoördinaat");
+        verwacht.put("art. 5, lid 2 (oud)", "$art5Lid2Oud");
+        verwacht.put("", "$x");
+        verwacht.put("²³", "$x");
+        verwacht.put("waarde", "$waarde2");
+        Map<String, String> gekregen = new LinkedHashMap<>();
+        for (String gelezen : verwacht.keySet()) gekregen.put(gelezen, TmsTranspiler.leesnaam(gelezen, Set.of()));
+        assertEquals(verwacht, gekregen);
+        for (String naam : gekregen.values())
+            assertTrue(identifier(naam) && !naam.contains("_"), () -> naam + " is geen variabele zonder underscore");
+        // a name of which nothing stays takes a number where $x is taken, as every read name does
+        assertEquals("$x2", TmsTranspiler.leesnaam("²³", Set.of("$x")));
+        assertEquals("$x3", TmsTranspiler.leesnaam("", Set.of("$x", "$x2")));
+    }
+
+    @Test void het_plan_weigert_een_tweede_declaratie_in_haar_scope() {
+        Leestabel leeg = new Leestabel(List.of());
+        Gevolg kanaal = new Gevolg.Kanaalstand("proef", true, Gevolg.Invoeging.LOGISCH);
+        Onderwerp onderwerp = new Onderwerp(Object.class, "$o", List.of(), List.of(),
+                List.of(Binding.van("$v", Waarde.class, "waarde")));
+        assertEquals("de regel twee patronen declareert de variabele $o twee keer", assertThrows(
+                IllegalArgumentException.class, () -> new Regelplan("twee patronen", null, null, leeg,
+                        List.of(onderwerp, new Patroon(Waarde.class, "$o", List.of(), List.of(), List.of())), kanaal))
+                .getMessage());
+        assertEquals("de regel binding als patroon declareert de variabele $v twee keer", assertThrows(
+                IllegalArgumentException.class, () -> new Regelplan("binding als patroon", null, null, leeg,
+                        List.of(onderwerp, new Patroon(Waarde.class, "$v", List.of(), List.of(), List.of())), kanaal))
+                .getMessage());
+        assertEquals("de regel twee resultaten declareert de variabele $v twee keer", assertThrows(
+                IllegalArgumentException.class, () -> new Regelplan("twee resultaten", null, null, leeg,
+                        List.of(onderwerp, new Accumulatie(new Patroon(Waarde.class, "$w", List.of(), List.of(),
+                                List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, "$v")))),
+                        kanaal)).getMessage());
+        assertEquals("de regel binnen en buiten declareert de variabele $v twee keer", assertThrows(
+                IllegalArgumentException.class, () -> new Regelplan("binnen en buiten", null, null, leeg,
+                        List.of(onderwerp, new Niet(new Patroon(Waarde.class, "$v", List.of(), List.of(), List.of()))),
+                        kanaal)).getMessage());
+        Leestabel tweeSlots = new Leestabel(List.of(new Lezing(0, Leessoort.INVOER, "a", "$v"),
+                new Lezing(1, Leessoort.INVOER, "b", "$v")));
+        assertEquals("de regel twee slots geeft twee slots de variabele $v", assertThrows(
+                IllegalArgumentException.class, () -> new Regelplan("twee slots", null, null, tweeSlots,
+                        List.of(onderwerp), kanaal)).getMessage());
+        // what a quantification declares lives only inside it: a second quantification and an item after both may
+        // declare that name again
+        Niet eerste = new Niet(new Patroon(Waarde.class, "$w", List.of(), List.of(), List.of()));
+        Bestaat tweede = new Bestaat(List.of(new Patroon(Waarde.class, "$w", List.of(), List.of(), List.of())),
+                List.of("$w"), List.of());
+        assertEquals(4, new Regelplan("lokaal", null, null, leeg, List.of(onderwerp, eerste, tweede,
+                new Patroon(Waarde.class, "$w", List.of(), List.of(), List.of())), kanaal).linkerkant().size());
     }
 
     /** The kind and the variable of every slot of the rule {@code regel} in the golden {@code golden}. */
