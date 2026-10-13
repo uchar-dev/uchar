@@ -417,11 +417,9 @@ public final class TmsTranspiler {
      *  apart from the left-hand sides. No consumer reads a plan, so it is no public entry. */
     List<Waardeplan> waardeplannen() { return List.copyOf(waardeplannen); }
 
-    /** The plan of every rule the branch renders whole from its plan ({@link Regelplan}), in the order the rules were
-     *  built, of the forms that lowered: the ordinary rules, their fault, deposit and validity rules, the rules of two
-     *  writers of one target, and the standings of parameters and the evaluation date. The rules of the other forms are
-     *  built directly until step 1c of card drl-teksttak-op-truth-maintenance plans them. No consumer reads a plan, so
-     *  it is no public entry. */
+    /** The plan of every rule of the branch ({@link Regelplan}), in the order the rules were built, of the forms that
+     *  lowered: since step 1c-C2 of card drl-teksttak-op-truth-maintenance every rule comes whole from its plan, the
+     *  rules of the defaults included. No consumer reads a plan, so it is no public entry. */
     List<Regelplan> regelplannen() { return List.copyOf(regelplannen); }
 
     /**
