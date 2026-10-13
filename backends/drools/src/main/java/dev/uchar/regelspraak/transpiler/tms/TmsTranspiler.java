@@ -1385,13 +1385,6 @@ public final class TmsTranspiler {
         return kanFalen ? Toetsitem.Rol.ZONDER_FOUT : Toetsitem.Rol.VOORWAARDE;
     }
 
-    /** {@code toets} where it answers, and not holding where it faults, for a test a form composes itself
-     *  ({@link #lidfoutregel}); the test of a condition says so by its role ({@link Toetsitem.Rol#ZONDER_FOUT}). */
-    private static Toets zonderFout(Toets toets) {
-        Predicate<Object[]> p = ClosureWeergave.zonderFout(toets::test);
-        return p::test;
-    }
-
     /**
      * The rule that deposits the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 for the condition {@code c} of
      * {@code vorm}, whose rule is {@code regelnaam}: the reference interpreter deposits wherever its evaluation of a
@@ -1581,14 +1574,13 @@ public final class TmsTranspiler {
         int scope = scopeRol == null ? -1 : lez.scopelezing(scopeRol);
         lez.stop();
         int tijdlijn = ooit;
-        Toets doetMee = w -> {
-            for (int i = 0; i < sleutels.size(); i++) if (i != tijdlijn && w[sleutels.get(i)] == null) return false;
-            // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
-            if (tijdlijn >= 0 && w[sleutels.get(tijdlijn)] instanceof Emmerscalair) return false;
-            return scope < 0 || w[scope] != null;
-        };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
-                new Term.GecompileerdeToets(doetMee::test, null), gelezen, null);
+        // the key takes part where every component off the timeline is gevuld and the parent is set
+        List<Term> deelname = new ArrayList<>();
+        for (int i = 0; i < sleutels.size(); i++) if (i != tijdlijn) deelname.add(gevuld(sleutels.get(i)));
+        // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
+        if (tijdlijn >= 0) deelname.add(emmerscalair(sleutels.get(tijdlijn), false));
+        if (scope >= 0) deelname.add(gevuld(scope));
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(deelname), gelezen, null);
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> {
             List<Object> waarden = new ArrayList<>(sleutels.size());
             for (int i = 0; i < sleutels.size(); i++) {
@@ -1638,12 +1630,10 @@ public final class TmsTranspiler {
                 + bron.sleutels().get(positie) + "' van " + type.naam + " op een tijdlijn");
         int tijdlijn = lez.tijdlijn(tijdlid);
         lez.stop();
-        Toets emmer = w -> {
-            for (int i : ervoor) if (w[i] == null) return false;
-            return w[tijdlijn] instanceof Emmerscalair;
-        };
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
-                new Term.GecompileerdeToets(emmer::test, null), gelezen, null);
+        List<Term> emmer = new ArrayList<>();
+        for (int i : ervoor) emmer.add(gevuld(i));
+        emmer.add(emmerscalair(tijdlijn, true));
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(emmer), gelezen, null);
         String sleutelnaam = tijdlid.naam();
         items.add(gevolg(lez, posities(gelezen), (drools, o, w) -> drools.logicalInsert(new Fout(o, naam,
                 new Invoervormfout("the ever-unique key \"" + sleutelnaam + "\" needs the full timeline; ", o,
@@ -2997,6 +2987,24 @@ public final class TmsTranspiler {
         return new Term.Const(waarde, null, null);
     }
 
+    /** A test a form composes itself ({@link Toetsitem.Rol#VORM}) of the checks {@code leden}: their conjunction,
+     *  read in order up to the first that does not hold ({@link Term.Samengesteld} under all). No node of the IR
+     *  stands for it, so it carries no source fragment. */
+    private static Term alle(List<Term> leden) {
+        return new Term.Samengesteld(Conditie.Kwantor.ALLE, 0, leden, null);
+    }
+
+    /** The check that the value bound at slot {@code slot} is gevuld, in a test a form composes itself. */
+    private static Term gevuld(int slot) {
+        return new Term.Aanroep(Functie.LEEGTOETS, List.of(new Term.Lees(slot, null), constante(false)), null);
+    }
+
+    /** The check that the value bound at slot {@code slot} is ({@code gewenst}) or is not the asOfDate-bucket scalar
+     *  of a timeline ({@link Emmerscalair}), in a test a form composes itself. */
+    private static Term emmerscalair(int slot, boolean gewenst) {
+        return new Term.Aanroep(Functie.EMMERSCALAIR, List.of(new Term.Lees(slot, null), constante(gewenst)), null);
+    }
+
     /** The source fragment of an IR node, which a term carries; null where the IR has none. */
     private static String bron(dev.uchar.regelspraak.ir.Bron bron) {
         return bron == null ? null : bron.snippet();
@@ -4347,8 +4355,12 @@ public final class TmsTranspiler {
         List<Plaatslezing> plaatsen = new ArrayList<>();
         Lezingen lez = bijdragelezingen(subject, elem, l -> plaatsen.addAll(bereik.perRoute().apply(l)));
         Set<Integer> gelezen = lez.volg();
-        Toets filtertoets = filter == null ? null : toetsweergave(voorwaarde(filter, lez));
-        Toets houdt = filtertoets == null ? w -> true : lez.kanFalen() ? zonderFout(filtertoets) : filtertoets;
+        // the member's filter holds, without its fault where it can fault: the filter fault rule takes that fault
+        List<Term> emmer = new ArrayList<>();
+        if (filter != null) {
+            Term filtertoets = voorwaarde(filter, lez);
+            emmer.add(lez.kanFalen() ? new Term.ZonderFout(filtertoets, bron(filter.bron())) : filtertoets);
+        }
         int waarde = lez.tijdlijn(lidwaarde);
         lez.stop();
         Set<Integer> gebruik = lez.volg();
@@ -4359,9 +4371,8 @@ public final class TmsTranspiler {
             gebruik.add(p.plaats());
         }
         String naam = lidwaarde.naam();
-        Toets emmer = w -> houdt.test(w) && w[waarde] instanceof Emmerscalair;
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM,
-                new Term.GecompileerdeToets(emmer::test, null), gelezen, filter);
+        emmer.add(emmerscalair(waarde, true));
+        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.VORM, alle(emmer), gelezen, filter);
         items.add(gevolg(lez, lez.drager, posities(gebruik), (drools, onderwerp, w) -> {
             List<Integer> plaats = new ArrayList<>(plaatsen.size() + 1);
             plaats.add(selectie);
