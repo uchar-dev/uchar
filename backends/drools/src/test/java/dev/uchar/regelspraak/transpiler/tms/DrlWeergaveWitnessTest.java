@@ -45,10 +45,11 @@ class DrlWeergaveWitnessTest {
 
     /** Floors, measured 2026-10-13 at step 2a: the goldens the exec-model branch plays, and those whose text the
      *  rendering gives and Drools compiles, raised at step 3a, which carries the rules of a fold, from 117 to the 165
-     *  measured then, and at step 3b, which carries those of a uniqueness and of the channel, to the 170 measured then.
-     *  A deliberate removal lowers a floor in the same commit. */
+     *  measured then, at step 3b, which carries those of a uniqueness and of the channel, to the 170 measured then, and
+     *  at step 4, which carries those of a defaults stack, to the 207 measured then. A deliberate removal lowers a floor
+     *  in the same commit. */
     private static final int EXPECTED_MIN_GOLDENS = 250;
-    private static final int EXPECTED_MIN_GECOMPILEERD = 170;
+    private static final int EXPECTED_MIN_GECOMPILEERD = 207;
 
     /** What the text of no golden holds. */
     private static final List<String> VERBODEN = List.of("import function", "salience", "no-loop", "modify",
@@ -99,10 +100,11 @@ class DrlWeergaveWitnessTest {
     }
 
     /** Floors, measured 2026-10-13 at step 2a: the rules of the goldens the branch plays whose consequence the rendering
-     *  carries, raised at step 3a from 1221 to the 1433 measured then and at step 3b to the 1467 measured then, and the
-     *  goldens that have at least one, which stayed 224. A deliberate removal lowers a floor in the same commit. */
-    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1467;
-    private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 224;
+     *  carries, raised at step 3a from 1221 to the 1433 measured then, at step 3b to the 1467 measured then and at step 4
+     *  to the 1684 measured then, and the goldens that have at least one, which stayed 224 until step 4 raised them to
+     *  the 239 measured then. A deliberate removal lowers a floor in the same commit. */
+    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1684;
+    private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 239;
 
     /** The rules whose consequence the rendering carries compile in every golden, also in one whose text it refuses for
      *  the consequence of another rule: their left-hand sides and terms are those of the whole corpus but for the rules
@@ -226,6 +228,32 @@ class DrlWeergaveWitnessTest {
         for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de kanaaltekst");
         for (String vorm : Vormenplan.KANAALVORMEN)
             assertTrue(tekst.contains(vorm), () -> "de kanaaltekst mist " + vorm + ":\n" + tekst);
+    }
+
+    /**
+     * Every form of the rules of a defaults stack compiles (step 4), also where no golden has it: a plan made here over
+     * the same beans ({@link Vormenplan#defaults}), with the decision of a default computed and collapsed with its fault,
+     * the attribution of a characteristic and the decision not to attribute it, each with its control fact, the decision
+     * of a reconciliation bound off an outcome, and the conflict under a constant key and under a bound one, as an
+     * outcome and as the §9.5 inconsistency. One plan gives one text, written to {@code <map>/_defaultsplan.drl} under
+     * {@code -Duchar.drlvorm}.
+     *
+     * <p><b>Red</b> before step 4, on {@code e2bd685e}: the rendering refused the plan, "de DRL-weergave draagt Afloop
+     * nog niet".
+     */
+    @Test void elke_vorm_van_de_defaults_compileert() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Modelplan plan = Vormenplan.defaults(wachter);
+        String tekst = DrlWeergave.tekst(plan);
+        assertEquals(tekst, DrlWeergave.tekst(plan), "één plan geeft één tekst");
+        String dump = System.getProperty("uchar.drlvorm");
+        if (dump != null) Files.writeString(Path.of(dump).resolve("_defaultsplan.drl"), tekst);
+        assertEquals(List.of(), compileer(tekst, b.beanLoader()), () -> "de defaultstekst compileert niet:\n" + tekst);
+        for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de defaultstekst");
+        for (String vorm : Vormenplan.DEFAULTSVORMEN)
+            assertTrue(tekst.contains(vorm), () -> "de defaultstekst mist " + vorm + ":\n" + tekst);
     }
 
     /** The errors of compiling {@code tekst} with {@code KieHelper} under the bean loader {@code bonen}, which is the

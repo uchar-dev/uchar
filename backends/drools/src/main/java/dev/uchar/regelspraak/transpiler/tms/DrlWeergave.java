@@ -78,7 +78,9 @@ import java.util.TreeSet;
  * disagree and the standings (step 2a), and those of the rules of a fold (step 3a): a member's contribution, and the
  * deposit, the fault of the filter and the fault of a member, with the member's place in the fold's order as a function
  * of the rule; and those of a uniqueness and of the §9.5 channel (step 3b): the keys, the violation, the fault of the
- * form of an input and the standing of the channel. Every other kind it refuses loudly ({@link Weigering}).
+ * form of an input and the standing of the channel; and those of a defaults stack (step 4): the decision of a default
+ * or a reconciliation, with its fault where it is computed, and the conflict of a reconciliation, each with the facts
+ * of the stack. Every other kind it refuses loudly ({@link Weigering}).
  */
 final class DrlWeergave {
 
@@ -893,6 +895,8 @@ final class DrlWeergave {
                         + "))");
                 case Gevolg.Kanaalstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(KanaalStand.class)
                         + "(" + str(x.producent()) + ", " + x.inconsistent() + ")");
+                case Gevolg.Afloop x -> afloop(x, b);
+                case Gevolg.Conflict x -> conflict(x, b);
                 default -> throw new Weigering(g.getClass().getSimpleName());
             }
             return b.toString();
@@ -1034,6 +1038,62 @@ final class DrlWeergave {
                     .append(c.argumenten()).append("), ").append(x.tijdlijn()).append(")) {\n");
             voegIn(b, "        ", x.invoeging(), "k");
             b.append("    }\n");
+        }
+
+        /** The decision of {@link Gevolg.Afloop}: a function of the rule gives its value, collapsed where the plan says
+         *  so, and gives an evaluation fault as its outcome where the plan names a fault, a computed decision; any other
+         *  exception leaves the fire, a broken contract, as in the executable model. The fault in place of the
+         *  decision; nothing where the value is null, so that the lower defaults decide (RUNTIME-SEMANTICS ch. 7.1);
+         *  else the facts of the decision in the order of the plan. */
+        private void afloop(Gevolg.Afloop x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("afloop", plaats);
+            Context c = context(x.slots(), -1, null, x.waarde());
+            Expr e = waarde(x.waarde(), c);
+            String v = x.collapse() ? aanroep(Functie.COLLAPSE, List.of(e)).tekst() : e.tekst();
+            vul(plaats, x.waarde().bron(), "Object " + naam + "(" + c.declaratie() + ")", x.fout() == null
+                    ? "    return " + v + ";\n"
+                    : vang("        return " + v + ";\n", "        return " + route(Route.GEVANGEN) + "(e);\n"));
+            b.append("    Object v = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            if (x.fout() != null) {
+                b.append("    if (").append(route(Route.IS_EVALUATIEFOUT)).append("(v)) {\n");
+                voegIn(b, "        ", x.invoeging(), "new " + typenaam(Fout.class) + "(" + x.onderwerp() + ", "
+                        + str(x.fout().vorm()) + ", " + route(Route.BENOEM) + "(v, " + str(x.fout().regel()) + "))");
+                b.append("    } else if (v != null) {\n");
+            } else {
+                b.append("    if (v != null) {\n");
+            }
+            for (Gevolg.Stapelfeit f : x.feiten()) voegIn(b, "        ", x.invoeging(), stapelfeit(f, x.onderwerp()));
+            b.append("    }\n");
+        }
+
+        /** The conflict of {@link Gevolg.Conflict}: a function of the rule gives its key, a constant or the key of the
+         *  conflicting member bound off its outcome, and the rule inserts the fact of the plan under it. */
+        private void conflict(Gevolg.Conflict x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("conflict", plaats);
+            Context c = context(x.slots(), -1, null, x.sleutel());
+            vul(plaats, x.sleutel().bron(), "Object " + naam + "(" + c.declaratie() + ")",
+                    "    return " + waarde(x.sleutel(), c).tekst() + ";\n");
+            b.append("    Object v = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            voegIn(b, "    ", x.invoeging(), stapelfeit(x.feit(), x.onderwerp()));
+        }
+
+        /** The fact {@code f} of a defaults stack on {@code onderwerp}, with the local {@code v} of the consequence: the
+         *  decision, or the key of a conflict. */
+        private String stapelfeit(Gevolg.Stapelfeit f, String onderwerp) {
+            return switch (f) {
+                case Gevolg.Stapelfeit.Waarde x -> "new " + typenaam(Waarde.class) + "(" + onderwerp + ", "
+                        + sleutel(x.doel()) + ", v, " + str(x.schrijver()) + ")";
+                case Gevolg.Stapelfeit.Kenmerk x -> "new " + typenaam(HeeftKenmerk.class) + "(" + onderwerp + ", "
+                        + sleutel(x.kenmerk()) + ")";
+                case Gevolg.Stapelfeit.Beslist x -> "new " + typenaam(Beslist.class) + "(" + onderwerp + ", "
+                        + str(x.stapel()) + ", " + x.index() + ")";
+                case Gevolg.Stapelfeit.Uitkomst x -> "new " + typenaam(Uitkomst.class) + "(" + onderwerp + ", "
+                        + str(x.stapel()) + ", " + x.keten() + ", " + x.positie() + ", " + enumlabel(x.soort()) + ", "
+                        + (x.soort() == Uitkomst.Soort.BESLIST ? "v, null" : "null, (String) v") + ")";
+                case Gevolg.Stapelfeit.Inconsistentie x -> route(Route.INCONSISTENTIE) + "((String) v, " + onderwerp + ")";
+            };
         }
 
         /** The fault of {@link Gevolg.Filterfout}: the filter evaluated again over the same bound values, its

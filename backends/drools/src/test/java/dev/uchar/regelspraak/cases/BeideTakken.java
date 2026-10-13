@@ -38,10 +38,11 @@ final class BeideTakken {
     /** The kinds {@code DRL_TMS} does not carry yet, each with the step of card drl-teksttak-op-truth-maintenance that
      *  brings it: the consequences its rendering refuses by their simple names, and the day kinds, whose predicates
      *  the branch does not set as globals yet. Measured at step 2b; the kinds of the rules of a fold left at step 3a,
-     *  which carries them, so that every row of a fold or a quantifier fold runs on {@code DRL_TMS}, and those of a
-     *  uniqueness and of the §9.5 channel at step 3b, so that every row of a uniqueness runs there too. */
+     *  which carries them, so that every row of a fold or a quantifier fold runs on {@code DRL_TMS}, those of a
+     *  uniqueness and of the §9.5 channel at step 3b, so that every row of a uniqueness runs there too, and those of a
+     *  defaults stack at step 4. */
     static final Map<String, String> NOG_NIET = Map.ofEntries(
-            Map.entry("Afloop", "4"), Map.entry("Conflict", "4"), Map.entry("Creatie", "5a"),
+            Map.entry("Creatie", "5a"),
             Map.entry("Koppeling", "5a"), Map.entry("TweedeVulling", "5a"), Map.entry("Ontvanger", "5b"),
             Map.entry("Uitdeling", "5b"), Map.entry("dagsoorten", "5b"));
 

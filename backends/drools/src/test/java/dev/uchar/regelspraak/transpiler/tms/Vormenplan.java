@@ -38,7 +38,8 @@ import java.util.List;
  * Plans made by hand that hold every form {@link DrlWeergave} carries, over three beans of one document (a Wachter at a
  * Post on a Kustvak), so that a witness can compile the forms no golden of the corpus renders: the forms of step 2a of
  * card drl-teksttak-op-truth-maintenance ({@link #plan}), those of the rules of a fold of step 3a ({@link #vouwen}), and
- * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}). They decide nothing of a document's
+ * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}), and those of a defaults stack of step 4
+ * ({@link #defaults}). They decide nothing of a document's
  * meaning, and no rule of them is meant to fire. The rules are named after what they hold.
  */
 final class Vormenplan {
@@ -176,6 +177,72 @@ final class Vormenplan {
         regels.add(new Regelplan("kanaalstand proef: consistent", null, null, tabel(),
                 List.of(new Niet(kanaal, Bestaat.verklaard(kanaal), Bestaat.gelezen(kanaal))),
                 new Gevolg.Kanaalstand("proef", false, Gevolg.Invoeging.LOGISCH)));
+        return new Modelplan(List.of(), regels);
+    }
+
+    /** Fragments of the text that show the forms of the plan of the defaults ({@link #defaults}), one per form. */
+    static final List<String> DEFAULTSVORMEN = List.of("Object r0_afloop0(Object $uitkijkbonus)",
+            "        return Rekenhulpen.collapse($uitkijkbonus);\n    } catch (RuntimeException e) {\n"
+                    + "        return Rekenhulpen.gevangen(e);",
+            "    if (Rekenhulpen.isEvaluatiefout(v)) {\n        insertLogical(new Fout($onderwerp, \"proefstapel\","
+                    + " Rekenhulpen.benoem(v, \"proefstapel\")));\n    } else if (v != null) {",
+            "insertLogical(new Waarde($onderwerp, ElementSleutel.van(\"wachter\", \"uitkijkbonus\", false), v,"
+                    + " \"proefstapel\"));",
+            "insertLogical(new Beslist($onderwerp, \"proefstapel\", 0));",
+            "Object r1_afloop0() {\n    return Boolean.TRUE;\n}",
+            "insertLogical(new HeeftKenmerk($onderwerp, ElementSleutel.van(\"wachter\", \"waakzaam\", true)));",
+            "Object r2_afloop0() {\n    return Boolean.FALSE;\n}",
+            "    if (v != null) {\n        insertLogical(new Beslist($onderwerp, \"proefstapel\", 2));\n    }",
+            "insertLogical(new Uitkomst($onderwerp, \"proefstapel\", 1, 2,"
+                    + " dev.uchar.regelspraak.transpiler.tms.Uitkomst.Soort.BESLIST, v, null));",
+            "Object r4_conflict0() {\n    return \"proefstapel/0\";\n}",
+            "insertLogical(new Uitkomst($onderwerp, \"proefstapel\", 0, 1,"
+                    + " dev.uchar.regelspraak.transpiler.tms.Uitkomst.Soort.CONFLICT, null, (String) v));",
+            "insertLogical(Rekenhulpen.inconsistentie((String) v, $onderwerp));");
+
+    /**
+     * A plan with every consequence of the rules of a defaults stack (step 4 of card drl-teksttak-op-truth-maintenance),
+     * over the Wachter of the same document as {@link #plan}: the decision of the simple form on an attribute, computed
+     * and collapsed, with its fault and its control fact; the attribution of a characteristic and the decision not to
+     * attribute it, constants, each with its control fact; the decision of a reconciliation bound off the outcome of a
+     * member, inserted as an outcome; and the conflict of a reconciliation, under a constant key as an outcome and under
+     * the key of a member as the §9.5 inconsistency. No rule of it is meant to fire.
+     */
+    static Modelplan defaults(Class<?> wachter) {
+        List<Regelplan> regels = new ArrayList<>();
+        Onderwerp metBonus = new Onderwerp(wachter, O, List.of(), List.of(),
+                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+        regels.add(new Regelplan("default 0", "proefstapel", null,
+                tabel(new Lezing(0, Leessoort.INVOER, "uitkijkbonus", "$uitkijkbonus")), List.of(metBonus),
+                new Gevolg.Afloop(O, lees(0), List.of(0), 1, true, new Gevolg.Foutnaam("proefstapel", "proefstapel"),
+                        List.of(new Gevolg.Stapelfeit.Waarde(ElementSleutel.van("wachter", "uitkijkbonus", false),
+                                "proefstapel"), new Gevolg.Stapelfeit.Beslist("proefstapel", 0)),
+                        Gevolg.Invoeging.LOGISCH)));
+        Onderwerp onderwerp = new Onderwerp(wachter, O, List.of(), List.of(), List.of());
+        regels.add(new Regelplan("default 1", "proefstapel", null, tabel(), List.of(onderwerp),
+                new Gevolg.Afloop(O, new Term.Const(Boolean.TRUE, null, null), List.of(), 0, false, null,
+                        List.of(new Gevolg.Stapelfeit.Kenmerk(ElementSleutel.van("wachter", "waakzaam", true)),
+                                new Gevolg.Stapelfeit.Beslist("proefstapel", 1)), Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("default 2", "proefstapel", null, tabel(), List.of(onderwerp),
+                new Gevolg.Afloop(O, new Term.Const(Boolean.FALSE, null, null), List.of(), 0, false, null,
+                        List.of(new Gevolg.Stapelfeit.Beslist("proefstapel", 2)), Gevolg.Invoeging.LOGISCH)));
+        Patroon besluit = new Patroon(Uitkomst.class, "$besluit", List.of(new Alfa("lid-besluit", List.of(
+                new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, Uitkomst.Soort.BESLIST)))), List.of(),
+                List.of(Binding.van(O, Uitkomst.class, "onderwerp"), Binding.van("$waarde", Uitkomst.class, "waarde")));
+        regels.add(new Regelplan("eens 0", "proefstapel", null, tabel(new Lezing(0, Leessoort.BESLUIT, "besluit",
+                "$waarde")), List.of(besluit), new Gevolg.Afloop(O, lees(0), List.of(0), 1, false, null,
+                List.of(new Gevolg.Stapelfeit.Uitkomst("proefstapel", 1, 2, Uitkomst.Soort.BESLIST)),
+                Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("verschil 0", "proefstapel", null, tabel(), List.of(onderwerp),
+                new Gevolg.Conflict(O, tekst("proefstapel/0"), List.of(), 0,
+                        new Gevolg.Stapelfeit.Uitkomst("proefstapel", 0, 1, Uitkomst.Soort.CONFLICT),
+                        Gevolg.Invoeging.LOGISCH)));
+        Patroon conflict = new Patroon(Uitkomst.class, "$conflict", List.of(new Alfa("lid-conflict", List.of(
+                new Alfa.Veldtoets("soort", Alfa.Vergelijker.GELIJK, Uitkomst.Soort.CONFLICT)))), List.of(),
+                List.of(Binding.van(O, Uitkomst.class, "onderwerp"), Binding.van("$sleutel", Uitkomst.class, "sleutel")));
+        regels.add(new Regelplan("doorgeven wortel", "proefstapel", null, tabel(new Lezing(0, Leessoort.CONFLICTSLEUTEL,
+                "conflictsleutel", "$sleutel")), List.of(conflict), new Gevolg.Conflict(O, lees(0), List.of(0), 1,
+                new Gevolg.Stapelfeit.Inconsistentie(), Gevolg.Invoeging.LOGISCH)));
         return new Modelplan(List.of(), regels);
     }
 
