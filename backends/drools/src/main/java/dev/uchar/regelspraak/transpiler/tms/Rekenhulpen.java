@@ -969,6 +969,38 @@ public final class Rekenhulpen {
         return diepte;
     }
 
+    /** A new bean of the class named {@code klasse}, by its public constructor without arguments, every member unset:
+     *  the construction of an object creation ({@code plan.Gevolg.Constructie}) in a DRL text, which names a bean class
+     *  and cannot load one, since the text does not see the beans. The class is loaded by the class loader of
+     *  {@code onderwerp}, the bean of the creation's subject: within a session every bean is of the build's bean loader
+     *  ({@code DroolsBackend.voegIn}). A class that does not load, or that has no public constructor without arguments,
+     *  fails loudly with its name. */
+    public static Object nieuwObject(Object onderwerp, String klasse) {
+        Class<?> k;
+        try {
+            k = Class.forName(klasse, true, onderwerp.getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("een objectcreatie maakt een " + klasse + ", maar de beanloader van haar"
+                    + " onderwerp laadt die klasse niet", e);
+        }
+        try {
+            return k.getConstructor().newInstance();
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException("een objectcreatie maakt een " + klasse + ", maar die klasse heeft geen"
+                    + " publieke constructor zonder argumenten", e);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("een objectcreatie kon geen " + klasse + " maken", e);
+        }
+    }
+
+    /** Sets the member whose bean property is {@code eigenschap} on the new bean {@code object} to {@code waarde}, where
+     *  that is not null, through the setter that {@code Namen.lidnamen} names ({@link Accessors#eigenschapSetter}): an
+     *  attribute initialisation of an object creation ({@code plan.Gevolg.Constructie.Zetting}), set before the bean is
+     *  inserted, so no rule ever sees the bean without it; a leeg value leaves the member unset. */
+    public static void zet(Object object, String eigenschap, Object waarde) {
+        if (waarde != null) Accessors.eigenschapSetter(object.getClass(), eigenschap).accept(object, waarde);
+    }
+
     /** The object a chain of to-one reference fields {@code velden}, bean properties, reaches from {@code start}, each
      *  read as {@link #lees} reads it; a broken link reads as null. */
     private static Object wandel(Object start, List<?> velden) {

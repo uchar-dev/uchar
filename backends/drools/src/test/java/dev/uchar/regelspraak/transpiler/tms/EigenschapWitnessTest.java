@@ -175,10 +175,16 @@ class EigenschapWitnessTest {
                 if (!m.getValue().equals(verwacht))
                     fouten.add(naam + " | " + m.getKey() + " " + m.getValue() + ", de generator " + verwacht);
             }
-            // the writer, read back through the generator's own getter
+            // the writers, read back through the generator's own getter: the setter, and the routes of a creation,
+            // which make a bean of the generator's class by its name and set the member on it
             meet(fouten, naam, "Accessors.eigenschapSetter", geschreven, () -> {
                 Accessors.eigenschapSetter(proef, e).accept(bean, geschreven);
                 return proef.getMethod(getter).invoke(bean);
+            });
+            meet(fouten, naam, "Rekenhulpen.zet", geschreven, () -> {
+                Object nieuw = Rekenhulpen.nieuwObject(bean, proef.getName());
+                Rekenhulpen.zet(nieuw, e, geschreven);
+                return proef.getMethod(getter).invoke(nieuw);
             });
             // the readers, of a value set through the generator's own setter
             proef.getMethod(setter, java.math.BigDecimal.class).invoke(bean, gezet);

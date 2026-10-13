@@ -30,13 +30,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * evaluation fault, joining texts, reading a bean and walking a path with null at an absent link, the tests of a
  * reading form, a validity window and a class by its name, the cell of a {@code Let} with its public
  * {@link Leegbarriere}, the verdict of a matrix, a broken contract, the fault of writers that disagree over lists, and
- * a list of a fixed number of values. The witness pins each route with its signature, which a rendering into DRL text
- * writes, what the three routes of the probe do, and what the routes of step 1e do. The rendering into closures calls
+ * a list of a fixed number of values; and none before step 5 the construction of an object creation's new bean, of a
+ * class the text names, and the setting of its attribute initialisations. The witness pins each route with its
+ * signature, which a rendering into DRL text writes, what the three routes of the probe do, what the routes of step 1e
+ * do, and what those of step 5 do. The rendering into closures calls
  * the same methods where it has a use for them ({@link PatternDslWeergave}, {@link ClosureWeergave}); that its
  * behaviour did not change is what the harness {@code Vuurspoor} shows.
  *
  * <p><b>Red</b> before the step: there was no {@code Route}, and this class did not compile. Before step 1e the routes
- * of that step did not exist, and the two tests over them did not compile.
+ * of that step did not exist, and the two tests over them did not compile; before step 5 neither did the routes of a
+ * creation, and their test did not compile.
  */
 class RouteWitnessTest {
 
@@ -74,6 +77,8 @@ class RouteWitnessTest {
                 "BIJDRAGE: Bijdrage Rekenhulpen.bijdrage[String, Object, Object, Object, String, boolean]",
                 "VOUWPLAATS: List Rekenhulpen.vouwplaats[Plaatsreden, String, Object, int, List, List, List]",
                 "CREATIEDIEPTE: int Rekenhulpen.creatiediepte[String, int, String, List, int]",
+                "NIEUW_OBJECT: Object Rekenhulpen.nieuwObject[Object, String]",
+                "ZET: void Rekenhulpen.zet[Object, String, Object]",
                 "IS_EVALUATIEFOUT: boolean Rekenhulpen.isEvaluatiefout[Object]",
                 "GEVANGEN: RuntimeException Rekenhulpen.gevangen[RuntimeException]",
                 "BENOEM: RuntimeException Rekenhulpen.benoem[Object, String]",
@@ -189,6 +194,39 @@ class RouteWitnessTest {
         assertEquals(List.of(), Rekenhulpen.lijst0());
         assertEquals(Arrays.asList(1, null, 3), Rekenhulpen.lijst3(1, null, 3));
         assertEquals(List.of(1, 2, 3, 4, 5, 6), Rekenhulpen.lijst6(1, 2, 3, 4, 5, 6));
+    }
+
+    /** The routes of a creation: a new bean of a class by its name, through the class loader of the subject's bean;
+     *  a class that does not load and one without a public constructor without arguments fail with their names; an
+     *  attribute set through the setter of the property, and a leeg value left unset. */
+    @Test void de_routes_van_een_creatie() {
+        Lid onderwerp = new Lid(null, BigDecimal.ONE);
+        Object nieuw = Rekenhulpen.nieuwObject(onderwerp, Nieuw.class.getName());
+        assertTrue(nieuw instanceof Nieuw, () -> "een " + nieuw.getClass());
+        assertTrue(assertThrows(IllegalStateException.class, () -> Rekenhulpen.nieuwObject(onderwerp,
+                "dev.uchar.regelspraak.facts.Bestaatniet")).getMessage().contains("dev.uchar.regelspraak.facts.Bestaatniet"));
+        assertTrue(assertThrows(IllegalStateException.class, () -> Rekenhulpen.nieuwObject(onderwerp,
+                Lid.class.getName())).getMessage().contains(Lid.class.getName() + ", maar die klasse heeft geen publieke"
+                + " constructor zonder argumenten"));
+        Rekenhulpen.zet(nieuw, "bedrag", BigDecimal.TEN);
+        assertEquals(BigDecimal.TEN, ((Nieuw) nieuw).getBedrag());
+        Rekenhulpen.zet(nieuw, "bedrag", null);
+        assertEquals(BigDecimal.TEN, ((Nieuw) nieuw).getBedrag(), "een lege waarde laat het lid zoals het is");
+    }
+
+    /** A bean of a creation: a public constructor without arguments and a member with its setter. */
+    public static final class Nieuw {
+        private BigDecimal bedrag;
+
+        public Nieuw() {}
+
+        public BigDecimal getBedrag() {
+            return bedrag;
+        }
+
+        public void setBedrag(BigDecimal bedrag) {
+            this.bedrag = bedrag;
+        }
     }
 
     /** A bean with a member and a reference field, read by property. */

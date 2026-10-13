@@ -52,6 +52,12 @@ public enum Route {
     /** The creation depth of an object creation's new object, which {@link Gevolg.Creatiediepte} carries the arguments
      *  of; past the budget the fault at the making, {@code Creatiebudget}, whose constructor is not public. */
     CREATIEDIEPTE(Rekenhulpen.class, "creatiediepte"),
+    /** The new bean of an object creation, of the class the text names, loaded by the class loader of the subject's bean
+     *  ({@link Gevolg.Constructie}): a DRL text names a bean class and cannot load one. */
+    NIEUW_OBJECT(Rekenhulpen.class, "nieuwObject"),
+    /** An attribute initialisation set on the new bean of an object creation where its value is not null, through the
+     *  setter {@code Namen.lidnamen} names ({@link Gevolg.Constructie.Zetting}). */
+    ZET(Rekenhulpen.class, "zet"),
     /** Whether the outcome of an evaluation is an evaluation fault, which a consequence inserts as a fault. */
     IS_EVALUATIEFOUT(Rekenhulpen.class, "isEvaluatiefout"),
     /** An exception caught in an evaluation as its outcome where it is an evaluation fault; any other passes on. */
