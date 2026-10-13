@@ -63,6 +63,7 @@ class RouteWitnessTest {
                 "VERSE_SONDE: Object Rekenhulpen.sonde[]",
                 "MELD: void Rekenhulpen.meld[Object]",
                 "GEMELD: boolean Rekenhulpen.gemeld[Object]",
+                "IS_LEEG: boolean Rekenhulpen.isLeeg[Object]",
                 "REKENFOUT: Rekenfout Rekenhulpen.rekenfout[String, String]",
                 "INCONSISTENTIE: Object Rekenhulpen.inconsistentie[String, Object]",
                 "EMMERSCALAIR: Emmerscalair Rekenhulpen.emmerscalairVan[Object]",
@@ -87,11 +88,14 @@ class RouteWitnessTest {
                 "BINNEN: boolean Rekenhulpen.binnen[Object, String, String]",
                 "IS_EEN: boolean Rekenhulpen.isEen[Object, String]",
                 "KLASSE_NIET_IN: boolean Rekenhulpen.klasseNietIn[Object, List]",
+                "KLASSE_IS: boolean Rekenhulpen.klasseIs[Object, String]",
                 "BINDERCEL: Object Rekenhulpen.bindercel[]",
                 "BINDERCEL_GEVULD: boolean Rekenhulpen.bindercelGevuld[Object]",
                 "VUL_BINDERCEL: Object Rekenhulpen.vulBindercel[Object, Object]",
                 "BINDERWAARDE: Object Rekenhulpen.binderwaarde[Object]",
                 "OPGEVANGEN: Object Rekenhulpen.opgevangen[Leegbarriere, Object]",
+                "VASTGESTELD: Boolean Rekenhulpen.vastgesteld[Kwantor, int, int, int, int]",
+                "EINDOORDEEL: boolean Rekenhulpen.eindoordeel[Kwantor, int, long, long]",
                 "OORDEEL: BigDecimal Rekenhulpen.oordeel[boolean]",
                 "CONTRACTBREUK: Object Rekenhulpen.contractbreuk[String]",
                 "SCHRIJVERSCONFLICT: Fout Rekenhulpen.schrijversconflict[Object, Object, String, List, List, List]",
@@ -158,6 +162,8 @@ class RouteWitnessTest {
         assertFalse(Rekenhulpen.isEen(null, "java.lang.Object"));
         assertTrue(Rekenhulpen.klasseNietIn(new ArrayList<>(), List.of("java.util.AbstractList")));
         assertFalse(Rekenhulpen.klasseNietIn(new ArrayList<>(), List.of("java.util.LinkedList", "java.util.ArrayList")));
+        assertTrue(Rekenhulpen.klasseIs(new ArrayList<>(), "java.util.ArrayList"));
+        assertFalse(Rekenhulpen.klasseIs(new ArrayList<>(), "java.util.AbstractList"));
         LocalDate dag = LocalDate.of(2026, 1, 1);
         assertTrue(Rekenhulpen.binnen(dag, "2026-01-01", null));
         assertFalse(Rekenhulpen.binnen(dag, null, "2025-12-31"));

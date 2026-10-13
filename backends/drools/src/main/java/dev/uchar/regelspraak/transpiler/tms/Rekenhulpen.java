@@ -760,6 +760,12 @@ public final class Rekenhulpen {
         return !klassen.contains(object.getClass().getName());
     }
 
+    /** Whether the own class of {@code object}, exactly, has the name {@code klasse} ({@code Alfa.Vergelijker.KLASSE_IS}).
+     *  A name stands for one class here, as for {@link #klasseNietIn}. */
+    public static boolean klasseIs(Object object, String klasse) {
+        return object.getClass().getName().equals(klasse);
+    }
+
     private static boolean heetOfErft(Class<?> c, String naam) {
         if (c == null) return false;
         if (c.getName().equals(naam)) return true;

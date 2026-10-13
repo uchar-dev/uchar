@@ -21,6 +21,9 @@ public enum Route {
     MELD(Rekenhulpen.class, "meld"),
     /** Whether the probe heard a place: the verdict of a test of deposits, and the deposit of a consequence. */
     GEMELD(Rekenhulpen.class, "gemeld"),
+    /** Whether a computed value is leeg, null or a timeline without a segment: a {@link Gevolg.Waarde} inserts it only
+     *  where it is not, or where the plan writes leeg. */
+    IS_LEEG(Rekenhulpen.class, "isLeeg"),
     /** The evaluation fault of a fixed sentence, named in a rule, which {@link Gevolg.Fout} inserts. */
     REKENFOUT(Rekenhulpen.class, "rekenfout"),
     /** The §9.5 inconsistency of a form on an object, which {@link Gevolg.Inconsistentie} and the deposit of a
@@ -77,6 +80,8 @@ public enum Route {
     IS_EEN(Rekenhulpen.class, "isEen"),
     /** Whether the own class of an object has none of the names ({@link Alfa.Vergelijker#KLASSE_NIET_IN}). */
     KLASSE_NIET_IN(Rekenhulpen.class, "klasseNietIn"),
+    /** Whether the own class of an object, exactly, has a name ({@link Alfa.Vergelijker#KLASSE_IS}). */
+    KLASSE_IS(Rekenhulpen.class, "klasseIs"),
     /** A fresh cell for the binder of one evaluation of a {@link Term.Let}. */
     BINDERCEL(Rekenhulpen.class, "bindercel"),
     /** Whether the cell of a binder holds its value. */
@@ -87,6 +92,11 @@ public enum Route {
     BINDERWAARDE(Rekenhulpen.class, "binderwaarde"),
     /** The outcome of a {@code Let} its barrier ended: leeg where the barrier is its own; another passes on. */
     OPGEVANGEN(Rekenhulpen.class, "opgevangen"),
+    /** The verdict of a composite once some of its members are read, or none while the rest can change it: the stop
+     *  triggers before each member ({@link Term.Samengesteld}). */
+    VASTGESTELD(Rekenhulpen.class, "vastgesteld"),
+    /** The verdict of a composite whose members are all read ({@link Term.Samengesteld}). */
+    EINDOORDEEL(Rekenhulpen.class, "eindoordeel"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Gevolg.Inbreng.Oordeel}). */
     OORDEEL(Rekenhulpen.class, "oordeel"),
     /** A broken contract, thrown: no evaluation fault. */
