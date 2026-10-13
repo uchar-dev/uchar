@@ -57,7 +57,9 @@ import java.util.TreeSet;
  *       function it stands in.</li>
  *   <li>The constraints that decide which fact a pattern matches stay DRL constraints: the key of a fact, a null
  *       test, the rank of a control fact and an identity join, so that Drools indexes them. A test of a class goes
- *       through a route, since the text imports no bean class.</li>
+ *       through a route, since the text imports no bean class. A member of a bean stands as the name Drools reads
+ *       the generator's getter under ({@code Namen.lidnamen}); a member Drools reads as something else under that
+ *       name, a word of DRL or MVEL, is refused by name.</li>
  *   <li>A join meets nothing where a side reads null, as the identity join of the executable model does: where the
  *       pattern's side is a field and the other side can read null, a field of an object or a value a binding binds,
  *       the join tests the field for null first, since DRL finds two nulls equal.</li>
@@ -421,7 +423,7 @@ final class DrlWeergave {
                                List<Betatoets> betatoetsen, List<Alfa> naAlfa, List<Binding> bindingen) {
             List<String> c = new ArrayList<>();
             for (Alfa a : alfa) c.add(alfa(klasse, a));
-            for (Join j : joins) c.addAll(join(j));
+            for (Join j : joins) c.addAll(join(klasse, j));
             for (Betatoets b : betatoetsen) c.add(betatoets(b));
             for (Alfa a : naAlfa) c.add(alfa(klasse, a));
             for (Binding b : bindingen) c.add(binding(klasse, b));
@@ -457,9 +459,10 @@ final class DrlWeergave {
         /** An identity join, which meets nothing where a side reads null ({@link Join}): where the pattern's side is a
          *  field and the other side can read null, a field of an object or a value that is no pattern's object, the
          *  field is tested for null first, since DRL finds two nulls equal. */
-        private List<String> join(Join j) {
-            String links = j.veld() == null ? "this" : j.eigenschap();
-            String rechts = j.doelveld() == null ? j.doel() : j.doel() + "." + j.doelveld().eigenschap();
+        private List<String> join(Class<?> klasse, Join j) {
+            String links = j.veld() == null ? "this" : veldnaam(klasse, j.eigenschap(), j.veld());
+            String rechts = j.doelveld() == null ? j.doel() : j.doel() + "." + veldnaam(j.doelveld().klasse(),
+                    j.doelveld().eigenschap(), j.doelveld().naam());
             boolean rechtsLeeg = j.doelveld() != null || !patroonvariabelen.contains(j.doel());
             List<String> uit = new ArrayList<>();
             if (j.veld() != null && rechtsLeeg) uit.add(links + " != null");
@@ -486,8 +489,8 @@ final class DrlWeergave {
             return naam + "(this, " + b.doel() + ")";
         }
 
-        /** A value a pattern binds: a field of a fact of the branch as it is; a member of a bean by its property, or by
-         *  the route {@code lees} where the pattern's class does not declare it, read as its form says; along a path
+        /** A value a pattern binds: a field of a fact of the branch as it is; a member of a bean by its name in DRL,
+         *  or by the route {@code lees} where the pattern's class does not declare it, read as its form says; along a path
          *  a function that walks it. */
         private String binding(Class<?> klasse, Binding b) {
             if (!b.pad().isEmpty())
@@ -498,9 +501,21 @@ final class DrlWeergave {
                 return b.doel() + " : " + b.veld().eigenschap();
             }
             boolean eigen = b.veld().klasse().isAssignableFrom(klasse);
-            String lees = eigen ? b.veld().eigenschap() : route(Route.LEES) + "(this, " + str(b.veld().eigenschap()) + ")";
+            String lees = eigen ? veldnaam(klasse, b.veld().eigenschap(), b.veld().naam())
+                    : route(Route.LEES) + "(this, " + str(b.veld().eigenschap()) + ")";
             if (b.vorm() == Binding.Leesvorm.WAARDE) return b.doel() + " : " + (eigen ? lees : "(" + lees + ")");
             return b.doel() + " : (" + leesvorm(lees, b.vorm(), b.soort()) + ")";
+        }
+
+        /** How the text spells the field {@code eigenschap} of an object of {@code klasse}: a component of a fact of
+         *  the branch by its name, a member of a bean by the name Drools reads its getter under
+         *  ({@code Namen.lidnamen}); a member {@code naam} that Drools reads as something else where a pattern spells
+         *  its name is refused, by name, since a constraint on it could hold or fail without a word. */
+        private String veldnaam(Class<?> klasse, String eigenschap, String naam) {
+            if (!isBean(klasse)) return eigenschap;
+            String drl = Namen.lidnamen(eigenschap).drlEigenschap();
+            if (drl == null) throw new Weigering("het lid " + str(naam));
+            return drl;
         }
 
         /** {@code lees} read as {@code vorm}, through its route. */
@@ -548,7 +563,7 @@ final class DrlWeergave {
                 // a member the pattern's class does not declare is read through the class of the object itself
                 String basis = t.veld() == null ? "this"
                         : t.declarant() != null ? route(Route.LEES) + "(this, " + str(t.eigenschap()) + ")"
-                        : t.eigenschap();
+                        : veldnaam(klasse, t.eigenschap(), t.veld());
                 lees = leesvorm(basis, t.vorm(), null);
             }
             Object w = t.waarde();

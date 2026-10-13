@@ -59,8 +59,19 @@ public final class Namen {
 
     /** The Java names of a bean member besides its field, the property: the {@code get} and the {@code is} form of its
      *  getter, of which the generator writes the {@code is} form for a scalar characteristic and the {@code get} form
-     *  for every other member, and its setter. */
-    public record Lidnamen(String getter, String isGetter, String setter) {}
+     *  for every other member; its setter; and the name a DRL text spells the member by, the property Drools reads
+     *  the getter under, or null where Drools reads that name as something else in some place of a pattern. */
+    public record Lidnamen(String getter, String isGetter, String setter, String drlEigenschap) {}
+
+    /** The names of members Drools 8.44 does not read as the member where a DRL pattern spells them: as a binding, as
+     *  the left side of a constraint, and after another pattern's variable ({@code DrlEigenschapWitnessTest}, over 113
+     *  names: the words of DRL and of MVEL, the implicit variables of a consequence, and plain names). As the left side
+     *  of a constraint these fail to compile, or, for {@code drools}, {@code kcontext} and {@code nil}, compile and
+     *  read something else, so that the constraint never holds. Every other name the measurement read as the member
+     *  in each place, also where a global of the text has the same name. */
+    private static final java.util.Set<String> GEEN_DRL_EIGENSCHAP = java.util.Set.of("and", "contains", "def",
+            "drools", "empty", "foreach", "function", "in", "is", "isdef", "kcontext", "nil", "or", "soundslike",
+            "strsim", "until", "var", "with");
 
     /** The Java names of the member whose bean property is {@code eigenschap} ({@link #eigenschap}): {@code get},
      *  {@code is} and {@code set}, each followed by the property with its first character in upper case and the rest
@@ -70,10 +81,14 @@ public final class Namen {
      *  declared name gives {@code getİş} for "İş", whose property is {@code iş} (the lower case of {@code İ} is
      *  {@code i}) and whose getter is {@code getIş}; and {@code RegelSpraakRuntime.pascal} of the property reads
      *  {@code 日X}, of "日 X", as a shouted word and gives {@code get日x}. {@code EigenschapWitnessTest} holds the
-     *  names of each reader and writer to the generator's, on a bean the generator wrote and the compiler compiled. */
+     *  names of each reader and writer to the generator's, on a bean the generator wrote and the compiler compiled;
+     *  {@code DrlEigenschapWitnessTest} holds the DRL name to what Drools reads, on such a bean. */
     public static Lidnamen lidnamen(String eigenschap) {
         String stam = Character.toUpperCase(eigenschap.charAt(0)) + eigenschap.substring(1);
-        return new Lidnamen("get" + stam, "is" + stam, "set" + stam);
+        // Drools names a getter's property by the stem with its first letter in lower case, which is not always the
+        // property the stem came from: ışık gives the stem Işık, which Drools reads as işık and not as ışık (measured)
+        String drl = Character.toLowerCase(stam.charAt(0)) + stam.substring(1);
+        return new Lidnamen("get" + stam, "is" + stam, "set" + stam, GEEN_DRL_EIGENSCHAP.contains(drl) ? null : drl);
     }
 
     /** A §9.3 regelnaam spliced inside DRL double quotes: {@code \} and {@code "} would end the string (or

@@ -225,7 +225,7 @@ class EigenschapWitnessTest {
     }
 
     /** A document whose object type {@code Proef} has a number attribute for each of {@code namen}. */
-    private static String proefdocument(List<String> namen) {
+    static String proefdocument(List<String> namen) {
         StringBuilder attributen = new StringBuilder();
         for (String n : namen)
             attributen.append(attributen.isEmpty() ? "" : ", ").append("{\"node\": \"Attribute\", \"name\": ")
