@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-06-01",
+  "input": {
+    "instances": [
+      {
+        "label": "M",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vergunning geweigerd",
+          "weigering herroepen",
+          "herroeping vervallen"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "M",
+      "characteristic": "uitgesloten"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "M",
+      "characteristic": "penninggerechtigd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
