@@ -16,6 +16,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
 import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.drools.model.DSL;
@@ -217,7 +218,7 @@ final class PatternDslWeergave {
      *  and the route that makes one key, or one per value a component on a timeline ever carries. */
     private RuleItemBuilder<?> uniciteitssleutel(Gevolg.Uniciteitssleutel g) {
         List<Waardefunctie> componenten = new ArrayList<>();
-        for (dev.uchar.regelspraak.transpiler.tms.plan.Term t : g.componenten())
+        for (Term t : g.componenten())
             componenten.add(ClosureWeergave.waardefunctie(t));
         return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, element, w) -> {
             List<Object> waarden = new ArrayList<>(componenten.size());
@@ -231,7 +232,7 @@ final class PatternDslWeergave {
 
     /** The slots a consequence reads, each once and in ascending order, without -1, which stands for none. */
     private static List<Integer> slotsVan(int... slots) {
-        return java.util.Arrays.stream(slots).filter(i -> i >= 0).distinct().sorted().boxed().toList();
+        return Arrays.stream(slots).filter(i -> i >= 0).distinct().sorted().boxed().toList();
     }
 
     /** The value in slot {@code slot} of {@code w}, null for the slot -1. */
