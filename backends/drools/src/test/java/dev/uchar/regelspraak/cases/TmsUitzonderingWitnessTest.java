@@ -2,9 +2,11 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.uchar.regelspraak.transpiler.tms.Stuurfeit;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import dev.uchar.regelspraak.transpiler.tms.Uitkomst;
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.KieBase;
 import org.kie.api.event.rule.ObjectDeletedEvent;
 import org.kie.api.event.rule.ObjectInsertedEvent;
 import org.kie.api.event.rule.ObjectUpdatedEvent;
@@ -54,6 +56,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * sample failed on the build, "elke_volgorde_van_de_regels_in_het_document:113 » Excluded tms-transpiler SKIP: defaults:
  * heffing van een jutter — een PrioritizedDefaults: de truth-maintenance-tak draagt deze vorm nog niet"; the exec-model
  * branch passed the same case.
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; acceptance (a), the
+ * unordered defaults with §9.5 and the nested exception groups of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2): every order of
+ * the document's rules plays on the exec-model branch and on {@code DRL_TMS}, and the sample of orders runs on both, on
+ * {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}); a control fact must be withdrawn on
+ * the way there too. <b>Red</b> on {@code e2bd685e}, before step 4: both tests failed on {@code DRL_TMS} with "drl-tms:
+ * de DRL-weergave draagt Afloop nog niet".
  */
 class TmsUitzonderingWitnessTest {
 
@@ -111,48 +120,66 @@ class TmsUitzonderingWitnessTest {
     }
 
     @Test void elke_volgorde_van_de_regels_in_het_document() throws Exception {
+        int volgordes = 0;
         for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
             List<String> namen = TmsDocumenten.regelnamen(volgorde);
-            assertNull(CaseRunner.speelCase(document(volgorde), zaak(), DroolsBackend.Branch.EXEC_MODEL),
-                    () -> "volgorde " + namen);
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+                assertNull(CaseRunner.speelCase(document(volgorde), zaak(), tak), () -> tak + ": volgorde " + namen);
+                volgordes++;
+            }
         }
+        assertEquals(4, volgordes);
     }
 
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         DroolsBackend.Build b = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.EXEC_MODEL);
         List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
         int[] ingetrokken = {0};
-        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100)) {
-            List<String> namen = volgorde.stream().map(Rule::getName).toList();
-            Map<Object, String> labels = new IdentityHashMap<>();
-            List<Object> bonen = new ArrayList<>();
-            for (Map.Entry<String, Geval> e : GEVALLEN.entrySet()) {
-                Object boon = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), e.getValue().kenmerken());
-                labels.put(boon, e.getKey());
-                bonen.add(boon);
-            }
-            List<String> conflicten = new ArrayList<>();
-            TmsDocumenten.vuur(b, volgorde, bonen, sessie -> sessie.addEventListener(new RuleRuntimeEventListener() {
-                @Override public void objectInserted(ObjectInsertedEvent e) { }
-                @Override public void objectUpdated(ObjectUpdatedEvent e) { }
-                @Override public void objectDeleted(ObjectDeletedEvent e) {
-                    if (e.getOldObject() instanceof Uitkomst) ingetrokken[0]++;
-                }
-            }), sessie -> {
-                conflicten.addAll(TmsDocumenten.inconsistenties(sessie, labels));
-                for (Object f : sessie.getObjects(o -> o instanceof Stuurfeit))
-                    assertTrue(f instanceof Uitkomst, () -> "een algemene groep zet alleen Uitkomst in: " + f);
-            });
-            List<String> verwacht = new ArrayList<>();
-            GEVALLEN.forEach((label, g) -> { if (g.conflict() != null) verwacht.add(g.conflict() + " @ " + label); });
-            verwacht.sort(null);
-            assertEquals(verwacht, conflicten, () -> "conflicten in volgorde " + namen);
-            for (Object boon : bonen) {
-                Geval g = GEVALLEN.get(labels.get(boon));
-                assertEquals(g.heffing() == null ? null : new BigDecimal(g.heffing()), TmsDocumenten.lees(boon, "heffing"),
-                        () -> labels.get(boon) + " heffing in volgorde " + namen);
-            }
-        }
+        for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261008L, 100))
+            vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName).toList(),
+                    ingetrokken);
         assertTrue(ingetrokken[0] > 0, "geen volgorde trok een stuurfeit in: de steekproef liep geen tussenstand langs");
+        DroolsBackend.Build t = DroolsBackend.build(document(REGELS), DroolsBackend.Branch.DRL_TMS);
+        List<String> regels = Tekstvolgorde.regels(t);
+        assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, "de regels van de tekst");
+        int[] inDeTekst = {0};
+        for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261008L, 100))
+            vuurSteekproef(t, Tekstvolgorde.kieBase(t, volgorde), volgorde, inDeTekst);
+        assertTrue(inDeTekst[0] > 0, "geen volgorde van de tekst trok een stuurfeit in");
+    }
+
+    /** Fires the Jutters of {@link #GEVALLEN} through {@code kieBase}, the rules of {@code b} in the order {@code namen}:
+     *  the conflicts and the heffing of each are as pinned, and a general group inserts no other control fact than
+     *  {@code Uitkomst}; counts in {@code ingetrokken} the outcomes truth maintenance withdrew. */
+    private static void vuurSteekproef(DroolsBackend.Build b, KieBase kieBase, List<String> namen, int[] ingetrokken)
+            throws Exception {
+        Map<Object, String> labels = new IdentityHashMap<>();
+        List<Object> bonen = new ArrayList<>();
+        for (Map.Entry<String, Geval> e : GEVALLEN.entrySet()) {
+            Object boon = TmsDocumenten.boon(b.beanLoader(), "Jutter", Map.of(), e.getValue().kenmerken());
+            labels.put(boon, e.getKey());
+            bonen.add(boon);
+        }
+        List<String> conflicten = new ArrayList<>();
+        TmsDocumenten.vuur(b, kieBase, namen, bonen, sessie -> sessie.addEventListener(new RuleRuntimeEventListener() {
+            @Override public void objectInserted(ObjectInsertedEvent e) { }
+            @Override public void objectUpdated(ObjectUpdatedEvent e) { }
+            @Override public void objectDeleted(ObjectDeletedEvent e) {
+                if (e.getOldObject() instanceof Uitkomst) ingetrokken[0]++;
+            }
+        }), sessie -> {
+            conflicten.addAll(TmsDocumenten.inconsistenties(sessie, labels));
+            for (Object f : sessie.getObjects(o -> o instanceof Stuurfeit))
+                assertTrue(f instanceof Uitkomst, () -> "een algemene groep zet alleen Uitkomst in: " + f);
+        });
+        List<String> verwacht = new ArrayList<>();
+        GEVALLEN.forEach((label, g) -> { if (g.conflict() != null) verwacht.add(g.conflict() + " @ " + label); });
+        verwacht.sort(null);
+        assertEquals(verwacht, conflicten, () -> "conflicten op " + b.branch() + " in volgorde " + namen);
+        for (Object boon : bonen) {
+            Geval g = GEVALLEN.get(labels.get(boon));
+            assertEquals(g.heffing() == null ? null : new BigDecimal(g.heffing()), TmsDocumenten.lees(boon, "heffing"),
+                    () -> labels.get(boon) + " heffing op " + b.branch() + " in volgorde " + namen);
+        }
     }
 }
