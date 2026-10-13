@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
+import dev.uchar.regelspraak.transpiler.tms.plan.Betatoets;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
@@ -138,6 +139,7 @@ final class PatternDslWeergave {
             throw new IllegalStateException("de variabele " + o.naam() + " wordt twee keer gebonden");
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alfa a : o.alfa()) def = def.expr(a.id(), predicaat(o.bonenklasse(), a));
+        for (Join j : o.joins()) def = join(def, o.bonenklasse(), j);
         for (Binding b : o.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
         return def;
     }
@@ -192,7 +194,55 @@ final class PatternDslWeergave {
                             voegIn(drools, x.invoeging(), new PadStand(a[0], x.pad(), x.lid(), null)))
                     : new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarde())}, (drools, a) ->
                             voegIn(drools, x.invoeging(), new PadStand(a[0], x.pad(), x.lid(), a[1])));
+            case Gevolg.Uniciteitssleutel x -> uniciteitssleutel(x);
+            case Gevolg.Uniciteitsschending x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new Uniciteitsschending(x.uniciteit(), a[0])));
+            case Gevolg.Invoervormfout x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new Fout(a[0], x.fout().vorm(),
+                            Rekenhulpen.invoervormfout(x.voor(), a[0], x.na(), x.fout().regel()))));
+            case Gevolg.Kanaalstand x -> new Consequentie(new Variable[0], (drools, a) ->
+                    voegIn(drools, x.invoeging(), new KanaalStand(x.producent(), x.inconsistent())));
+            case Gevolg.Ontvanger x -> consequentie(x.onderwerp(), slotsVan(x.ontvanger(), x.gewicht(), x.sleutel(),
+                    x.maximum()), (drools, bron, w) -> voegIn(drools, x.invoeging(), new Ontvanger(x.verdeling(), bron,
+                    w[x.ontvanger()], lees(w, x.gewicht()), lees(w, x.sleutel()), lees(w, x.maximum()))));
+            case Gevolg.Uitdeling x -> consequentie(x.onderwerp(), slotsVan(x.pot(), x.lijst()), (drools, bron, w) -> {
+                for (Object feit : Rekenhulpen.uitdeling(x.vorm(), bron, x.methode(), w[x.pot()], w[x.lijst()],
+                        x.gewogen(), x.gemaximeerd(), x.afnemend(), x.decimalen(), x.aandeel(), x.rest(), x.schrijver()))
+                    voegIn(drools, x.invoeging(), feit);
+            });
         };
+    }
+
+    /** The keys of {@link Gevolg.Uniciteitssleutel}: the components computed from the bound values, the parent bound,
+     *  and the route that makes one key, or one per value a component on a timeline ever carries. */
+    private RuleItemBuilder<?> uniciteitssleutel(Gevolg.Uniciteitssleutel g) {
+        List<Waardefunctie> componenten = new ArrayList<>();
+        for (dev.uchar.regelspraak.transpiler.tms.plan.Term t : g.componenten())
+            componenten.add(ClosureWeergave.waardefunctie(t));
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, element, w) -> {
+            List<Object> waarden = new ArrayList<>(componenten.size());
+            for (Waardefunctie c : componenten) waarden.add(c.van(w));
+            Object ouder = g.scope() < 0 ? null : w[g.scope()];
+            for (Uniciteitssleutel k : Rekenhulpen.uniciteitssleutels(g.uniciteit(), g.bron(), element, ouder, waarden,
+                    g.tijdlijn()))
+                voegIn(drools, g.invoeging(), k);
+        });
+    }
+
+    /** The slots a consequence reads, each once and in ascending order, without -1, which stands for none. */
+    private static List<Integer> slotsVan(int... slots) {
+        return java.util.Arrays.stream(slots).filter(i -> i >= 0).distinct().sorted().boxed().toList();
+    }
+
+    /** The value in slot {@code slot} of {@code w}, null for the slot -1. */
+    private static Object lees(Object[] w, int slot) {
+        return slot < 0 ? null : w[slot];
+    }
+
+    /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array that
+     *  reaches the last of them. */
+    private RuleItemBuilder<?> consequentie(String onderwerp, List<Integer> slots, Gevolgfunctie f) {
+        return consequentie(onderwerp, slots, slots.isEmpty() ? 0 : slots.get(slots.size() - 1) + 1, f);
     }
 
     /** The value of {@link Gevolg.Waarde}: computed from the bound values, with its fault, its deposit and its leeg
@@ -331,9 +381,20 @@ final class PatternDslWeergave {
         Variable<Object> v = (Variable<Object>) DSL.declarationOf(p.feitklasse(), p.naam());
         PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
         for (Alfa a : p.alfa()) def = def.expr(a.id(), predicaat(p.feitklasse(), a));
-        for (Join j : p.joins()) def = zelfde(def, j.id(), bekend(j.doel()), veld(p.feitklasse(), j.veld()), o -> o);
+        for (Join j : p.joins()) def = join(def, p.feitklasse(), j);
+        for (Betatoets t : p.betatoetsen())
+            def = def.expr(t.id(), bekend(t.doel()), ClosureWeergave.betatoets(t.functie()));
         for (Binding b : p.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
         return new Weergegeven(v, def);
+    }
+
+    /** The identity join {@code j} on a pattern over {@code klasse}: the field it names of the pattern's object, or the
+     *  object itself, against the object its variable binds, or the reference field it names of that object. */
+    private PatternDSL.PatternDef<Object> join(PatternDSL.PatternDef<Object> def, Class<?> klasse, Join j) {
+        Function1<Object, Object> links = j.veld() == null ? x -> x : veld(klasse, j.veld());
+        Function1<Object, Object> rechts = j.doelveld() == null ? o -> o
+                : veld(j.doelveld().klasse(), j.doelveld().naam());
+        return zelfde(def, j.id(), bekend(j.doel()), links, rechts);
     }
 
     private RuleItemBuilder<?> bestaat(Bestaat b) {

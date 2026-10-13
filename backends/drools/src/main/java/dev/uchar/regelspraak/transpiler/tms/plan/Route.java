@@ -25,7 +25,16 @@ public enum Route {
     INCONSISTENTIE(Rekenhulpen.class, "inconsistentie"),
     /** An input timeline as the asOfDate-bucket scalar the case gave, which {@link Gevolg.Stand} carries where it says
      *  so. */
-    EMMERSCALAIR(Rekenhulpen.class, "emmerscalairVan");
+    EMMERSCALAIR(Rekenhulpen.class, "emmerscalairVan"),
+    /** The fault of the form of an input, its sentence around the object, named in a rule, which
+     *  {@link Gevolg.Invoervormfout} inserts. */
+    INVOERVORMFOUT(Rekenhulpen.class, "invoervormfout"),
+    /** The keys of an instance in a source of a uniqueness, one per value a component on a timeline ever carries, which
+     *  {@link Gevolg.Uniciteitssleutel} inserts. */
+    UNICITEITSSLEUTELS(Rekenhulpen.class, "uniciteitssleutels"),
+    /** The facts of the distribution of an allocation over the recipients of one source, computed by
+     *  {@code Verdeling.bereken}: its deposits, its shares and its rest, which {@link Gevolg.Uitdeling} inserts. */
+    UITDELING(Rekenhulpen.class, "uitdeling");
 
     private final Class<?> klasse;
     private final String methode;

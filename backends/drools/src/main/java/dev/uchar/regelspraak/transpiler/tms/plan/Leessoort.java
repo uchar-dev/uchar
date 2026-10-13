@@ -76,5 +76,8 @@ public enum Leessoort {
     AFLEIDING,
     /** The standing of a member on the object a path reaches, off its {@code Stand} or {@code KenmerkStand}: what the
      *  standing of the path carries ({@code TmsTranspiler.padstandregels}). */
-    BEREIKTE_STAND
+    BEREIKTE_STAND,
+    /** The number of keys of a uniqueness that collide with the key the rule binds, itself included, off an accumulate
+     *  ({@code TmsTranspiler.uniciteitsregels}). */
+    BOTSINGEN
 }

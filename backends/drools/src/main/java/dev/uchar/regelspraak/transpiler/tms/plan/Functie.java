@@ -196,7 +196,13 @@ public enum Functie {
     DOEL_LEEG(Rekenhulpen.class, "doelLeeg", false),
     /** Whether the value facts on one attribute of one object hold two different values, leeg among them, numbers by
      *  value (RUNTIME-SEMANTICS ch. 5.7). A test a form composes itself. */
-    VERSCHILLEN(Rekenhulpen.class, "verschillen", false);
+    VERSCHILLEN(Rekenhulpen.class, "verschillen", false),
+    /** Whether more than one key of a uniqueness collides with a key, by the count of the keys that collide with it,
+     *  itself included (RUNTIME-SEMANTICS ch. 5.9): the test of the rule that finds a duplicate. */
+    DUBBEL(Rekenhulpen.class, "dubbel", false),
+    /** Whether a key of a uniqueness is the same key of one form as the key another pattern binds
+     *  ({@code Uniciteitssleutel.botstMet}): a constraint between the two ({@link Betatoets}). */
+    BOTST_MET(Rekenhulpen.class, "botstMet", false);
 
     private final Class<?> klasse;
     private final String methode;

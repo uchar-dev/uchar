@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Every route of the plan ({@link Route}) is a public static method of a public class, the only method of its name
  * there, so that a DRL text reaches it as an {@code import function} (card drl-teksttak-op-truth-maintenance, step
  * 1c-A2): a fresh probe, a report to it and its verdict, the fault of a fixed sentence, the inconsistency of a form and
- * the asOfDate-bucket scalar of an input had no public route before the step. The witness pins each route with its
+ * the asOfDate-bucket scalar of an input had no public route before the step; the fault of an input's form, the keys of
+ * a uniqueness and the facts of an allocation's distribution none before step 1c-B1. The witness pins each route with its
  * signature, which a rendering into DRL text writes, and what the three routes of the probe do. The rendering into
  * closures calls the same methods ({@link PatternDslWeergave}, {@link ClosureWeergave}); that its behaviour did not
  * change is what the harness {@code Vuurspoor} shows.
@@ -52,7 +53,11 @@ class RouteWitnessTest {
                 "GEMELD: boolean Rekenhulpen.gemeld[Object]",
                 "REKENFOUT: Rekenfout Rekenhulpen.rekenfout[String, String]",
                 "INCONSISTENTIE: Object Rekenhulpen.inconsistentie[String, Object]",
-                "EMMERSCALAIR: Emmerscalair Rekenhulpen.emmerscalairVan[Object]"), uit);
+                "EMMERSCALAIR: Emmerscalair Rekenhulpen.emmerscalairVan[Object]",
+                "INVOERVORMFOUT: Invoervormfout Rekenhulpen.invoervormfout[String, Object, String, String]",
+                "UNICITEITSSLEUTELS: List Rekenhulpen.uniciteitssleutels[String, int, Object, Object, List, int]",
+                "UITDELING: List Rekenhulpen.uitdeling[String, Object, Methode, Object, Object, boolean, boolean,"
+                        + " boolean, Integer, ElementSleutel, ElementSleutel, String]"), uit);
     }
 
     /** A fresh probe heard nothing; a report makes it heard; a report to an empty slot and the verdict of an empty slot

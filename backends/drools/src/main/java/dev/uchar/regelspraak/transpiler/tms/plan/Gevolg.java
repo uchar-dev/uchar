@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
 import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,10 +17,12 @@ import java.util.Map;
  *
  * <p>The kinds are those of the ordinary rules and the standings of parameters and the evaluation date (step 1c-A1 of
  * card drl-teksttak-op-truth-maintenance), and the standings of characteristics, attributes and paths (step 1c-A2),
- * where the source of a standing is a field ({@link Standbron}). The consequences of the other forms are kinds of their
- * own when their step plans them: a contribution to a fold and the intermediate facts of a fold's filter and members,
- * the key and the violation of a uniqueness, the recipient and the shares of an allocation, a creation and a link, the
- * control facts of a default; each names the fact it inserts and how, as these do.
+ * where the source of a standing is a field ({@link Standbron}), and those of a consistency, a uniqueness, the §9.5
+ * channel and an allocation (step 1c-B1): the key and the violation of a uniqueness, the fault of a key's form, the
+ * standing of a channel, the recipient of an allocation and its distribution, whose computation is a route
+ * ({@link Route}) the plan names with its arguments. The consequences of the other forms are kinds of their own when
+ * their step plans them: a contribution to a fold and the intermediate facts of a fold's filter and members, a creation
+ * and a link, the control facts of a default; each names the fact it inserts and how, as these do.
  */
 public sealed interface Gevolg {
 
@@ -154,4 +157,54 @@ public sealed interface Gevolg {
                         + " is leeg bij een ontbrekende link, zonder slot; niet " + bron + " met slot " + waarde);
         }
     }
+
+    /**
+     * The keys of the object {@code onderwerp} binds in source {@code bron} of the uniqueness {@code uniciteit}
+     * (RUNTIME-SEMANTICS ch. 5.6, 5.9), made by the route {@link Route#UNICITEITSSLEUTELS}: its key components in the
+     * source's order, each the value of its term in {@code componenten} over the value array of {@code grootte} slots
+     * with the bound values at {@code slots}, an enumeration label in its normalised form; the parent in slot
+     * {@code scope}, -1 for a form without a scope; and where the component at position {@code tijdlijn} is on a
+     * timeline (-1: none), one key per value that timeline ever carries (ever-uniqueness).
+     */
+    record Uniciteitssleutel(String onderwerp, String uniciteit, int bron, List<Term> componenten, int tijdlijn,
+                             int scope, List<Integer> slots, int grootte, Invoeging invoeging) implements Gevolg {
+        public Uniciteitssleutel {
+            componenten = List.copyOf(componenten);
+            slots = List.copyOf(slots);
+        }
+    }
+
+    /** The violation of the uniqueness {@code uniciteit} by the object {@code onderwerp} binds, a key of which is in a
+     *  duplicate (ch. 5.9). */
+    record Uniciteitsschending(String onderwerp, String uniciteit, Invoeging invoeging) implements Gevolg {}
+
+    /** The fault of the form of an input on the object {@code onderwerp} binds, the sentence {@code voor}, the object
+     *  and {@code na}, under {@code fout}, made by the route {@link Route#INVOERVORMFOUT}. */
+    record Invoervormfout(String onderwerp, String voor, String na, Foutnaam fout, Invoeging invoeging)
+            implements Gevolg {}
+
+    /** The standing of the §9.5 channel of the form {@code producent} (ch. 5.6), {@code inconsistent} or consistent: a
+     *  rule without a subject, whose left-hand side tests whether an inconsistency of that form stands. */
+    record Kanaalstand(String producent, boolean inconsistent, Invoeging invoeging) implements Gevolg {}
+
+    /** A recipient of the allocation {@code verdeling} for the source {@code onderwerp} binds (ch. 4.1): the recipient
+     *  in slot {@code ontvanger}, and its weight, its ordering key and its cap in the slots {@code gewicht},
+     *  {@code sleutel} and {@code maximum}, each -1 where the allocation declares none, so that the fact carries null
+     *  there. */
+    record Ontvanger(String onderwerp, String verdeling, int ontvanger, int gewicht, int sleutel, int maximum,
+                     Invoeging invoeging) implements Gevolg {}
+
+    /**
+     * The distribution of an allocation over the recipients of the source {@code onderwerp} binds (ch. 4.2 to 4.4),
+     * computed by the route {@link Route#UITDELING}, which calls {@code Verdeling.bereken}: by {@code methode}, of the
+     * pot in slot {@code pot} over the list of {@code Ontvanger} facts in slot {@code lijst}, {@code gewogen} where the
+     * allocation declares a ratio attribute, {@code gemaximeerd} where it declares a cap, {@code afnemend} the ordered
+     * method's direction, {@code decimalen} the floor's decimals (null: none). Each share is a value of {@code aandeel}
+     * on its recipient and the rest a value of {@code rest} on the source (null: the allocation writes no rest), both
+     * written by {@code schrijver}; each degradation is the §9.5 inconsistency of the form {@code vorm} on its
+     * recipient.
+     */
+    record Uitdeling(String onderwerp, String vorm, ResolvedVerdeling.Methode methode, int pot, int lijst,
+                     boolean gewogen, boolean gemaximeerd, boolean afnemend, Integer decimalen, ElementSleutel aandeel,
+                     ElementSleutel rest, String schrijver, Invoeging invoeging) implements Gevolg {}
 }

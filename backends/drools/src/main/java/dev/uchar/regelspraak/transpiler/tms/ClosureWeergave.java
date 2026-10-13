@@ -289,6 +289,13 @@ final class ClosureWeergave {
         };
     }
 
+    /** The constraint of a pattern ({@link dev.uchar.regelspraak.transpiler.tms.plan.Betatoets}) that calls
+     *  {@code functie} over the pattern's object and the object another pattern binds, in that order. */
+    static org.drools.model.functions.Predicate2<Object, Object> betatoets(Functie functie) {
+        Implementatie f = implementatie(functie);
+        return (x, o) -> (Boolean) f.van(new Object[]{x, o});
+    }
+
     /** A function of the plan as a call on evaluated arguments. */
     @FunctionalInterface
     private interface Implementatie {
@@ -381,6 +388,8 @@ final class ClosureWeergave {
             case EMMERSCALAIR -> x -> Rekenhulpen.emmerscalair(x[0], (Boolean) x[1]);
             case DOEL_LEEG -> x -> Rekenhulpen.doelLeeg(x[0], x[1]);
             case VERSCHILLEN -> x -> Rekenhulpen.verschillen(x[0]);
+            case DUBBEL -> x -> Rekenhulpen.dubbel(x[0]);
+            case BOTST_MET -> x -> Rekenhulpen.botstMet(x[0], x[1]);
         };
     }
 

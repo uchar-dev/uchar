@@ -1318,7 +1318,7 @@ public final class TmsTranspiler {
         return weergeef(new Regelplan("schrijvers " + lid.declarant().naam + "." + lid.naam() + ": verschil", null, null,
                 new Leestabel(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Lezing(0, Leessoort.WAARDEN,
                         "waarden", "$waarden"))),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of()),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()),
                         new Accumulatie(new Patroon(Waarde.class, "$waarde", List.of(vanDoel), List.of(opOnderwerp),
                                 List.of()), List.of(new Accumulatie.Functie(Accumulatie.Soort.LIJST, null, "$waarden"))),
                         verschil),
@@ -1438,20 +1438,19 @@ public final class TmsTranspiler {
         // the rule is named by the form, and the channel test reads the error facts by that name
         if (c.naam() == null) throw new Weigering("een consistentie zonder naam (WF-107)");
         if (c.subject() == null || c.assertie() == null) throw new Weigering("een consistentie zonder subject of assertie");
-        Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject()).geldig(c.geldigheid());
+        Supplier<Lezingen> nieuw = () -> new Lezingen(c.subject(), false).geldig(c.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Term houdt = voorwaarde(c.assertie(), lez);
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         Term geschonden = new Term.Aanroep(Functie.NIET, List.of(houdt), bron(c.assertie().bron()));
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), geschonden, gelezen, c.assertie());
+        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), geschonden, gelezen, c.assertie());
         String naam = c.naam();
-        items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                drools.logicalInsert(RegelSpraakRuntime.newInconsistentie(INCONSISTENTIE, naam, o))));
         lez.vastleggen();
         List<Rule> uit = new ArrayList<>();
-        uit.add(PatternDSL.rule(PKG, model.geëmitteerdeRegelNaam(naam)).build(items.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lez.regelplan(model.geëmitteerdeRegelNaam(naam), items,
+                new Gevolg.Inconsistentie(ONDERWERP, naam, Gevolg.Invoeging.LOGISCH))));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null));
         Rule deponering = deponeerregel(naam, model.geëmitteerdeRegelNaam(naam), nieuw, c.assertie(), null);
         if (deponering != null) uit.add(deponering);
@@ -5237,6 +5236,15 @@ public final class TmsTranspiler {
         Variable<Object> drager;
         /** The patterns before the subject pattern: the fold subject's in a contribution rule. */
         final List<RuleItemBuilder<?>> kop = new ArrayList<>();
+        /** In a rule that comes whole from its plan, the planned items before the subject pattern: the pattern of the
+         *  source of an allocation's recipient rule ({@link #kopPlan}). */
+        private final List<LhsItem> kopplan = new ArrayList<>();
+        /** In a rule that comes whole from its plan, the identity joins of the subject pattern to an object a planned
+         *  item before it binds ({@link #onderwerpJoin}). */
+        private final List<Join> onderwerpjoins = new ArrayList<>();
+        /** In a rule that comes whole from its plan, the planned items right after the subject pattern: the range of an
+         *  allocation over a relation a form creates ({@link #bereikPlan}). */
+        private final List<LhsItem> bereikplan = new ArrayList<>();
         /** The patterns right after the subject pattern: the existential intermediates of a multi-step range. */
         final List<RuleItemBuilder<?>> bereik = new ArrayList<>();
         /** The folds this rule reads, registered with it ({@link #vastleggen}). */
@@ -5336,23 +5344,49 @@ public final class TmsTranspiler {
          *  ({@link #linkerkanten}). */
         private void legVast(Toetsitem test) {
             List<LhsItem> plan = new ArrayList<>();
-            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpbindingen));
+            plan.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbindingen));
             plan.addAll(parameters);
             plan.addAll(standen);
             if (test != null) plan.add(test);
             linkerkanten.add(new Linkerkant(vorm, new Leestabel(slots), plan));
         }
 
-        /** The plan of this rule, {@code naam}, of the form being lowered: the subject pattern with its constraints and
-         *  bindings as they stand now, {@code items} after it, and {@code gevolg}. A rule that comes whole from its plan
-         *  has nothing before the subject pattern and no range after it, which only a contribution rule has. */
+        /** The plan of this rule, {@code naam}, of the form being lowered: the planned items before the subject
+         *  pattern, the subject pattern with its constraints, joins and bindings as they stand now, the planned items
+         *  right after it, {@code items} after those, and {@code gevolg}. A rule that comes whole from its plan has no
+         *  pattern built outside the plan before or after the subject pattern, which a contribution rule still has. */
         Regelplan regelplan(String naam, List<LhsItem> items, Gevolg gevolg) {
             if (!kop.isEmpty() || !bereik.isEmpty())
                 throw new IllegalStateException("een regel uit haar plan met patronen buiten het plan: " + naam);
-            List<LhsItem> lhs = new ArrayList<>();
-            lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpbindingen));
+            List<LhsItem> lhs = new ArrayList<>(kopplan);
+            lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbindingen));
+            lhs.addAll(bereikplan);
             lhs.addAll(items);
             return new Regelplan(naam, vorm, null, new Leestabel(slots), lhs, gevolg);
+        }
+
+        /** Plans {@code item} before the subject pattern, in a rule that comes whole from its plan. */
+        void kopPlan(LhsItem item) {
+            alleenGepland("een patroon voor het onderwerp");
+            kopplan.add(item);
+        }
+
+        /** Plans the identity join {@code j} on the subject pattern, after its constraints, in a rule that comes whole
+         *  from its plan. */
+        void onderwerpJoin(Join j) {
+            alleenGepland("een join op het onderwerp");
+            onderwerpjoins.add(j);
+        }
+
+        /** Plans {@code item} right after the subject pattern, in a rule that comes whole from its plan. */
+        void bereikPlan(LhsItem item) {
+            alleenGepland("een patroon na het onderwerp");
+            bereikplan.add(item);
+        }
+
+        /** Refuses {@code wat} in a rule whose items are rendered as they come, which renders no such item. */
+        private void alleenGepland(String wat) {
+            if (weergave != null) throw new IllegalStateException(wat + " in een regel die niet uit haar plan komt");
         }
 
         /** The number of slots of the value array so far. */
@@ -5914,15 +5948,15 @@ public final class TmsTranspiler {
         String naam = "kenmerkstand " + lid.declarant().naam + "." + lid.naam() + ": ";
         Alfa invoerWaar = invoerWaar(id("invoer"), lid, true);
         Rule invoer = weergeef(new Regelplan(naam + "waar uit de invoer", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(invoerWaar), List.of())),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(invoerWaar), List.of(), List.of())),
                 new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, true, Gevolg.Invoeging.LOGISCH)));
         Rule afleiding = weergeef(new Regelplan(naam + "waar uit een afleiding", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of()), afgeleid(sleutel)),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), afgeleid(sleutel)),
                 new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, true,
                         Gevolg.Invoeging.LOGISCH)));
         Alfa geenInvoer = invoerWaar(id("geen-invoer"), lid, false);
         Rule onwaar = weergeef(new Regelplan(naam + "onwaar", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(geenInvoer), List.of()),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(geenInvoer), List.of(), List.of()),
                         new Niet(afgeleid(sleutel))),
                 new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.GEEN, false, Gevolg.Invoeging.LOGISCH)));
         return List.of(invoer, afleiding, onwaar);
@@ -5967,7 +6001,7 @@ public final class TmsTranspiler {
                     List.of(opOnderwerp(id("waarde-onderwerp"))), List.of(Binding.van("$v", Waarde.class, "waarde")));
             uit.add(weergeef(new Regelplan(naam + "uit een afleiding", null, null,
                     eenSlot(Leessoort.AFLEIDING, "afleiding " + sleutel, "$v"),
-                    List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of()), waarde),
+                    List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of()), waarde),
                     new Gevolg.Stand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, 0, false,
                             Gevolg.Invoeging.LOGISCH))));
         }
@@ -5991,7 +6025,7 @@ public final class TmsTranspiler {
     private Rule invoerstandregel(Lid lid, String naam, Boolean emmer) {
         ElementSleutel sleutel = lid.sleutel();
         List<LhsItem> items = new ArrayList<>();
-        items.add(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(new Binding("$invoer", List.of(),
+        items.add(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
                 new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null))));
         if (emmer != null) {
             Patroon p = new Patroon(Emmerinvoer.class, "$emmerinvoer",
@@ -6040,12 +6074,12 @@ public final class TmsTranspiler {
                 List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde")));
         Rule aanwezig = weergeef(new Regelplan(naam + "link aanwezig", null, null,
                 eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v"),
-                List.of(new Onderwerp(klasse, ONDERWERP, List.of(link), List.of(bereikt)), stand),
+                List.of(new Onderwerp(klasse, ONDERWERP, List.of(link), List.of(), List.of(bereikt)), stand),
                 new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH)));
 
         Alfa geenLink = langsPad(id("geen-link"), velden, Alfa.Vergelijker.LEEG);
         Rule afwezig = weergeef(new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
-                List.of(new Onderwerp(klasse, ONDERWERP, List.of(geenLink), List.of())),
+                List.of(new Onderwerp(klasse, ONDERWERP, List.of(geenLink), List.of(), List.of())),
                 new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
                         Gevolg.Invoeging.LOGISCH)));
         return List.of(aanwezig, afwezig);

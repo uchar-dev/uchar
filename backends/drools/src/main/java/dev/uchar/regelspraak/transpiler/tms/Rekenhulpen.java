@@ -1,6 +1,8 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.ir.ResolvedVerdeling;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 
 /**
@@ -25,7 +28,9 @@ import java.util.function.Predicate;
  *
  * <p>Beside them the routes of a test and a consequence ({@code plan.Route}): a fresh probe, a report to it and its
  * verdict, and the facts a consequence makes whose class or constructor a DRL text cannot reach, the fault of a fixed
- * sentence, the inconsistency of a form and the asOfDate-bucket scalar of an input. A {@link Sonde} and the generated
+ * sentence, the inconsistency of a form and the asOfDate-bucket scalar of an input, or whose number a computation over
+ * the bound values decides: the fault of an input's form, the keys of a uniqueness, and the shares, the rest and the
+ * deposits of an allocation. A {@link Sonde} and the generated
  * inconsistency class stay out of reach themselves: a rendering only hands them on, typed {@code Object}.
  */
 public final class Rekenhulpen {
@@ -448,6 +453,18 @@ public final class Rekenhulpen {
         return false;
     }
 
+    /** Whether more than one key of a uniqueness collides with a key, by {@code botsingen}, the count of the keys that
+     *  collide with it, itself included (RUNTIME-SEMANTICS ch. 5.9). */
+    public static boolean dubbel(Object botsingen) {
+        return ((Number) botsingen).longValue() > 1;
+    }
+
+    /** Whether the key {@code sleutel} is the same key of one form as the key {@code ander}
+     *  ({@link Uniciteitssleutel#botstMet}). */
+    public static boolean botstMet(Object sleutel, Object ander) {
+        return ((Uniciteitssleutel) sleutel).botstMet((Uniciteitssleutel) ander);
+    }
+
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
     public static boolean gelijkeWaarde(Object a, Object b) {
         if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
@@ -535,5 +552,50 @@ public final class Rekenhulpen {
      *  ({@link Emmerscalair}, RUNTIME-SEMANTICS ch. 8.4): what the standing of such an input carries. */
     public static Emmerscalair emmerscalairVan(Object tijdlijn) {
         return Emmerscalair.van((List<?>) tijdlijn);
+    }
+
+    /** The fault of the form of an input ({@link Invoervormfout}), the sentence {@code voor}, the object {@code object}
+     *  and {@code na}, named in the rule {@code regel}: the fault a consequence inserts where the case gives an input
+     *  in a form the rule cannot read ({@code plan.Gevolg.Invoervormfout}). */
+    public static Invoervormfout invoervormfout(String voor, Object object, String na, String regel) {
+        return new Invoervormfout(voor, object, na).inDeRegel(regel);
+    }
+
+    /** The keys of {@code element} in source {@code bron} of the uniqueness {@code uniciteit}, linked to the parent
+     *  {@code scope} (null for a form without a scope), over its key components {@code waarden} in the source's order
+     *  ({@link Uniciteitssleutel}): one key; or, where the component at {@code tijdlijn} is a timeline, one key per value
+     *  it ever carries, in ascending order and none where it carries none (ever-uniqueness, RUNTIME-SEMANTICS ch. 5.9,
+     *  {@code rsOoitWaarden}). {@code tijdlijn} is -1 where no component is on a timeline. */
+    public static List<Uniciteitssleutel> uniciteitssleutels(String uniciteit, int bron, Object element, Object scope,
+                                                             List<?> waarden, int tijdlijn) {
+        if (tijdlijn < 0) return List.of(new Uniciteitssleutel(uniciteit, bron, element, scope, new ArrayList<>(waarden)));
+        List<Uniciteitssleutel> uit = new ArrayList<>();
+        for (BigDecimal waarde : new TreeSet<>(RegelSpraakRuntime.rsOoitWaarden(waarden.get(tijdlijn)))) {
+            List<Object> sleutel = new ArrayList<>(waarden);
+            sleutel.set(tijdlijn, waarde);
+            uit.add(new Uniciteitssleutel(uniciteit, bron, element, scope, sleutel));
+        }
+        return uit;
+    }
+
+    /** The facts the distribution of one allocation inserts for one source {@code bron} (RUNTIME-SEMANTICS ch. 4.2 to
+     *  4.4), computed by {@link Verdeling#bereken} from the {@code pot} and {@code ontvangers}, the list of the source's
+     *  {@link Ontvanger} facts, in the order its consequence inserts them: the §9.5 inconsistency of the form
+     *  {@code vorm} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
+     *  {@link Waarde} of {@code aandeel} written by {@code schrijver}; and where the allocation writes a rest
+     *  ({@code rest} not null) and something is distributed, that rest, a {@link Waarde} of {@code rest} on the
+     *  source. */
+    public static List<Object> uitdeling(String vorm, Object bron, ResolvedVerdeling.Methode methode, Object pot,
+                                         Object ontvangers, boolean gewogen, boolean gemaximeerd, boolean afnemend,
+                                         Integer decimalen, ElementSleutel aandeel, ElementSleutel rest, String schrijver) {
+        List<Ontvanger> lijst = new ArrayList<>();
+        for (Object o : (List<?>) ontvangers) lijst.add((Ontvanger) o);
+        Verdeling.Uitslag u = Verdeling.bereken(methode, pot, lijst, gewogen, gemaximeerd, decimalen, afnemend);
+        List<Object> uit = new ArrayList<>();
+        for (Object r : u.deponeringen()) uit.add(inconsistentie(vorm, r));
+        for (Map.Entry<Object, BigDecimal> e : u.aandelen().entrySet())
+            uit.add(new Waarde(e.getKey(), aandeel, e.getValue(), schrijver));
+        if (rest != null && u.rest() != null) uit.add(new Waarde(bron, rest, u.rest(), schrijver));
+        return uit;
     }
 }
