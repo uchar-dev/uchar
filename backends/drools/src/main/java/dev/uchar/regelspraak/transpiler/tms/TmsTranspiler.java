@@ -1208,8 +1208,11 @@ public final class TmsTranspiler {
             Join leegOpOnderwerp = new Join(id("lege-schrijver-onderwerp"), "onderwerp", ONDERWERP);
             int legen = lez.legeSchrijvers();
             int onderwerp = lez.lid();
-            Term doelLeeg = new Term.Aanroep(Functie.DOEL_LEEG, List.of(new Term.Lees(legen, null),
-                    new Term.Lees(onderwerp, null), constante(lid.klasse()), constante(lid.naam())), null);
+            // the target's input on the subject's bean, as it is, which the guard tests for leeg as the first variant's
+            // constraint does; read in the test, so the executable model binds no value of it
+            Term invoer = new Term.Invoer(new Term.Lees(onderwerp, null), new Binding.Veld(lid.klasse(), lid.naam()),
+                    Binding.Leesvorm.WAARDE, null);
+            Term doelLeeg = new Term.Aanroep(Functie.DOEL_LEEG, List.of(new Term.Lees(legen, null), invoer), null);
             return List.of(
                     new Niet(new Patroon(Waarde.class, "$andere_schrijver", List.of(ander), List.of(anderOpOnderwerp),
                             List.of())),
@@ -3419,6 +3422,8 @@ public final class TmsTranspiler {
             case Term.Const c -> null;
             case Term.Lees l -> null;
             case Term.Dagsoort d -> null;
+            // a read of an input has no effect and cannot fault, so the evaluation goes on to what follows it
+            case Term.Invoer i -> leestEerst(i.object(), slot);
             case Term.Binder b -> b.slot() == slot;
             case Term.Aanroep a -> {
                 Boolean eerst = leestEerst(a.argumenten(), slot);

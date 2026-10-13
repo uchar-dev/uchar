@@ -63,8 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>{@code jutterswet-voorwaardelijke-initialisatie}: an initialisation beside no other writer, guarded by the
  *       input on the target and the absence of another writer's value.</li>
  *   <li>The same document with two computing rules beside the initialisation
- *       ({@link #initialisatieNaastLegeSchrijver}), since no golden has one: outside the standing domain a computing rule writes leeg, so the guard counts the
- *       other writers that wrote leeg and tests the input only where none did.</li>
+ *       ({@link #initialisatieNaastLegeSchrijver}), since no golden has one: outside the standing domain a computing
+ *       rule writes leeg, so the guard counts the other writers that wrote leeg and, where none did, tests the input,
+ *       which the test reads off the bean as a node of the plan with its member and its form of reading.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step: the transpiler planned only the left-hand sides and built every rule itself, so there
@@ -405,13 +406,12 @@ class RegelplanWitnessTest {
                         + " ElementSleutel[objecttype=vondst, naam=bergloon, kenmerk=false], schrijver NIET_GELIJK"
                         + " standaardbergloon, waarde LEEG]] join [lege-schrijver-onderwerp_4: onderwerp ="
                         + " $onderwerp] bind [] functies [AANTAL null -> $lege_schrijvers]",
-                "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: DOEL_LEEG(Lees 1, Lees 2, Const class"
-                        + " dev.uchar.regelspraak.facts.Vondst, Const bergloon)",
+                "  toets doel-leeg_5 VORM sonde -1 slots [1, 2] grootte 3: DOEL_LEEG(Lees 1, Invoer Vondst.bergloon"
+                        + " WAARDE (Lees 2))",
                 "    toets 0 Aanroep",
                 "    toets 0.0 Lees",
-                "    toets 0.1 Lees",
-                "    toets 0.2 Const Class",
-                "    toets 0.3 Const String",
+                "    toets 0.1 Invoer",
+                "    toets 0.1.0 Lees",
                 "  gevolg Waarde [onderwerp=$onderwerp, doel=ElementSleutel[objecttype=vondst, naam=bergloon,"
                         + " kenmerk=false], schrijver=standaardbergloon, waarde=RS_MAAL(Const 2, Lees 0), slots=[0],"
                         + " grootte=3, collapse=true, schrijftLeeg=false, deponering=null,"

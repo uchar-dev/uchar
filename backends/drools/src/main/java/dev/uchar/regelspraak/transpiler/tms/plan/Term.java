@@ -44,6 +44,14 @@ public sealed interface Term {
     record Lees(int slot, String bron) implements Term {}
 
     /**
+     * The input member {@code veld} on the bean of the object that {@code object} gives, read as {@code vorm}
+     * ({@link Binding.Leesvorm}): an input that a test the form composes itself reads where it evaluates, with no
+     * pattern that binds it, such as the target in the guard of an initialisation. The read has no effect and cannot
+     * fault.
+     */
+    record Invoer(Term object, Binding.Veld veld, Binding.Leesvorm vorm, String bron) implements Term {}
+
+    /**
      * The read of the binder {@code naam} of the {@link Let} whose slot is {@code slot} (RUNTIME-SEMANTICS ch. 10.6): the
      * first read evaluates the {@code Let}'s value and every further one reads that result; a leeg value ends that
      * {@code Let} with leeg.

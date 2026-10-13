@@ -18,6 +18,8 @@ final class Termboom {
             case Term.Const c -> "Const " + waarde(c.waarde())
                     + (c.type() == null || c.type().eenheidOf() == null ? "" : " " + c.type().eenheidOf().weergave());
             case Term.Lees l -> "Lees " + l.slot();
+            case Term.Invoer i -> "Invoer " + i.veld().klasse().getSimpleName() + "." + i.veld().naam() + " " + i.vorm()
+                    + " (" + boom(i.object()) + ")";
             case Term.Binder b -> "Binder " + b.slot() + " " + b.naam();
             case Term.Let l -> "Let " + l.slot() + " " + l.naam() + (l.gretig() ? " gretig" : "") + " [" + boom(l.waarde())
                     + "] in [" + boom(l.lichaam()) + "]";
@@ -62,6 +64,7 @@ final class Termboom {
         return switch (t) {
             case Term.Const c -> List.of();
             case Term.Lees l -> List.of();
+            case Term.Invoer i -> List.of(i.object());
             case Term.Binder b -> List.of();
             case Term.Let l -> List.of(l.waarde(), l.lichaam());
             case Term.Keuze k -> List.of(k.voorwaarde(), k.dan(), k.anders());

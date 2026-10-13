@@ -13,6 +13,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -43,6 +44,11 @@ final class ClosureWeergave {
             case Term.Lees l -> {
                 int i = l.slot();
                 yield w -> w[i];
+            }
+            case Term.Invoer i -> {
+                Waardefunctie object = waardefunctie(i.object());
+                Function<Object, Object> lees = PatternDslWeergave.invoerlezer(i.veld(), i.vorm(), null);
+                yield w -> lees.apply(object.van(w));
             }
             case Term.Binder b -> {
                 int i = b.slot();
@@ -373,7 +379,7 @@ final class ClosureWeergave {
             case KANAAL -> x -> Rekenhulpen.kanaal(x[0]);
             case NIET -> x -> Rekenhulpen.niet(x[0]);
             case EMMERSCALAIR -> x -> Rekenhulpen.emmerscalair(x[0], (Boolean) x[1]);
-            case DOEL_LEEG -> x -> Rekenhulpen.doelLeeg(x[0], x[1], (Class<?>) x[2], (String) x[3]);
+            case DOEL_LEEG -> x -> Rekenhulpen.doelLeeg(x[0], x[1]);
             case VERSCHILLEN -> x -> Rekenhulpen.verschillen(x[0]);
         };
     }

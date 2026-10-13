@@ -1,7 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Conditie;
-import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -428,11 +427,11 @@ public final class Rekenhulpen {
     }
 
     /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): {@code legen}, the
-     *  number of other writers that wrote leeg on {@code onderwerp}, is not 0, or the input of member {@code lid} of
-     *  {@code onderwerp}'s bean, read through the getter of {@code klasse}, is leeg; the input is read only where no such
-     *  writer settles it. */
-    public static boolean doelLeeg(Object legen, Object onderwerp, Class<?> klasse, String lid) {
-        return ((Number) legen).longValue() != 0 || Accessors.getter(klasse, lid).apply(onderwerp) == null;
+     *  number of other writers that wrote leeg on the subject, is not 0, or {@code invoer}, the subject's input on
+     *  the target, which the plan reads ({@code plan.Term.Invoer}), is leeg. The read has no effect, so that it is
+     *  evaluated also where such a writer settles the guard changes nothing. */
+    public static boolean doelLeeg(Object legen, Object invoer) {
+        return ((Number) legen).longValue() != 0 || invoer == null;
     }
 
     /** Whether the value facts in {@code waarden}, a list, hold two different values, leeg among them
