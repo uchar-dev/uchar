@@ -165,6 +165,51 @@ class SessiedumpWitnessTest {
                 List.of(sectie(nee, "vuringen"), sectie(gooit, "vuringen")));
     }
 
+    /**
+     * The whole dump, every section, of two documents on both branches, held against a file in the test resources
+     * (round 5b, Fable advice 4 §1.4): the document {@link #STRUCTUURNAMEN} with its case, and the document of
+     * {@link #twee_koppelingen_die_als_tekst_samenvallen_verschillen_in_de_dump} with the fact type "F x", whose
+     * creation "maak" makes a Boei for V1 and lays the link between them. Until then the dump was held by the baseline
+     * of the harness, which is made with the dump code of the worktree and so changes along with it, and by single
+     * lines of this class: a change in the spelling of a value or a section passed unseen once the baseline was made
+     * again. The pins live in {@code src/test/resources/sessiedump/<document>/dump.<branch>.txt}; under the property
+     * {@code uchar.dumppin} the test writes each dump it makes to that directory as well, to renew a pin by hand after
+     * a deliberate change. The two branches give the same dump of each document.
+     *
+     * <p><b>Red</b> with a mutant of {@code Sessiedump} that writes a {@code BigDecimal} without its class (not
+     * committed): "de dump in structuurnamen/dump.exec_model.txt ==&gt; expected: &lt;… lees waarde "V1"."tarief = vak
+     * (oud).nieuw" = BigDecimal(1) …&gt; but was: &lt;… lees waarde "V1"."tarief = vak (oud).nieuw" = 1 …&gt;"; and on
+     * {@code da00178e}, before the section {@code fixpunt}, where the dump lacked the line "fixpunt ja".
+     */
+    @Test void de_hele_dump_van_twee_documenten_staat_vast() throws Exception {
+        Map<String, Path> documenten = new java.util.LinkedHashMap<>();
+        documenten.put("structuurnamen", STRUCTUURNAMEN);
+        documenten.put("koppeling", koppelingdocument("F x", "r"));
+        Map<String, JsonNode> zaken = Map.of("structuurnamen", structuurzaak(), "koppeling", TmsDocumenten.zaak(
+                List.of(TmsDocumenten.instantie("V1", "Vondst", Map.of(), List.of(), Map.of())),
+                List.of(TmsDocumenten.consistent())));
+        String vernieuw = System.getProperty("uchar.dumppin");
+        // every dump is made, and written under the property, before the first comparison can stop the test
+        Map<Path, String> dumps = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, Path> doc : documenten.entrySet())
+            for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS)) {
+                String d = Takdumps.dump(doc.getValue(), zaken.get(doc.getKey()), tak);
+                Path bestand = Path.of(doc.getKey(), "dump." + tak.name().toLowerCase(java.util.Locale.ROOT) + ".txt");
+                dumps.put(bestand, d);
+                if (vernieuw != null) {
+                    Path pad = Path.of(vernieuw).resolve(bestand);
+                    java.nio.file.Files.createDirectories(pad.getParent());
+                    java.nio.file.Files.writeString(pad, d);
+                }
+            }
+        for (Map.Entry<Path, String> d : dumps.entrySet())
+            assertEquals(java.nio.file.Files.readString(PINMAP.resolve(d.getKey())), d.getValue(),
+                    () -> "de dump in " + d.getKey());
+    }
+
+    /** The directory of the pinned dumps of {@link #de_hele_dump_van_twee_documenten_staat_vast}. */
+    private static final Path PINMAP = Path.of("src", "test", "resources", "sessiedump");
+
     /** The lines of the section {@code sectie} of dump {@code d}, in their order. */
     private static List<String> sectie(String d, String sectie) {
         return Stream.of(d.split("\n")).filter(r -> r.startsWith(sectie + " ")).toList();
