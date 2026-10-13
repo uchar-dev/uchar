@@ -47,6 +47,14 @@ public final class Namen {
 
     public static String setter(String naam) { return "set" + ident(naam, true); }
 
+    /** The bean property of a member named {@code naam}: the camel identifier a DRL constraint spells, whose getter and
+     *  setter are those of the name itself ({@link #getter}, {@link #setter}), since {@code ident} with
+     *  {@code upperFirst} gives the same Pascal form of both where the first word starts with a cased letter. The
+     *  executable-model branch plans it once (its plan's {@code Binding.Veld}, {@code Alfa.Veldtoets} and {@code Join}),
+     *  so that no rendering derives a property from a declared name with spaces. On a fact of that branch, whose
+     *  components are single lowercase words, it is the component's name itself. */
+    public static String eigenschap(String naam) { return ident(naam, false); }
+
     /** A §9.3 regelnaam spliced inside DRL double quotes: {@code \} and {@code "} would end the string (or
      *  escape into it) and a newline ends the rule header — all four are substituted (disjoint characters,
      *  none introduces another, so order is immaterial). The SAME escaping guards the idempotency-constraint

@@ -384,7 +384,7 @@ final class PatternDslWeergave {
         Gevolg.Constructie constructie = g.constructie();
         List<BiConsumer<Object, Object>> zetters = new ArrayList<>();
         for (Gevolg.Constructie.Zetting z : constructie.zettingen())
-            zetters.add(Accessors.setter(z.veld().klasse(), z.veld().naam()));
+            zetters.add(Accessors.setter(z.veld().klasse(), z.veld().eigenschap()));
         Gevolg.Creatiediepte d = g.diepte();
         return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
             int diepte = Rekenhulpen.creatiediepte(g.creatie(), d.stratum(), d.type(), (List<?>) w[d.herkomst()],
@@ -537,9 +537,9 @@ final class PatternDslWeergave {
     /** The identity join {@code j} on a pattern over {@code klasse}: the field it names of the pattern's object, or the
      *  object itself, against the object its variable binds, or the reference field it names of that object. */
     private PatternDSL.PatternDef<Object> join(PatternDSL.PatternDef<Object> def, Class<?> klasse, Join j) {
-        Function1<Object, Object> links = j.veld() == null ? x -> x : veld(klasse, j.veld());
+        Function1<Object, Object> links = j.veld() == null ? x -> x : veld(klasse, j.eigenschap());
         Function1<Object, Object> rechts = j.doelveld() == null ? o -> o
-                : veld(j.doelveld().klasse(), j.doelveld().naam());
+                : veld(j.doelveld().klasse(), j.doelveld().eigenschap());
         return zelfde(def, j.id(), bekend(j.doel()), links, rechts);
     }
 
@@ -793,7 +793,7 @@ final class PatternDslWeergave {
      *  the path, null where a link is absent, as the test's form reads it. */
     private static Function1<Object, Object> lezer(Class<?> klasse, Alfa.Veldtoets t) {
         Function1<Object, Object> f = t.veld() == null ? x -> x
-                : veld(t.declarant() != null ? t.declarant() : klasse, t.veld());
+                : veld(t.declarant() != null ? t.declarant() : klasse, t.eigenschap());
         if (t.pad().isEmpty() && t.vorm() == Binding.Leesvorm.WAARDE) return f;
         return langs(t.pad(), vorm(f::apply, t.vorm(), null));
     }
@@ -805,7 +805,7 @@ final class PatternDslWeergave {
         if (klasse.getPackageName().equals(PatternDslWeergave.class.getPackageName())) {
             if (!b.pad().isEmpty() || b.vorm() != Binding.Leesvorm.WAARDE)
                 throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
-            return veld(klasse, b.veld().naam());
+            return veld(klasse, b.veld().eigenschap());
         }
         return langs(b.pad(), invoerlezer(b.veld(), b.vorm(), b.soort()));
     }
@@ -815,7 +815,7 @@ final class PatternDslWeergave {
     private static Function1<Object, Object> langs(List<Binding.Veld> pad, Function<Object, Object> eind) {
         if (pad.isEmpty()) return o -> eind.apply(o);
         List<Function<Object, Object>> stappen = new ArrayList<>();
-        for (Binding.Veld stap : pad) stappen.add(Accessors.getter(stap.klasse(), stap.naam()));
+        for (Binding.Veld stap : pad) stappen.add(Accessors.getter(stap.klasse(), stap.eigenschap()));
         return o -> {
             Object d = o;
             for (Function<Object, Object> stap : stappen) {
@@ -828,7 +828,7 @@ final class PatternDslWeergave {
 
     /** The read of member {@code veld} off a bean, as {@code vorm} reads it ({@link Binding.Leesvorm}). */
     static Function<Object, Object> invoerlezer(Binding.Veld veld, Binding.Leesvorm vorm, Class<?> soort) {
-        return vorm(Accessors.getter(veld.klasse(), veld.naam()), vorm, soort);
+        return vorm(Accessors.getter(veld.klasse(), veld.eigenschap()), vorm, soort);
     }
 
     /** {@code getter} as {@code vorm} reads what it gives: as it is, as whether it holds {@code true}, as the segments

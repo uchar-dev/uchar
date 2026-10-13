@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+
 import java.util.List;
 
 /**
@@ -22,16 +24,28 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
      * class of a field beyond it is not the pattern's. A field on a bean is read through the getter of the class
      * {@code declarant} where that is not null, the class that declares the member, which an object the test sees may
      * extend while the pattern's class does not declare it; else through the getter of the pattern's class.
+     * {@code eigenschap} is the property a rendering reads of the field, null with {@code veld}: on a bean the bean
+     * property of the member ({@link Namen#eigenschap}), on a fact of the branch the component itself.
      */
-    public record Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde,
-                            Class<?> declarant) {
+    public record Veldtoets(List<Binding.Veld> pad, String veld, String eigenschap, Binding.Leesvorm vorm,
+                            Vergelijker op, Object waarde, Class<?> declarant) {
         public Veldtoets {
             pad = List.copyOf(pad);
+            if ((veld == null) != (eigenschap == null))
+                throw new IllegalArgumentException("een veldtoets leest een eigenschap precies waar zij een veld leest: "
+                        + veld + ", " + eigenschap);
             if (!pad.isEmpty() && veld != null)
                 throw new IllegalArgumentException("een veldtoets langs een pad toetst het object dat het pad bereikt,"
                         + " niet het veld " + veld);
             if (declarant != null && veld == null)
                 throw new IllegalArgumentException("een veldtoets op het object zelf leest geen veld van " + declarant);
+        }
+
+        /** A test of what the test reads of the pattern's object, a field through the getter of {@code declarant}, with
+         *  the property the field has. */
+        public Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde,
+                         Class<?> declarant) {
+            this(pad, veld, veld == null ? null : Namen.eigenschap(veld), vorm, op, waarde, declarant);
         }
 
         /** A test of what the test reads of the pattern's object, a field through the getter of the pattern's class. */
@@ -42,7 +56,7 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
         /** A test of field {@code veld} of the pattern's own object as it is; a null {@code veld} tests the object
          *  itself. */
         public Veldtoets(String veld, Vergelijker op, Object waarde) {
-            this(List.of(), veld, Binding.Leesvorm.WAARDE, op, waarde, null);
+            this(List.of(), veld, Binding.Leesvorm.WAARDE, op, waarde, (Class<?>) null);
         }
     }
 

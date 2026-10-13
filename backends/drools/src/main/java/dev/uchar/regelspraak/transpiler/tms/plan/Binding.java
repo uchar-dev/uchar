@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+
 import java.util.List;
 
 /**
@@ -21,8 +23,17 @@ public record Binding(String doel, List<Veld> pad, Veld veld, Leesvorm vorm, Cla
         return new Binding(doel, List.of(), new Veld(klasse, veld), Leesvorm.WAARDE, null);
     }
 
-    /** A property {@code naam} of the objects of {@code klasse}. */
-    public record Veld(Class<?> klasse, String naam) {}
+    /** A property {@code naam} of the objects of {@code klasse}, as the document declares the member or as a fact of
+     *  the branch names its component, and {@code eigenschap}, the property a rendering reads or writes: the name of
+     *  the bean property, whose getter and setter are the member's ({@link Namen#eigenschap}), and on a fact of the
+     *  branch the component itself. */
+    public record Veld(Class<?> klasse, String naam, String eigenschap) {
+
+        /** The property {@code naam} of the objects of {@code klasse}, with the bean property it has. */
+        public Veld(Class<?> klasse, String naam) {
+            this(klasse, naam, Namen.eigenschap(naam));
+        }
+    }
 
     /**
      * How the field is read: {@code WAARDE} as it is; {@code WAAR} as whether it holds {@code true}, a characteristic
