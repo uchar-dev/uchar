@@ -61,5 +61,10 @@ public enum Leessoort {
     /** The number of places a to-many step's member has in its list ({@code TmsTranspiler.plaats}). */
     LIJSTPLAATSEN,
     /** The least place a to-many step's member has in its list ({@code TmsTranspiler.plaats}). */
-    LIJSTPLAATS
+    LIJSTPLAATS,
+    /** The number of other writers of an initialisation's target that wrote leeg on the subject
+     *  ({@code TmsTranspiler.initialisatieRegel}). */
+    LEGE_SCHRIJVERS,
+    /** The value facts that the writers of one attribute put on the subject ({@code TmsTranspiler.verschilregel}). */
+    WAARDEN
 }

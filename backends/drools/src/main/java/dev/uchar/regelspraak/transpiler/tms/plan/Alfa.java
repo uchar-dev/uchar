@@ -14,11 +14,13 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
         if (toetsen.isEmpty()) throw new IllegalArgumentException("een alfaconstraint toetst ten minste één veld");
     }
 
-    /** A test of field {@code veld} of the object against {@code waarde}. */
+    /** A test of field {@code veld} of the object against {@code waarde}; a null {@code veld} tests the object itself. */
     public record Veldtoets(String veld, Vergelijker op, Object waarde) {}
 
-    /** How a field is tested: {@code GELIJK} by {@code equals}, {@code MINSTENS} as a whole number at least the value,
-     *  {@code BINNEN} as a date the validity window {@code waarde} admits, {@code IS_EEN} as an instance of the class
-     *  {@code waarde}. */
-    public enum Vergelijker { GELIJK, MINSTENS, BINNEN, IS_EEN }
+    /** How a field is tested: {@code GELIJK} by {@code equals}, {@code NIET_GELIJK} by its negation, {@code MINSTENS}
+     *  as a whole number at least the value, {@code BINNEN} as a date the validity window {@code waarde} admits,
+     *  {@code IS_EEN} as an instance of the class {@code waarde}, {@code LEEG} as null and {@code GEVULD} as not null
+     *  (both without a {@code waarde}), and {@code KLASSE_NIET_IN} as an object whose own class, exactly, is none of the
+     *  set of classes {@code waarde}. */
+    public enum Vergelijker { GELIJK, NIET_GELIJK, MINSTENS, BINNEN, IS_EEN, LEEG, GEVULD, KLASSE_NIET_IN }
 }

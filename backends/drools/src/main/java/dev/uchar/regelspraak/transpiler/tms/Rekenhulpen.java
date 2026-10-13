@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -424,6 +425,35 @@ public final class Rekenhulpen {
      *  RUNTIME-SEMANTICS ch. 8.4), equal to {@code gewenst}: a part of a test a form composes itself. */
     public static boolean emmerscalair(Object waarde, boolean gewenst) {
         return (waarde instanceof Emmerscalair) == gewenst;
+    }
+
+    /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): {@code legen}, the
+     *  number of other writers that wrote leeg on {@code onderwerp}, is not 0, or the input of member {@code lid} of
+     *  {@code onderwerp}'s bean, read through the getter of {@code klasse}, is leeg; the input is read only where no such
+     *  writer settles it. */
+    public static boolean doelLeeg(Object legen, Object onderwerp, Class<?> klasse, String lid) {
+        return ((Number) legen).longValue() != 0 || Accessors.getter(klasse, lid).apply(onderwerp) == null;
+    }
+
+    /** Whether the value facts in {@code waarden}, a list, hold two different values, leeg among them
+     *  ({@link #gelijkeWaarde}). */
+    public static boolean verschillen(Object waarden) {
+        List<?> l = (List<?>) waarden;
+        for (Object x : l)
+            if (!gelijkeWaarde(((Waarde) l.get(0)).waarde(), ((Waarde) x).waarde())) return true;
+        return false;
+    }
+
+    /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */
+    public static boolean gelijkeWaarde(Object a, Object b) {
+        if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
+        return Objects.equals(a, b);
+    }
+
+    /** Whether a computed value is leeg: null, or a timeline without a segment, which is the temporal leeg
+     *  (RUNTIME-SEMANTICS ch. 3.1, 7.8: an empty timeline is one never written). */
+    public static boolean isLeeg(Object v) {
+        return v == null || v instanceof List<?> l && l.isEmpty();
     }
 
     // ---------------- timelines ----------------

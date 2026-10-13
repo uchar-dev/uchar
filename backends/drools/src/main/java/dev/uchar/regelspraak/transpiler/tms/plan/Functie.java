@@ -189,7 +189,14 @@ public enum Functie {
     NIET(Rekenhulpen.class, "niet", false),
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
-    EMMERSCALAIR(Rekenhulpen.class, "emmerscalair", false);
+    EMMERSCALAIR(Rekenhulpen.class, "emmerscalair", false),
+    /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): another writer wrote
+     *  leeg on the subject, by a count of such writers, or the subject's input on the target, a member read off the
+     *  bean, by a {@code Class} and a {@code String} constant, is leeg. A part of a test a form composes itself. */
+    DOEL_LEEG(Rekenhulpen.class, "doelLeeg", false),
+    /** Whether the value facts on one attribute of one object hold two different values, leeg among them, numbers by
+     *  value (RUNTIME-SEMANTICS ch. 5.7). A test a form composes itself. */
+    VERSCHILLEN(Rekenhulpen.class, "verschillen", false);
 
     private final Class<?> klasse;
     private final String methode;

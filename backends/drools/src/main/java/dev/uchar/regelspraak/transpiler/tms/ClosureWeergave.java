@@ -373,6 +373,8 @@ final class ClosureWeergave {
             case KANAAL -> x -> Rekenhulpen.kanaal(x[0]);
             case NIET -> x -> Rekenhulpen.niet(x[0]);
             case EMMERSCALAIR -> x -> Rekenhulpen.emmerscalair(x[0], (Boolean) x[1]);
+            case DOEL_LEEG -> x -> Rekenhulpen.doelLeeg(x[0], x[1], (Class<?>) x[2], (String) x[3]);
+            case VERSCHILLEN -> x -> Rekenhulpen.verschillen(x[0]);
         };
     }
 

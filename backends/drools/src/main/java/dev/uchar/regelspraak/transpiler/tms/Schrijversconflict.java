@@ -1,7 +1,9 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -33,6 +35,21 @@ public final class Schrijversconflict extends IllegalStateException {
      *  attribute as declared. The object is named by type and identity until {@link #benoemd} gives it a label. */
     Schrijversconflict(Object onderwerp, String attribuut, String type, List<Schrijfdaad> schrijvers) {
         this(onderwerp, attribuut, type, schrijvers, "een " + type + " (" + Feitnamen.object(onderwerp) + ")");
+    }
+
+    /** The conflict of the value facts {@code waarden} on attribute {@code attribuut} of {@code onderwerp}: the
+     *  writers in the order of the document, {@code documentplaats} giving a rule's place and a writer the document has
+     *  no rule of, such as a defaults group, after them by name, and the object's own type named by {@code typenamen}
+     *  from its bean class's simple name, or that name where it has none. */
+    static Schrijversconflict van(Object onderwerp, String attribuut, List<Waarde> waarden,
+                                  Map<String, Integer> documentplaats, Map<String, String> typenamen) {
+        List<Waarde> geordend = new ArrayList<>(waarden);
+        geordend.sort(Comparator.comparing((Waarde w) -> documentplaats.getOrDefault(w.schrijver(), Integer.MAX_VALUE))
+                .thenComparing(Waarde::schrijver));
+        List<Schrijfdaad> daden = new ArrayList<>();
+        for (Waarde w : geordend) daden.add(new Schrijfdaad(w.schrijver(), w.waarde()));
+        String klasse = onderwerp.getClass().getSimpleName();
+        return new Schrijversconflict(onderwerp, attribuut, typenamen.getOrDefault(klasse, klasse), daden);
     }
 
     private Schrijversconflict(Object onderwerp, String attribuut, String type, List<Schrijfdaad> schrijvers,

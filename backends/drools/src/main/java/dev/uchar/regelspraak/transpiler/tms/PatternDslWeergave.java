@@ -2,21 +2,27 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.runtime.Accessors;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
 import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
+import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
 import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
 import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
+import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.drools.model.DSL;
+import org.drools.model.Global;
 import org.drools.model.Index;
 import org.drools.model.PatternDSL;
+import org.drools.model.Rule;
 import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
 import org.drools.model.functions.Function1;
@@ -45,24 +51,29 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * The rendering of the planned left-hand side of one rule into Drools' executable model: the subject pattern, the
- * patterns, the accumulates and the test of the condition as {@code PatternDSL} items, with the constraint ids, the
- * names and the indexed identity joins the analysis planned. It decides nothing: what is read, how, and in which order
- * is the plan's ({@code TmsTranspiler.Lezingen}).
+ * The rendering of a planned rule into Drools' executable model: the subject pattern, the patterns, the accumulates
+ * and the tests as {@code PatternDSL} items, with the constraint ids, the names and the indexed identity joins the
+ * analysis planned, and the consequence the plan's {@link Gevolg} says. It decides nothing: what is read, how, in which
+ * order, and what a firing inserts is the plan's ({@code TmsTranspiler.Lezingen}, {@link Regelplan}).
  *
- * <p>It renders each item when the analysis hands it over, and keeps the rendering, since until step 1c of card
- * drl-teksttak-op-truth-maintenance the forms still add constraints to the rendered subject pattern themselves, and a
- * rule and the fault rule of its condition take the same rendered items. The variables of the value array's slots are
- * the variables the bindings of the plan bind, by name; a value variable is bound once.
+ * <p>A whole plan it renders at once ({@link #regel}). Until step 1c of card drl-teksttak-op-truth-maintenance has
+ * planned every form, the forms that still build their rules themselves take an instance per rule, which renders each
+ * item of the left-hand side when the analysis hands it over and keeps the rendering, since such a form adds
+ * constraints to the rendered subject pattern itself. The variables of the value array's slots are the variables the
+ * bindings of the plan bind, by name; a value variable is bound once.
  */
 final class PatternDslWeergave {
 
     private final Variable<Object> onderwerp;
     private final PatternDSL.PatternDef<Object> onderwerpPatroon;
+    /** The slots of the rule's value array of a whole plan ({@link #regel}); null for the rendering of a form that still
+     *  builds its rule itself, which registers each slot as the analysis makes it ({@link #lezing}). */
+    private final Leestabel tabel;
     /** The value variables of the rule, by name, the subject's among them. */
     private final Map<String, Variable<Object>> waarden = new HashMap<>();
     /** The value variables a binding or an accumulate function binds already. */
@@ -76,6 +87,184 @@ final class PatternDslWeergave {
         onderwerp = (Variable<Object>) DSL.declarationOf(bonenklasse, naam);
         onderwerpPatroon = PatternDSL.pattern(onderwerp);
         waarden.put(naam, onderwerp);
+        tabel = null;
+    }
+
+    /** The rendering of a whole plan, whose subject pattern, if the rule has one, is an item of its left-hand side. */
+    private PatternDslWeergave(Leestabel tabel) {
+        onderwerp = null;
+        onderwerpPatroon = null;
+        this.tabel = tabel;
+    }
+
+    /**
+     * The rule {@code plan} plans: its left-hand side item by item, in order, and its consequence, under its name and
+     * in its agenda group. {@code globals} gives the global of a name, which a consequence that reads one binds: the
+     * model declares each global once, so the rule takes that declaration.
+     */
+    @SuppressWarnings("rawtypes")
+    static Rule regel(Regelplan plan, Function<String, Global<?>> globals) {
+        PatternDslWeergave w = new PatternDslWeergave(plan.lezingen());
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        for (LhsItem item : plan.linkerkant()) items.add(w.weergave(item));
+        items.add(w.gevolg(plan.gevolg(), globals));
+        org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.naam());
+        if (plan.agendagroep() != null) b = b.attribute(Rule.Attribute.AGENDA_GROUP, plan.agendagroep());
+        return b.build(items.toArray(new RuleItemBuilder[0]));
+    }
+
+    /** The rendering of {@code item} of a whole plan. */
+    private RuleItemBuilder<?> weergave(LhsItem item) {
+        return switch (item) {
+            case Onderwerp o -> onderwerp(o);
+            case Patroon p -> {
+                // a consequence may name the object a pattern binds, as the fault of a session without a date does
+                Weergegeven w = patroon(p);
+                if (waarden.putIfAbsent(p.naam(), w.variabele()) != null)
+                    throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
+                yield w.def();
+            }
+            case Niet n -> DSL.not(patroon(n.patroon()).def());
+            case Bestaat b -> bestaat(b);
+            case Accumulatie a -> accumulatie(a);
+            case Toetsitem t -> toets(t);
+        };
+    }
+
+    /** The subject pattern of a whole plan: its variable, its constraints, then its bindings. */
+    @SuppressWarnings("unchecked")
+    private PatternDSL.PatternDef<Object> onderwerp(Onderwerp o) {
+        Variable<Object> v = (Variable<Object>) DSL.declarationOf(o.bonenklasse(), o.naam());
+        if (waarden.putIfAbsent(o.naam(), v) != null)
+            throw new IllegalStateException("de variabele " + o.naam() + " wordt twee keer gebonden");
+        PatternDSL.PatternDef<Object> def = PatternDSL.pattern(v);
+        for (Alfa a : o.alfa()) def = def.expr(a.id(), predicaat(o.bonenklasse(), a));
+        for (Binding b : o.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
+        return def;
+    }
+
+    /** Adds the constraint {@code a} on the subject bean to the subject pattern this rendering renders as the analysis
+     *  hands it over. */
+    void alfaOnderwerp(Class<?> bonenklasse, Alfa a) {
+        onderwerpPatroon.expr(a.id(), predicaat(bonenklasse, a));
+    }
+
+    /** The variable of slot {@code slot} of the value array, null for a binder or a probe. */
+    private Variable<?> variabele(int slot) {
+        if (tabel == null) return slots.get(slot);
+        String naam = tabel.slots().get(slot).naam();
+        return naam == null ? null : bekend(naam);
+    }
+
+    // ---------------- the consequence ----------------
+
+    /** The consequence {@code g} plans. */
+    @SuppressWarnings("rawtypes")
+    private RuleItemBuilder<?> gevolg(Gevolg g, Function<String, Global<?>> globals) {
+        return switch (g) {
+            case Gevolg.Waarde x -> waarde(x);
+            case Gevolg.Kenmerk x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new HeeftKenmerk(a[0], x.kenmerk())));
+            case Gevolg.Toetsfout x -> toetsfout(x);
+            case Gevolg.Fout x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new Fout(a[0], x.fout().vorm(),
+                            new Rekenfout(x.zin()).inDeRegel(x.fout().regel()))));
+            case Gevolg.Inconsistentie x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(),
+                            RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENTIE, x.vorm(), a[0])));
+            case Gevolg.Schrijversconflict x ->
+                    new Consequentie(new Variable[]{bekend(x.onderwerp()), variabele(x.waarden())}, (drools, a) -> {
+                        List<Waarde> waarden = new ArrayList<>();
+                        for (Object o : (List<?>) a[1]) waarden.add((Waarde) o);
+                        Schrijversconflict c = Schrijversconflict.van(a[0], x.attribuut(), waarden, x.documentplaats(),
+                                x.typenamen());
+                        voegIn(drools, x.invoeging(), new Fout(a[0], c.schrijvers().get(0).schrijver(), c));
+                    });
+            case Gevolg.Parameterstand x -> new Consequentie(new Variable[]{globals.apply(x.global())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new ParameterStand(x.parameter(), a[0])));
+            case Gevolg.Rekendatumstand x -> new Consequentie(new Variable[]{globals.apply(x.global())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new Rekendatum((LocalDate) a[0])));
+        };
+    }
+
+    /** The value of {@link Gevolg.Waarde}: computed from the bound values, with its fault, its deposit and its leeg
+     *  policy as the plan says. */
+    private RuleItemBuilder<?> waarde(Gevolg.Waarde g) {
+        Waardefunctie waarde = ClosureWeergave.waardefunctie(g.waarde());
+        Gevolg.Deponering deponering = g.deponering();
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
+            // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
+            Sonde s = deponering == null ? null : new Sonde();
+            if (s != null) w[deponering.sonde()] = s;
+            Object v;
+            try {
+                v = waarde.van(w);
+                if (g.collapse()) v = Rekenhulpen.collapse(v);
+            } catch (RuntimeException e) {
+                if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                voegIn(drools, g.invoeging(),
+                        new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                return;
+            }
+            if (s != null && s.gemeld())
+                voegIn(drools, g.invoeging(),
+                        RegelSpraakRuntime.newInconsistentie(TmsTranspiler.INCONSISTENTIE, deponering.vorm(), onderwerp));
+            if (!Rekenhulpen.isLeeg(v) || g.schrijftLeeg())
+                voegIn(drools, g.invoeging(), new Waarde(onderwerp, g.doel(), v, g.schrijver()));
+        });
+    }
+
+    /** The fault of {@link Gevolg.Toetsfout}: the condition evaluated again over the same bound values. */
+    private RuleItemBuilder<?> toetsfout(Gevolg.Toetsfout g) {
+        Predicate<Object[]> toets = ClosureWeergave.toets(g.toets());
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
+            RuntimeException f = ClosureWeergave.fout(toets, w);
+            if (f == null)
+                throw new IllegalStateException("de voorwaarde van \"" + g.fout().vorm() + "\" faalde in de toets en niet"
+                        + " in het gevolg, over dezelfde gebonden waarden");
+            voegIn(drools, g.invoeging(), new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(f, g.fout().regel())));
+        });
+    }
+
+    /** The body of a consequence: the Drools handle, the object, and the bound values at their slots. */
+    @FunctionalInterface
+    private interface Gevolgfunctie {
+        void voer(org.drools.model.Drools drools, Object onderwerp, Object[] waarden);
+    }
+
+    /** A consequence over the object {@code onderwerp} binds and the values at {@code slots}, in a value array of
+     *  {@code grootte} slots. */
+    @SuppressWarnings("rawtypes")
+    private RuleItemBuilder<?> consequentie(String onderwerp, List<Integer> slots, int grootte, Gevolgfunctie f) {
+        int[] pos = slots.stream().mapToInt(Integer::intValue).toArray();
+        Variable[] v = new Variable[pos.length + 1];
+        v[0] = bekend(onderwerp);
+        for (int j = 0; j < pos.length; j++) v[j + 1] = variabele(pos[j]);
+        return new Consequentie(v, (drools, args) -> {
+            Object[] w = new Object[grootte];
+            for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j + 1];
+            f.voer(drools, args[0], w);
+        });
+    }
+
+    private static void voegIn(org.drools.model.Drools drools, Gevolg.Invoeging invoeging, Object feit) {
+        if (invoeging == Gevolg.Invoeging.LOGISCH) drools.logicalInsert(feit);
+        else drools.insert(feit);
+    }
+
+    /** A consequence over any number of bound variables. Each typed {@code execute} of the DSL sets its builder's block
+     *  to a {@link org.drools.model.functions.BlockN} over the Drools handle and the bound facts, and the engine calls
+     *  that block whatever its arity; this builder sets the same block directly, so a consequence is not limited by the
+     *  arities the DSL spells out. */
+    static final class Consequentie
+            extends org.drools.model.consequences.ConsequenceBuilder.AbstractValidBuilder<Consequentie> {
+        @SuppressWarnings("rawtypes")
+        Consequentie(Variable[] v, BiConsumer<org.drools.model.Drools, Object[]> body) {
+            super(v);
+            usingDrools = true;
+            block = args -> body.accept((org.drools.model.Drools) args[0],
+                    java.util.Arrays.copyOfRange(args, 1, args.length));
+        }
     }
 
     Variable<Object> onderwerp() { return onderwerp; }
@@ -190,7 +379,7 @@ final class PatternDslWeergave {
         };
         String id = toets.id();
         Variable[] v = new Variable[pos.length];
-        for (int j = 0; j < pos.length; j++) v[j] = slots.get(pos[j]);
+        for (int j = 0; j < pos.length; j++) v[j] = variabele(pos[j]);
         return switch (v.length) {
             case 0 -> DSL.expr(id, t.test(new Object[0]));
             case 1 -> DSL.expr(id, v[0], (Predicate1) a -> t.test(new Object[]{a}));
@@ -248,6 +437,10 @@ final class PatternDslWeergave {
     private static final Map<Class<?>, Map<String, Function1<Object, Object>>> VELDEN = new HashMap<>();
 
     static {
+        veld(Waarde.class, "onderwerp", Waarde::onderwerp);
+        veld(Waarde.class, "attribuut", Waarde::attribuut);
+        veld(Waarde.class, "schrijver", Waarde::schrijver);
+        veld(Waarde.class, "waarde", Waarde::waarde);
         veld(Stand.class, "onderwerp", Stand::onderwerp);
         veld(Stand.class, "attribuut", Stand::attribuut);
         veld(Stand.class, "waarde", Stand::waarde);
@@ -302,13 +495,17 @@ final class PatternDslWeergave {
     private static Predicate1<Object> predicaat(Class<?> klasse, Alfa a) {
         List<Predicate1<Object>> delen = new ArrayList<>();
         for (Alfa.Veldtoets t : a.toetsen()) {
-            Function1<Object, Object> f = veld(klasse, t.veld());
+            Function1<Object, Object> f = t.veld() == null ? x -> x : veld(klasse, t.veld());
             Object w = t.waarde();
             delen.add(switch (t.op()) {
                 case GELIJK -> x -> f.apply(x).equals(w);
+                case NIET_GELIJK -> x -> !f.apply(x).equals(w);
                 case MINSTENS -> x -> ((Number) f.apply(x)).intValue() >= ((Number) w).intValue();
                 case BINNEN -> x -> ((Geldigheid) w).bevat((LocalDate) f.apply(x));
                 case IS_EEN -> x -> ((Class<?>) w).isInstance(f.apply(x));
+                case LEEG -> x -> f.apply(x) == null;
+                case GEVULD -> x -> f.apply(x) != null;
+                case KLASSE_NIET_IN -> x -> !((Set<?>) w).contains(f.apply(x).getClass());
             });
         }
         if (delen.size() == 1) return delen.get(0);
