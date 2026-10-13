@@ -380,7 +380,7 @@ final class PatternDslWeergave {
         Gevolg.Constructie constructie = g.constructie();
         List<BiConsumer<Object, Object>> zetters = new ArrayList<>();
         for (Gevolg.Constructie.Zetting z : constructie.zettingen())
-            zetters.add(Accessors.setter(z.veld().klasse(), z.veld().eigenschap()));
+            zetters.add(Accessors.eigenschapSetter(z.veld().klasse(), z.veld().eigenschap()));
         Gevolg.Creatiediepte d = g.diepte();
         return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
             int diepte = Rekenhulpen.creatiediepte(g.creatie(), d.stratum(), d.type(), (List<?>) w[d.herkomst()],
@@ -747,14 +747,15 @@ final class PatternDslWeergave {
         VELDEN.computeIfAbsent(klasse, k -> new HashMap<>()).put(naam, (Function1<Object, Object>) (Function1<?, ?>) lezer);
     }
 
-    /** The read of field {@code naam} of an object of {@code klasse}. */
+    /** The read of field {@code naam} of an object of {@code klasse}: a component of a fact of the branch, or a bean
+     *  property, read through the getter the bean generator wrote for it. */
     private static Function1<Object, Object> veld(Class<?> klasse, String naam) {
         if (klasse.getPackageName().equals(PatternDslWeergave.class.getPackageName())) {
             Function1<Object, Object> f = VELDEN.getOrDefault(klasse, Map.of()).get(naam);
             if (f == null) throw new IllegalStateException("geen lezer voor het veld " + naam + " van " + klasse.getSimpleName());
             return f;
         }
-        Function<Object, Object> getter = Accessors.getter(klasse, naam);
+        Function<Object, Object> getter = Accessors.eigenschapGetter(klasse, naam);
         return getter::apply;
     }
 
@@ -811,7 +812,7 @@ final class PatternDslWeergave {
     private static Function1<Object, Object> langs(List<Binding.Veld> pad, Function<Object, Object> eind) {
         if (pad.isEmpty()) return o -> eind.apply(o);
         List<Function<Object, Object>> stappen = new ArrayList<>();
-        for (Binding.Veld stap : pad) stappen.add(Accessors.getter(stap.klasse(), stap.eigenschap()));
+        for (Binding.Veld stap : pad) stappen.add(Accessors.eigenschapGetter(stap.klasse(), stap.eigenschap()));
         return o -> {
             Object d = o;
             for (Function<Object, Object> stap : stappen) {
@@ -824,7 +825,7 @@ final class PatternDslWeergave {
 
     /** The read of member {@code veld} off a bean, as {@code vorm} reads it ({@link Binding.Leesvorm}). */
     static Function<Object, Object> invoerlezer(Binding.Veld veld, Binding.Leesvorm vorm, Class<?> soort) {
-        return vorm(Accessors.getter(veld.klasse(), veld.eigenschap()), vorm, soort);
+        return vorm(Accessors.eigenschapGetter(veld.klasse(), veld.eigenschap()), vorm, soort);
     }
 
     /** {@code getter} as {@code vorm} reads what it gives: as it is, as whether it holds {@code true}, as the segments

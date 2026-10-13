@@ -4,6 +4,7 @@ import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.ir.Conditie;
 import dev.uchar.regelspraak.ir.Geldigheid;
 import dev.uchar.regelspraak.ir.ResolvedVerdeling;
+import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
@@ -702,10 +703,10 @@ public final class Rekenhulpen {
     }
 
     /** The member {@code eigenschap}, a bean property ({@code plan.Binding.Veld#eigenschap}), of the bean
-     *  {@code object}, through the getter of its own class as the runtime reads a property; null where {@code object}
-     *  is null, a link that is absent. */
+     *  {@code object}, through the getter the bean generator wrote for it on the object's own class
+     *  ({@code Accessors.leesEigenschap}); null where {@code object} is null, a link that is absent. */
     public static Object lees(Object object, String eigenschap) {
-        return RegelSpraakRuntime.get(object, eigenschap);
+        return Accessors.leesEigenschap(object, eigenschap);
     }
 
     /** The object the walk over the reference fields {@code eigenschappen}, bean properties in order, reaches from
@@ -968,13 +969,13 @@ public final class Rekenhulpen {
         return diepte;
     }
 
-    /** The object a chain of to-one reference fields {@code velden} reaches from {@code start}, each read as the
-     *  runtime reads a property by name; a broken link reads as null. */
+    /** The object a chain of to-one reference fields {@code velden}, bean properties, reaches from {@code start}, each
+     *  read as {@link #lees} reads it; a broken link reads as null. */
     private static Object wandel(Object start, List<?> velden) {
         Object cur = start;
         for (Object v : velden) {
             if (cur == null) return null;
-            cur = RegelSpraakRuntime.get(cur, (String) v);
+            cur = Accessors.leesEigenschap(cur, (String) v);
         }
         return cur;
     }

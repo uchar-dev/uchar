@@ -1,9 +1,12 @@
 package dev.uchar.regelspraak.runtime;
 
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +44,15 @@ import java.util.function.Function;
  * being masked. A missing getter on the declared class fails FAST at model-build (a clear bean/spec mismatch)
  * instead of at first fire. None is reachable by the value pipeline (kenmerks only ever get {@code TRUE}, the only
  * primitive setters are boolean kenmerks, and the fact-bean getters are pure field reads).
+ *
+ * <p>Two entries. {@link #getter} and {@link #setter} take a DECLARED name and derive the method from it through
+ * {@link RegelSpraakRuntime#pascal}, as the reflective bridge does; the DRL-text branch and its replay read that way.
+ * {@link #eigenschapGetter}, {@link #eigenschapSetter} and {@link #leesEigenschap} take the member's bean PROPERTY and
+ * the names {@code Namen.lidnamen} gives it, the very names the fact-model generator writes, without deriving them
+ * again: {@code pascal} of a property is not always its getter ("日 X" has the property {@code 日X}, which
+ * {@code pascal} reads as a shouted word, {@code 日x}), and the Pascal form of a declared name is not always the
+ * generator's getter either ({@code İş} where the generator writes {@code Iş}). Every reader and writer of a bean member
+ * in the executable-model branch goes through the property entry.
  */
 public final class Accessors {
     private Accessors() {}
@@ -48,6 +60,11 @@ public final class Accessors {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final Map<Class<?>, Map<String, Function<Object, Object>>> GETTERS = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Map<String, BiConsumer<Object, Object>>> SETTERS = new ConcurrentHashMap<>();
+    /** The property entry's own caches: a key there is a property, here a declared name, and the two resolve a string
+     *  to a method differently. */
+    private static final Map<Class<?>, Map<String, Function<Object, Object>>> EIGENSCHAPGETTERS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<String, BiConsumer<Object, Object>>> EIGENSCHAPSETTERS =
+            new ConcurrentHashMap<>();
     /** Per-owner lookups. A fact bean loaded in a CHILD classloader lives in a DIFFERENT (unnamed) module than this
      *  class, so the static parent-bound {@link #LOOKUP} cannot unreflect its methods; a {@code privateLookupIn}
      *  teleported into the owner can. Cached because {@code privateLookupIn} is a security-checked call and the same
@@ -100,37 +117,105 @@ public final class Accessors {
                       .computeIfAbsent(prop, p -> buildSetter(owner, p));
     }
 
+    /** A null-safe typed getter for the member of {@code owner} whose bean property is {@code eigenschap}
+     *  ({@code Namen.eigenschap} of its declared name): the {@code get} or else the {@code is} method that
+     *  {@code Namen.lidnamen} names, as the fact-model generator wrote it, never derived again. Throws at THIS call when
+     *  the bean has no such getter. An object that is not an {@code owner} is read through this entry on its own
+     *  class. */
+    public static Function<Object, Object> eigenschapGetter(Class<?> owner, String eigenschap) {
+        return EIGENSCHAPGETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
+                                .computeIfAbsent(eigenschap, e -> buildEigenschapGetter(owner, e));
+    }
+
+    /** A typed setter for the member of {@code owner} whose bean property is {@code eigenschap}: the one single-argument
+     *  method that {@code Namen.lidnamen} names. Throws at THIS call where the bean has none, or more than one, since the
+     *  generator writes exactly one per member. An object that is not an {@code owner} is written through this entry on
+     *  its own class. */
+    public static BiConsumer<Object, Object> eigenschapSetter(Class<?> owner, String eigenschap) {
+        return EIGENSCHAPSETTERS.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
+                                .computeIfAbsent(eigenschap, e -> buildEigenschapSetter(owner, e));
+    }
+
+    /** The member of {@code bean} whose bean property is {@code eigenschap}, through {@link #eigenschapGetter} of the
+     *  bean's own class: a read whose class is known only when it runs, along a path or off an object of any class.
+     *  Null where {@code bean} is null, a link that is absent. */
+    public static Object leesEigenschap(Object bean, String eigenschap) {
+        return bean == null ? null : eigenschapGetter(bean.getClass(), eigenschap).apply(bean);
+    }
+
     private static Function<Object, Object> buildGetter(Class<?> owner, String prop) {
-        Method m = getterMethod(owner, prop);
+        String p = RegelSpraakRuntime.pascal(prop);
+        Method m = getterMethod(owner, "get" + p, "is" + p);
         if (m == null) throw new IllegalStateException("geen getter voor '" + prop + "' op " + owner.getName());
+        Function<Object, Object> raw = getypeerd(owner, m);
+        if (raw == null) return o -> RegelSpraakRuntime.get(o, prop);
+        // null owner -> null (leeg). A non-owner instance (only possible if a future objecttype specialisatie /
+        // a relation field broader than the navigation target ever feeds a SUBTYPE/sibling here) defers to the
+        // bridge, which re-resolves on the ACTUAL class -- so the typed path stays a true drop-in, not a cast trap.
+        return o -> o == null ? null : owner.isInstance(o) ? raw.apply(o) : RegelSpraakRuntime.get(o, prop);
+    }
+
+    private static Function<Object, Object> buildEigenschapGetter(Class<?> owner, String eigenschap) {
+        Namen.Lidnamen n = Namen.lidnamen(eigenschap);
+        Method m = getterMethod(owner, n.getter(), n.isGetter());
+        if (m == null)
+            throw new IllegalStateException("geen getter voor de eigenschap '" + eigenschap + "' op " + owner.getName()
+                    + ": " + n.getter() + " noch " + n.isGetter());
+        Function<Object, Object> raw = getypeerd(owner, m);
+        // where no typed handle binds, the method itself by reflection; the bridge would derive the name again
+        Function<Object, Object> lees = raw != null ? raw : o -> reflectief(m, o);
+        return o -> o == null ? null : owner.isInstance(o) ? lees.apply(o)
+                : eigenschapGetter(o.getClass(), eigenschap).apply(o);
+    }
+
+    /** The typed read through {@code m} of an object of {@code owner}, or null where it does not bind: the owner's
+     *  module forbids private access, or the proxy cannot bind the signature. Each null counts in {@link #lmfFallbacks}. */
+    private static Function<Object, Object> getypeerd(Class<?> owner, Method m) {
         // A Lookup that can unreflect on the owner wherever it lives (parent OR child loader). null -> the owner's
         // module forbids private access: keep the reflective bridge.
         MethodHandles.Lookup lk = ownerLookup(owner);
-        if (lk == null) { lmfFallbacks++; return o -> RegelSpraakRuntime.get(o, prop); }
+        if (lk == null) { lmfFallbacks++; return null; }
         MethodHandle mh;
         try { mh = lk.unreflect(m); }
         catch (IllegalAccessException e) { throw new IllegalStateException(e); }
         try {
-            Function<Object, Object> raw = proxy(Function.class, mh,
-                    MethodType.methodType(Object.class, Object.class));    // Function.apply erased: (Owner)Ret
-            // null owner -> null (leeg). A non-owner instance (only possible if a future objecttype specialisatie /
-            // a relation field broader than the navigation target ever feeds a SUBTYPE/sibling here) defers to the
-            // bridge, which re-resolves on the ACTUAL class -- so the typed path stays a true drop-in, not a cast trap.
-            return o -> o == null ? null : owner.isInstance(o) ? raw.apply(o) : RegelSpraakRuntime.get(o, prop);
+            return proxy(Function.class, mh, MethodType.methodType(Object.class, Object.class));   // Function.apply erased: (Owner)Ret
         } catch (Throwable t) {
-            // a signature the proxy cannot bind -> the cached reflective bridge (still correct, just untyped)
+            // a signature the proxy cannot bind -> the reflective bridge (still correct, just untyped)
             lmfFallbacks++;
-            return o -> RegelSpraakRuntime.get(o, prop);
+            return null;
         }
     }
 
     private static BiConsumer<Object, Object> buildSetter(Class<?> owner, String prop) {
-        Method m = uniqueSetterMethod(owner, prop);
+        Method m = uniqueSetterMethod(owner, "set" + RegelSpraakRuntime.pascal(prop));
         if (m == null) return (o, v) -> RegelSpraakRuntime.set(o, prop, v);   // 0 or >1 overloads: value-directed bridge
+        BiConsumer<Object, Object> raw = getypeerdeSetter(owner, m, prop);
+        if (raw == null) return (o, v) -> RegelSpraakRuntime.set(o, prop, v);
+        return (o, v) -> { if (owner.isInstance(o)) raw.accept(o, v); else RegelSpraakRuntime.set(o, prop, v); };   // subtype-safe drop-in
+    }
+
+    private static BiConsumer<Object, Object> buildEigenschapSetter(Class<?> owner, String eigenschap) {
+        String naam = Namen.lidnamen(eigenschap).setter();
+        Method m = uniqueSetterMethod(owner, naam);
+        if (m == null)
+            throw new IllegalStateException("niet precies één setter " + naam + " met één argument voor de eigenschap '"
+                    + eigenschap + "' op " + owner.getName());
+        BiConsumer<Object, Object> raw = getypeerdeSetter(owner, m, eigenschap);
+        BiConsumer<Object, Object> zet = raw != null ? raw : (o, v) -> reflectief(m, o, v);
+        return (o, v) -> {
+            if (owner.isInstance(o)) zet.accept(o, v);
+            else eigenschapSetter(o.getClass(), eigenschap).accept(o, v);
+        };
+    }
+
+    /** The typed write through {@code m} to an object of {@code owner}, or null where it does not bind, as
+     *  {@link #getypeerd}; {@code wat} names the member in a fault of the setter. */
+    private static BiConsumer<Object, Object> getypeerdeSetter(Class<?> owner, Method m, String wat) {
         // Owner Lookup: both the direct-handle (primitive-setter) and the proxy (object-setter) branches must unreflect
         // on the owner's class, which fails cross-loader off the parent LOOKUP. null -> reflective bridge.
         MethodHandles.Lookup lk = ownerLookup(owner);
-        if (lk == null) { lmfFallbacks++; return (o, v) -> RegelSpraakRuntime.set(o, prop, v); }
+        if (lk == null) { lmfFallbacks++; return null; }
         MethodHandle mh;
         try { mh = lk.unreflect(m); }
         catch (IllegalAccessException e) { throw new IllegalStateException(e); }
@@ -140,31 +225,39 @@ public final class Accessors {
             // regression). The owner Lookup lets this handle link against a CHILD-loaded bean too.
             final MethodHandle fmh = mh;
             return (o, v) -> {
-                if (!owner.isInstance(o)) { RegelSpraakRuntime.set(o, prop, v); return; }   // subtype-safe drop-in
                 try { fmh.invoke(o, v); }
                 catch (RuntimeException | Error e) { throw e; }
-                catch (Throwable t) { throw new IllegalStateException("setter '" + prop + "' faalde op " + owner.getName(), t); }
+                catch (Throwable t) { throw new IllegalStateException("setter '" + wat + "' faalde op " + owner.getName(), t); }
             };
         }
         try {
-            BiConsumer<Object, Object> bc = proxy(BiConsumer.class, mh,
+            return proxy(BiConsumer.class, mh,
                     MethodType.methodType(void.class, Object.class, Object.class));  // BiConsumer.accept erased: (Owner,ParamT)void
-            return (o, v) -> { if (owner.isInstance(o)) bc.accept(o, v); else RegelSpraakRuntime.set(o, prop, v); };
         } catch (Throwable t) {
             lmfFallbacks++;
-            return (o, v) -> RegelSpraakRuntime.set(o, prop, v);
+            return null;
         }
     }
 
-    private static Method getterMethod(Class<?> owner, String prop) {
-        String p = RegelSpraakRuntime.pascal(prop);
-        for (String pre : new String[]{"get", "is"}) {
-            try { return owner.getMethod(pre + p); } catch (NoSuchMethodException ignore) { }
+    /** A call of {@code m} on {@code o} by reflection, with the fault of the method itself as it is. */
+    private static Object reflectief(Method m, Object o, Object... argumenten) {
+        try { return m.invoke(o, argumenten); }
+        catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException r) throw r;
+            if (e.getCause() instanceof Error f) throw f;
+            throw new IllegalStateException(m.getName() + " faalde op " + o.getClass().getName(), e.getCause());
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Method getterMethod(Class<?> owner, String get, String is) {
+        for (String naam : new String[]{get, is}) {
+            try { return owner.getMethod(naam); } catch (NoSuchMethodException ignore) { }
         }
         return null;
     }
-    private static Method uniqueSetterMethod(Class<?> owner, String prop) {
-        String name = "set" + RegelSpraakRuntime.pascal(prop);
+    private static Method uniqueSetterMethod(Class<?> owner, String name) {
         Method only = null; int n = 0;
         for (Method m : owner.getMethods())
             if (m.getName().equals(name) && m.getParameterCount() == 1) { only = m; n++; }

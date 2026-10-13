@@ -553,7 +553,7 @@ public final class TmsTranspiler {
             HeeftKenmerk h = (HeeftKenmerk) f;
             Lid lid = lidVan(h, h.kenmerk());
             kenmerken.add(new Fixpunt.AfgeleidKenmerk(h.onderwerp(), lid.naam()));
-            BiConsumer<Object, Object> zetter = Accessors.setter(lid.klasse(), lid.naam());
+            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(lid.klasse(), Namen.eigenschap(lid.naam()));
             daden.add(() -> zetter.accept(h.onderwerp(), Boolean.TRUE));
         }
         Map<Object, Map<ElementSleutel, List<Waarde>>> perDoel = new IdentityHashMap<>();
@@ -578,7 +578,8 @@ public final class TmsTranspiler {
                 Object v = lid.tijd() == null ? eerste.waarde()
                         : Tijdvak.beans((List<Tijdvak>) eerste.waarde(), segmentklasse());
                 waarden.add(new Fixpunt.AfgeleideWaarde(eerste.onderwerp(), lid.naam(), v));
-                BiConsumer<Object, Object> zetter = Accessors.setter(lid.klasse(), lid.naam());
+                BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(lid.klasse(),
+                        Namen.eigenschap(lid.naam()));
                 daden.add(() -> zetter.accept(eerste.onderwerp(), v));
             }
         List<Fixpunt.GemaaktObject> objecten = new ArrayList<>();
@@ -609,11 +610,11 @@ public final class TmsTranspiler {
         RegelSpraakModel.Rol r0 = ft.rollen.get(0), r1 = ft.rollen.get(1);
         Objecttype t0 = model.objecttypeOpNaam(r0.objecttypeNaam()), t1 = model.objecttypeOpNaam(r1.objecttypeNaam());
         if (!r1.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t0, r1.naam(), t1)) {
-            BiConsumer<Object, Object> zetter = Accessors.setter(bonenklasse(t0), r1.naam());
+            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(bonenklasse(t0), Namen.eigenschap(r1.naam()));
             daden.add(() -> zetter.accept(k.eerste(), k.tweede()));
         }
         if (!r0.meervoudig() && FactModelGenerator.heeftReferentieVeld(model, t1, r0.naam(), t0)) {
-            BiConsumer<Object, Object> zetter = Accessors.setter(bonenklasse(t1), r0.naam());
+            BiConsumer<Object, Object> zetter = Accessors.eigenschapSetter(bonenklasse(t1), Namen.eigenschap(r0.naam()));
             daden.add(() -> zetter.accept(k.tweede(), k.eerste()));
         }
         return new Fixpunt.GemaakteKoppeling(ft.naam, r0.naam(), k.eerste(), r1.naam(), k.tweede());
@@ -6078,7 +6079,8 @@ public final class TmsTranspiler {
                         List.of()));
             } else {
                 // the field on the near bean reaches the far one, or the field on the far bean the near one
-                List<String> veld = List.of(h.veld());
+                // the walk reads bean properties, as every chain of the plan holds them
+                List<String> veld = List.of(Namen.eigenschap(h.veld()));
                 Betatoets stap = h.opNabij()
                         ? new Betatoets(id("veld-nabij"), Functie.ONTMOETING, nabij,
                                 List.of(constante(List.of()), constante(veld)))

@@ -343,7 +343,7 @@ public final class DroolsBackend {
         Map<Objecttype, List<String>> velden = new HashMap<>();
         for (Object boon : bonen)
             for (String veld : velden.computeIfAbsent(typen.get(boon), t -> referentievelden(build.model(), t))) {
-                Object doel = Accessors.getter(boon.getClass(), veld).apply(boon);
+                Object doel = Accessors.leesEigenschap(boon, veld);
                 if (doel != null && !typen.containsKey(doel))
                     return wie + ": het veld '" + veld + "' van " + naam(boon) + " wijst naar een "
                             + perKlasse.computeIfAbsent(doel.getClass(), k -> objecttype(build, doel)).naam + " ("
@@ -387,7 +387,7 @@ public final class DroolsBackend {
         for (Map.Entry<Class<?>, Objecttype> k : klassen.entrySet()) {
             List<String> velden = referentievelden(build.model(), k.getValue());
             List<Function<Object, Object>> lezers = new ArrayList<>();
-            for (String veld : velden) lezers.add(Accessors.getter(k.getKey(), veld));
+            for (String veld : velden) lezers.add(Accessors.eigenschapGetter(k.getKey(), veld));
             uit.put(k.getKey(), new Bewaking.Relatievelden(velden, lezers));
         }
         return uit;
@@ -463,7 +463,7 @@ public final class DroolsBackend {
         for (Object boon : bonen)
             for (String veld : referentievelden.computeIfAbsent(typen.get(boon), t -> referentievelden(model, t))) {
                 if (!velden.contains(veld)) continue;
-                Object houder = Accessors.getter(boon.getClass(), veld).apply(boon);
+                Object houder = Accessors.leesEigenschap(boon, veld);
                 if (houder != null)
                     werkelijk.computeIfAbsent(new Lijstsleutel(veld, houder, relatie.apply(boon).apply(veld)),
                             k -> new ArrayList<>()).add(boon);
@@ -483,7 +483,7 @@ public final class DroolsBackend {
                     throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar een " + ot.naam
                             + " heeft geen referentieveld '" + veld + "'; de rol is die van de houder, de naam van het"
                             + " veld waarmee een lid naar de houder wijst");
-                Object houder = Accessors.getter(lid.getClass(), veld).apply(lid);
+                Object houder = Accessors.leesEigenschap(lid, veld);
                 if (houder != l.houder())
                     throw new IllegalArgumentException(wat + " noemt " + naam(lid) + ", maar diens veld '" + veld
                             + "' wijst " + (houder == null ? "nergens heen" : "naar " + naam(houder)));

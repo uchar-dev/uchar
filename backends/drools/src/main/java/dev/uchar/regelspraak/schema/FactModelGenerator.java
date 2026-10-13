@@ -895,10 +895,12 @@ public final class FactModelGenerator {
                 b.append("    private ").append(l.javaType()).append(' ').append(l.eigenschap()).append(";\n");
             b.append('\n');
             for (Lid l : leden) {
-                String p = l.eigenschap(), P = Character.toUpperCase(p.charAt(0)) + p.substring(1);
-                b.append("    public ").append(l.javaType()).append(' ').append(l.isVorm() ? "is" : "get").append(P)
+                // the names every reader and writer of the member takes from the same helper
+                String p = l.eigenschap();
+                Namen.Lidnamen n = Namen.lidnamen(p);
+                b.append("    public ").append(l.javaType()).append(' ').append(l.isVorm() ? n.isGetter() : n.getter())
                  .append("() { return ").append(p).append("; }\n")
-                 .append("    public void set").append(P).append('(').append(l.javaType()).append(" v) { this.")
+                 .append("    public void ").append(n.setter()).append('(').append(l.javaType()).append(" v) { this.")
                  .append(p).append(" = v; }\n");
             }
             b.append("}\n");

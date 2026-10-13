@@ -2,7 +2,9 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.cases.CaseRunner;
 import dev.uchar.regelspraak.cases.DroolsBackend;
+import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.kern.Namen;
@@ -29,7 +31,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,26 +42,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>the property is a Java identifier;</li>
  *   <li>on a fact of the branch it is the component's name itself;</li>
- *   <li>on a bean its getter and setter are those of the declared name, as {@code Accessors} resolves them
- *       ({@code get}, {@code is} or {@code set} and {@link RegelSpraakRuntime#pascal}), so the executable model reads
- *       the same member through the property as before through the name.</li>
+ *   <li>on a bean the getter {@code Namen.lidnamen} names for the property is one the bean has, and it is the getter of
+ *       the declared name as {@code Accessors} resolved it before decision 26 ({@code get} and
+ *       {@link RegelSpraakRuntime#pascal}), so that on the corpus the branch reads the same member as before.</li>
  * </ul>
- * Fix round 1e (decision 24) adds names outside the corpus, where the property and the declared name part:
+ * Decision 26 puts the Java names of a bean member in one place, {@link Namen#lidnamen}, which the bean generator writes
+ * them with. Per name outside the corpus whose bean the generator can write ({@code İş}, whose property {@code iş} has
+ * the getter {@code getIş} where the declared name pascal-cases to {@code getİş}; {@code 日 X}, whose property
+ * {@code 日X} {@code pascal} reads as a shouted word, {@code get日x}; and further {@code ß}, a hyphen, a word in
+ * capitals, a single letter and diacritics), on a bean the generator wrote and the compiler compiled, every reader and
+ * writer of a member uses the getter and setter the generator wrote:
  * <ul>
- *   <li>per name, the getter and setter {@code Accessors} derives from the property are those
- *       {@code FactModelGenerator} writes: {@code İş} (whose property {@code iş} gives {@code getIş}, where the
- *       declared name gave {@code getİş}, which no bean has), a digit first, {@code ß}, a word in capitals, a hyphen
- *       and diacritics; and one name for which they are not, pinned with its reason: a first character without case
- *       followed by a capital alone, {@code 日 X}, whose property {@code 日X} {@code pascal} reads as a shouted
- *       word;</li>
- *   <li>a document with a member {@code İş} fires through the branch, with the value the reference interpreter and
- *       the ASP backend give, where the case leaves the member without input; with an input, the replay fails loudly
- *       when it sets it.</li>
+ *   <li>the names of {@code Namen.lidnamen}, and those of {@link Namen#getter} and {@link Namen#setter}, through which
+ *       {@code CaseRunner} sets the input and reads and writes the roles and the expected values;</li>
+ *   <li>the property entry of {@code Accessors}, through which the PatternDSL rendering reads a field, a binding, a
+ *       step of a path and an input, sets the initialisations of a creation, and the analysis writes the derived values
+ *       and links onto the beans, and the entry of the replay reads the reference fields;</li>
+ *   <li>{@code PatternDslWeergave.invoerlezer}, and the routes {@code lees}, {@code langs} and {@code ontmoeting}.</li>
  * </ul>
+ * Two documents fire through the branch with the value the reference interpreter and the ASP backend give: one with a
+ * member {@code İş}, with and without an input for it, and one with an input member {@code 日 X} and a derived member
+ * {@code İç}.
  *
- * <p><b>Red</b> before the step, on {@code eab32f03}: the three records had no property, and this class did not
- * compile. <b>Red</b> for fix round 1e, on {@code 5c6b34e3}, before step 1e: the document with the member {@code İş}
- * fails at the build, "geen getter voor 'İş' op dev.uchar.regelspraak.facts.Jutter".
+ * <p><b>Red</b> before step 1e, on {@code eab32f03}: the three records had no property, and this class did not compile.
+ * <b>Red</b> for fix round 1e, on {@code 5c6b34e3}: the document with the member {@code İş} fails at the build, "geen
+ * getter voor 'İş' op dev.uchar.regelspraak.facts.Jutter". <b>Red</b> for decision 26, on {@code b30f936c}: the input
+ * of the {@code İş} document fails, "kon setter setİş(BigDecimal) niet aanroepen op Jutter"; the document with
+ * {@code 日 X} fails at the build, "geen getter voor '日X' op dev.uchar.regelspraak.facts.Jutter"; and on the compiled
+ * bean {@code Namen.getter} and {@code Namen.setter} name {@code getİş} and {@code setİş}, and the PatternDSL reader and
+ * the routes find no getter for {@code 日X}.
  */
 class EigenschapWitnessTest {
 
@@ -97,7 +107,8 @@ class EigenschapWitnessTest {
                 if (!identifier(eigenschap)) geenIdentifier.add(plaats);
                 if (klasse != null && klasse.getPackageName().equals(TAK)) {
                     if (!eigenschap.equals(naam)) feit.add(plaats);
-                } else if (!RegelSpraakRuntime.pascal(eigenschap).equals(RegelSpraakRuntime.pascal(naam))) {
+                } else if (klasse != null && !heeftGetter(klasse, Namen.lidnamen(eigenschap))
+                        || !Namen.lidnamen(eigenschap).getter().equals("get" + RegelSpraakRuntime.pascal(naam))) {
                     bean.add(plaats);
                 }
                 if (!eigenschap.equals(naam)) anders++;
@@ -105,7 +116,8 @@ class EigenschapWitnessTest {
         }
         assertEquals(List.of(), geenIdentifier, "eigenschappen die geen identifier zijn");
         assertEquals(List.of(), feit, "feiten van de tak met een eigenschap die niet de component is");
-        assertEquals(List.of(), bean, "beans met een eigenschap waarvan de getter niet die van het lid is");
+        assertEquals(List.of(), bean, "beans met een eigenschap waarvan de getter niet die van het lid is, of niet die"
+                + " van de gedeclareerde naam vóór besluit 26");
         int n = velden, a = anders;
         assertTrue(n >= EXPECTED_MIN_VELDEN, () -> n + " velden, onder de vloer " + EXPECTED_MIN_VELDEN);
         assertTrue(a >= EXPECTED_MIN_ANDERS, () -> a + " eigenschappen die van de naam verschillen, onder de vloer "
@@ -120,72 +132,123 @@ class EigenschapWitnessTest {
         assertEquals(null, new Alfa.Veldtoets(null, Alfa.Vergelijker.KLASSE_IS, Object.class).eigenschap());
     }
 
-    /** Names outside the corpus whose getter and setter, as {@code Accessors} derives them from the property, are those
-     *  the bean generator writes. */
-    private static final List<String> ZELFDE = List.of("İş", "3e lid", "straße", "ABC wet", "datum-tijd",
+    /** Names outside the corpus whose bean the generator can write, each a case where a derivation other than
+     *  {@link Namen#lidnamen} misses the generator's names, or a kind of character a name may hold. */
+    private static final List<String> LASTIG = List.of("İş", "日 X", "straße", "ABC wet", "datum-tijd", "q", "BSN",
             "één coördinaat");
 
-    /** Names outside the corpus for which they are not, each with the two getters, the generator's first: where the
-     *  property's first character has no case and the rest has a letter but no lowercase one, {@code pascal} reads the
-     *  property as a shouted word and lowers its rest, so {@code Accessors} looks for a getter the bean does not have
-     *  and the build fails loudly ("geen getter voor"). Before step 1e the declared name gave the generator's getter
-     *  here. Fails when stale. */
-    private static final Map<String, List<String>> ANDERS = Map.of("日 X", List.of("get日X", "get日x"));
+    @Test void elke_lezer_en_schrijver_gebruikt_de_namen_van_de_beangenerator() throws Exception {
+        Map<String, String> bronnen = FactModelGenerator.genereer(IrLoader.load(json(proefdocument(LASTIG))));
+        String bron = bronnen.get("Proef");
+        // the generator writes per member "get<P>() { return <p>; }" and "set<P>(<type> v) { this.<p> = v; }"
+        Map<String, String> getters = new HashMap<>(), setters = new HashMap<>();
+        Matcher g = Pattern.compile("public \\S+ ((?:get|is)\\S+)\\(\\) \\{ return (\\S+); \\}").matcher(bron);
+        while (g.find()) getters.put(g.group(2), g.group(1));
+        Matcher z = Pattern.compile("public void (set\\S+)\\(\\S+ v\\) \\{ this\\.(\\S+) = v; \\}").matcher(bron);
+        while (z.find()) setters.put(z.group(2), z.group(1));
+        Class<?> proef = BeanCompiler.compileer(bronnen).loadClass(FactModelGenerator.PAKKET + ".Proef");
+        List<String> fouten = new ArrayList<>();
+        int n = 0;
+        for (String naam : LASTIG) {
+            String e = Namen.eigenschap(naam), getter = getters.get(e), setter = setters.get(e);
+            Object bean = proef.getConstructor().newInstance();
+            java.math.BigDecimal geschreven = new java.math.BigDecimal(++n + ".01"),
+                    gezet = new java.math.BigDecimal(n + ".02");
+            Map<String, Object> namen = new java.util.LinkedHashMap<>();
+            namen.put("lidnamen.getter", Namen.lidnamen(e).getter());
+            namen.put("lidnamen.setter", Namen.lidnamen(e).setter());
+            namen.put("Namen.getter", Namen.getter(naam));
+            namen.put("Namen.setter", Namen.setter(naam));
+            for (Map.Entry<String, Object> m : namen.entrySet()) {
+                String verwacht = m.getKey().endsWith("getter") ? getter : setter;
+                if (!m.getValue().equals(verwacht))
+                    fouten.add(naam + " | " + m.getKey() + " " + m.getValue() + ", de generator " + verwacht);
+            }
+            // the writer, read back through the generator's own getter
+            meet(fouten, naam, "Accessors.eigenschapSetter", geschreven, () -> {
+                Accessors.eigenschapSetter(proef, e).accept(bean, geschreven);
+                return proef.getMethod(getter).invoke(bean);
+            });
+            // the readers, of a value set through the generator's own setter
+            proef.getMethod(setter, java.math.BigDecimal.class).invoke(bean, gezet);
+            meet(fouten, naam, "Accessors.eigenschapGetter", gezet, () -> Accessors.eigenschapGetter(proef, e).apply(bean));
+            meet(fouten, naam, "Accessors.leesEigenschap", gezet, () -> Accessors.leesEigenschap(bean, e));
+            meet(fouten, naam, "PatternDslWeergave.invoerlezer", gezet, () -> PatternDslWeergave.invoerlezer(
+                    new Binding.Veld(proef, naam), Binding.Leesvorm.WAARDE, null).apply(bean));
+            meet(fouten, naam, "Rekenhulpen.lees", gezet, () -> Rekenhulpen.lees(bean, e));
+            meet(fouten, naam, "Rekenhulpen.langs", gezet, () -> Rekenhulpen.langs(bean, List.of(e)));
+            meet(fouten, naam, "Rekenhulpen.ontmoeting", true,
+                    () -> Rekenhulpen.ontmoeting(bean, bean, List.of(e), List.of(e)));
+        }
+        assertEquals(List.of(), fouten, () -> "lezers en schrijvers die niet de namen van de beangenerator gebruiken:\n"
+                + bron);
+    }
 
-    @Test void de_getter_van_de_eigenschap_is_die_de_beangenerator_schrijft() {
-        List<String> namen = new ArrayList<>(ZELFDE);
-        namen.addAll(new java.util.TreeSet<>(ANDERS.keySet()));
+    /** One reader or writer {@code wie} of the member {@code naam}: what it gives, or the fault it throws, where that is
+     *  not {@code verwacht}. */
+    private static void meet(List<String> fouten, String naam, String wie, Object verwacht,
+                             java.util.concurrent.Callable<Object> lezing) {
+        try {
+            Object gelezen = lezing.call();
+            if (!verwacht.equals(gelezen)) fouten.add(naam + " | " + wie + " gaf " + gelezen + ", verwacht " + verwacht);
+        } catch (Exception f) {
+            Throwable oorzaak = f instanceof java.lang.reflect.InvocationTargetException i ? i.getCause() : f;
+            fouten.add(naam + " | " + wie + " faalt: " + oorzaak);
+        }
+    }
+
+    /** A document whose object type {@code Proef} has a number attribute for each of {@code namen}. */
+    private static String proefdocument(List<String> namen) {
         StringBuilder attributen = new StringBuilder();
         for (String n : namen)
             attributen.append(attributen.isEmpty() ? "" : ", ").append("{\"node\": \"Attribute\", \"name\": ")
                     .append(Namen.drlString(n)).append(", \"datatype\": {\"node\": \"Number\", \"whole\": false,"
                             + " \"decimals\": 2, \"sign\": \"nonNegative\"}}");
-        String bron = FactModelGenerator.genereer(IrLoader.load(json("{\"format\": \"uchar-ir-v1\", \"model\":"
+        return "{\"format\": \"uchar-ir-v1\", \"model\":"
                 + " {\"objectTypes\": [{\"node\": \"ObjectType\", \"name\": \"Proef\", \"animate\": false,"
                 + " \"plural\": \"Proeven\", \"attributes\": [" + attributen + "], \"characteristics\": []}],"
                 + " \"factTypes\": [], \"parameters\": [], \"domains\": [], \"unitSystems\": [], \"dimensions\": [],"
                 + " \"timelines\": [], \"dayKinds\": []}, \"rules\": {\"rules\": [], \"dayKindDefinitions\": [],"
                 + " \"objectCreations\": [], \"allocations\": [], \"consistencies\": [], \"uniquenesses\": [],"
                 + " \"factCreations\": [], \"startPointDeterminations\": [], \"ruleGroups\": []},"
-                + " \"diagnostics\": []}"))).get("Proef");
-        // the generator writes per member "get<P>() { return <p>; }" and "set<P>(<type> v) { this.<p> = v; }"
-        Map<String, String> getters = new HashMap<>(), setters = new HashMap<>();
-        Matcher g = Pattern.compile("public \\S+ (get\\S+)\\(\\) \\{ return (\\S+); \\}").matcher(bron);
-        while (g.find()) getters.put(g.group(2), g.group(1));
-        Matcher z = Pattern.compile("public void (set\\S+)\\(\\S+ v\\) \\{ this\\.(\\S+) = v; \\}").matcher(bron);
-        while (z.find()) setters.put(z.group(2), z.group(1));
-        List<String> zelfde = new ArrayList<>(), anders = new ArrayList<>();
-        for (String n : namen) {
-            String eigenschap = Namen.eigenschap(n);
-            String pascal = RegelSpraakRuntime.pascal(eigenschap), getter = "get" + pascal, setter = "set" + pascal;
-            if (getter.equals(getters.get(eigenschap)) && setter.equals(setters.get(eigenschap))) zelfde.add(n);
-            else anders.add(n + " " + getters.get(eigenschap) + " " + getter);
+                + " \"diagnostics\": []}";
+    }
+
+    /** Whether {@code klasse} has the {@code get} or the {@code is} form of {@code namen}. */
+    private static boolean heeftGetter(Class<?> klasse, Namen.Lidnamen namen) {
+        for (String m : List.of(namen.getter(), namen.isGetter())) {
+            try {
+                klasse.getMethod(m);
+                return true;
+            } catch (NoSuchMethodException ignore) {
+                // the other form
+            }
         }
-        assertEquals(ZELFDE, zelfde, () -> "namen waarvan Accessors de getter van de beangenerator vindt:\n" + bron);
-        List<String> verwacht = new ArrayList<>();
-        for (String n : new java.util.TreeSet<>(ANDERS.keySet()))
-            verwacht.add(n + " " + ANDERS.get(n).get(0) + " " + ANDERS.get(n).get(1));
-        assertEquals(verwacht, anders, "namen waarvan Accessors een andere getter zoekt");
-        // the case decision 24 accepts: the declared name gave a getter the bean lacks, the property gives its own
-        assertEquals("getİş", "get" + RegelSpraakRuntime.pascal("İş"));
-        assertEquals("getIş", getters.get(Namen.eigenschap("İş")));
+        return false;
     }
 
     /** The document {@code eigenschap/turks-lid}: "het uit van een Jutter moet berekend worden als het İş van de
      *  Jutter plus 1,00", verifier-clean. Without an input for İş the branch reads the member, leeg, through the getter
-     *  the generator wrote, and gives 1.00, as the reference interpreter and the ASP backend do. With an input of 4.50,
-     *  where both give 5.50, the replay fails loudly when it sets the input: it names the setter after the declared
-     *  name ({@code Namen.setter}), {@code setİş}, which the bean does not have. That limit of the replay lies outside
-     *  the analysis; this pins it, and fails when it is gone. */
+     *  the generator wrote, and gives 1.00; with an input of 4.50 the replay sets it through the setter the generator
+     *  wrote, {@code setIş}, and the branch gives 5.50; the reference interpreter and the ASP backend give both. */
     @Test void een_document_met_een_turks_lid_vuurt() throws Exception {
         Path map = Path.of("src", "test", "resources", "eigenschap", "turks-lid");
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
         assertNull(VouwplanWitnessTest.speelCase(map.resolve("ir.json"), json.readTree(map.resolve("case.json")
                 .toFile())));
-        java.lang.reflect.InvocationTargetException invoer = assertThrows(
-                java.lang.reflect.InvocationTargetException.class, () -> VouwplanWitnessTest.speelCase(
-                        map.resolve("ir.json"), json.readTree(map.resolve("case-invoer.json").toFile())));
-        assertEquals("kon setter setİş(BigDecimal) niet aanroepen op Jutter", invoer.getCause().getMessage());
+        assertNull(VouwplanWitnessTest.speelCase(map.resolve("ir.json"), json.readTree(map.resolve("case-invoer.json")
+                .toFile())));
+    }
+
+    /** The document {@code eigenschap/lastige-leden}: "het İç van een Jutter moet berekend worden als het 日 X van de
+     *  Jutter plus 1,00", verifier-clean. The replay sets the input 日 X = 2.00 through {@code set日X}, the branch reads
+     *  it through {@code get日X}, writes 3.00 through {@code setIç} after the fixpoint, and the replay reads it through
+     *  {@code getIç}; the reference interpreter and the ASP backend give 3.00. */
+    @Test void een_document_met_lastige_leden_vuurt() throws Exception {
+        Path map = Path.of("src", "test", "resources", "eigenschap", "lastige-leden");
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        assertNull(VouwplanWitnessTest.speelCase(map.resolve("ir.json"), json.readTree(map.resolve("case.json")
+                .toFile())));
     }
 
     private static com.fasterxml.jackson.databind.JsonNode json(String tekst) {

@@ -41,26 +41,40 @@ public final class Namen {
         return letter;
     }
 
-    /** The JavaBean getter name for an attribute/kenmerk/rol ({@code get<Pascal>}; the boolean {@code is<X>}
-     *  form is the FACT side's — mvel resolves the property either way). */
-    public static String getter(String naam) { return "get" + ident(naam, true); }
+    /** The getter of the member named {@code naam}, as the fact-model generator writes it: {@code get} and the stem of
+     *  its property ({@link #lidnamen}); a scalar characteristic has the {@code is} form instead, which a reader of a
+     *  name tries second. */
+    public static String getter(String naam) { return lidnamen(eigenschap(naam)).getter(); }
 
-    public static String setter(String naam) { return "set" + ident(naam, true); }
+    /** The setter of the member named {@code naam}, as the fact-model generator writes it ({@link #lidnamen}). */
+    public static String setter(String naam) { return lidnamen(eigenschap(naam)).setter(); }
 
     /** The bean property of a member named {@code naam}: the camel identifier of the name, which is the field the
-     *  fact-model generator writes for the member and the property a DRL constraint spells. The generator writes the
-     *  member's getter and setter as {@code get}, {@code is} or {@code set} and the property with its first character
-     *  in upper case. {@code Accessors} derives them from the property through {@code RegelSpraakRuntime.pascal}, which
-     *  gives that same name unless it reads the property as a shouted word: where the property's first character has no
-     *  case and the rest has a letter but no lowercase one ({@code 日X} of "日 X"), it looks for {@code get日x}, which
-     *  the bean does not have, and the build fails loudly. Nor is the property's getter always that of the declared
-     *  name ({@link #getter}): the lower case of {@code İ} is {@code i}, whose upper case is {@code I}, so for "İş" the
-     *  generator writes {@code getIş}, which the property reaches and the declared name, {@code getİş}, does not.
-     *  {@code EigenschapWitnessTest} holds both per name. The executable-model branch plans the property once (its
-     *  plan's {@code Binding.Veld}, {@code Alfa.Veldtoets} and {@code Join}), so that no rendering derives a property
-     *  from a declared name with spaces. On a fact of that branch, whose components are single lowercase words, it is
-     *  the component's name itself. */
+     *  fact-model generator writes for the member and the property a DRL constraint spells. Its getter and setter are
+     *  {@link #lidnamen} of it. The executable-model branch plans the property once (its plan's {@code Binding.Veld},
+     *  {@code Alfa.Veldtoets} and {@code Join}), so that no rendering derives a property from a declared name with
+     *  spaces. On a fact of that branch, whose components are single lowercase words, it is the component's name
+     *  itself. */
     public static String eigenschap(String naam) { return ident(naam, false); }
+
+    /** The Java names of a bean member besides its field, the property: the {@code get} and the {@code is} form of its
+     *  getter, of which the generator writes the {@code is} form for a scalar characteristic and the {@code get} form
+     *  for every other member, and its setter. */
+    public record Lidnamen(String getter, String isGetter, String setter) {}
+
+    /** The Java names of the member whose bean property is {@code eigenschap} ({@link #eigenschap}): {@code get},
+     *  {@code is} and {@code set}, each followed by the property with its first character in upper case and the rest
+     *  as it is. THE one derivation of these names: the fact-model generator writes a member's getter and setter
+     *  through it, and every reader and writer of a member takes them from it, from the property, never again from a
+     *  declared name. Neither other derivation gives the generator's names for every name: the Pascal form of the
+     *  declared name gives {@code getİş} for "İş", whose property is {@code iş} (the lower case of {@code İ} is
+     *  {@code i}) and whose getter is {@code getIş}; and {@code RegelSpraakRuntime.pascal} of the property reads
+     *  {@code 日X}, of "日 X", as a shouted word and gives {@code get日x}. {@code EigenschapWitnessTest} holds the
+     *  names of each reader and writer to the generator's, on a bean the generator wrote and the compiler compiled. */
+    public static Lidnamen lidnamen(String eigenschap) {
+        String stam = Character.toUpperCase(eigenschap.charAt(0)) + eigenschap.substring(1);
+        return new Lidnamen("get" + stam, "is" + stam, "set" + stam);
+    }
 
     /** A §9.3 regelnaam spliced inside DRL double quotes: {@code \} and {@code "} would end the string (or
      *  escape into it) and a newline ends the rule header — all four are substituted (disjoint characters,
