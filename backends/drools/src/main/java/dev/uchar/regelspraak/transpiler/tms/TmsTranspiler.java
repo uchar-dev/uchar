@@ -68,6 +68,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1242,12 +1243,15 @@ public final class TmsTranspiler {
     }
 
     /** The reads of a rule on {@code subject}, whose subject pattern leaves out the objects of a class in
-     *  {@code geabsorbeerd}: an effective stack writes the target there ({@link #geabsorbeerd}). */
+     *  {@code geabsorbeerd}: an effective stack writes the target there ({@link #geabsorbeerd}). The plan carries the
+     *  classes in the order of the document's types, as {@code geabsorbeerd} lists them: an immutable copy by
+     *  {@code Set.copyOf} iterates in an order that differs per run, and a rendering into text must be the same in
+     *  every run. */
     private Lezingen lezingen(Objecttype subject, Set<Class<?>> geabsorbeerd) {
         Lezingen lez = new Lezingen(subject);
         if (!geabsorbeerd.isEmpty())
-            lez.onderwerpAlfa(new Alfa(id("niet-in-een-stapel"),
-                    List.of(new Alfa.Veldtoets(null, Alfa.Vergelijker.KLASSE_NIET_IN, Set.copyOf(geabsorbeerd)))));
+            lez.onderwerpAlfa(new Alfa(id("niet-in-een-stapel"), List.of(new Alfa.Veldtoets(null,
+                    Alfa.Vergelijker.KLASSE_NIET_IN, Collections.unmodifiableSet(new LinkedHashSet<>(geabsorbeerd))))));
         return lez;
     }
 
