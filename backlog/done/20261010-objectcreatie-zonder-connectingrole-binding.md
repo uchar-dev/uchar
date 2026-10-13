@@ -185,4 +185,4 @@ aanvulling op `20261009-ref-strata-na-een-creatie`, en de javadoc van `Kringen.t
    de DRL-teksttak en voor een invoerrelatie.
 4. **CONSTRUCTS rij 21:** de hoofdsessie zet bij de landing de nieuwe tekst.
 5. **Toolchain:** de toolchainkaart (`20261010-sessie-via-de-ingang-van-uchar`) pint op deze landing. Punt 4 van het
-   dekkingsverlies is dan terug, behalve het supertypepad. De pin beweegt pas na de demo van 2026-10-12.
+   dekkingsverlies is dan terug, behalve het supertypepad.
