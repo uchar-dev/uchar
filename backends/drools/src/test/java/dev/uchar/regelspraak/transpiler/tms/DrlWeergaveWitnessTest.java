@@ -44,9 +44,10 @@ class DrlWeergaveWitnessTest {
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
 
     /** Floors, measured 2026-10-13 at step 2a: the goldens the exec-model branch plays, and those whose text the
-     *  rendering gives and Drools compiles. A deliberate removal lowers a floor in the same commit. */
+     *  rendering gives and Drools compiles, raised at step 3a, which carries the rules of a fold, from 117 to the 165
+     *  measured then. A deliberate removal lowers a floor in the same commit. */
     private static final int EXPECTED_MIN_GOLDENS = 250;
-    private static final int EXPECTED_MIN_GECOMPILEERD = 117;
+    private static final int EXPECTED_MIN_GECOMPILEERD = 165;
 
     /** What the text of no golden holds. */
     private static final List<String> VERBODEN = List.of("import function", "salience", "no-loop", "modify",
@@ -97,8 +98,9 @@ class DrlWeergaveWitnessTest {
     }
 
     /** Floors, measured 2026-10-13 at step 2a: the rules of the goldens the branch plays whose consequence the rendering
-     *  carries, and the goldens that have at least one. A deliberate removal lowers a floor in the same commit. */
-    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1221;
+     *  carries, raised at step 3a from 1221 to the 1433 measured then, and the goldens that have at least one, which
+     *  stayed 224. A deliberate removal lowers a floor in the same commit. */
+    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1433;
     private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 224;
 
     /** The rules whose consequence the rendering carries compile in every golden, also in one whose text it refuses for
@@ -166,9 +168,36 @@ class DrlWeergaveWitnessTest {
         for (String vorm : Vormenplan.VORMEN)
             assertTrue(tekst.contains(vorm), () -> "de vormentekst mist " + vorm + ":\n" + tekst);
         DrlWeergave.Weigering w = org.junit.jupiter.api.Assertions.assertThrows(DrlWeergave.Weigering.class,
-                () -> DrlWeergave.tekst(Vormenplan.bijdrage(wachter)));
-        assertEquals("Bijdrage", w.soort());
-        assertEquals("de DRL-weergave draagt Bijdrage nog niet", w.getMessage());
+                () -> DrlWeergave.tekst(Vormenplan.ongedragen(wachter)));
+        assertEquals("Uniciteitsschending", w.soort());
+        assertEquals("de DRL-weergave draagt Uniciteitsschending nog niet", w.getMessage());
+    }
+
+    /**
+     * Every form of the rules of a fold compiles (step 3a), also where no golden has it: a plan made here over the same
+     * beans ({@link Vormenplan#vouwen}), with a contribution of every kind, the place of a member over no step and over
+     * two, in the second selection, with and without a probe, the accumulates over the places through the constraint of
+     * a place and of a meeting, the deposit of a filter, the fault of a filter and the fault of a member. One plan gives
+     * one text, written to {@code <map>/_vouwenplan.drl} under {@code -Duchar.drlvorm}.
+     *
+     * <p><b>Red</b> before step 3a, on {@code 4c8a687b}: the rendering refused the plan, "de DRL-weergave draagt
+     * Bijdrage nog niet".
+     */
+    @Test void elke_vorm_van_een_vouw_compileert() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Class<?> post = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Post");
+        Class<?> kustvak = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Kustvak");
+        Modelplan plan = Vormenplan.vouwen(wachter, post, kustvak);
+        String tekst = DrlWeergave.tekst(plan);
+        assertEquals(tekst, DrlWeergave.tekst(plan), "één plan geeft één tekst");
+        String dump = System.getProperty("uchar.drlvorm");
+        if (dump != null) Files.writeString(Path.of(dump).resolve("_vouwenplan.drl"), tekst);
+        assertEquals(List.of(), compileer(tekst, b.beanLoader()), () -> "de vouwentekst compileert niet:\n" + tekst);
+        for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de vouwentekst");
+        for (String vorm : Vormenplan.VOUWVORMEN)
+            assertTrue(tekst.contains(vorm), () -> "de vouwentekst mist " + vorm + ":\n" + tekst);
     }
 
     /** The errors of compiling {@code tekst} with {@code KieHelper} under the bean loader {@code bonen}, which is the

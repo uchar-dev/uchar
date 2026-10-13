@@ -35,10 +35,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * A plan made by hand that holds every form {@link DrlWeergave} carries in step 2a of card
- * drl-teksttak-op-truth-maintenance, over three beans of one document (a Wachter at a Post on a Kustvak), so that a
- * witness can compile the forms no golden of the corpus renders: it decides nothing of a document's meaning, and no
- * rule of it is meant to fire. The rules are named after what they hold.
+ * Plans made by hand that hold every form {@link DrlWeergave} carries, over three beans of one document (a Wachter at a
+ * Post on a Kustvak), so that a witness can compile the forms no golden of the corpus renders: the forms of step 2a of
+ * card drl-teksttak-op-truth-maintenance ({@link #plan}) and those of the rules of a fold of step 3a ({@link #vouwen}).
+ * They decide nothing of a document's meaning, and no rule of them is meant to fire. The rules are named after what
+ * they hold.
  */
 final class Vormenplan {
 
@@ -116,13 +117,123 @@ final class Vormenplan {
                 new Modelplan.Globaal("rekendatum", LocalDate.class)), regels);
     }
 
-    /** A plan whose one rule has a consequence of a kind this step does not carry. */
-    static Modelplan bijdrage(Class<?> wachter) {
-        return new Modelplan(List.of(), List.of(new Regelplan("bijdrage", null, null,
-                new Leestabel(List.of(new Lezing(0, Leessoort.ONDERWERP, "onderwerp zelf", O))),
+    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: the violation of a
+     *  uniqueness, which step 3b of the card brings. */
+    static Modelplan ongedragen(Class<?> wachter) {
+        return new Modelplan(List.of(), List.of(new Regelplan("schending", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of())),
-                new Gevolg.Bijdrage(O, "proefvouw", 0, new Gevolg.Inbreng.Telling(), List.of(0), 1,
-                        Gevolg.Invoeging.LOGISCH))));
+                new Gevolg.Uniciteitsschending(O, "proefuniciteit", Gevolg.Invoeging.LOGISCH))));
+    }
+
+    /** Fragments of the text that show the forms of the fold plan ({@link #vouwen}), one per form. */
+    static final List<String> VOUWVORMEN = List.of("new Bijdrage(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
+            "Rekenhulpen.bijdrage(\"proefvouw: som\"", "\"MAAND\", true)", "Rekenhulpen.oordeel(", "_matrix",
+            "_lidtoets", "new Lidtoets(plaats, waar, fout, Rekenhulpen.gemeld(sonde))",
+            "new Lidtoets(plaats, waar, fout, Rekenhulpen.gemeld(null))", "_plaats",
+            "Rekenhulpen.vouwplaats(dev.uchar.regelspraak.transpiler.tms.plan.Gevolg.Plaatsreden.KWANTOR",
+            "java.util.Arrays.asList(\"kustvak\", \"wachter\")", "java.util.Arrays.asList()",
+            "new Filterdeponering(", "RuntimeException f = ", "new Filterfout(", "new Lidfout(",
+            "Rekenhulpen.invoervormfout(", "Rekenhulpen.plaatsVan(", "Rekenhulpen.ontmoeting(", "Lijstplaats(");
+
+    /**
+     * A plan with every consequence of the rules of a fold (step 3a of card drl-teksttak-op-truth-maintenance), over the
+     * beans of the same document as {@link #plan}: the members are the Posts of a Kustvak, joined as the analysis joins
+     * a member to the fold's subject. A member's contribution of each kind (its count, its value, its value as a total
+     * per month and counted where it is filled, the verdict of a matrix, and the test of a matrix with a probe and a
+     * place of two steps in the second selection, or without either), the deposit of a filter, the fault of a filter
+     * and the fault of a member, each with the accumulates over the places of the steps that the analysis plans beside
+     * them, one through the constraint of a place and one through the constraint of a meeting. No rule of it is meant
+     * to fire.
+     */
+    static Modelplan vouwen(Class<?> wachter, Class<?> post, Class<?> kustvak) {
+        String v = "$vouwonderwerp";
+        Patroon vouwonderwerp = new Patroon(kustvak, v, List.of(), List.of(), List.of());
+        Binding hoogte = Binding.van("$hoogte", post, "hoogte");
+        Term matrix = new Term.Aanroep(Functie.RS_AGG_VERGELIJK, List.of(lees(0), getal("5"), tekst(">")),
+                "de hoogte groter dan 5");
+        Term deponerend = new Term.Aanroep(Functie.RS_AGG_VERGELIJK, List.of(new Term.Deel(Functie.GEDEELD, lees(0),
+                getal("2"), 6, "de hoogte gedeeld door 2"), getal("1"), tekst(">")), "de helft groter dan 1");
+        Term falend = new Term.Aanroep(Functie.RS_AGG_VERGELIJK, List.of(new Term.Deel(Functie.GEDEELD, lees(0),
+                getal("0"), -1, "de hoogte gedeeld door 0"), getal("1"), tekst(">")), "het filter dat faalt");
+        List<Regelplan> regels = new ArrayList<>();
+        regels.add(new Regelplan("telling", "proef", null, tabel(new Lezing(0, Leessoort.ONDERWERP, "lid", O)),
+                List.of(vouwonderwerp, lid(post, v)), new Gevolg.Bijdrage(v, "proefvouw: telling", 0,
+                new Gevolg.Inbreng.Telling(), List.of(0), 1, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("lidwaarde", "proef", null, tabel(hoogteslot(), lidslot(1)),
+                List.of(vouwonderwerp, lid(post, v, hoogte)), new Gevolg.Bijdrage(v, "proefvouw: som", 1,
+                new Gevolg.Inbreng.Lidwaarde(0, null, false), List.of(0, 1), 2, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("lidwaarde per maand", "proef", null, tabel(hoogteslot(), lidslot(1)),
+                List.of(vouwonderwerp, lid(post, v, hoogte)), new Gevolg.Bijdrage(v, "proefvouw: totaal", 1,
+                new Gevolg.Inbreng.Lidwaarde(0, "MAAND", true), List.of(0, 1), 2, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("oordeel", "proef", null, tabel(hoogteslot(), lidslot(1)),
+                List.of(vouwonderwerp, lid(post, v, hoogte)), new Gevolg.Bijdrage(v, "proefvouw: oordeel", 1,
+                new Gevolg.Inbreng.Oordeel(matrix), List.of(0, 1), 2, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("lidtoets", "proef", null, tabel(hoogteslot(), lidslot(1),
+                plaatsslot(2, Leessoort.LIJSTPLAATSEN, "$lijstplaatsen_1"), plaatsslot(3, Leessoort.LIJSTPLAATS, "$plaats_1"),
+                plaatsslot(4, Leessoort.LIJSTPLAATSEN, "$lijstplaatsen_2"), plaatsslot(5, Leessoort.LIJSTPLAATS, "$plaats_2"),
+                new Lezing(6, Leessoort.SONDE, null, null)),
+                List.of(vouwonderwerp, lid(post, v, hoogte), plaatsen(1, "kustvak", new Betatoets("plaats-1",
+                        Functie.PLAATS_VAN, O, List.of(new Term.Const(List.of(), null, null)))),
+                        plaatsen(2, "wachter", new Betatoets("plaats-2", Functie.ONTMOETING, O, List.of(
+                                new Term.Const(List.of(), null, null), new Term.Const(List.of("wachter"), null, null))))),
+                new Gevolg.Bijdrage(v, "proefvouw: lidtoets", 1, new Gevolg.Inbreng.Lidtoets(deponerend, 6,
+                        new Gevolg.Vouwplaats(1, List.of(new Gevolg.Vouwplaats.Stap("kustvak", 2, 3),
+                                new Gevolg.Vouwplaats.Stap("wachter", 4, 5)), Gevolg.Plaatsreden.KWANTOR)),
+                        List.of(0, 1, 2, 3, 4, 5), 7, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("lidtoets zonder plaats", "proef", null, tabel(hoogteslot(), lidslot(1)),
+                List.of(vouwonderwerp, lid(post, v, hoogte)), new Gevolg.Bijdrage(v, "proefvouw: lidtoets", 1,
+                new Gevolg.Inbreng.Lidtoets(matrix, -1, new Gevolg.Vouwplaats(0, List.of(), Gevolg.Plaatsreden.KWANTOR)),
+                List.of(0, 1), 2, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("filterdeponering", "proef", null, tabel(new Lezing(0, Leessoort.ONDERWERP, "lid", O)),
+                List.of(vouwonderwerp, lid(post, v)), new Gevolg.Filterdeponering(v, "proefvouw", 0,
+                Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("filterfout", "proef", null, tabel(hoogteslot(), lidslot(1),
+                plaatsslot(2, Leessoort.LIJSTPLAATSEN, "$lijstplaatsen_1"), plaatsslot(3, Leessoort.LIJSTPLAATS, "$plaats_1")),
+                List.of(vouwonderwerp, lid(post, v, hoogte), plaatsen(1, "kustvak", new Betatoets("plaats-1",
+                        Functie.PLAATS_VAN, O, List.of(new Term.Const(List.of(), null, null)))),
+                        new Toetsitem("fout", Toetsitem.Rol.FOUT, falend, -1, List.of(0), 4)),
+                new Gevolg.Filterfout(v, "proefvouw", 1, falend, new Gevolg.Vouwplaats(0,
+                        List.of(new Gevolg.Vouwplaats.Stap("kustvak", 2, 3)), Gevolg.Plaatsreden.FILTERFOUT),
+                        List.of(0, 1, 2, 3), 4, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("lidfout", "proef", null, tabel(new Lezing(0, Leessoort.ONDERWERP, "lid", O),
+                plaatsslot(1, Leessoort.LIJSTPLAATSEN, "$lijstplaatsen_1"), plaatsslot(2, Leessoort.LIJSTPLAATS, "$plaats_1")),
+                List.of(vouwonderwerp, lid(post, v), plaatsen(1, "kustvak", new Betatoets("plaats-1",
+                        Functie.PLAATS_VAN, O, List.of(new Term.Const(List.of(), null, null))))),
+                new Gevolg.Lidfout(v, "proefvouw", 0, new Gevolg.Vouwplaats(0,
+                        List.of(new Gevolg.Vouwplaats.Stap("kustvak", 1, 2)), Gevolg.Plaatsreden.LIDFOUT),
+                        "the total of ", ": a scalar", Gevolg.Invoeging.LOGISCH)));
+        return new Modelplan(List.of(), regels);
+    }
+
+    private static Leestabel tabel(Lezing... slots) {
+        return new Leestabel(List.of(slots));
+    }
+
+    private static Lezing hoogteslot() {
+        return new Lezing(0, Leessoort.INVOER, "hoogte", "$hoogte");
+    }
+
+    private static Lezing lidslot(int slot) {
+        return new Lezing(slot, Leessoort.ONDERWERP, "lid", O);
+    }
+
+    private static Lezing plaatsslot(int slot, Leessoort soort, String naam) {
+        return new Lezing(slot, soort, naam, naam);
+    }
+
+    /** The member, a Post of the fold's subject, bound as the subject of a rule of the fold. */
+    private static Onderwerp lid(Class<?> post, String vouwonderwerp, Binding... bindingen) {
+        return new Onderwerp(post, O, List.of(), List.of(new Join("bereik", "kustvak", vouwonderwerp)),
+                List.of(bindingen));
+    }
+
+    /** The accumulate over the places under {@code veld} of the step {@code n}: their count and the least of them. */
+    private static Accumulatie plaatsen(int n, String veld, Betatoets vanLid) {
+        return new Accumulatie(new Patroon(Lijstplaats.class, "$lijstplaats_" + n, List.of(new Alfa("veld-" + n,
+                List.of(new Alfa.Veldtoets("veld", Alfa.Vergelijker.GELIJK, veld)))), List.of(), List.of(vanLid),
+                List.of(Binding.van("$lijstplaatswaarde_" + n, Lijstplaats.class, "plaats"))),
+                List.of(new Accumulatie.Functie(Accumulatie.Soort.AANTAL, null, "$lijstplaatsen_" + n),
+                        new Accumulatie.Functie(Accumulatie.Soort.MINIMUM, "$lijstplaatswaarde_" + n, "$plaats_" + n)));
     }
 
     /**

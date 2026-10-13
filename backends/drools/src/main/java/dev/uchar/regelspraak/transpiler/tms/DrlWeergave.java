@@ -74,8 +74,10 @@ import java.util.TreeSet;
  *       in that order: one plan gives one text.</li>
  * </ul>
  *
- * <p>The consequences of this step are those of the ordinary rules, the faults, the inconsistency, the writers that
- * disagree and the standings; every other kind it refuses loudly ({@link Weigering}).
+ * <p>The consequences it carries are those of the ordinary rules, the faults, the inconsistency, the writers that
+ * disagree and the standings (step 2a), and those of the rules of a fold (step 3a): a member's contribution, and the
+ * deposit, the fault of the filter and the fault of a member, with the member's place in the fold's order as a function
+ * of the rule; every other kind it refuses loudly ({@link Weigering}).
  */
 final class DrlWeergave {
 
@@ -872,6 +874,15 @@ final class DrlWeergave {
                 case Gevolg.Padstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(PadStand.class) + "("
                         + x.onderwerp() + ", " + str(x.pad()) + ", " + sleutel(x.lid()) + ", "
                         + (x.bron() == Gevolg.Standbron.ONTBREKENDE_LINK ? "null" : variabele(x.waarde())) + ")");
+                case Gevolg.Bijdrage x -> bijdrage(x, b);
+                case Gevolg.Filterdeponering x -> voegIn(b, "    ", x.invoeging(), "new "
+                        + typenaam(Filterdeponering.class) + "(" + str(x.vouw()) + ", " + x.onderwerp() + ", "
+                        + variabele(x.lid()) + ")");
+                case Gevolg.Filterfout x -> filterfout(x, b);
+                case Gevolg.Lidfout x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Lidfout.class) + "("
+                        + str(x.vouw()) + ", " + x.onderwerp() + ", " + variabele(x.lid()) + ", "
+                        + route(Route.INVOERVORMFOUT) + "(" + str(x.voor()) + ", " + variabele(x.lid()) + ", "
+                        + str(x.na()) + ", null), " + vouwplaats(x.plaats(), x.vouw(), x.lid(), null) + ")");
                 default -> throw new Weigering(g.getClass().getSimpleName());
             }
             return b.toString();
@@ -941,6 +952,105 @@ final class DrlWeergave {
                     .append(");\n    }\n");
             voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "(" + x.onderwerp() + ", "
                     + str(x.fout().vorm()) + ", " + route(Route.BENOEM) + "(f, " + str(x.fout().regel()) + "))");
+        }
+
+        /** The contribution of {@link Gevolg.Bijdrage} on the fold's subject: the member itself; its value through
+         *  the route, which gives nothing where it is leeg; the verdict of the matrix of a quantifier fold, a function
+         *  of the rule; or its test of the member, a function of the rule that takes the member's place first, then
+         *  evaluates the matrix with the probe where the plan names one, and gives the verdict or the evaluation
+         *  fault. */
+        private void bijdrage(Gevolg.Bijdrage x, StringBuilder b) {
+            String nieuw = "new " + typenaam(Bijdrage.class) + "(" + str(x.vouw()) + ", " + x.onderwerp() + ", "
+                    + variabele(x.lid()) + ", ";
+            switch (x.inbreng()) {
+                case Gevolg.Inbreng.Telling t -> voegIn(b, "    ", x.invoeging(), nieuw + "null)");
+                case Gevolg.Inbreng.Lidwaarde l -> {
+                    b.append("    Object v = ").append(route(Route.BIJDRAGE)).append("(").append(str(x.vouw()))
+                            .append(", ").append(x.onderwerp()).append(", ").append(variabele(x.lid())).append(", ")
+                            .append(variabele(l.waarde())).append(", ")
+                            .append(l.totaal() == null ? "null" : str(l.totaal())).append(", ").append(l.gevuld())
+                            .append(");\n");
+                    b.append("    if (v != null) {\n");
+                    voegIn(b, "        ", x.invoeging(), "v");
+                    b.append("    }\n");
+                }
+                case Gevolg.Inbreng.Oordeel o -> {
+                    int plaats = reserveer();
+                    String naam = naam("matrix", plaats);
+                    Context c = context(x.slots(), -1, null, o.matrix());
+                    vul(plaats, o.matrix().bron(), "boolean " + naam + "(" + c.declaratie() + ")",
+                            "    return " + bool(o.matrix(), c) + ";\n");
+                    voegIn(b, "    ", x.invoeging(), nieuw + route(Route.OORDEEL) + "(" + naam + "(" + c.argumenten()
+                            + ")))");
+                }
+                case Gevolg.Inbreng.Lidtoets l -> {
+                    int plaats = reserveer();
+                    String naam = naam("lidtoets", plaats);
+                    Context c = context(x.slots(), l.sonde(), route(Route.VERSE_SONDE) + "()", l.matrix());
+                    // the place first, so that a member without one breaks the contract before the matrix is evaluated
+                    String lichaam = "    java.util.List plaats = " + vouwplaats(l.plaats(), x.vouw(), x.lid(), c)
+                            + ";\n    Boolean waar = null;\n    RuntimeException fout = null;\n"
+                            + vang("        waar = Boolean.valueOf(" + bool(l.matrix(), c) + ");\n",
+                                    "        fout = " + route(Route.GEVANGEN) + "(e);\n")
+                            + "    return new " + typenaam(Lidtoets.class) + "(plaats, waar, fout, "
+                            + route(Route.GEMELD) + "(" + (l.sonde() < 0 ? "null" : SONDE) + "));\n";
+                    vul(plaats, l.matrix().bron(), "Object " + naam + "(" + c.declaratie() + ")", lichaam);
+                    voegIn(b, "    ", x.invoeging(), nieuw + naam + "(" + c.argumenten() + "))");
+                }
+            }
+        }
+
+        /** The fault of {@link Gevolg.Filterfout}: the filter evaluated again over the same bound values, its
+         *  evaluation fault inserted with the member's place, and an answer there a broken contract. */
+        private void filterfout(Gevolg.Filterfout x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("fout", plaats);
+            Context c = context(x.slots(), -1, null, x.filter());
+            String t = bool(x.filter(), c);
+            vul(plaats, x.filter().bron(), "RuntimeException " + naam + "(" + c.declaratie() + ")",
+                    vang("        boolean uitkomst = " + t + ";\n        return null;\n",
+                            "        return " + route(Route.GEVANGEN) + "(e);\n"));
+            b.append("    RuntimeException f = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            b.append("    if (f == null) {\n        ").append(route(Route.CONTRACTBREUK)).append("(")
+                    .append(str("het filter van " + x.vouw() + " faalde in de toets en niet in het gevolg, over"
+                            + " dezelfde gebonden waarden")).append(");\n    }\n");
+            voegIn(b, "    ", x.invoeging(), "new " + typenaam(Filterfout.class) + "(" + str(x.vouw()) + ", "
+                    + x.onderwerp() + ", " + variabele(x.lid()) + ", f, "
+                    + vouwplaats(x.plaats(), x.vouw(), x.lid(), null) + ")");
+        }
+
+        /**
+         * The member's place {@code p} in the order of the fold {@code vouw}, through the route, as a function of this
+         * rule over the member in slot {@code lid} and the count and the least place of each step, by the variables of
+         * their slots; returns its call, which reads those variables where it stands: in the consequence, where the
+         * left-hand side binds them, or in the function whose context is {@code c}, which must pass them.
+         */
+        private String vouwplaats(Gevolg.Vouwplaats p, String vouw, int lid, Context c) {
+            int plaats = reserveer();
+            String naam = naam("plaats", plaats);
+            List<String> parameters = new ArrayList<>(), velden = new ArrayList<>(), aantallen = new ArrayList<>(),
+                    plaatsen = new ArrayList<>();
+            parameters.add(variabele(lid));
+            for (Gevolg.Vouwplaats.Stap s : p.stappen()) {
+                velden.add(str(s.veld()));
+                aantallen.add(variabele(s.aantal()));
+                plaatsen.add(variabele(s.plaats()));
+                parameters.add(variabele(s.aantal()));
+                parameters.add(variabele(s.plaats()));
+            }
+            if (c != null)
+                for (String v : parameters)
+                    if (!c.heeft(v))
+                        throw new IllegalStateException("de plaats van een lid in " + plan.naam() + " leest " + v
+                                + ", dat de functie van haar gevolg niet krijgt");
+            List<String> declaratie = new ArrayList<>();
+            for (String v : parameters) declaratie.add("Object " + v);
+            vul(plaats, null, "java.util.List " + naam + "(" + String.join(", ", declaratie) + ")",
+                    "    return " + route(Route.VOUWPLAATS) + "(" + enumlabel(p.reden()) + ", " + str(vouw) + ", "
+                            + variabele(lid) + ", " + p.selectie() + ", java.util.Arrays.asList("
+                            + String.join(", ", velden) + "), java.util.Arrays.asList(" + String.join(", ", aantallen)
+                            + "), java.util.Arrays.asList(" + String.join(", ", plaatsen) + "));\n");
+            return naam + "(" + String.join(", ", parameters) + ")";
         }
 
         // ---------------- the day kinds of a term ----------------
