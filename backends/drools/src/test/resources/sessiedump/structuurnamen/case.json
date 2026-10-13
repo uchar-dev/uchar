@@ -1,0 +1,28 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "V1",
+      "objectType" : "Vondst",
+      "attributes" : { },
+      "roles" : { },
+      "characteristics" : [ ]
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "V1",
+    "attribute" : "tarief = vak (oud).nieuw",
+    "value" : {
+      "number" : "1"
+    }
+  }, {
+    "kind" : "characteristicPresent",
+    "label" : "V1",
+    "characteristic" : "wrak (x) = y"
+  }, {
+    "kind" : "consistent"
+  } ]
+}

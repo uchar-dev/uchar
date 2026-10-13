@@ -1,0 +1,108 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Vondst",
+      "animate" : true,
+      "plural" : "Vondsts",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "tarief = vak (oud).nieuw",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "wrak (x) = y",
+        "kind" : "adjectival"
+      } ]
+    } ],
+    "factTypes" : [ ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "tarief",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "tarief = vak (oud).nieuw",
+          "subjectType" : "Vondst",
+          "source" : {
+            "snippet" : "De tarief = vak (oud).nieuw van een Vondst"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "number" : "1"
+          },
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "1"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    }, {
+      "node" : "Rule",
+      "name" : "wrak",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "wrak (x) = y",
+          "subjectType" : "Vondst",
+          "source" : {
+            "snippet" : "Een Vondst is wrak (x) = y"
+          }
+        },
+        "value" : {
+          "node" : "Literal",
+          "value" : {
+            "boolean" : true
+          },
+          "type" : {
+            "node" : "Boolean"
+          },
+          "source" : {
+            "snippet" : "waar"
+          }
+        },
+        "initialisation" : false
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ],
+    "prioritizedDefaults" : [ ]
+  },
+  "diagnostics" : [ ]
+}

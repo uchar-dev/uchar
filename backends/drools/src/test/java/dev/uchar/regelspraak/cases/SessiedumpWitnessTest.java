@@ -2,16 +2,21 @@ package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
 import dev.uchar.regelspraak.transpiler.tms.Fout;
+import dev.uchar.regelspraak.transpiler.tms.Waarde;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static dev.uchar.regelspraak.cases.TmsDocumenten.attribuut;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,6 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * dumps of the two labels were equal, both naming the bean {@code Post@?}; the sections {@code lees} and {@code feit} of
  * the two rules were equal, both {@code Inconsistentie(Post@?, V1)}; and the dump wrote the sentence with the identity,
  * replaced by the label, where this class wants it refused.
+ *
+ * <p>Every name stands quoted (lens on round 4), also one that holds a space, "=", ".", "(" or ")", which WF-057 admits.
+ * <b>Red</b> on {@code 605fc574}, before the fix: the dump wrote {@code lees waarde "V1".tarief = vak (oud).nieuw =
+ * BigDecimal(1)} and {@code lees kenmerk "V1" wrak (x) = y}; the keys of "a.b" with "c" and of "a" with "b.c" both
+ * printed {@code attribuut=a.b.c}, and the two dumps were equal; and the links of the fact type "F x" (roles "r", "s")
+ * and of the fact type "F" (roles "x r", "s") both printed {@code lees koppeling F x r="V1" s=«"maak"»("V1")#1}. The
+ * documents pass the verifier, and the reference interpreter and the ASP runner pass their cases.
  */
 class SessiedumpWitnessTest {
 
@@ -84,6 +96,91 @@ class SessiedumpWitnessTest {
         }));
         assertTrue(e.getMessage().startsWith("de dump schrijft geen identiteit: de zin \"een zin over Vondst@"),
                 e.getMessage());
+    }
+
+    /** An attribute and a characteristic whose names WF-057 admits and that hold the characters of the structure of a
+     *  line: a space, "=", ".", "(" and ")". The dump quotes both, so the line of a derived value and that of a derived
+     *  characteristic keep one reading. */
+    @Test void een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd() throws Exception {
+        String d = dump(CaseRunner.voorMeting(STRUCTUURNAMEN, DroolsBackend.Branch.EXEC_MODEL), structuurzaak());
+        assertTrue(d.contains("\nlees waarde \"V1\".\"tarief = vak (oud).nieuw\" = BigDecimal(1)\n"),
+                () -> "de dump citeert het attribuut niet:\n" + d);
+        assertTrue(d.contains("\nlees kenmerk \"V1\" \"wrak (x) = y\"\n"), () -> "de dump citeert het kenmerk niet:\n" + d);
+    }
+
+    /** Two keys of members that differ, whose type and name read as one text where they stand unquoted: "a.b" with "c"
+     *  and "a" with "b.c", and the attribute "b (kenmerk)" with the characteristic "b". Each pair gives two dumps that
+     *  differ, with the type and the name of the key quoted. */
+    @Test void twee_sleutels_die_als_tekst_samenvallen_verschillen_in_de_dump() throws Exception {
+        assertSleutels(ElementSleutel.van("A.B", "c", false), ElementSleutel.van("A", "B.c", false),
+                "\"a.b\".\"c\"", "\"a\".\"b.c\"");
+        assertSleutels(ElementSleutel.van("A", "b (kenmerk)", false), ElementSleutel.van("A", "b", true),
+                "\"a\".\"b (kenmerk)\"", "\"a\".\"b\" (kenmerk)");
+    }
+
+    /** Two created links of fact types that differ, whose fact type and first role read as one text where they stand
+     *  unquoted: the fact type "F x" with the roles "r" and "s", and the fact type "F" with the roles "x r" and "s".
+     *  Each link is the one an object creation lays between its subject and the Boei it makes. */
+    @Test void twee_koppelingen_die_als_tekst_samenvallen_verschillen_in_de_dump() throws Exception {
+        String een = koppelingregel("F x", "r"), twee = koppelingregel("F", "x r");
+        assertNotEquals(een, twee, "twee koppelingen van verschillende feittypen kregen dezelfde regel");
+        assertEquals("lees koppeling \"F x\" \"r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", een);
+        assertEquals("lees koppeling \"F\" \"x r\"=\"V1\" \"s\"=«\"maak\"»(\"V1\")#1", twee);
+    }
+
+    /** The document of {@link #een_naam_met_tekens_van_de_regelopbouw_staat_geciteerd}, in the test resources, where
+     *  the verifier, the reference interpreter and the ASP runner read it too. */
+    private static final Path STRUCTUURNAMEN = Path.of("src", "test", "resources", "sessiedump", "structuurnamen",
+            "ir.json");
+
+    /** The case of {@link #STRUCTUURNAMEN}, read from the file beside it. */
+    private static JsonNode structuurzaak() throws Exception {
+        return TmsDocumenten.JSON.readTree(java.nio.file.Files.readString(STRUCTUURNAMEN.resolveSibling("case.json")));
+    }
+
+    /** Puts a {@link Waarde} under {@code a} and one under {@code b} on V1 in two sessions, and asserts that their
+     *  dumps differ, each with its key rendered as {@code tekstA} and {@code tekstB}. The dumps are written without a
+     *  fire, as for a fire that threw, so that only the rendering of the facts counts. */
+    private static void assertSleutels(ElementSleutel a, ElementSleutel b, String tekstA, String tekstB)
+            throws Exception {
+        String dumpA = zonderVuren(a), dumpB = zonderVuren(b);
+        assertNotEquals(dumpA, dumpB, () -> a + " en " + b + " kregen dezelfde dump:\n" + dumpA);
+        assertTrue(dumpA.contains("attribuut=" + tekstA + ","), () -> "de dump citeert " + a + " niet:\n" + dumpA);
+        assertTrue(dumpB.contains("attribuut=" + tekstB + ","), () -> "de dump citeert " + b + " niet:\n" + dumpB);
+    }
+
+    private static String zonderVuren(ElementSleutel sleutel) throws Exception {
+        String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(attribuut("merk", TEKST)),
+                List.of())), List.of());
+        return CaseRunner.voorMeting(TmsDocumenten.document(model, List.of()), DroolsBackend.Branch.EXEC_MODEL)
+                .metSessie(vondst("V1", "x"), (bouw, sessie, labels) -> {
+                    sessie.insert(new Waarde(labels.get("V1"), sleutel, BigDecimal.ONE, "proef"));
+                    Sessiedump d = Sessiedump.op(sessie, labels);
+                    StringBuilder uit = new StringBuilder();
+                    d.schrijf(uit, new IllegalStateException("proef"), labels);
+                    return uit.toString();
+                });
+    }
+
+    /** The line of {@code lees} for the link the creation "maak" lays between V1 and the Boei it makes for V1, in a
+     *  document whose fact type {@code feittype} relates a Vondst in the role {@code rol} to a Boei in the role "s". */
+    private static String koppelingregel(String feittype, String rol) throws Exception {
+        String d = dump(CaseRunner.voorMeting(koppelingdocument(feittype, rol), DroolsBackend.Branch.EXEC_MODEL),
+                TmsDocumenten.zaak(List.of(TmsDocumenten.instantie("V1", "Vondst", Map.of(), List.of(), Map.of())),
+                        List.of(TmsDocumenten.consistent())));
+        List<String> regels = Stream.of(d.split("\n")).filter(r -> r.startsWith("lees koppeling ")).toList();
+        assertEquals(1, regels.size(), () -> "één gemaakte koppeling in lees:\n" + d);
+        return regels.get(0);
+    }
+
+    /** "Een Vondst heeft een Boei": the creation "maak", whose new Boei plays the role "s" of {@code feittype} beside the
+     *  Vondst in the role {@code rol}. */
+    static Path koppelingdocument(String feittype, String rol) throws Exception {
+        String model = TmsDocumenten.model(List.of(TmsDocumenten.objecttype("Vondst", List.of(), List.of()),
+                TmsDocumenten.objecttype("Boei", List.of(), List.of())),
+                List.of(TmsDocumenten.feittype(feittype, rol, "Vondst", "s", "Boei")));
+        return TmsCreatieWitnessTest.document(model, List.of(), List.of(), List.of(TmsCreatieWitnessTest.objectcreatie(
+                "maak", "Vondst", "Boei", List.of(), "null", feittype, "s")), List.of(), List.of());
     }
 
     /** The case of one Vondst labelled {@code label} whose merk is {@code merk}. */

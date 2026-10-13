@@ -57,9 +57,13 @@ import java.util.function.Predicate;
  *
  * <p>The text names every object by a name of its own and never by its identity, which differs between two runs: an
  * input bean by its case label, quoted, and a made object by its creation, the name of its subject and its number,
- * {@code «"creatie"»("onderwerp")#k} ({@link Naam}). A case label, the name of a rule and a text value stand quoted and
- * escaped as they are, and nothing in the text is replaced afterwards: a case label is free text and may look like an
- * identity, so a rewrite of the text would make two sessions alike that differ (lens on step 3b). A sentence of the
+ * {@code «"creatie"»("onderwerp")#k} ({@link Naam}). Every name and every text stands quoted and escaped as it is: a case
+ * label, the name of a rule, a global, an attribute, a characteristic, a fact type and its roles, the type and the name
+ * of a member's key, a text value and a sentence. So no line holds a real line break, and two different names never
+ * print alike, also where a name holds a space, "=", ".", "(" or ")", which WF-057 admits (lens on round 4). Only a
+ * Java identifier stands unquoted, the class of a value and a field of a bean or of a fact, since the compiler admits
+ * none of those characters in one. Nothing in the text is replaced afterwards: a case label is free text and may look
+ * like an identity, so a rewrite of the text would make two sessions alike that differ (lens on step 3b). A sentence of the
  * branch that names an object is formed again with these names where the fault carries its object ({@code benoemd});
  * one that names an object of the session by its type and identity anyway is refused, never written. Every value
  * carries its Java class, a number its scale and a text its quotes ({@link Naamgeving#render}), so two values that a
@@ -111,7 +115,7 @@ final class Sessiedump {
                 Object w = sessie.getGlobal(g.getName());
                 globals.put(g.getName(), w instanceof Predicate<?> ? "Predicate" : n.render(w));
             }
-        globals.forEach((g, w) -> regels.add("global " + g + " = " + w));
+        globals.forEach((g, w) -> regels.add("global " + citeer(g) + " = " + w));
         regels.sort(Comparator.naturalOrder());
         return regels;
     }
@@ -179,14 +183,15 @@ final class Sessiedump {
         Fixpunt fp = DroolsBackend.lees(bouw, sessie, label::get);
         List<String> lees = new ArrayList<>();
         for (Fixpunt.AfgeleideWaarde w : fp.waarden())
-            lees.add("waarde " + n.naamVan(w.object()) + "." + w.attribuut() + " = " + n.render(w.waarde()));
-        for (Fixpunt.AfgeleidKenmerk k : fp.kenmerken()) lees.add("kenmerk " + n.naamVan(k.object()) + " " + k.kenmerk());
+            lees.add("waarde " + n.naamVan(w.object()) + "." + citeer(w.attribuut()) + " = " + n.render(w.waarde()));
+        for (Fixpunt.AfgeleidKenmerk k : fp.kenmerken())
+            lees.add("kenmerk " + n.naamVan(k.object()) + " " + citeer(k.kenmerk()));
         for (Fixpunt.GemaaktObject g : fp.objecten())
             lees.add("object " + n.naamVan(g.object()) + " door " + citeer(g.creatie()) + " voor "
                     + n.naamVan(g.onderwerp()));
         for (Fixpunt.GemaakteKoppeling k : fp.koppelingen())
-            lees.add("koppeling " + k.feittype() + " " + k.eersteRol() + "=" + n.naamVan(k.eerste()) + " "
-                    + k.tweedeRol() + "=" + n.naamVan(k.tweede()));
+            lees.add("koppeling " + citeer(k.feittype()) + " " + citeer(k.eersteRol()) + "=" + n.naamVan(k.eerste())
+                    + " " + citeer(k.tweedeRol()) + "=" + n.naamVan(k.tweede()));
         for (Fout f : fp.fouten())
             lees.add("fout " + n.naamVan(f.onderwerp()) + " " + citeer(f.regel()) + ": " + n.zin(f.fout()));
         for (Object i : fp.inconsistenties()) lees.add("inconsistentie " + n.render(i));
@@ -370,8 +375,10 @@ final class Sessiedump {
          * value with its Java class, so that two values a fact holds unequal never print alike, as {@code BigDecimal} 2
          * and the text "2" did: a number of {@code BigDecimal} as {@link BigDecimal#toString}, one text per value and
          * scale (also where a fact compares such numbers by {@code compareTo}, which can only show a difference more,
-         * never hide one); a text quoted and escaped; an enumeration label with its class. A bean without a name, and an
-         * object whose class prints its identity, are refused.
+         * never hide one); a text quoted and escaped; an enumeration label with its class; the key of a member with its
+         * type and its name quoted; any other value with the text its class gives of it, quoted unless it is one of the
+         * fixed forms of {@code Boolean}, {@code Integer}, {@code Long}, {@code LocalDate} and {@code LocalDateTime}. A
+         * bean without a name, and an object whose class prints its identity, are refused.
          */
         String render(Object o) {
             if (o == null) return "leeg";
@@ -391,7 +398,8 @@ final class Sessiedump {
             if (o instanceof BigDecimal d) return "BigDecimal(" + d + ")";
             if (o instanceof String s) return "String(" + citeer(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
-            if (o instanceof ElementSleutel k) return k.objecttype() + "." + k.naam() + (k.kenmerk() ? " (kenmerk)" : "");
+            if (o instanceof ElementSleutel k)
+                return citeer(k.objecttype()) + "." + citeer(k.naam()) + (k.kenmerk() ? " (kenmerk)" : "");
             if (o instanceof Throwable e) return fout(e);
             if (o instanceof List<?> l) {
                 List<String> r = new ArrayList<>();
@@ -444,7 +452,12 @@ final class Sessiedump {
             } catch (NoSuchMethodException e) {
                 throw new IllegalStateException(e);
             }
-            return klasse.getSimpleName() + "(" + o + ")";
+            // the text of these classes has a fixed form without a space, a quote, a parenthesis or a line break; the
+            // text any other class gives of itself has a form unknown here, so it stands quoted
+            if (o instanceof Boolean || o instanceof Integer || o instanceof Long || o instanceof java.time.LocalDate
+                    || o instanceof java.time.LocalDateTime)
+                return klasse.getSimpleName() + "(" + o + ")";
+            return klasse.getSimpleName() + "(" + citeer(o.toString()) + ")";
         }
     }
 
