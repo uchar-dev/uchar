@@ -1,9 +1,11 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.uchar.regelspraak.transpiler.tms.Tekstvolgorde;
 import dev.uchar.regelspraak.transpiler.tms.Uitkomst;
 import org.drools.model.Rule;
 import org.junit.jupiter.api.Test;
+import org.kie.api.KieBase;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
@@ -70,6 +72,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  * form and order, ended in the fault of the displaced exception group, none of the fifty played; the lens document
  * ended in "Rekenfout: fout in de regel "defaults A:Vondst.heffing": the evaluationYear context value needs an
  * evaluation date; the case carries asOfDate null"; and the sample failed in its first order on that fault.
+ *
+ * <p><b>Both branches of the analysis</b> (card drl-teksttak-op-truth-maintenance, rest of step 4; acceptance (a), the
+ * nested exception groups of PRIORITIZED-DEFAULTS-EVOLUTIE §5.2 under a displaced default): the document of the lens and
+ * every place, form and order play on the exec-model branch and on {@code DRL_TMS}, and the sample of orders runs on
+ * both, on {@code DRL_TMS} with the rules of the text in each order ({@code Tekstvolgorde}): there too a displaced
+ * exception group is evaluated first in some order, and its fault goes again. <b>Red</b> on {@code e2bd685e}, before
+ * step 4: the three tests failed on {@code DRL_TMS} with "drl-tms: de DRL-weergave draagt Afloop nog niet".
  */
 class TmsVerdrongenUitzonderingWitnessTest {
 
@@ -151,9 +160,9 @@ class TmsVerdrongenUitzonderingWitnessTest {
                 List.of(waarde("V1", "heffing", "10"), consistent()));
         JsonNode geenWrak = TmsDocumenten.zaakOp(null, List.of(instantieMet("V2", "Vondst", Map.of(), List.of())),
                 List.of(consistent()));
-        assertEquals(List.of("gespeeld", fout(FOUTEN.get(0))), List.of(
-                TmsFoutWitnessTest.speel(ir, wrak, DroolsBackend.Branch.EXEC_MODEL),
-                TmsFoutWitnessTest.speel(ir, geenWrak, DroolsBackend.Branch.EXEC_MODEL)));
+        for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TMS))
+            assertEquals(List.of("gespeeld", fout(FOUTEN.get(0))), List.of(TmsFoutWitnessTest.speel(ir, wrak, tak),
+                    TmsFoutWitnessTest.speel(ir, geenWrak, tak)), tak.toString());
     }
 
     @Test void elke_plaats_en_elke_fout_in_elke_volgorde_van_de_regels() throws Exception {
@@ -162,15 +171,17 @@ class TmsVerdrongenUitzonderingWitnessTest {
             for (Fout f : FOUTEN)
                 for (List<String> volgorde : TmsDocumenten.permutaties(REGELS)) {
                     Path ir = TmsDocumenten.document(MODEL, volgorde, List.of(), List.of(groep(p, f)));
-                    String wat = p.naam() + ", " + f.naam() + ", " + TmsDocumenten.regelnamen(volgorde);
-                    uitkomsten.add(wat + ", V1: " + TmsFoutWitnessTest.speel(ir, verdrongen(),
-                            DroolsBackend.Branch.EXEC_MODEL));
-                    verwacht.add(wat + ", V1: gespeeld");
-                    uitkomsten.add(wat + ", V2: " + TmsFoutWitnessTest.speel(ir, bereikt(),
-                            DroolsBackend.Branch.EXEC_MODEL));
-                    verwacht.add(wat + ", V2: " + fout(f));
+                    for (DroolsBackend.Branch tak : List.of(DroolsBackend.Branch.EXEC_MODEL,
+                            DroolsBackend.Branch.DRL_TMS)) {
+                        String wat = tak + ", " + p.naam() + ", " + f.naam() + ", " + TmsDocumenten.regelnamen(volgorde);
+                        uitkomsten.add(wat + ", V1: " + TmsFoutWitnessTest.speel(ir, verdrongen(), tak));
+                        verwacht.add(wat + ", V1: gespeeld");
+                        uitkomsten.add(wat + ", V2: " + TmsFoutWitnessTest.speel(ir, bereikt(), tak));
+                        verwacht.add(wat + ", V2: " + fout(f));
+                    }
                 }
         assertEquals(verwacht, uitkomsten);
+        assertEquals(PLAATSEN.size() * FOUTEN.size() * 2 * 2 * 2, uitkomsten.size());
     }
 
     /**
@@ -178,7 +189,8 @@ class TmsVerdrongenUitzonderingWitnessTest {
      * consequence in every place: the fire reaches its fixpoint without throwing, no fault stands there, every
      * {@link Uitkomst} at the fixpoint decides 10, so no exception group below the displaced default settles anything,
      * and the heffing is 10. In some order a displaced exception group was evaluated before wrak was derived; its fault
-     * went again when the higher default decided.
+     * went again when the higher default decided. The same on {@code DRL_TMS}, with the rules of the text in a sample of
+     * orders.
      */
     @Test void steekproef_van_volgordes_van_de_gegenereerde_regels() throws Exception {
         for (Plaats p : PLAATSEN)
@@ -188,34 +200,47 @@ class TmsVerdrongenUitzonderingWitnessTest {
                         List.of(groep(p, f))), DroolsBackend.Branch.EXEC_MODEL);
                 int tussenstand = 0;
                 List<Rule> gegenereerd = b.execModelTranspiler().model().getRules();
-                for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 40)) {
-                    List<String> namen = volgorde.stream().map(Rule::getName).toList();
-                    Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(),
-                            List.of("aangespoeld", "geregistreerd"));
-                    TmsFoutWitnessTest.Foutfeiten fouten = new TmsFoutWitnessTest.Foutfeiten();
-                    List<Object> uitkomsten = new ArrayList<>();
-                    vuur(b, volgorde, v1, fouten, uitkomsten, wat + ", volgorde " + namen);
-                    assertEquals(fouten.ingevoegd, fouten.ingetrokken, () -> wat + ": een fout staat aan het fixpunt in"
-                            + " volgorde " + namen);
-                    for (Object u : uitkomsten)
-                        assertTrue(((Uitkomst) u).waarde() instanceof BigDecimal w && w.compareTo(BigDecimal.TEN) == 0,
-                                () -> wat + ": " + u + " staat aan het fixpunt in volgorde " + namen);
-                    TmsFoutWitnessTest.assertGetal("10", TmsDocumenten.lees(v1, "heffing"),
-                            wat + ": heffing in volgorde " + namen);
-                    if (fouten.ingevoegd > 0) tussenstand++;
-                }
+                for (List<Rule> volgorde : TmsDocumenten.steekproef(gegenereerd, 20261009L, 40))
+                    if (vuurSteekproef(b, TmsDocumenten.kieBase(b, volgorde), volgorde.stream().map(Rule::getName)
+                            .toList(), wat)) tussenstand++;
                 assertTrue(tussenstand > 0, wat + ": geen volgorde rekende de verdrongen uitzonderingsgroep eerst uit");
+                DroolsBackend.Build t = DroolsBackend.build(TmsDocumenten.document(MODEL, REGELS, List.of(),
+                        List.of(groep(p, f))), DroolsBackend.Branch.DRL_TMS);
+                List<String> regels = Tekstvolgorde.regels(t);
+                assertEquals(gegenereerd.stream().map(Rule::getName).toList(), regels, wat + ": de regels van de tekst");
+                int inDeTekst = 0;
+                for (List<String> volgorde : TmsDocumenten.steekproef(regels, 20261009L, 40))
+                    if (vuurSteekproef(t, Tekstvolgorde.kieBase(t, volgorde), volgorde, wat)) inDeTekst++;
+                assertTrue(inDeTekst > 0, wat + ": geen volgorde van de tekst rekende de verdrongen uitzonderingsgroep"
+                        + " eerst uit");
             }
     }
 
-    /** Fires {@code boon} through the rules of {@code b} added in {@code volgorde}: the fire must reach its fixpoint
+    /** Fires V1 through {@code kieBase}, the rules of {@code b} in the order {@code namen}: no fault stands at the
+     *  fixpoint, every {@link Uitkomst} there decides 10, and the heffing is 10. Whether a fault stood on the way. */
+    private static boolean vuurSteekproef(DroolsBackend.Build b, KieBase kieBase, List<String> namen, String wat)
+            throws Exception {
+        String waar = wat + " op " + b.branch() + ", volgorde " + namen;
+        Object v1 = TmsDocumenten.boon(b.beanLoader(), "Vondst", Map.of(), List.of("aangespoeld", "geregistreerd"));
+        TmsFoutWitnessTest.Foutfeiten fouten = new TmsFoutWitnessTest.Foutfeiten();
+        List<Object> uitkomsten = new ArrayList<>();
+        vuur(b, kieBase, v1, fouten, uitkomsten, waar);
+        assertEquals(fouten.ingevoegd, fouten.ingetrokken, () -> waar + ": een fout staat aan het fixpunt");
+        for (Object u : uitkomsten)
+            assertTrue(((Uitkomst) u).waarde() instanceof BigDecimal w && w.compareTo(BigDecimal.TEN) == 0,
+                    () -> waar + ": " + u + " staat aan het fixpunt");
+        TmsFoutWitnessTest.assertGetal("10", TmsDocumenten.lees(v1, "heffing"), waar + ": heffing");
+        return fouten.ingevoegd > 0;
+    }
+
+    /** Fires {@code boon} through {@code kieBase}, which holds the rules of {@code b}: the fire must reach its fixpoint
      *  without throwing, the write-back must raise no fault, and {@code uitkomsten} receives the {@link Uitkomst} facts
      *  of the fixpoint. */
-    private static void vuur(DroolsBackend.Build b, List<Rule> volgorde, Object boon,
+    private static void vuur(DroolsBackend.Build b, KieBase kieBase, Object boon,
                              TmsFoutWitnessTest.Foutfeiten fouten, List<Object> uitkomsten, String wat) {
         ClassLoader vorige = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(b.beanLoader());
-        KieSession sessie = TmsDocumenten.kieBase(b, volgorde).newKieSession();
+        KieSession sessie = kieBase.newKieSession();
         try {
             sessie.addEventListener(fouten);
             sessie.insert(boon);
