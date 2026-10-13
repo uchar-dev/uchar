@@ -47,12 +47,19 @@ public final class Namen {
 
     public static String setter(String naam) { return "set" + ident(naam, true); }
 
-    /** The bean property of a member named {@code naam}: the camel identifier a DRL constraint spells, whose getter and
-     *  setter are those of the name itself ({@link #getter}, {@link #setter}), since {@code ident} with
-     *  {@code upperFirst} gives the same Pascal form of both where the first word starts with a cased letter. The
-     *  executable-model branch plans it once (its plan's {@code Binding.Veld}, {@code Alfa.Veldtoets} and {@code Join}),
-     *  so that no rendering derives a property from a declared name with spaces. On a fact of that branch, whose
-     *  components are single lowercase words, it is the component's name itself. */
+    /** The bean property of a member named {@code naam}: the camel identifier of the name, which is the field the
+     *  fact-model generator writes for the member and the property a DRL constraint spells. The generator writes the
+     *  member's getter and setter as {@code get}, {@code is} or {@code set} and the property with its first character
+     *  in upper case. {@code Accessors} derives them from the property through {@code RegelSpraakRuntime.pascal}, which
+     *  gives that same name unless it reads the property as a shouted word: where the property's first character has no
+     *  case and the rest has a letter but no lowercase one ({@code 日X} of "日 X"), it looks for {@code get日x}, which
+     *  the bean does not have, and the build fails loudly. Nor is the property's getter always that of the declared
+     *  name ({@link #getter}): the lower case of {@code İ} is {@code i}, whose upper case is {@code I}, so for "İş" the
+     *  generator writes {@code getIş}, which the property reaches and the declared name, {@code getİş}, does not.
+     *  {@code EigenschapWitnessTest} holds both per name. The executable-model branch plans the property once (its
+     *  plan's {@code Binding.Veld}, {@code Alfa.Veldtoets} and {@code Join}), so that no rendering derives a property
+     *  from a declared name with spaces. On a fact of that branch, whose components are single lowercase words, it is
+     *  the component's name itself. */
     public static String eigenschap(String naam) { return ident(naam, false); }
 
     /** A §9.3 regelnaam spliced inside DRL double quotes: {@code \} and {@code "} would end the string (or

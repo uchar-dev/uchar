@@ -727,7 +727,10 @@ public final class Rekenhulpen {
     }
 
     /** Whether a reference field holds {@code ander}, an instance of the class named {@code soort} where that is not
-     *  null ({@code Binding.Leesvorm.GEZET}, {@link #isEen}). */
+     *  null ({@code Binding.Leesvorm.GEZET}, {@link #isEen}). A name stands for one class here: the replay admits only
+     *  a bean whose class {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference
+     *  field that points outside the input ({@code doelBuitenDeInvoer}), so within a session two classes of one name do
+     *  not meet. */
     public static boolean gezet(Object ander, String soort) {
         return ander != null && (soort == null || isEen(ander, soort));
     }
@@ -742,13 +745,17 @@ public final class Rekenhulpen {
 
     /** Whether {@code object} is an instance of the class named {@code klasse}: its own class or a class or interface
      *  it extends has that name ({@code Alfa.Vergelijker.IS_EEN}). A bean class is named, not loaded: a DRL text cannot
-     *  reach the classes of the beans. */
+     *  reach the classes of the beans. A name stands for one class here: the replay admits only a bean whose class
+     *  {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference field that points
+     *  outside the input ({@code doelBuitenDeInvoer}), so within a session two classes of one name do not meet. */
     public static boolean isEen(Object object, String klasse) {
         return object != null && heetOfErft(object.getClass(), klasse);
     }
 
     /** Whether the own class of {@code object}, exactly, has none of the names {@code klassen}
-     *  ({@code Alfa.Vergelijker.KLASSE_NIET_IN}). */
+     *  ({@code Alfa.Vergelijker.KLASSE_NIET_IN}). A name stands for one class here: the replay admits only a bean whose
+     *  class {@code Build.beanLoader()} loaded ({@code DroolsBackend.voegIn}) and refuses a reference field that points
+     *  outside the input ({@code doelBuitenDeInvoer}), so within a session two classes of one name do not meet. */
     public static boolean klasseNietIn(Object object, List<?> klassen) {
         return !klassen.contains(object.getClass().getName());
     }
