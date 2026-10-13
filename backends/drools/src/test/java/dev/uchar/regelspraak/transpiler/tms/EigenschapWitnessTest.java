@@ -400,31 +400,39 @@ class EigenschapWitnessTest {
                 .toFile())));
     }
 
-    /** The cases {@code eigenschap/spelling} on the golden {@code jutterswet-sluimerwacht}, each with one key in another
-     *  capitalisation than its declaration (fix round 2a2, point 1): in the input an attribute ("melDingen" for
+    /** The cases {@code eigenschap/spelling} on a copy of the golden {@code jutterswet-sluimerwacht}, each with one key in
+     *  another capitalisation than its declaration (fix round 2a2, point 1): in the input an attribute ("melDingen" for
      *  "meldingen") and a characteristic ("beMand"), in an expectation an attribute ("meldingsAfschrift") and a
      *  characteristic ("sluimerEnd"). The reference interpreter and the ASP backend read each key as the declared member
      *  and play every case; the replay brings the key back to its declaration before it derives a setter or a getter,
      *  so it reaches the members the generator wrote. */
     @Test void een_sleutel_in_een_andere_hoofdletterspelling_bereikt_het_gedeclareerde_lid() throws Exception {
-        Path ir = GOLDEN.resolve("jutterswet-sluimerwacht").resolve("ir.json");
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
-        List<Path> zaken;
-        try (Stream<Path> s = Files.list(Path.of("src", "test", "resources", "eigenschap", "spelling"))) {
-            zaken = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
-        }
-        List<String> fouten = new ArrayList<>();
-        for (Path zaak : zaken) {
-            String uitkomst;
-            try {
-                uitkomst = VouwplanWitnessTest.speelCase(ir, json.readTree(zaak.toFile()));
-            } catch (java.lang.reflect.InvocationTargetException f) {
-                uitkomst = "faalt: " + f.getCause();
+        // the golden written again, compactly, under a hash of its own: the seam of the harness numbers the sessions
+        // per document, and these cases would shift the numbers of the golden's own sessions in the suite
+        Path ir = Files.createTempFile("sluimerwacht", ".json");
+        try {
+            Files.writeString(ir, json.writeValueAsString(json.readTree(GOLDEN.resolve("jutterswet-sluimerwacht")
+                    .resolve("ir.json").toFile())));
+            List<Path> zaken;
+            try (Stream<Path> s = Files.list(Path.of("src", "test", "resources", "eigenschap", "spelling"))) {
+                zaken = s.filter(p -> p.getFileName().toString().startsWith("case")).sorted().toList();
             }
-            if (uitkomst != null) fouten.add(zaak.getFileName() + " | " + uitkomst);
+            List<String> fouten = new ArrayList<>();
+            for (Path zaak : zaken) {
+                String uitkomst;
+                try {
+                    uitkomst = VouwplanWitnessTest.speelCase(ir, json.readTree(zaak.toFile()));
+                } catch (java.lang.reflect.InvocationTargetException f) {
+                    uitkomst = "faalt: " + f.getCause();
+                }
+                if (uitkomst != null) fouten.add(zaak.getFileName() + " | " + uitkomst);
+            }
+            assertEquals(4, zaken.size(), "de vier cases van eigenschap/spelling");
+            assertEquals(List.of(), fouten, "cases waarvan de replay het gedeclareerde lid niet bereikt");
+        } finally {
+            Files.delete(ir);
         }
-        assertEquals(4, zaken.size(), "de vier cases van eigenschap/spelling");
-        assertEquals(List.of(), fouten, "cases waarvan de replay het gedeclareerde lid niet bereikt");
     }
 
     private static com.fasterxml.jackson.databind.JsonNode json(String tekst) {
