@@ -4493,7 +4493,7 @@ public final class TmsTranspiler {
 
     /** The patterns of the intermediates of {@code plan} that neither walk determines, each over its node's bean class,
      *  its variable named into {@code tussen}, and constrained to its neighbours by the hops on either side of it
-     *  ({@link #stap}). */
+     *  ({@link #padstap}). */
     private List<Patroon> tussenpatronen(Bronpad.Plan plan, Map<Integer, String> tussen) {
         for (int i : plan.tussenknopen()) tussen.put(i, "$tussen_" + id("pad"));
         List<Patroon> patronen = new ArrayList<>();
@@ -4501,8 +4501,8 @@ public final class TmsTranspiler {
         for (Map.Entry<Integer, String> e : tussen.entrySet()) {
             int i = e.getKey();
             List<Betatoets> stappen = new ArrayList<>();
-            stappen.add(stap(plan, i, i, tussen));
-            if (i == laatste) stappen.add(stap(plan, plan.achterwaartsVanaf(), i, tussen));
+            stappen.add(padstap(plan, i, i, tussen));
+            if (i == laatste) stappen.add(padstap(plan, plan.achterwaartsVanaf(), i, tussen));
             patronen.add(new Patroon(bonenklasse(plan.knoopTypen().get(i)), e.getValue(), List.of(), List.of(), stappen,
                     List.of()));
         }
@@ -4529,7 +4529,7 @@ public final class TmsTranspiler {
      *  forward prefix), the member's (a backward suffix) or an intermediate declared before it, and the hop's field on
      *  the end that holds it, the hop's source going forward and its target going backward. The two walks meet where
      *  the hop holds ({@link Functie#ONTMOETING}). */
-    private Betatoets stap(Bronpad.Plan plan, int stap, int dit, Map<Integer, String> tussen) {
+    private Betatoets padstap(Bronpad.Plan plan, int stap, int dit, Map<Integer, String> tussen) {
         int ander = stap - 1 == dit ? stap : stap - 1;
         boolean ditIsDoel = ander == stap - 1;
         List<String> keten = ander <= plan.voorwaarts() ? plan.ketenVanafOnderwerp(ander)
