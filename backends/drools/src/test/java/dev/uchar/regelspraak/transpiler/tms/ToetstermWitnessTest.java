@@ -41,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * ({@link Termboom#velden}), a test whose list equals that of the test before it of the same form named with "zoals de
  * vorige toets". That the rendering of these trees tests what the compiled tests tested before the step is what the
  * harness {@code Vuurspoor} shows, a dump of every firing and every fact of the corpus and of the suite equal to the
- * one before the step.
+ * one before the step, for every test a document of the corpus or the suite fires. The member-fault rule of a fold
+ * whose filter can fault is in none of them: {@code TmsLidfoutWitnessTest} fires {@link #keurlastMetDelendFilter} and
+ * pins what stands at the fixpoint. This class and that method are public for that test, in package {@code cases},
+ * whose seams fire a case.
  *
  * <ul>
  *   <li>{@code jutterswet-opvolgerquorum}: a composite under all of a comparison and two quantifier folds whose
@@ -62,14 +65,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>{@code jutterswet-keurlast} with a filter that divides ({@link #keurlastMetDelendFilter}), since no document of
  *       the corpus or the suite has a per-element fold whose filter can fault: the member-fault rule tests the filter
  *       without its fault, which the filter-fault rule takes, and then that the member's timeline is the
- *       asOfDate-bucket scalar. Since no document evaluates that test, a test of its own pins the rendering of a
- *       condition tested without its fault.</li>
+ *       asOfDate-bucket scalar. A test of its own pins the rendering of a condition tested without its fault, and
+ *       {@code TmsLidfoutWitnessTest} fires the document: where the filter divides by zero the filter-fault rule
+ *       takes the fault and the member-fault rule does not hold.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step: the compilers of these tests made the predicates themselves, so each of them was a
  * {@code GecompileerdeToets}, which showed nothing of what it tested.
  */
-class ToetstermWitnessTest {
+public class ToetstermWitnessTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -130,7 +134,7 @@ class ToetstermWitnessTest {
      * attributes added to the Vondst, the characteristic it no longer reads removed and the fold's fragments rewritten
      * to the new filter. A numeric zero divisor faults the filter. Verifier-clean.
      */
-    static JsonNode keurlastMetDelendFilter() throws Exception {
+    public static JsonNode keurlastMetDelendFilter() throws Exception {
         ObjectNode d = (ObjectNode) JSON.readTree(GOLDEN.resolve("jutterswet-keurlast").resolve("ir.json").toFile());
         for (JsonNode o : d.path("model").path("objectTypes"))
             if (o.path("name").asText().equals("Vondst")) {
@@ -318,8 +322,9 @@ class ToetstermWitnessTest {
     }
 
     /**
-     * The rendering of a condition tested without its fault ({@link Term.ZonderFout}), which no document of the corpus
-     * or the suite evaluates, so the harness cannot show it: where the condition faults the test does not hold, where
+     * The rendering of a condition tested without its fault ({@link Term.ZonderFout}) for each kind of outcome. No
+     * document the harness fires evaluates such a condition; {@code TmsLidfoutWitnessTest} fires one whose condition
+     * faults with a division by zero. Where the condition faults the test does not hold, where
      * it answers the test is its answer, and an exception that is no evaluation fault passes; in the conjunction of a
      * test a form composes itself a member after one that does not hold is not evaluated, as the lambda of the
      * member-fault rule did with {@code &&}.
