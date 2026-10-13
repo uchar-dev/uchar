@@ -67,7 +67,6 @@ import org.drools.model.PatternDSL;
 import org.drools.model.Rule;
 import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
-import org.drools.model.functions.Block2;
 import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.impl.ModelImpl;
@@ -1355,31 +1354,6 @@ public final class TmsTranspiler {
         return weergeef(lez.regelplan(regelnaam + ": fout in de voorwaarde", items, fout));
     }
 
-    /** {@link #voorwaardefoutregel} for a default, whose rule a step of card drl-teksttak-op-truth-maintenance has not
-     *  planned yet ({@link #eigenRegel}): {@code nieuw} adds constraints to the rendered subject pattern and
-     *  {@code blokkade} the rendered control-fact patterns, so this rule is built directly, as before the step, until
-     *  step 1c-C plans them. */
-    private Rule voorwaardefoutregelRechtstreeks(String vorm, String regelnaam, Supplier<Lezingen> nieuw, Conditie c,
-                                                 Function<Lezingen, List<RuleItemBuilder<?>>> blokkade) {
-        Lezingen lez = nieuw.get();
-        Set<Integer> gelezen = lez.volg();
-        Term toets = voorwaarde(c, lez);
-        lez.stop();
-        List<RuleItemBuilder<?>> items = lez.linkerkant(Toetsitem.Rol.FOUT, toets, gelezen, c);
-        if (blokkade != null) items.addAll(blokkade.apply(lez));
-        String zinregel = model.geëmitteerdeRegelNaam(vorm);
-        Toets gecompileerd = toetsweergave(toets);
-        items.add(gevolg(lez, posities(gelezen), (drools, onderwerp, w) -> {
-            RuntimeException f = fout(gecompileerd, w);
-            if (f == null)
-                throw new IllegalStateException("de voorwaarde van \"" + vorm + "\" faalde in de toets en niet in het"
-                        + " gevolg, over dezelfde gebonden waarden");
-            drools.logicalInsert(new Fout(onderwerp, vorm, Rekenfout.benoem(f, zinregel)));
-        }, lez.variabelen.size()));
-        lez.vastleggen();
-        return PatternDSL.rule(PKG, regelnaam + ": fout in de voorwaarde").build(items.toArray(new RuleItemBuilder[0]));
-    }
-
     /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
      *  its fault, which the fault rule takes ({@link #voorwaardefoutregel}). */
     private static Toetsitem.Rol voorwaarderol(boolean kanFalen) {
@@ -1410,12 +1384,6 @@ public final class TmsTranspiler {
         lez.vastleggen();
         return weergeef(lez.regelplan(regelnaam + ": deponering in de voorwaarde", items,
                 new Gevolg.Inconsistentie(ONDERWERP, vorm, Gevolg.Invoeging.LOGISCH)));
-    }
-
-    /** The evaluation fault {@code toets} raises over {@code w}, or null where it answers, as the test of the fault rule
-     *  finds it ({@link ClosureWeergave#fout}): the consequence of that rule asks it again for the fault it inserts. */
-    private static RuntimeException fout(Toets toets, Object[] w) {
-        return ClosureWeergave.fout(toets::test, w);
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -2373,12 +2341,6 @@ public final class TmsTranspiler {
         boolean heeftLeden() { return leden != null; }
     }
 
-    /** What a decision or a reconciliation does with its outcome, from the values its rule bound. */
-    @FunctionalInterface
-    private interface Afloop {
-        void voer(org.drools.model.Drools drools, Object onderwerp, Object waarde);
-    }
-
     /** What the rules of one stack share while they are built. */
     private static final class Stapelbouw {
         final String naam;
@@ -2591,20 +2553,20 @@ public final class TmsTranspiler {
             beslissend.remove(beslissend.size() - 1);
         String naam = b.naam;
         ElementSleutel sleutel = b.lid.sleutel();
-        boolean kenmerk = b.kenmerk;
         List<Rule> uit = new ArrayList<>();
         for (int j = 0; j < beslissend.size(); j++) {
             Knoop k = beslissend.get(j);
             int i = k.positie();
             boolean hoger = j > 0, lager = j < beslissend.size() - 1;
             if (lager) b.stuurfeiten.add("Beslist");
+            // the target: an attribute's value, or the attribution of a characteristic, whose decision the default
+            // declares; a do-not-attribute decision writes nothing and only displaces the defaults below it
+            List<Gevolg.Stapelfeit> feiten = new ArrayList<>();
+            if (!b.kenmerk) feiten.add(new Gevolg.Stapelfeit.Waarde(sleutel, naam));
+            else if (Boolean.TRUE.equals(k.d().besluit())) feiten.add(new Gevolg.Stapelfeit.Kenmerk(sleutel));
+            if (lager) feiten.add(new Gevolg.Stapelfeit.Beslist(naam, i));
             uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(),
-                    () -> hoger ? List.of(geenBeslist(naam, i)) : List.of(),
-                    (drools, o, v) -> {
-                        if (!kenmerk) drools.logicalInsert(new Waarde(o, sleutel, v, naam));
-                        else if (Boolean.TRUE.equals(v)) drools.logicalInsert(new HeeftKenmerk(o, sleutel));
-                        if (lager) drools.logicalInsert(new Beslist(o, naam, i));
-                    }));
+                    () -> hoger ? List.of(geenBeslist(naam, i)) : List.of(), feiten));
         }
         return uit;
     }
@@ -2647,27 +2609,25 @@ public final class TmsTranspiler {
                 if (i > 0) wacht.add(geenUitkomst(naam, id, i));
                 return wacht;
             };
-            Afloop beslist = (drools, o, v) ->
-                    drools.logicalInsert(new Uitkomst(o, naam, id, i, Uitkomst.Soort.BESLIST, v, null));
+            Gevolg.Stapelfeit beslist = new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.BESLIST);
             if (!k.heeftLeden()) {
                 if (!beslistZelf(b, k.d())) continue;
                 b.stuurfeiten.add("Uitkomst " + Uitkomst.Soort.BESLIST);
-                uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, beslist));
+                uit.addAll(eigenRegel(b, k, naam + ": default " + k.label(), nietHoger, List.of(beslist)));
                 continue;
             }
             for (List<Knoop> lid : k.leden()) ketenregels(b, lid, nietHoger, uit);
             int eerste = k.eersteLid(), tot = eerste + k.leden().size();
             verzoening(b, eerste, k.leden().size(), k.leden().stream().anyMatch(TmsTranspiler::kanConflicteren),
                     k.sleutel(), k.label(), nietHoger,
-                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.CONFLICT),
-                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.BESLIST), false, true, uit);
+                    new Gevolg.Stapelfeit.Uitkomst(naam, id, i, Uitkomst.Soort.CONFLICT), beslist, false, true, uit);
             if (beslistZelf(b, k.d()))
                 uit.addAll(eigenRegel(b, k, naam + ": terugval " + k.label(), () -> {
                     List<LhsItem> wacht = new ArrayList<>();
                     wacht.add(new Niet(uitkomsten(naam, eerste, tot, null)));
                     wacht.addAll(nietHoger.get());
                     return wacht;
-                }, beslist));
+                }, List.of(beslist)));
         }
     }
 
@@ -2821,16 +2781,15 @@ public final class TmsTranspiler {
      * 2026-10-09).
      */
     private List<Rule> eigenRegel(Stapelbouw b, Knoop k, String regelnaam, Supplier<List<LhsItem>> wacht,
-                                  Afloop besluit) {
+                                  List<Gevolg.Stapelfeit> feiten) {
         Default d = k.d();
-        Class<?> klasse = b.klasse;
         Supplier<Lezingen> nieuw = () -> {
-            Lezingen l = new Lezingen(k.niveau());
-            l.onderwerp.expr(id("concreet-type"), o -> o.getClass() == klasse);
-            if (d.initialisatie()) {
-                Function<Object, Object> invoer = Accessors.getter(b.lid.klasse(), b.lid.naam());
-                l.onderwerp.expr(id("doel-leeg-in-de-invoer"), o -> invoer.apply(o) == null);
-            }
+            Lezingen l = new Lezingen(k.niveau(), false);
+            l.onderwerpAlfa(concreetType(b.klasse));
+            // the input on the target, read through the getter of the type that declares it, as the bean holds it
+            if (d.initialisatie())
+                l.onderwerpAlfa(new Alfa(id("doel-leeg-in-de-invoer"), List.of(new Alfa.Veldtoets(List.of(),
+                        b.lid.naam(), Binding.Leesvorm.WAARDE, Alfa.Vergelijker.LEEG, null, b.lid.klasse()))));
             return l.geldig(k.geldigheid());
         };
         Lezingen lez = nieuw.get();
@@ -2839,45 +2798,25 @@ public final class TmsTranspiler {
         boolean kanFalen = lez.kanFalen();
         lez.stop();
         String naam = b.naam;
-        List<RuleItemBuilder<?>> items;
+        List<LhsItem> items;
+        Gevolg besluit;
         if (b.kenmerk) {
-            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), weergegeven(lez, wacht.get()));
-            Boolean beslissing = d.besluit();
-            items.add(DSL.on(lez.s).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                    besluit.voer(drools, o, beslissing)));
+            items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.get());
+            besluit = new Gevolg.Afloop(ONDERWERP, constante(d.besluit()), List.of(), lez.grootte(), false, null, feiten,
+                    Gevolg.Invoeging.LOGISCH);
         } else {
             Set<Integer> gebruik = lez.volg();
-            Waardefunctie waarde = gevolgwaarde(herschaald(waarde(d.consequentie(), lez),
-                    eff.eenheidVan(d.consequentie()), b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel"));
+            Term waarde = waardeplan(herschaald(waarde(d.consequentie(), lez), eff.eenheidVan(d.consequentie()),
+                    b.lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het doel"));
             lez.stop();
-            items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), weergegeven(lez, wacht.get()));
-            int n = lez.variabelen.size();
-            items.add(gevolg(lez, posities(gebruik), (drools, o, w) -> {
-                Object v;
-                try {
-                    v = collapse(waarde.van(w));
-                } catch (RuntimeException e) {
-                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
-                    drools.logicalInsert(new Fout(o, naam, Rekenfout.benoem(e, naam)));
-                    return;
-                }
-                if (v != null) besluit.voer(drools, o, v);
-            }, n));
+            items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, d.voorwaarde(), wacht.get());
+            besluit = new Gevolg.Afloop(ONDERWERP, waarde, List.copyOf(gebruik), lez.grootte(), true,
+                    new Gevolg.Foutnaam(naam, naam), feiten, Gevolg.Invoeging.LOGISCH);
         }
         b.lezingen.add(lez);
         List<Rule> uit = new ArrayList<>();
-        uit.add(PatternDSL.rule(PKG, regelnaam).build(items.toArray(new RuleItemBuilder[0])));
-        if (kanFalen)
-            uit.add(voorwaardefoutregelRechtstreeks(naam, regelnaam, nieuw, d.voorwaarde(),
-                    l -> weergegeven(l, wacht.get())));
-        return uit;
-    }
-
-    /** The planned control-fact patterns {@code stuur} of a default, rendered by the rendering of {@code lez}, whose rule
-     *  is built item by item until the rule of a default comes whole from its plan. */
-    private static List<RuleItemBuilder<?>> weergegeven(Lezingen lez, List<LhsItem> stuur) {
-        List<RuleItemBuilder<?>> uit = new ArrayList<>();
-        for (LhsItem item : stuur) uit.add(lez.weergave.item(item));
+        uit.add(weergeef(lez.regelplan(regelnaam, items, besluit)));
+        if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuw, d.voorwaarde(), l -> wacht.get()));
         return uit;
     }
 
@@ -2928,13 +2867,6 @@ public final class TmsTranspiler {
     /** The function a consequence or a test calls to compute {@code t} ({@link ClosureWeergave}). */
     private static Waardefunctie weergave(Term t) {
         return ClosureWeergave.waardefunctie(t);
-    }
-
-    /** The test a consequence calls to evaluate the condition {@code t} again ({@link ClosureWeergave#toets(Term)}), for
-     *  the one consequence built outside a plan ({@link Toets}). */
-    private static Toets toetsweergave(Term t) {
-        Predicate<Object[]> p = ClosureWeergave.toets(t);
-        return p::test;
     }
 
     /** {@code t}, the value a consequence of the form being lowered computes, recorded as its plan
@@ -4561,16 +4493,6 @@ public final class TmsTranspiler {
     }
 
     // ---------------- conditions ----------------
-
-    /** A condition as a predicate over the values its reads bind, in the order {@link Lezingen} gives them indices: the
-     *  rendering of a planned condition that a consequence calls to evaluate it again ({@link #toetsweergave}). Only
-     *  the fault rule of a default's condition still builds such a consequence itself
-     *  ({@link #voorwaardefoutregelRechtstreeks}), until step 1c-C of card drl-teksttak-op-truth-maintenance plans it;
-     *  every other consequence evaluates its plan's term ({@link Gevolg}). */
-    @FunctionalInterface
-    private interface Toets {
-        boolean test(Object[] waarden);
-    }
 
     /** The condition {@code c} as a term whose value is a truth value ({@link Term}), with the reads it needs bound in
      *  {@code lez}. Every condition node is named here, so a node the IR records gain later fails to compile until it

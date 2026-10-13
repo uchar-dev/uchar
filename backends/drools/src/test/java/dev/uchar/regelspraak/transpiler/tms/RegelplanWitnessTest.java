@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -59,7 +60,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>{@code jutterswet-vrijgavetoets}: two computing rules on one target and the rule of two writers that stand
  *       with different values.</li>
  *   <li>{@code jutterswet-wrakerfbasis}: a rule whose subject pattern leaves out the objects of a type a defaults
- *       stack writes the target of.</li>
+ *       stack writes the target of; the plans of the stack itself, which step 1c-C2 planned, are left out here and
+ *       have a witness of their own.</li>
  *   <li>{@code jutterswet-voorwaardelijke-initialisatie}: an initialisation beside no other writer, guarded by the
  *       input on the target and the absence of another writer's value.</li>
  *   <li>The same document with two computing rules beside the initialisation
@@ -353,7 +355,7 @@ class RegelplanWitnessTest {
                 "    waarde 0.0 Lees bron 'zijn grondslag'",
                 "    waarde 0.1 Const BigDecimal type Numeriek[geheel=true, decimalen=0, teken=ONBEPAALD,"
                         + " eenheid=null] bron '2'"),
-                regels(golden("jutterswet-wrakerfbasis")));
+                regels(golden("jutterswet-wrakerfbasis"), p -> !RegelplanWitnessTest.vanEenStapel(p)));
     }
 
     @Test void een_initialisatie_zonder_andere_schrijver() throws Exception {
@@ -497,9 +499,15 @@ class RegelplanWitnessTest {
     /** Every plan of {@code document}'s rules as text, in the order the rules were built; after a line that holds a
      *  term, the term node by node ({@link Termboom#velden}). */
     private static List<String> regels(JsonNode document) throws ReflectiveOperationException {
+        return regels(document, p -> true);
+    }
+
+    /** As {@link #regels(JsonNode)}, of the plans {@code welke} takes. */
+    static List<String> regels(JsonNode document, Predicate<Regelplan> welke) throws ReflectiveOperationException {
         List<String> uit = new ArrayList<>();
         for (Regelplan p : DroolsBackend.build(document, DroolsBackend.Branch.EXEC_MODEL).execModelTranspiler()
                 .regelplannen()) {
+            if (!welke.test(p)) continue;
             uit.add("regel " + p.naam() + " | vorm " + p.vorm() + " | groep " + p.agendagroep());
             List<String> slots = new ArrayList<>();
             for (Lezing l : p.lezingen().slots())
@@ -515,6 +523,11 @@ class RegelplanWitnessTest {
                     Termboom.velden("    " + c.getName(), t, "0", uit);
         }
         return uit;
+    }
+
+    /** Whether {@code p} is a plan of a rule of a defaults stack, whose form the manifest names after the stack. */
+    static boolean vanEenStapel(Regelplan p) {
+        return p.vorm() != null && p.vorm().startsWith("defaults ");
     }
 
     private static String item(LhsItem item) {
