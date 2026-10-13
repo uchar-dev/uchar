@@ -34,14 +34,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * in by hand, the check of the characteristic "bemand" of the member under the qualifier of the whole year, and the
  * warning is dropped. The expectations are computed by hand from RUNTIME-SEMANTICS ch. 3.9: a post counts where each
  * year its true periods touch is covered on every day, so a post manned for the first half of 2026 does not count, a
- * post manned through 2025 and 2026 does, and a post without any period counts vacuously. The verifier passes both
- * documents, and the reference interpreter and the ASP backend pass every case.
+ * post manned through 2025 and 2026 does, and a post without any period counts vacuously.
  *
- * <p>Measured on {@code 4c8a687b}, before step 3a, per document (verifier, ref, clingo, exec-model branch, DRL-text
- * branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4, PLAYED 4, EXCLUDE on the compiler error above,
- * EXCLUDE "drl-tms: de DRL-weergave draagt Bijdrage nog niet"; the creation guard PASS, PASS 3, PASS 3, PLAYED 3, the
- * same compiler error, and EXCLUDE "drl-tms: de DRL-weergave draagt Creatie nog niet". The creation guard plays through
- * {@code DRL_TMS} once the branch carries a creation (step 5a); until then the branch refuses it for the creation.
+ * <p>This witness fires two branches only: the exec-model branch and {@code DRL_TMS}. The documents lie outside the
+ * corpus, so no gate runs them through the verifier, the reference interpreter, the ASP backend or the DRL-text
+ * branch; those were run by hand. Measured on {@code 4c8a687b}, before step 3a, per document (verifier, ref, clingo,
+ * exec-model branch, DRL-text branch, {@code DRL_TMS}): the computation rule PASS, PASS 4, PASS 4, PLAYED 4, EXCLUDE
+ * on the compiler error above, EXCLUDE "drl-tms: de DRL-weergave draagt Bijdrage nog niet"; the creation guard PASS,
+ * PASS 3, PASS 3, PLAYED 3, the same compiler error, and EXCLUDE "drl-tms: de DRL-weergave draagt Creatie nog niet".
+ * Measured again at fix round 3a of the card, on {@code 85b9a970}, with the same outcomes but for {@code DRL_TMS}, which
+ * plays the computation rule (PLAYED 4): the verifier PASS on both documents, ref and clingo PASS on each of the seven
+ * cases, one case per call ({@code ref/bin/runner.exe <ir.json> <case.json>} and
+ * {@code backends/clingo/bin/clingo_runner.exe <ir.json> <case.json>} under {@code _build/default}). The raw output of
+ * that run is not in the repository; it is kept with the measurements of the card, in
+ * {@code stap3b/fix3a/heelperiode-ruw.txt} (verifier, ref, clingo) and {@code stap3b/fix3a/heelperiode-ruw-drools.txt}
+ * (the three Drools branches through the CLI). The creation guard plays through {@code DRL_TMS} once the branch
+ * carries a creation (step 5a); until then the branch refuses it for the creation.
  *
  * <p><b>Red</b> on {@code 4c8a687b}: the test of the computation rule fails on the refusal of the contribution. The
  * test of the creation guard holds there too, since the rendering meets the creation first: it pins the loud refusal
