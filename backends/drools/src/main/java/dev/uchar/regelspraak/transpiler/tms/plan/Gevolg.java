@@ -15,10 +15,11 @@ import java.util.Map;
  * of the rule's value array.
  *
  * <p>The kinds are those of the ordinary rules and the standings of parameters and the evaluation date (step 1c-A1 of
- * card drl-teksttak-op-truth-maintenance). The consequences of the other forms are kinds of their own when their step
- * plans them: a contribution to a fold and the intermediate facts of a fold's filter and members, the key and the
- * violation of a uniqueness, the recipient and the shares of an allocation, a creation and a link, the control facts of
- * a default; each names the fact it inserts and how, as these do.
+ * card drl-teksttak-op-truth-maintenance), and the standings of characteristics, attributes and paths (step 1c-A2),
+ * where the source of a standing is a field ({@link Standbron}). The consequences of the other forms are kinds of their
+ * own when their step plans them: a contribution to a fold and the intermediate facts of a fold's filter and members,
+ * the key and the violation of a uniqueness, the recipient and the shares of an allocation, a creation and a link, the
+ * control facts of a default; each names the fact it inserts and how, as these do.
  */
 public sealed interface Gevolg {
 
@@ -101,4 +102,23 @@ public sealed interface Gevolg {
     /** The standing of the session's evaluation date, which the global {@code global} holds, null where the case
      *  carries none: a rule without a left-hand side, which fires once per session. */
     record Rekendatumstand(String global, Invoeging invoeging) implements Gevolg {}
+
+    /** Where a standing takes what it states from, as the left-hand side of its rule decided: the input on the object's
+     *  bean ({@code INVOER}); a derivation, the fact a form inserted ({@code AFLEIDING}); or neither, so that a
+     *  characteristic is onwaar ({@code GEEN}). */
+    enum Standbron { INVOER, AFLEIDING, GEEN }
+
+    /**
+     * The standing of characteristic {@code kenmerk} on the object {@code onderwerp} binds, {@code waar} or onwaar:
+     * waar from the input or from a derivation ({@code bron}), onwaar where neither holds. Where both hold, the two
+     * waar standings are equal facts, which truth maintenance keeps as one with a justification each.
+     */
+    record Kenmerkstand(String onderwerp, ElementSleutel kenmerk, Standbron bron, boolean waar, Invoeging invoeging)
+            implements Gevolg {
+        public Kenmerkstand {
+            if (waar == (bron == Standbron.GEEN))
+                throw new IllegalArgumentException("een kenmerkstand is waar uit de invoer of een afleiding en onwaar"
+                        + " uit geen van beide, niet " + waar + " uit " + bron);
+        }
+    }
 }

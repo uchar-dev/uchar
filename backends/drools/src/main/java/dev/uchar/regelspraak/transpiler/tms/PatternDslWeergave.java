@@ -184,6 +184,8 @@ final class PatternDslWeergave {
                     voegIn(drools, x.invoeging(), new ParameterStand(x.parameter(), a[0])));
             case Gevolg.Rekendatumstand x -> new Consequentie(new Variable[]{globals.apply(x.global())}, (drools, a) ->
                     voegIn(drools, x.invoeging(), new Rekendatum((LocalDate) a[0])));
+            case Gevolg.Kenmerkstand x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new KenmerkStand(a[0], x.kenmerk(), x.waar())));
         };
     }
 
@@ -447,6 +449,8 @@ final class PatternDslWeergave {
         veld(KenmerkStand.class, "onderwerp", KenmerkStand::onderwerp);
         veld(KenmerkStand.class, "kenmerk", KenmerkStand::kenmerk);
         veld(KenmerkStand.class, "waar", KenmerkStand::waar);
+        veld(HeeftKenmerk.class, "onderwerp", HeeftKenmerk::onderwerp);
+        veld(HeeftKenmerk.class, "kenmerk", HeeftKenmerk::kenmerk);
         veld(PadStand.class, "onderwerp", PadStand::onderwerp);
         veld(PadStand.class, "pad", PadStand::pad);
         veld(PadStand.class, "lid", PadStand::lid);
@@ -495,7 +499,7 @@ final class PatternDslWeergave {
     private static Predicate1<Object> predicaat(Class<?> klasse, Alfa a) {
         List<Predicate1<Object>> delen = new ArrayList<>();
         for (Alfa.Veldtoets t : a.toetsen()) {
-            Function1<Object, Object> f = t.veld() == null ? x -> x : veld(klasse, t.veld());
+            Function1<Object, Object> f = lezer(klasse, t);
             Object w = t.waarde();
             delen.add(switch (t.op()) {
                 case GELIJK -> x -> f.apply(x).equals(w);
@@ -515,6 +519,15 @@ final class PatternDslWeergave {
         };
     }
 
+    /** The read a field test makes of the pattern's object ({@link Alfa.Veldtoets}): a field as {@link #veld} reads
+     *  it, or the object itself, as it is; else along the path, null where a link is absent, as the test's form reads
+     *  it. */
+    private static Function1<Object, Object> lezer(Class<?> klasse, Alfa.Veldtoets t) {
+        Function1<Object, Object> f = t.veld() == null ? x -> x : veld(klasse, t.veld());
+        if (t.pad().isEmpty() && t.vorm() == Binding.Leesvorm.WAARDE) return f;
+        return langs(t.pad(), vorm(f::apply, t.vorm(), null));
+    }
+
     /** The read a binding makes: a field of a fact as its record accessor; on a bean the walk over the reference
      *  fields of the path, null where a link is absent, and then the member as the binding reads it. */
     private static Function1<Object, Object> lezer(Binding b) {
@@ -524,23 +537,34 @@ final class PatternDslWeergave {
                 throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
             return veld(klasse, b.veld().naam());
         }
-        Function<Object, Object> lid = invoerlezer(b.veld(), b.vorm(), b.soort());
-        if (b.pad().isEmpty()) return o -> lid.apply(o);
+        return langs(b.pad(), invoerlezer(b.veld(), b.vorm(), b.soort()));
+    }
+
+    /** {@code eind} of the object the walk over the reference fields {@code pad} reaches, null where a link on it is
+     *  absent. */
+    private static Function1<Object, Object> langs(List<Binding.Veld> pad, Function<Object, Object> eind) {
+        if (pad.isEmpty()) return o -> eind.apply(o);
         List<Function<Object, Object>> stappen = new ArrayList<>();
-        for (Binding.Veld stap : b.pad()) stappen.add(Accessors.getter(stap.klasse(), stap.naam()));
+        for (Binding.Veld stap : pad) stappen.add(Accessors.getter(stap.klasse(), stap.naam()));
         return o -> {
             Object d = o;
             for (Function<Object, Object> stap : stappen) {
                 d = stap.apply(d);
                 if (d == null) return null;
             }
-            return lid.apply(d);
+            return eind.apply(d);
         };
     }
 
     /** The read of member {@code veld} off a bean, as {@code vorm} reads it ({@link Binding.Leesvorm}). */
     static Function<Object, Object> invoerlezer(Binding.Veld veld, Binding.Leesvorm vorm, Class<?> soort) {
-        Function<Object, Object> getter = Accessors.getter(veld.klasse(), veld.naam());
+        return vorm(Accessors.getter(veld.klasse(), veld.naam()), vorm, soort);
+    }
+
+    /** {@code getter} as {@code vorm} reads what it gives: as it is, as whether it holds {@code true}, as the segments
+     *  of a timeline, or as whether a reference is set, to an instance of {@code soort} where that is not null. */
+    private static Function<Object, Object> vorm(Function<Object, Object> getter, Binding.Leesvorm vorm,
+                                                 Class<?> soort) {
         return switch (vorm) {
             case WAARDE -> getter;
             case WAAR -> o -> Boolean.TRUE.equals(getter.apply(o));

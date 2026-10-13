@@ -5901,38 +5901,41 @@ public final class TmsTranspiler {
      * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation over a
      * characteristic, {@code not HeeftKenmerk}, and reads the input in its left-hand side, so a derivation that appears
      * later retracts the onwaar standing and every conclusion that read it. When both sources hold, the two waar
-     * standings are equal, and truth maintenance keeps them as one fact with a justification each.
+     * standings are equal, and truth maintenance keeps them as one fact with a justification each. The input is read
+     * off the bean as whether it holds {@code true} ({@link Binding.Leesvorm#WAAR}), the one truth value the standing
+     * holds: a characteristic on a timeline is never read through it ({@link Lezingen#tijdlijn}).
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> kenmerkstandregels(Lid lid) {
-        Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
         ElementSleutel sleutel = lid.sleutel();
         String naam = "kenmerkstand " + lid.declarant().naam + "." + lid.naam() + ": ";
-
-        Variable s1 = DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Rule invoer = PatternDSL.rule(PKG, naam + "waar uit de invoer").build(
-                PatternDSL.pattern(s1).expr(id("invoer"), (Predicate1) o -> Boolean.TRUE.equals(getter.apply(o))),
-                DSL.on(s1).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                        drools.logicalInsert(new KenmerkStand(o, sleutel, true))));
-
-        Variable s2 = DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Variable<HeeftKenmerk> h2 = DSL.declarationOf(HeeftKenmerk.class, "$afgeleid");
-        Rule afleiding = PatternDSL.rule(PKG, naam + "waar uit een afleiding").build(
-                PatternDSL.pattern(s2),
-                zelfde(PatternDSL.pattern(h2).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel)),
-                        "afgeleid-onderwerp", s2, HeeftKenmerk::onderwerp),
-                DSL.on(s2).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                        drools.logicalInsert(new KenmerkStand(o, sleutel, true))));
-
-        Variable s3 = DSL.declarationOf(lid.klasse(), "$onderwerp");
-        Variable<HeeftKenmerk> h3 = DSL.declarationOf(HeeftKenmerk.class, "$afgeleid");
-        Rule onwaar = PatternDSL.rule(PKG, naam + "onwaar").build(
-                PatternDSL.pattern(s3).expr(id("geen-invoer"), (Predicate1) o -> !Boolean.TRUE.equals(getter.apply(o))),
-                DSL.not(zelfde(PatternDSL.pattern(h3).expr(id("afgeleid"), x -> x.kenmerk().equals(sleutel)),
-                        "afgeleid-onderwerp", s3, HeeftKenmerk::onderwerp)),
-                DSL.on(s3).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                        drools.logicalInsert(new KenmerkStand(o, sleutel, false))));
+        Alfa invoerWaar = invoerWaar(id("invoer"), lid, true);
+        Rule invoer = weergeef(new Regelplan(naam + "waar uit de invoer", null, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(invoerWaar), List.of())),
+                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.INVOER, true, Gevolg.Invoeging.LOGISCH)));
+        Rule afleiding = weergeef(new Regelplan(naam + "waar uit een afleiding", null, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(), List.of()), afgeleid(sleutel)),
+                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.AFLEIDING, true,
+                        Gevolg.Invoeging.LOGISCH)));
+        Alfa geenInvoer = invoerWaar(id("geen-invoer"), lid, false);
+        Rule onwaar = weergeef(new Regelplan(naam + "onwaar", null, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(lid.klasse(), ONDERWERP, List.of(geenInvoer), List.of()),
+                        new Niet(afgeleid(sleutel))),
+                new Gevolg.Kenmerkstand(ONDERWERP, sleutel, Gevolg.Standbron.GEEN, false, Gevolg.Invoeging.LOGISCH)));
         return List.of(invoer, afleiding, onwaar);
+    }
+
+    /** The test that the input of characteristic {@code lid} on the subject's bean, read as whether it holds
+     *  {@code true}, is {@code waar}. */
+    private static Alfa invoerWaar(String id, Lid lid, boolean waar) {
+        return new Alfa(id, List.of(new Alfa.Veldtoets(List.of(), lid.naam(), Binding.Leesvorm.WAAR,
+                Alfa.Vergelijker.GELIJK, waar)));
+    }
+
+    /** The pattern of the {@link HeeftKenmerk} of {@code kenmerk} that a derivation put on the subject: a constraint on
+     *  the characteristic, the join on the subject. */
+    private Patroon afgeleid(ElementSleutel kenmerk) {
+        return new Patroon(HeeftKenmerk.class, "$afgeleid", List.of(gelijk(id("afgeleid"), "kenmerk", kenmerk)),
+                List.of(opOnderwerp(id("afgeleid-onderwerp"))), List.of());
     }
 
     /**

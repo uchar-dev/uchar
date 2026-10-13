@@ -14,8 +14,27 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
         if (toetsen.isEmpty()) throw new IllegalArgumentException("een alfaconstraint toetst ten minste één veld");
     }
 
-    /** A test of field {@code veld} of the object against {@code waarde}; a null {@code veld} tests the object itself. */
-    public record Veldtoets(String veld, Vergelijker op, Object waarde) {}
+    /**
+     * A test against {@code waarde} of what the test reads of the pattern's object: its field {@code veld}, or with
+     * {@code veld} null the object itself, or along the reference fields of {@code pad} the object the path reaches,
+     * null where a link on it is absent; read as {@code vorm} ({@link Binding.Leesvorm}), as the analysis decided,
+     * among them a characteristic on a bean as whether it holds {@code true}. A path ends in the object it reaches: the
+     * class of a field beyond it is not the pattern's.
+     */
+    public record Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde) {
+        public Veldtoets {
+            pad = List.copyOf(pad);
+            if (!pad.isEmpty() && veld != null)
+                throw new IllegalArgumentException("een veldtoets langs een pad toetst het object dat het pad bereikt,"
+                        + " niet het veld " + veld);
+        }
+
+        /** A test of field {@code veld} of the pattern's own object as it is; a null {@code veld} tests the object
+         *  itself. */
+        public Veldtoets(String veld, Vergelijker op, Object waarde) {
+            this(List.of(), veld, Binding.Leesvorm.WAARDE, op, waarde);
+        }
+    }
 
     /** How a field is tested: {@code GELIJK} by {@code equals}, {@code NIET_GELIJK} by its negation, {@code MINSTENS}
      *  as a whole number at least the value, {@code BINNEN} as a date the validity window {@code waarde} admits,
