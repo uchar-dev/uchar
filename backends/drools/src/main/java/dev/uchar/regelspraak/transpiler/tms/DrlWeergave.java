@@ -1,0 +1,961 @@
+package dev.uchar.regelspraak.transpiler.tms;
+
+import dev.uchar.regelspraak.graaf.ProducentConsument.ElementSleutel;
+import dev.uchar.regelspraak.ir.Geldigheid;
+import dev.uchar.regelspraak.runtime.Breuk;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
+import dev.uchar.regelspraak.transpiler.kern.Namen;
+import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
+import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
+import dev.uchar.regelspraak.transpiler.tms.plan.Bestaat;
+import dev.uchar.regelspraak.transpiler.tms.plan.Betatoets;
+import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
+import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
+import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
+import dev.uchar.regelspraak.transpiler.tms.plan.Join;
+import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
+import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
+import dev.uchar.regelspraak.transpiler.tms.plan.Modelplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
+import dev.uchar.regelspraak.transpiler.tms.plan.Onderwerp;
+import dev.uchar.regelspraak.transpiler.tms.plan.Patroon;
+import dev.uchar.regelspraak.transpiler.tms.plan.Regelplan;
+import dev.uchar.regelspraak.transpiler.tms.plan.Route;
+import dev.uchar.regelspraak.transpiler.tms.plan.Term;
+import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
+
+import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * The rendering of the outcome of the analysis into DRL text ({@link #tekst}), the second rendering beside the
+ * executable model ({@link PatternDslWeergave}). It decides nothing: which globals there are, what each rule reads,
+ * how and in which order, what a test asks and what a firing inserts is the plan's ({@link Modelplan},
+ * {@link Regelplan}); this class spells it.
+ *
+ * <p>The spelling follows the measurements of the second advice of card drl-teksttak-op-truth-maintenance (FABLE-2
+ * §2) and the decisions taken on them:
+ * <ul>
+ *   <li>The rules are MVEL; every test and every value of the plan, a {@link Term}, is a function in the Java dialect
+ *       with the RegelSpraak sentence of its node above it as a comment, which the rule calls. MVEL has no
+ *       {@code try} and no {@code throw}, and one form for every term keeps one semantics. A node that needs
+ *       statements of its own, a composite, a {@code Let} and its binder, a condition without its fault, the
+ *       evaluation of a fold and of a quantifier fold, is a function of its own, which takes the parameters of the
+ *       function it stands in.</li>
+ *   <li>The constraints that decide which fact a pattern matches stay DRL constraints: the key of a fact, a null
+ *       test, the rank of a control fact and an identity join, so that Drools indexes them. A test of a class goes
+ *       through a route, since the text imports no bean class.</li>
+ *   <li>A join meets nothing where a side reads null, as the identity join of the executable model does: where the
+ *       pattern's side is a field and the other side can read null, a field of an object or a value a binding binds,
+ *       the join tests the field for null first, since DRL finds two nulls equal.</li>
+ *   <li>A read along a path is a function that walks the path with the routes {@code langs} and {@code lees}, null
+ *       where a link is absent; never the null-safe navigation of the dialect, which drops the match instead.</li>
+ *   <li>Every helper is called through its class, never through an {@code import function}: a helper named like a
+ *       field of a fact shadows that field without a complaint (FABLE-2 §2.1). The text imports the classes of the
+ *       branch and of the runtime it names, never a bean class, which the Java dialect cannot see: a bean stands with
+ *       its full name in a pattern. A class of the JDK and an enumeration label stand with their full names.</li>
+ *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code sonde}), and a function is named
+ *       after its rule's place in the plan and its own place in that rule's functions, which stand before the rule
+ *       in that order: one plan gives one text.</li>
+ * </ul>
+ *
+ * <p>The consequences of this step are those of the ordinary rules, the faults, the inconsistency, the writers that
+ * disagree and the standings; every other kind it refuses loudly ({@link Weigering}).
+ */
+final class DrlWeergave {
+
+    /** The path of the text in the resource tree of a {@code KieHelper}: its folders follow the package, its extension
+     *  gives the type. */
+    static final String PAD = TmsTranspiler.PKG.replace('.', '/') + "/regels.drl";
+
+    /** The fixed name of the probe: a local of a consequence, and the parameter of a function that a probe reaches. */
+    private static final String SONDE = "sonde";
+
+    /** A form of the plan this rendering does not carry yet, refused loudly with its kind, never left out. */
+    static final class Weigering extends RuntimeException {
+        private final String soort;
+
+        Weigering(String soort) {
+            super("de DRL-weergave draagt " + soort + " nog niet");
+            this.soort = soort;
+        }
+
+        /** The kind refused, such as the simple name of a consequence. */
+        String soort() { return soort; }
+    }
+
+    /** The classes the text imports, by their canonical names. */
+    private final Set<String> imports = new TreeSet<>();
+    /** The canonical name of each imported class by its simple name, so that two classes of one name fail loudly. */
+    private final Map<String, String> enkelvoudig = new HashMap<>();
+    /** The globals of the day kinds the terms name, by their names, each with its day kind. */
+    private final Map<String, String> dagsoorten = new LinkedHashMap<>();
+    private final StringBuilder regels = new StringBuilder();
+
+    private DrlWeergave() {}
+
+    /**
+     * The DRL text of {@code plan}: the package, the imports, the globals of the plan and those of the day kinds its
+     * terms name, then per rule, in the order of the plan, its functions and the rule. A consequence of a kind this
+     * rendering does not carry is refused ({@link Weigering}).
+     */
+    static String tekst(Modelplan plan) {
+        DrlWeergave w = new DrlWeergave();
+        for (int n = 0; n < plan.regels().size(); n++) w.new Regel(n, plan.regels().get(n)).weergeven();
+        Set<String> gedeclareerd = new HashSet<>();
+        StringBuilder globals = new StringBuilder();
+        for (Modelplan.Globaal g : plan.globals()) {
+            if (!gedeclareerd.add(g.naam()))
+                throw new IllegalStateException("de global " + g.naam() + " wordt twee keer gedeclareerd");
+            globals.append("global ").append(w.typenaam(g.klasse())).append(' ').append(g.naam()).append(";\n");
+        }
+        for (String d : w.dagsoorten.keySet()) {
+            if (!gedeclareerd.add(d)) throw new IllegalStateException("de global " + d + " wordt twee keer gedeclareerd");
+            globals.append("global java.util.function.Predicate ").append(d).append(";\n");
+        }
+        StringBuilder uit = new StringBuilder("package ").append(TmsTranspiler.PKG).append(";\n\n");
+        for (String i : w.imports) uit.append("import ").append(i).append(";\n");
+        if (!w.imports.isEmpty()) uit.append('\n');
+        if (!globals.isEmpty()) uit.append(globals).append('\n');
+        return uit.append(w.regels).toString();
+    }
+
+    // ---------------- names ----------------
+
+    private static boolean isBean(Class<?> k) {
+        return k.getPackageName().equals(FactModelGenerator.PAKKET);
+    }
+
+    /** The name the text gives class {@code k}: a bean by its full name, a class of {@code java.lang} by its simple
+     *  name, any other class of the JDK by its full name, and a class of the branch or of the runtime by its simple
+     *  name, imported. */
+    private String typenaam(Class<?> k) {
+        if (k.isPrimitive()) return k.getName();
+        if (k.isArray()) throw new IllegalStateException("een DRL-tekst spelt geen arraytype: " + k.getName());
+        String canoniek = k.getCanonicalName();
+        if (isBean(k)) return canoniek;
+        if (k.getPackageName().startsWith("java."))
+            return k.getPackageName().equals("java.lang") && k.getEnclosingClass() == null ? k.getSimpleName() : canoniek;
+        String eerder = enkelvoudig.putIfAbsent(k.getSimpleName(), canoniek);
+        if (eerder != null && !eerder.equals(canoniek))
+            throw new IllegalStateException("twee klassen heten " + k.getSimpleName() + " in de DRL-tekst: " + eerder
+                    + " en " + canoniek);
+        imports.add(canoniek);
+        return k.getSimpleName();
+    }
+
+    /** A call of route {@code r}, through its class. */
+    private String route(Route r) {
+        return typenaam(r.klasse()) + "." + r.methode();
+    }
+
+    /** A call of function {@code f}, through its class. */
+    private String functie(Functie f) {
+        return typenaam(f.klasse()) + "." + f.methode();
+    }
+
+    private static String str(String s) {
+        return Namen.drlString(s);
+    }
+
+    /** The one public method of {@code klasse} called {@code naam}; the witnesses of the routes hold that there is one. */
+    private static Method methode(Class<?> klasse, String naam) {
+        Method uit = null;
+        for (Method m : klasse.getMethods())
+            if (m.getName().equals(naam)) {
+                if (uit != null) throw new IllegalStateException(klasse.getName() + "." + naam + " is overladen");
+                uit = m;
+            }
+        if (uit == null) throw new IllegalStateException("geen publieke methode " + klasse.getName() + "." + naam);
+        return uit;
+    }
+
+    private static Class<?> omhul(Class<?> k) {
+        if (!k.isPrimitive()) return k;
+        if (k == boolean.class) return Boolean.class;
+        if (k == int.class) return Integer.class;
+        if (k == long.class) return Long.class;
+        if (k == double.class) return Double.class;
+        throw new IllegalStateException("geen omhulling voor " + k);
+    }
+
+    /** An expression of the Java dialect with its static type, null for the null literal. */
+    private record Expr(String tekst, Class<?> type) {}
+
+    /** {@code e} as an argument of a parameter of type {@code p}: cast where its static type is not that type. */
+    private String cast(Class<?> p, Expr e) {
+        if (p == Object.class) return e.tekst();
+        Class<?> doel = omhul(p);
+        if (e.type() == null) return p.isPrimitive() ? "((" + typenaam(doel) + ") null)" : e.tekst();
+        if (doel.isAssignableFrom(omhul(e.type()))) return e.tekst();
+        if (isBean(doel)) throw new IllegalStateException("een functie kan niet naar de beanklasse " + doel + " casten");
+        return "((" + typenaam(doel) + ") " + e.tekst() + ")";
+    }
+
+    /** {@code e} as a Java truth value. */
+    private static String alsBoolean(Expr e) {
+        return e.type() == boolean.class || e.type() == Boolean.class ? e.tekst() : "((Boolean) " + e.tekst() + ")";
+    }
+
+    /** A constant of the plan in the Java dialect, with its Java type. */
+    private Expr constante(Object w) {
+        if (w == null) return new Expr("null", null);
+        if (w instanceof String s) return new Expr(str(s), String.class);
+        if (w instanceof Boolean b) return new Expr(b ? "Boolean.TRUE" : "Boolean.FALSE", Boolean.class);
+        if (w instanceof Integer i) return new Expr("Integer.valueOf(" + i + ")", Integer.class);
+        if (w instanceof Long l) return new Expr("Long.valueOf(" + l + "L)", Long.class);
+        if (w instanceof BigDecimal d) return new Expr("new java.math.BigDecimal(" + str(d.toString()) + ")", BigDecimal.class);
+        if (w instanceof BigInteger i) return new Expr("new java.math.BigInteger(" + str(i.toString()) + ")", BigInteger.class);
+        if (w instanceof Breuk b)
+            return new Expr(typenaam(Breuk.class) + ".van(new java.math.BigInteger(" + str(b.teller().toString())
+                    + "), new java.math.BigInteger(" + str(b.noemer().toString()) + "))", Breuk.class);
+        if (w instanceof LocalDate d) return new Expr("java.time.LocalDate.parse(" + str(d.toString()) + ")", LocalDate.class);
+        if (w instanceof LocalDateTime d)
+            return new Expr("java.time.LocalDateTime.parse(" + str(d.toString()) + ")", LocalDateTime.class);
+        if (w instanceof Enum<?> e) return new Expr(enumlabel(e), e.getDeclaringClass());
+        if (w instanceof Class<?> k) {
+            if (isBean(k)) throw new Weigering("een beanklasse als constante van een term");
+            return new Expr(typenaam(k) + ".class", Class.class);
+        }
+        if (w instanceof List<?> l) {
+            List<String> delen = new ArrayList<>();
+            for (Object x : l) delen.add(constante(x).tekst());
+            return new Expr("java.util.Arrays.asList(" + String.join(", ", delen) + ")", List.class);
+        }
+        throw new IllegalStateException("een constante van het type " + w.getClass().getName() + " in het plan");
+    }
+
+    /** An enumeration label by its full name. */
+    private static String enumlabel(Enum<?> e) {
+        return e.getDeclaringClass().getCanonicalName() + "." + e.name();
+    }
+
+    /** A constant of a field test in MVEL. */
+    private String mvelconstante(Object w) {
+        if (w == null) return "null";
+        if (w instanceof String s) return str(s);
+        if (w instanceof Boolean || w instanceof Integer) return w.toString();
+        if (w instanceof ElementSleutel e) return sleutel(e);
+        if (w instanceof Enum<?> e) return enumlabel(e);
+        throw new IllegalStateException("een veldtoets met een constante van het type " + w.getClass().getName());
+    }
+
+    /** The key of a member, as {@link ElementSleutel#van} makes every key of the plan. */
+    private String sleutel(ElementSleutel e) {
+        return typenaam(ElementSleutel.class) + ".van(" + str(e.objecttype()) + ", " + str(e.naam()) + ", "
+                + e.kenmerk() + ")";
+    }
+
+    /** The global of the day kind {@code naam}: its predicate, a constant of the document, which the case runner sets
+     *  under this name before the session fires. */
+    private String dagsoort(String naam) {
+        String global = "rsDagsoort_" + Namen.ident(naam, true);
+        if (!global.codePoints().allMatch(Character::isJavaIdentifierPart))
+            throw new Weigering("de dagsoort '" + naam + "', waarvan de global geen Java-identifier is");
+        String eerder = dagsoorten.putIfAbsent(global, naam);
+        if (eerder != null && !eerder.equals(naam))
+            throw new IllegalStateException("de dagsoorten '" + eerder + "' en '" + naam + "' delen de global " + global);
+        return global;
+    }
+
+    // ---------------- the context of a function of a term ----------------
+
+    /** What a function of a term sees: its parameters, in order, each with the expression the rule passes it; the
+     *  parameter of each slot of the value array that the position passes; the probe's slot, -1 for none; and per
+     *  binder of an enclosing {@code Let} the call of its binder function. A function nested in a term takes the
+     *  parameters of the function it stands in, under the same names. */
+    private static final class Context {
+        private final List<String[]> parameters = new ArrayList<>();
+        private final Map<Integer, String> slots = new HashMap<>();
+        private final Map<Integer, String> binders = new HashMap<>();
+        private int sonde = -1;
+
+        void parameter(String type, String naam, String argument) {
+            for (String[] p : parameters)
+                if (p[1].equals(naam)) throw new IllegalStateException("de parameter " + naam + " staat er twee keer");
+            parameters.add(new String[]{type, naam, argument});
+        }
+
+        boolean heeft(String naam) {
+            for (String[] p : parameters) if (p[1].equals(naam)) return true;
+            return false;
+        }
+
+        /** The declaration of the parameters. */
+        String declaratie() {
+            List<String> d = new ArrayList<>();
+            for (String[] p : parameters) d.add(p[0] + " " + p[1]);
+            return String.join(", ", d);
+        }
+
+        /** The arguments of the call in the rule. */
+        String argumenten() {
+            List<String> a = new ArrayList<>();
+            for (String[] p : parameters) a.add(p[2]);
+            return String.join(", ", a);
+        }
+
+        /** The arguments of the call of a nested function: the parameters themselves. */
+        String doorgeven() {
+            List<String> a = new ArrayList<>();
+            for (String[] p : parameters) a.add(p[1]);
+            return String.join(", ", a);
+        }
+
+        /** This context with the cell {@code cel} of a {@code Let}, a local of that {@code Let}'s function. */
+        Context metCel(String cel) {
+            Context c = new Context();
+            for (String[] p : parameters) c.parameters.add(new String[]{p[0], p[1], p[1]});
+            c.slots.putAll(slots);
+            c.binders.putAll(binders);
+            c.sonde = sonde;
+            c.parameter("Object", cel, cel);
+            return c;
+        }
+    }
+
+    // ---------------- one rule ----------------
+
+    /** The rendering of the plan of one rule, the {@code n}th of the plan: its functions and its rule. */
+    private final class Regel {
+        private final int n;
+        private final Regelplan plan;
+        /** The functions of this rule, in the order of their names. */
+        private final List<String> functies = new ArrayList<>();
+        /** The variables the patterns of this rule bind to their objects, as far as they are in scope. */
+        private Set<String> patroonvariabelen = new HashSet<>();
+
+        Regel(int n, Regelplan plan) {
+            this.n = n;
+            this.plan = plan;
+        }
+
+        void weergeven() {
+            List<String> when = new ArrayList<>();
+            for (LhsItem item : plan.linkerkant()) when.add(item(item));
+            String then = gevolg(plan.gevolg());
+            for (String f : functies) {
+                if (f == null) throw new IllegalStateException("een functie van " + plan.naam() + " is niet geschreven");
+                regels.append(f).append('\n');
+            }
+            regels.append("rule \"").append(Namen.escapeRegelNaam(plan.naam())).append("\"\n");
+            regels.append("    dialect \"mvel\"\n");
+            if (plan.agendagroep() != null) regels.append("    agenda-group ").append(str(plan.agendagroep())).append('\n');
+            regels.append("when\n");
+            for (String w : when) regels.append("    ").append(w).append('\n');
+            regels.append("then\n").append(then).append("end\n\n");
+        }
+
+        /** A place for a function of this rule, reserved where its node is met, so the functions stand in the order of
+         *  the plan. */
+        private int reserveer() {
+            functies.add(null);
+            return functies.size() - 1;
+        }
+
+        private String naam(String soort, int plaats) {
+            return "r" + n + "_" + soort + plaats;
+        }
+
+        /** Writes the function at {@code plaats}: the RegelSpraak sentence {@code bron} as a comment, where the node has
+         *  one, its head and its body. */
+        private void vul(int plaats, String bron, String kop, String lichaam) {
+            StringBuilder f = new StringBuilder();
+            if (bron != null) f.append("// ").append(Namen.commentVeilig(bron)).append('\n');
+            f.append("function ").append(kop).append(" {\n").append(lichaam).append("}\n");
+            functies.set(plaats, f.toString());
+        }
+
+        /** The variable of slot {@code slot}: the one a binding of the left-hand side binds. */
+        private String variabele(int slot) {
+            Lezing l = plan.lezingen().slots().get(slot);
+            if (l.naam() == null)
+                throw new IllegalStateException("slot " + slot + " van " + plan.naam() + " heeft geen variabele: " + l);
+            return l.naam();
+        }
+
+        // ---------------- the left-hand side ----------------
+
+        private String item(LhsItem item) {
+            return switch (item) {
+                case Onderwerp o -> patroon(o.naam(), o.bonenklasse(), o.alfa(), o.joins(), o.betatoetsen(), List.of(),
+                        o.bindingen());
+                case Patroon p -> patroon(p);
+                case Niet x -> "not( " + gekwantificeerd(x.patronen()) + " )";
+                case Bestaat x -> "exists( " + gekwantificeerd(x.patronen()) + " )";
+                case Accumulatie a -> accumulatie(a);
+                case Toetsitem t -> toets(t);
+            };
+        }
+
+        private String patroon(Patroon p) {
+            return patroon(p.naam(), p.feitklasse(), p.alfa(), p.joins(), p.betatoetsen(), p.naAlfa(), p.bindingen());
+        }
+
+        /** A pattern: its constraints on its object, its identity joins, its constraints between its object and
+         *  another, its constraints on its object after those, and its bindings, in that order. */
+        private String patroon(String naam, Class<?> klasse, List<Alfa> alfa, List<Join> joins,
+                               List<Betatoets> betatoetsen, List<Alfa> naAlfa, List<Binding> bindingen) {
+            List<String> c = new ArrayList<>();
+            for (Alfa a : alfa) c.add(alfa(klasse, a));
+            for (Join j : joins) c.addAll(join(j));
+            for (Betatoets b : betatoetsen) c.add(betatoets(b));
+            for (Alfa a : naAlfa) c.add(alfa(klasse, a));
+            for (Binding b : bindingen) c.add(binding(klasse, b));
+            patroonvariabelen.add(naam);
+            return naam + " : " + typenaam(klasse) + (c.isEmpty() ? "()" : "( " + String.join(", ", c) + " )");
+        }
+
+        /** The patterns of a negation or an existence; what they bind lives only inside it. */
+        private String gekwantificeerd(List<Patroon> patronen) {
+            Set<String> buiten = new HashSet<>(patroonvariabelen);
+            List<String> p = new ArrayList<>();
+            for (Patroon x : patronen) p.add(patroon(x));
+            patroonvariabelen = buiten;
+            return String.join(" and ", p);
+        }
+
+        private String accumulatie(Accumulatie a) {
+            String bron = patroon(a.bron());
+            List<String> f = new ArrayList<>();
+            for (Accumulatie.Functie x : a.functies()) {
+                String over = x.bron() == null ? a.bron().naam() : x.bron();
+                f.add(x.doel() + " : " + switch (x.soort()) {
+                    case AANTAL -> "count()";
+                    case SOM -> "sumBD(" + over + ")";
+                    case MINIMUM -> "min(" + over + ")";
+                    case MAXIMUM -> "max(" + over + ")";
+                    case LIJST -> "collectList(" + over + ")";
+                });
+            }
+            return "accumulate( " + bron + "; " + String.join(", ", f) + " )";
+        }
+
+        /** An identity join, which meets nothing where a side reads null ({@link Join}): where the pattern's side is a
+         *  field and the other side can read null, a field of an object or a value that is no pattern's object, the
+         *  field is tested for null first, since DRL finds two nulls equal. */
+        private List<String> join(Join j) {
+            String links = j.veld() == null ? "this" : j.eigenschap();
+            String rechts = j.doelveld() == null ? j.doel() : j.doel() + "." + j.doelveld().eigenschap();
+            boolean rechtsLeeg = j.doelveld() != null || !patroonvariabelen.contains(j.doel());
+            List<String> uit = new ArrayList<>();
+            if (j.veld() != null && rechtsLeeg) uit.add(links + " != null");
+            uit.add(links + " == " + rechts);
+            return uit;
+        }
+
+        /** A constraint between the pattern's object and the object or value another pattern binds: a function that
+         *  calls the plan's function with its constants. */
+        private String betatoets(Betatoets b) {
+            int plaats = reserveer();
+            String naam = naam("beta", plaats);
+            Method m = methode(b.functie().klasse(), b.functie().methode());
+            Class<?>[] p = m.getParameterTypes();
+            if (p.length != 2 + b.constanten().size())
+                throw new IllegalStateException(b.functie() + " neemt " + p.length + " argumenten, niet "
+                        + (2 + b.constanten().size()));
+            List<String> a = new ArrayList<>(List.of(cast(p[0], new Expr("eigen", Object.class)),
+                    cast(p[1], new Expr("ander", Object.class))));
+            for (int i = 0; i < b.constanten().size(); i++) a.add(cast(p[2 + i], constante(b.constanten().get(i).waarde())));
+            Expr aanroep = new Expr(functie(b.functie()) + "(" + String.join(", ", a) + ")", m.getReturnType());
+            vul(plaats, null, "boolean " + naam + "(Object eigen, Object ander)", "    return " + alsBoolean(aanroep)
+                    + ";\n");
+            return naam + "(this, " + b.doel() + ")";
+        }
+
+        /** A value a pattern binds: a field of a fact of the branch as it is; a member of a bean by its property, or by
+         *  the route {@code lees} where the pattern's class does not declare it, read as its form says; along a path
+         *  a function that walks it. */
+        private String binding(Class<?> klasse, Binding b) {
+            if (!b.pad().isEmpty())
+                return b.doel() + " : (" + padfunctie(b.pad(), b.veld().eigenschap(), b.vorm(), b.soort()) + "(this))";
+            if (!isBean(klasse)) {
+                if (b.vorm() != Binding.Leesvorm.WAARDE)
+                    throw new IllegalStateException("een feit van de tak wordt gelezen zoals het is: " + b);
+                return b.doel() + " : " + b.veld().eigenschap();
+            }
+            boolean eigen = b.veld().klasse().isAssignableFrom(klasse);
+            String lees = eigen ? b.veld().eigenschap() : route(Route.LEES) + "(this, " + str(b.veld().eigenschap()) + ")";
+            if (b.vorm() == Binding.Leesvorm.WAARDE) return b.doel() + " : " + (eigen ? lees : "(" + lees + ")");
+            return b.doel() + " : (" + leesvorm(lees, b.vorm(), b.soort()) + ")";
+        }
+
+        /** {@code lees} read as {@code vorm}, through its route. */
+        private String leesvorm(String lees, Binding.Leesvorm vorm, Class<?> soort) {
+            return switch (vorm) {
+                case WAARDE -> lees;
+                case WAAR -> route(Route.WAAR) + "(" + lees + ")";
+                case TIJDVAKKEN -> route(Route.TIJDVAKKEN) + "(" + lees + ")";
+                case GEZET -> route(Route.GEZET) + "(" + lees + ", " + (soort == null ? "null" : str(soort.getName()))
+                        + ")";
+            };
+        }
+
+        /** A function of the object a pattern matches that walks the reference fields {@code pad} with the route
+         *  {@code langs}, null where a link is absent, and reads of the object reached the member {@code eigenschap}
+         *  (the object itself where it is null) as {@code vorm} says. */
+        private String padfunctie(List<Binding.Veld> pad, String eigenschap, Binding.Leesvorm vorm, Class<?> soort) {
+            int plaats = reserveer();
+            String naam = naam("pad", plaats);
+            List<String> stappen = new ArrayList<>();
+            for (Binding.Veld v : pad) stappen.add(str(v.eigenschap()));
+            String langs = route(Route.LANGS) + "(o, java.util.Arrays.asList(" + String.join(", ", stappen) + "))";
+            if (eigenschap == null && vorm == Binding.Leesvorm.WAARDE) {
+                vul(plaats, null, "Object " + naam + "(Object o)", "    return " + langs + ";\n");
+                return naam;
+            }
+            String lees = eigenschap == null ? "bereikt" : route(Route.LEES) + "(bereikt, " + str(eigenschap) + ")";
+            vul(plaats, null, "Object " + naam + "(Object o)", "    Object bereikt = " + langs + ";\n"
+                    + "    return bereikt == null ? null : " + leesvorm(lees, vorm, soort) + ";\n");
+            return naam;
+        }
+
+        /** An alpha constraint: its field tests in order, as one constraint. */
+        private String alfa(Class<?> klasse, Alfa a) {
+            List<String> t = new ArrayList<>();
+            for (Alfa.Veldtoets v : a.toetsen()) t.add(veldtoets(klasse, v));
+            return String.join(" && ", t);
+        }
+
+        private String veldtoets(Class<?> klasse, Alfa.Veldtoets t) {
+            String lees;
+            if (!t.pad().isEmpty()) {
+                lees = padfunctie(t.pad(), null, t.vorm(), null) + "(this)";
+            } else {
+                // a member the pattern's class does not declare is read through the class of the object itself
+                String basis = t.veld() == null ? "this"
+                        : t.declarant() != null ? route(Route.LEES) + "(this, " + str(t.eigenschap()) + ")"
+                        : t.eigenschap();
+                lees = leesvorm(basis, t.vorm(), null);
+            }
+            Object w = t.waarde();
+            return switch (t.op()) {
+                case GELIJK -> lees + " == " + mvelconstante(w);
+                case NIET_GELIJK -> lees + " != " + mvelconstante(w);
+                case MINSTENS -> lees + " >= " + ((Number) w).intValue();
+                case ONDER -> lees + " < " + ((Number) w).intValue();
+                case BINNEN -> {
+                    Geldigheid g = (Geldigheid) w;
+                    yield route(Route.BINNEN) + "(" + lees + ", " + (g.vanaf() == null ? "null" : str(g.vanaf().toString()))
+                            + ", " + (g.tot() == null ? "null" : str(g.tot().toString())) + ")";
+                }
+                case IS_EEN -> route(Route.IS_EEN) + "(" + lees + ", " + str(((Class<?>) w).getName()) + ")";
+                case LEEG -> lees + " == null";
+                case GEVULD -> lees + " != null";
+                case KLASSE_NIET_IN -> {
+                    List<String> namen = new ArrayList<>();
+                    for (Object k : (Collection<?>) w) namen.add(str(((Class<?>) k).getName()));
+                    yield route(Route.KLASSE_NIET_IN) + "(" + lees + ", " + lijst(namen) + ")";
+                }
+                case KLASSE_IS -> route(Route.KLASSE_IS) + "(" + lees + ", " + str(((Class<?>) w).getName()) + ")";
+            };
+        }
+
+        /** A list of the MVEL expressions {@code elementen}: through a route of its length up to six, else a function
+         *  that returns it. */
+        private String lijst(List<String> elementen) {
+            if (elementen.size() <= 6)
+                return route(Route.valueOf("LIJST" + elementen.size())) + "(" + String.join(", ", elementen) + ")";
+            int plaats = reserveer();
+            String naam = naam("lijst", plaats);
+            vul(plaats, null, "java.util.List " + naam + "()", "    return java.util.Arrays.asList("
+                    + String.join(", ", elementen) + ");\n");
+            return naam + "()";
+        }
+
+        /** The test of the rule: a function that asks of the condition what its role says, called in an {@code eval}. */
+        private String toets(Toetsitem t) {
+            int plaats = reserveer();
+            String naam = naam("toets", plaats);
+            boolean deponering = t.rol() == Toetsitem.Rol.DEPONERING;
+            Context c = context(t.slots(), deponering ? t.sonde() : -1, route(Route.VERSE_SONDE) + "()", t.toets());
+            String b = bool(t.toets(), c);
+            String gevangen = "        " + route(Route.GEVANGEN) + "(e);\n";
+            String lichaam = switch (t.rol()) {
+                case VOORWAARDE, VORM -> "    return " + b + ";\n";
+                case ZONDER_FOUT -> vang("        return " + b + ";\n", gevangen + "        return false;\n");
+                case FOUT -> vang("        boolean uitkomst = " + b + ";\n        return false;\n",
+                        gevangen + "        return true;\n");
+                case DEPONERING -> vang("        boolean uitkomst = " + b + ";\n", gevangen) + "    return "
+                        + route(Route.GEMELD) + "(" + SONDE + ");\n";
+            };
+            vul(plaats, t.toets().bron(), "boolean " + naam + "(" + c.declaratie() + ")", lichaam);
+            return "eval( " + naam + "(" + c.argumenten() + ") )";
+        }
+
+        /** A try with {@code probeer} as its body and {@code vangst} as the body of its catch of a
+         *  {@code RuntimeException e}. */
+        private String vang(String probeer, String vangst) {
+            return "    try {\n" + probeer + "    } catch (RuntimeException e) {\n" + vangst + "    }\n";
+        }
+
+        /** The context of a function of a position: a parameter per slot the position passes, in its order; the probe
+         *  where the position has one, with {@code sondeArgument} as what the rule passes; and the global of each day
+         *  kind the terms name. */
+        private Context context(List<Integer> slots, int sonde, String sondeArgument, Term... termen) {
+            Context c = new Context();
+            for (int s : slots) {
+                String v = variabele(s);
+                c.parameter("Object", v, v);
+                c.slots.put(s, v);
+            }
+            if (sonde >= 0) {
+                c.parameter("Object", SONDE, sondeArgument);
+                c.sonde = sonde;
+            }
+            Set<String> globals = new LinkedHashSet<>();
+            for (Term t : termen) dagsoorten(t, globals);
+            for (String d : globals) c.parameter("java.util.function.Predicate", d, d);
+            return c;
+        }
+
+        // ---------------- the terms ----------------
+
+        /** {@code t}, a condition, as a Java truth value. */
+        private String bool(Term t, Context c) {
+            if (t instanceof Term.Samengesteld s) return samengesteld(s, c);
+            if (t instanceof Term.ZonderFout z) return zonderFout(z, c);
+            return alsBoolean(waarde(t, c));
+        }
+
+        /** {@code t} as a Java expression in the function whose context is {@code c}. */
+        private Expr waarde(Term t, Context c) {
+            return switch (t) {
+                case Term.Const k -> constante(k.waarde());
+                case Term.Lees l -> {
+                    String p = c.slots.get(l.slot());
+                    if (p == null)
+                        throw new IllegalStateException("de term leest slot " + l.slot() + ", dat haar plaats in "
+                                + plan.naam() + " niet doorgeeft");
+                    yield new Expr(p, Object.class);
+                }
+                case Term.Invoer i -> new Expr(leesvorm(route(Route.LEES) + "(" + waarde(i.object(), c).tekst() + ", "
+                        + str(i.veld().eigenschap()) + ")", i.vorm(), null), Object.class);
+                case Term.Binder b -> {
+                    String aanroep = c.binders.get(b.slot());
+                    if (aanroep == null) throw new IllegalStateException("de binder " + b.naam() + " buiten zijn Let");
+                    yield new Expr(aanroep, Object.class);
+                }
+                case Term.Let l -> new Expr(let(l, c), Object.class);
+                case Term.Keuze k -> new Expr("(" + bool(k.voorwaarde(), c) + " ? (Object) " + waarde(k.dan(), c).tekst()
+                        + " : (Object) " + waarde(k.anders(), c).tekst() + ")", Object.class);
+                case Term.Aanroep a -> aanroep(a.functie(), a.argumenten().stream().map(x -> waarde(x, c)).toList());
+                case Term.Herschaal h -> aanroep(h.functie(), h.noemer() == null
+                        ? List.of(waarde(h.term(), c), constante(h.teller()))
+                        : List.of(waarde(h.term(), c), constante(h.teller()), constante(h.noemer())));
+                case Term.Deel d -> {
+                    Expr links = waarde(d.links(), c), rechts = waarde(d.rechts(), c);
+                    yield aanroep(d.functie(), List.of(links, rechts, sonde(d.sonde(), c)));
+                }
+                case Term.Wortel w -> aanroep(w.functie(), List.of(waarde(w.radicand(), c), sonde(w.sonde(), c)));
+                case Term.Faal f -> routeaanroep(Route.FAAL, List.of(constante(f.zin())));
+                case Term.Vereist v -> routeaanroep(Route.VEREIST, List.of(waarde(v.waarde(), c), constante(v.zin())));
+                case Term.Tekstreeks s -> {
+                    List<String> delen = new ArrayList<>();
+                    for (Term x : s.delen()) delen.add(waarde(x, c).tekst());
+                    yield routeaanroep(Route.TEKSTREEKS, List.of(new Expr("java.util.Arrays.asList("
+                            + String.join(", ", delen) + ")", List.class)));
+                }
+                case Term.GelijsteVouw g -> {
+                    Expr tot = new Expr("null", null);
+                    for (Term x : g.operanden()) tot = aanroep(g.functie(), List.of(tot, waarde(x, c)));
+                    yield tot;
+                }
+                case Term.Vouwlezing v -> new Expr(vouwlezing(v, c), Object.class);
+                case Term.Samengesteld s -> new Expr("Boolean.valueOf(" + samengesteld(s, c) + ")", Boolean.class);
+                case Term.Kwantorlezing q -> new Expr(kwantorlezing(q, c), Object.class);
+                case Term.ZonderFout z -> new Expr("Boolean.valueOf(" + zonderFout(z, c) + ")", Boolean.class);
+                case Term.Dagsoort d -> {
+                    String global = dagsoort(d.naam());
+                    if (!c.heeft(global)) throw new IllegalStateException("de dagsoort " + d.naam() + " buiten haar context");
+                    yield new Expr(global, java.util.function.Predicate.class);
+                }
+            };
+        }
+
+        /** The probe a place reports to: the position's, where the plan names it, or none with slot -1. */
+        private Expr sonde(int slot, Context c) {
+            if (slot < 0) return new Expr("null", null);
+            if (slot != c.sonde)
+                throw new IllegalStateException("een plaats in " + plan.naam() + " meldt aan slot " + slot
+                        + ", niet aan de sonde van haar positie");
+            return new Expr(SONDE, Object.class);
+        }
+
+        /** A call of {@code f} on {@code argumenten}, evaluated in that order, each cast as its parameter takes it. */
+        private Expr aanroep(Functie f, List<Expr> argumenten) {
+            Method m = methode(f.klasse(), f.methode());
+            return new Expr(functie(f) + "(" + argumentlijst(m, argumenten) + ")", m.getReturnType());
+        }
+
+        private Expr routeaanroep(Route r, List<Expr> argumenten) {
+            Method m = methode(r.klasse(), r.methode());
+            return new Expr(route(r) + "(" + argumentlijst(m, argumenten) + ")", m.getReturnType());
+        }
+
+        private String argumentlijst(Method m, List<Expr> argumenten) {
+            Class<?>[] p = m.getParameterTypes();
+            if (p.length != argumenten.size())
+                throw new IllegalStateException(m.getName() + " neemt " + p.length + " argumenten, niet "
+                        + argumenten.size());
+            List<String> a = new ArrayList<>();
+            for (int i = 0; i < p.length; i++) a.add(cast(p[i], argumenten.get(i)));
+            return String.join(", ", a);
+        }
+
+        /** A composite: its members read in order, the stop triggers of RUNTIME-SEMANTICS ch. 5.10 tested before
+         *  each, the quantifier's verdict where none stops it. */
+        private String samengesteld(Term.Samengesteld s, Context c) {
+            int plaats = reserveer();
+            String naam = naam("samengesteld", plaats);
+            String kw = enumlabel(s.kwantor());
+            int n = s.leden().size();
+            StringBuilder b = new StringBuilder("    int raak = 0;\n    Boolean vast;\n");
+            for (int i = 0; i < n; i++) {
+                b.append("    vast = ").append(route(Route.VASTGESTELD)).append("(").append(kw).append(", ")
+                        .append(s.drempel()).append(", raak, ").append(i).append(", ").append(n - i).append(");\n");
+                b.append("    if (vast != null) {\n        return vast;\n    }\n");
+                b.append("    if (").append(bool(s.leden().get(i), c)).append(") {\n        raak++;\n    }\n");
+            }
+            b.append("    return ").append(route(Route.EINDOORDEEL)).append("(").append(kw).append(", ")
+                    .append(s.drempel()).append(", raak, ").append(n).append(");\n");
+            vul(plaats, s.bron(), "boolean " + naam + "(" + c.declaratie() + ")", b.toString());
+            return naam + "(" + c.doorgeven() + ")";
+        }
+
+        /** A condition where its evaluation answers, and not holding where it faults. */
+        private String zonderFout(Term.ZonderFout z, Context c) {
+            int plaats = reserveer();
+            String naam = naam("zonderfout", plaats);
+            String b = bool(z.voorwaarde(), c);
+            vul(plaats, z.bron(), "boolean " + naam + "(" + c.declaratie() + ")", vang("        return " + b + ";\n",
+                    "        " + route(Route.GEVANGEN) + "(e);\n        return false;\n"));
+            return naam + "(" + c.doorgeven() + ")";
+        }
+
+        /** The evaluation of a fold in the rule that reads it: its filter's deposit heard by the position's probe, then
+         *  the first filter fault, then the first member fault, then the fold's value. */
+        private String vouwlezing(Term.Vouwlezing v, Context c) {
+            int plaats = reserveer();
+            String naam = naam("vouwlezing", plaats);
+            StringBuilder b = new StringBuilder();
+            if (v.sonde() >= 0) {
+                if (v.deponeringen() < 0)
+                    throw new IllegalStateException("een vouwlezing met een sonde en zonder deponeringen in " + plan.naam());
+                b.append("    if (((Number) ").append(slot(v.deponeringen(), c)).append(").longValue() > 0) {\n        ")
+                        .append(route(Route.MELD)).append("(").append(sonde(v.sonde(), c).tekst()).append(");\n    }\n");
+            }
+            if (v.filterfout() >= 0) {
+                String f = slot(v.filterfout(), c);
+                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typenaam(Filterfout.class))
+                        .append(") ").append(f).append(").fout();\n    }\n");
+            }
+            if (v.lidfout() >= 0) {
+                String f = slot(v.lidfout(), c);
+                b.append("    if (").append(f).append(" != null) {\n        throw ((").append(typenaam(Lidfout.class))
+                        .append(") ").append(f).append(").fout();\n    }\n");
+            }
+            b.append("    return ").append(waarde(v.uitkomst(), c).tekst()).append(";\n");
+            vul(plaats, v.bron(), "Object " + naam + "(" + c.declaratie() + ")", b.toString());
+            return naam + "(" + c.doorgeven() + ")";
+        }
+
+        private String slot(int slot, Context c) {
+            String p = c.slots.get(slot);
+            if (p == null)
+                throw new IllegalStateException("slot " + slot + " staat niet in de context van een term van " + plan.naam());
+            return p;
+        }
+
+        /** The verdict of a quantifier fold whose matrix can fault or deposit, through its function. */
+        private String kwantorlezing(Term.Kwantorlezing q, Context c) {
+            int plaats = reserveer();
+            String naam = naam("kwantorlezing", plaats);
+            Expr aanroep = aanroep(q.functie(), List.of(waarde(q.aantal(), c), waarde(q.bijdragen(), c),
+                    constante(q.kwantor()), constante(q.drempel()), sonde(q.sonde(), c)));
+            vul(plaats, q.bron(), "Object " + naam + "(" + c.declaratie() + ")", "    return " + aanroep.tekst() + ";\n");
+            return naam + "(" + c.doorgeven() + ")";
+        }
+
+        /**
+         * A {@code Let} by need (RUNTIME-SEMANTICS ch. 10.6): a function per {@code Let}, which makes the cell of its
+         * binder and evaluates its body, and a function per binder, which evaluates the value in the enclosing scope
+         * at the first read and serves that result to every further read. A leeg value raises the barrier of that cell,
+         * which the {@code Let}'s own function catches as leeg; a barrier of an enclosing {@code Let} passes on.
+         */
+        private String let(Term.Let l, Context c) {
+            int plaats = reserveer();
+            String naam = naam("let", plaats);
+            int binderplaats = reserveer();
+            String binder = naam("binder", binderplaats);
+            String cel = "cel_" + l.slot();
+            Context binnen = c.metCel(cel);
+            binnen.binders.put(l.slot(), binder + "(" + binnen.doorgeven() + ")");
+            String waarde = waarde(l.waarde(), c).tekst();
+            String lichaam = waarde(l.lichaam(), binnen).tekst();
+            vul(binderplaats, l.waarde().bron(), "Object " + binder + "(" + binnen.declaratie() + ")",
+                    "    if (!" + route(Route.BINDERCEL_GEVULD) + "(" + cel + ")) {\n        "
+                            + route(Route.VUL_BINDERCEL) + "(" + cel + ", " + waarde + ");\n    }\n    return "
+                            + route(Route.BINDERWAARDE) + "(" + cel + ");\n");
+            vul(plaats, l.bron(), "Object " + naam + "(" + c.declaratie() + ")",
+                    "    Object " + cel + " = " + route(Route.BINDERCEL) + "();\n    try {\n        return " + lichaam
+                            + ";\n    } catch (" + typenaam(Leegbarriere.class) + " barriere) {\n        return "
+                            + route(Route.OPGEVANGEN) + "(barriere, " + cel + ");\n    }\n");
+            return naam + "(" + c.doorgeven() + ")";
+        }
+
+        // ---------------- the consequence ----------------
+
+        private String gevolg(Gevolg g) {
+            StringBuilder b = new StringBuilder();
+            switch (g) {
+                case Gevolg.Waarde x -> waarde(x, b);
+                case Gevolg.Kenmerk x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(HeeftKenmerk.class) + "("
+                        + x.onderwerp() + ", " + sleutel(x.kenmerk()) + ")");
+                case Gevolg.Toetsfout x -> toetsfout(x, b);
+                case Gevolg.Fout x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "("
+                        + x.onderwerp() + ", " + str(x.fout().vorm()) + ", " + route(Route.REKENFOUT) + "("
+                        + str(x.zin()) + ", " + str(x.fout().regel()) + "))");
+                case Gevolg.Inconsistentie x -> voegIn(b, "    ", x.invoeging(), route(Route.INCONSISTENTIE) + "("
+                        + str(x.vorm()) + ", " + x.onderwerp() + ")");
+                case Gevolg.Schrijversconflict x -> voegIn(b, "    ", x.invoeging(), route(Route.SCHRIJVERSCONFLICT)
+                        + "(" + x.onderwerp() + ", " + variabele(x.waarden()) + ", " + str(x.attribuut()) + ", "
+                        + lijst(teksten(x.documentvolgorde())) + ", " + lijst(teksten(x.typeklassen())) + ", "
+                        + lijst(teksten(x.typen())) + ")");
+                case Gevolg.Parameterstand x -> voegIn(b, "    ", x.invoeging(), "new "
+                        + typenaam(ParameterStand.class) + "(" + str(x.parameter()) + ", " + x.global() + ")");
+                case Gevolg.Rekendatumstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Rekendatum.class)
+                        + "(" + x.global() + ")");
+                case Gevolg.Kenmerkstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(KenmerkStand.class)
+                        + "(" + x.onderwerp() + ", " + sleutel(x.kenmerk()) + ", " + x.waar() + ")");
+                case Gevolg.Stand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Stand.class) + "("
+                        + x.onderwerp() + ", " + sleutel(x.attribuut()) + ", " + (x.emmerscalair()
+                        ? route(Route.EMMERSCALAIR) + "(" + variabele(x.waarde()) + ")" : variabele(x.waarde())) + ")");
+                case Gevolg.Padstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(PadStand.class) + "("
+                        + x.onderwerp() + ", " + str(x.pad()) + ", " + sleutel(x.lid()) + ", "
+                        + (x.bron() == Gevolg.Standbron.ONTBREKENDE_LINK ? "null" : variabele(x.waarde())) + ")");
+                default -> throw new Weigering(g.getClass().getSimpleName());
+            }
+            return b.toString();
+        }
+
+        private List<String> teksten(List<String> waarden) {
+            List<String> uit = new ArrayList<>();
+            for (String w : waarden) uit.add(str(w));
+            return uit;
+        }
+
+        private void voegIn(StringBuilder b, String inspringing, Gevolg.Invoeging invoeging, String feit) {
+            b.append(inspringing).append(invoeging == Gevolg.Invoeging.LOGISCH ? "insertLogical" : "insert").append('(')
+                    .append(feit).append(");\n");
+        }
+
+        /** The value of {@link Gevolg.Waarde}: a function that evaluates it and gives an evaluation fault as its
+         *  outcome; the fault in place of the value and of the deposit, else the deposit first and then the value,
+         *  where it is gevuld or the plan writes leeg. */
+        private void waarde(Gevolg.Waarde x, StringBuilder b) {
+            Gevolg.Deponering d = x.deponering();
+            int plaats = reserveer();
+            String naam = naam("waarde", plaats);
+            Context c = context(x.slots(), d == null ? -1 : d.sonde(), SONDE, x.waarde());
+            Expr e = waarde(x.waarde(), c);
+            String v = x.collapse() ? aanroep(Functie.COLLAPSE, List.of(e)).tekst() : e.tekst();
+            vul(plaats, x.waarde().bron(), "Object " + naam + "(" + c.declaratie() + ")",
+                    vang("        return " + v + ";\n", "        return " + route(Route.GEVANGEN) + "(e);\n"));
+            if (d != null) b.append("    Object ").append(SONDE).append(" = ").append(route(Route.VERSE_SONDE)).append("();\n");
+            b.append("    Object v = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            b.append("    if (").append(route(Route.IS_EVALUATIEFOUT)).append("(v)) {\n");
+            voegIn(b, "        ", x.invoeging(), "new " + typenaam(Fout.class) + "(" + x.onderwerp() + ", "
+                    + str(x.fout().vorm()) + ", " + route(Route.BENOEM) + "(v, " + str(x.fout().regel()) + "))");
+            b.append("    } else {\n");
+            if (d != null) {
+                b.append("        if (").append(route(Route.GEMELD)).append("(").append(SONDE).append(")) {\n");
+                voegIn(b, "            ", x.invoeging(), route(Route.INCONSISTENTIE) + "(" + str(d.vorm()) + ", "
+                        + x.onderwerp() + ")");
+                b.append("        }\n");
+            }
+            String feit = "new " + typenaam(Waarde.class) + "(" + x.onderwerp() + ", " + sleutel(x.doel()) + ", v, "
+                    + str(x.schrijver()) + ")";
+            if (x.schrijftLeeg()) {
+                voegIn(b, "        ", x.invoeging(), feit);
+            } else {
+                b.append("        if (!").append(route(Route.IS_LEEG)).append("(v)) {\n");
+                voegIn(b, "            ", x.invoeging(), feit);
+                b.append("        }\n");
+            }
+            b.append("    }\n");
+        }
+
+        /** The fault of {@link Gevolg.Toetsfout}: the condition evaluated again over the same bound values, its
+         *  evaluation fault inserted, and an answer there a broken contract. */
+        private void toetsfout(Gevolg.Toetsfout x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("fout", plaats);
+            Context c = context(x.slots(), -1, null, x.toets());
+            String t = bool(x.toets(), c);
+            vul(plaats, x.toets().bron(), "Object " + naam + "(" + c.declaratie() + ")",
+                    vang("        boolean uitkomst = " + t + ";\n        return null;\n",
+                            "        return " + route(Route.GEVANGEN) + "(e);\n"));
+            b.append("    Object f = ").append(naam).append("(").append(c.argumenten()).append(");\n");
+            b.append("    if (!").append(route(Route.IS_EVALUATIEFOUT)).append("(f)) {\n        ")
+                    .append(route(Route.CONTRACTBREUK)).append("(").append(str("de voorwaarde van \"" + x.fout().vorm()
+                            + "\" faalde in de toets en niet in het gevolg, over dezelfde gebonden waarden"))
+                    .append(");\n    }\n");
+            voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "(" + x.onderwerp() + ", "
+                    + str(x.fout().vorm()) + ", " + route(Route.BENOEM) + "(f, " + str(x.fout().regel()) + "))");
+        }
+
+        // ---------------- the day kinds of a term ----------------
+
+        /** Adds to {@code uit} the global of every day kind {@code t} names, in the order of the tree. */
+        private void dagsoorten(Term t, Set<String> uit) {
+            switch (t) {
+                case Term.Dagsoort d -> uit.add(dagsoort(d.naam()));
+                case Term.Invoer i -> dagsoorten(i.object(), uit);
+                case Term.Let l -> {
+                    dagsoorten(l.waarde(), uit);
+                    dagsoorten(l.lichaam(), uit);
+                }
+                case Term.Keuze k -> {
+                    dagsoorten(k.voorwaarde(), uit);
+                    dagsoorten(k.dan(), uit);
+                    dagsoorten(k.anders(), uit);
+                }
+                case Term.Aanroep a -> a.argumenten().forEach(x -> dagsoorten(x, uit));
+                case Term.Herschaal h -> dagsoorten(h.term(), uit);
+                case Term.Deel d -> {
+                    dagsoorten(d.links(), uit);
+                    dagsoorten(d.rechts(), uit);
+                }
+                case Term.Wortel w -> dagsoorten(w.radicand(), uit);
+                case Term.Vereist v -> dagsoorten(v.waarde(), uit);
+                case Term.Tekstreeks s -> s.delen().forEach(x -> dagsoorten(x, uit));
+                case Term.GelijsteVouw g -> g.operanden().forEach(x -> dagsoorten(x, uit));
+                case Term.Vouwlezing v -> dagsoorten(v.uitkomst(), uit);
+                case Term.Samengesteld s -> s.leden().forEach(x -> dagsoorten(x, uit));
+                case Term.Kwantorlezing q -> {
+                    dagsoorten(q.aantal(), uit);
+                    dagsoorten(q.bijdragen(), uit);
+                }
+                case Term.ZonderFout z -> dagsoorten(z.voorwaarde(), uit);
+                case Term.Const k -> { }
+                case Term.Lees l -> { }
+                case Term.Binder x -> { }
+                case Term.Faal f -> { }
+            }
+        }
+    }
+}
