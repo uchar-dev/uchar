@@ -15,9 +15,10 @@ import java.util.function.Predicate;
  * without deciding anything itself. A condition is a term whose value is a truth value. Every decision the analysis
  * takes about a value or a condition is a node or a field of a node: the function that computes it, by name
  * ({@link Functie}), among them the helper that compares and the operator, polarity and leeg tables it takes as
- * constants; the factor that restates a unit ({@link Herschaal}); where a division or a square root deposits
- * ({@link Deel}, {@link Wortel}); where the evaluation faults ({@link Faal}, {@link Vereist}, {@link Vouwlezing} and the
- * functions that can, {@link Functie#kanFalen}); what is evaluated only on need, on one branch or up to a stop
+ * constants; the factor that restates a unit ({@link Herschaal}); where a division, a square root or the matrix of a
+ * quantifier fold deposits ({@link Deel}, {@link Wortel}, {@link Kwantorlezing}); where the evaluation faults
+ * ({@link Faal}, {@link Vereist}, {@link Vouwlezing} and the functions that can, {@link Functie#kanFalen}) and where a
+ * fault does not hold instead ({@link ZonderFout}); what is evaluated only on need, on one branch or up to a stop
  * ({@link Let}, {@link Keuze}, {@link Samengesteld}). The children of a node are evaluated in the order the node lists
  * them, which is the order of RUNTIME-SEMANTICS ch. 5.11.
  *
@@ -153,6 +154,31 @@ public sealed interface Term {
             leden = List.copyOf(leden);
         }
     }
+
+    /**
+     * The verdict of a quantifier fold whose matrix can fault or deposit, in the rule that reads the fold
+     * (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code functie} ({@link Functie#KWANTORLEZING}): the outcome of
+     * the matrix per contributor, the list {@code bijdragen} over the count {@code aantal}, read in the contributors'
+     * order under {@code kwantor} with the threshold {@code drempel} of a counting quantifier, the stop triggers of
+     * ch. 5.10 tested before each contributor. A contributor that is reached deposits where its matrix deposited, heard
+     * by the probe in slot {@code sonde} of the value array (-1: the matrix does not deposit), and faults where its
+     * matrix faulted; one that is not reached does neither. A fold whose matrix can do neither is an {@link Aanroep} of
+     * {@link Functie#KWANTOROORDEEL} over the count and the sum of the verdicts, where the order does not show.
+     */
+    record Kwantorlezing(Functie functie, Term aantal, Term bijdragen, Conditie.Kwantor kwantor, int drempel, int sonde,
+                         String bron) implements Term {
+        public Kwantorlezing {
+            if (functie != Functie.KWANTORLEZING)
+                throw new IllegalArgumentException("een kwantorlezing neemt KWANTORLEZING als functie, niet " + functie);
+        }
+    }
+
+    /**
+     * The condition {@code voorwaarde} where its evaluation answers, and not holding where it faults
+     * (RUNTIME-SEMANTICS ch. 5.2): a part of a test a form composes itself, where another rule takes the fault. An
+     * exception that is no evaluation fault is a broken contract and passes.
+     */
+    record ZonderFout(Term voorwaarde, String bron) implements Term {}
 
     /** The predicate of the day kind {@code naam} over a calendar day: a constant of the document, which reads nothing
      *  of working memory (IR-SPEC ch. 3.7, WF-031). */

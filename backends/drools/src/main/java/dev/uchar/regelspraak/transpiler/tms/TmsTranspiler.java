@@ -3443,6 +3443,10 @@ public final class TmsTranspiler {
             // a composite is a condition, which stands in a value only as the condition of a choice, answered above; its
             // members after the first are read only where no stop came before them
             case Term.Samengesteld s -> Boolean.FALSE;
+            // so are the verdict of a quantifier fold that can fault and deposit, and a condition tested without its
+            // fault, which stands only in a test a form composes itself
+            case Term.Kwantorlezing k -> Boolean.FALSE;
+            case Term.ZonderFout z -> Boolean.FALSE;
             // the analysis adds the node only where the fold's filter can deposit or a fault can stand, before the value
             case Term.Vouwlezing v -> Boolean.FALSE;
             case Term.Faal f -> Boolean.FALSE;
@@ -4948,8 +4952,9 @@ public final class TmsTranspiler {
      * invisible. Where it can, the order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the
      * contributors' order and stops at the first contributor after which the verdict stands, so a contributor it does not
      * reach raises no fault and deposits nothing. A contribution then carries the matrix's outcome and the member's place
-     * ({@link Lidtoets}), the accumulate collects them, and the evaluation replays that order ({@link #kwantorlezing}).
-     * The filter is settled for every member before the matrix, as for any fold ({@link #gelezenVouw}). The range is one
+     * ({@link Lidtoets}), the accumulate collects them, and the evaluation replays that order
+     * ({@link Rekenhulpen#kwantorlezing}). The filter is settled for every member before the matrix, as for any fold
+     * ({@link #gelezenVouw}). The range is one
      * step, {@code sourceRole}: the loader refuses a multi-step one (WF-108 (c)), and so does this method where a
      * hand-built model carries one.
      */
@@ -4984,8 +4989,8 @@ public final class TmsTranspiler {
         int[] i = lez.vouw(v, Accumulatie.Soort.LIJST);
         if (v.lidKanFalen()) lez.markeerFalen();
         int sonde = v.lidDeponeert() ? lez.sonde() : -1;
-        Waardefunctie oordeel = weergave(gelezenVouw(v, i, lez, new Term.GecompileerdeToets(w -> kwantorlezing(kw,
-                drempel, leeg(w[i[0]]) ? List.of() : (List<?>) w[i[1]], w, sonde), bron), bron));
+        Waardefunctie oordeel = weergave(gelezenVouw(v, i, lez, new Term.GecompileerdeToets(
+                w -> Rekenhulpen.kwantorlezing(w[i[0]], w[i[1]], kw, drempel, sonde < 0 ? null : w[sonde]), bron), bron));
         return w -> (Boolean) oordeel.van(w);
     }
 
@@ -5074,29 +5079,6 @@ public final class TmsTranspiler {
                 subject, elem, bereik, kv.filter(), lezingen::add));
         return new Vouw(sleutel, List.copyOf(regels), List.copyOf(lezingen), filterKanFalen, filterDeponeert,
                 lidKanFalen, lidDeponeert);
-    }
-
-    /**
-     * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link Lidtoets} of each
-     * contributor (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the contributors' order, with the stop triggers of ch. 5.10
-     * tested before each contributor, the empty prefix included. A contributor that is reached deposits where its
-     * matrix deposited, heard by the probe at {@code sonde}, and faults where its matrix faulted; one that is not reached
-     * does neither.
-     */
-    private static Boolean kwantorlezing(Conditie.Kwantor kw, int drempel, List<?> bijdragen, Object[] w, int sonde) {
-        List<Lidtoets> leden = new ArrayList<>(bijdragen.size());
-        for (Object b : bijdragen) leden.add((Lidtoets) b);
-        leden.sort(null);
-        int n = leden.size(), raak = 0;
-        for (int k = 0; k < n; k++) {
-            Boolean vast = Rekenhulpen.vastgesteld(kw, drempel, raak, k, n - k);
-            if (vast != null) return vast;
-            Lidtoets lid = leden.get(k);
-            if (lid.gedeponeerd()) Sonde.meld(w, sonde);
-            if (lid.fout() != null) throw lid.fout();
-            if (lid.waar()) raak++;
-        }
-        return Rekenhulpen.eindoordeel(kw, drempel, raak, n);
     }
 
     /**

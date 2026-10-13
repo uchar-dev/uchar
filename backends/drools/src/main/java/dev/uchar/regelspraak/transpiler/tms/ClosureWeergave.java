@@ -101,6 +101,11 @@ final class ClosureWeergave {
                 Predicate<Object[]> p = samengesteld(s);
                 yield w -> p.test(w);
             }
+            case Term.Kwantorlezing k -> kwantorlezing(k);
+            case Term.ZonderFout z -> {
+                Predicate<Object[]> p = toets(z);
+                yield w -> p.test(w);
+            }
             case Term.Dagsoort d -> {
                 Predicate<LocalDate> p = d.predikaat();
                 yield w -> p;
@@ -112,11 +117,12 @@ final class ClosureWeergave {
         };
     }
 
-    /** The test that {@code t}, a condition, holds: a compiled condition as it is, a composite as its fold, any other
-     *  term as its value, a truth value. */
+    /** The test that {@code t}, a condition, holds: a compiled condition as it is, a composite as its fold, a condition
+     *  tested without its fault as that test, any other term as its value, a truth value. */
     static Predicate<Object[]> toets(Term t) {
         if (t instanceof Term.GecompileerdeToets g) return g.toets();
         if (t instanceof Term.Samengesteld s) return samengesteld(s);
+        if (t instanceof Term.ZonderFout z) return zonderFout(toets(z.voorwaarde()));
         Waardefunctie f = waardefunctie(t);
         return w -> (Boolean) f.van(w);
     }
@@ -242,6 +248,20 @@ final class ClosureWeergave {
         };
     }
 
+    /** The verdict of a quantifier fold whose matrix can fault or deposit ({@link Term.Kwantorlezing}): the count and
+     *  the outcomes evaluated in that order, then the plan's function over them with the quantifier, the threshold and
+     *  the probe in the node's slot, or nothing where the node has none. */
+    private static Waardefunctie kwantorlezing(Term.Kwantorlezing k) {
+        Waardefunctie aantal = waardefunctie(k.aantal()), bijdragen = waardefunctie(k.bijdragen());
+        Implementatie f = implementatie(k.functie());
+        Conditie.Kwantor kw = k.kwantor();
+        int drempel = k.drempel(), sonde = k.sonde();
+        return w -> {
+            Object n = aantal.van(w), b = bijdragen.van(w);
+            return f.van(new Object[]{n, b, kw, drempel, sonde < 0 ? null : w[sonde]});
+        };
+    }
+
     /** A listed fold: each operand taken by the plan's step as it is evaluated, so the order of evaluation and
      *  comparison is the value compiler's ({@link Term.GelijsteVouw}). */
     private static Waardefunctie gelijsteVouw(Term.GelijsteVouw g) {
@@ -351,6 +371,13 @@ final class ClosureWeergave {
                     (Boolean) x[4], x[5]);
             case GEHEEL_PERIODE -> x -> Rekenhulpen.geheelPeriode(x[0], x[1], (String) x[2], (Integer) x[3],
                     (Boolean) x[4]);
+            case KWANTOROORDEEL -> x -> Rekenhulpen.kwantoroordeel(x[0], x[1], (Conditie.Kwantor) x[2],
+                    (Integer) x[3]);
+            case KWANTORLEZING -> x -> Rekenhulpen.kwantorlezing(x[0], x[1], (Conditie.Kwantor) x[2], (Integer) x[3],
+                    x[4]);
+            case KANAAL -> x -> Rekenhulpen.kanaal(x[0]);
+            case NIET -> x -> Rekenhulpen.niet(x[0]);
+            case EMMERSCALAIR -> x -> Rekenhulpen.emmerscalair(x[0], (Boolean) x[1]);
         };
     }
 

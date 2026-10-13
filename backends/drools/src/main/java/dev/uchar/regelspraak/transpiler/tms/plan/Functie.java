@@ -172,7 +172,24 @@ public enum Functie {
     /** The fold of the whole-period qualifier (ch. 3.9, {@code rsGeheelPeriode}) over a timeline, with the bound of a
      *  comparison or none, the grid ("JAAR" or "MAAND") and the test's code as constants, complemented where a
      *  {@code Boolean} constant says the qualifier is negated. */
-    GEHEEL_PERIODE(Rekenhulpen.class, "geheelPeriode", false);
+    GEHEEL_PERIODE(Rekenhulpen.class, "geheelPeriode", false),
+    /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (ch. 3.9a), from the count of its
+     *  contributors and the sum of their verdicts, 1 or 0 each, under a {@code Conditie.Kwantor} constant with an
+     *  {@code Integer} threshold; over no contributor the sum is not read. */
+    KWANTOROORDEEL(Rekenhulpen.class, "kwantoroordeel", false),
+    /** The verdict of a quantifier fold whose matrix can fault or deposit, read over the outcome per contributor in
+     *  the contributors' order and stopped as ch. 5.10 says; a contributor that is reached deposits to the probe and
+     *  raises its fault. The function of a {@link Term.Kwantorlezing}. */
+    KWANTORLEZING(Rekenhulpen.class, "kwantorlezing", true),
+    /** A test of the §9.5 channel of a form (ch. 5.6): whether the standing of its channel, bound off its
+     *  {@code KanaalStand}, says it is inconsistent. */
+    KANAAL(Rekenhulpen.class, "kanaal", false),
+    /** The negation of a condition's truth value: the test of a consistency, which holds where its assertion does not
+     *  (IR-SPEC ch. 3.5). */
+    NIET(Rekenhulpen.class, "niet", false),
+    /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
+     *  constant must equal: a part of a test a form composes itself. */
+    EMMERSCALAIR(Rekenhulpen.class, "emmerscalair", false);
 
     private final Class<?> klasse;
     private final String methode;

@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -371,6 +372,58 @@ public final class Rekenhulpen {
             case TEN_HOOGSTE -> raak <= drempel;
             case PRECIES -> raak == drempel;
         };
+    }
+
+    /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (RUNTIME-SEMANTICS ch. 3.9a): over
+     *  {@code aantal} contributors, of which the sum {@code raak} of the verdicts, 1 or 0 each, hold, under {@code kw}
+     *  with the threshold {@code drempel}. Over no contributor the accumulate's sum is not read. */
+    public static boolean kwantoroordeel(Object aantal, Object raak, Conditie.Kwantor kw, int drempel) {
+        long n = ((Number) aantal).longValue();
+        return eindoordeel(kw, drempel, n == 0 ? 0 : ((BigDecimal) raak).longValueExact(), n);
+    }
+
+    /**
+     * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link Lidtoets} of each
+     * contributor, the list {@code bijdragen} over the count {@code aantal} (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the
+     * contributors' order, with the stop triggers of ch. 5.10 tested before each contributor, the empty prefix
+     * included. A contributor that is reached deposits where its matrix deposited, heard by {@code sonde}, the probe of
+     * the reading rule or nothing, and faults where its matrix faulted; one that is not reached does neither. Over no
+     * contributor the accumulate's list is not read.
+     */
+    public static boolean kwantorlezing(Object aantal, Object bijdragen, Conditie.Kwantor kw, int drempel,
+                                        Object sonde) {
+        List<?> lijst = ((Number) aantal).longValue() == 0 ? List.of() : (List<?>) bijdragen;
+        List<Lidtoets> leden = new ArrayList<>(lijst.size());
+        for (Object b : lijst) leden.add((Lidtoets) b);
+        leden.sort(null);
+        int n = leden.size(), raak = 0;
+        for (int k = 0; k < n; k++) {
+            Boolean vast = vastgesteld(kw, drempel, raak, k, n - k);
+            if (vast != null) return vast;
+            Lidtoets lid = leden.get(k);
+            if (lid.gedeponeerd()) Sonde.meld(sonde);
+            if (lid.fout() != null) throw lid.fout();
+            if (lid.waar()) raak++;
+        }
+        return eindoordeel(kw, drempel, raak, n);
+    }
+
+    /** A test of the §9.5 channel (RUNTIME-SEMANTICS ch. 5.6): whether {@code inconsistent}, the standing of a form's
+     *  channel bound off its {@code KanaalStand}, holds. */
+    public static boolean kanaal(Object inconsistent) {
+        return Boolean.TRUE.equals(inconsistent);
+    }
+
+    /** The negation of {@code waarde}, a condition's truth value: the test of a consistency, which holds where its
+     *  assertion does not (IR-SPEC ch. 3.5). */
+    public static boolean niet(Object waarde) {
+        return !(Boolean) waarde;
+    }
+
+    /** Whether {@code waarde} is the asOfDate-bucket scalar a case gives for a timeline ({@link Emmerscalair},
+     *  RUNTIME-SEMANTICS ch. 8.4), equal to {@code gewenst}: a part of a test a form composes itself. */
+    public static boolean emmerscalair(Object waarde, boolean gewenst) {
+        return (waarde instanceof Emmerscalair) == gewenst;
     }
 
     // ---------------- timelines ----------------
