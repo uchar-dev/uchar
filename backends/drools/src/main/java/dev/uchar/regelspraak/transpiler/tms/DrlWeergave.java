@@ -109,12 +109,20 @@ final class DrlWeergave {
 
     /**
      * The DRL text of {@code plan}: the package, the imports, the globals of the plan and those of the day kinds its
-     * terms name, then per rule, in the order of the plan, its functions and the rule. A consequence of a kind this
-     * rendering does not carry is refused ({@link Weigering}).
+     * terms name, then per rule, in the order of the plan, its functions and the rule, under the name of its plan. A
+     * consequence of a kind this rendering does not carry is refused ({@link Weigering}), and so are two rules of one
+     * name, of which a KieBase would keep one.
      */
     static String tekst(Modelplan plan) {
         DrlWeergave w = new DrlWeergave();
-        for (int n = 0; n < plan.regels().size(); n++) w.new Regel(n, plan.regels().get(n)).weergeven();
+        Set<String> regelnamen = new HashSet<>();
+        for (int n = 0; n < plan.regels().size(); n++) {
+            // the header escapes a name one to one, so two rules of one name in the text are two plans of one name
+            if (!regelnamen.add(plan.regels().get(n).naam()))
+                throw new IllegalStateException("twee regels van het plan heten " + str(plan.regels().get(n).naam())
+                        + ", en een KieBase houdt één regel per naam");
+            w.new Regel(n, plan.regels().get(n)).weergeven();
+        }
         Set<String> gedeclareerd = new HashSet<>();
         StringBuilder globals = new StringBuilder();
         for (Modelplan.Globaal g : plan.globals()) {
@@ -351,7 +359,9 @@ final class DrlWeergave {
                 if (f == null) throw new IllegalStateException("een functie van " + plan.naam() + " is niet geschreven");
                 regels.append(f).append('\n');
             }
-            regels.append("rule \"").append(Namen.escapeRegelNaam(plan.naam())).append("\"\n");
+            // the plan's name escaped as a string literal, which the parser reads back as that name (RegelnaamWitnessTest):
+            // vormVan, the scenario report and the creation driver look a fired rule up by the name of its plan
+            regels.append("rule ").append(str(plan.naam())).append("\n");
             regels.append("    dialect \"mvel\"\n");
             if (plan.agendagroep() != null) regels.append("    agenda-group ").append(str(plan.agendagroep())).append('\n');
             regels.append("when\n");
