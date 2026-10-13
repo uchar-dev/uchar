@@ -1729,8 +1729,8 @@ public final class TmsTranspiler {
      * carries the negation over the channel, so a condition that reads it, in either polarity, binds the standing as a
      * positive pattern.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> kanaalstandregels(String producent) {
+        // the class the fact model generates for the inconsistency is data of the plan, by which a rendering names it
         Class<?> klasse;
         try {
             klasse = Class.forName(INCONSISTENTIE, true, beanLoader);
@@ -1738,18 +1738,15 @@ public final class TmsTranspiler {
             throw new IllegalStateException("geen beanklasse " + INCONSISTENTIE + " voor het kanaal van " + producent, e);
         }
         String naam = "kanaalstand " + producent + ": ";
-        Variable i1 = DSL.declarationOf(klasse, "$inconsistentie");
-        Rule inconsistent = PatternDSL.rule(PKG, naam + "inconsistent").build(
-                DSL.exists(PatternDSL.pattern(i1).expr(id("kanaal"),
-                        (Predicate1) i -> producent.equals(RegelSpraakRuntime.get(i, "regel")))),
-                DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
-                        drools.logicalInsert(new KanaalStand(producent, true))));
-        Variable i2 = DSL.declarationOf(klasse, "$inconsistentie");
-        Rule consistent = PatternDSL.rule(PKG, naam + "consistent").build(
-                DSL.not(PatternDSL.pattern(i2).expr(id("kanaal"),
-                        (Predicate1) i -> producent.equals(RegelSpraakRuntime.get(i, "regel")))),
-                DSL.execute((org.drools.model.functions.Block1<org.drools.model.Drools>) drools ->
-                        drools.logicalInsert(new KanaalStand(producent, false))));
+        Patroon fout = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
+                List.of(), List.of());
+        Rule inconsistent = weergeef(new Regelplan(naam + "inconsistent", null, null, new Leestabel(List.of()),
+                List.of(new Bestaat(List.of(fout))),
+                new Gevolg.Kanaalstand(producent, true, Gevolg.Invoeging.LOGISCH)));
+        Patroon geen = new Patroon(klasse, "$inconsistentie", List.of(gelijk(id("kanaal"), "regel", producent)),
+                List.of(), List.of());
+        Rule consistent = weergeef(new Regelplan(naam + "consistent", null, null, new Leestabel(List.of()),
+                List.of(new Niet(geen)), new Gevolg.Kanaalstand(producent, false, Gevolg.Invoeging.LOGISCH)));
         return List.of(inconsistent, consistent);
     }
 
