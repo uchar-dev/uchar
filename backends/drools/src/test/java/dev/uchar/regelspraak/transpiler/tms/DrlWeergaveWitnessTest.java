@@ -45,9 +45,10 @@ class DrlWeergaveWitnessTest {
 
     /** Floors, measured 2026-10-13 at step 2a: the goldens the exec-model branch plays, and those whose text the
      *  rendering gives and Drools compiles, raised at step 3a, which carries the rules of a fold, from 117 to the 165
-     *  measured then. A deliberate removal lowers a floor in the same commit. */
+     *  measured then, and at step 3b, which carries those of a uniqueness and of the channel, to the 170 measured then.
+     *  A deliberate removal lowers a floor in the same commit. */
     private static final int EXPECTED_MIN_GOLDENS = 250;
-    private static final int EXPECTED_MIN_GECOMPILEERD = 165;
+    private static final int EXPECTED_MIN_GECOMPILEERD = 170;
 
     /** What the text of no golden holds. */
     private static final List<String> VERBODEN = List.of("import function", "salience", "no-loop", "modify",
@@ -98,9 +99,9 @@ class DrlWeergaveWitnessTest {
     }
 
     /** Floors, measured 2026-10-13 at step 2a: the rules of the goldens the branch plays whose consequence the rendering
-     *  carries, raised at step 3a from 1221 to the 1433 measured then, and the goldens that have at least one, which
-     *  stayed 224. A deliberate removal lowers a floor in the same commit. */
-    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1433;
+     *  carries, raised at step 3a from 1221 to the 1433 measured then and at step 3b to the 1467 measured then, and the
+     *  goldens that have at least one, which stayed 224. A deliberate removal lowers a floor in the same commit. */
+    private static final int EXPECTED_MIN_GEDRAGEN_REGELS = 1467;
     private static final int EXPECTED_MIN_GOLDENS_MET_REGELS = 224;
 
     /** The rules whose consequence the rendering carries compile in every golden, also in one whose text it refuses for
@@ -169,8 +170,8 @@ class DrlWeergaveWitnessTest {
             assertTrue(tekst.contains(vorm), () -> "de vormentekst mist " + vorm + ":\n" + tekst);
         DrlWeergave.Weigering w = org.junit.jupiter.api.Assertions.assertThrows(DrlWeergave.Weigering.class,
                 () -> DrlWeergave.tekst(Vormenplan.ongedragen(wachter)));
-        assertEquals("Uniciteitsschending", w.soort());
-        assertEquals("de DRL-weergave draagt Uniciteitsschending nog niet", w.getMessage());
+        assertEquals("TweedeVulling", w.soort());
+        assertEquals("de DRL-weergave draagt TweedeVulling nog niet", w.getMessage());
     }
 
     /**
@@ -198,6 +199,33 @@ class DrlWeergaveWitnessTest {
         for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de vouwentekst");
         for (String vorm : Vormenplan.VOUWVORMEN)
             assertTrue(tekst.contains(vorm), () -> "de vouwentekst mist " + vorm + ":\n" + tekst);
+    }
+
+    /**
+     * Every form of the rules of a uniqueness and of the §9.5 channel compiles (step 3b), also where no golden has it: a
+     * plan made here over the same beans ({@link Vormenplan#kanaal}), with the keys under a form without a scope, over a
+     * component that is null and one through a function, and under a form with a scope, over a component on a
+     * timeline; the violation, the fault of the form of an input, and the standing of the channel, inconsistent and
+     * consistent. One plan gives one text, written to {@code <map>/_kanaalplan.drl} under {@code -Duchar.drlvorm}.
+     *
+     * <p><b>Red</b> before step 3b, on {@code 0458b2d0}: the rendering refused the plan, "de DRL-weergave draagt
+     * Uniciteitssleutel nog niet".
+     */
+    @Test void elke_vorm_van_een_uniciteit_en_van_het_kanaal_compileert() throws Exception {
+        DroolsBackend.Build b = DroolsBackend.build(GOLDEN.resolve("anchor/jutterswet-kustwacht").resolve("ir.json"),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> wachter = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Wachter");
+        Class<?> post = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Post");
+        Class<?> inconsistentie = b.beanLoader().loadClass("dev.uchar.regelspraak.facts.Inconsistentie");
+        Modelplan plan = Vormenplan.kanaal(wachter, post, inconsistentie);
+        String tekst = DrlWeergave.tekst(plan);
+        assertEquals(tekst, DrlWeergave.tekst(plan), "één plan geeft één tekst");
+        String dump = System.getProperty("uchar.drlvorm");
+        if (dump != null) Files.writeString(Path.of(dump).resolve("_kanaalplan.drl"), tekst);
+        assertEquals(List.of(), compileer(tekst, b.beanLoader()), () -> "de kanaaltekst compileert niet:\n" + tekst);
+        for (String v : VERBODEN) assertTrue(!tekst.contains(v), () -> v + " in de kanaaltekst");
+        for (String vorm : Vormenplan.KANAALVORMEN)
+            assertTrue(tekst.contains(vorm), () -> "de kanaaltekst mist " + vorm + ":\n" + tekst);
     }
 
     /** The errors of compiling {@code tekst} with {@code KieHelper} under the bean loader {@code bonen}, which is the

@@ -69,15 +69,16 @@ import java.util.TreeSet;
  *       field of a fact shadows that field without a complaint (FABLE-2 §2.1). The text imports the classes of the
  *       branch and of the runtime it names, never a bean class, which the Java dialect cannot see: a bean stands with
  *       its full name in a pattern. A class of the JDK and an enumeration label stand with their full names.</li>
- *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code sonde}), and a function is named
- *       after its rule's place in the plan and its own place in that rule's functions, which stand before the rule
- *       in that order: one plan gives one text.</li>
+ *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code k}, {@code sonde}), and a function is
+ *       named after its rule's place in the plan and its own place in that rule's functions, which stand before the
+ *       rule in that order: one plan gives one text.</li>
  * </ul>
  *
  * <p>The consequences it carries are those of the ordinary rules, the faults, the inconsistency, the writers that
  * disagree and the standings (step 2a), and those of the rules of a fold (step 3a): a member's contribution, and the
  * deposit, the fault of the filter and the fault of a member, with the member's place in the fold's order as a function
- * of the rule; every other kind it refuses loudly ({@link Weigering}).
+ * of the rule; and those of a uniqueness and of the §9.5 channel (step 3b): the keys, the violation, the fault of the
+ * form of an input and the standing of the channel. Every other kind it refuses loudly ({@link Weigering}).
  */
 final class DrlWeergave {
 
@@ -883,6 +884,15 @@ final class DrlWeergave {
                         + str(x.vouw()) + ", " + x.onderwerp() + ", " + variabele(x.lid()) + ", "
                         + route(Route.INVOERVORMFOUT) + "(" + str(x.voor()) + ", " + variabele(x.lid()) + ", "
                         + str(x.na()) + ", null), " + vouwplaats(x.plaats(), x.vouw(), x.lid(), null) + ")");
+                case Gevolg.Uniciteitssleutel x -> uniciteitssleutel(x, b);
+                case Gevolg.Uniciteitsschending x -> voegIn(b, "    ", x.invoeging(), "new "
+                        + typenaam(Uniciteitsschending.class) + "(" + str(x.uniciteit()) + ", " + x.onderwerp() + ")");
+                case Gevolg.Invoervormfout x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(Fout.class) + "("
+                        + x.onderwerp() + ", " + str(x.fout().vorm()) + ", " + route(Route.INVOERVORMFOUT) + "("
+                        + str(x.voor()) + ", " + x.onderwerp() + ", " + str(x.na()) + ", " + str(x.fout().regel())
+                        + "))");
+                case Gevolg.Kanaalstand x -> voegIn(b, "    ", x.invoeging(), "new " + typenaam(KanaalStand.class)
+                        + "(" + str(x.producent()) + ", " + x.inconsistent() + ")");
                 default -> throw new Weigering(g.getClass().getSimpleName());
             }
             return b.toString();
@@ -998,6 +1008,32 @@ final class DrlWeergave {
                     voegIn(b, "    ", x.invoeging(), nieuw + naam + "(" + c.argumenten() + "))");
                 }
             }
+        }
+
+        /** The keys of {@link Gevolg.Uniciteitssleutel}: a function of the rule gives the key components, each the
+         *  value of its term over the bound values, in a list that the Java dialect builds because a component may be
+         *  null; the route makes the keys of them, linked to the parent where the form has a scope, and the rule
+         *  inserts each. The sentences of the components stand above the function, since a comment in its body would
+         *  reach the parser of the text. */
+        private void uniciteitssleutel(Gevolg.Uniciteitssleutel x, StringBuilder b) {
+            int plaats = reserveer();
+            String naam = naam("componenten", plaats);
+            Context c = context(x.slots(), -1, null, x.componenten().toArray(new Term[0]));
+            StringBuilder lichaam = new StringBuilder("    java.util.List waarden = new java.util.ArrayList();\n");
+            List<String> bronnen = new ArrayList<>();
+            for (Term t : x.componenten()) {
+                lichaam.append("    waarden.add(").append(waarde(t, c).tekst()).append(");\n");
+                if (t.bron() != null) bronnen.add(t.bron());
+            }
+            lichaam.append("    return waarden;\n");
+            vul(plaats, bronnen.isEmpty() ? null : String.join("; ", bronnen),
+                    "java.util.List " + naam + "(" + c.declaratie() + ")", lichaam.toString());
+            b.append("    for (Object k : ").append(route(Route.UNICITEITSSLEUTELS)).append("(").append(str(x.uniciteit()))
+                    .append(", ").append(x.bron()).append(", ").append(x.onderwerp()).append(", ")
+                    .append(x.scope() < 0 ? "null" : variabele(x.scope())).append(", ").append(naam).append("(")
+                    .append(c.argumenten()).append("), ").append(x.tijdlijn()).append(")) {\n");
+            voegIn(b, "        ", x.invoeging(), "k");
+            b.append("    }\n");
         }
 
         /** The fault of {@link Gevolg.Filterfout}: the filter evaluated again over the same bound values, its

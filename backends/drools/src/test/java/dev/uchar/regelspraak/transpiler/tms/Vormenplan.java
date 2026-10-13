@@ -37,9 +37,9 @@ import java.util.List;
 /**
  * Plans made by hand that hold every form {@link DrlWeergave} carries, over three beans of one document (a Wachter at a
  * Post on a Kustvak), so that a witness can compile the forms no golden of the corpus renders: the forms of step 2a of
- * card drl-teksttak-op-truth-maintenance ({@link #plan}) and those of the rules of a fold of step 3a ({@link #vouwen}).
- * They decide nothing of a document's meaning, and no rule of them is meant to fire. The rules are named after what
- * they hold.
+ * card drl-teksttak-op-truth-maintenance ({@link #plan}), those of the rules of a fold of step 3a ({@link #vouwen}), and
+ * those of a uniqueness and of the §9.5 channel of step 3b ({@link #kanaal}). They decide nothing of a document's
+ * meaning, and no rule of them is meant to fire. The rules are named after what they hold.
  */
 final class Vormenplan {
 
@@ -117,12 +117,66 @@ final class Vormenplan {
                 new Modelplan.Globaal("rekendatum", LocalDate.class)), regels);
     }
 
-    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: the violation of a
-     *  uniqueness, which step 3b of the card brings. */
+    /** A plan whose one rule has a consequence of a kind the rendering does not carry yet: the fault of a second filling
+     *  of a relation, which step 5a of the card brings. Until step 3b it was the violation of a uniqueness, which that
+     *  step carries. */
     static Modelplan ongedragen(Class<?> wachter) {
-        return new Modelplan(List.of(), List.of(new Regelplan("schending", null, null, new Leestabel(List.of()),
+        return new Modelplan(List.of(), List.of(new Regelplan("tweede vulling", null, null, new Leestabel(List.of()),
                 List.of(new Onderwerp(wachter, O, List.of(), List.of(), List.of())),
-                new Gevolg.Uniciteitsschending(O, "proefuniciteit", Gevolg.Invoeging.LOGISCH))));
+                new Gevolg.TweedeVulling(O, "proefrelatie", "een tweede vulling", Gevolg.Invoeging.LOGISCH))));
+    }
+
+    /** Fragments of the text that show the forms of the plan of a uniqueness and the channel ({@link #kanaal}), one per
+     *  form. */
+    static final List<String> KANAALVORMEN = List.of("_componenten", "java.util.List waarden = new java.util.ArrayList();",
+            "waarden.add(null);", "waarden.add(Rekenhulpen.terugval(", "// zijn uitkijkbonus; zijn uitkijkbonus of 0",
+            "for (Object k : Rekenhulpen.uniciteitssleutels(\"proefuniciteit\", 0, $onderwerp, null, ",
+            "for (Object k : Rekenhulpen.uniciteitssleutels(\"proefuniciteit\", 1, $onderwerp, $kustvak, ",
+            ", -1)) {", ", 0)) {", "        insertLogical(k);",
+            "insertLogical(new Uniciteitsschending(\"proefuniciteit\", $onderwerp));",
+            "insertLogical(new Fout($onderwerp, \"proefuniciteit\", Rekenhulpen.invoervormfout(\"the key \\\"uitkijkbonus\\\""
+                    + " needs the full timeline; \", $onderwerp, \" supplies a scalar\", \"proefuniciteit\")));",
+            "insertLogical(new KanaalStand(\"proef\", true));", "insertLogical(new KanaalStand(\"proef\", false));");
+
+    /**
+     * A plan with every consequence of the rules of a uniqueness and of the §9.5 channel (step 3b of card
+     * drl-teksttak-op-truth-maintenance), over the beans of the same document as {@link #plan}: the keys of a Wachter
+     * under a form without a scope, over its uitkijkbonus, a component that is null and one through a function, each
+     * with its sentence; the keys of a Post under a form whose scope is its Kustvak, over a component on a timeline;
+     * the violation of the uniqueness; the fault of the form of an input, with a quote in its sentence; and the
+     * standing of the channel of a form, inconsistent where an inconsistency of that form stands and consistent where
+     * none does. No rule of it is meant to fire.
+     */
+    static Modelplan kanaal(Class<?> wachter, Class<?> post, Class<?> inconsistentie) {
+        List<Regelplan> regels = new ArrayList<>();
+        Onderwerp metBonus = new Onderwerp(wachter, O, List.of(), List.of(),
+                List.of(Binding.van("$uitkijkbonus", wachter, "uitkijkbonus")));
+        regels.add(new Regelplan("sleutel", "proefuniciteit", null,
+                tabel(new Lezing(0, Leessoort.INVOER, "uitkijkbonus", "$uitkijkbonus")), List.of(metBonus),
+                new Gevolg.Uniciteitssleutel(O, "proefuniciteit", 0, List.of(new Term.Lees(0, "zijn uitkijkbonus"),
+                        new Term.Const(null, null, null), new Term.Aanroep(Functie.TERUGVAL, List.of(lees(0), getal("0")),
+                                "zijn uitkijkbonus of 0")), -1, -1, List.of(0), 1, Gevolg.Invoeging.LOGISCH)));
+        Onderwerp metKustvak = new Onderwerp(post, O, List.of(), List.of(),
+                List.of(Binding.van("$hoogte", post, "hoogte"), Binding.van("$kustvak", post, "kustvak")));
+        regels.add(new Regelplan("sleutel met scope en tijdlijn", "proefuniciteit", null,
+                tabel(hoogteslot(), new Lezing(1, Leessoort.SCOPE, "kustvak", "$kustvak")), List.of(metKustvak),
+                new Gevolg.Uniciteitssleutel(O, "proefuniciteit", 1, List.of(lees(0)), 0, 1, List.of(0, 1), 2,
+                        Gevolg.Invoeging.LOGISCH)));
+        Onderwerp onderwerp = new Onderwerp(wachter, O, List.of(), List.of(), List.of());
+        regels.add(new Regelplan("schending", "proefuniciteit", null, tabel(), List.of(onderwerp),
+                new Gevolg.Uniciteitsschending(O, "proefuniciteit", Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("invoervorm", "proefuniciteit", null, tabel(), List.of(onderwerp),
+                new Gevolg.Invoervormfout(O, "the key \"uitkijkbonus\" needs the full timeline; ", " supplies a scalar",
+                        new Gevolg.Foutnaam("proefuniciteit", "proefuniciteit"), Gevolg.Invoeging.LOGISCH)));
+        List<Patroon> kanaal = List.of(new Patroon(inconsistentie, "$inconsistentie", List.of(new Alfa("kanaal",
+                List.of(new Alfa.Veldtoets("regel", Alfa.Vergelijker.GELIJK, "proef")))), List.of(), List.of()));
+        regels.add(new Regelplan("kanaalstand proef: inconsistent", null, null, tabel(),
+                List.of(new Bestaat(kanaal, Bestaat.verklaard(kanaal), Bestaat.gelezen(kanaal))),
+                new Gevolg.Kanaalstand("proef", true, Gevolg.Invoeging.LOGISCH)));
+        regels.add(new Regelplan("kanaalstand proef: consistent", null, null, tabel(),
+                List.of(new Niet(kanaal, Bestaat.verklaard(kanaal), Bestaat.gelezen(kanaal))),
+                new Gevolg.Kanaalstand("proef", false, Gevolg.Invoeging.LOGISCH)));
+        return new Modelplan(List.of(), regels);
     }
 
     /** Fragments of the text that show the forms of the fold plan ({@link #vouwen}), one per form. */
