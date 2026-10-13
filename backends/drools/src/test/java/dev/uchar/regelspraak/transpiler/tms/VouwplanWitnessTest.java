@@ -13,6 +13,7 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Betatoets;
 import dev.uchar.regelspraak.transpiler.tms.plan.Binding;
 import dev.uchar.regelspraak.transpiler.tms.plan.Gevolg;
 import dev.uchar.regelspraak.transpiler.tms.plan.Join;
+import dev.uchar.regelspraak.transpiler.tms.plan.Leestabel;
 import dev.uchar.regelspraak.transpiler.tms.plan.Lezing;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Niet;
@@ -24,15 +25,22 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.kie.api.runtime.KieSession;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The rules of a fold come whole from a plan (card drl-teksttak-op-truth-maintenance, step 1c-B2): the contribution
@@ -46,8 +54,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * ({@link Gevolg.Vouwplaats}), the probe, and what the routes of the plan compute. This witness pins those plans as
  * text, per plan in order: the name, the form and the group; the slots, each with its kind, its variable and its key;
  * every item of the left-hand side in order with its kind, its pattern class, its constraint ids, each field test, its
- * joins, its constraints between two objects with their function and constants, its bindings, and of an existence the
- * variables it declares and those it reads from outside; and the kind of the consequence with every field. A term, the
+ * joins, its constraints between two objects with their function and each of their constants with its value, the class
+ * of its value, its IR type and its source fragment, its bindings, and of an existence the variables it declares and
+ * those it reads from outside; and the kind of the consequence with every field. A term, the
  * test of a rule or the matrix or the filter of a consequence, is pinned as a tree and on the lines after it node by
  * node with its source fragment and of a constant the class of its value and its whole IR type
  * ({@link Termboom#velden}).
@@ -64,7 +73,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>{@link #havenketen}, since no golden has one: a range of three steps with two intermediates, quantified
  *       together after the member's pattern in the contribution rule and bound per route in the rule of the filter's
  *       fault, whose place of the first step is that of an intermediate. Fired as well, against the values the
- *       reference interpreter and the ASP backend give.</li>
+ *       reference interpreter and the ASP backend give, and with a case whose filter faults along every route, where
+ *       each route's {@link Filterfout} carries its own place and the rule names the first route's fault.</li>
  *   <li>The document of {@code TmsKwantorvouwWitnessTest} whose matrix divides ({@link #matrixDieDeelt}), since no
  *       golden has one: a quantifier fold whose matrix can fault and deposit, so a member contributes its test, with
  *       its place and the probe.</li>
@@ -78,6 +88,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * did not compile, since the plan had no consequence of a fold, no constraint on the subject pattern between two
  * objects, no constants of such a constraint and no scope of an existence; with only the names of the plans pinned,
  * none of the six documents had a plan of any of these rules.
+ *
+ * <p>The fix round of step 1c-B2 added the case of {@link #havenketen} whose filter faults, red under a mutation of the
+ * place reader, pinned the constants of a constraint between two objects with every field, and made the scope of an
+ * existence cover what its patterns bind ({@link #de_scope_van_een_bestaan_omvat_de_bindingen_van_zijn_patronen}).
  */
 class VouwplanWitnessTest {
 
@@ -153,9 +167,10 @@ class VouwplanWitnessTest {
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_4: keurende jutter = $vouwonderwerp]"
                         + " beta [] bind [$lezing_2 = [] Vondst.gekeurd WAAR]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_5 alfa [plaats-veld_9: [[] veld WAARDE"
-                        + " GELIJK keurendeJutter]] join [] beta [plaats-lid_10: PLAATS_VAN $onderwerp []] bind"
-                        + " [$lijstplaatswaarde_plaats_6 = [] Lijstplaats.plaats WAARDE] functies [AANTAL null ->"
-                        + " $lijstplaatsen_plaats_7, MINIMUM $lijstplaatswaarde_plaats_6 -> $plaats_plaats_8]",
+                        + " GELIJK keurendeJutter]] join [] beta [plaats-lid_10: PLAATS_VAN $onderwerp [] {List<>,"
+                        + " type null, bron null}] bind [$lijstplaatswaarde_plaats_6 = [] Lijstplaats.plaats"
+                        + " WAARDE] functies [AANTAL null -> $lijstplaatsen_plaats_7, MINIMUM"
+                        + " $lijstplaatswaarde_plaats_6 -> $plaats_plaats_8]",
                 "  patroon Stand $stand_3 alfa [stand_11: [[] attribuut WAARDE GELIJK"
                         + " ElementSleutel[objecttype=vondst, naam=keurtarief, kenmerk=false]]] join"
                         + " [stand-onderwerp_12: onderwerp = $onderwerp] beta [] bind [$tijdlijn_3 = []"
@@ -219,9 +234,10 @@ class VouwplanWitnessTest {
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_7: aanmelder = $vouwonderwerp] beta"
                         + " [] bind [$lezing_2 = [] Vondst.gewicht WAARDE, $lezing_3 = [] Vondst.deelnemers WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_8 alfa [plaats-veld_12: [[] veld WAARDE"
-                        + " GELIJK aanmelder]] join [] beta [plaats-lid_13: PLAATS_VAN $onderwerp []] bind"
-                        + " [$lijstplaatswaarde_plaats_9 = [] Lijstplaats.plaats WAARDE] functies [AANTAL null ->"
-                        + " $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9 -> $plaats_plaats_11]",
+                        + " GELIJK aanmelder]] join [] beta [plaats-lid_13: PLAATS_VAN $onderwerp [] {List<>, type"
+                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_9 = [] Lijstplaats.plaats WAARDE]"
+                        + " functies [AANTAL null -> $lijstplaatsen_plaats_10, MINIMUM $lijstplaatswaarde_plaats_9"
+                        + " -> $plaats_plaats_11]",
                 "  toets voorwaarde_14 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -299,9 +315,10 @@ class VouwplanWitnessTest {
                 "  onderwerp Vondst $onderwerp alfa [] join [bereik_33: aanmelder = $vouwonderwerp] beta"
                         + " [] bind [$lezing_2 = [] Vondst.gewicht WAARDE, $lezing_3 = [] Vondst.deelnemers WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_34 alfa [plaats-veld_38: [[] veld WAARDE"
-                        + " GELIJK aanmelder]] join [] beta [plaats-lid_39: PLAATS_VAN $onderwerp []] bind"
-                        + " [$lijstplaatswaarde_plaats_35 = [] Lijstplaats.plaats WAARDE] functies [AANTAL null ->"
-                        + " $lijstplaatsen_plaats_36, MINIMUM $lijstplaatswaarde_plaats_35 -> $plaats_plaats_37]",
+                        + " GELIJK aanmelder]] join [] beta [plaats-lid_39: PLAATS_VAN $onderwerp [] {List<>, type"
+                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_35 = [] Lijstplaats.plaats WAARDE]"
+                        + " functies [AANTAL null -> $lijstplaatsen_plaats_36, MINIMUM"
+                        + " $lijstplaatswaarde_plaats_35 -> $plaats_plaats_37]",
                 "  toets voorwaarde_40 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn gewicht gedeeld"
@@ -358,7 +375,8 @@ class VouwplanWitnessTest {
                         + " ElementSleutel[objecttype=vondst, naam=gewicht, kenmerk=false])]",
                 "  patroon Jutter $vouwonderwerp alfa [] join [] beta [] bind []",
                 "  onderwerp Vondst $onderwerp alfa [] join [] beta [pad_0: ONTMOETING $vouwonderwerp"
-                        + " [bergendeBoot, schipper] []] bind [$lezing_1 = [] Vondst.gewicht WAARDE]",
+                        + " [bergendeBoot, schipper] {List<String>, type null, bron null} [] {List<>, type null,"
+                        + " bron null}] bind [$lezing_1 = [] Vondst.gewicht WAARDE]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=laagste vondstgewicht van een jutter:"
                         + " vouw 0, lid=0, slots=[0, 1], grootte=2, invoeging=LOGISCH]",
                 "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=false]"),
@@ -375,8 +393,10 @@ class VouwplanWitnessTest {
                 "  onderwerp Bergplaats $onderwerp alfa [] join [] beta [] bind [$lezing_1 = []"
                         + " Bergplaats.vangstgewicht WAARDE]",
                 "  bestaat binnen [$tussen_pad_0] buiten [$vouwonderwerp, $onderwerp] [Boot"
-                        + " $tussen_pad_0 alfa [] join [] beta [pad_1: ONTMOETING $vouwonderwerp [schipper] [],"
-                        + " pad_2: ONTMOETING $onderwerp [losplaats] []] bind []]",
+                        + " $tussen_pad_0 alfa [] join [] beta [pad_1: ONTMOETING $vouwonderwerp [schipper]"
+                        + " {List<String>, type null, bron null} [] {List<>, type null, bron null}, pad_2:"
+                        + " ONTMOETING $onderwerp [losplaats] {List<String>, type null, bron null} [] {List<>,"
+                        + " type null, bron null}] bind []]",
                 "  gevolg Bijdrage [onderwerp=$vouwonderwerp, vouw=aantal gevulde bergplaatsen: vouw 0,"
                         + " lid=0, slots=[0, 1], grootte=2, invoeging=LOGISCH]",
                 "    inbreng Lidwaarde [waarde=1, totaal=null, gevuld=true]",
@@ -391,8 +411,11 @@ class VouwplanWitnessTest {
                         + " Haven.havengeld WAARDE, $lezing_1 = [] Haven.ligplaatsen WAARDE]",
                 "  bestaat binnen [$tussen_pad_7, $tussen_pad_8] buiten [$vouwonderwerp, $onderwerp]"
                         + " [Boot $tussen_pad_7 alfa [] join [] beta [pad_9: ONTMOETING $vouwonderwerp [schipper]"
-                        + " []] bind [], Bergplaats $tussen_pad_8 alfa [] join [] beta [pad_10: ONTMOETING"
-                        + " $tussen_pad_7 [] [losplaats], pad_11: ONTMOETING $onderwerp [haven] []] bind []]",
+                        + " {List<String>, type null, bron null} [] {List<>, type null, bron null}] bind [],"
+                        + " Bergplaats $tussen_pad_8 alfa [] join [] beta [pad_10: ONTMOETING $tussen_pad_7 []"
+                        + " {List<>, type null, bron null} [losplaats] {List<String>, type null, bron null},"
+                        + " pad_11: ONTMOETING $onderwerp [haven] {List<String>, type null, bron null} [] {List<>,"
+                        + " type null, bron null}] bind []]",
                 "  toets voorwaarde_12 ZONDER_FOUT sonde -1 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
@@ -419,13 +442,17 @@ class VouwplanWitnessTest {
                 "  onderwerp Haven $onderwerp alfa [] join [] beta [] bind [$lezing_2 = []"
                         + " Haven.havengeld WAARDE, $lezing_3 = [] Haven.ligplaatsen WAARDE]",
                 "  patroon Boot $tussen_pad_13 alfa [] join [] beta [pad_15: ONTMOETING $vouwonderwerp"
-                        + " [schipper] []] bind []",
+                        + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
+                        + " bind []",
                 "  patroon Bergplaats $tussen_pad_14 alfa [] join [] beta [pad_16: ONTMOETING"
-                        + " $tussen_pad_13 [] [losplaats], pad_17: ONTMOETING $onderwerp [haven] []] bind []",
+                        + " $tussen_pad_13 [] {List<>, type null, bron null} [losplaats] {List<String>, type null,"
+                        + " bron null}, pad_17: ONTMOETING $onderwerp [haven] {List<String>, type null, bron null}"
+                        + " [] {List<>, type null, bron null}] bind []",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_18 alfa [plaats-veld_22: [[] veld WAARDE"
-                        + " GELIJK schipper]] join [] beta [plaats-lid_23: PLAATS_VAN $tussen_pad_13 []] bind"
-                        + " [$lijstplaatswaarde_plaats_19 = [] Lijstplaats.plaats WAARDE] functies [AANTAL null ->"
-                        + " $lijstplaatsen_plaats_20, MINIMUM $lijstplaatswaarde_plaats_19 -> $plaats_plaats_21]",
+                        + " GELIJK schipper]] join [] beta [plaats-lid_23: PLAATS_VAN $tussen_pad_13 [] {List<>,"
+                        + " type null, bron null}] bind [$lijstplaatswaarde_plaats_19 = [] Lijstplaats.plaats"
+                        + " WAARDE] functies [AANTAL null -> $lijstplaatsen_plaats_20, MINIMUM"
+                        + " $lijstplaatswaarde_plaats_19 -> $plaats_plaats_21]",
                 "  toets voorwaarde_24 FOUT sonde -1 slots [2, 3] grootte 6: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 4 (Lees 2, Lees 3), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
@@ -463,9 +490,11 @@ class VouwplanWitnessTest {
                         + " Haven.havengeld WAARDE, $lezing_1 = [] Haven.ligplaatsen WAARDE]",
                 "  bestaat binnen [$tussen_pad_25, $tussen_pad_26] buiten [$vouwonderwerp, $onderwerp]"
                         + " [Boot $tussen_pad_25 alfa [] join [] beta [pad_27: ONTMOETING $vouwonderwerp"
-                        + " [schipper] []] bind [], Bergplaats $tussen_pad_26 alfa [] join [] beta [pad_28:"
-                        + " ONTMOETING $tussen_pad_25 [] [losplaats], pad_29: ONTMOETING $onderwerp [haven] []]"
-                        + " bind []]",
+                        + " [schipper] {List<String>, type null, bron null} [] {List<>, type null, bron null}]"
+                        + " bind [], Bergplaats $tussen_pad_26 alfa [] join [] beta [pad_28: ONTMOETING"
+                        + " $tussen_pad_25 [] {List<>, type null, bron null} [losplaats] {List<String>, type null,"
+                        + " bron null}, pad_29: ONTMOETING $onderwerp [haven] {List<String>, type null, bron null}"
+                        + " [] {List<>, type null, bron null}] bind []]",
                 "  toets voorwaarde_30 DEPONERING sonde 2 slots [0, 1] grootte 4: Samengesteld DE"
                         + " 0(RS_AGG_VERGELIJK(Deel GEDEELD sonde 2 (Lees 0, Lees 1), Const 2, Const >))",
                 "    toets 0 Samengesteld bron 'aan de volgende voorwaarde voldoen: zijn havengeld"
@@ -495,9 +524,10 @@ class VouwplanWitnessTest {
                 "  onderwerp Wacht $onderwerp alfa [] join [bereik_2: ploeg = $vouwonderwerp] beta []"
                         + " bind [$lezing_1 = [] Wacht.opgave WAARDE]",
                 "  accumulatie Lijstplaats $lijstplaats_plaats_3 alfa [plaats-veld_7: [[] veld WAARDE"
-                        + " GELIJK ploeg]] join [] beta [plaats-lid_8: PLAATS_VAN $onderwerp []] bind"
-                        + " [$lijstplaatswaarde_plaats_4 = [] Lijstplaats.plaats WAARDE] functies [AANTAL null ->"
-                        + " $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4 -> $plaats_plaats_6]",
+                        + " GELIJK ploeg]] join [] beta [plaats-lid_8: PLAATS_VAN $onderwerp [] {List<>, type"
+                        + " null, bron null}] bind [$lijstplaatswaarde_plaats_4 = [] Lijstplaats.plaats WAARDE]"
+                        + " functies [AANTAL null -> $lijstplaatsen_plaats_5, MINIMUM $lijstplaatswaarde_plaats_4"
+                        + " -> $plaats_plaats_6]",
                 "  patroon Stand $stand_2 alfa [stand_0: [[] attribuut WAARDE GELIJK"
                         + " ElementSleutel[objecttype=wacht, naam=deelnemers, kenmerk=false]]] join"
                         + " [stand-onderwerp_1: onderwerp = $onderwerp] beta [] bind [$lezing_2 = [] Stand.waarde"
@@ -556,10 +586,129 @@ class VouwplanWitnessTest {
     /** {@link #havenketen} fired: no document of the corpus or the suite has two intermediates, so the harness does not
      *  watch the rendering of an existence whose second pattern reads the first one's object. */
     @Test void het_pad_met_twee_tussenknopen_vuurt(@TempDir Path map) throws Exception {
+        Path ir = map.resolve("ir.json");
+        Files.writeString(ir, JSON.writeValueAsString(havenketen()));
+        assertNull(speelCase(ir, JSON.readTree(HAVENKETEN_CASE)));
+    }
+
+    /** Case {@code zaak} of {@code ir} through the full replay on the exec-model branch, as the witnesses of the replay
+     *  fire a case ({@code CaseRunner.speelCase}): the failure line of the case, null where every expectation matches.
+     *  That entry is package-private in its own package, so this takes it by reflection, as {@link #matrixDieDeelt}
+     *  takes its document. */
+    static String speelCase(Path ir, JsonNode zaak) throws Exception {
+        Method speel = CaseRunner.class.getDeclaredMethod("speelCase", Path.class, JsonNode.class,
+                DroolsBackend.Branch.class);
+        speel.setAccessible(true);
+        return (String) speel.invoke(null, ir, zaak, DroolsBackend.Branch.EXEC_MODEL);
+    }
+
+    /** The case of {@link #havenketen} where the filter faults (fix round 1c-B2): J1's boats B1, B2 and B3, in that
+     *  order, unload at P1, P2 and P3, which lie in H1, H2 and H1, and both havens have 0 ligplaatsen, so the filter
+     *  divides by zero along every route. The reference interpreter and the ASP backend both fault with "division by
+     *  numeric zero", a sentence that names no member. */
+    private static final String HAVENKETEN_FOUT = """
+            {"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+              {"label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {"gevoerde boot": ["B1", "B2", "B3"]},
+               "characteristics": []},
+              {"label": "B1", "objectType": "Boot", "attributes": {}, "roles": {"losplaats": ["P1"]},
+               "characteristics": []},
+              {"label": "B2", "objectType": "Boot", "attributes": {}, "roles": {"losplaats": ["P2"]},
+               "characteristics": []},
+              {"label": "B3", "objectType": "Boot", "attributes": {}, "roles": {"losplaats": ["P3"]},
+               "characteristics": []},
+              {"label": "P1", "objectType": "Bergplaats", "attributes": {}, "roles": {"haven": ["H1"]},
+               "characteristics": []},
+              {"label": "P2", "objectType": "Bergplaats", "attributes": {}, "roles": {"haven": ["H2"]},
+               "characteristics": []},
+              {"label": "P3", "objectType": "Bergplaats", "attributes": {}, "roles": {"haven": ["H1"]},
+               "characteristics": []},
+              {"label": "H1", "objectType": "Haven", "attributes": {"havengeld": {"number": "4"},
+               "ligplaatsen": {"number": "0"}}, "roles": {}, "characteristics": []},
+              {"label": "H2", "objectType": "Haven", "attributes": {"havengeld": {"number": "30"},
+               "ligplaatsen": {"number": "0"}}, "roles": {}, "characteristics": []}],
+              "parameters": {}},
+             "expectedFault": {"ref": "division by numeric zero", "clingo": "division by numeric zero",
+              "drools": "4 gedeeld door 0"}}
+            """;
+
+    /** {@link #havenketen} fired where the filter faults (fix round 1c-B2): the rule of the filter's fault binds the
+     *  two intermediates per route and reads the place of the route's Boot, the first one, in J1's list, so each route
+     *  gives a {@link Filterfout} with its own place: H1 along B1 at [0, 0], H2 along B2 at [0, 1], H1 along B3 at
+     *  [0, 2]. The least is the first route's, H1's, so the rule names H1's fault, the first member in fold order
+     *  (RUNTIME-SEMANTICS ch. 5.11): "4 gedeeld door 0", where the least sentence would name H2's 30. A place reader
+     *  that reads the wrong place gives another fault or other places; no document of the corpus or the suite fires
+     *  this form, so the harness does not watch it. */
+    @Test void het_pad_met_twee_tussenknopen_faalt_op_de_eerste_routeplaats(@TempDir Path map) throws Exception {
         Path ir = map.resolve("ir.json"), zaak = map.resolve("case.json");
         Files.writeString(ir, JSON.writeValueAsString(havenketen()));
-        Files.writeString(zaak, HAVENKETEN_CASE);
-        assertEquals(new CaseRunner.Result("PLAYED", "", List.of(), 1), CaseRunner.runGolden(ir, List.of(zaak)));
+        Files.writeString(zaak, HAVENKETEN_FOUT);
+        String deling = "DelingDoorNul: deling door nul in de regel \"havengeldtotaal van een Jutter: vouw 1\": %s"
+                + " gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4,"
+                + " punt 4)";
+        assertEquals(List.of(
+                "Filterfout J1 H1 [0, 0]: " + deling.formatted("4"),
+                "Filterfout J1 H2 [0, 1]: " + deling.formatted("30"),
+                "Filterfout J1 H1 [0, 2]: " + deling.formatted("4")),
+                filterfouten(ir, JSON.readTree(HAVENKETEN_FOUT)));
+        CaseRunner.RoodResult r = CaseRunner.runRood(ir, zaak);
+        assertEquals("FAULT", r.status(), r::detail);
+        assertTrue(r.detail().startsWith("DelingDoorNul: deling door nul in de regel \"havengeldtotaal van een"
+                + " Jutter\": 4 gedeeld door 0 — "), r::detail);
+    }
+
+    /** The {@link Filterfout} facts that stand at the fixpoint of {@code zaak} on {@code ir}, in their own order, each
+     *  with the case labels of the fold's subject and of the member, its place and its fault as named after the fold.
+     *  Read off the session after the fire and before the write-back, which raises the fault of the rule instead,
+     *  through the measuring seam of {@code CaseRunner} ({@code voorMeting}, {@code metSessie}), which is
+     *  package-private in its own package: by reflection, as {@link #matrixDieDeelt} takes its document. */
+    @SuppressWarnings("unchecked")
+    private static List<String> filterfouten(Path ir, JsonNode zaak) throws Exception {
+        Method voorMeting = CaseRunner.class.getDeclaredMethod("voorMeting", Path.class, DroolsBackend.Branch.class);
+        voorMeting.setAccessible(true);
+        Object runner = voorMeting.invoke(null, ir, DroolsBackend.Branch.EXEC_MODEL);
+        Class<?> meting = Class.forName("dev.uchar.regelspraak.cases.CaseRunner$Sessiemeting");
+        Object lezer = Proxy.newProxyInstance(meting.getClassLoader(), new Class<?>[]{meting}, (proxy, m, a) -> {
+            if (!m.getName().equals("meet")) throw new UnsupportedOperationException(m.getName());
+            DroolsBackend.Build bouw = (DroolsBackend.Build) a[0];
+            KieSession sessie = (KieSession) a[1];
+            DroolsBackend.Vuring vuring = DroolsBackend.vuur(bouw, sessie);
+            if (vuring.geenFixpunt() != null) throw new AssertionError(vuring.geenFixpunt());
+            Map<Object, String> label = new IdentityHashMap<>();
+            ((Map<String, Object>) a[2]).forEach((l, boon) -> label.put(boon, l));
+            List<Filterfout> fouten = new ArrayList<>();
+            for (Object f : sessie.getObjects()) if (f instanceof Filterfout x) fouten.add(x);
+            fouten.sort(null);
+            List<String> uit = new ArrayList<>();
+            for (Filterfout x : fouten) {
+                RuntimeException benoemd = Rekenfout.benoem(x.fout(), x.vouw());
+                uit.add("Filterfout " + label.get(x.onderwerp()) + " " + label.get(x.element()) + " " + x.plaats()
+                        + ": " + benoemd.getClass().getSimpleName() + ": " + benoemd.getMessage());
+            }
+            return uit;
+        });
+        Method metSessie = CaseRunner.class.getDeclaredMethod("metSessie", JsonNode.class, meting);
+        metSessie.setAccessible(true);
+        return (List<String>) metSessie.invoke(runner, zaak, lezer);
+    }
+
+    /** The scope of an existence covers what its patterns bind as well (fix round 1c-B2): a value a pattern inside
+     *  binds lives only inside it, like the pattern's object. The plan declares it among the variables of the
+     *  existence, the constructor refuses a scope without it, and the rendering forgets it after the existence, so an
+     *  item after it that names the value fails loudly instead of joining a value of the quantification. */
+    @Test void de_scope_van_een_bestaan_omvat_de_bindingen_van_zijn_patronen() {
+        Patroon metBinding = new Patroon(Waarde.class, "$waarde", List.of(), List.of(),
+                List.of(Binding.van("$v", Waarde.class, "waarde")));
+        IllegalArgumentException zonder = assertThrows(IllegalArgumentException.class,
+                () -> new Bestaat(List.of(metBinding), List.of("$waarde"), List.of()));
+        assertEquals("een bestaat-item declareert de variabelen van zijn patronen en van hun bindingen,"
+                + " [$waarde, $v], niet [$waarde]", zonder.getMessage());
+        Bestaat bestaan = new Bestaat(List.of(metBinding), List.of("$waarde", "$v"), List.of());
+        Regelplan erna = new Regelplan("na het bestaan", null, null, new Leestabel(List.of()), List.of(bestaan,
+                new Patroon(Waarde.class, "$erna", List.of(), List.of(new Join("erna", null, "$v")), List.of())),
+                new Gevolg.Kanaalstand("bestaan", true, Gevolg.Invoeging.LOGISCH));
+        IllegalStateException weg = assertThrows(IllegalStateException.class,
+                () -> PatternDslWeergave.regel(erna, naam -> null));
+        assertEquals("de variabele $v is nog niet gebonden", weg.getMessage());
     }
 
     /** {@code jutterswet-gevuldepad} (a Jutter's boats, each unloading at one Bergplaats) with a third step, since no
@@ -678,11 +827,25 @@ class VouwplanWitnessTest {
                 + joins(p.joins()) + " beta " + beta(p.betatoetsen()) + " bind " + bindingen(p.bindingen());
     }
 
-    /** Each constraint between two objects with its id, its function, the variable on the other side and the values
-     *  of its constants. */
+    /** Each constraint between two objects with its id, its function, the variable on the other side and each of its
+     *  constants with every field ({@link #constante}). */
     private static List<String> beta(List<Betatoets> beta) {
         return beta.stream().map(t -> t.id() + ": " + t.functie() + " " + t.doel()
-                + t.constanten().stream().map(c -> " " + c.waarde()).reduce("", String::concat)).toList();
+                + t.constanten().stream().map(c -> " " + constante(c)).reduce("", String::concat)).toList();
+    }
+
+    /** A constant of the analysis with every field: its value, the class of its value (a list by the classes of its
+     *  elements), its IR type and its source fragment, each null where the constant has none (fix round 1c-B2). */
+    private static String constante(Term.Const c) {
+        return c.waarde() + " {" + klasse(c.waarde()) + ", type " + c.type() + ", bron " + c.bron() + "}";
+    }
+
+    private static String klasse(Object waarde) {
+        if (waarde == null) return "null";
+        if (waarde instanceof List<?> l)
+            return "List<" + String.join(",", l.stream().map(e -> e == null ? "null" : e.getClass().getSimpleName())
+                    .distinct().toList()) + ">";
+        return waarde.getClass().getSimpleName();
     }
 
     private static List<String> joins(List<Join> joins) {

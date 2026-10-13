@@ -480,16 +480,17 @@ final class PatternDslWeergave {
         return def.expr(t.id(), bekend(t.doel()), ClosureWeergave.betatoets(t.functie(), t.constanten()));
     }
 
-    /** The existence of {@code b}, in the scope its plan states: the variables of its patterns are known to the
-     *  patterns after them inside it, and to nothing after it. */
+    /** The existence of {@code b}, in the scope its plan states: the variables of its patterns, and those their
+     *  bindings bind, are known to the patterns after them inside it, and to nothing after it. */
     private RuleItemBuilder<?> bestaat(Bestaat b) {
         for (String naam : b.buiten()) bekend(naam);
         PatternDSL.PatternDef<?>[] defs = new PatternDSL.PatternDef<?>[b.patronen().size()];
         for (int i = 0; i < defs.length; i++) {
-            Weergegeven w = patroon(b.patronen().get(i));
+            Patroon p = b.patronen().get(i);
+            Weergegeven w = patroon(p);
             defs[i] = w.def();
-            if (waarden.putIfAbsent(b.binnen().get(i), w.variabele()) != null)
-                throw new IllegalStateException("de variabele " + b.binnen().get(i) + " wordt twee keer gebonden");
+            if (waarden.putIfAbsent(p.naam(), w.variabele()) != null)
+                throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
         }
         for (String naam : b.binnen()) waarden.remove(naam);
         return DSL.exists(defs[0], Arrays.copyOfRange(defs, 1, defs.length));

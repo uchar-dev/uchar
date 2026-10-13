@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import dev.uchar.regelspraak.cases.CaseRunner;
 import dev.uchar.regelspraak.cases.DroolsBackend;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulatie;
 import dev.uchar.regelspraak.transpiler.tms.plan.Alfa;
@@ -33,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The rules of the forms that fill or read the §9.5 channel come whole from a plan (card
@@ -435,10 +435,9 @@ class KanaalplanWitnessTest {
      *  document of the corpus or the suite has this shape, so the harness does not watch it. A rendering that read
      *  another field of the source would match no recipient and lose the shares. */
     @Test void een_verdeling_waarvan_de_bron_naar_de_ontvanger_wijst_vuurt(@TempDir Path map) throws Exception {
-        Path ir = map.resolve("ir.json"), zaak = map.resolve("case.json");
+        Path ir = map.resolve("ir.json");
         Files.writeString(ir, JSON.writeValueAsString(bronWijstNaarOntvanger()));
-        Files.writeString(zaak, BRON_WIJST_NAAR_ONTVANGER_CASE);
-        assertEquals(new CaseRunner.Result("PLAYED", "", List.of(), 1), CaseRunner.runGolden(ir, List.of(zaak)));
+        assertNull(VouwplanWitnessTest.speelCase(ir, JSON.readTree(BRON_WIJST_NAAR_ONTVANGER_CASE)));
     }
 
     @Test void een_verdeling_over_een_relatie_die_een_creatie_maakt() throws Exception {
