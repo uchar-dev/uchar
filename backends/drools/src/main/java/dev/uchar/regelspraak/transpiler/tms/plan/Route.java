@@ -41,7 +41,10 @@ public enum Route {
     /** The place of a member in a fold's order from the places its rule binds ({@link Gevolg.Vouwplaats}), which a
      *  filter fault, a member fault and a quantifier fold's test of a member carry; where the input states no place,
      *  the broken contract, named after what the rule needs the place for. */
-    VOUWPLAATS(Rekenhulpen.class, "vouwplaats");
+    VOUWPLAATS(Rekenhulpen.class, "vouwplaats"),
+    /** The creation depth of an object creation's new object, which {@link Gevolg.Creatiediepte} carries the arguments
+     *  of; past the budget the fault at the making, {@code Creatiebudget}, whose constructor is not public. */
+    CREATIEDIEPTE(Rekenhulpen.class, "creatiediepte");
 
     private final Class<?> klasse;
     private final String methode;

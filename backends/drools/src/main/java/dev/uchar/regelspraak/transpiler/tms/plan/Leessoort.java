@@ -77,6 +77,10 @@ public enum Leessoort {
     /** The standing of a member on the object a path reaches, off its {@code Stand} or {@code KenmerkStand}: what the
      *  standing of the path carries ({@code TmsTranspiler.padstandregels}). */
     BEREIKTE_STAND,
+    /** The input of a member on the object a path over a relation a form creates reaches, off that bean as the
+     *  binding's form of reading says: what the standing of such a path carries where no form writes the member
+     *  ({@code TmsTranspiler.koppelingpadstandregels}). */
+    BEREIKTE_INVOER,
     /** The number of keys of a uniqueness that collide with the key the rule binds, itself included, off an accumulate
      *  ({@code TmsTranspiler.uniciteitsregels}). */
     BOTSINGEN

@@ -244,7 +244,9 @@ class StandplanWitnessTest {
             case Onderwerp o -> "onderwerp " + o.bonenklasse().getSimpleName() + " " + o.naam() + " alfa "
                     + alfa(o.alfa()) + " bind " + bindingen(o.bindingen());
             case Patroon p -> "patroon " + patroon(p);
-            case Niet n -> "niet " + patroon(n.patroon());
+            case Niet n -> "niet " + (n.patronen().size() == 1 ? patroon(n.patronen().get(0)) : "binnen "
+                    + n.binnen() + " buiten " + n.buiten() + " "
+                    + n.patronen().stream().map(StandplanWitnessTest::patroon).toList());
             case Bestaat b -> "bestaat " + b.patronen().stream().map(StandplanWitnessTest::patroon).toList();
             case Accumulatie a -> "accumulatie " + patroon(a.bron());
             case Toetsitem t -> "toets " + t.id();

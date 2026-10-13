@@ -669,6 +669,59 @@ public final class Rekenhulpen {
         return ((Lijstplaats) lijstplaats).lid() == wandel(knoop, keten);
     }
 
+    // ---------------- creations and links (plan.Betatoets, Route.CREATIEDIEPTE) ----------------
+
+    /** Whether {@code gemaakt}, a {@link Gemaakt}, is of the creation phase numbered {@code fase}. */
+    public static boolean inFase(Object gemaakt, Object fase) {
+        return ((Gemaakt) gemaakt).fase() == (Integer) fase;
+    }
+
+    /** Whether {@code koppeling}, a {@link Koppeling}, is of another creation phase than the one numbered {@code fase}. */
+    public static boolean nietInFase(Object koppeling, Object fase) {
+        return ((Koppeling) koppeling).fase() != (Integer) fase;
+    }
+
+    /** Whether the links {@code twee} and {@code een}, each a {@link Koppeling}, hold different objects at the end
+     *  {@code einde} names, {@code "eerste"} or {@code "tweede"}, by identity. */
+    public static boolean andereVulling(Object twee, Object een, String einde) {
+        Koppeling x = (Koppeling) twee, y = (Koppeling) een;
+        return switch (einde) {
+            case "eerste" -> x.eerste() != y.eerste();
+            case "tweede" -> x.tweede() != y.tweede();
+            default -> throw new IllegalArgumentException("een koppeling heeft geen einde '" + einde + "'");
+        };
+    }
+
+    /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
+     *  subject of declared type {@code type}, whose own marks are {@code herkomst}, the {@link Gemaakt} facts whose object
+     *  is the subject: none for an object of the input, one for an object a creation made. It is one more than the
+     *  subject's depth in this stratum, where an object of the input and one a lower stratum made stand at 0, since a
+     *  lower stratum is complete before this one fires (RUNTIME-SEMANTICS ch. 5.5, 6.3). Past {@code budget} it throws
+     *  {@link Creatiebudget}. A subject that a higher stratum made cannot occur: a creation reads its subject's
+     *  population strictly (ch. 6.1), so it sits at or above every creation that makes its subjects; such a subject, or
+     *  an object with two marks, is a fault of this transpiler and throws as one. */
+    public static int creatiediepte(String naam, int stratum, String type, List<?> herkomst, int budget) {
+        if (herkomst.size() > 1)
+            throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
+                    + herkomst.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + herkomst);
+        int diepte = 1;
+        if (!herkomst.isEmpty()) {
+            Gemaakt g = (Gemaakt) herkomst.get(0);
+            if (g.stratum() > stratum)
+                throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" van stratum " + stratum
+                        + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
+                        + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
+                        + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
+            if (g.stratum() == stratum) diepte = g.diepte() + 1;
+        }
+        if (diepte > budget)
+            throw new Creatiebudget("creation budget exhausted: objectcreatie \"" + naam + "\" van stratum " + stratum
+                    + " zou een object maken op aanmaakdiepte " + diepte + ", voor een " + type + " op diepte "
+                    + (diepte - 1) + " — een keten van aanmaken die niet stopt is een fout, nooit een stille afkapping"
+                    + " (RUNTIME-SEMANTICS ch. 5.5)");
+        return diepte;
+    }
+
     /** The object a chain of to-one reference fields {@code velden} reaches from {@code start}, each read as the
      *  runtime reads a property by name; a broken link reads as null. */
     private static Object wandel(Object start, List<?> velden) {

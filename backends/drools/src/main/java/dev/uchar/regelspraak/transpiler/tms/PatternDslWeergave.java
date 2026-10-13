@@ -126,7 +126,7 @@ final class PatternDslWeergave {
                     throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
                 yield w.def();
             }
-            case Niet n -> DSL.not(patroon(n.patroon()).def());
+            case Niet n -> niet(n);
             case Bestaat b -> bestaat(b);
             case Accumulatie a -> accumulatie(a);
             case Toetsitem t -> toets(t);
@@ -219,6 +219,15 @@ final class PatternDslWeergave {
                         voegIn(drools, x.invoeging(), new Lidfout(x.vouw(), drager, w[x.lid()],
                                 Rekenhulpen.invoervormfout(x.voor(), w[x.lid()], x.na(), null), plaats));
                     });
+            case Gevolg.Creatie x -> creatie(x);
+            case Gevolg.Koppeling x -> x.fase() < 0
+                    ? new Consequentie(new Variable[]{bekend(x.eerste()), bekend(x.tweede())}, (drools, a) ->
+                            voegIn(drools, x.invoeging(), new Koppeling(x.relatie(), a[0], a[1], 0)))
+                    : new Consequentie(new Variable[]{bekend(x.eerste()), bekend(x.tweede()), variabele(x.fase())},
+                            (drools, a) -> voegIn(drools, x.invoeging(),
+                                    new Koppeling(x.relatie(), a[0], a[1], (Integer) a[2])));
+            case Gevolg.TweedeVulling x -> new Consequentie(new Variable[]{bekend(x.onderwerp())}, (drools, a) ->
+                    voegIn(drools, x.invoeging(), new Fout(a[0], x.relatie(), new IllegalStateException(x.zin()))));
             case Gevolg.Uitdeling x -> consequentie(x.onderwerp(), slotsVan(x.pot(), x.lijst()), (drools, bron, w) -> {
                 for (Object feit : Rekenhulpen.uitdeling(x.vorm(), bron, x.methode(), w[x.pot()], w[x.lijst()],
                         x.gewogen(), x.gemaximeerd(), x.afnemend(), x.decimalen(), x.aandeel(), x.rest(), x.schrijver()))
@@ -360,6 +369,66 @@ final class PatternDslWeergave {
         });
     }
 
+    /**
+     * The object creation of {@link Gevolg.Creatie}, in the order of its steps: the depth through its route, before
+     * anything is made; the values of the initialisations, the first evaluation fault being all the creation does; the
+     * construction of the new bean, with the attribute initialisations whose value is gevuld set on it before it enters
+     * working memory; then the insertions, in order.
+     */
+    private RuleItemBuilder<?> creatie(Gevolg.Creatie g) {
+        List<Waardefunctie> waarden = new ArrayList<>();
+        for (Gevolg.Initialisatie i : g.initialisaties()) waarden.add(ClosureWeergave.waardefunctie(i.waarde()));
+        Gevolg.Constructie constructie = g.constructie();
+        List<BiConsumer<Object, Object>> zetters = new ArrayList<>();
+        for (Gevolg.Constructie.Zetting z : constructie.zettingen())
+            zetters.add(Accessors.setter(z.veld().klasse(), z.veld().naam()));
+        Gevolg.Creatiediepte d = g.diepte();
+        return consequentie(g.onderwerp(), g.slots(), g.grootte(), (drools, onderwerp, w) -> {
+            int diepte = Rekenhulpen.creatiediepte(g.creatie(), d.stratum(), d.type(), (List<?>) w[d.herkomst()],
+                    d.budget());
+            Object[] v = new Object[waarden.size()];
+            for (int i = 0; i < v.length; i++) {
+                try {
+                    v[i] = Rekenhulpen.collapse(waarden.get(i).van(w));
+                } catch (RuntimeException e) {
+                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
+                    voegIn(drools, g.foutinvoeging(),
+                            new Fout(onderwerp, g.fout().vorm(), Rekenfout.benoem(e, g.fout().regel())));
+                    return;
+                }
+            }
+            Object nieuw = nieuwObject(constructie.klasse());
+            for (int j = 0; j < zetters.size(); j++) {
+                Object waarde = v[constructie.zettingen().get(j).initialisatie()];
+                if (waarde != null) zetters.get(j).accept(nieuw, waarde);
+            }
+            int fase = (Integer) w[g.fase()];
+            for (Gevolg.Invoegsel i : g.invoegingen())
+                switch (i) {
+                    case Gevolg.Invoegsel.Nieuw n -> voegIn(drools, n.invoeging(), nieuw);
+                    case Gevolg.Invoegsel.Merk m -> voegIn(drools, m.invoeging(),
+                            new Gemaakt(g.creatie(), onderwerp, nieuw, fase, d.stratum(), diepte));
+                    case Gevolg.Invoegsel.Link l -> voegIn(drools, l.invoeging(), l.nieuwIsEerste()
+                            ? new Koppeling(l.relatie(), nieuw, onderwerp, fase)
+                            : new Koppeling(l.relatie(), onderwerp, nieuw, fase));
+                    case Gevolg.Invoegsel.Kenmerk k -> {
+                        if (Boolean.TRUE.equals(v[k.initialisatie()]))
+                            voegIn(drools, k.invoeging(),
+                                    new HeeftKenmerk(nieuw, g.initialisaties().get(k.initialisatie()).lid()));
+                    }
+                }
+        });
+    }
+
+    /** A new bean of {@code klasse} by its constructor without arguments, every field unset. */
+    private static Object nieuwObject(Class<?> klasse) {
+        try {
+            return klasse.getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("kon geen " + klasse.getSimpleName() + " maken", e);
+        }
+    }
+
     /** The fault of {@link Gevolg.Toetsfout}: the condition evaluated again over the same bound values. */
     private RuleItemBuilder<?> toetsfout(Gevolg.Toetsfout g) {
         Predicate<Object[]> toets = ClosureWeergave.toets(g.toets());
@@ -443,7 +512,7 @@ final class PatternDslWeergave {
             r = switch (item) {
                 case Onderwerp o -> onderwerpPatroon;
                 case Patroon p -> patroon(p).def();
-                case Niet n -> DSL.not(patroon(n.patroon()).def());
+                case Niet n -> niet(n);
                 case Bestaat b -> bestaat(b);
                 case Accumulatie a -> accumulatie(a);
                 case Toetsitem t -> toets(t);
@@ -462,6 +531,7 @@ final class PatternDslWeergave {
         for (Alfa a : p.alfa()) def = def.expr(a.id(), predicaat(p.feitklasse(), a));
         for (Join j : p.joins()) def = join(def, p.feitklasse(), j);
         for (Betatoets t : p.betatoetsen()) def = betatoets(def, t);
+        for (Alfa a : p.naAlfa()) def = def.expr(a.id(), predicaat(p.feitklasse(), a));
         for (Binding b : p.bindingen()) def = def.bind(bind(b.doel()), lezer(b));
         return new Weergegeven(v, def);
     }
@@ -480,20 +550,34 @@ final class PatternDslWeergave {
         return def.expr(t.id(), bekend(t.doel()), ClosureWeergave.betatoets(t.functie(), t.constanten()));
     }
 
-    /** The existence of {@code b}, in the scope its plan states: the variables of its patterns, and those their
-     *  bindings bind, are known to the patterns after them inside it, and to nothing after it. */
+    /** The existence of {@code b}, in the scope its plan states ({@link #gekwantificeerd}). */
     private RuleItemBuilder<?> bestaat(Bestaat b) {
-        for (String naam : b.buiten()) bekend(naam);
-        PatternDSL.PatternDef<?>[] defs = new PatternDSL.PatternDef<?>[b.patronen().size()];
+        PatternDSL.PatternDef<?>[] defs = gekwantificeerd(b.patronen(), b.binnen(), b.buiten());
+        return DSL.exists(defs[0], Arrays.copyOfRange(defs, 1, defs.length));
+    }
+
+    /** The absence of {@code n}, in the scope its plan states ({@link #gekwantificeerd}). */
+    private RuleItemBuilder<?> niet(Niet n) {
+        PatternDSL.PatternDef<?>[] defs = gekwantificeerd(n.patronen(), n.binnen(), n.buiten());
+        return DSL.not(defs[0], Arrays.copyOfRange(defs, 1, defs.length));
+    }
+
+    /** The patterns of an existence or a negation, rendered in the scope its plan states: what it reads from before
+     *  ({@code buiten}) is bound, and what it declares ({@code binnen}), the variables of its patterns and those their
+     *  bindings bind, is known to the patterns after them inside it and to nothing after it. */
+    private PatternDSL.PatternDef<?>[] gekwantificeerd(List<Patroon> patronen, List<String> binnen,
+                                                       List<String> buiten) {
+        for (String naam : buiten) bekend(naam);
+        PatternDSL.PatternDef<?>[] defs = new PatternDSL.PatternDef<?>[patronen.size()];
         for (int i = 0; i < defs.length; i++) {
-            Patroon p = b.patronen().get(i);
+            Patroon p = patronen.get(i);
             Weergegeven w = patroon(p);
             defs[i] = w.def();
             if (waarden.putIfAbsent(p.naam(), w.variabele()) != null)
                 throw new IllegalStateException("de variabele " + p.naam() + " wordt twee keer gebonden");
         }
-        for (String naam : b.binnen()) waarden.remove(naam);
-        return DSL.exists(defs[0], Arrays.copyOfRange(defs, 1, defs.length));
+        for (String naam : binnen) waarden.remove(naam);
+        return defs;
     }
 
     private RuleItemBuilder<?> accumulatie(Accumulatie a) {
@@ -638,7 +722,11 @@ final class PatternDslWeergave {
         veld(Uniciteitsschending.class, "element", Uniciteitsschending::element);
         veld(Ontvanger.class, "verdeling", Ontvanger::verdeling);
         veld(Ontvanger.class, "bron", Ontvanger::bron);
+        veld(Gemaakt.class, "regel", Gemaakt::regel);
+        veld(Gemaakt.class, "onderwerp", Gemaakt::onderwerp);
         veld(Gemaakt.class, "object", Gemaakt::object);
+        veld(Fout.class, "regel", Fout::regel);
+        veld(Fout.class, "onderwerp", Fout::onderwerp);
         veld(Koppeling.class, "relatie", Koppeling::relatie);
         veld(Koppeling.class, "eerste", Koppeling::eerste);
         veld(Koppeling.class, "tweede", Koppeling::tweede);
@@ -687,10 +775,11 @@ final class PatternDslWeergave {
     }
 
     /** The read a field test makes of the pattern's object ({@link Alfa.Veldtoets}): a field as {@link #veld} reads
-     *  it, or the object itself, as it is; else along the path, null where a link is absent, as the test's form reads
-     *  it. */
+     *  it, of the declaring class the test names or else of the pattern's, or the object itself, as it is; else along
+     *  the path, null where a link is absent, as the test's form reads it. */
     private static Function1<Object, Object> lezer(Class<?> klasse, Alfa.Veldtoets t) {
-        Function1<Object, Object> f = t.veld() == null ? x -> x : veld(klasse, t.veld());
+        Function1<Object, Object> f = t.veld() == null ? x -> x
+                : veld(t.declarant() != null ? t.declarant() : klasse, t.veld());
         if (t.pad().isEmpty() && t.vorm() == Binding.Leesvorm.WAARDE) return f;
         return langs(t.pad(), vorm(f::apply, t.vorm(), null));
     }

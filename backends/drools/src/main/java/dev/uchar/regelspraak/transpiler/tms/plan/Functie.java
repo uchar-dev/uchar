@@ -211,7 +211,19 @@ public enum Functie {
     /** Whether a {@code Lijstplaats} is the place of the member that the walk over the reference fields of a chain
      *  from the object another pattern binds reaches, by identity: the constraint of the accumulate that binds a
      *  member's place in its list ({@link Betatoets}), the chain its constant. */
-    PLAATS_VAN(Rekenhulpen.class, "plaatsVan", false);
+    PLAATS_VAN(Rekenhulpen.class, "plaatsVan", false),
+    /** Whether a {@code Gemaakt} is of the creation phase whose number the other pattern binds: the constraint of an
+     *  object creation's guard that keeps an object made in the phase that fires from being a subject before the next
+     *  one ({@link Betatoets}). */
+    IN_FASE(Rekenhulpen.class, "inFase", false),
+    /** Whether a {@code Koppeling} is of another creation phase than the one whose number the other pattern binds: the
+     *  constraint of a fact creation's path over a relation a form creates, which does not walk a link of the phase it
+     *  fires in ({@link Betatoets}). */
+    NIET_IN_FASE(Rekenhulpen.class, "nietInFase", false),
+    /** Whether two {@code Koppeling} facts hold different objects at the end their constant names ({@code "eerste"} or
+     *  {@code "tweede"}), by identity: the constraint of the rule of a second filler of a to-one role, between the
+     *  second link and the first ({@link Betatoets}). */
+    ANDERE_VULLING(Rekenhulpen.class, "andereVulling", false);
 
     private final Class<?> klasse;
     private final String methode;

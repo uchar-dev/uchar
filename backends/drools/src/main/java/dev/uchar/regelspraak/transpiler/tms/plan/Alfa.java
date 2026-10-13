@@ -19,20 +19,30 @@ public record Alfa(String id, List<Veldtoets> toetsen) {
      * {@code veld} null the object itself, or along the reference fields of {@code pad} the object the path reaches,
      * null where a link on it is absent; read as {@code vorm} ({@link Binding.Leesvorm}), as the analysis decided,
      * among them a characteristic on a bean as whether it holds {@code true}. A path ends in the object it reaches: the
-     * class of a field beyond it is not the pattern's.
+     * class of a field beyond it is not the pattern's. A field on a bean is read through the getter of the class
+     * {@code declarant} where that is not null, the class that declares the member, which an object the test sees may
+     * extend while the pattern's class does not declare it; else through the getter of the pattern's class.
      */
-    public record Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde) {
+    public record Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde,
+                            Class<?> declarant) {
         public Veldtoets {
             pad = List.copyOf(pad);
             if (!pad.isEmpty() && veld != null)
                 throw new IllegalArgumentException("een veldtoets langs een pad toetst het object dat het pad bereikt,"
                         + " niet het veld " + veld);
+            if (declarant != null && veld == null)
+                throw new IllegalArgumentException("een veldtoets op het object zelf leest geen veld van " + declarant);
+        }
+
+        /** A test of what the test reads of the pattern's object, a field through the getter of the pattern's class. */
+        public Veldtoets(List<Binding.Veld> pad, String veld, Binding.Leesvorm vorm, Vergelijker op, Object waarde) {
+            this(pad, veld, vorm, op, waarde, null);
         }
 
         /** A test of field {@code veld} of the pattern's own object as it is; a null {@code veld} tests the object
          *  itself. */
         public Veldtoets(String veld, Vergelijker op, Object waarde) {
-            this(List.of(), veld, Binding.Leesvorm.WAARDE, op, waarde);
+            this(List.of(), veld, Binding.Leesvorm.WAARDE, op, waarde, null);
         }
     }
 

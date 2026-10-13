@@ -88,7 +88,7 @@ class LinkerkantplanWitnessTest {
                         o.bindingen().forEach(b -> tel(t, "binding op het onderwerp"));
                     }
                     case Patroon p -> patroon(t, "patroon", p);
-                    case Niet n -> patroon(t, "niet", n.patroon());
+                    case Niet n -> n.patronen().forEach(p -> patroon(t, "niet", p));
                     case Bestaat b -> b.patronen().forEach(p -> patroon(t, "bestaat", p));
                     case Accumulatie a -> {
                         patroon(t, "accumulatie", a.bron());

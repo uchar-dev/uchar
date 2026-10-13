@@ -539,7 +539,9 @@ class KanaalplanWitnessTest {
             case Onderwerp o -> "onderwerp " + o.bonenklasse().getSimpleName() + " " + o.naam() + " alfa "
                     + alfa(o.alfa()) + " join " + joins(o.joins()) + " bind " + bindingen(o.bindingen());
             case Patroon p -> "patroon " + patroon(p);
-            case Niet n -> "niet " + patroon(n.patroon());
+            case Niet n -> "niet " + (n.patronen().size() == 1 ? patroon(n.patronen().get(0)) : "binnen "
+                    + n.binnen() + " buiten " + n.buiten() + " "
+                    + n.patronen().stream().map(KanaalplanWitnessTest::patroon).toList());
             case Bestaat b -> "bestaat " + b.patronen().stream().map(KanaalplanWitnessTest::patroon).toList();
             case Accumulatie a -> "accumulatie " + patroon(a.bron()) + " functies "
                     + a.functies().stream().map(f -> f.soort() + " " + f.bron() + " -> " + f.doel()).toList();

@@ -401,6 +401,9 @@ final class ClosureWeergave {
             case BOTST_MET -> x -> Rekenhulpen.botstMet(x[0], x[1]);
             case ONTMOETING -> x -> Rekenhulpen.ontmoeting(x[0], x[1], (List<?>) x[2], (List<?>) x[3]);
             case PLAATS_VAN -> x -> Rekenhulpen.plaatsVan(x[0], x[1], (List<?>) x[2]);
+            case IN_FASE -> x -> Rekenhulpen.inFase(x[0], x[1]);
+            case NIET_IN_FASE -> x -> Rekenhulpen.nietInFase(x[0], x[1]);
+            case ANDERE_VULLING -> x -> Rekenhulpen.andereVulling(x[0], x[1], (String) x[2]);
         };
     }
 

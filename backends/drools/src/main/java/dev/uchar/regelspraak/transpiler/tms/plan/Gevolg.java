@@ -22,9 +22,10 @@ import java.util.Map;
  * standing of a channel, the recipient of an allocation and its distribution, whose computation is a route
  * ({@link Route}) the plan names with its arguments; and those of the rules of a fold (step 1c-B2): a member's
  * contribution, with what it contributes as a kind of its own ({@link Inbreng}), and the intermediate facts of a
- * fold's filter and members, with the member's place in the fold's order ({@link Vouwplaats}). The consequences of the
- * other forms are kinds of their own when their step plans them: a creation and a link, the control facts of a
- * default; each names the fact it inserts and how, as these do.
+ * fold's filter and members, with the member's place in the fold's order ({@link Vouwplaats}); and those of an object
+ * creation, a link and the fault of a second filler of a to-one role (step 1c-C1), where a creation constructs its new
+ * object before it inserts anything ({@link Creatie}). The consequences of the defaults are kinds of their own when
+ * their step plans them; each names the fact it inserts and how, as these do.
  */
 public sealed interface Gevolg {
 
@@ -308,4 +309,119 @@ public sealed interface Gevolg {
                 throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + plaats.reden());
         }
     }
+
+    /**
+     * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3) of the creation {@code creatie} for the subject the
+     * variable {@code onderwerp} binds, over a value array of {@code grootte} slots with the bound values at
+     * {@code slots}. Its consequence takes four steps, in this order:
+     * <ol>
+     *   <li>the creation depth of the new object, made by the route {@link Route#CREATIEDIEPTE} from {@code diepte}:
+     *       past the budget it throws, the fault at the making, before anything is made;</li>
+     *   <li>the value of each of {@code initialisaties}, in order, each collapsed from an exact rational to a decimal;
+     *       where one raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), that fault, named under {@code fout} and
+     *       inserted on the subject as {@code foutinvoeging}, is all the creation does, as in the reference
+     *       interpreter, which then makes nothing;</li>
+     *   <li>the construction of the new object ({@code constructie}): a bean of its class, on which the attribute
+     *       initialisations whose value is gevuld are set before the bean is inserted. That is construction and no
+     *       write on a bean in working memory: the bean is in none yet, so no rule ever saw it without them;</li>
+     *   <li>the insertions {@code invoegingen}, in order, the new object itself first ({@link Invoegsel}).</li>
+     * </ol>
+     * The constructor holds the plan to that order: every initialisation is set in the construction where it is an
+     * attribute, or inserted as a characteristic after the new object where it is one, exactly once; the new object is
+     * inserted first, its mark and its link once each.
+     */
+    record Creatie(String onderwerp, String creatie, Creatiediepte diepte, List<Initialisatie> initialisaties,
+                   Foutnaam fout, Invoeging foutinvoeging, Constructie constructie, int fase,
+                   List<Invoegsel> invoegingen, List<Integer> slots, int grootte) implements Gevolg {
+        public Creatie {
+            initialisaties = List.copyOf(initialisaties);
+            invoegingen = List.copyOf(invoegingen);
+            slots = List.copyOf(slots);
+            int[] keer = new int[initialisaties.size()];
+            for (Constructie.Zetting z : constructie.zettingen()) {
+                if (initialisaties.get(z.initialisatie()).lid().kenmerk())
+                    throw new IllegalArgumentException("een kenmerkinitialisatie wordt ingevoegd, niet gezet: "
+                            + initialisaties.get(z.initialisatie()).lid());
+                keer[z.initialisatie()]++;
+            }
+            if (invoegingen.isEmpty() || !(invoegingen.get(0) instanceof Invoegsel.Nieuw))
+                throw new IllegalArgumentException("een creatie voegt eerst het nieuwe object in: " + invoegingen);
+            int merken = 0, links = 0;
+            for (Invoegsel i : invoegingen)
+                switch (i) {
+                    case Invoegsel.Nieuw n -> { }
+                    case Invoegsel.Merk m -> merken++;
+                    case Invoegsel.Link l -> links++;
+                    case Invoegsel.Kenmerk k -> {
+                        if (!initialisaties.get(k.initialisatie()).lid().kenmerk())
+                            throw new IllegalArgumentException("een attribuutinitialisatie wordt gezet, niet ingevoegd: "
+                                    + initialisaties.get(k.initialisatie()).lid());
+                        keer[k.initialisatie()]++;
+                    }
+                }
+            if (invoegingen.stream().filter(i -> i instanceof Invoegsel.Nieuw).count() != 1 || merken != 1
+                    || links != 1)
+                throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk en zijn koppeling elk"
+                        + " één keer in: " + invoegingen);
+            for (int i = 0; i < keer.length; i++)
+                if (keer[i] != 1)
+                    throw new IllegalArgumentException("de initialisatie van " + initialisaties.get(i).lid() + " komt "
+                            + keer[i] + " keer in de constructie of de invoegingen, niet één keer");
+        }
+    }
+
+    /** The creation depth of an object creation's new object (RUNTIME-SEMANTICS ch. 5.5, 6.3), which the route
+     *  {@link Route#CREATIEDIEPTE} computes: one more than the depth of the subject, of declared type {@code type}, in
+     *  the creation's stratum {@code stratum}, from the subject's marks in slot {@code herkomst} of the value array; past
+     *  {@code budget} the route throws the fault at the making. */
+    record Creatiediepte(int herkomst, int stratum, String type, int budget) {}
+
+    /** One member initialisation of an object creation: the member {@code lid} of the new object, and its value
+     *  {@code waarde}, evaluated over the bound values of the rule. */
+    record Initialisatie(ElementSleutel lid, Term waarde) {}
+
+    /** How an object creation makes its new object: a bean of {@code klasse}, by its constructor without arguments, on
+     *  which each of {@code zettingen} is set, in order, before the bean is inserted. */
+    record Constructie(Class<?> klasse, List<Zetting> zettingen) {
+        public Constructie {
+            zettingen = List.copyOf(zettingen);
+        }
+
+        /** The value of the attribute initialisation at index {@code initialisatie}, set on the new bean through the
+         *  setter of the bean property {@code veld} where the value is gevuld; a leeg value leaves the member unset. */
+        public record Zetting(int initialisatie, Binding.Veld veld) {}
+    }
+
+    /** One insertion of an object creation, after its construction, with how it goes into working memory. */
+    sealed interface Invoegsel {
+        Invoeging invoeging();
+
+        /** The new object itself. */
+        record Nieuw(Invoeging invoeging) implements Invoegsel {}
+
+        /** The new object's {@code Gemaakt}: the creation, the subject, the new object, the creation phase in slot
+         *  {@link Creatie#fase}, the stratum and the depth of {@link Creatie#diepte}. */
+        record Merk(Invoeging invoeging) implements Invoegsel {}
+
+        /** The {@code Koppeling} of the relation {@code relatie} between the new object and the subject, the new object
+         *  its first end where {@code nieuwIsEerste} and its second end otherwise, so the relation's order of roles
+         *  decides the direction, carrying the creation phase in slot {@link Creatie#fase}. */
+        record Link(String relatie, boolean nieuwIsEerste, Invoeging invoeging) implements Invoegsel {}
+
+        /** The {@code HeeftKenmerk} of the characteristic of the initialisation at index {@code initialisatie} on the
+         *  new object, where its value is true. */
+        record Kenmerk(int initialisatie, Invoeging invoeging) implements Invoegsel {}
+    }
+
+    /** The link of the relation {@code relatie} whose first end is the object the variable {@code eerste} binds and
+     *  whose second end is the object {@code tweede} binds, so the relation's order of roles decides the direction,
+     *  carrying the creation phase in slot {@code fase} of the value array, or phase 0, the input's, where {@code fase}
+     *  is -1: a link a reference field on a bean of the input carries, or the link a fact creation makes. */
+    record Koppeling(String relatie, String eerste, String tweede, int fase, Invoeging invoeging) implements Gevolg {}
+
+    /** The fault of a second distinct filler of a to-one role (RUNTIME-SEMANTICS ch. 5.5), a fault of the program and
+     *  no overwrite: on the object {@code onderwerp} binds, the near end of two links of one relation to different
+     *  objects, under the declared name of the relation {@code relatie}, an {@code IllegalStateException} with the
+     *  sentence {@code zin}. */
+    record TweedeVulling(String onderwerp, String relatie, String zin, Invoeging invoeging) implements Gevolg {}
 }

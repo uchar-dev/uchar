@@ -812,7 +812,9 @@ class VouwplanWitnessTest {
                     + alfa(o.alfa()) + " join " + joins(o.joins()) + " beta " + beta(o.betatoetsen()) + " bind "
                     + bindingen(o.bindingen());
             case Patroon p -> "patroon " + patroon(p);
-            case Niet n -> "niet " + patroon(n.patroon());
+            case Niet n -> "niet " + (n.patronen().size() == 1 ? patroon(n.patronen().get(0)) : "binnen "
+                    + n.binnen() + " buiten " + n.buiten() + " "
+                    + n.patronen().stream().map(VouwplanWitnessTest::patroon).toList());
             case Bestaat b -> "bestaat binnen " + b.binnen() + " buiten " + b.buiten() + " "
                     + b.patronen().stream().map(VouwplanWitnessTest::patroon).toList();
             case Accumulatie a -> "accumulatie " + patroon(a.bron()) + " functies "

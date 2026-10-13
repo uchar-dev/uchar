@@ -69,7 +69,6 @@ import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
 import org.drools.model.functions.Block2;
 import org.drools.model.functions.Block3;
-import org.drools.model.functions.Block4;
 import org.drools.model.functions.Function1;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.impl.ModelImpl;
@@ -1938,7 +1937,7 @@ public final class TmsTranspiler {
     // ---------------- object and fact creation ----------------
 
     /** One member initialisation of an object creation: the member on the created type, and its value on the subject. */
-    private record Initialisatie(Lid lid, Waardefunctie waarde) {}
+    private record Initialisatie(Lid lid, Term waarde) {}
 
     /**
      * An object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), a rule of the agenda group {@link #OBJECTCREATIE}:
@@ -1946,11 +1945,12 @@ public final class TmsTranspiler {
      * {@link Creatiefase} the driver opened, no {@link Gemaakt} of this creation for the subject, no {@link Gemaakt} that
      * makes the subject itself in this phase, and the condition as the test; and a consequence that makes a new bean of
      * the created type and inserts, stated, the bean, its {@link Gemaakt}, the {@link Koppeling} of the connecting
-     * relation and a {@link HeeftKenmerk} for a characteristic initialisation whose value is true. An attribute
-     * initialisation whose value is gevuld is set on the new bean before it is inserted: it is the input of the made
-     * object, as the reference interpreter reads it, so a writer of the member displaces it as it displaces case input,
-     * and an initialisation rule on the member finds the target filled. Each value is computed from the values the rule
-     * binds when it fires. The driver fires this group only at a fixpoint of the rule layer, so the condition and the
+     * relation and a {@link HeeftKenmerk} for a characteristic initialisation whose value is true
+     * ({@link Gevolg.Creatie}). An attribute initialisation whose value is gevuld is set on the new bean before it is
+     * inserted, as part of its construction ({@link Gevolg.Constructie}): it is the input of the made object, as the
+     * reference interpreter reads it, so a writer of the member displaces it as it displaces case input, and an
+     * initialisation rule on the member finds the target filled. Each value is computed from the values the rule binds
+     * when it fires. The driver fires this group only at a fixpoint of the rule layer, so the condition and the
      * values are those of that fixpoint; and nothing the creation made lapses, as in the reference interpreter, which
      * keeps a minted instance under a fixed label. One object per creation per subject, then. The object is a bean of
      * the created type, so every pattern over that type sees it, and nothing is written on a bean that was there before:
@@ -1991,7 +1991,7 @@ public final class TmsTranspiler {
         boolean nieuwIsEerste = Namen.norm(ft.rollen.get(0).naam()).equals(Namen.norm(k.fwdRol()));
         String naam = oc.naam();
         String regelnaam = model.geëmitteerdeRegelNaam(naam);
-        Supplier<Lezingen> nieuwe = () -> new Lezingen(subject).geldig(oc.geldigheid());
+        Supplier<Lezingen> nieuwe = () -> new Lezingen(subject, false).geldig(oc.geldigheid());
         Lezingen lez = nieuwe.get();
         Set<Integer> gelezen = lez.volg();
         Term toets = oc.voorwaarde() == null ? null : voorwaarde(oc.voorwaarde(), lez);
@@ -2021,7 +2021,7 @@ public final class TmsTranspiler {
             Term w = waarde(t.waarde(), lez);
             if (!t.kenmerk())
                 w = herschaald(w, eff.eenheidVan(t.waarde()), lid.datatype().eenheidOf(), "een §4 schrijfgrens naar het lid");
-            inits.add(new Initialisatie(lid, gevolgwaarde(w)));
+            inits.add(new Initialisatie(lid, waardeplan(w)));
         }
         lez.stop();
         int stratum = stratum(oc, naam);
@@ -2029,67 +2029,43 @@ public final class TmsTranspiler {
         gebruik.add(fase);
         int herkomst = lez.herkomst();
         gebruik.add(herkomst);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, oc.voorwaarde(),
+        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, oc.voorwaarde(),
                 creatiebewaking(naam, lez, fase));
         // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
         // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
-        Variable<Fout> eigenFout = DSL.declarationOf(Fout.class, "$eigen_fout");
-        items.add(DSL.not(zelfde(PatternDSL.pattern(eigenFout).expr(id("eigen-fout"), x -> x.regel().equals(naam)),
-                "eigen-fout-onderwerp", lez.s, Fout::onderwerp)));
-        if (k.eenOpEen()) {
+        items.add(new Niet(new Patroon(Fout.class, "$eigen_fout", List.of(gelijk(id("eigen-fout"), "regel", naam)),
+                List.of(new Join(id("eigen-fout-onderwerp"), "onderwerp", ONDERWERP)), List.of())));
+        if (k.eenOpEen())
             // an instance linked toward the subject in the input world blocks the creation (ch. 5.5)
-            Function<Object, Object> voorwaarts = Accessors.getter(bonenklasse(subject), k.fwdRef());
-            lez.onderwerp.expr(id("geen-gekoppelde-instantie"), o -> voorwaarts.apply(o) == null);
+            lez.onderwerpAlfa(new Alfa(id("geen-gekoppelde-instantie"),
+                    List.of(new Alfa.Veldtoets(k.fwdRef(), Alfa.Vergelijker.LEEG, null))));
+        // every initialisation is set on the new bean in its construction where it is an attribute, or inserted as a
+        // characteristic after the bean where it is one, in the order of the document
+        List<Gevolg.Initialisatie> initialisaties = new ArrayList<>();
+        List<Gevolg.Constructie.Zetting> zettingen = new ArrayList<>();
+        List<Gevolg.Invoegsel> invoegingen = new ArrayList<>(List.of(new Gevolg.Invoegsel.Nieuw(Gevolg.Invoeging.GESTELD),
+                new Gevolg.Invoegsel.Merk(Gevolg.Invoeging.GESTELD),
+                new Gevolg.Invoegsel.Link(relatie, nieuwIsEerste, Gevolg.Invoeging.GESTELD)));
+        for (int i = 0; i < inits.size(); i++) {
+            Lid lid = inits.get(i).lid();
+            initialisaties.add(new Gevolg.Initialisatie(lid.sleutel(), inits.get(i).waarde()));
+            if (lid.kenmerk()) invoegingen.add(new Gevolg.Invoegsel.Kenmerk(i, Gevolg.Invoeging.GESTELD));
+            else zettingen.add(new Gevolg.Constructie.Zetting(i, new Binding.Veld(lid.klasse(), lid.naam())));
         }
-        Class<?> klasse = bonenklasse(nieuw);
-        String subjecttype = subject.naam;
-        // the setter of each attribute an initialisation sets, null for a characteristic
-        List<BiConsumer<Object, Object>> zetters = new ArrayList<>();
-        for (Initialisatie i : inits)
-            zetters.add(i.lid().kenmerk() ? null : Accessors.setter(i.lid().klasse(), i.lid().naam()));
-        items.add(gevolg(lez, posities(gebruik), (drools, onderwerp, w) -> {
-            // the budget first: a mint past it is the fault at the making, before anything is made
-            int diepte = diepte(naam, stratum, subjecttype, (List<?>) w[herkomst]);
-            Object[] waarden = new Object[inits.size()];
-            RuntimeException fout = null;
-            for (int i = 0; i < inits.size() && fout == null; i++) {
-                try {
-                    waarden[i] = collapse(inits.get(i).waarde().van(w));
-                } catch (RuntimeException e) {
-                    if (!Rekenfout.isEvaluatiefout(e)) throw e;
-                    fout = Rekenfout.benoem(e, regelnaam);
-                }
-            }
-            // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
-            // making, as in the reference interpreter, which then makes nothing: no object, no mark and no link that
-            // another form could read and fault on. The fault is stated like everything a creation makes, and the
-            // rule's guard on it keeps the creation from firing again in a later generation
-            if (fout != null) {
-                drools.insert(new Fout(onderwerp, naam, fout));
-                return;
-            }
-            int f = (Integer) w[fase];
-            Object object = nieuweBoon(klasse);
-            // the member values are the input of the new object, as the reference interpreter reads them: they go on
-            // the new bean before it enters working memory, so no rule ever saw it without them and no bean in the
-            // session changes; a writer of the member then displaces them as it displaces case input (ch. 5.5, 7.8)
-            for (int i = 0; i < inits.size(); i++)
-                if (zetters.get(i) != null && waarden[i] != null) zetters.get(i).accept(object, waarden[i]);
-            drools.insert(object);
-            drools.insert(new Gemaakt(naam, onderwerp, object, f, stratum, diepte));
-            drools.insert(nieuwIsEerste ? new Koppeling(relatie, object, onderwerp, f)
-                    : new Koppeling(relatie, onderwerp, object, f));
-            for (int i = 0; i < inits.size(); i++)
-                if (zetters.get(i) == null && Boolean.TRUE.equals(waarden[i]))
-                    drools.insert(new HeeftKenmerk(object, inits.get(i).lid().sleutel()));
-        }, lez.variabelen.size()));
+        // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
+        // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
+        // creation makes, and the rule's guard on it keeps the creation from firing again in a later generation
+        Gevolg creatie = new Gevolg.Creatie(ONDERWERP, naam,
+                new Gevolg.Creatiediepte(herkomst, stratum, subject.naam, CREATIEBUDGET), initialisaties,
+                new Gevolg.Foutnaam(naam, regelnaam), Gevolg.Invoeging.GESTELD,
+                new Gevolg.Constructie(bonenklasse(nieuw), zettingen), fase, invoegingen, List.copyOf(gebruik),
+                lez.grootte());
         for (Initialisatie i : inits) afgeleid.put(i.lid().sleutel(), i.lid());
         lez.vastleggen();
         creatieregels.add(regelnaam);
         creatiestrata.add(stratum);
         List<Rule> uit = new ArrayList<>();
-        uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, OBJECTCREATIE)
-                .build(items.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lez.regelplan(regelnaam, OBJECTCREATIE, items, creatie)));
         if (kanFalen) uit.add(voorwaardefoutregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null));
         Rule deponering = deponeerregel(naam, regelnaam, nieuwe, oc.voorwaarde(), null);
         if (deponering != null) uit.add(deponering);
@@ -2148,46 +2124,15 @@ public final class TmsTranspiler {
      *  subject, so that it makes one object per subject, and no {@link Gemaakt} that made the subject itself in the
      *  current phase, bound at {@code fase} ({@link Lezingen#creatiefase}), so that an object waits for the next phase,
      *  after the rule layer has reached a fixpoint over it. */
-    private List<RuleItemBuilder<?>> creatiebewaking(String naam, Lezingen lez, int fase) {
-        @SuppressWarnings("unchecked")
-        Variable<Object> f = (Variable<Object>) lez.variabelen.get(fase);
-        Variable<Gemaakt> eigen = DSL.declarationOf(Gemaakt.class, "$gemaakt_" + id("creatie"));
-        Variable<Gemaakt> nieuw = DSL.declarationOf(Gemaakt.class, "$nieuw_" + id("creatie"));
+    private List<LhsItem> creatiebewaking(String naam, Lezingen lez, int fase) {
+        String f = lez.variabele(fase);
+        String eigen = "$gemaakt_" + id("creatie"), nieuw = "$nieuw_" + id("creatie");
         return List.of(
-                DSL.not(zelfde(PatternDSL.pattern(eigen).expr(id("gemaakt"), g -> g.regel().equals(naam)),
-                        "gemaakt-onderwerp", lez.s, Gemaakt::onderwerp)),
-                DSL.not(zelfde(PatternDSL.pattern(nieuw), "nieuw-object", lez.s, Gemaakt::object)
-                        .expr(id("nieuw-in-deze-fase"), f, (g, n) -> g.fase() == (Integer) n)));
-    }
-
-    /** The creation depth of the object that the object creation {@code naam} of stratum {@code stratum} makes for a
-     *  subject of declared type {@code type}, whose own marks are {@code herkomst}, the {@link Gemaakt} facts whose object
-     *  is the subject ({@link Lezingen#herkomst}): none for an object of the input, one for an object a creation made.
-     *  It is one more than the subject's depth in this stratum, where an object of the input and one a lower stratum made
-     *  stand at 0, since a lower stratum is complete before this one fires (RUNTIME-SEMANTICS ch. 5.5, 6.3). Past
-     *  {@link #CREATIEBUDGET} it throws {@link Creatiebudget}. A subject that a higher stratum made cannot occur: a
-     *  creation reads its subject's population strictly (ch. 6.1), so it sits at or above every creation that makes its
-     *  subjects; such a subject, or an object with two marks, is a fault of this transpiler and throws as one. */
-    static int diepte(String naam, int stratum, String type, List<?> herkomst) {
-        if (herkomst.size() > 1)
-            throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" ontmoet een onderwerp met "
-                    + herkomst.size() + " merktekens van een creatie, waar een object één keer gemaakt wordt: " + herkomst);
-        int diepte = 1;
-        if (!herkomst.isEmpty()) {
-            Gemaakt g = (Gemaakt) herkomst.get(0);
-            if (g.stratum() > stratum)
-                throw new IllegalStateException("exec-model: objectcreatie \"" + naam + "\" van stratum " + stratum
-                        + " ontmoet een onderwerp dat een creatie van stratum " + g.stratum() + " maakte, terwijl een"
-                        + " creatie de populatie van haar onderwerp strikt leest en dus in het stratum van elke maker van"
-                        + " haar onderwerpen staat of erboven (RUNTIME-SEMANTICS ch. 6.1, 6.3)");
-            if (g.stratum() == stratum) diepte = g.diepte() + 1;
-        }
-        if (diepte > CREATIEBUDGET)
-            throw new Creatiebudget("creation budget exhausted: objectcreatie \"" + naam + "\" van stratum " + stratum
-                    + " zou een object maken op aanmaakdiepte " + diepte + ", voor een " + type + " op diepte "
-                    + (diepte - 1) + " — een keten van aanmaken die niet stopt is een fout, nooit een stille afkapping"
-                    + " (RUNTIME-SEMANTICS ch. 5.5)");
-        return diepte;
+                new Niet(new Patroon(Gemaakt.class, eigen, List.of(gelijk(id("gemaakt"), "regel", naam)),
+                        List.of(new Join(id("gemaakt-onderwerp"), "onderwerp", ONDERWERP)), List.of())),
+                new Niet(new Patroon(Gemaakt.class, nieuw, List.of(),
+                        List.of(new Join(id("nieuw-object"), "object", ONDERWERP)),
+                        List.of(new Betatoets(id("nieuw-in-deze-fase"), Functie.IN_FASE, f)), List.of())));
     }
 
     /** The evaluation stratum of the creation {@code vorm}, named {@code naam}: every creation is a form of the
@@ -2198,15 +2143,6 @@ public final class TmsTranspiler {
             throw new IllegalStateException("exec-model: de creatie \"" + naam + "\" heeft geen stratum in de"
                     + " afhankelijkheidsgraaf");
         return s;
-    }
-
-    /** A new bean of {@code klasse}, with every field unset: what a creation initialises is a fact beside it. */
-    private static Object nieuweBoon(Class<?> klasse) {
-        try {
-            return klasse.getConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("kon geen " + klasse.getSimpleName() + " maken", e);
-        }
     }
 
     /**
@@ -2240,7 +2176,7 @@ public final class TmsTranspiler {
             throw new Weigering(Gastheer.DOELPOGING_GENEST);
         String regelnaam = model.geëmitteerdeRegelNaam(fc.naam());
         Conditie ankerguard = doelcheck == null ? c : null;
-        Supplier<Lezingen> nieuw = () -> new Lezingen(anker).geldig(fc.geldigheid());
+        Supplier<Lezingen> nieuw = () -> new Lezingen(anker, false).geldig(fc.geldigheid());
         Lezingen lez = nieuw.get();
         Set<Integer> gelezen = lez.volg();
         Term toets = ankerguard == null ? null : voorwaarde(ankerguard, lez);
@@ -2248,7 +2184,7 @@ public final class TmsTranspiler {
         lez.stop();
         int stratum = stratum(fc, fc.naam());
         int fase = lez.creatiefase(stratum);
-        List<RuleItemBuilder<?>> items = lez.linkerkant(voorwaarderol(kanFalen), toets, gelezen, ankerguard);
+        List<LhsItem> items = lez.plan(voorwaarderol(kanFalen), toets, gelezen, ankerguard);
         List<RolBindingRef> stappen = new ArrayList<>();
         for (ResolvedFeitCreatie.Tussenstap t : fc.tussenstappen()) stappen.add(t.rolBinding());
         stappen.add(fc.joinRol());
@@ -2259,24 +2195,29 @@ public final class TmsTranspiler {
             hops.add(h);
             cur = h.naar();
         }
-        @SuppressWarnings("unchecked")
-        Variable<Object> f = (Variable<Object>) lez.variabelen.get(fase);
-        PatternDSL.PatternDef<Object> doelpatroon = keten(hops, lez.s, items, f);
-        Variable<Object> doelvar = doelpatroon.getFirstVariable();
-        if (doelcheck != null) doelbewaking(doelcheck, doelpatroon, items);
-        Variable<Koppeling> bestaand = DSL.declarationOf(Koppeling.class, "$bestaand_" + id("feitcreatie"));
-        items.add(DSL.not(zelfde(zelfde(PatternDSL.pattern(bestaand).expr(id("bestaand"), x -> x.relatie().equals(relatie)),
-                "bestaand-anker", lez.s, x -> ankerIsEerste ? x.eerste() : x.tweede()),
-                "bestaand-doel", doelvar, x -> ankerIsEerste ? x.tweede() : x.eerste())));
-        items.add(DSL.on(lez.s, doelvar, f).execute((Block4<org.drools.model.Drools, Object, Object, Object>)
-                (drools, a, d, n) -> drools.insert(ankerIsEerste ? new Koppeling(relatie, a, d, (Integer) n)
-                        : new Koppeling(relatie, d, a, (Integer) n))));
+        List<Patroon> pad = new ArrayList<>(keten(hops, ONDERWERP, lez.variabele(fase)));
+        String doelvar = pad.get(pad.size() - 1).naam();
+        if (doelcheck != null) {
+            Doelbewaking b = doelbewaking(doelcheck, doelvar);
+            pad.set(pad.size() - 1, metNaAlfa(pad.get(pad.size() - 1), b.naAlfa()));
+            items.addAll(pad);
+            if (b.stand() != null) items.add(b.stand());
+        } else {
+            items.addAll(pad);
+        }
+        String ankereinde = ankerIsEerste ? "eerste" : "tweede", doeleinde = ankerIsEerste ? "tweede" : "eerste";
+        items.add(new Niet(new Patroon(Koppeling.class, "$bestaand_" + id("feitcreatie"),
+                List.of(gelijk(id("bestaand"), "relatie", relatie)),
+                List.of(new Join(id("bestaand-anker"), ankereinde, ONDERWERP),
+                        new Join(id("bestaand-doel"), doeleinde, doelvar)),
+                List.of())));
+        Gevolg koppeling = new Gevolg.Koppeling(relatie, ankerIsEerste ? ONDERWERP : doelvar,
+                ankerIsEerste ? doelvar : ONDERWERP, fase, Gevolg.Invoeging.GESTELD);
         lez.vastleggen();
         creatieregels.add(regelnaam);
         creatiestrata.add(stratum);
         List<Rule> uit = new ArrayList<>();
-        uit.add(PatternDSL.rule(PKG, regelnaam).attribute(Rule.Attribute.AGENDA_GROUP, FEITCREATIE)
-                .build(items.toArray(new RuleItemBuilder[0])));
+        uit.add(weergeef(lez.regelplan(regelnaam, FEITCREATIE, items, koppeling)));
         if (kanFalen) uit.add(voorwaardefoutregel(fc.naam(), regelnaam, nieuw, ankerguard, null));
         Rule deponering = deponeerregel(fc.naam(), regelnaam, nieuw, ankerguard, null);
         if (deponering != null) uit.add(deponering);
@@ -2300,41 +2241,61 @@ public final class TmsTranspiler {
             if (!FactModelGenerator.heeftReferentieVeld(model, van, paar[0].naam(), naar))
                 throw new Weigering(wat + ": " + FactModelGenerator.geenReferentieveldReden(model, van, paar[0].naam(), naar)
                         + " (§13.3.9 opslagrichting)");
-            return new Hop(van, naar, Accessors.getter(bonenklasse(van), paar[0].naam()), true, null, false);
+            return new Hop(van, naar, paar[0].naam(), true, null, false);
         }
         if (!paar[1].meervoudig()) {
             if (!FactModelGenerator.heeftReferentieVeld(model, naar, paar[1].naam(), van))
                 throw new Weigering(wat + ": " + FactModelGenerator.geenReferentieveldReden(model, naar, paar[1].naam(), van)
                         + " (§13.3.9 opslagrichting)");
-            return new Hop(van, naar, Accessors.getter(bonenklasse(naar), paar[1].naam()), false, null, false);
+            return new Hop(van, naar, paar[1].naam(), false, null, false);
         }
         throw new Weigering(wat + ": de stap over '" + stap.feittype() + "' heeft twee rollen naar veel, waarvoor het"
                 + " beanmodel geen veld heeft (§13.3.9 opslagrichting)");
     }
 
-    /** The guard of a fact creation on each target ({@code check}, hosted on a type the target satisfies): the target
-     *  must be of the host's type, and its characteristic must hold as the check asks, read through its standing where a
-     *  form writes it and off the bean otherwise. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void doelbewaking(Conditie.Kenmerk check, PatternDSL.PatternDef<Object> doelpatroon,
-                              List<RuleItemBuilder<?>> items) {
+    /** The guard of a fact creation on each target ({@code check}, hosted on a type the target satisfies), for the
+     *  target the variable {@code doel} binds at the end of the creation's path: the target must be of the host's type,
+     *  and its characteristic must hold as the check asks, read through its standing where a form writes it and off the
+     *  bean otherwise, through the getter of the class that declares it. The constraints on the target come after the
+     *  one that reaches it ({@link Patroon#naAlfa}), as do those on the standing after its join. */
+    private Doelbewaking doelbewaking(Conditie.Kenmerk check, String doel) {
         Objecttype host = check.eigenaar();
         Lid lid = lid(host, check.kenmerk(), true);
         Class<?> hostklasse = bonenklasse(host);
         boolean gewenst = !check.negatie();
-        doelpatroon.expr(id("doel-gastheer"), d -> hostklasse.isInstance(d));
+        Alfa gastheer = new Alfa(id("doel-gastheer"),
+                List.of(new Alfa.Veldtoets(null, Alfa.Vergelijker.IS_EEN, hostklasse)));
         ElementSleutel sleutel = lid.sleutel();
         if (schrijvers.containsKey(sleutel)) {
-            Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$doelstand_" + id("doel"));
-            Variable<Object> doel = doelpatroon.getFirstVariable();
-            items.add(zelfde(PatternDSL.pattern(st).expr(id("doelstand"), x -> x.kenmerk().equals(sleutel)),
-                    "doelstand-doel", doel, KenmerkStand::onderwerp)
-                    .expr(id("doelstand-waar"), x -> x.waar() == gewenst));
+            String st = "$doelstand_" + id("doel");
+            Patroon stand = new Patroon(KenmerkStand.class, st, List.of(gelijk(id("doelstand"), "kenmerk", sleutel)),
+                    List.of(new Join(id("doelstand-doel"), "onderwerp", doel)), List.of(),
+                    List.of(gelijk(id("doelstand-waar"), "waar", gewenst)), List.of());
             gelezen.putIfAbsent(sleutel, lid);
-        } else {
-            Function<Object, Object> getter = Accessors.getter(lid.klasse(), lid.naam());
-            doelpatroon.expr(id("doel-kenmerk"), d -> Boolean.TRUE.equals(getter.apply(d)) == gewenst);
+            return new Doelbewaking(List.of(gastheer), stand);
         }
+        Alfa kenmerk = new Alfa(id("doel-kenmerk"), List.of(new Alfa.Veldtoets(List.of(), lid.naam(),
+                Binding.Leesvorm.WAAR, Alfa.Vergelijker.GELIJK, gewenst, lid.klasse())));
+        return new Doelbewaking(List.of(gastheer, kenmerk), null);
+    }
+
+    /** The guard of a fact creation on its target ({@link #doelbewaking}): the constraints on the target's pattern after
+     *  the one that reaches it, and the pattern of the target's characteristic standing, null where the guard reads the
+     *  characteristic off the bean. */
+    private record Doelbewaking(List<Alfa> naAlfa, Patroon stand) {}
+
+    /** {@code p} with the constraints {@code naAlfa} after its joins and its other constraints. */
+    private static Patroon metNaAlfa(Patroon p, List<Alfa> naAlfa) {
+        List<Alfa> alle = new ArrayList<>(p.naAlfa());
+        alle.addAll(naAlfa);
+        return new Patroon(p.feitklasse(), p.naam(), p.alfa(), p.joins(), p.betatoetsen(), alle, p.bindingen());
+    }
+
+    /** {@code p} binding {@code b} as well, after its other bindings. */
+    private static Patroon metBinding(Patroon p, Binding b) {
+        List<Binding> alle = new ArrayList<>(p.bindingen());
+        alle.add(b);
+        return new Patroon(p.feitklasse(), p.naam(), p.alfa(), p.joins(), p.betatoetsen(), p.naAlfa(), alle);
     }
 
     /**
@@ -2361,39 +2322,36 @@ public final class TmsTranspiler {
     }
 
     /** The links of {@code relatie} the reference field {@code veld} of the beans of {@code houder} carries, the holder
-     *  being the link's first end where {@code houderIsEerste}. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+     *  being the link's first end where {@code houderIsEerste}: a rule of no form, whose subject is the holder and whose
+     *  link has phase 0, the input's. */
     private Rule invoerkoppeling(String relatie, Objecttype houder, String veld, boolean houderIsEerste) {
         Class<?> klasse = bonenklasse(houder);
-        Function<Object, Object> lees = Accessors.getter(klasse, veld);
-        Variable<Object> h = (Variable<Object>) DSL.declarationOf(klasse, "$houder");
-        Variable<Object> ander = DSL.declarationOf(Object.class, "$ander");
-        return PatternDSL.rule(PKG, "koppeling " + relatie + " uit de invoer: " + houder.naam + "." + veld).build(
-                PatternDSL.pattern(h).expr(id("koppeling-invoer"), o -> lees.apply(o) != null).bind(ander, o -> lees.apply(o)),
-                DSL.on(h, ander).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, a, b) ->
-                        drools.logicalInsert(houderIsEerste ? new Koppeling(relatie, a, b, 0)
-                                : new Koppeling(relatie, b, a, 0))));
+        Onderwerp h = new Onderwerp(klasse, "$houder", List.of(new Alfa(id("koppeling-invoer"),
+                List.of(new Alfa.Veldtoets(veld, Alfa.Vergelijker.GEVULD, null)))), List.of(),
+                List.of(Binding.van("$ander", klasse, veld)));
+        return weergeef(new Regelplan("koppeling " + relatie + " uit de invoer: " + houder.naam + "." + veld, null, null,
+                new Leestabel(List.of()), List.of(h), new Gevolg.Koppeling(relatie, houderIsEerste ? "$houder" : "$ander",
+                houderIsEerste ? "$ander" : "$houder", -1, Gevolg.Invoeging.LOGISCH)));
     }
 
     /** The fault of two links of {@code relatie} from one object to two different fillers of the to-one role
      *  {@code rol}: the near object is the links' first end where {@code nabijIsEerste}. */
     private Rule tweedeVulling(RegelSpraakModel.Feittype ft, String relatie, boolean nabijIsEerste, String rol,
                                Objecttype nabijType) {
-        Variable<Koppeling> een = DSL.declarationOf(Koppeling.class, "$een");
-        Variable<Koppeling> twee = DSL.declarationOf(Koppeling.class, "$twee");
-        Variable<Object> nabij = DSL.declarationOf(Object.class, "$nabij");
+        String nabijeinde = nabijIsEerste ? "eerste" : "tweede", vereinde = nabijIsEerste ? "tweede" : "eerste";
         String zin = "de naar-één-rol \"" + rol + "\" van een " + nabijType.naam + " heeft twee verschillende vullingen;"
                 + " een tweede vulling is een fout, geen overschrijving (RUNTIME-SEMANTICS ch. 5.5)";
-        return PatternDSL.rule(PKG, "koppeling " + relatie + ": tweede vulling van " + rol).build(
-                PatternDSL.pattern(een).expr(id("vulling"), x -> x.relatie().equals(relatie))
-                        .bind(nabij, x -> nabijIsEerste ? x.eerste() : x.tweede()),
-                zelfde(PatternDSL.pattern(twee).expr(id("tweede-vulling"), x -> x.relatie().equals(relatie)),
-                        "tweede-vulling-nabij", een, x -> nabijIsEerste ? x.eerste() : x.tweede(),
-                        y -> nabijIsEerste ? y.eerste() : y.tweede())
-                        .expr(id("tweede-vulling-ander"), een, (x, y) -> nabijIsEerste
-                                ? x.tweede() != y.tweede() : x.eerste() != y.eerste()),
-                DSL.on(nabij).execute((Block2<org.drools.model.Drools, Object>) (drools, n) ->
-                        drools.logicalInsert(new Fout(n, ft.naam, new IllegalStateException(zin)))));
+        Patroon een = new Patroon(Koppeling.class, "$een", List.of(gelijk(id("vulling"), "relatie", relatie)), List.of(),
+                List.of(Binding.van("$nabij", Koppeling.class, nabijeinde)));
+        Patroon twee = new Patroon(Koppeling.class, "$twee", List.of(gelijk(id("tweede-vulling"), "relatie", relatie)),
+                List.of(new Join(id("tweede-vulling-nabij"), nabijeinde, "$een",
+                        new Binding.Veld(Koppeling.class, nabijeinde))),
+                List.of(new Betatoets(id("tweede-vulling-ander"), Functie.ANDERE_VULLING, "$een",
+                        List.of(constante(vereinde)))),
+                List.of());
+        return weergeef(new Regelplan("koppeling " + relatie + ": tweede vulling van " + rol, null, null,
+                new Leestabel(List.of()), List.of(een, twee),
+                new Gevolg.TweedeVulling("$nabij", ft.naam, zin, Gevolg.Invoeging.LOGISCH)));
     }
 
     // ---------------- prioritized defaults ----------------
@@ -5223,10 +5181,18 @@ public final class TmsTranspiler {
          *  planned items after the subject pattern, the parameter items, the standing items and the test, which
          *  {@link #regelplan} takes with what the form adds after them. */
         List<LhsItem> plan(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde) {
+            return plan(rol, toets, gelezen, voorwaarde, List.of());
+        }
+
+        /** As {@link #plan(Toetsitem.Rol, Term, Set, Conditie)}, with {@code stuur} between the standing items and the
+         *  test: the guard of a creation, whose ids the analysis draws before the test's. */
+        List<LhsItem> plan(Toetsitem.Rol rol, Term toets, Set<Integer> gelezen, Conditie voorwaarde,
+                           List<LhsItem> stuur) {
             Toetsitem test = toetsitem(rol, toets, gelezen, voorwaarde);
             legVast(test);
             List<LhsItem> uit = new ArrayList<>(parameters);
             uit.addAll(standen);
+            uit.addAll(stuur);
             if (test != null) uit.add(test);
             return uit;
         }
@@ -5259,12 +5225,24 @@ public final class TmsTranspiler {
          *  pattern, the subject pattern with its constraints, joins, other constraints and bindings as they stand now,
          *  the planned items right after it, {@code items} after those, and {@code gevolg}. */
         Regelplan regelplan(String naam, List<LhsItem> items, Gevolg gevolg) {
+            return regelplan(naam, null, items, gevolg);
+        }
+
+        /** As {@link #regelplan(String, List, Gevolg)}, for a rule of the agenda group {@code agendagroep}. */
+        Regelplan regelplan(String naam, String agendagroep, List<LhsItem> items, Gevolg gevolg) {
             List<LhsItem> lhs = new ArrayList<>(kopplan);
             lhs.add(new Onderwerp(bonenklasse(subject), ONDERWERP, onderwerpalfa, onderwerpjoins, onderwerpbetatoetsen,
                     onderwerpbindingen));
             lhs.addAll(bereikplan);
             lhs.addAll(items);
-            return new Regelplan(naam, vorm, null, new Leestabel(slots), lhs, gevolg);
+            return new Regelplan(naam, vorm, agendagroep, new Leestabel(slots), lhs, gevolg);
+        }
+
+        /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */
+        String variabele(int slot) {
+            String naam = slots.get(slot).naam();
+            if (naam == null) throw new IllegalStateException("slot " + slot + " wordt door geen patroon gebonden");
+            return naam;
         }
 
         /** Plans {@code item} before the subject pattern, in a rule that comes whole from its plan. */
@@ -5481,7 +5459,7 @@ public final class TmsTranspiler {
         /** The marks of the creation that made this rule's subject, the {@link Gemaakt} facts whose object is the
          *  subject, bound as a list off an accumulate: empty for an object of the input, one mark for an object a
          *  creation made. An accumulate over no fact still binds a row, so the rule reads an object of the input as
-         *  well. An object creation reads the depth of its subject off it ({@link TmsTranspiler#diepte}). */
+         *  well. An object creation reads the depth of its subject off it ({@link Rekenhulpen#creatiediepte}). */
         /** The {@link Ontvanger} facts of the allocation {@code verdeling} whose source is this rule's subject, bound as
          *  a list off an accumulate: the recipients with their weights, keys and caps as their own rule bound them
          *  ({@link TmsTranspiler#verdeling}). A recipient whose fact changes changes the list, and the activation that
@@ -5708,7 +5686,7 @@ public final class TmsTranspiler {
          *  An attribute on a timeline is read through its standing at the end of the path, as {@link #tijdlijn} reads
          *  one of the subject's own, so the read carries the case's input convention, a {@code List<Tijdvak>} or an
          *  {@link Emmerscalair}; a characteristic on a timeline, which is input only, is bound as its true periods, a
-         *  {@code List<Tijdvak>} ({@link #invoerlezing}). */
+         *  {@code List<Tijdvak>} ({@link TmsTranspiler#invoervorm}). */
         int genavigeerd(Pad pad, Lid lid) {
             String sleutel = "pad " + pad.sleutel() + " " + lid.sleutel();
             int bekend = bestaand(sleutel);
@@ -5998,7 +5976,6 @@ public final class TmsTranspiler {
      * convention; where it does not, the value is null, under a {@code not} over the same chain. A link that a creation
      * adds takes the standing along.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private List<Rule> koppelingpadstandregels(Padlezing p) {
         Pad pad = p.pad();
         Lid lid = p.lid();
@@ -6008,80 +5985,79 @@ public final class TmsTranspiler {
         String naam = "padstand " + pad.subject().naam + "." + String.join(".", pad.rollen()) + " naar "
                 + lid.declarant().naam + "." + lid.naam() + ": ";
 
-        Variable<Object> s1 = (Variable<Object>) DSL.declarationOf(klasse, "$onderwerp");
-        List<RuleItemBuilder<?>> items = new ArrayList<>();
-        items.add(PatternDSL.pattern(s1));
-        PatternDSL.PatternDef<Object> bereikt = keten(pad.hops(), s1, items, null);
-        Variable<Object> v = DSL.declarationOf(Object.class, "$v");
+        List<LhsItem> items = new ArrayList<>();
+        items.add(new Onderwerp(klasse, ONDERWERP, List.of(), List.of(), List.of()));
+        List<Patroon> keten = keten(pad.hops(), ONDERWERP, null);
+        Leestabel waarde;
         if (schrijvers.containsKey(lk) || tijdlijnattribuut(lid)) {
-            Variable<Object> doel = bereikt.getFirstVariable();
-            if (lid.kenmerk()) {
-                Variable<KenmerkStand> st = DSL.declarationOf(KenmerkStand.class, "$stand");
-                items.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.kenmerk().equals(lk)), "stand-bereikt",
-                        doel, KenmerkStand::onderwerp).bind(v, KenmerkStand::waar));
-            } else {
-                Variable<Stand> st = DSL.declarationOf(Stand.class, "$stand");
-                items.add(zelfde(PatternDSL.pattern(st).expr(id("stand"), x -> x.attribuut().equals(lk)), "stand-bereikt",
-                        doel, Stand::onderwerp).bind(v, Stand::waarde));
-            }
+            items.addAll(keten);
+            Class<?> standklasse = lid.kenmerk() ? KenmerkStand.class : Stand.class;
+            items.add(new Patroon(standklasse, "$stand",
+                    List.of(gelijk(id("stand"), lid.kenmerk() ? "kenmerk" : "attribuut", lk)),
+                    List.of(new Join(id("stand-bereikt"), "onderwerp", keten.get(keten.size() - 1).naam())),
+                    List.of(Binding.van("$v", standklasse, lid.kenmerk() ? "waar" : "waarde"))));
+            waarde = eenSlot(Leessoort.BEREIKTE_STAND, "stand " + ps + " " + lk, "$v");
         } else {
-            Function<Object, Object> lees = invoerlezing(lid);
-            bereikt.bind(v, o -> lees.apply(o));
+            // the input of the member off the bean the chain reaches, read as the binding's form says
+            items.addAll(keten.subList(0, keten.size() - 1));
+            items.add(metBinding(keten.get(keten.size() - 1), new Binding("$v", List.of(),
+                    new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null)));
+            waarde = eenSlot(Leessoort.BEREIKTE_INVOER, "invoer " + ps + " " + lk, "$v");
         }
-        items.add(DSL.on(s1, v).execute((Block3<org.drools.model.Drools, Object, Object>) (drools, o, w) ->
-                drools.logicalInsert(new PadStand(o, ps, lk, w))));
-        Rule aanwezig = PatternDSL.rule(PKG, naam + "link aanwezig").build(items.toArray(new RuleItemBuilder[0]));
+        Rule aanwezig = weergeef(new Regelplan(naam + "link aanwezig", null, null, waarde, items,
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.BEREIKT, 0, Gevolg.Invoeging.LOGISCH)));
 
-        Variable<Object> s2 = (Variable<Object>) DSL.declarationOf(klasse, "$onderwerp");
-        List<RuleItemBuilder<?>> geen = new ArrayList<>();
-        keten(pad.hops(), s2, geen, null);
-        Rule afwezig = PatternDSL.rule(PKG, naam + "link afwezig").build(PatternDSL.pattern(s2),
-                DSL.not((org.drools.model.view.ViewItem<?>) geen.get(0),
-                        geen.subList(1, geen.size()).toArray(new org.drools.model.view.ViewItem<?>[0])),
-                DSL.on(s2).execute((Block2<org.drools.model.Drools, Object>) (drools, o) ->
-                        drools.logicalInsert(new PadStand(o, ps, lk, null))));
+        // no combination of the chain's objects: what the chain declares lives inside the negation, and it reads the
+        // subject alone from before it
+        List<Patroon> geen = keten(pad.hops(), ONDERWERP, null);
+        Rule afwezig = weergeef(new Regelplan(naam + "link afwezig", null, null, new Leestabel(List.of()),
+                List.of(new Onderwerp(klasse, ONDERWERP, List.of(), List.of(), List.of()),
+                        new Niet(geen, Bestaat.verklaard(geen), List.of(ONDERWERP))),
+                new Gevolg.Padstand(ONDERWERP, ps, lk, Gevolg.Standbron.ONTBREKENDE_LINK, -1,
+                        Gevolg.Invoeging.LOGISCH)));
         return List.of(aanwezig, afwezig);
     }
 
     /**
-     * The patterns that walk {@code hops} from the object {@code van} binds, into {@code uit}: per hop a pattern over the
-     * bean the hop reaches, joined to the near object by the reference field of the end that holds it, or, over a
-     * relation a form creates, through a {@link Koppeling} pattern whose other end the bean pattern then binds. Returns
-     * the pattern over the last bean reached.
+     * The patterns that walk {@code hops} from the object the variable {@code van} binds, in order: per hop a pattern
+     * over the bean the hop reaches, tested against the near object along the reference field of the end that holds it
+     * ({@link Functie#ONTMOETING}, the field the chain of one side), or, over a relation a form creates, a
+     * {@link Koppeling} pattern joined to the near object, which binds the link's other end, and a pattern over the bean
+     * joined to that end. Where {@code fase} names the variable of the creation phase, a link of that phase is not
+     * walked. The last pattern is the one over the last bean reached.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private PatternDSL.PatternDef<Object> keten(List<Hop> hops, Variable<Object> van, List<RuleItemBuilder<?>> uit,
-                                                Variable<Object> fase) {
-        Variable<Object> nabij = van;
-        PatternDSL.PatternDef<Object> laatste = null;
+    private List<Patroon> keten(List<Hop> hops, String van, String fase) {
+        List<Patroon> uit = new ArrayList<>();
+        String nabij = van;
         for (Hop h : hops) {
-            Variable<Object> ver = (Variable<Object>) DSL.declarationOf(bonenklasse(h.naar()), "$stap_" + id("keten"));
-            PatternDSL.PatternDef<Object> p = PatternDSL.pattern(ver);
-            Variable<Object> n = nabij;
+            Class<?> klasse = bonenklasse(h.naar());
+            String ver = "$stap_" + id("keten");
             if (h.relatie() != null) {
-                String relatie = h.relatie();
                 boolean eerste = h.nabijIsEerste();
-                Variable<Koppeling> k = DSL.declarationOf(Koppeling.class, "$koppeling_" + id("keten"));
-                Variable<Object> overzijde = DSL.declarationOf(Object.class, "$overzijde_" + id("keten"));
-                PatternDSL.PatternDef<Koppeling> kp = zelfde(PatternDSL.pattern(k)
-                        .expr(id("koppeling"), x -> x.relatie().equals(relatie)), "koppeling-nabij", n,
-                        x -> eerste ? x.eerste() : x.tweede());
+                String koppeling = "$koppeling_" + id("keten");
+                String overzijde = "$overzijde_" + id("keten");
+                Alfa vanRelatie = gelijk(id("koppeling"), "relatie", h.relatie());
+                Join opNabij = new Join(id("koppeling-nabij"), eerste ? "eerste" : "tweede", nabij);
                 // a creation rule does not walk a link of the phase it fires in: the rule layer has not seen it yet
-                if (fase != null) kp.expr(id("koppeling-eerder"), fase, (x, f) -> x.fase() != (Integer) f);
-                uit.add(kp.bind(overzijde, x -> eerste ? x.tweede() : x.eerste()));
-                zelfde(p, "koppeling-ver", overzijde, x -> x);
-            } else if (h.opNabij()) {
-                Function<Object, Object> lees = h.lees();
-                p.expr(id("veld-nabij"), n, (x, o) -> lees.apply(o) == x);
+                List<Betatoets> eerder = fase == null ? List.of()
+                        : List.of(new Betatoets(id("koppeling-eerder"), Functie.NIET_IN_FASE, fase));
+                uit.add(new Patroon(Koppeling.class, koppeling, List.of(vanRelatie), List.of(opNabij), eerder,
+                        List.of(Binding.van(overzijde, Koppeling.class, eerste ? "tweede" : "eerste"))));
+                uit.add(new Patroon(klasse, ver, List.of(), List.of(new Join(id("koppeling-ver"), null, overzijde)),
+                        List.of()));
             } else {
-                Function<Object, Object> lees = h.lees();
-                p.expr(id("veld-ver"), n, (x, o) -> lees.apply(x) == o);
+                // the field on the near bean reaches the far one, or the field on the far bean the near one
+                List<String> veld = List.of(h.veld());
+                Betatoets stap = h.opNabij()
+                        ? new Betatoets(id("veld-nabij"), Functie.ONTMOETING, nabij,
+                                List.of(constante(List.of()), constante(veld)))
+                        : new Betatoets(id("veld-ver"), Functie.ONTMOETING, nabij,
+                                List.of(constante(veld), constante(List.of())));
+                uit.add(new Patroon(klasse, ver, List.of(), List.of(), List.of(stap), List.of()));
             }
-            uit.add(p);
             nabij = ver;
-            laatste = p;
         }
-        return laatste;
+        return uit;
     }
 
     // ---------------- members, paths and beans ----------------
@@ -6100,19 +6076,11 @@ public final class TmsTranspiler {
         return lid.tijd() != null && !lid.kenmerk();
     }
 
-    /** The read of the input member {@code lid} off a bean of a type that declares it: a characteristic on a timeline as
-     *  its true periods, a {@code List<Tijdvak>} ({@link Tijdvak#lijst}), null for an absent timeline, a characteristic
-     *  that holds one truth value as that value, and any other member as its value. An attribute on a timeline is read
-     *  through its standing instead ({@link #tijdlijnattribuut}). A closure, for the one rule family that still builds
-     *  its rules itself ({@link #koppelingpadstandregels}, until step 1c-C of card
-     *  drl-teksttak-op-truth-maintenance); a plan carries the same decision as a binding's form of reading
-     *  ({@link #invoervorm}). */
-    private static Function<Object, Object> invoerlezing(Lid lid) {
-        return PatternDslWeergave.invoerlezer(new Binding.Veld(lid.klasse(), lid.naam()), invoervorm(lid), null);
-    }
-
-    /** How the input member {@code lid} is read off a bean: the decision a plan's binding carries
-     *  ({@link Binding.Leesvorm}), which {@link #invoerlezing} takes as well. */
+    /** How the input member {@code lid} is read off a bean of a type that declares it, the decision a plan's binding
+     *  carries ({@link Binding.Leesvorm}): a characteristic on a timeline as its true periods, a {@code List<Tijdvak>}
+     *  ({@link Tijdvak#lijst}), null for an absent timeline, a characteristic that holds one truth value as whether it
+     *  holds {@code true}, and any other member as its value. An attribute on a timeline is read through its standing
+     *  instead ({@link #tijdlijnattribuut}). */
     private static Binding.Leesvorm invoervorm(Lid lid) {
         if (lid.tijd() != null) return Binding.Leesvorm.TIJDVAKKEN;
         if (lid.kenmerk()) return Binding.Leesvorm.WAAR;
@@ -6221,10 +6189,10 @@ public final class TmsTranspiler {
     }
 
     /** One hop of a path or a range, from an object of type {@code van} to one of type {@code naar}: over an input
-     *  relation by {@code lees} on the bean of one end ({@code opNabij}: on the near object, else on the far one), over
-     *  a relation a form creates by its {@link Koppeling} facts ({@code relatie} set, {@code nabijIsEerste} saying
-     *  which end of the link the near object is). */
-    private record Hop(Objecttype van, Objecttype naar, Function<Object, Object> lees, boolean opNabij, String relatie,
+     *  relation by the reference field {@code veld} on the bean of one end ({@code opNabij}: on the near object, else on
+     *  the far one), over a relation a form creates by its {@link Koppeling} facts ({@code relatie} set,
+     *  {@code nabijIsEerste} saying which end of the link the near object is, {@code veld} null). */
+    private record Hop(Objecttype van, Objecttype naar, String veld, boolean opNabij, String relatie,
                        boolean nabijIsEerste) {}
 
     /** A derived member read over a path: one family of path-standing rules. */
@@ -6257,7 +6225,7 @@ public final class TmsTranspiler {
                 throw new Weigering(wat + ": " + cur.naam + " heeft geen referentieveld '" + rol + "' naar " + volgend.naam
                         + " (§13.3.9 opslagrichting)");
             velden.add(new Binding.Veld(bonenklasse(cur), rol));
-            hops.add(new Hop(cur, volgend, Accessors.getter(bonenklasse(cur), rol), true, null, false));
+            hops.add(new Hop(cur, volgend, rol, true, null, false));
             cur = volgend;
         }
         return new Pad(subject.naam + ":" + String.join(".", w.rollen()), subject, w.rollen(), cur, List.copyOf(velden),

@@ -33,17 +33,9 @@ public record Bestaat(List<Patroon> patronen, List<String> binnen, List<String> 
         return uit;
     }
 
-    /** Refuses, as a fault of the analysis, the scope {@code binnen} and {@code buiten} of a quantification over
-     *  {@code patronen}, the {@code item}, where it is not the one the patterns give: {@code binnen} what they declare
-     *  ({@link #verklaard}), each once, and {@code buiten} what they read from before the quantification. */
-    static void scope(String item, List<Patroon> patronen, List<String> binnen, List<String> buiten) {
-        if (patronen.isEmpty()) throw new IllegalArgumentException(item + " heeft ten minste één patroon");
-        List<String> verklaard = verklaard(patronen);
-        if (!binnen.equals(verklaard))
-            throw new IllegalArgumentException(item + " declareert de variabelen van zijn patronen en van hun"
-                    + " bindingen, " + verklaard + ", niet " + binnen);
-        if (new LinkedHashSet<>(binnen).size() != binnen.size())
-            throw new IllegalArgumentException(item + " declareert een variabele twee keer: " + binnen);
+    /** The variables bound before a quantification over {@code patronen} that its patterns join or test, each once, in
+     *  the order they are met: those no pattern before the reading one declares. */
+    public static List<String> gelezen(List<Patroon> patronen) {
         Set<String> gezien = new LinkedHashSet<>(), gelezen = new LinkedHashSet<>();
         for (Patroon p : patronen) {
             List<String> doelen = new ArrayList<>();
@@ -53,7 +45,23 @@ public record Bestaat(List<Patroon> patronen, List<String> binnen, List<String> 
             gezien.add(p.naam());
             for (Binding b : p.bindingen()) gezien.add(b.doel());
         }
-        if (!buiten.equals(List.copyOf(gelezen)))
+        return List.copyOf(gelezen);
+    }
+
+    /** Refuses, as a fault of the analysis, the scope {@code binnen} and {@code buiten} of a quantification over
+     *  {@code patronen}, the {@code item}, where it is not the one the patterns give: {@code binnen} what they declare
+     *  ({@link #verklaard}), each once, and {@code buiten} what they read from before the quantification
+     *  ({@link #gelezen}). */
+    static void scope(String item, List<Patroon> patronen, List<String> binnen, List<String> buiten) {
+        if (patronen.isEmpty()) throw new IllegalArgumentException(item + " heeft ten minste één patroon");
+        List<String> verklaard = verklaard(patronen);
+        if (!binnen.equals(verklaard))
+            throw new IllegalArgumentException(item + " declareert de variabelen van zijn patronen en van hun"
+                    + " bindingen, " + verklaard + ", niet " + binnen);
+        if (new LinkedHashSet<>(binnen).size() != binnen.size())
+            throw new IllegalArgumentException(item + " declareert een variabele twee keer: " + binnen);
+        List<String> gelezen = gelezen(patronen);
+        if (!buiten.equals(gelezen))
             throw new IllegalArgumentException(item + " leest van buiten " + gelezen + ", niet " + buiten);
         // a pattern reads an object or a value of the quantification only after the pattern that declares it
         for (String b : buiten)
