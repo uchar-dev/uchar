@@ -6,8 +6,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.cases.DroolsBackend;
+import dev.uchar.regelspraak.ir.Conditie;
+import dev.uchar.regelspraak.transpiler.tms.plan.Functie;
 import dev.uchar.regelspraak.transpiler.tms.plan.LhsItem;
 import dev.uchar.regelspraak.transpiler.tms.plan.Linkerkant;
+import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.Toetsitem;
 
 import org.junit.jupiter.api.Test;
@@ -17,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The tests that step 1b2 of card drl-teksttak-op-truth-maintenance left compiled are planned as well (step 1b3): the
@@ -56,7 +62,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>{@code jutterswet-keurlast} with a filter that divides ({@link #keurlastMetDelendFilter}), since no document of
  *       the corpus or the suite has a per-element fold whose filter can fault: the member-fault rule tests the filter
  *       without its fault, which the filter-fault rule takes, and then that the member's timeline is the
- *       asOfDate-bucket scalar.</li>
+ *       asOfDate-bucket scalar. Since no document evaluates that test, a test of its own pins the rendering of a
+ *       condition tested without its fault.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step: the compilers of these tests made the predicates themselves, so each of them was a
@@ -308,6 +315,27 @@ class ToetstermWitnessTest {
                 "keurlast van een jutter DEPONERING sonde 2 0.1 Const BigDecimal type Numeriek[geheel=true, "
                         + "decimalen=0, teken=ONBEPAALD, eenheid=null] bron '2'",
                 "keurlast van een jutter DEPONERING sonde 2 0.2 Const String"), velden(plannen));
+    }
+
+    /**
+     * The rendering of a condition tested without its fault ({@link Term.ZonderFout}), which no document of the corpus
+     * or the suite evaluates, so the harness cannot show it: where the condition faults the test does not hold, where
+     * it answers the test is its answer, and an exception that is no evaluation fault passes; in the conjunction of a
+     * test a form composes itself a member after one that does not hold is not evaluated, as the lambda of the
+     * member-fault rule did with {@code &&}.
+     */
+    @Test void een_toets_zonder_fout_houdt_niet_waar_de_voorwaarde_faalt() {
+        Term faalt = new Term.Faal("de voorwaarde faalt", null);
+        Term waar = new Term.Const(Boolean.TRUE, null, null);
+        assertFalse(ClosureWeergave.toets(new Term.ZonderFout(faalt, null)).test(new Object[0]));
+        assertTrue(ClosureWeergave.toets(new Term.ZonderFout(waar, null)).test(new Object[0]));
+        Term kenmerk = new Term.Aanroep(Functie.KENMERK, List.of(new Term.Lees(0, null), waar), null);
+        Object[] geenWaarheidswaarde = {"geen waarheidswaarde"};
+        assertThrows(ClassCastException.class,
+                () -> ClosureWeergave.toets(new Term.ZonderFout(kenmerk, null)).test(geenWaarheidswaarde));
+        Term vorm = new Term.Samengesteld(Conditie.Kwantor.ALLE, 0, List.of(new Term.ZonderFout(faalt, null), faalt),
+                null);
+        assertFalse(ClosureWeergave.toets(vorm).test(new Object[0]));
     }
 
     private static JsonNode golden(String naam) throws Exception {
