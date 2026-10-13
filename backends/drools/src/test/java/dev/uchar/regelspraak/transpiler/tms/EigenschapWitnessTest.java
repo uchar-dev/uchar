@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -62,7 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * </ul>
  * Two documents fire through the branch with the value the reference interpreter and the ASP backend give: one with a
  * member {@code İş}, with and without an input for it, and one with an input member {@code 日 X} and a derived member
- * {@code İç}.
+ * {@code İç}. A name whose property is no Java identifier, such as "3 M", "3e lid" or "m²", is no member a bean can
+ * have: the build fails loudly on the bean source, before any reader, and a test of its own pins that (fix round 2a,
+ * point 3).
  *
  * <p><b>Red</b> before step 1e, on {@code eab32f03}: the three records had no property, and this class did not compile.
  * <b>Red</b> for fix round 1e, on {@code 5c6b34e3}: the document with the member {@code İş} fails at the build, "geen
@@ -182,6 +185,30 @@ class EigenschapWitnessTest {
         }
         assertEquals(List.of(), fouten, () -> "lezers en schrijvers die niet de namen van de beangenerator gebruiken:\n"
                 + bron);
+    }
+
+    /** Names whose property is no Java identifier: a digit first ("3 M", "3e lid") or a character that is no
+     *  identifier character ({@code ²}, decision 24). The generator writes the property as the field, so the bean source
+     *  does not compile, before any reader or writer comes into play: an older limit of the generator, not of this card
+     *  (decision 27), and no member a document can have yet. */
+    private static final List<String> GEEN_JAVANAAM = List.of("3 M", "3e lid", "m²");
+
+    /** The build of a document with such a member fails loudly on the bean source, and the compiler's report quotes
+     *  the field ("private java.math.BigDecimal 3M;"). Measured on {@code c00897a3} (fix round 2a, point 3). */
+    @Test void een_lid_zonder_javanaam_faalt_luid_bij_de_beanbron() throws Exception {
+        for (String naam : GEEN_JAVANAAM) {
+            Path ir = Files.createTempFile("geen-javanaam", ".json");
+            try {
+                Files.writeString(ir, proefdocument(List.of(naam)));
+                IllegalStateException f = assertThrows(IllegalStateException.class,
+                        () -> DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL), naam);
+                assertTrue(f.getMessage().startsWith("gegenereerde fact-beans compileren niet:\n"), f::getMessage);
+                assertTrue(f.getMessage().contains("private java.math.BigDecimal " + Namen.eigenschap(naam) + ";"),
+                        f::getMessage);
+            } finally {
+                Files.delete(ir);
+            }
+        }
     }
 
     /** One reader or writer {@code wie} of the member {@code naam}: what it gives, or the fault it throws, where that is
